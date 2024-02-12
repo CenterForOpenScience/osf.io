@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from website.util import api_v2_url
 from api.base.settings import API_BASE

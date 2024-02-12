@@ -1,6 +1,6 @@
 import datetime
 
-import mock
+from unittest import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase

@@ -1,5 +1,5 @@
 from future.moves.urllib.parse import urlparse, parse_qs
-import mock
+from unittest import mock
 from nose.tools import *  # noqa
 import responses
 from rest_framework import status as http_status

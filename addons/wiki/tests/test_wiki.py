@@ -5,7 +5,7 @@
 from copy import deepcopy
 from rest_framework import status as http_status
 import time
-import mock
+from unittest import mock
 import pytest
 import pytz
 import datetime

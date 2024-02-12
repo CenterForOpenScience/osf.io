@@ -2,7 +2,7 @@
 from django.http import HttpResponse
 
 from future.moves.urllib.parse import urlparse
-import mock
+from unittest import mock
 from nose.tools import *  # noqa:
 from rest_framework.test import APIRequestFactory
 from django.test.utils import override_settings

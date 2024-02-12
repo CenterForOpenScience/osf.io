@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 import json
-import mock
+from unittest import mock
 import datetime
 
 import pytest

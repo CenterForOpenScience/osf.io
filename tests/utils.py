@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import functools
-import mock
+from unittest import mock
 
 from django.http import HttpRequest
 from django.utils import timezone

@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from rest_framework import status as http_status
 

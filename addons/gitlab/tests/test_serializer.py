@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the GitLab addon."""
-import mock
+from unittest import mock
 import pytest
 
 from tests.base import OsfTestCase

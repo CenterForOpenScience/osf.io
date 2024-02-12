@@ -10,7 +10,7 @@ import uuid
 
 import blinker
 import responses
-import mock
+from unittest import mock
 import pytest
 
 from django.test import TestCase as DjangoTestCase

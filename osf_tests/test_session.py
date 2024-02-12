@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.utils import timezone
 import itsdangerous
 import pytest
-from unittest import mock
+from unittest from unittest import mock
 
 from api.base.authentication.drf import drf_get_session_from_cookie
 from framework.sessions import set_current_session, flask_get_session_from_cookie, get_session, create_session

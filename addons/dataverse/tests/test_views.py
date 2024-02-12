@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from nose.tools import (assert_false, assert_equal, assert_in, assert_true)
-import mock
+from unittest import mock
 import pytest
 import unittest
 

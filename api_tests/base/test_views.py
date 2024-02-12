@@ -2,7 +2,7 @@
 from rest_framework import status as http_status
 import pkgutil
 
-import mock
+from unittest import mock
 
 from nose import SkipTest
 from nose.tools import *  # noqa:

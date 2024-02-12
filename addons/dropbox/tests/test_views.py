@@ -7,7 +7,7 @@ from nose.tools import assert_equal
 from tests.base import OsfTestCase
 from urllib3.exceptions import MaxRetryError
 
-import mock
+from unittest import mock
 import pytest
 from addons.base.tests import views as views_testing
 from addons.dropbox.tests.utils import (

@@ -7,7 +7,7 @@ import pytz
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-import mock
+from unittest import mock
 import pytest
 from nose.tools import *  # noqa
 from transitions import MachineError

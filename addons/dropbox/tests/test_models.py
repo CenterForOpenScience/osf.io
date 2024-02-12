@@ -1,6 +1,6 @@
 import unittest
 
-import mock
+from unittest import mock
 import pytest
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)

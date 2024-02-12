@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from types import SimpleNamespace

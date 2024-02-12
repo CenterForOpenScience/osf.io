@@ -1,4 +1,4 @@
-import mock  # noqa
+from unittest import mock  # noqa
 from datetime import timedelta
 
 from django.utils import timezone

@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from rest_framework import status as http_status
-import mock
+from unittest import mock
 from nose.tools import assert_equal
 import pytest
 

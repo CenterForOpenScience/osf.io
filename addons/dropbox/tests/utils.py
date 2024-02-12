@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-import mock
+from unittest import mock
 from addons.base.tests.base import AddonTestCase, OAuthAddonTestCaseMixin
 from addons.dropbox.models import Provider
 from addons.dropbox.tests.factories import DropboxAccountFactory

@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from addons.bitbucket.api import BitbucketClient
 

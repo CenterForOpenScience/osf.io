@@ -9,7 +9,7 @@ import datetime as dt
 from rest_framework import status as http_status
 import json
 import time
-import mock
+from unittest import mock
 from http.cookies import SimpleCookie
 
 import unittest

@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from nose.tools import assert_equal, assert_in, assert_raises
 
-import mock
+from unittest import mock
 
 from framework.auth import Auth
 

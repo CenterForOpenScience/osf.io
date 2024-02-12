@@ -5,7 +5,7 @@ import random
 from contextlib import ExitStack, contextmanager
 
 import responses
-import mock  # noqa
+from unittest import mock  # noqa
 from django.utils import timezone
 from django.db import IntegrityError
 from mock import call

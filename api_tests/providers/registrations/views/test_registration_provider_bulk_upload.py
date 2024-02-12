@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 import hashlib
 from rest_framework.exceptions import NotFound
 

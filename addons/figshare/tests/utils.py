@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.figshare.models import FigshareProvider

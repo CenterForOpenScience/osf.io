@@ -2,7 +2,7 @@
 Tests related to authenticating API requests
 """
 
-import mock
+from unittest import mock
 
 import pytest
 from nose.tools import *  # noqa:

@@ -36,7 +36,7 @@ from __future__ import print_function, absolute_import
 
 import ast
 import sys
-import mock
+from unittest import mock
 import argparse
 import logging
 

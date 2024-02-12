@@ -1,7 +1,7 @@
 import os
 
 import pytest
-import mock
+from unittest import mock
 import shutil
 import tempfile
 import xml

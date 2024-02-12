@@ -3,7 +3,7 @@ import time
 from importlib import import_module
 
 import datetime
-import mock
+from unittest import mock
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from mock import patch, Mock

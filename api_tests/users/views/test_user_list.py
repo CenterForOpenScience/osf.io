@@ -3,7 +3,7 @@ from importlib import import_module
 
 import itsdangerous
 from django.conf import settings as django_conf_settings
-import mock
+from unittest import mock
 import pytest
 import unittest
 from future.moves.urllib.parse import urlparse, parse_qs

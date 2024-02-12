@@ -2,7 +2,7 @@
 from nose.tools import *  # noqa: F403
 import jwe
 import jwt
-import mock
+from unittest import mock
 import furl
 import pytest
 import time

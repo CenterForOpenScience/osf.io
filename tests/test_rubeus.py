@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import mock
+from unittest import mock
 from nose.tools import *  # noqa: F403
 
 from tests.base import OsfTestCase

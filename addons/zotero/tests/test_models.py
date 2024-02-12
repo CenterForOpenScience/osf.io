@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 import unittest
-import mock
+from unittest import mock
 from framework.auth import Auth
 from nose.tools import (assert_equal, assert_is_none, assert_true, assert_false,
     assert_is, assert_in)

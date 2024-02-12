@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the S3 addon."""
-import mock
+from unittest import mock
 import pytest
 
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import mock
+from unittest import mock
 
 from nose.tools import *  # noqa
 

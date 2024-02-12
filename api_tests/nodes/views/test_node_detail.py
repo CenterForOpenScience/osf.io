@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.utils import timezone
 from future.moves.urllib.parse import urlparse
-import mock
+from unittest import mock
 from nose.tools import *  # noqa:
 import pytest
 from rest_framework import exceptions

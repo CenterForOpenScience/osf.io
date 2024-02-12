@@ -1,5 +1,5 @@
 import copy
-import mock
+from unittest import mock
 import pytest
 
 from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION

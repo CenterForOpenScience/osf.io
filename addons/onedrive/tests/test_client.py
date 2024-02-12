@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-import mock
+from unittest import mock
 
 from addons.onedrive import settings
 from addons.onedrive.client import OneDriveClient

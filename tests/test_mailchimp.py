@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from hashlib import md5
-import mock
+from unittest import mock
 import pytest
 from mailchimp3.mailchimpclient import MailChimpError
 from nose.tools import *  # noqa; PEP8 asserts

@@ -1,6 +1,6 @@
 import abc
 
-import mock
+from unittest import mock
 import pytest
 import pytz
 import datetime

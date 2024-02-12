@@ -1,5 +1,5 @@
 # from nose.tools import *  # noqa
-import mock
+from unittest import mock
 from nose.tools import (assert_false, assert_true,
     assert_equal, assert_is_none)
 import pytest

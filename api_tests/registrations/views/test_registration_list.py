@@ -1,6 +1,6 @@
 import dateutil.relativedelta
 from django.utils import timezone
-import mock
+from unittest import mock
 from nose.tools import *  # noqa:
 import pytest
 

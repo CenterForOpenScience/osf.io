@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-import mock
+from unittest import mock
 from nose.tools import *
 
 from website.notifications.events.base import Event, register, event_registry

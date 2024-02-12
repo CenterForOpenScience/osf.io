@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # noqa:
-import mock  # noqa
+from unittest import mock  # noqa
 import unittest
 import pytest
 from importlib import import_module

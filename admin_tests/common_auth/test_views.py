@@ -1,5 +1,5 @@
 from nose import tools as nt
-import mock
+from unittest import mock
 
 from django.test import RequestFactory
 from django.http import Http404

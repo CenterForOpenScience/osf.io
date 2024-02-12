@@ -10,7 +10,7 @@ import furl
 import itsdangerous
 import jwe
 import jwt
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
 from framework.auth import cas, signing

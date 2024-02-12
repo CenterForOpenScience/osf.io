@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from addons.gitlab.api import GitLabClient
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase

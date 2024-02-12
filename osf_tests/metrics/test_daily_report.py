@@ -1,5 +1,5 @@
 from datetime import date
-from unittest import mock
+from unittest from unittest import mock
 
 import pytest
 from elasticsearch_metrics import metrics

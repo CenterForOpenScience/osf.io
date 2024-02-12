@@ -1,5 +1,5 @@
 import collections
-import mock
+from unittest import mock
 from babel import dates, Locale
 from schema import Schema, And, Use, Or
 from django.utils import timezone

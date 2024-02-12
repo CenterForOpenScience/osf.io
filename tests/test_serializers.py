@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 import datetime as dt
 from nose.tools import *  # noqa (PEP8 asserts)
 

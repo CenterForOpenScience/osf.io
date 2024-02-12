@@ -1,6 +1,6 @@
 import contextlib
 from urllib.parse import urlsplit
-from unittest import mock
+from unittest from unittest import mock
 
 from django.http import QueryDict
 import responses

@@ -10,7 +10,7 @@ from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.conf import settings as django_conf_settings
-import mock
+from unittest import mock
 import itsdangerous
 import pytest
 import pytz

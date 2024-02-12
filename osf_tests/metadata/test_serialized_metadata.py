@@ -1,6 +1,6 @@
 import datetime
 import pathlib
-from unittest import mock
+from unittest from unittest import mock
 
 import rdflib
 

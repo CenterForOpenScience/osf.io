@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-import mock
+from unittest import mock
 import pytest
 import random
 from nose.tools import *  # noqa:

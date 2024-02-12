@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
 import responses
-import mock
+from unittest import mock
 from nose.tools import *  # noqa: F403
 import pytest
 import unittest

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 from datetime import timedelta
 
 from django.utils import timezone

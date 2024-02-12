@@ -1,6 +1,6 @@
 import pytest
 import copy
-import mock
+from unittest import mock
 
 from osf.models import ApiOAuth2Application
 from website.util import api_v2_url

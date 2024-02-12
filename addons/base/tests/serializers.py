@@ -1,6 +1,6 @@
 import abc
 
-import mock
+from unittest import mock
 from framework.auth import Auth
 from nose.tools import (assert_equal, assert_false, assert_in,
                         assert_is_not_none, assert_raises, assert_true)

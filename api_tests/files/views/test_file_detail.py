@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import itsdangerous
-import mock
+from unittest import mock
 import pytest
 import pytz
 from django.utils import timezone

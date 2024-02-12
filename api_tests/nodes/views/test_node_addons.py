@@ -2,7 +2,7 @@
 import abc
 from json import dumps
 
-import mock
+from unittest import mock
 import pytest
 import mendeley
 from nose.tools import *  # noqa:

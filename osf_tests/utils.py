@@ -1,7 +1,7 @@
 import contextlib
 import datetime as dt
 import functools
-import mock
+from unittest import mock
 
 from framework.auth import Auth
 from django.utils import timezone

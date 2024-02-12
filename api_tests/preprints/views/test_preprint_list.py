@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import datetime as dt
 
 from nose.tools import *  # noqa:

@@ -1,5 +1,5 @@
 
-import mock
+from unittest import mock
 from flask import request
 
 from tests.base import OsfTestCase

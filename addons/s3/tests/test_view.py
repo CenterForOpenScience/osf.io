@@ -2,7 +2,7 @@
 from rest_framework import status as http_status
 
 from boto.exception import S3ResponseError
-import mock
+from unittest import mock
 from nose.tools import (assert_equal, assert_equals,
     assert_true, assert_in, assert_false)
 import pytest

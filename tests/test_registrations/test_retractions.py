@@ -3,7 +3,7 @@
 import datetime
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
 from django.db import DataError

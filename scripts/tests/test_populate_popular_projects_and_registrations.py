@@ -1,6 +1,6 @@
 from nose.tools import *  # noqa
 
-import mock
+from unittest import mock
 
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory, RegistrationFactory

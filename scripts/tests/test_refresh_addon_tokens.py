@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
 

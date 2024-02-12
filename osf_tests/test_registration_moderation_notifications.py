@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 from mock import call
 
 from django.utils import timezone

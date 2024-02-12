@@ -3,7 +3,7 @@ import logging
 from rest_framework import status as http_status
 import json
 import logging
-import mock
+from unittest import mock
 import time
 from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 

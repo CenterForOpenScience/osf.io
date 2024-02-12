@@ -1,6 +1,6 @@
 import datetime as dt
 import pytest
-import mock
+from unittest import mock
 import pytz
 import datetime
 

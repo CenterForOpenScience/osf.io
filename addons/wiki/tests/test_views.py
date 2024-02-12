@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Views tests for the wiki addon."""
 import pytest
-import mock
+from unittest import mock
 import pytz
 import datetime
 from django.utils import timezone

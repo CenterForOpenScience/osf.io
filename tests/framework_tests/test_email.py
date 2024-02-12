@@ -2,7 +2,7 @@
 import unittest
 import smtplib
 
-import mock
+from unittest import mock
 from nose.tools import *  # noqa: F403
 import sendgrid
 

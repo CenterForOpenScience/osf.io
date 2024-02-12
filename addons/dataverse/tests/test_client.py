@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from nose.tools import (
     assert_equal, assert_raises, assert_true,
     assert_false, assert_in, assert_is, assert_is_none

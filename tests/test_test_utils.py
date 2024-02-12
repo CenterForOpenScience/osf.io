@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 from nose.tools import *  # noqa: F403
 import unittest
 

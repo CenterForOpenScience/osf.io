@@ -1,7 +1,7 @@
 import jwt
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 from django.db.models import Q
 from nose.tools import *  # noqa
 

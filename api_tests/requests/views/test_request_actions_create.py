@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE

@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import time
 from django.contrib.auth.models import Group

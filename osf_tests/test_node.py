@@ -1,6 +1,6 @@
 import datetime
 
-import mock
+from unittest import mock
 import pytest
 import pytz
 import responses

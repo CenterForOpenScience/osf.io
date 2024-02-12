@@ -1,5 +1,5 @@
 import pytz
-import mock
+from unittest import mock
 import datetime
 import pytest
 

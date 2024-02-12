@@ -6,7 +6,7 @@ from django.utils import timezone
 from github3.repos.branch import Branch
 from nose.tools import *  # noqa: F403
 from json import dumps
-import mock
+from unittest import mock
 import pytest
 
 from framework.auth import Auth

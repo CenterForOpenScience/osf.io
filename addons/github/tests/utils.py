@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from json import dumps
 import github3
 from addons.github.api import GitHubClient

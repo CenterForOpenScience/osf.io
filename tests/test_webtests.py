@@ -7,7 +7,7 @@ import logging
 import unittest
 
 import markupsafe
-import mock
+from unittest import mock
 import pytest
 from nose.tools import *  # noqa: F403
 import re

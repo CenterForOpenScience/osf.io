@@ -1,7 +1,7 @@
 
 from django.db import IntegrityError
 from django.utils import timezone
-import mock
+from unittest import mock
 from past.builtins import basestring
 import pytest
 

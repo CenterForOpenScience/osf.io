@@ -2,7 +2,7 @@ from asynctest import TestCase as AsyncTestCase
 from boaapi.boa_client import BoaException
 from boaapi.status import CompilerStatus, ExecutionStatus
 from http.client import HTTPMessage
-import mock
+from unittest import mock
 import pytest
 from unittest.mock import ANY, MagicMock
 from urllib.error import HTTPError

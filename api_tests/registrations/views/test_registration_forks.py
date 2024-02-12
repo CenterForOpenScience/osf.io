@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE

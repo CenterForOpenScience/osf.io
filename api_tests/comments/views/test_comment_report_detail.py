@@ -1,5 +1,5 @@
 from django.utils import timezone
-import mock
+from unittest import mock
 import pytest
 
 from addons.wiki.tests.factories import WikiFactory

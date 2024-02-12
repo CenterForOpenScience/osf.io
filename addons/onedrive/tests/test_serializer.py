@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the OneDrive addon."""
-import mock
+from unittest import mock
 import pytest
 
 from addons.onedrive.models import OneDriveProvider

@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from dataverse import Connection, Dataverse, Dataset, DataverseFile
 

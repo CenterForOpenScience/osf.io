@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-import mock
+from unittest import mock
 import os
 import pytest
 import time
