@@ -5,6 +5,7 @@ from osf.models import CedarMetadataRecord
 from osf.utils.permissions import READ, WRITE
 from osf_tests.factories import AuthUserFactory
 
+
 @pytest.mark.django_db
 class TestCedarMetadataRecordDetailDeleteForProjects(TestCedarMetadataRecord):
 

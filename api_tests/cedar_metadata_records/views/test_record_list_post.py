@@ -11,33 +11,6 @@ from osf_tests.factories import AuthUserFactory
 @pytest.mark.django_db
 class TestCedarMetadataRecordListCreateForProjects(TestCedarMetadataRecord):
 
-    @pytest.fixture
-    def payload_node(self, cedar_template_alt, cedar_record_metadata_json, node):
-
-        return {
-            'data': {
-                'type': 'cedar_metadata_records',
-                'attributes': {
-                    'metadata': cedar_record_metadata_json,
-                    'is_published': 'true'
-                },
-                'relationships': {
-                    'template': {
-                        'data': {
-                            'type': 'cedar-metadata-templates',
-                            'id': cedar_template_alt._id
-                        }
-                    },
-                    'target': {
-                        'data': {
-                            'type': 'nodes',
-                            'id': node._id
-                        }
-                    }
-                }
-            }
-        }
-
     def test_record_list_create_for_node_with_inactive_template(self, app, user, payload_node, cedar_template_inactive):
 
         payload = payload_node
@@ -119,33 +92,6 @@ class TestCedarMetadataRecordListCreateForProjects(TestCedarMetadataRecord):
 @pytest.mark.django_db
 class TestCedarMetadataRecordListCreateForRegistrations(TestCedarMetadataRecord):
 
-    @pytest.fixture
-    def payload_registration(self, cedar_template_alt, cedar_record_metadata_json, registration):
-
-        return {
-            'data': {
-                'type': 'cedar_metadata_records',
-                'attributes': {
-                    'metadata': cedar_record_metadata_json,
-                    'is_published': 'true'
-                },
-                'relationships': {
-                    'template': {
-                        'data': {
-                            'type': 'cedar-metadata-templates',
-                            'id': cedar_template_alt._id
-                        }
-                    },
-                    'target': {
-                        'data': {
-                            'type': 'nodes',
-                            'id': registration._id
-                        }
-                    }
-                }
-            }
-        }
-
     def test_record_list_create_for_node_with_inactive_template(self, app, user, payload_registration, cedar_template_inactive):
         payload = payload_registration
         payload['data']['relationships']['template']['data']['id'] = cedar_template_inactive._id
@@ -225,33 +171,6 @@ class TestCedarMetadataRecordListCreateForRegistrations(TestCedarMetadataRecord)
 
 @pytest.mark.django_db
 class TestCedarMetadataRecordListCreateForFiles(TestCedarMetadataRecord):
-
-    @pytest.fixture
-    def payload_file(self, cedar_template_alt, cedar_record_metadata_json, file):
-
-        return {
-            'data': {
-                'type': 'cedar_metadata_records',
-                'attributes': {
-                    'metadata': cedar_record_metadata_json,
-                    'is_published': 'true'
-                },
-                'relationships': {
-                    'template': {
-                        'data': {
-                            'type': 'cedar-metadata-templates',
-                            'id': cedar_template_alt._id
-                        }
-                    },
-                    'target': {
-                        'data': {
-                            'type': 'files',
-                            'id': file.get_guid()._id
-                        }
-                    }
-                }
-            }
-        }
 
     def test_record_list_create_for_file_with_inactive_template(self, app, user, payload_file, cedar_template_inactive):
 

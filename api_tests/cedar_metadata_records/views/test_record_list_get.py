@@ -2,6 +2,7 @@ import pytest
 
 from .test_record import TestCedarMetadataRecord
 
+
 @pytest.mark.django_db
 class TestCedarMetadataRecordList(TestCedarMetadataRecord):
 

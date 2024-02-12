@@ -208,8 +208,89 @@ class TestCedarMetadataRecord(object):
     def all_cedar_record_ids(self, cedar_draft_record_ids, cedar_published_private_record_ids, cedar_published_public_record_ids):
         return cedar_draft_record_ids + cedar_published_private_record_ids + cedar_published_public_record_ids
 
+    @pytest.fixture
+    def payload_node(self, cedar_template_alt, cedar_record_metadata_json, node):
+
+        return {
+            'data': {
+                'type': 'cedar_metadata_records',
+                'attributes': {
+                    'metadata': cedar_record_metadata_json,
+                    'is_published': 'true'
+                },
+                'relationships': {
+                    'template': {
+                        'data': {
+                            'type': 'cedar-metadata-templates',
+                            'id': cedar_template_alt._id
+                        }
+                    },
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': node._id
+                        }
+                    }
+                }
+            }
+        }
+
+    @pytest.fixture
+    def payload_registration(self, cedar_template_alt, cedar_record_metadata_json, registration):
+
+        return {
+            'data': {
+                'type': 'cedar_metadata_records',
+                'attributes': {
+                    'metadata': cedar_record_metadata_json,
+                    'is_published': 'true'
+                },
+                'relationships': {
+                    'template': {
+                        'data': {
+                            'type': 'cedar-metadata-templates',
+                            'id': cedar_template_alt._id
+                        }
+                    },
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': registration._id
+                        }
+                    }
+                }
+            }
+        }
+
+    @pytest.fixture
+    def payload_file(self, cedar_template_alt, cedar_record_metadata_json, file):
+
+        return {
+            'data': {
+                'type': 'cedar_metadata_records',
+                'attributes': {
+                    'metadata': cedar_record_metadata_json,
+                    'is_published': 'true'
+                },
+                'relationships': {
+                    'template': {
+                        'data': {
+                            'type': 'cedar-metadata-templates',
+                            'id': cedar_template_alt._id
+                        }
+                    },
+                    'target': {
+                        'data': {
+                            'type': 'files',
+                            'id': file.get_guid()._id
+                        }
+                    }
+                }
+            }
+        }
+
     @pytest.fixture()
-    def record_patch_payload(self, cedar_record_metadata_alt_json):
+    def payload_record_update(self, cedar_record_metadata_alt_json):
 
         return {
             'data': {
