@@ -17,7 +17,7 @@ Ensure `"dataverse"` exists in the addons list in `"addons.json"`
 
 1. Go to user settings. Under "Add-ons", select "Dataverse" and click submit.
 2. Under "Configure Add-ons", select "other dataverse provider", and enter `demo.dataverse.org/` for the url. Enter your API Token.
-3. Go to the the node settings page. Under "Select Add-ons", select "Dataverse" and click submit.
+3. Go to the node settings page. Under "Select Add-ons", select "Dataverse" and click submit.
 4. Under "Configure Add-ons", select a dataverse and dataset and click submit.
 
 ## Notes on privacy settings:
