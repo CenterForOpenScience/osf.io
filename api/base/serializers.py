@@ -658,7 +658,7 @@ class RelationshipField(ser.Field):
             # Handle private endpoint view serialization when it is a relationship in a public one
             if kwargs.get('version', False):
                 kwargs.pop('version')
-                view_url = utils.absolute_reverse(view, kwargs=kwargs)
+                view_url = drf_reverse(view, kwargs=kwargs)
             else:
                 raise e
         return resolve(view_url)
