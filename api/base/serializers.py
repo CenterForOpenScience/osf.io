@@ -652,12 +652,16 @@ class RelationshipField(ser.Field):
         view = self.view_name
         if callable(view):
             view = self._handle_callable_view(resource, view)
-        return resolve(
-            reverse(
-                view,
-                kwargs=kwargs,
-            ),
-        )
+        try:
+            view_url = reverse(view, kwargs=kwargs)
+        except NoReverseMatch as e:
+            # Handle private endpoint view serialization when it is a relationship in a public one
+            if kwargs.get('version', False):
+                kwargs.pop('version')
+                view_url = utils.absolute_reverse(view, kwargs=kwargs)
+            else:
+                raise e
+        return resolve(view_url)
 
     def process_related_counts_parameters(self, params, value):
         """
