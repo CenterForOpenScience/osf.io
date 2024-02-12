@@ -8,7 +8,7 @@ import responses
 from unittest import mock  # noqa
 from django.utils import timezone
 from django.db import IntegrityError
-from mock import call
+from unittest.mock import call
 import pytest
 from nose.tools import *  # noqa: F403
 
