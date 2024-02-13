@@ -230,6 +230,7 @@ DATACITE_RESOURCE_TYPES_GENERAL = {
     'Dissertation',
     'Event',
     'Image',
+    'Instrument',
     'InteractiveResource',
     'Journal',
     'JournalArticle',
@@ -243,13 +244,13 @@ DATACITE_RESOURCE_TYPES_GENERAL = {
     'Software',
     'Sound',
     'Standard',
+    'StudyRegistration',
     'Text',
     'Workflow',
     'Other',
 }
 DATACITE_RESOURCE_TYPE_BY_OSF_TYPE = {
     OSF.Preprint: 'Preprint',
-    # TODO (datacite 4.5): OSF.Registration: DATACITE.StudyRegistration,
 }
 
 ##### END osfmap #####
