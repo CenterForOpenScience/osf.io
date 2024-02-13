@@ -117,7 +117,7 @@ class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
     def get_serializer_class(self):
         return None
 
-    def get(self, request, **kwargs):
+    def get(self, request, *args, **kwargs):
         record = self.get_object()
         file_name = f'{record._id}-{record.get_template_name()}-v{record.get_template_version()}.json'
         return Response(record.metadata, headers={'Content-Disposition': f'attachment; filename={file_name}'})
