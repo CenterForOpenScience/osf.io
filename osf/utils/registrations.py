@@ -81,6 +81,8 @@ def flatten_registration_metadata(schema, registered_meta):
     registration_responses = {}
     registration_response_keys = schema.schema_blocks.filter(
         registration_response_key__isnull=False
+    ).exclude(
+        block_type__in=('section-heading', 'subsection-heading')
     ).values(
         'registration_response_key',
         'block_type'
@@ -236,6 +238,8 @@ def expand_registration_responses(schema, registration_responses, file_storage_r
     # Pull out all registration_response_keys and their block types
     registration_response_keys = schema.schema_blocks.filter(
         registration_response_key__isnull=False
+    ).exclude(
+        block_type__in=('section-heading', 'subsection-heading')
     ).values(
         'registration_response_key',
         'block_type'

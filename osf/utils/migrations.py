@@ -378,6 +378,8 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
                 rs.id,
                 block_type='subsection-heading' if sub else 'section-heading',
                 display_text=question.get('title', '') or question.get('description', ''),
+                schema_block_group_key=generate_object_id(),
+                registration_response_key=get_registration_response_key(question),
             )
         else:
             # the first subquestion has no text, so the "section" heading is better interpreted as a question label
