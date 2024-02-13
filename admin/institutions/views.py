@@ -28,6 +28,7 @@ from website.util import quota
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
 import csv
+from admin.base.utils import render_bad_request_response
 
 logger = logging.getLogger(__name__)
 
@@ -342,7 +343,10 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
     raise_exception = True
 
     def get(self, request, **kwargs):
-        institution_id = self.kwargs['institution_id']
+        institution_id = self.kwargs.get('institution_id')
+        if not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
+            raise Http404(f'Institution with id "{institution_id}" not found. Please double check.')
+
         response = HttpResponse(content_type='text/tsv')
         writer = csv.writer(response, delimiter='\t')
         writer.writerow(['GUID', 'Username', 'Fullname', 'Ratio (%)', 'Usage (Byte)', 'Remaining (Byte)', 'Quota (Byte)'])
@@ -371,10 +375,13 @@ class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
     paginate_by = 10
 
     def get_userlist(self):
+        institution_id = self.kwargs.get('institution_id')
+        if not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
+            raise Http404(f'Institution with id "{institution_id}" not found. Please double check.')
         guid = self.request.GET.get('guid')
         name = self.request.GET.get('info')
         email = self.request.GET.get('email')
-        queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
+        queryset = OSFUser.objects.filter(affiliated_institutions=institution_id)
 
         if not email and not guid and not name:
             return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
@@ -413,9 +420,15 @@ class UpdateQuotaUserListByInstitutionID(PermissionRequiredMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        institution_id = self.kwargs['institution_id']
+        institution_id = self.kwargs.get('institution_id')
+        if not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
+            raise Http404(f'Institution with id "{institution_id}" not found. Please double check.')
         min_value, max_value = connection.ops.integer_field_range('IntegerField')
-        max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
+        try:
+            max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
+        except (ValueError, TypeError):
+            return render_bad_request_response(request, error_msgs='max_quota must be a integer')
+
         for user in OSFUser.objects.filter(
                 affiliated_institutions=institution_id):
             UserQuota.objects.update_or_create(
@@ -424,7 +437,7 @@ class UpdateQuotaUserListByInstitutionID(PermissionRequiredMixin, View):
         return redirect('institutions:institution_user_list',
                         institution_id=institution_id)
 
-class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPassesTestMixin):
+class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, QuotaUserList):
     template_name = 'institutions/statistical_status_default_storage.html'
     permission_required = 'osf.view_institution'
     raise_exception = True
@@ -460,7 +473,12 @@ class RecalculateQuota(RdmPermissionMixin, RedirectView):
         return redirect('institutions:institution_list')
 
 
-class RecalculateQuotaOfUsersInInstitution(RdmPermissionMixin, RedirectView):
+class RecalculateQuotaOfUsersInInstitution(RdmPermissionMixin, UserPassesTestMixin, RedirectView):
+    raise_exception = True
+
+    def test_func(self):
+        return not self.is_super_admin and self.is_admin \
+            and self.request.user.affiliated_institutions.exists()
 
     def dispatch(self, request, *args, **kwargs):
         if self.is_admin:

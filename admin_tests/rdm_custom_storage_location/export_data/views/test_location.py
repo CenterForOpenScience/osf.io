@@ -13,6 +13,7 @@ from osf_tests.factories import (
     InstitutionFactory,
 )
 from tests.base import AdminTestCase
+from django.contrib.auth.models import AnonymousUser
 
 pytestmark = pytest.mark.django_db
 
@@ -29,29 +30,63 @@ class TestExportStorageLocationViewBaseView(AdminTestCase):
         self.view = location.ExportStorageLocationViewBaseView()
         self.institution = InstitutionFactory()
 
+        self.anon = AnonymousUser()
+
+        self.normal_user = AuthUserFactory(fullname='normal_user')
+        self.normal_user.is_staff = False
+        self.normal_user.is_superuser = False
+
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
+        self.institution02_admin.is_staff = True
+        self.institution02_admin.save()
+
     def test_get_default_storage_location(self):
         view = setup_view(self.view, self.request)
-        view.get_default_storage_location()
+        nt.assert_is_not_none(view.get_default_storage_location())
 
     def test_have_default_storage_location_id(self):
         view = setup_view(self.view, self.request)
-        view.have_default_storage_location_id(1)
+        nt.assert_false(view.have_default_storage_location_id(1))
 
     def test_test_func(self):
         view = setup_view(self.view, self.request)
-        view.test_func()
+        nt.assert_false(view.test_func())
 
     def test_test_func_user_is_institutional_admin(self):
         self.user.is_staff = True
         self.user.affiliated_institutions.add(self.institution)
 
         view = setup_view(self.view, self.request)
-        view.test_func()
+        nt.assert_true(view.test_func())
 
     def test_is_affiliated_institution(self):
         institution_id = self.institution.id
+        self.user.is_staff = True
+        self.user.affiliated_institutions.add(self.institution)
+        self.request.user = self.user
         view = setup_view(self.view, self.request)
-        view.is_affiliated_institution(institution_id)
+        nt.assert_true(view.is_affiliated_institution(institution_id))
+
+    def test__test_func_anonymous(self):
+        self.request.user = self.anon
+        nt.assert_false(setup_view(self.view, self.request).test_func())
+
+    def test__test_func_normal_user(self):
+        self.request.user = self.normal_user
+        nt.assert_false(setup_view(self.view, self.request).test_func())
+
+    def test__test_func_super_user(self):
+        self.request.user = self.superuser
+        nt.assert_true(setup_view(self.view, self.request).test_func())
+
+    def test__test_func_admin_not_inst(self):
+        self.request.user = self.institution02_admin
+        nt.assert_false(setup_view(self.view, self.request).test_func())
 
 
 @pytest.mark.feature_202210
@@ -271,6 +306,21 @@ class TestDeleteCredentialsView(AdminTestCase):
         self.view = location.DeleteCredentialsView()
         self.user.affiliated_institutions.add(self.institution)
 
+        self.anon = AnonymousUser()
+
+        self.normal_user = AuthUserFactory(fullname='normal_user')
+        self.normal_user.is_staff = False
+        self.normal_user.is_superuser = False
+
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
+        self.institution02_admin.is_staff = True
+        self.institution02_admin.save()
+
     def test_delete_is_not_super_admin(self):
         user2 = AuthUserFactory()
         request = RequestFactory().get('/fake_path')
@@ -290,8 +340,9 @@ class TestDeleteCredentialsView(AdminTestCase):
 
     def test_delete(self):
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
-
         view = setup_view(self.view, self.request, export_location.id)
+        view.institution_guid = self.institution.guid
+        view.storage_location = export_location
         result = view.delete(self.request, export_location.id)
 
         nt.assert_equals(result.status_code, 200)
@@ -303,3 +354,45 @@ class TestDeleteCredentialsView(AdminTestCase):
         result = view.delete(self.request, int(export_location.id) + 1)
 
         nt.assert_equals(result.status_code, 400)
+
+    def test__test_func_anonymus(self):
+        self.request.user = self.anon
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
+        view = setup_view(self.view, self.request, export_location.id)
+        nt.assert_false(view.test_func())
+
+    def test__test_func_normal_user(self):
+        self.request.user = self.normal_user
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
+        view = setup_view(self.view, self.request, export_location.id)
+        nt.assert_false(view.test_func())
+
+    def test__test_func_super_user(self):
+        self.request.user = self.superuser
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
+        view = setup_view(self.view, self.request, export_location.id)
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_not_inst(self):
+        self.request.user = self.institution02_admin
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
+        view = setup_view(self.view, self.request, export_location.id)
+        nt.assert_false(view.test_func())
+
+    def test__test_func_admin_not_permission(self):
+        user2 = AuthUserFactory()
+        request = RequestFactory().get('/fake_path')
+        user2.is_superuser = False
+        user2.is_staff = True
+        request.user = user2
+        user2.affiliated_institutions.add(self.institution)
+        user2.save()
+
+        export_location = ExportDataLocation.objects.create()
+
+        view = setup_view(self.view, self.request, export_location.id)
+        nt.assert_false(view.test_func())
+
+        export_location = ExportDataLocation.objects.create(institution_guid=InstitutionFactory().guid)
+        view = setup_view(self.view, self.request, export_location.id)
+        nt.assert_false(view.test_func())

@@ -242,6 +242,7 @@
         <div class="modal middle fade" id="revert" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action={% url 'custom_storage_location:export_data:export_data_revert' %}>
+                    <input type='hidden' value={{institution.id}} id='institution_id' class='buckinput' name='institution_id' />
                     {% csrf_token %}
                     <div class="modal-content" id="bodyrevertmodal">
                         <!--<div class="modal-header">-->
@@ -298,6 +299,7 @@
         <div class="modal middle fade" id="deleteExport" tabindex="-1" aria-labelledby="deleteExportLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action={% url 'custom_storage_location:export_data:export_data_delete' %}>
+                    <input type='hidden' value={{institution.id}} id='institution_id' class='buckinput' name='institution_id' />
                     {% csrf_token %}
                     <div class="modal-content">
                         <!--<div class="modal-header">-->
