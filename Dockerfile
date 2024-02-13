@@ -135,12 +135,12 @@ COPY ./addons/s3/static/ ./addons/s3/static/
 COPY ./addons/twofactor/static/ ./addons/twofactor/static/
 COPY ./addons/wiki/static/ ./addons/wiki/static/
 COPY ./addons/zotero/static/ ./addons/zotero/static/
-COPY ./build_js_config_files.py ./build_js_config_files.py
 RUN \
     # OSF
     yarn install --frozen-lockfile \
     && mkdir -p ./website/static/built/ \
-    && python3 build_js_config_files.py \
+    && pip3 install invoke==2.2.0 \
+    && python3 -m invoke build-js-config-files \
     && yarn run webpack-prod \
     # Admin
     && cd ./admin \
