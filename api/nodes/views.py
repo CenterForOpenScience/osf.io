@@ -2290,11 +2290,12 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         return context
 
 
-class NodeCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class NodeCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -2305,6 +2306,7 @@ class NodeCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     view_name = 'node-cedar-metadata-records-list'
 
     def get_default_queryset(self):
+        self.get_node()
         node_records = CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
         user_auth = get_user_auth(self.request)
         record_ids = [record.id for record in node_records if can_view_record(user_auth, record, guid_type=Node)]

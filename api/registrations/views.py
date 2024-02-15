@@ -973,11 +973,12 @@ class RegistrationResourceList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_node()
 
 
-class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrModeratorOrPublic,
     )
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -988,6 +989,7 @@ class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView
     view_name = 'registration-cedar-metadata-records-list'
 
     def get_default_queryset(self):
+        self.get_node()
         registration_records = CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
         user_auth = get_user_auth(self.request)
         record_ids = [record.id for record in registration_records if can_view_record(user_auth, record, guid_type=Registration)]
