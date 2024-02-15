@@ -139,7 +139,7 @@ def ensure_licenses(*args, **kwargs):
             else:
                 nupdated += 1
 
-            logger.info('License {name} ({id}) added to the database.'.format(name=name, id=id))
+            logger.info(f'License {name} ({id}) added to the database.')
 
     logger.info('{} licenses inserted into the database, {} licenses updated in the database.'.format(
         ninserted, nupdated
@@ -154,7 +154,7 @@ def remove_licenses(*args):
     pre_count = NodeLicense.objects.all().count()
     NodeLicense.objects.all().delete()
 
-    logger.info('{} licenses removed from the database.'.format(pre_count))
+    logger.info(f'{pre_count} licenses removed from the database.')
 
 
 def ensure_schemas(*args):
@@ -181,7 +181,7 @@ def ensure_schemas(*args):
         if created:
             logger.info('Added schema {} to the database'.format(schema['name']))
 
-    logger.info('Ensured {} schemas are in the database'.format(schema_count))
+    logger.info(f'Ensured {schema_count} schemas are in the database')
 
 
 def remove_schemas(*args):
@@ -189,7 +189,7 @@ def remove_schemas(*args):
     pre_count = RegistrationSchema.objects.all().count()
     RegistrationSchema.objects.all().delete()
 
-    logger.info('Removed {} schemas from the database'.format(pre_count))
+    logger.info(f'Removed {pre_count} schemas from the database')
 
 
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
@@ -471,7 +471,7 @@ def map_schemas_to_schemablocks(*args):
         if RegistrationSchemaBlock.objects.filter(schema_id=rs.id).exists():
             continue
 
-        logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
+        logger.info(f'Migrating schema {rs.name}, version {rs.schema_version} to schema blocks.')
         if rs.schema.get('atomicSchema'):
             create_schema_blocks_for_atomic_schema(rs)
             continue
@@ -657,7 +657,7 @@ def batch_node_migrations(state, migrations):
             page += 1
             page_end += increment
             if page <= total_pages:
-                logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
+                logger.info(f'Updating page {page_end / increment} / {total_pages}')
             with connection.cursor() as cursor:
                 cursor.execute(migration['sql'].format(
                     start=page_start,

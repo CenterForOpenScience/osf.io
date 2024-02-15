@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from django.conf.urls import re_path
 
 from admin.common_auth import views

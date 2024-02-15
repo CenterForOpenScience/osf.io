@@ -33,7 +33,7 @@ class NodesFilterMixin(ListFilterMixin):
                         queryset = queryset.get_roots()
                         query_params = deepcopy(query_params)
                         query_params.pop(key)
-        return super(NodesFilterMixin, self).param_queryset(query_params, queryset)
+        return super().param_queryset(query_params, queryset)
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'parent':
@@ -66,7 +66,7 @@ class NodesFilterMixin(ListFilterMixin):
             )
             return preprint_query if utils.is_truthy(operation['value']) else ~preprint_query
 
-        return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
 
 class UserNodesFilterMixin(NodesFilterMixin):
@@ -88,7 +88,7 @@ class UserNodesFilterMixin(NodesFilterMixin):
                 return Q(id__in=self.build_node_list(user, permissions.WRITE_NODE))
             elif perm == permissions.ADMIN:
                 return Q(id__in=self.build_node_list(user, permissions.ADMIN_NODE))
-        return super(UserNodesFilterMixin, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
     def build_node_list(self, user, perm, with_superuser=False):
         return Node.objects.get_nodes_for_user(user, permission=perm).values_list('id', flat=True)

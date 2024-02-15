@@ -561,7 +561,7 @@ class UserVisitsQuery(JSONAPIBaseView):
     DAYS_PER_PERIOD = {'day': 1, 'month': 31, 'year': 365}
 
     def get(self, request, *args):
-        report_date = {'gte': f'now/d-1d'}
+        report_date = {'gte': 'now/d-1d'}
 
         if request.GET.get('timeframe', False):
             timeframe = request.GET.get('timeframe')
@@ -572,7 +572,7 @@ class UserVisitsQuery(JSONAPIBaseView):
                     period = m.group(2)
                     days_back = int(period_count) * self.DAYS_PER_PERIOD[period]
                 else:
-                    raise Exception('Unsupported timeframe format: "{}"'.format(timeframe))
+                    raise Exception(f'Unsupported timeframe format: "{timeframe}"')
                 report_date = {'gte': f'now/d-{days_back}d'}
         elif request.GET.get('timeframeStart'):
             tsStart = request.GET.get('timeframeStart')

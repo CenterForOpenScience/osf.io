@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import framework
 import importlib
 import json
@@ -42,7 +39,7 @@ def init_addons(settings, routes=True):
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
         try:
-            addon = apps.get_app_config('addons_{}'.format(addon_name))
+            addon = apps.get_app_config(f'addons_{addon_name}')
         except LookupError:
             addon = None
         if addon:

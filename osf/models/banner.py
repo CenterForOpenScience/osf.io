@@ -46,4 +46,4 @@ class ScheduledBanner(models.Model):
         self.start_date = datetime.combine(self.start_date, datetime.min.time())
         self.end_date = datetime.combine(self.end_date, datetime.max.time())
         validate_banner_dates(self.id, self.start_date, self.end_date)
-        super(ScheduledBanner, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)

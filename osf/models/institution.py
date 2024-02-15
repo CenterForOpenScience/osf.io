@@ -57,14 +57,13 @@ class InstitutionManager(models.Manager):
 
 
 class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, GuardianMixin):
-
     objects = InstitutionManager()
 
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
     INSTITUTION_GROUPS = {
-        'institutional_admins': ('view_institutional_metrics', ),
+        'institutional_admins': ('view_institutional_metrics',),
     }
     group_format = 'institution_{self._id}_{group}'
     groups = INSTITUTION_GROUPS
@@ -130,13 +129,13 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('node', None)
-        super(Institution, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __unicode__(self):
-        return u'{} : ({})'.format(self.name, self._id)
+        return f'{self.name} : ({self._id})'
 
     def __str__(self):
-        return u'{} : ({})'.format(self.name, self._id)
+        return f'{self.name} : ({self._id})'
 
     @property
     def api_v2_url(self):
@@ -144,7 +143,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
 
     @property
     def absolute_url(self):
-        return urljoin(website_settings.DOMAIN, 'institutions/{}/'.format(self._id))
+        return urljoin(website_settings.DOMAIN, f'institutions/{self._id}/')
 
     @property
     def absolute_api_v2_url(self):
@@ -202,7 +201,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
 
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields()
-        super(Institution, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if saved_fields:
             self.update_search()
 
@@ -219,7 +218,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
                     to_addr=user.username,
                     mail=mails.INSTITUTION_DEACTIVATION,
                     user=user,
-                    forgot_password_link='{}{}'.format(website_settings.DOMAIN, forgot_password),
+                    forgot_password_link=f'{website_settings.DOMAIN}{forgot_password}',
                     osf_support_email=website_settings.OSF_SUPPORT_EMAIL
                 )
             except Exception:

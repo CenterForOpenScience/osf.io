@@ -1,6 +1,4 @@
-from __future__ import unicode_literals
-
-import mock
+from unittest import mock
 import unittest
 
 import pytest
@@ -69,69 +67,69 @@ class TestOsfstorageFileNode(StorageTestCase):
         file.save()
 
         assert_equals(file.serialize(), {
-            u'id': file._id,
-            u'path': file.path,
-            u'created': None,
-            u'name': u'MOAR PYLONS',
-            u'kind': 'file',
-            u'version': 0,
-            u'downloads': 0,
-            u'size': None,
-            u'modified': None,
-            u'contentType': None,
-            u'checkout': None,
-            u'md5': None,
-            u'sha256': None,
+            'id': file._id,
+            'path': file.path,
+            'created': None,
+            'name': 'MOAR PYLONS',
+            'kind': 'file',
+            'version': 0,
+            'downloads': 0,
+            'size': None,
+            'modified': None,
+            'contentType': None,
+            'checkout': None,
+            'md5': None,
+            'sha256': None,
         })
 
         version = file.create_version(
             self.user,
             {
-                u'service': u'cloud',
-                settings.WATERBUTLER_RESOURCE: u'osf',
-                u'object': u'06d80e',
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
             }, {
-                u'size': 1234,
-                u'contentType': u'text/plain'
+                'size': 1234,
+                'contentType': 'text/plain'
             })
 
         assert_equals(file.serialize(), {
-            u'id': file._id,
-            u'path': file.path,
-            u'created': version.created.isoformat(),
-            u'name': u'MOAR PYLONS',
-            u'kind': u'file',
-            u'version': 1,
-            u'downloads': 0,
-            u'size': 1234,
-            u'modified': version.created.isoformat(),
-            u'contentType': u'text/plain',
-            u'checkout': None,
-            u'md5': None,
-            u'sha256': None,
+            'id': file._id,
+            'path': file.path,
+            'created': version.created.isoformat(),
+            'name': 'MOAR PYLONS',
+            'kind': 'file',
+            'version': 1,
+            'downloads': 0,
+            'size': 1234,
+            'modified': version.created.isoformat(),
+            'contentType': 'text/plain',
+            'checkout': None,
+            'md5': None,
+            'sha256': None,
         })
 
         date = timezone.now()
         version.update_metadata({
-            u'modified': date.isoformat()
+            'modified': date.isoformat()
         })
 
         assert_equals(file.serialize(), {
-            u'id': file._id,
-            u'path': file.path,
-            u'created': version.created.isoformat(),
-            u'name': u'MOAR PYLONS',
-            u'kind': u'file',
-            u'version': 1,
-            u'downloads': 0,
-            u'size': 1234,
+            'id': file._id,
+            'path': file.path,
+            'created': version.created.isoformat(),
+            'name': 'MOAR PYLONS',
+            'kind': 'file',
+            'version': 1,
+            'downloads': 0,
+            'size': 1234,
             # modified date is the creation date of latest version
             # see https://github.com/CenterForOpenScience/osf.io/pull/7155
-            u'modified': version.created.isoformat(),
-            u'contentType': u'text/plain',
-            u'checkout': None,
-            u'md5': None,
-            u'sha256': None,
+            'modified': version.created.isoformat(),
+            'contentType': 'text/plain',
+            'checkout': None,
+            'md5': None,
+            'sha256': None,
         })
 
     def test_get_child_by_name(self):
@@ -142,7 +140,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(self.node_settings.get_root().name, '')
 
     def test_folder_path(self):
-        path = '/{}/'.format(self.node_settings.root_node._id)
+        path = f'/{self.node_settings.root_node._id}/'
 
         assert_equal(self.node_settings.get_root().path, path)
 
@@ -150,7 +148,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         file = OsfStorageFile(name='MOAR PYLONS', target=self.node)
         file.save()
         assert_equal(file.name, 'MOAR PYLONS')
-        assert_equal(file.path, '/{}'.format(file._id))
+        assert_equal(file.path, f'/{file._id}')
 
     def test_append_folder(self):
         child = self.node_settings.get_root().append_folder('Test')
@@ -173,7 +171,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_children(self):
         kids = [
-            self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
+            self.node_settings.get_root().append_file(f'Foo{x}Bar')
             for x in range(100)
         ]
 
@@ -517,7 +515,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
             files[-1].get_guid(create=True)
 
         guids = [file.get_guid()._id for file in files]
@@ -547,7 +545,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
             files[-1].get_guid(create=True)
 
         guids = [file.get_guid()._id for file in files]
@@ -573,7 +571,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
 
         all_guids = OsfStorageFileNode.get_file_guids(
             '/' + folder._id, provider='osfstorage', target=node)
@@ -594,7 +592,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
 
         folder.delete()
 
@@ -609,12 +607,12 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
             files[-1].get_guid(create=True)
 
         subfolder = folder.append_folder('subfoo')
         for i in range(1, 4):
-            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+            files.append(subfolder.append_file(f'subfoo.{i}'))
             files[-1].get_guid(create=True)
 
         guids = [file.get_guid()._id for file in files]
@@ -631,12 +629,12 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
             files[-1].get_guid(create=True)
 
         subfolder = folder.append_folder('subfoo')
         for i in range(1, 4):
-            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+            files.append(subfolder.append_file(f'subfoo.{i}'))
             files[-1].get_guid(create=True)
 
         guids = [file.get_guid()._id for file in files]
@@ -655,11 +653,11 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
 
         subfolder = folder.append_folder('subfoo')
         for i in range(1, 4):
-            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+            files.append(subfolder.append_file(f'subfoo.{i}'))
 
         all_guids = OsfStorageFileNode.get_file_guids(
             '/' + folder._id, provider='osfstorage', target=node)
@@ -672,11 +670,11 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         files = []
         for i in range(1, 4):
-            files.append(folder.append_file('foo.{}'.format(i)))
+            files.append(folder.append_file(f'foo.{i}'))
 
         subfolder = folder.append_folder('subfoo')
         for i in range(1, 4):
-            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+            files.append(subfolder.append_file(f'subfoo.{i}'))
 
         folder.delete()
 
@@ -796,7 +794,7 @@ class TestNodeSettingsModel:
 @pytest.mark.enable_implicit_clean
 class TestOsfStorageFileVersion(StorageTestCase):
     def setUp(self):
-        super(TestOsfStorageFileVersion, self).setUp()
+        super().setUp()
         self.user = factories.AuthUserFactory()
         self.mock_date = datetime.datetime(1991, 10, 31, tzinfo=pytz.UTC)
 
@@ -811,7 +809,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_true(retrieved.location)
         assert_true(retrieved.size)
         # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
-        assert_equal(retrieved.identifier, u'0')
+        assert_equal(retrieved.identifier, '0')
         assert_true(retrieved.content_type)
         assert_true(retrieved.modified)
 
@@ -931,7 +929,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
 @pytest.mark.django_db
 class TestOsfStorageCheckout(StorageTestCase):
     def setUp(self):
-        super(TestOsfStorageCheckout, self).setUp()
+        super().setUp()
         self.user = factories.AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.osfstorage = self.node.get_addon('osfstorage')

@@ -66,7 +66,7 @@ from website.util import rubeus
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-ERROR_MESSAGES = {'FILE_GONE': u"""
+ERROR_MESSAGES = {'FILE_GONE': """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -77,7 +77,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
 </p>""",
-                  'FILE_GONE_ACTOR_UNKNOWN': u"""
+                  'FILE_GONE_ACTOR_UNKNOWN': """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -88,7 +88,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 <p>
 It was deleted on {deleted_on}.
 </p>""",
-                  'DONT_KNOW': u"""
+                  'DONT_KNOW': """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -96,7 +96,7 @@ It was deleted on {deleted_on}.
 <p>
 File not found at {provider}.
 </p>""",
-                  'BLAME_PROVIDER': u"""
+                  'BLAME_PROVIDER': """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -108,7 +108,7 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 <p>
 You may wish to verify this through {provider}'s website.
 </p>""",
-                  'FILE_SUSPENDED': u"""
+                  'FILE_SUSPENDED': """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -224,7 +224,7 @@ def make_auth(user):
     if user is not None:
         return {
             'id': user._id,
-            'email': '{}@osf.io'.format(user._id),
+            'email': f'{user._id}@osf.io',
             'name': user.fullname,
         }
     return {}
@@ -387,10 +387,10 @@ LOG_ACTION_MAP = {
     'create_folder': NodeLog.FOLDER_CREATED,
 }
 
-DOWNLOAD_ACTIONS = set([
+DOWNLOAD_ACTIONS = {
     'download_file',
     'download_zip',
-])
+}
 
 @must_be_signed
 @no_auto_transaction
@@ -711,19 +711,19 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
-                'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
+                'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer connected to {object_text}.'
             })
 
         if not node_addon.has_auth:
             raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, data={
                 'message_short': 'Unauthorized',
-                'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
+                'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer authorized.'
             })
 
         if not node_addon.complete:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
-                'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
+                'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer configured.'
             })
 
     savepoint_id = transaction.savepoint()
@@ -809,7 +809,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
-        if format and '.{}'.format(format.lower()) != extension.lower():
+        if format and f'.{format.lower()}' != extension.lower():
             return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
@@ -829,10 +829,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
-        return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
+        return redirect(furl.furl(f'/{guid._id}/').set(args=extras).url)
     if isinstance(target, Preprint):
         # Redirecting preprint file guids to the preprint detail page
-        return redirect('/{}/'.format(target._id))
+        return redirect(f'/{target._id}/')
 
     return addon_view_file(auth, target, file_node, version)
 
@@ -877,7 +877,7 @@ def addon_view_or_download_quickfile(**kwargs):
             'message_short': 'File Not Found',
             'message_long': 'The requested file could not be found.'
         })
-    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.target._id, fid))
+    return proxy_url(f'/project/{file_.target._id}/files/osfstorage/{fid}/')
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue

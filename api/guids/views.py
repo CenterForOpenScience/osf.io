@@ -58,7 +58,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get(self, request, **kwargs):
         if not self.should_resolve(self.request):
-            return super(GuidDetail, self).get(request, **kwargs)
+            return super().get(request, **kwargs)
 
         url = self.get_redirect_url(**kwargs)
         if url:

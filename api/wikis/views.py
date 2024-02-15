@@ -28,7 +28,7 @@ from addons.wiki.models import WikiPage
 from website.files.exceptions import VersionNotFoundError
 
 
-class WikiMixin(object):
+class WikiMixin:
     """Mixin with convenience methods for retrieving the wiki page based on the
     URL. By default, fetches the wiki page based on the wiki_id kwarg.
     """

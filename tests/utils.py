@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import functools
-import mock
+from unittest import mock
 
 from django.http import HttpRequest
 from django.utils import timezone
@@ -215,7 +215,7 @@ def make_drf_request_with_version(version='2.0', *args, **kwargs):
     req.version = version
     return req
 
-class MockAuth(object):
+class MockAuth:
 
     def __init__(self, user):
         self.user = user

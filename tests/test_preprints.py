@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from nose.tools import *  # noqa: F403
 import jwe
 import jwt
-import mock
+from unittest import mock
 import furl
 import pytest
 import time
@@ -126,10 +125,10 @@ class TestPreprintProperties:
         assert preprint.has_submitted_preprint is True
 
     def test_deep_url(self, preprint):
-        assert preprint.deep_url == '/preprints/{}/'.format(preprint._id)
+        assert preprint.deep_url == f'/preprints/{preprint._id}/'
 
     def test_url_(self, preprint):
-        assert preprint.url == '/preprints/{}/{}/'.format(preprint.provider._id, preprint._id)
+        assert preprint.url == f'/preprints/{preprint.provider._id}/{preprint._id}/'
 
     def test_absolute_url(self, preprint):
         assert preprint.absolute_url == urljoin(
@@ -138,7 +137,7 @@ class TestPreprintProperties:
         )
 
     def test_absolute_api_v2_url(self, preprint):
-        assert '/preprints/{}/'.format(preprint._id) in preprint.absolute_api_v2_url
+        assert f'/preprints/{preprint._id}/' in preprint.absolute_api_v2_url
 
     def test_admin_contributor_or_group_member_ids(self, preprint, user):
         user2 = UserFactory()
@@ -1184,7 +1183,7 @@ class TestManageContributors:
             preprint.manage_contributors(
                 users, auth=auth, save=True
             )
-        assert excinfo.value.args[0] == 'User {0} not in contributors'.format(user.fullname)
+        assert excinfo.value.args[0] == f'User {user.fullname} not in contributors'
 
     def test_manage_contributors_no_contributors(self, preprint, auth):
         with pytest.raises(PreprintStateError):
@@ -1379,7 +1378,7 @@ class TestPreprintUpdate:
 class TestSetPreprintFile(OsfTestCase):
 
     def setUp(self):
-        super(TestSetPreprintFile, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
@@ -1489,7 +1488,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.preprint.primary_file._id, self.file._id)
 
-        assert(self.preprint.created)
+        assert (self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
 
     def test_cant_save_without_file(self):
@@ -1512,7 +1511,7 @@ class TestSetPreprintFile(OsfTestCase):
 
 class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
-        super(TestPreprintPermissions, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.noncontrib = AuthUserFactory()
         self.write_contrib = AuthUserFactory()
@@ -1776,7 +1775,7 @@ class TestPreprintPermissions(OsfTestCase):
 
 class TestPreprintProvider(OsfTestCase):
     def setUp(self):
-        super(TestPreprintProvider, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
         self.provider_osf = PreprintProviderFactory(_id='osf')
@@ -1816,7 +1815,7 @@ class TestPreprintProvider(OsfTestCase):
         some_other_provider = PreprintProviderFactory(name='asdfArxiv')
         subj_asdf = SubjectFactory(provider=some_other_provider)
 
-        assert set(self.provider.top_level_subjects) == set([subj_a, subj_b])
+        assert set(self.provider.top_level_subjects) == {subj_a, subj_b}
 
     def test_all_subjects(self):
         subj_a = SubjectFactory(provider=self.provider, text='A')
@@ -1830,7 +1829,7 @@ class TestPreprintProvider(OsfTestCase):
         some_other_provider = PreprintProviderFactory(name='asdfArxiv')
         subj_asdf = SubjectFactory(provider=some_other_provider)
 
-        assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
+        assert set(self.provider.all_subjects) == {subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa}
 
     def test_highlighted_subjects(self):
         subj_a = SubjectFactory(provider=self.provider, text='A')
@@ -1842,11 +1841,11 @@ class TestPreprintProvider(OsfTestCase):
         subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
 
         assert self.provider.has_highlighted_subjects is False
-        assert set(self.provider.highlighted_subjects) == set([subj_a, subj_b])
+        assert set(self.provider.highlighted_subjects) == {subj_a, subj_b}
         subj_aaa.highlighted = True
         subj_aaa.save()
         assert self.provider.has_highlighted_subjects is True
-        assert set(self.provider.highlighted_subjects) == set([subj_aaa])
+        assert set(self.provider.highlighted_subjects) == {subj_aaa}
 
     def test_change_preprint_provider_custom_taxonomies(self):
         subject_two = SubjectFactory(provider=self.provider_two,
@@ -1886,7 +1885,7 @@ class TestPreprintProvider(OsfTestCase):
 
 class TestPreprintIdentifiers(OsfTestCase):
     def setUp(self):
-        super(TestPreprintIdentifiers, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
 
@@ -1913,7 +1912,7 @@ class TestPreprintIdentifiers(OsfTestCase):
 @pytest.mark.enable_implicit_clean
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
-        super(TestOnPreprintUpdatedTask, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         if len(self.user.fullname.split(' ')) > 2:
             # Prevent unexpected keys ('suffix', 'additional_name')
@@ -1935,7 +1934,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             pp.add_contributor(self.user, visible=False)
             pp.save()
 
-            pp.creator.given_name = u'ZZYZ'
+            pp.creator.given_name = 'ZZYZ'
             if len(pp.creator.fullname.split(' ')) > 2:
                 # Prevent unexpected keys ('suffix', 'additional_name')
                 pp.creator.fullname = 'David Davidson'
@@ -1947,7 +1946,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
     def tearDown(self):
         handlers.celery_before_request()
-        super(TestOnPreprintUpdatedTask, self).tearDown()
+        super().tearDown()
 
     def test_update_or_enqueue_on_preprint_updated(self):
         # enqueue_postcommit_task automatically calls task in testing now.
@@ -1973,7 +1972,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
-        super(TestPreprintConfirmationEmails, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.write_contrib = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
@@ -1989,7 +1988,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             self.user.email,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             user=self.user,
-            provider_url='{}preprints/{}'.format(domain, self.preprint.provider._id),
+            provider_url=f'{domain}preprints/{self.preprint.provider._id}',
             domain=domain,
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
@@ -2009,7 +2008,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
 
 class TestPreprintOsfStorage(OsfTestCase):
     def setUp(self):
-        super(TestPreprintOsfStorage, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.session = SessionStore()
         self.session['auth_user_id'] = self.user._id
@@ -2031,7 +2030,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         assert_equal(self.preprint.logs.count(), nlog + 1)
         assert_equal(
             self.preprint.logs.latest().action,
-            '{0}_{1}'.format('osf_storage', action),
+            '{}_{}'.format('osf_storage', action),
         )
         assert_equal(
             self.preprint.logs.latest().params['path'],
@@ -2062,7 +2061,7 @@ class TestPreprintOsfStorage(OsfTestCase):
 class TestCheckPreprintAuth(OsfTestCase):
 
     def setUp(self):
-        super(TestCheckPreprintAuth, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
 
@@ -2119,7 +2118,7 @@ class TestCheckPreprintAuth(OsfTestCase):
 class TestPreprintOsfStorageLogs(OsfTestCase):
 
     def setUp(self):
-        super(TestPreprintOsfStorageLogs, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.user_non_contrib = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
@@ -2279,7 +2278,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
         assert_equal(self.preprint.logs.count(), nlogs + 1)
-        assert('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
     def test_add_folder_osfstorage_log(self):
         path = 'pizza'
@@ -2289,7 +2288,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
         assert_equal(self.preprint.logs.count(), nlogs + 1)
-        assert('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
 
 @pytest.mark.django_db

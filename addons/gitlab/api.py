@@ -14,7 +14,7 @@ from addons.gitlab.settings import DEFAULT_HOSTS
 https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
 
-class GitLabClient(object):
+class GitLabClient:
 
     def __init__(self, external_account=None, access_token=None, host=None):
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
@@ -90,7 +90,7 @@ class GitLabClient(object):
         :param str ref: Git reference
         :returns: tuple: Tuple of headers and file location
         """
-        uri = 'projects/{0}/repository/archive?sha={1}'.format(repo_id, ref)
+        uri = f'projects/{repo_id}/repository/archive?sha={ref}'
 
         request = self._get_api_request(uri)
 
@@ -131,9 +131,9 @@ class GitLabClient(object):
         return False
 
     def _get_api_request(self, uri):
-        headers = {'PRIVATE-TOKEN': '{}'.format(self.access_token)}
+        headers = {'PRIVATE-TOKEN': f'{self.access_token}'}
 
-        return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v4', uri),
+        return requests.get('https://{}/{}/{}'.format(self.host, 'api/v4', uri),
                             verify=True, headers=headers)
 
     def revoke_token(self):

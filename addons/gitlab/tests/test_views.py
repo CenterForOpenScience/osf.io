@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 import datetime
 import pytest
 import unittest
@@ -35,7 +34,7 @@ class TestGitLabAuthViews(GitLabAddonTestCase, OAuthAddonAuthViewsTestCaseMixin,
         mock.PropertyMock()
     )
     def test_delete_external_account(self):
-        super(TestGitLabAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
     def test_oauth_start(self):
         pass
@@ -52,14 +51,14 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     ## Overrides ##
 
     def setUp(self):
-        super(TestGitLabConfigViews, self).setUp()
+        super().setUp()
         self.mock_api_user = mock.patch('addons.gitlab.api.GitLabClient.user')
         self.mock_api_user.return_value = mock.Mock()
         self.mock_api_user.start()
 
     def tearDown(self):
         self.mock_api_user.stop()
-        super(TestGitLabConfigViews, self).tearDown()
+        super().tearDown()
 
     def test_folder_list(self):
         # GH only lists root folder (repos), this test is superfluous
@@ -70,7 +69,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     def test_set_config(self, mock_repo, mock_add_hook):
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
-        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
         res = self.app.post_json(url, {
             'gitlab_user': 'octocat',
             'gitlab_repo': 'repo_name',
@@ -80,7 +79,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
+            f'{self.ADDON_SHORT_NAME}_repo_linked'
         )
         mock_add_hook.assert_called_once_with(save=False)
 
@@ -90,7 +89,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
 class TestCRUD(OsfTestCase):
 
     def setUp(self):
-        super(TestCRUD, self).setUp()
+        super().setUp()
         self.gitlab = create_mock_gitlab(user='fred', private=False)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -108,7 +107,7 @@ class TestCRUD(OsfTestCase):
 class TestGitLabViews(OsfTestCase):
 
     def setUp(self):
-        super(TestGitLabViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
@@ -278,8 +277,8 @@ class TestGitLabViews(OsfTestCase):
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='gitlab')
         expected_urls = {
-            'view': '{0}?branch={1}'.format(url, sha),
-            'download': '{0}?action=download&branch={1}'.format(url, sha)
+            'view': f'{url}?branch={sha}',
+            'download': f'{url}?action=download&branch={sha}'
         }
 
         assert_equal(urls['view'], expected_urls['view'])
@@ -290,7 +289,7 @@ class TestGitLabViews(OsfTestCase):
     def test_hook_callback_add_file_not_thro_osf(self, mock_repo, mock_verify):
         gitlab_mock = self.gitlab
         gitlab_mock.repo = mock_repo
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(
             url,
@@ -323,7 +322,7 @@ class TestGitLabViews(OsfTestCase):
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(
             url,
@@ -350,7 +349,7 @@ class TestGitLabViews(OsfTestCase):
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(
             url,
@@ -371,7 +370,7 @@ class TestGitLabViews(OsfTestCase):
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         self.app.post_json(
             url,
             {'test': True,
@@ -389,7 +388,7 @@ class TestGitLabViews(OsfTestCase):
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         self.app.post_json(
             url,
             {'test': True,
@@ -407,7 +406,7 @@ class TestGitLabViews(OsfTestCase):
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         self.app.post_json(
             url,
             {'test': True,
@@ -428,7 +427,7 @@ class TestRegistrationsWithGitLab(OsfTestCase):
 
     def setUp(self):
 
-        super(TestRegistrationsWithGitLab, self).setUp()
+        super().setUp()
         self.project = ProjectFactory.build()
         self.project.save()
         self.consolidated_auth = Auth(user=self.project.creator)
@@ -447,7 +446,7 @@ class TestGitLabSettings(OsfTestCase):
 
     def setUp(self):
 
-        super(TestGitLabSettings, self).setUp()
+        super().setUp()
         self.gitlab = create_mock_gitlab(user='fred', private=False)
         self.project = ProjectFactory()
         self.auth = self.project.creator.auth

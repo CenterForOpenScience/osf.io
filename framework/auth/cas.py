@@ -26,7 +26,7 @@ class CasHTTPError(CasError):
     """Error raised when an unexpected error is returned from the CAS server."""
 
     def __init__(self, code, message, headers, content):
-        super(CasHTTPError, self).__init__(code, message)
+        super().__init__(code, message)
         self.headers = headers
         self.content = content
 
@@ -41,10 +41,10 @@ class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""
 
     def __init__(self, message):
-        super(CasTokenError, self).__init__(http_status.HTTP_400_BAD_REQUEST, message)
+        super().__init__(http_status.HTTP_400_BAD_REQUEST, message)
 
 
-class CasResponse(object):
+class CasResponse:
     """A wrapper for an HTTP response returned from CAS."""
 
     def __init__(self, authenticated=False, status=None, user=None, attributes=None):
@@ -54,7 +54,7 @@ class CasResponse(object):
         self.attributes = attributes or {}
 
 
-class CasClient(object):
+class CasClient:
     """HTTP client for the CAS server."""
 
     def __init__(self, base_url):
@@ -141,7 +141,7 @@ class CasClient(object):
 
         url = self.get_profile_url()
         headers = {
-            'Authorization': 'Bearer {}'.format(access_token),
+            'Authorization': f'Bearer {access_token}',
         }
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
@@ -325,7 +325,7 @@ def make_response_from_ticket(ticket, service_url):
             )
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],

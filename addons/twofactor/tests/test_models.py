@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db
 
 class TestCallbacks(unittest.TestCase):
     def setUp(self):
-        super(TestCallbacks, self).setUp()
+        super().setUp()
 
         self.user = UserFactory()
         self.user.add_addon('twofactor')
@@ -54,7 +54,7 @@ class TestUserSettingsModel(unittest.TestCase):
     TOTP_SECRET_B32 = 'XD4FTBQGR6AHTKU5'
 
     def setUp(self):
-        super(TestUserSettingsModel, self).setUp()
+        super().setUp()
 
         self.user = UserFactory()
         self.user.add_addon('twofactor')
@@ -64,7 +64,7 @@ class TestUserSettingsModel(unittest.TestCase):
         self.user_settings.save()
 
     def tearDown(self):
-        super(TestUserSettingsModel, self).tearDown()
+        super().tearDown()
         self.user.__class__.delete(self.user)
 
     def test_b32(self):
@@ -75,7 +75,7 @@ class TestUserSettingsModel(unittest.TestCase):
 
         assert_equal(url.scheme, 'otpauth')
         assert_equal(url.netloc, 'totp')
-        assert_equal(url.path, '/OSF:{}'.format(self.user.username))
+        assert_equal(url.path, f'/OSF:{self.user.username}')
         assert_equal(
             parse_qs(url.query),
             {'secret': [self.TOTP_SECRET_B32]}

@@ -34,7 +34,7 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
     ])
 
     def __init__(self, *args, **kwargs):
-        super(TaxonomizableSerializerMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         request = kwargs['context']['request']
 
         if self.expect_subjects_as_relationships(request):

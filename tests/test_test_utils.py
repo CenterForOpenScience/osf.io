@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 from nose.tools import *  # noqa: F403
 import unittest
 
@@ -13,7 +12,7 @@ from tests import utils as test_utils
 class TestUtilsTests(OsfTestCase):
 
     def setUp(self):
-        super(TestUtilsTests, self).setUp()
+        super().setUp()
 
         self.node = ProjectFactory()
         self.user = self.node.creator

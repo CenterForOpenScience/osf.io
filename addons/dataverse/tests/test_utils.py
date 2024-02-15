@@ -37,12 +37,12 @@ class TestUtils(DataverseAddonTestCase):
 
     def test_mock_dataset(self):
         dataset_id = 'DVN/23456'
-        doi = 'doi:12.3456/{0}'.format(dataset_id)
+        doi = f'doi:12.3456/{dataset_id}'
         mock_dataset = create_mock_dataset(dataset_id)
         assert_equal(mock_dataset.doi, doi)
         assert_equal(mock_dataset.citation,
-                     'Example Citation for {0}'.format(dataset_id))
-        assert_equal(mock_dataset.title, 'Example ({0})'.format(dataset_id))
+                     f'Example Citation for {dataset_id}')
+        assert_equal(mock_dataset.title, f'Example ({dataset_id})')
         assert_equal(mock_dataset.doi, doi)
         assert_equal(mock_dataset.get_state(), 'DRAFT')
         assert_equal(len(mock_dataset.get_files()), 1)

@@ -24,11 +24,11 @@ from website import settings
 
 class TestDraftNodeProvidersList(ApiTestCase):
     def setUp(self):
-        super(TestDraftNodeProvidersList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
-        self.url = '/{}draft_nodes/{}/files/'.format(API_BASE, self.draft_node._id)
+        self.url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/'
 
         self.user_two = AuthUserFactory()
         self.draft_reg.add_contributor(self.user_two)
@@ -79,12 +79,12 @@ class TestDraftNodeProvidersList(ApiTestCase):
 
     def test_returns_osfstorage_folder_version_two(self):
         res = self.app.get(
-            '{}osfstorage/'.format(self.url), auth=self.user.auth)
+            f'{self.url}osfstorage/', auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
         res = self.app.get(
-            '{}osfstorage/?version=2.2'.format(self.url), auth=self.user.auth)
+            f'{self.url}osfstorage/?version=2.2', auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
 
@@ -113,15 +113,15 @@ def prepare_mock_wb_response(
     wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=view_only, base_url=node.osfstorage_region.waterbutler_url)
 
     default_file = {
-        u'contentType': None,
-        u'extra': {u'downloads': 0, u'version': 1},
-        u'kind': u'file',
-        u'modified': None,
-        u'name': u'NewFile',
-        u'path': u'/NewFile',
-        u'provider': provider,
-        u'size': None,
-        u'materialized': '/',
+        'contentType': None,
+        'extra': {'downloads': 0, 'version': 1},
+        'kind': 'file',
+        'modified': None,
+        'name': 'NewFile',
+        'path': '/NewFile',
+        'provider': provider,
+        'size': None,
+        'materialized': '/',
     }
 
     if len(files):
@@ -140,7 +140,7 @@ def prepare_mock_wb_response(
         responses.Response(
             method=method,
             url=wb_url,
-            json={u'data': jsonapi_data},
+            json={'data': jsonapi_data},
             status=status_code,
             content_type='application/json'
         )
@@ -150,7 +150,7 @@ def prepare_mock_wb_response(
 class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeFilesList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
@@ -196,7 +196,7 @@ class TestNodeFilesList(ApiTestCase):
             'osfstorage').get_root().append_file('NewFile')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/{}'.format(self.private_url, fobj._id), auth=self.user.auth)
+            f'{self.private_url}osfstorage/{fobj._id}', auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_true(isinstance(res.json['data'], dict))
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -208,7 +208,7 @@ class TestNodeFilesList(ApiTestCase):
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/'.format(self.private_url), auth=self.user.auth)
+            f'{self.private_url}osfstorage/', auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
@@ -216,7 +216,7 @@ class TestNodeFilesList(ApiTestCase):
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/?version=2.2'.format(self.private_url), auth=self.user.auth)
+            f'{self.private_url}osfstorage/?version=2.2', auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_list_returns_folder_data(self):
@@ -224,7 +224,7 @@ class TestNodeFilesList(ApiTestCase):
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/'.format(self.private_url, fobj._id), auth=self.user.auth)
+            f'{self.private_url}osfstorage/', auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -235,7 +235,7 @@ class TestNodeFilesList(ApiTestCase):
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/{}/'.format(self.private_url, fobj._id), auth=self.user.auth)
+            f'{self.private_url}osfstorage/{fobj._id}/', auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 0)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -307,7 +307,7 @@ class TestNodeFilesList(ApiTestCase):
         wb_request = responses.calls[-1].request
         url = furl.furl(wb_request.url)
 
-        assert_equal(url.query, 'meta=True&view_only={}'.format(vol.key))
+        assert_equal(url.query, f'meta=True&view_only={vol.key}')
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
         assert_in(vol.key, res.json['data'][0]['links']['info'])
@@ -321,7 +321,7 @@ class TestNodeFilesList(ApiTestCase):
         self._prepare_mock_wb_response(
             provider='github', files=[{'name': 'NewFile'}])
         self.add_github()
-        url = '/{}draft_nodes/{}/files/github/'.format(API_BASE, self.draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
 
         # test create
         res = self.app.get(url, auth=self.user.auth)
@@ -343,7 +343,7 @@ class TestNodeFilesList(ApiTestCase):
         folder.save()
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], path='/Folder/')
         self.add_github()
-        url = '/{}draft_nodes/{}/files/github/Folder/'.format(API_BASE, self.draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/Folder/'
         res = self.app.get(url, params={'info': ''}, auth=self.user.auth)
 
         assert_equal(res.status_code, 200)
@@ -392,7 +392,7 @@ class TestNodeFilesList(ApiTestCase):
             provider='github', files=[{'name': 'NewFile'}],
             folder=False, path='/')
 
-        url = '/{}draft_nodes/{}/files/github/'.format(API_BASE, self.draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
         res = self.app.get(
             url, auth=self.user.auth,
             expect_errors=True,
@@ -404,7 +404,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_waterbutler_server_error_returns_503(self):
         self._prepare_mock_wb_response(status_code=500)
         self.add_github()
-        url = '/{}draft_nodes/{}/files/github/'.format(API_BASE, self.draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
         res = self.app.get(
             url, auth=self.user.auth,
             expect_errors=True,
@@ -424,7 +424,7 @@ class TestNodeFilesList(ApiTestCase):
                 status=400
             )
         )
-        url = '/{}draft_nodes/{}/files/github/'.format(API_BASE, self.draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
 
@@ -432,7 +432,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_handles_unauthenticated_waterbutler_request(self):
         self._prepare_mock_wb_response(status_code=401)
         self.add_github()
-        url = '/{}draft_nodes/{}/files/github/'.format(API_BASE, self.draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
@@ -457,7 +457,7 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(
             res.json['errors'][0]['detail'],
-            'The {} provider is not configured for this project.'.format(provider))
+            f'The {provider} provider is not configured for this project.')
 
     @responses.activate
     def test_handles_bad_waterbutler_request(self):
@@ -471,7 +471,7 @@ class TestNodeFilesList(ApiTestCase):
             )
         )
         self.add_github()
-        url = '/{}draft_nodes/{}/files/github/'.format(API_BASE, self.draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
         assert_in('detail', res.json['errors'][0])
@@ -485,7 +485,7 @@ class TestNodeFilesList(ApiTestCase):
 class TestNodeFilesListFiltering(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeFilesListFiltering, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
@@ -627,7 +627,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
 class TestNodeFilesListPagination(ApiTestCase):
     def setUp(self):
-        super(TestNodeFilesListPagination, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
@@ -699,7 +699,7 @@ class TestNodeFilesListPagination(ApiTestCase):
 class TestDraftNodeStorageProviderDetail(ApiTestCase):
 
     def setUp(self):
-        super(TestDraftNodeStorageProviderDetail, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.draft_reg = DraftRegistrationFactory(initiator=self.user)
         self.draft_node = self.draft_reg.branched_from
@@ -711,7 +711,7 @@ class TestDraftNodeStorageProviderDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(
             res.json['data']['id'],
-            '{}:osfstorage'.format(self.draft_node._id)
+            f'{self.draft_node._id}:osfstorage'
         )
 
     def test_cannot_view_if_private(self):

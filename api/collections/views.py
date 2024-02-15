@@ -51,7 +51,7 @@ from osf.models import (
 from osf.utils.workflows import CollectionSubmissionStates
 
 
-class CollectionMixin(object):
+class CollectionMixin:
     """Mixin with convenience methods for retrieving the current collection based on the
     current URL. By default, fetches the current node based on the collection_id kwarg.
     """
@@ -574,7 +574,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -664,7 +664,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedRegistrationsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -692,7 +692,7 @@ class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedPreprintsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -793,7 +793,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeLinksList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 

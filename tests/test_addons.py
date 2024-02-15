@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import datetime
 import time
 import functools
@@ -10,7 +8,7 @@ import furl
 import itsdangerous
 import jwe
 import jwt
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
 from framework.auth import cas, signing
@@ -57,7 +55,7 @@ SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 class TestAddonAuth(OsfTestCase):
 
     def setUp(self):
-        super(TestAddonAuth, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
@@ -232,7 +230,7 @@ class TestAddonAuth(OsfTestCase):
 class TestAddonLogs(OsfTestCase):
 
     def setUp(self):
-        super(TestAddonLogs, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.user_non_contrib = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
@@ -535,7 +533,7 @@ class TestAddonLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)
-        assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
     def test_add_log_updates_cache_create(self):
         self.configure_osf_addon()
@@ -1013,13 +1011,13 @@ class TestAddonLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)
-        assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
 
 class TestCheckAuth(OsfTestCase):
 
     def setUp(self):
-        super(TestCheckAuth, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
@@ -1088,7 +1086,7 @@ class TestCheckAuth(OsfTestCase):
 class TestCheckOAuth(OsfTestCase):
 
     def setUp(self):
-        super(TestCheckOAuth, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
@@ -1198,7 +1196,7 @@ def mock_touch(self, bearer, version=None, revision=None, **kwargs):
 class TestAddonFileViews(OsfTestCase):
 
     def setUp(self):
-        super(TestAddonFileViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
 
@@ -1329,13 +1327,13 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 302)
-        assert_equals(resp.location, 'http://localhost/{}/'.format(guid._id))
+        assert_equals(resp.location, f'http://localhost/{guid._id}/')
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        resp = self.app.get('/{}/?action=download'.format(guid._id), auth=self.user.auth)
+        resp = self.app.get(f'/{guid._id}/?action=download', auth=self.user.auth)
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
@@ -1345,7 +1343,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_uppercased_ext_test_file()
         guid = file_node.get_guid(create=True)
 
-        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+        resp = self.app.get(f'/{guid._id}/download?format=pdf', auth=self.user.auth)
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
@@ -1356,7 +1354,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_uppercased_ext_test_file()
         guid = file_node.get_guid(create=True)
 
-        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+        resp = self.app.get(f'/{guid._id}/download?format=pdf', auth=self.user.auth)
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
@@ -1366,7 +1364,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        resp = self.app.get('/{}/?action=download&revision=1'.format(guid._id), auth=self.user.auth)
+        resp = self.app.get(f'/{guid._id}/?action=download&revision=1', auth=self.user.auth)
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
@@ -1482,7 +1480,7 @@ class TestAddonFileViews(OsfTestCase):
         guid = file_node.get_guid(create=True)
 
         with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
-            resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
+            resp = self.app.head(f'/{guid._id}/', auth=self.user.auth)
         assert_equals(resp.status_code, 200)
 
         args, kwargs = mock_ember.call_args
@@ -1495,7 +1493,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        resp = self.app.head('/{}/?revision=1&foo=bar'.format(guid._id), auth=self.user.auth)
+        resp = self.app.head(f'/{guid._id}/?revision=1&foo=bar', auth=self.user.auth)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
         assert_equals(resp.status_code, 302)
@@ -1681,7 +1679,7 @@ class TestAddonFileViews(OsfTestCase):
 class TestLegacyViews(OsfTestCase):
 
     def setUp(self):
-        super(TestLegacyViews, self).setUp()
+        super().setUp()
         self.path = 'mercury.png'
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
@@ -1692,7 +1690,7 @@ class TestLegacyViews(OsfTestCase):
         file_record.save()
 
     def test_view_file_redirect(self):
-        url = '/{0}/osffiles/{1}/'.format(self.project._id, self.path)
+        url = f'/{self.project._id}/osffiles/{self.path}/'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
@@ -1704,7 +1702,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_download_file_redirect(self):
-        url = '/{0}/osffiles/{1}/download/'.format(self.project._id, self.path)
+        url = f'/{self.project._id}/osffiles/{self.path}/download/'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
@@ -1716,7 +1714,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_download_file_version_redirect(self):
-        url = '/{0}/osffiles/{1}/version/3/download/'.format(
+        url = '/{}/osffiles/{}/version/3/download/'.format(
             self.project._id,
             self.path,
         )
@@ -1732,7 +1730,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_api_download_file_redirect(self):
-        url = '/api/v1/project/{0}/osffiles/{1}/'.format(self.project._id, self.path)
+        url = f'/api/v1/project/{self.project._id}/osffiles/{self.path}/'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
@@ -1744,7 +1742,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_api_download_file_version_redirect(self):
-        url = '/api/v1/project/{0}/osffiles/{1}/version/3/'.format(
+        url = '/api/v1/project/{}/osffiles/{}/version/3/'.format(
             self.project._id,
             self.path,
         )
@@ -1760,7 +1758,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_no_provider_name(self):
-        url = '/{0}/files/{1}'.format(
+        url = '/{}/files/{}'.format(
             self.project._id,
             self.path,
         )
@@ -1791,7 +1789,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_other_addon_redirect(self):
-        url = '/project/{0}/mycooladdon/files/{1}/'.format(
+        url = '/project/{}/mycooladdon/files/{}/'.format(
             self.project._id,
             self.path,
         )
@@ -1806,7 +1804,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_other_addon_redirect_download(self):
-        url = '/project/{0}/mycooladdon/files/{1}/download/'.format(
+        url = '/project/{}/mycooladdon/files/{}/download/'.format(
             self.project._id,
             self.path,
         )
@@ -1823,7 +1821,7 @@ class TestLegacyViews(OsfTestCase):
 class TestViewUtils(OsfTestCase):
 
     def setUp(self):
-        super(TestViewUtils, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
@@ -1890,4 +1888,4 @@ class TestViewUtils(OsfTestCase):
         # Default addons should be in addon dicts, but they have no js assets because you can't
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
-        assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
+        assert not any(f'/{addon}/' in asset_paths for addon in default_addons)

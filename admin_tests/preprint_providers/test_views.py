@@ -1,6 +1,6 @@
 import pytest
 import json
-import mock
+from unittest import mock
 from io import StringIO
 
 import responses
@@ -128,7 +128,7 @@ class TestShareSourcePreprintProvider(AdminTestCase):
 
 class TestPreprintProviderChangeForm(AdminTestCase):
     def setUp(self):
-        super(TestPreprintProviderChangeForm, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.preprint_provider = PreprintProviderFactory()
@@ -207,7 +207,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
 @pytest.mark.enable_implicit_clean
 class TestPreprintProviderExportImport(AdminTestCase):
     def setUp(self):
-        super(TestPreprintProviderExportImport, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.preprint_provider = PreprintProviderFactory()
@@ -365,7 +365,7 @@ class TestCreateRegistrationProvider(CreateProviderMixinBase):
     def view(self, req, provider):
         plain_view = views.CreatePreprintProvider()
         view = setup_form_view(plain_view, req, form=PreprintProviderForm())
-        view.kwargs = {'{}_provider_id'.format(provider.readable_type): provider.id}
+        view.kwargs = {f'{provider.readable_type}_provider_id': provider.id}
         return view
 
 class TestDeletePreprintProvider(DeleteProviderMixinBase):
@@ -393,7 +393,7 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
     def test_cannot_delete_if_preprints_present(self, req, view, preprint, provider_with_preprint):
         redirect = view.delete(req)
-        assert redirect.url == '/preprint_providers/{}/cannot_delete/'.format(provider_with_preprint.id)
+        assert redirect.url == f'/preprint_providers/{provider_with_preprint.id}/cannot_delete/'
         assert redirect.status_code == 302
 
     def test_delete_provider_with_no_preprints(self, req, view):
@@ -403,7 +403,7 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
     def test_cannot_get_if_preprints_present(self, req, view, preprint, provider_with_preprint):
         redirect = view.get(req)
-        assert redirect.url == '/preprint_providers/{}/cannot_delete/'.format(provider_with_preprint.id)
+        assert redirect.url == f'/preprint_providers/{provider_with_preprint.id}/cannot_delete/'
         assert redirect.status_code == 302
 
 class TestProcessCustomTaxonomy(ProcessCustomTaxonomyMixinBase):

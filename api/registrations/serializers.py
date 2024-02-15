@@ -631,7 +631,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
 
     def __init__(self, *args, **kwargs):
-        super(RegistrationCreateSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         request = kwargs['context']['request']
         # required fields defined here for the different versions
         if self.expect_cleaner_attributes(request):
@@ -744,7 +744,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         for qid in file_qids:
             for file_response in draft.registration_responses.get(qid, []):
                 if not self._is_attached_file_valid(file_response, registering):
-                        orphan_files.append(file_response)
+                    orphan_files.append(file_response)
 
         return orphan_files
 

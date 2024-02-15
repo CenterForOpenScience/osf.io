@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Base settings file, common to all environments.
 These settings can be overridden in local.py.
@@ -32,7 +31,7 @@ BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
 TEST_ENV = False
 
-with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+with open(os.path.join(APP_PATH, 'package.json')) as fobj:
     VERSION = json.load(fobj)['version']
 
 # Expiration time for verification key
@@ -494,7 +493,7 @@ class CeleryConfig:
         task_ignore_result = True
         task_store_errors_even_if_ignored = True
 
-    broker_url = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
+    broker_url = os.environ.get('BROKER_URL', f'amqp://{RABBITMQ_USERNAME}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_VHOST}')
     broker_use_ssl = False
 
     # Default RabbitMQ backend

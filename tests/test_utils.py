@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 import datetime
-import mock
+from unittest import mock
 import os
 import pytest
 import time
@@ -253,7 +252,7 @@ class TestFrameworkUtils(unittest.TestCase):
 
         assert_equal(
             'i_contain_cool_umlauts.txt',
-            secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+            secure_filename('i contain cool \xfcml\xe4uts.txt')
         )
 
 
@@ -318,7 +317,7 @@ class TestWebsiteUtils(unittest.TestCase):
         assert_equal(type(outputs), tuple)
 
     def test_rapply_on_set(self):
-        inputs = set(i for i in range(5))
+        inputs = {i for i in range(5)}
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:

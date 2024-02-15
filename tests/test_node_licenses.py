@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 import builtins
 import json
 import unittest
-import mock
+from unittest import mock
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -35,7 +34,7 @@ LICENSE_TEXT = json.dumps({
 class TestNodeLicenses(OsfTestCase):
 
     def setUp(self):
-        super(TestNodeLicenses, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)

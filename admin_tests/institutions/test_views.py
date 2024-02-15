@@ -23,7 +23,7 @@ from admin.base.forms import ImportFileForm
 
 class TestInstitutionList(AdminTestCase):
     def setUp(self):
-        super(TestInstitutionList, self).setUp()
+        super().setUp()
 
         self.institution1 = InstitutionFactory()
         self.institution2 = InstitutionFactory()
@@ -53,7 +53,7 @@ class TestInstitutionList(AdminTestCase):
 
 class TestInstitutionDisplay(AdminTestCase):
     def setUp(self):
-        super(TestInstitutionDisplay, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
 
@@ -108,13 +108,13 @@ class TestInstitutionDelete(AdminTestCase):
         node.affiliated_institutions.add(self.institution)
 
         redirect = self.view.delete(self.request)
-        nt.assert_equal(redirect.url, '/institutions/{}/cannot_delete/'.format(self.institution.id))
+        nt.assert_equal(redirect.url, f'/institutions/{self.institution.id}/cannot_delete/')
         nt.assert_equal(redirect.status_code, 302)
 
 
 class TestInstitutionChangeForm(AdminTestCase):
     def setUp(self):
-        super(TestInstitutionChangeForm, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.institution = InstitutionFactory()
@@ -145,7 +145,7 @@ class TestInstitutionChangeForm(AdminTestCase):
 
 class TestInstitutionExport(AdminTestCase):
     def setUp(self):
-        super(TestInstitutionExport, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.institution = InstitutionFactory()
@@ -166,7 +166,7 @@ class TestInstitutionExport(AdminTestCase):
 
 class TestCreateInstitution(AdminTestCase):
     def setUp(self):
-        super(TestCreateInstitution, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.change_permission = Permission.objects.get(codename='change_institution')
@@ -203,7 +203,7 @@ class TestCreateInstitution(AdminTestCase):
 
 class TestAffiliatedNodeList(AdminTestCase):
     def setUp(self):
-        super(TestAffiliatedNodeList, self).setUp()
+        super().setUp()
 
         self.institution = InstitutionFactory()
 

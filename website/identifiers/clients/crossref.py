@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import furl
 import lxml
 import lxml.builder
@@ -100,7 +99,7 @@ class CrossRefClient(AbstractIdentifierClient):
         posted_content.append(element.posted_date(*self._crossref_format_date(element, preprint.date_published)))
 
         if status == 'public':
-            posted_content.append(element.item_number('osf.io/{}'.format(preprint._id)))
+            posted_content.append(element.item_number(f'osf.io/{preprint._id}'))
 
             if preprint.description:
                 posted_content.append(
@@ -226,7 +225,7 @@ class CrossRefClient(AbstractIdentifierClient):
             metadata = self.build_metadata(preprint, include_relation)
             doi = self.build_doi(preprint)
             username, password = self.get_credentials()
-            logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
+            logger.info(f'Sending metadata for DOI {doi}:\n{metadata}')
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
             requests.post(

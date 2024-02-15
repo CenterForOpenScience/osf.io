@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 import abc
 from json import dumps
 
-import mock
+from unittest import mock
 import pytest
 import mendeley
 from nose.tools import *  # noqa:
@@ -40,7 +39,7 @@ VALID_ROOT_FOLDER_IDS = (
 )
 
 
-class NodeAddonListMixin(object):
+class NodeAddonListMixin:
     def set_setting_list_url(self):
         self.setting_list_url = '/{}nodes/{}/addons/?page[size]=100'.format(
             API_BASE, self.node._id
@@ -129,7 +128,7 @@ class NodeAddonListMixin(object):
             assert_equal(addon_data, None)
 
 
-class NodeAddonDetailMixin(object):
+class NodeAddonDetailMixin:
     def set_setting_detail_url(self):
         self.setting_detail_url = '/{}nodes/{}/addons/{}/'.format(
             API_BASE, self.node._id, self.short_name
@@ -494,7 +493,7 @@ class NodeAddonDetailMixin(object):
         assert_equal(res.status_code, 403)
 
 
-class NodeAddonFolderMixin(object):
+class NodeAddonFolderMixin:
     def set_folder_url(self):
         self.folder_url = '/{}nodes/{}/addons/{}/folders/'.format(
             API_BASE, self.node._id, self.short_name
@@ -602,11 +601,13 @@ class NodeAddonTestSuiteMixin(
 class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
     addon_type = 'OAUTH'
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def AccountFactory(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def NodeSettingsFactory(self):
         pass
 
@@ -632,23 +633,19 @@ class NodeOAuthCitationAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
 
     def test_settings_list_noncontrib_public_can_view(self):
         with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
-            super(NodeOAuthCitationAddonTestSuiteMixin,
-                  self).test_settings_list_noncontrib_public_can_view
+            super().test_settings_list_noncontrib_public_can_view
 
     def test_settings_list_GET_enabled(self):
         with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
-            super(NodeOAuthCitationAddonTestSuiteMixin,
-                  self).test_settings_list_GET_enabled
+            super().test_settings_list_GET_enabled
 
     def test_settings_detail_noncontrib_public_can_view(self):
         with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
-            super(NodeOAuthCitationAddonTestSuiteMixin,
-                  self).test_settings_detail_noncontrib_public_can_view
+            super().test_settings_detail_noncontrib_public_can_view
 
     def test_settings_detail_GET_enabled(self):
         with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
-            super(NodeOAuthCitationAddonTestSuiteMixin,
-                  self).test_settings_detail_GET_enabled
+            super().test_settings_detail_GET_enabled
 
 
 class NodeUnmanageableAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
@@ -748,11 +745,11 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @property
     def _mock_folder_result(self):
-        return {u'path': u'test name/test',
-                u'kind': u'repo',
-                u'name': u'test',
-                u'provider': u'github',
-                u'id': u'12345'}
+        return {'path': 'test name/test',
+                'kind': 'repo',
+                'name': 'test',
+                'provider': 'github',
+                'id': '12345'}
 
 
 class TestNodeMendeleyAddon(
@@ -841,11 +838,11 @@ class TestNodeZoteroAddon(
 
     @property
     def _mock_folder_result(self):
-        return {u'path': u'18497322',
-                u'kind': u'library',
-                u'name': u'Group Library I',
-                u'provider': u'zotero',
-                u'id': u'18497322'}
+        return {'path': '18497322',
+                'kind': 'library',
+                'name': 'Group Library I',
+                'provider': 'zotero',
+                'id': '18497322'}
 
     @mock.patch('addons.zotero.models.Zotero._get_folders')
     def test_sub_folder_list_GET_expected_behavior(self, mock_folders):
@@ -914,16 +911,12 @@ class TestNodeFigshareAddon(
     @mock.patch('addons.figshare.client.FigshareClient.get_folders')
     def test_folder_list_GET_expected_behavior(self, mock_folders):
         mock_folders.return_value = [self._mock_folder_result]
-        super(
-            TestNodeFigshareAddon,
-            self).test_folder_list_GET_expected_behavior()
+        super().test_folder_list_GET_expected_behavior()
 
     @mock.patch('addons.figshare.client.FigshareClient.get_linked_folder_info')
     def test_settings_detail_PUT_all_sets_settings(self, mock_info):
         mock_info.return_value = self._mock_folder_result
-        super(
-            TestNodeFigshareAddon, self
-        ).test_settings_detail_PUT_all_sets_settings
+        super().test_settings_detail_PUT_all_sets_settings
 
 
 class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
@@ -947,9 +940,7 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
                 'path_collection': {'entries': {}}
             }
             with mock.patch('addons.box.models.Provider.refresh_oauth_key'):
-                super(
-                    TestNodeBoxAddon,
-                    self).test_settings_detail_PUT_all_sets_settings()
+                super().test_settings_detail_PUT_all_sets_settings()
 
 
 class TestNodeDropboxAddon(
@@ -1020,7 +1011,7 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     @mock.patch('addons.s3.models.get_bucket_names')
     def test_folder_list_GET_expected_behavior(self, mock_names):
         mock_names.return_value = ['a.bucket']
-        super(TestNodeS3Addon, self).test_folder_list_GET_expected_behavior()
+        super().test_folder_list_GET_expected_behavior()
 
     @mock.patch('addons.s3.models.bucket_exists')
     @mock.patch('addons.s3.models.get_bucket_location_or_error')
@@ -1028,7 +1019,7 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
             self, mock_location, mock_exists):
         mock_exists.return_value = True
         mock_location.return_value = ''
-        super(TestNodeS3Addon, self).test_settings_detail_PUT_all_sets_settings()
+        super().test_settings_detail_PUT_all_sets_settings()
 
 
 class TestNodeGoogleDriveAddon(
@@ -1063,9 +1054,7 @@ class TestNodeGoogleDriveAddon(
     def test_folder_list_GET_expected_behavior(self, mock_about):
         mock_about.return_value = {'rootFolderId': 'FAKEROOTID'}
         with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl'):
-            super(
-                TestNodeGoogleDriveAddon, self
-            ).test_folder_list_GET_expected_behavior()
+            super().test_folder_list_GET_expected_behavior()
 
     def test_settings_detail_PUT_PATCH_only_folder_id_raises_error(self):
         self.node_settings.clear_settings()
@@ -1089,7 +1078,7 @@ class TestNodeGoogleDriveAddon(
         )
 
         assert res_put.status_code == res_patch.status_code == 400
-        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+        assert (f'Must specify both folder_id and folder_path for {self.short_name}' ==
                 res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
 
     def test_settings_detail_PUT_PATCH_only_folder_path_raises_error(self):
@@ -1114,7 +1103,7 @@ class TestNodeGoogleDriveAddon(
         )
 
         assert res_put.status_code == res_patch.status_code == 400
-        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+        assert (f'Must specify both folder_id and folder_path for {self.short_name}' ==
                 res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
 
     def test_settings_detail_incomplete_PUT_raises_error(self):
@@ -1154,7 +1143,7 @@ class TestNodeForwardAddon(
         }
 
     def setUp(self):
-        super(TestNodeForwardAddon, self).setUp()
+        super().setUp()
         self.addon_type = 'OAUTH'
         self.node_settings = self.node.get_or_add_addon(
             self.short_name, auth=self.auth)

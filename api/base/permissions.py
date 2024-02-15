@@ -140,7 +140,7 @@ class OwnerOnly(permissions.BasePermission):
     # TODO: Write tests for basic, session, and oauth-based authentication
     def has_object_permission(self, request, view, obj):
         """Not applied to all members of a queryset"""
-        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), 'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}'.format(obj)
+        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), f'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {obj}'
         return (obj.owner.id == request.user.id)
 
 
@@ -156,5 +156,5 @@ def PermissionWithGetter(Base, getter):
 
         def has_object_permission(self, request, view, obj):
             obj = self.get_object(request, view, obj)
-            return super(Perm, self).has_object_permission(request, view, obj)
+            return super().has_object_permission(request, view, obj)
     return Perm

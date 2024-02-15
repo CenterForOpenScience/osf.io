@@ -26,7 +26,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             'institution_id',
             type=str,
@@ -62,7 +62,7 @@ class Command(BaseCommand):
         # Verify the institution
         institution = Institution.load(institution_id)
         if not institution:
-            message = 'Error: invalid institution ID [{}]'.format(institution_id)
+            message = f'Error: invalid institution ID [{institution_id}]'
             logger.error(message)
             sentry.log_message(message)
             return

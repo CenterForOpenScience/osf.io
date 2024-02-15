@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 # This is a management command, rather than a migration script, for three primary reasons:
 #   1. It makes no changes to database structure (e.g. AlterField), only database content.
 #   2. It may need to be ran more than once. (Unlikely, but possible).
 #   3. A reverse migration isn't possible without making a back-up table.
 
-from __future__ import unicode_literals
 import logging
 
 from django.core.management.base import BaseCommand
@@ -20,7 +18,7 @@ class Command(BaseCommand):
     Strip trailing whitespace from osf_subject.text
     """
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',
@@ -46,9 +44,9 @@ class Command(BaseCommand):
             with connection.cursor() as cursor:
                 cursor.execute(sql_select)
                 rows = cursor.fetchall()
-                logger.info('Preparing to update {} rows:'.format(len(rows)))
+                logger.info(f'Preparing to update {len(rows)} rows:')
                 for row in rows:
-                    logger.info('\tSubject {} -- {}'.format(row[0], row[1]))
+                    logger.info(f'\tSubject {row[0]} -- {row[1]}')
                 cursor.execute(sql_update)
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')

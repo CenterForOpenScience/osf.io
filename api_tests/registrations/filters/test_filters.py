@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from nose.tools import *  # noqa:
 
 from osf.models import Node, Registration
@@ -11,10 +10,10 @@ from osf_tests.factories import (
 )
 
 
-class RegistrationListFilteringMixin(object):
+class RegistrationListFilteringMixin:
 
     def setUp(self):
-        super(RegistrationListFilteringMixin, self).setUp()
+        super().setUp()
 
         assert self.url, 'Subclasses of RegistrationListFilteringMixin must define self.url'
 
@@ -33,11 +32,11 @@ class RegistrationListFilteringMixin(object):
         self.node_A = RegistrationFactory(project=self.A, creator=self.user)
         self.node_B2 = RegistrationFactory(project=self.B2, creator=self.user)
 
-        self.parent_url = '{}filter[parent]='.format(self.url)
-        self.parent_url_ne = '{}filter[parent][ne]=null'.format(self.url)
-        self.root_url = '{}filter[root]='.format(self.url)
-        self.tags_url = '{}filter[tags]='.format(self.url)
-        self.contributors_url = '{}filter[contributors]='.format(self.url)
+        self.parent_url = f'{self.url}filter[parent]='
+        self.parent_url_ne = f'{self.url}filter[parent][ne]=null'
+        self.root_url = f'{self.url}filter[root]='
+        self.tags_url = f'{self.url}filter[tags]='
+        self.contributors_url = f'{self.url}filter[contributors]='
 
     def test_parent_filter_null(self):
         expected = [self.node_A._id, self.node_B2._id]
@@ -112,11 +111,11 @@ class RegistrationListFilteringMixin(object):
     def test_tag_filter(self):
         self.node_A.add_tag('nerd', auth=Auth(self.node_A.creator), save=True)
         expected = [self.node_A._id]
-        res = self.app.get('{}nerd'.format(self.tags_url), auth=self.user.auth)
+        res = self.app.get(f'{self.tags_url}nerd', auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert_equal(expected, actual)
 
-        res = self.app.get('{}bird'.format(self.tags_url), auth=self.user.auth)
+        res = self.app.get(f'{self.tags_url}bird', auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert_equal([], actual)
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''Example settings/local.py file.
 These settings override what's in website/settings/defaults.py
 
@@ -32,10 +31,10 @@ PREPRINT_PROVIDER_DOMAINS = {
 USE_EXTERNAL_EMBER = True
 PROXY_EMBER_APPS = True
 EMBER_DOMAIN = environ.get('EMBER_DOMAIN', 'localhost')
-LIVE_RELOAD_DOMAIN = 'http://{}:4200'.format(EMBER_DOMAIN)  # Change port for the current app
+LIVE_RELOAD_DOMAIN = f'http://{EMBER_DOMAIN}:4200'  # Change port for the current app
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
-        'server': 'http://{}:4200/'.format(EMBER_DOMAIN),
+        'server': f'http://{EMBER_DOMAIN}:4200/',
         'path': '/ember_osf_web/',
         'routes': [
             'collections',
@@ -44,11 +43,11 @@ EXTERNAL_EMBER_APPS = {
         ],
     },
     'preprints': {
-        'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
+        'server': f'http://{EMBER_DOMAIN}:4201/',
         'path': '/preprints/'
     },
     'reviews': {
-        'server': 'http://{}:4203/'.format(EMBER_DOMAIN),
+        'server': f'http://{EMBER_DOMAIN}:4203/',
         'path': '/reviews/'
     },
 }

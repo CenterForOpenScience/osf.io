@@ -46,7 +46,7 @@ from api.institutions.permissions import UserIsAffiliated
 from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
 
 
-class InstitutionMixin(object):
+class InstitutionMixin:
     """Mixin with convenience method get_institution
     """
 
@@ -285,7 +285,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
         for id_ in ids:
             registration = Registration.load(id_)
             if not registration.has_permission(user, osf_permissions.WRITE):
-                raise exceptions.PermissionDenied(detail='Write permission on registration {} required'.format(id_))
+                raise exceptions.PermissionDenied(detail=f'Write permission on registration {id_} required')
             registrations.append(registration)
 
         for registration in registrations:
@@ -294,7 +294,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(InstitutionRegistrationsRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
@@ -369,7 +369,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for id_ in ids:
             node = Node.load(id_)
             if not node.has_permission(user, osf_permissions.WRITE):
-                raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(id_))
+                raise exceptions.PermissionDenied(detail=f'Write permission on node {id_} required')
             nodes.append(node)
 
         for node in nodes:
@@ -378,7 +378,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(InstitutionNodesRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret

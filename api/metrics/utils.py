@@ -104,7 +104,7 @@ def parse_date_range(query_params, is_monthly=False):
             if m:
                 days_back = m.group(1)
             else:
-                raise Exception('Unsupported timeframe format: "{}"'.format(timeframe))
+                raise Exception(f'Unsupported timeframe format: "{timeframe}"')
             report_date_range = {'gte': f'now/d-{days_back}d'}
     elif query_params.get('timeframeStart'):
         tsStart = query_params.get('timeframeStart')

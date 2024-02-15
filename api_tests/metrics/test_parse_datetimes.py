@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from datetime import datetime
 from django.utils import timezone
@@ -58,7 +58,7 @@ class TestParseDatetimes:
     def test_time_used_for_specifc_date_fails(self, mock_timezone, start_date, end_date):
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
-            parse_datetimes({'on_date': '{}T01:01:01'.format(start_date)})
+            parse_datetimes({'on_date': f'{start_date}T01:01:01'})
             assert False
         except ValidationError:
             assert True
@@ -78,7 +78,7 @@ class TestParseDatetimes:
         try:
             parse_datetimes({
                 'end_datetime': end_date,
-                'start_datetime': '{}T01:01:01'.format(start_date),
+                'start_datetime': f'{start_date}T01:01:01',
             })
             assert False
         except ValidationError:

@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import furl
 import pytz
@@ -118,16 +118,16 @@ class WikiCRUDTestCase:
 
     @pytest.fixture()
     def url_wiki_public(self, wiki_public):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_public._id)
+        return f'/{API_BASE}wikis/{wiki_public._id}/'
 
     @pytest.fixture()
     def url_wiki_home(self, project_public):
         wiki_home = project_public.wikis.get(page_name='home')
-        return '/{}wikis/{}/'.format(API_BASE, wiki_home._id)
+        return f'/{API_BASE}wikis/{wiki_home._id}/'
 
     @pytest.fixture()
     def url_wiki_private(self, wiki_private):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_private._id)
+        return f'/{API_BASE}wikis/{wiki_private._id}/'
 
     @pytest.fixture()
     def url_wiki_publicly_editable(self, wiki_publicly_editable):
@@ -136,11 +136,11 @@ class WikiCRUDTestCase:
 
     @pytest.fixture()
     def url_registration_wiki_public(self, wiki_registration_public):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_registration_public._id)
+        return f'/{API_BASE}wikis/{wiki_registration_public._id}/'
 
     @pytest.fixture()
     def url_registration_wiki_private(self, wiki_registration_private):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_registration_private._id)
+        return f'/{API_BASE}wikis/{wiki_registration_private._id}/'
 
 
 class TestWikiDetailView(ApiWikiTestCase):
@@ -152,7 +152,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         with mock.patch('osf.models.AbstractNode.update_search'):
             self.public_wiki_page = WikiFactory(node=self.public_project, user=self.user)
             self.public_wiki = WikiVersionFactory(wiki_page=self.public_wiki_page, user=self.user)
-        self.public_url = '/{}wikis/{}/'.format(API_BASE, self.public_wiki_page._id)
+        self.public_url = f'/{API_BASE}wikis/{self.public_wiki_page._id}/'
         return self.public_wiki_page
 
     def _set_up_private_project_with_wiki_page(self):
@@ -317,7 +317,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['user']['links']['related']['href']
-        expected_url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        expected_url = f'/{API_BASE}users/{self.user._id}/'
         assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 
@@ -325,7 +325,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['node']['links']['related']['href']
-        expected_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        expected_url = f'/{API_BASE}nodes/{self.public_project._id}/'
         assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 

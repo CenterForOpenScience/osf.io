@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 from future.moves.urllib.parse import quote
 import uuid
@@ -181,7 +180,7 @@ def serialize_wiki_settings(user, nodes):
     items = []
 
     for node in nodes:
-        assert node, '{} is not a valid Node.'.format(node._id)
+        assert node, f'{node._id} is not a valid Node.'
 
         can_read = node.has_permission(user, READ)
         is_admin = node.has_permission(user, ADMIN)

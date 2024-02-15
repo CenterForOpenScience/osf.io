@@ -3,7 +3,7 @@
 import datetime
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
 from django.db import DataError
@@ -30,7 +30,7 @@ from osf.utils import permissions
 @pytest.mark.enable_bookmark_creation
 class RegistrationRetractionModelsTestCase(OsfTestCase):
     def setUp(self):
-        super(RegistrationRetractionModelsTestCase, self).setUp()
+        super().setUp()
 
         self.user = UserFactory()
         self.registration = RegistrationFactory(creator=self.user, is_public=True)
@@ -404,7 +404,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
     def setUp(self):
-        super(RegistrationWithChildNodesRetractionModelTestCase, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.auth = self.user.auth
@@ -565,7 +565,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class RegistrationRetractionShareHook(OsfTestCase):
     def setUp(self):
-        super(RegistrationRetractionShareHook, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.auth = self.user.auth
@@ -605,7 +605,7 @@ class RegistrationRetractionShareHook(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
-        super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(is_public=True, creator=self.user)
@@ -717,7 +717,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
-        super(ComponentRegistrationRetractionViewsTestCase, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
         self.project = ProjectFactory(is_public=True, creator=self.user)
@@ -771,7 +771,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
-        super(RegistrationRetractionViewsTestCase, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(creator=self.user, is_public=True)

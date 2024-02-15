@@ -2,7 +2,7 @@
 Tests related to authenticating API requests
 """
 
-import mock
+from unittest import mock
 
 import pytest
 from nose.tools import *  # noqa:
@@ -26,7 +26,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
     TOTP_SECRET = 'b8f85986068f8079aa9d'
 
     def setUp(self):
-        super(TestBasicAuthenticationValidation, self).setUp()
+        super().setUp()
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
@@ -138,7 +138,7 @@ class TestOAuthValidation(ApiTestCase):
     """Test that APIv2 requests can validate and respond to OAuth2 bearer tokens"""
 
     def setUp(self):
-        super(TestOAuthValidation, self).setUp()
+        super().setUp()
         self.user1 = UserFactory()
         self.user2 = UserFactory()
 
@@ -235,7 +235,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         but are not intended to be an exhaustive list of how all views respond to all scopes."""
 
     def setUp(self):
-        super(TestOAuthScopedAccess, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user2 = UserFactory()  # Todo move inside tests that need this
         self.project = ProjectFactory(creator=self.user)
@@ -270,7 +270,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             'data': {
                 'type': 'users',
                 'id': self.user._id,
-                'attributes': {u'suffix': u'VIII'}
+                'attributes': {'suffix': 'VIII'}
             }
         }
 
@@ -307,7 +307,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             'data': {
                 'type': 'users',
                 'id': self.user._id,
-                'attributes': {u'suffix': u'VIII'}
+                'attributes': {'suffix': 'VIII'}
             }
         }
 
@@ -328,7 +328,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             ['osf.nodes.full_write']
         )
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        payload = {u'suffix': u'VIII'}
+        payload = {'suffix': 'VIII'}
 
         res = self.app.get(
             url, params=payload,
@@ -343,7 +343,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         project = ProjectFactory(creator=self.user)
         mock_user_info.return_value = self._scoped_response(['osf.full_read'])
         url = api_v2_url(
-            'guids/{}/'.format(project._id),
+            f'guids/{project._id}/',
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
@@ -364,7 +364,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         project = ProjectFactory(creator=self.user)
         mock_user_info.return_value = self._scoped_response(['osf.full_write'])
         url = api_v2_url(
-            'guids/{}/'.format(project._id),
+            f'guids/{project._id}/',
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
@@ -385,7 +385,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         project = ProjectFactory()
         mock_user_info.return_value = self._scoped_response(['osf.full_read'])
         url = api_v2_url(
-            'guids/{}/'.format(project._id),
+            f'guids/{project._id}/',
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
@@ -407,7 +407,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         project = ProjectFactory()
         mock_user_info.return_value = self._scoped_response(['osf.full_write'])
         url = api_v2_url(
-            'guids/{}/'.format(project._id),
+            f'guids/{project._id}/',
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
@@ -452,7 +452,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             ['osf.users.profile_read', 'osf.users.email_read']
         )
         url = api_v2_url(
-            'users/{}/'.format(self.user2._id),
+            f'users/{self.user2._id}/',
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
@@ -470,7 +470,7 @@ class TestCSRFValidation:
 
     @pytest.fixture
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture
     def csrf_token(self):

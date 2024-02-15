@@ -3,7 +3,7 @@ import datetime as dt
 
 
 import pytest
-import mock
+from unittest import mock
 from django.utils import timezone
 from waffle.testutils import override_switch
 

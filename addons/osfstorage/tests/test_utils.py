@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 import pytest
 from nose.tools import *  # noqa
 from importlib import import_module
@@ -18,7 +17,7 @@ SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 class TestSerializeRevision(StorageTestCase):
 
     def setUp(self):
-        super(TestSerializeRevision, self).setUp()
+        super().setUp()
         self.path = 'kind-of-magic.webm'
         self.record = self.node_settings.get_root().append_file(self.path)
         self.versions = [

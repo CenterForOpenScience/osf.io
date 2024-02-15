@@ -165,7 +165,7 @@ class OSFBasicAuthentication(BasicAuthentication):
         :return: a tuple of the user and error messages
         """
 
-        user_auth_tuple = super(OSFBasicAuthentication, self).authenticate(request)
+        user_auth_tuple = super().authenticate(request)
         if user_auth_tuple is not None:
             self.authenticate_twofactor_credentials(user_auth_tuple[0], request)
         return user_auth_tuple
@@ -217,7 +217,7 @@ class OSFBasicAuthentication(BasicAuthentication):
         """
         Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
         """
-        return 'Documentation realm="{}"'.format(self.www_authenticate_realm)
+        return f'Documentation realm="{self.www_authenticate_realm}"'
 
 
 class OSFCASAuthentication(authentication.BaseAuthentication):

@@ -67,7 +67,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         self.link_type = 'related'
         self.always_embed = kwargs.pop('always_embed', False)
 
-        super(CheckoutField, self).__init__('users:user-detail', **kwargs)
+        super().__init__('users:user-detail', **kwargs)
 
     def resolve(self, resource, field_name, request):
         """
@@ -134,7 +134,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
     def to_representation(self, value):
 
-        url = super(CheckoutField, self).to_representation(value)
+        url = super().to_representation(value)
 
         rel_meta = None
         if value and hasattr(value, '_id'):
@@ -158,7 +158,7 @@ class FileNodeRelationshipField(RelationshipField):
     def to_representation(self, value):
         if not isinstance(value.target, AbstractNode):
             raise SkipField
-        return super(FileNodeRelationshipField, self).to_representation(value)
+        return super().to_representation(value)
 
 
 def disambiguate_files_related_view(node):
@@ -361,7 +361,7 @@ class BaseFileSerializer(JSONAPISerializer):
         return file
 
     def is_valid(self, **kwargs):
-        return super(BaseFileSerializer, self).is_valid(clean_html=False, **kwargs)
+        return super().is_valid(clean_html=False, **kwargs)
 
     def get_file_guid(self, obj):
         if obj:
@@ -371,7 +371,7 @@ class BaseFileSerializer(JSONAPISerializer):
         return None
 
     def get_absolute_url(self, obj):
-        return api_v2_url('files/{}/'.format(obj._id))
+        return api_v2_url(f'files/{obj._id}/')
 
 
 class FileSerializer(BaseFileSerializer):

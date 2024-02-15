@@ -16,10 +16,10 @@ from website import settings
 
 class TestPreprintProvidersList(ApiTestCase):
     def setUp(self):
-        super(TestPreprintProvidersList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
-        self.url = '/{}preprints/{}/files/'.format(API_BASE, self.preprint._id)
+        self.url = f'/{API_BASE}preprints/{self.preprint._id}/files/'
         self.user_two = AuthUserFactory()
 
     def test_published_preprint_files(self):
@@ -182,17 +182,17 @@ class TestPreprintProvidersList(ApiTestCase):
 
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(
-            '{}osfstorage/{}'.format(self.url, self.preprint.primary_file._id), auth=self.user.auth, expect_errors=True)
+            f'{self.url}osfstorage/{self.preprint.primary_file._id}', auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_returns_osfstorage_folder_version_two(self):
         res = self.app.get(
-            '{}osfstorage/'.format(self.url), auth=self.user.auth)
+            f'{self.url}osfstorage/', auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
         res = self.app.get(
-            '{}osfstorage/?version=2.2'.format(self.url), auth=self.user.auth)
+            f'{self.url}osfstorage/?version=2.2', auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_osfstorage_folder_data_not_found(self):
@@ -200,16 +200,16 @@ class TestPreprintProvidersList(ApiTestCase):
         fobj.save()
 
         res = self.app.get(
-            '{}osfstorage/{}'.format(self.url, fobj._id), auth=self.user.auth, expect_errors=True)
+            f'{self.url}osfstorage/{fobj._id}', auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
 
 class TestPreprintFilesList(ApiTestCase):
     def setUp(self):
-        super(TestPreprintFilesList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
-        self.url = '/{}preprints/{}/files/osfstorage/'.format(API_BASE, self.preprint._id)
+        self.url = f'/{API_BASE}preprints/{self.preprint._id}/files/osfstorage/'
         self.user_two = AuthUserFactory()
 
     def test_published_preprint_files(self):
@@ -340,9 +340,9 @@ class TestPreprintFilesList(ApiTestCase):
         second_file = OsfStorageFile.create(
             target_object_id=self.preprint.id,
             target_content_type=ContentType.objects.get_for_model(self.preprint),
-            path='/{}'.format(filename),
+            path=f'/{filename}',
             name=filename,
-            materialized_path='/{}'.format(filename))
+            materialized_path=f'/{filename}')
 
         second_file.save()
         from addons.osfstorage import settings as osfstorage_settings
@@ -364,7 +364,7 @@ class TestPreprintFilesList(ApiTestCase):
 
         data = res.json['data']
         assert len(data) == 2
-        assert set([item['id'] for item in data]) == {second_file._id, self.preprint.primary_file._id}
+        assert {item['id'] for item in data} == {second_file._id, self.preprint.primary_file._id}
 
     def test_nested_file_as_primary_file_is_returned(self):
         # Primary file can be any file nested somewhere under the preprint's root folder.
@@ -385,10 +385,10 @@ class TestPreprintFilesList(ApiTestCase):
         data = res.json['data'][0]
         assert data['id'] == subfolder._id
         assert data['attributes']['kind'] == 'folder'
-        assert data['attributes']['path'] == '/{}/'.format(subfolder._id)
-        assert data['attributes']['materialized_path'] == '/{}/'.format(subfolder.name)
+        assert data['attributes']['path'] == f'/{subfolder._id}/'
+        assert data['attributes']['materialized_path'] == f'/{subfolder.name}/'
 
     def test_cannot_access_other_addons(self):
-        url = '/{}preprints/{}/files/github/'.format(API_BASE, self.preprint._id)
+        url = f'/{API_BASE}preprints/{self.preprint._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 404

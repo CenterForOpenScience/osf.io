@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
-import mock
+from unittest import mock
 from nose.tools import *  # noqa: F403
 
 from tests.base import OsfTestCase
@@ -16,7 +15,7 @@ class TestRubeus(OsfTestCase):
 
     def setUp(self):
 
-        super(TestRubeus, self).setUp()
+        super().setUp()
 
         self.project = ProjectFactory.create()
         self.consolidated_auth = Auth(user=self.project.creator)
@@ -46,7 +45,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {0}'.format(
+            'name': 'Amazon S3: {}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
@@ -141,7 +140,7 @@ class TestRubeus(OsfTestCase):
             private_key=private_link.key
         )
 
-        assert result['name'] == 'Amazon S3: {0}'.format(
+        assert result['name'] == 'Amazon S3: {}'.format(
             self.node_settings.bucket
         )
 
@@ -154,7 +153,7 @@ class TestRubeus(OsfTestCase):
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {0}'.format(
+            'name': 'Amazon S3: {}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
@@ -191,7 +190,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {0}'.format(
+            'name': 'Amazon S3: {}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
@@ -309,7 +308,7 @@ mock_addon.config.get_hgrid_data.return_value = [serialized]
 class TestSerializingNodeWithAddon(OsfTestCase):
 
     def setUp(self):
-        super(TestSerializingNodeWithAddon, self).setUp()
+        super().setUp()
         self.auth = AuthFactory()
         self.project = ProjectFactory(creator=self.auth.user)
         self.project.get_addons = mock.Mock()

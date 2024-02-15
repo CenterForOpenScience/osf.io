@@ -241,7 +241,7 @@ the preprint, person, and identifier, plus another node representing the
 """
 
 
-class GraphNode(object):
+class GraphNode:
     """Utility class for building a JSON-LD graph suitable for pushing to SHARE
 
     WARNING: In this context, "graph node" does NOT have anything to do with
@@ -275,7 +275,7 @@ class GraphNode(object):
         return {'@id': self.id, '@type': self.type}
 
     def __init__(self, type_, **attrs):
-        self.id = '_:{}'.format(uuid.uuid4())
+        self.id = f'_:{uuid.uuid4()}'
         self.type = type_.lower()
         self.attrs = attrs
 
@@ -284,8 +284,7 @@ class GraphNode(object):
             if isinstance(value, GraphNode):
                 yield value
             elif isinstance(value, list):
-                for val in value:
-                    yield val
+                yield from value
 
     def serialize(self):
         ser = {}

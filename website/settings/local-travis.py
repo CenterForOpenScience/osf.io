@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''Example settings/local.py file.
 These settings override what's in website/settings/defaults.py
 

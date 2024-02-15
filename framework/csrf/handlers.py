@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.conf import settings as api_settings
 from django.middleware.csrf import _get_new_csrf_token, _sanitize_token
 from framework.auth.core import get_current_user_id

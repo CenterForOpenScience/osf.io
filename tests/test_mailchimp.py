@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 from hashlib import md5
-import mock
+from unittest import mock
 import pytest
 from mailchimp3.mailchimpclient import MailChimpError
 from nose.tools import *  # noqa; PEP8 asserts
@@ -16,7 +15,7 @@ from website.settings import MAILCHIMP_GENERAL_LIST, MAILCHIMP_LIST_MAP
 class TestMailChimpHelpers(OsfTestCase):
 
     def setUp(self, *args, **kwargs):
-        super(TestMailChimpHelpers, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
         with self.context:
             handlers.celery_before_request()
 

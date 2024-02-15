@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import division
-
 import copy
 import functools
 import logging
@@ -9,8 +5,6 @@ import math
 import re
 import unicodedata
 from framework import sentry
-
-import six
 
 from django.apps import apps
 from django.core.paginator import Paginator
@@ -126,7 +120,7 @@ def requires_search(func):
                     raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
-                if type(e.error) == dict:  # ES 2.0
+                if isinstance(e.error, dict):  # ES 2.0
                     try:
                         root_cause = e.error['root_cause'][0]
                         if root_cause['type'] == 'query_parsing_exception':
@@ -395,7 +389,7 @@ def serialize_node(node, category):
     parent_id = node.parent_id
 
     try:
-        normalized_title = six.u(node.title)
+        normalized_title = node.title
     except TypeError:
         normalized_title = node.title
     normalized_title = unicodedata.normalize('NFKD', normalized_title)
@@ -448,7 +442,7 @@ def serialize_node(node, category):
 
 def serialize_preprint(preprint, category):
     try:
-        normalized_title = six.u(preprint.title)
+        normalized_title = preprint.title
     except TypeError:
         normalized_title = preprint.title
     normalized_title = unicodedata.normalize('NFKD', normalized_title)
@@ -481,7 +475,7 @@ def serialize_preprint(preprint, category):
 
 def serialize_group(group, category):
     try:
-        normalized_title = six.u(group.name)
+        normalized_title = group.name
     except TypeError:
         normalized_title = group.name
     normalized_title = unicodedata.normalize('NFKD', normalized_title)
@@ -705,7 +699,7 @@ def update_user(user, index=None):
     for key, val in names.items():
         if val is not None:
             try:
-                val = six.u(val)
+                val = val
             except TypeError:
                 pass  # This is fine, will only happen in 2.x if val is already unicode
             normalized_names[key] = unicodedata.normalize('NFKD', val)
@@ -752,14 +746,14 @@ def update_file(file_, index=None, delete=False):
         path=file_.path,
     )
     if getattr(target, 'is_quickfiles', None):
-        node_url = '/{user_id}/quickfiles/'.format(user_id=target.creator._id)
+        node_url = f'/{target.creator._id}/quickfiles/'
     else:
-        node_url = '/{target_id}/'.format(target_id=target._id)
+        node_url = f'/{target._id}/'
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
     if file_guid:
-        guid_url = '/{file_guid}/'.format(file_guid=file_guid._id)
+        guid_url = f'/{file_guid._id}/'
     # File URL's not provided for preprint files, because the File Detail Page will
     # just reroute to preprints detail
     file_doc = {
@@ -795,7 +789,7 @@ def update_institution(institution, index=None):
     else:
         institution_doc = {
             'id': id_,
-            'url': '/institutions/{}/'.format(institution._id),
+            'url': f'/institutions/{institution._id}/',
             'logo_path': institution.logo_path,
             'category': 'institution',
             'name': institution.name,
@@ -964,15 +958,15 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     normalized_items = []
     for item in items:
         try:
-            normalized_item = six.u(item)
+            normalized_item = item
         except TypeError:
             normalized_item = item
         normalized_item = unicodedata.normalize('NFKD', normalized_item)
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = '  AND '.join('{}*~'.format(re.escape(item)) for item in items) + \
-            ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
+    query = '  AND '.join(f'{re.escape(item)}*~' for item in items) + \
+            ''.join(f' NOT id:"{excluded._id}"' for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']
@@ -992,7 +986,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             n_projects_in_common = 0
 
         if user is None:
-            logger.error('Could not load user {0}'.format(doc['id']))
+            logger.error('Could not load user {}'.format(doc['id']))
             continue
         if user.is_active:  # exclude merged, unregistered, etc.
             current_employment = None

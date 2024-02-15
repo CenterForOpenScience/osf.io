@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from api.base.settings.defaults import API_BASE
 from api.citations.utils import render_citation
 from django.utils import timezone
@@ -9,10 +8,10 @@ from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 
 
-class PreprintCitationsMixin(object):
+class PreprintCitationsMixin:
 
     def setUp(self):
-        super(PreprintCitationsMixin, self).setUp()
+        super().setUp()
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             creator=self.admin_contributor)
@@ -48,7 +47,7 @@ class PreprintCitationsMixin(object):
 class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintCitations, self).setUp()
+        super().setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/'.format(
             API_BASE, self.published_preprint._id)
         self.unpublished_preprint_url = '/{}preprints/{}/citation/'.format(
@@ -73,7 +72,7 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
 class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintCitationsPermissions, self).setUp()
+        super().setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/'.format(
             API_BASE, self.published_preprint._id)
         self.unpublished_preprint_url = '/{}preprints/{}/citation/'.format(
@@ -169,7 +168,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
 class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintCitationContent, self).setUp()
+        super().setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
             API_BASE, self.published_preprint._id)
         self.unpublished_preprint_url = '/{}preprints/{}/citation/apa/'.format(
@@ -196,7 +195,7 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
 class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintCitationsContentPermissions, self).setUp()
+        super().setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
             API_BASE, self.published_preprint._id)
         self.unpublished_preprint_url = '/{}preprints/{}/citation/apa/'.format(
@@ -292,7 +291,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
 class TestPreprintCitationContentMLA(ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintCitationContentMLA, self).setUp()
+        super().setUp()
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             creator=self.admin_contributor)
@@ -325,7 +324,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {} Web.'.format(
+        assert_equal(citation, 'McGee, Grapes C. B. “{}.” {}, {} Web.'.format(
             self.published_preprint.title,
             self.published_preprint.provider.name,
             'n.d.')
@@ -401,7 +400,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
 class TestPreprintCitationContentAPA(ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintCitationContentAPA, self).setUp()
+        super().setUp()
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             title='A Study of Coffee',
@@ -439,7 +438,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         assert_equal(citation,
-            u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
+            'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
                 'n.d.',
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi
@@ -452,7 +451,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation,
-            u'McGee, G. C. B. ({}). {}. {}'.format(
+            'McGee, G. C. B. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi
@@ -467,7 +466,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation,
-            u'McGee, G. C. B., Junior. ({}). {}. {}'.format(
+            'McGee, G. C. B., Junior. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi
@@ -483,7 +482,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation,
-            u'McGee, G. ({}). {}. {}'.format(
+            'McGee, G. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi
@@ -498,7 +497,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation,
-            u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
+            'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi
@@ -514,7 +513,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, & Schematics, L. R. ({}). {}. {}'.format(
+        assert_equal(citation, 'McGee, G. C. B., Jenkins, D. T. T., Junior, & Schematics, L. R. ({}). {}. {}'.format(
             date,
             'This Title Ends in a Period',
             'https://doi.org/' + self.published_preprint.article_doi)
@@ -526,7 +525,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         for i in range(1, 5):
             new_user = AuthUserFactory()
             new_user.given_name = 'James'
-            new_user.family_name = 'Taylor{}'.format(i)
+            new_user.family_name = f'Taylor{i}'
             new_user.save()
             self.published_preprint.add_contributor(new_user)
         self.published_preprint.save()
@@ -536,7 +535,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation,
-            u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., & Taylor4, J. ({}). {}. {}'.format(
+            'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., & Taylor4, J. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi
@@ -549,7 +548,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         for i in range(1, 6):
             new_user = AuthUserFactory()
             new_user.given_name = 'James'
-            new_user.family_name = 'Taylor{}'.format(i)
+            new_user.family_name = f'Taylor{i}'
             new_user.save()
             self.published_preprint.add_contributor(new_user)
         self.published_preprint.save()
@@ -559,7 +558,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation,
-            u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
+            'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi
@@ -570,7 +569,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
 class TestPreprintCitationContentChicago(ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintCitationContentChicago, self).setUp()
+        super().setUp()
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             title='A Study of Coffee',
@@ -604,7 +603,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         assert_equal(citation,
-            u'McGee, Grapes C. B. {} “{}.” {}. {}.'.format(
+            'McGee, Grapes C. B. {} “{}.” {}. {}.'.format(
                 'n.d.',
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -618,7 +617,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
         assert_equal(citation,
-            u'McGee, Grapes C. B. {}. “{}.” {}. {}. {}.'.format(
+            'McGee, Grapes C. B. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -635,7 +634,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
         assert_equal(citation,
-            u'McGee, Grapes C. B., Junior. {}. “{}.” {}. {}. {}.'.format(
+            'McGee, Grapes C. B., Junior. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -653,7 +652,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
         assert_equal(citation,
-            u'McGee, Grapes. {}. “{}.” {}. {}. {}.'.format(
+            'McGee, Grapes. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -670,7 +669,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
         assert_equal(citation,
-            u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. {}. “{}.” {}. {}. {}.'.format(
+            'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
@@ -688,7 +687,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
-        assert_equal(citation, u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, and Lilith R. Schematics. {}. “{}.” {}. {}. {}.'.format(
+        assert_equal(citation, 'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, and Lilith R. Schematics. {}. “{}.” {}. {}. {}.'.format(
             date.strftime('%Y'),
             'This Preprint Ends in a Period',
             self.published_preprint.provider.name,
@@ -702,7 +701,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         for i in range(1, 9):
             new_user = AuthUserFactory()
             new_user.given_name = 'James'
-            new_user.family_name = 'Taylor{}'.format(i)
+            new_user.family_name = f'Taylor{i}'
             new_user.save()
             self.published_preprint.add_contributor(new_user)
         self.published_preprint.save()
@@ -711,7 +710,7 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
         assert_equal(citation,
-            u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, Lilith R. Schematics, James Taylor1, James Taylor2, James Taylor3, James Taylor4, et al. {}. “{}.” {}. {}. {}.'.format(
+            'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, Lilith R. Schematics, James Taylor1, James Taylor2, James Taylor3, James Taylor4, et al. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,

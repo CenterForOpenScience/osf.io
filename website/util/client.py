@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import itertools
 
@@ -9,7 +7,7 @@ import requests
 from framework.exceptions import HTTPError
 
 
-class BaseClient(object):
+class BaseClient:
 
     @property
     def _auth(self):

@@ -72,7 +72,7 @@ def get_default_mailing_lists():
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
-    'initials': lambda user: u'{surname}, {initial}.'.format(
+    'initials': lambda user: '{surname}, {initial}.'.format(
         surname=user.family_name,
         initial=user.given_name_initial,
     ),
@@ -154,19 +154,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': u'http://orcid.org/{}',
-        'github': u'http://github.com/{}',
-        'scholar': u'http://scholar.google.com/citations?user={}',
-        'twitter': u'http://twitter.com/{}',
+        'orcid': 'http://orcid.org/{}',
+        'github': 'http://github.com/{}',
+        'scholar': 'http://scholar.google.com/citations?user={}',
+        'twitter': 'http://twitter.com/{}',
         'profileWebsites': [],
-        'linkedIn': u'https://www.linkedin.com/{}',
-        'impactStory': u'https://impactstory.org/u/{}',
-        'researcherId': u'http://researcherid.com/rid/{}',
-        'researchGate': u'https://researchgate.net/profile/{}',
-        'academiaInstitution': u'https://{}',
-        'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
-        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
+        'linkedIn': 'https://www.linkedin.com/{}',
+        'impactStory': 'https://impactstory.org/u/{}',
+        'researcherId': 'http://researcherid.com/rid/{}',
+        'researchGate': 'https://researchgate.net/profile/{}',
+        'academiaInstitution': 'https://{}',
+        'academiaProfileID': '.academia.edu/{}',
+        'baiduScholar': 'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
     }
 
     SPAM_USER_PROFILE_FIELDS = {
@@ -407,16 +407,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     is_staff = models.BooleanField(default=False)
 
     def __repr__(self):
-        return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
+        return f'<OSFUser({self.username!r}) with guid {self._id!r}>'
 
     @property
     def deep_url(self):
         """Used for GUID resolution."""
-        return '/profile/{}/'.format(self._primary_key)
+        return f'/profile/{self._primary_key}/'
 
     @property
     def url(self):
-        return '/{}/'.format(self._id)
+        return f'/{self._id}/'
 
     @property
     def absolute_url(self):
@@ -425,15 +425,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def absolute_api_v2_url(self):
         from website import util
-        return util.api_v2_url('users/{}/'.format(self._id))
+        return util.api_v2_url(f'users/{self._id}/')
 
     @property
     def api_url(self):
-        return '/api/v1/profile/{}/'.format(self._id)
+        return f'/api/v1/profile/{self._id}/'
 
     @property
     def profile_url(self):
-        return '/{}/'.format(self._id)
+        return f'/{self._id}/'
 
     @property
     def is_disabled(self):
@@ -692,7 +692,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return all((addon.can_be_merged for addon in self.get_addons()))
+        return all(addon.can_be_merged for addon in self.get_addons())
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
@@ -1026,7 +1026,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
         dirty_fields = set(self.get_dirty_fields(check_relationship=True))
-        ret = super(OSFUser, self).save(*args, **kwargs)
+        ret = super().save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
@@ -1072,7 +1072,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         had_existing_password = bool(self.has_usable_password() and self.is_confirmed)
         if self.username == raw_password:
             raise ChangePasswordError(['Password cannot be the same as your email address'])
-        super(OSFUser, self).set_password(raw_password)
+        super().set_password(raw_password)
         if had_existing_password and notify:
             mails.send_mail(
                 to_addr=self.username,
@@ -1310,13 +1310,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     return new_token
                 if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
-                        raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
+                        raise ExpiredTokenError(f'Token for email "{email}" is expired')
                     else:
                         new_token = self.add_unconfirmed_email(email)
                         self.save()
                         return new_token
                 return token
-        raise KeyError('No confirmation token for email "{0}"'.format(email))
+        raise KeyError(f'No confirmation token for email "{email}"')
 
     def get_confirmation_url(self, email,
                              external=True,
@@ -1341,7 +1341,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
         destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
-        return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
+        return f'{base}confirm/{external}{self._primary_key}/{token}/{destination}'
 
     def register(self, username, password=None, accepted_terms_of_service=None):
         """Registers the user.
@@ -1628,18 +1628,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
+                    f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
                 )
 
         elif isinstance(claim_origin, OSFGroup):
             if not claim_origin.has_permission(referrer, MANAGE):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a member to {0}'.format(claim_origin._id)
+                    f'Referrer does not have permission to add a member to {claim_origin._id}'
                 )
         else:
             if not claim_origin.has_permission(referrer, ADMIN):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id)
+                    f'Referrer does not have permission to add a contributor to {claim_origin._id}'
                 )
 
         pid = str(claim_origin._id)
@@ -1673,8 +1673,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # reraise as ValueError
-            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
-                                .format(**locals()))
+            raise ValueError(f'No unclaimed record for user {self._id} on node {project_id}')
 
     def get_claim_url(self, project_id, external=False):
         """Return the URL that an unclaimed user should use to claim their
@@ -1690,8 +1689,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base_url = website_settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
-                    .format(**locals())
+        return f'{base_url}user/{uid}/{project_id}/claim/?token={token}'
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with the given ``institution``."""

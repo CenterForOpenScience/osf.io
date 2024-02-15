@@ -1,5 +1,5 @@
 import collections
-import mock
+from unittest import mock
 from babel import dates, Locale
 from schema import Schema, And, Use, Or
 from django.utils import timezone
@@ -32,7 +32,7 @@ from tests.base import OsfTestCase, NotificationTestCase
 class TestNotificationsModels(OsfTestCase):
 
     def setUp(self):
-        super(TestNotificationsModels, self).setUp()
+        super().setUp()
         # Create project with component
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -412,7 +412,7 @@ class TestNotificationsModels(OsfTestCase):
 class TestSubscriptionView(OsfTestCase):
 
     def setUp(self):
-        super(TestSubscriptionView, self).setUp()
+        super().setUp()
         self.node = factories.NodeFactory()
         self.user = self.node.creator
         self.registration = factories.RegistrationFactory(creator=self.user)
@@ -563,7 +563,7 @@ class TestRemoveContributor(OsfTestCase):
     def test_remove_contributor_signal_called_when_contributor_is_removed(self):
         with capture_signals() as mock_signals:
             self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
-        assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
+        assert_equal(mock_signals.signals_sent(), {contributor_removed})
 
 
 class TestRemoveNodeSignal(OsfTestCase):
@@ -585,7 +585,7 @@ class TestRemoveNodeSignal(OsfTestCase):
 
         assert_true(project.is_deleted)
         assert_true(component.is_deleted)
-        assert_equal(mock_signals.signals_sent(), set([node_deleted]))
+        assert_equal(mock_signals.signals_sent(), {node_deleted})
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
         assert_equal(s.count(), 0)
@@ -619,7 +619,7 @@ def has(data, sub_data):
     # :param sub_data: subset being checked for
     # :return: True or False
     try:
-        next((item for item in data if item == sub_data))
+        next(item for item in data if item == sub_data)
         return True
     except StopIteration:
         lists_and_dicts = list_or_dict(data)
@@ -641,12 +641,12 @@ def subscription_schema(project, structure, level=0):
 
     node_schema = {
         'node': {
-            'id': Use(type(project._id), error='node_id{}'.format(level)),
-            'title': Use(type(project.title), error='node_title{}'.format(level)),
-            'url': Use(type(project.url), error='node_{}'.format(level))
+            'id': Use(type(project._id), error=f'node_id{level}'),
+            'title': Use(type(project.title), error=f'node_title{level}'),
+            'url': Use(type(project.url), error=f'node_{level}')
         },
         'kind': And(str, Use(lambda s: s in ('node', 'folder'),
-                             error="kind didn't match node or folder {}".format(level))),
+                             error=f"kind didn't match node or folder {level}")),
         'nodeType': Use(lambda s: s in ('project', 'component'), error='nodeType not project or component'),
         'category': Use(lambda s: s in settings.NODE_CATEGORY_MAP, error='category not in settings.NODE_CATEGORY_MAP'),
         'permissions': {
@@ -662,12 +662,12 @@ def subscription_schema(project, structure, level=0):
 def event_schema(level=None):
     return {
         'event': {
-            'title': And(Use(str, error='event_title{} not a string'.format(level)),
+            'title': And(Use(str, error=f'event_title{level} not a string'),
                          Use(lambda s: s in constants.NOTIFICATION_TYPES,
-                             error='event_title{} not in list'.format(level))),
-            'description': And(Use(str, error='event_desc{} not a string'.format(level)),
+                             error=f'event_title{level} not in list')),
+            'description': And(Use(str, error=f'event_desc{level} not a string'),
                                Use(lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
-                                   error='event_desc{} not in list'.format(level))),
+                                   error=f'event_desc{level} not in list')),
             'notificationType': And(str, Or('adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)),
             'parent_notification_type': Or(None, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)
         },
@@ -679,7 +679,7 @@ def event_schema(level=None):
 class TestNotificationUtils(OsfTestCase):
 
     def setUp(self):
-        super(TestNotificationUtils, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory()
         self.project = factories.ProjectFactory(creator=self.user)
 
@@ -1167,7 +1167,7 @@ class TestNotificationsDict(OsfTestCase):
 
 class TestCompileSubscriptions(NotificationTestCase):
     def setUp(self):
-        super(TestCompileSubscriptions, self).setUp()
+        super().setUp()
         self.user_1 = factories.UserFactory()
         self.user_2 = factories.UserFactory()
         self.user_3 = factories.UserFactory()
@@ -1287,7 +1287,7 @@ class TestCompileSubscriptions(NotificationTestCase):
 
 class TestMoveSubscription(NotificationTestCase):
     def setUp(self):
-        super(TestMoveSubscription, self).setUp()
+        super().setUp()
         self.blank = {key: [] for key in constants.NOTIFICATION_TYPES}  # For use where it is blank.
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
@@ -1416,7 +1416,7 @@ class TestMoveSubscription(NotificationTestCase):
 
 class TestSendEmails(NotificationTestCase):
     def setUp(self):
-        super(TestSendEmails, self).setUp()
+        super().setUp()
         self.user = factories.AuthUserFactory()
         self.project = factories.ProjectFactory()
         self.project_subscription = factories.NotificationSubscriptionFactory(
@@ -1668,7 +1668,7 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = f'{formatted_time} on {formatted_date}'
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_timezone(self):
@@ -1680,7 +1680,7 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = f'{formatted_time} on {formatted_date}'
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_locale(self):
@@ -1692,7 +1692,7 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale('en')
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = f'{formatted_time} on {formatted_date}'
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_handles_unicode(self):
@@ -1704,13 +1704,13 @@ class TestSendEmails(NotificationTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = f'{formatted_time} on {formatted_date}'
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
 
 class TestSendDigest(OsfTestCase):
     def setUp(self):
-        super(TestSendDigest, self).setUp()
+        super().setUp()
         self.user_1 = factories.UserFactory()
         self.user_2 = factories.UserFactory()
         self.project = factories.ProjectFactory()
@@ -1745,19 +1745,19 @@ class TestSendDigest(OsfTestCase):
         user_groups = list(get_users_emails(send_type))
         expected = [
             {
-                u'user_id': self.user_1._id,
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [str(self.project._id)],
-                    u'_id': d._id
+                'user_id': self.user_1._id,
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': d._id
                 }]
             },
             {
-                u'user_id': self.user_2._id,
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [str(self.project._id)],
-                    u'_id': d2._id
+                'user_id': self.user_2._id,
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': d2._id
                 }]
             }
         ]
@@ -1797,19 +1797,19 @@ class TestSendDigest(OsfTestCase):
         user_groups = list(get_users_emails(send_type))
         expected = [
             {
-                u'user_id': str(self.user_1._id),
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [str(self.project._id)],
-                    u'_id': str(d._id)
+                'user_id': str(self.user_1._id),
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': str(d._id)
                 }]
             },
             {
-                u'user_id': str(self.user_2._id),
-                u'info': [{
-                    u'message': u'Hello',
-                    u'node_lineage': [str(self.project._id)],
-                    u'_id': str(d2._id)
+                'user_id': str(self.user_2._id),
+                'info': [{
+                    'message': 'Hello',
+                    'node_lineage': [str(self.project._id)],
+                    '_id': str(d2._id)
                 }]
             }
         ]
@@ -1883,7 +1883,7 @@ class TestSendDigest(OsfTestCase):
 
 class TestNotificationsReviews(OsfTestCase):
     def setUp(self):
-        super(TestNotificationsReviews, self).setUp()
+        super().setUp()
         self.provider = factories.PreprintProviderFactory(_id='engrxiv')
         self.preprint = factories.PreprintFactory(provider=self.provider)
         self.user = factories.UserFactory()
@@ -1931,7 +1931,7 @@ class TestNotificationsReviews(OsfTestCase):
         assert_true(mock_notify.called)
 
 
-class QuerySetMatcher(object):
+class QuerySetMatcher:
     def __init__(self, some_obj):
         self.some_obj = some_obj
 
@@ -1942,7 +1942,7 @@ class QuerySetMatcher(object):
 class TestNotificationsReviewsModerator(OsfTestCase):
 
     def setUp(self):
-        super(TestNotificationsReviewsModerator, self).setUp()
+        super().setUp()
         self.provider = factories.PreprintProviderFactory(_id='engrxiv')
         self.preprint = factories.PreprintFactory(provider=self.provider)
         self.submitter = factories.UserFactory()
@@ -2012,7 +2012,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_reviews_request_notification(self, mock_store):
         time_now = timezone.now()
-        self.context_info_request['message'] = u'has requested withdrawal of {} "{}".'.format(self.context_info_request['reviewable'].provider.preprint_word,
+        self.context_info_request['message'] = 'has requested withdrawal of {} "{}".'.format(self.context_info_request['reviewable'].provider.preprint_word,
                                                                                                  self.context_info_request['reviewable'].title)
         self.context_info_request['profile_image_url'] = get_profile_image_url(self.context_info_request['requester'])
         self.context_info_request['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,

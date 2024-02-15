@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import abc
 
 import pytest
@@ -6,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from nose.tools import assert_equal, assert_in, assert_raises
 
-import mock
+from unittest import mock
 
 from framework.auth import Auth
 
@@ -42,7 +41,7 @@ def test_throttled_autoban(mock_mail):
 class TestReportAbuse(DbTestCase):
 
     def setUp(self):
-        super(TestReportAbuse, self).setUp()
+        super().setUp()
         self.comment = CommentFactory()
         self.auth = Auth(user=self.comment.user)
 

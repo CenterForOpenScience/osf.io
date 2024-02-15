@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import re
 import pytest
@@ -60,7 +59,7 @@ class FakeSerializer(ser.Serializer):
     )
 
 
-class FakeRecord(object):
+class FakeRecord:
 
     def __init__(
             self,
@@ -96,7 +95,7 @@ class FakeListView(ListFilterMixin, generics.GenericAPIView):
 class TestFilterMixin(ApiTestCase):
 
     def setUp(self):
-        super(TestFilterMixin, self).setUp()
+        super().setUp()
         self.view = FakeListView()
 
     def test_parse_query_params_default_operators(self):
@@ -331,7 +330,7 @@ class TestFilterMixin(ApiTestCase):
 class TestListFilterMixin(ApiTestCase):
 
     def setUp(self):
-        super(TestListFilterMixin, self).setUp()
+        super().setUp()
         self.view = FakeListView()
 
     def test_get_filtered_queryset_for_list_field_converts_to_lowercase(self):
@@ -479,12 +478,12 @@ class TestOSFOrderingFilter(ApiTestCase):
     def get_node_sort_url(self, field, ascend=True):
         if not ascend:
             field = '-' + field
-        return '/{}nodes/?sort={}'.format(API_BASE, field)
+        return f'/{API_BASE}nodes/?sort={field}'
 
     def get_multi_field_sort_url(self, field, node_id, ascend=True):
         if not ascend:
             field = '-' + field
-        return '/{}nodes/{}/addons/?sort={}'.format(API_BASE, node_id, field)
+        return f'/{API_BASE}nodes/{node_id}/addons/?sort={field}'
 
     def test_sort_by_serializer_field(self):
         user = AuthUserFactory()
@@ -512,7 +511,7 @@ class TestOSFOrderingFilter(ApiTestCase):
 class TestQueryPatternRegex(TestCase):
 
     def setUp(self):
-        super(TestQueryPatternRegex, self).setUp()
+        super().setUp()
         self.filter_regex = FakeListView.QUERY_PATTERN
         self.filter_fields = FakeListView.FILTER_FIELDS
 

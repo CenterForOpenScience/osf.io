@@ -13,7 +13,7 @@ class MultiEmailField(forms.Field):
         return [r.strip().lower() for r in value.split(',')]
 
     def validate(self, value):
-        super(MultiEmailField, self).validate(value)
+        super().validate(value)
         for email in value:
             validate_email(email)
 

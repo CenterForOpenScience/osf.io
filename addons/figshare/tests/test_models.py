@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from nose.tools import assert_false, assert_equal
 import pytest
 import unittest
@@ -60,7 +60,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         self.node_settings.save()
         assert_equal(self.node_settings.folder_id, folder_id)
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_folder_selected')
 
     def test_serialize_settings(self):
         # Custom `expected`

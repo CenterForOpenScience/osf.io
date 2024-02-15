@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
 from boto.exception import S3ResponseError
-import mock
+from unittest import mock
 from nose.tools import (assert_equal, assert_equals,
     assert_true, assert_in, assert_false)
 import pytest
@@ -31,13 +30,13 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
         self.mock_exists = mock.patch('addons.s3.views.utils.bucket_exists')
         self.mock_exists.return_value = True
         self.mock_exists.start()
-        super(TestS3Views, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_can_list.stop()
         self.mock_uid.stop()
         self.mock_exists.stop()
-        super(TestS3Views, self).tearDown()
+        super().tearDown()
 
     def test_s3_settings_input_empty_keys(self):
         url = self.project.api_url_for('s3_add_user_account')
@@ -148,7 +147,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
     @mock.patch('addons.s3.models.get_bucket_names')
     def test_folder_list(self, mock_names):
         mock_names.return_value = ['bucket1', 'bucket2']
-        super(TestS3Views, self).test_folder_list()
+        super().test_folder_list()
 
     @mock.patch('addons.s3.models.bucket_exists')
     @mock.patch('addons.s3.models.get_bucket_location_or_error')
@@ -156,7 +155,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
         mock_exists.return_value = True
         mock_location.return_value = ''
         self.node_settings.set_auth(self.external_account, self.user)
-        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
         res = self.app.put_json(url, {
             'selected': self.folder
         }, auth=self.user.auth)
@@ -165,7 +164,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
         self.node_settings.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_bucket_linked'.format(self.ADDON_SHORT_NAME)
+            f'{self.ADDON_SHORT_NAME}_bucket_linked'
         )
         assert_equal(res.json['result']['folder']['name'], self.node_settings.folder_name)
 
@@ -174,7 +173,7 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
 
     def setUp(self):
 
-        super(TestCreateBucket, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -276,14 +275,14 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
         error.message = 'This should work'
         mock_make.side_effect = error
 
-        url = '/api/v1/project/{0}/s3/newbucket/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/s3/newbucket/'
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body.decode(), '{"message": "This should work", "title": "Problem connecting to S3"}')
 
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_bad_location_fails(self, mock_make):
-        url = '/api/v1/project/{0}/s3/newbucket/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/s3/newbucket/'
         ret = self.app.post_json(
             url,
             {

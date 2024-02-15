@@ -9,7 +9,7 @@ class GitLabSerializer(StorageAddonSerializer):
 
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
-        ret = super(GitLabSerializer, self).serialize_account(external_account)
+        ret = super().serialize_account(external_account)
         host = external_account.oauth_secret
         ret.update({
             'host': host,
@@ -31,7 +31,7 @@ class GitLabSerializer(StorageAddonSerializer):
     def serialized_folder(self, node_settings):
         return {
             'path': node_settings.repo,
-            'name': '{0} / {1}'.format(node_settings.user, node_settings.repo),
+            'name': f'{node_settings.user} / {node_settings.repo}',
         }
 
     @property

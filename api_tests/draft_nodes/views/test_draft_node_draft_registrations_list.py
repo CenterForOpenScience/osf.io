@@ -60,7 +60,7 @@ class TestDraftNodeDraftRegistrationsList:
     def test_draft_node_draft_registration_relationship(
             self, app, user, draft_registration, draft_node):
 
-        url = '/{}draft_nodes/{}/'.format(API_BASE, draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{draft_node._id}/'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Various node-related utilities."""
 from string import ascii_lowercase, digits
 
@@ -38,7 +37,7 @@ def get_keen_activity():
     node_visits = []
     for character in list(digits + ascii_lowercase):
         partial_node_pageviews = client.count(
-            event_collection='pageviews-{}'.format(character),
+            event_collection=f'pageviews-{character}',
             timeframe='this_7_days',
             group_by='node.id',
             filters=[
@@ -52,7 +51,7 @@ def get_keen_activity():
         node_pageviews += partial_node_pageviews
 
         partial_node_visits = client.count_unique(
-            event_collection='pageviews-{}'.format(character),
+            event_collection=f'pageviews-{character}',
             target_property='anon.id',
             timeframe='this_7_days',
             group_by='node.id',
@@ -115,9 +114,9 @@ def activity():
 def sizeof_fmt(num, suffix='B'):
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
         if abs(num) < 1000.0:
-            return '%3.1f%s%s' % (num, unit, suffix)
+            return '{:3.1f}{}{}'.format(num, unit, suffix)
         num /= 1000.0
-    return '%.1f%s%s' % (num, 'Y', suffix)
+    return '{:.1f}{}{}'.format(num, 'Y', suffix)
 
 
 def get_storage_limits_css(node):

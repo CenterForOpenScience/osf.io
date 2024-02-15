@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import pytz
 from furl import furl
 from datetime import datetime, timedelta

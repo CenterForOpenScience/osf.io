@@ -1,4 +1,3 @@
-
 """ Payload for creating a schema response """
 create_schema_response_payload = {
     '$schema': 'http://json-schema.org/draft-04/schema#',

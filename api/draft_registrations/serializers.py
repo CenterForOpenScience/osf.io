@@ -43,7 +43,7 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     DraftRegistrations have several fields that can be edited that are persisted to the final registration.
     """
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
-    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
+    category_choices_string = ', '.join([f"'{choice[0]}'" for choice in category_choices])
 
     title = ser.CharField(required=False, allow_blank=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -174,7 +174,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
         )
 
     def update(self, draft, validated_data):
-        draft = super(DraftRegistrationDetailSerializer, self).update(draft, validated_data)
+        draft = super().update(draft, validated_data)
         user = self.context['request'].user
         auth = get_user_auth(self.context['request'])
 

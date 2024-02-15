@@ -56,14 +56,14 @@ def action_files_by_name(root, source_item, item_name):
 
 
 def audit_files(source_directory):
-    logger.info('Running audit. Source: {}'.format(source_directory))
+    logger.info(f'Running audit. Source: {source_directory}')
 
     including = open('including.txt', 'w+')
     ignoring = open('ignoring.txt', 'w+')
     for root, directory, files in os.walk(source_directory):
         for item in files:
             project_id = get_project_id(root, source_directory)
-            name = '{}/{}'.format(root.split(source_directory)[-1], item)  # get file/folder name from just under source
+            name = f'{root.split(source_directory)[-1]}/{item}'  # get file/folder name from just under source
             if not check_id(project_id, item):
                 ignoring.writelines(name + '\r')
             else:
@@ -73,7 +73,7 @@ def audit_files(source_directory):
     including.close()
 
     projects = set(os.listdir(source_directory))
-    project_ids = set([get_item_id(folders) for folders in list(projects)])
+    project_ids = {get_item_id(folders) for folders in list(projects)}
 
     # check for duplicate ids
     assert_equal(len(projects), len(project_ids))
@@ -95,13 +95,13 @@ def main(files_dir, metadata_dir, id_list=None):
     :param id_list: an optional list of project ids to limit what gets processed
     :return:
     """
-    logger.info('Processing files. Source: {} Destination: {}'.format(files_dir, metadata_dir))
+    logger.info(f'Processing files. Source: {files_dir} Destination: {metadata_dir}')
 
     project_dirs = os.listdir(files_dir)
     if id_list:
         project_dirs = [project for project in project_dirs if get_item_id(project) in id_list]
 
-    logger.info('Processing directories: {}'.format(project_dirs))
+    logger.info(f'Processing directories: {project_dirs}')
 
     # Copy whole tree to preserve file hierarchy then
     for item in project_dirs:

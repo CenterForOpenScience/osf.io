@@ -1,4 +1,3 @@
-
 from django.conf.urls import re_path
 
 from api.regions import views

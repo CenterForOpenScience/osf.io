@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
-import mock
+from unittest import mock
 from future.moves.urllib.parse import urlparse, urljoin, quote
 from rest_framework import status as http_status
 
@@ -81,7 +80,7 @@ class TestAuthUtils(OsfTestCase):
         user.reload()
         token = user.get_confirmation_token(user.username)
 
-        res = self.app.get('/confirm/{}/{}'.format(user._id, token), allow_redirects=False)
+        res = self.app.get(f'/confirm/{user._id}/{token}', allow_redirects=False)
         res = res.follow()
 
         assert_equal(res.status_code, 302)
@@ -98,7 +97,7 @@ class TestAuthUtils(OsfTestCase):
 
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-        res = self.app.get('/confirm/{}/{}'.format(user._id, token))
+        res = self.app.get(f'/confirm/{user._id}/{token}')
 
         res = res.follow()
 
@@ -142,8 +141,8 @@ class TestAuthUtils(OsfTestCase):
 
         # the valid username will be double quoted as it is furl quoted in both get_login_url and get_logout_url in order
         username_quoted = quote(quote(user.username, safe='@'), safe='@')
-        assert_in('username={}'.format(username_quoted), resp.location)
-        assert_in('verification_key={}'.format(user.verification_key), resp.location)
+        assert_in(f'username={username_quoted}', resp.location)
+        assert_in(f'verification_key={user.verification_key}', resp.location)
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
@@ -275,7 +274,7 @@ class TestAuthObject(OsfTestCase):
 class TestPrivateLink(OsfTestCase):
 
     def setUp(self):
-        super(TestPrivateLink, self).setUp()
+        super().setUp()
         self.flaskapp = Flask('testing_private_links')
 
         @self.flaskapp.route('/project/<pid>/')
@@ -294,7 +293,7 @@ class TestPrivateLink(OsfTestCase):
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_has_private_link_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get('/project/{0}'.format(self.project._primary_key),
+        res = self.app.get(f'/project/{self.project._primary_key}',
             {'view_only': self.link.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
@@ -303,7 +302,7 @@ class TestPrivateLink(OsfTestCase):
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_does_not_have_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get('/project/{0}'.format(self.project._primary_key),
+        res = self.app.get(f'/project/{self.project._primary_key}',
             {'key': None})
         assert_is_redirect(res)
 
@@ -330,7 +329,7 @@ class AuthAppTestCase(OsfTestCase):
 class TestMustBeContributorDecorator(AuthAppTestCase):
 
     def setUp(self):
-        super(TestMustBeContributorDecorator, self).setUp()
+        super().setUp()
         self.contrib = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
         admin = UserFactory()
@@ -447,7 +446,7 @@ def view_that_needs_contributor_or_public(**kwargs):
 class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
 
     def setUp(self):
-        super(TestMustBeContributorOrPublicDecorator, self).setUp()
+        super().setUp()
         self.contrib = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
         self.public_project = ProjectFactory(is_public=True)
@@ -556,7 +555,7 @@ def view_that_needs_contributor_or_public_but_not_anonymized(**kwargs):
 
 class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
     def setUp(self):
-        super(TestMustBeContributorOrPublicButNotAnonymizedDecorator, self).setUp()
+        super().setUp()
         self.contrib = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
         admin = UserFactory()
@@ -674,7 +673,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_decorator_does_allow_anonymous_link_public_project(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get('/project/{0}'.format(self.public_project._primary_key),
+        res = self.app.get(f'/project/{self.public_project._primary_key}',
             {'view_only': self.anonymized_link_to_public_project.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
@@ -682,7 +681,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_decorator_does_not_allow_anonymous_link_private_project(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get('/project/{0}'.format(self.private_project._primary_key),
+        res = self.app.get(f'/project/{self.private_project._primary_key}',
                            {'view_only': self.anonymized_link_to_private_project.key})
         res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 500)
@@ -753,7 +752,7 @@ def needs_addon_view(**kwargs):
 class TestMustHaveAddonDecorator(AuthAppTestCase):
 
     def setUp(self):
-        super(TestMustHaveAddonDecorator, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
@@ -792,7 +791,7 @@ class TestMustHaveAddonDecorator(AuthAppTestCase):
 class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
 
     def setUp(self):
-        super(TestMustBeAddonAuthorizerDecorator, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
         self.decorated = must_be_addon_authorizer('github')(needs_addon_view)
 

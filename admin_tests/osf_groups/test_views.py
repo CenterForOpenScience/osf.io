@@ -13,7 +13,7 @@ from osf_tests.factories import UserFactory, OSFGroupFactory
 class TestOSFGroupsListView(AdminTestCase):
 
     def setUp(self):
-        super(TestOSFGroupsListView, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.group = OSFGroupFactory(name='Brian Dawkins', creator=self.user)
         self.group2 = OSFGroupFactory(name='Brian Westbrook', creator=self.user)
@@ -47,7 +47,7 @@ class TestOSFGroupsListView(AdminTestCase):
 class TestOSFGroupsFormView(AdminTestCase):
 
     def setUp(self):
-        super(TestOSFGroupsFormView, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.group = OSFGroupFactory(name='Brian Dawkins', creator=self.user)
         self.group2 = OSFGroupFactory(name='Brian Westbrook', creator=self.user)
@@ -58,7 +58,7 @@ class TestOSFGroupsFormView(AdminTestCase):
         view = setup_log_view(self.view, request)
 
         redirect = view.post(request)
-        assert redirect.url == '/osf_groups/{}/'.format(self.group._id)
+        assert redirect.url == f'/osf_groups/{self.group._id}/'
 
     def test_post_name(self):
         request = RequestFactory().post('/fake_path', data={'id': '', 'name': 'Brian'})

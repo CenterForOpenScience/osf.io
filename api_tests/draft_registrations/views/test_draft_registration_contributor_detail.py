@@ -122,7 +122,7 @@ class TestDraftContributorOrdering(TestNodeContributorOrdering):
     @pytest.fixture()
     def url_contrib_base(self, project):
         # Overrides TestNodeContributorOrdering
-        return '/{}draft_registrations/{}/contributors/'.format(API_BASE, project._id)
+        return f'/{API_BASE}draft_registrations/{project._id}/contributors/'
 
     @pytest.fixture()
     def url_creator(self, user, project):
@@ -213,7 +213,7 @@ class TestDraftRegistrationContributorPartialUpdate(TestNodeContributorPartialUp
             save=True)
         url_read_contrib = '/{}draft_registrations/{}/contributors/{}/'.format(
             API_BASE, project._id, user_read_contrib._id)
-        contributor_id = '{}-{}'.format(project._id, user_read_contrib._id)
+        contributor_id = f'{project._id}-{user_read_contrib._id}'
         data = {
             'data': {
                 'id': contributor_id,

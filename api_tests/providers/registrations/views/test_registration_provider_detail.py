@@ -13,7 +13,7 @@ class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
 
     @pytest.fixture()
     def fake_url(self):
-        return '/{}providers/registrations/fake/'.format(API_BASE)
+        return f'/{API_BASE}providers/registrations/fake/'
 
     @pytest.fixture()
     def provider_url(self, provider):
@@ -27,11 +27,11 @@ class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
 
     @pytest.fixture()
     def provider_list_url(self, provider):
-        return '/{}providers/registrations/{}/submissions/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/registrations/{provider._id}/submissions/'
 
     @pytest.fixture()
     def provider_list_url_fake(self, fake_url):
-        return '{}submissions/'.format(fake_url)
+        return f'{fake_url}submissions/'
 
     @pytest.fixture()
     def brand(self):

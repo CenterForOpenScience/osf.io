@@ -95,7 +95,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
     def process_response(self, request, response):
         self._context.request = request
         try:
-            return super(CorsMiddleware, self).process_response(request, response)
+            return super().process_response(request, response)
         finally:
             self._context.request = None
 

@@ -61,10 +61,10 @@ jobs:
     - uses: ./.github/actions/build-es6
       with:
         ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: '3.10'
     - name: Install lxml
       run: |
         sudo apt update
@@ -104,10 +104,10 @@ jobs:
     - uses: ./.github/actions/build-es6
       with:
         ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: '3.10'
     - name: Install lxml
       run: |
         sudo apt update
@@ -147,10 +147,10 @@ jobs:
       - uses: ./.github/actions/build-es6
         with:
           ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-      - name: Set up Python 3.6
+      - name: Set up Python 3.10
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: '3.10'
       - name: Install lxml
         run: |
           sudo apt update
@@ -193,10 +193,10 @@ jobs:
     - uses: ./.github/actions/build-es6
       with:
         ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: '3.10'
     - name: Install lxml
       run: |
         sudo apt update
@@ -236,10 +236,10 @@ jobs:
     - uses: ./.github/actions/build-es6
       with:
         ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: '3.10'
     - name: Install lxml
       run: |
         sudo apt update

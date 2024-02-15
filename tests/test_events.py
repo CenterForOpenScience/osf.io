@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-import mock
+from unittest import mock
 from nose.tools import *
 
 from website.notifications.events.base import Event, register, event_registry
@@ -28,7 +28,7 @@ class TestEventNotImplemented(OsfTestCase):
         pass
 
     def setUp(self):
-        super(TestEventNotImplemented, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory()
         self.auth = Auth(user=self.user)
         self.node = factories.ProjectFactory(creator=self.user)
@@ -56,7 +56,7 @@ class TestListOfFiles(OsfTestCase):
     List files given a list
     """
     def setUp(self):
-        super(TestListOfFiles, self).setUp()
+        super().setUp()
         self.tree = {
             'kind': 'folder',
             'path': 'a',
@@ -94,7 +94,7 @@ class TestEventExists(OsfTestCase):
     # Add all possible called events here to ensure that the Event class can
     #  call them.
     def setUp(self):
-        super(TestEventExists, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.node = factories.ProjectFactory(creator=self.user)
@@ -142,7 +142,7 @@ class TestEventExists(OsfTestCase):
 
 class TestSignalEvent(OsfTestCase):
     def setUp(self):
-        super(TestSignalEvent, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory()
         self.auth = Auth(user=self.user)
         self.node = factories.ProjectFactory(creator=self.user)
@@ -157,7 +157,7 @@ class TestSignalEvent(OsfTestCase):
 
 class TestFileUpdated(OsfTestCase):
     def setUp(self):
-        super(TestFileUpdated, self).setUp()
+        super().setUp()
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -172,7 +172,7 @@ class TestFileUpdated(OsfTestCase):
         self.event = event_registry['file_updated'](self.user_2, self.project, 'file_updated', payload=file_payload)
 
     def test_info_formed_correct(self):
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
+        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
         assert_equal('updated file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('updated file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
 
@@ -185,7 +185,7 @@ class TestFileUpdated(OsfTestCase):
 
 class TestFileAdded(NotificationTestCase):
     def setUp(self):
-        super(TestFileAdded, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
@@ -199,7 +199,7 @@ class TestFileAdded(NotificationTestCase):
         self.event = event_registry['file_added'](self.user2, self.project, 'file_added', payload=file_payload)
 
     def test_info_formed_correct(self):
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
+        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
         assert_equal('added file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('added file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
 
@@ -212,7 +212,7 @@ class TestFileAdded(NotificationTestCase):
 
 class TestFileRemoved(NotificationTestCase):
     def setUp(self):
-        super(TestFileRemoved, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
@@ -234,9 +234,9 @@ class TestFileRemoved(NotificationTestCase):
 
     def test_info_formed_correct_folder(self):
         assert_equal('file_updated', self.event.event_type)
-        self.event.payload['metadata']['materialized'] += u'/'
-        assert_equal(u'removed folder "<b>{}/</b>".'.format(materialized.lstrip('/')), self.event.html_message)
-        assert_equal(u'removed folder "{}/".'.format(materialized.lstrip('/')), self.event.text_message)
+        self.event.payload['metadata']['materialized'] += '/'
+        assert_equal('removed folder "<b>{}/</b>".'.format(materialized.lstrip('/')), self.event.html_message)
+        assert_equal('removed folder "{}/".'.format(materialized.lstrip('/')), self.event.text_message)
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_removed(self, mock_notify):
@@ -247,7 +247,7 @@ class TestFileRemoved(NotificationTestCase):
 
 class TestFolderCreated(NotificationTestCase):
     def setUp(self):
-        super(TestFolderCreated, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
@@ -275,7 +275,7 @@ class TestFolderCreated(NotificationTestCase):
 
 class TestFolderFileRenamed(OsfTestCase):
     def setUp(self):
-        super(TestFolderFileRenamed, self).setUp()
+        super().setUp()
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -320,7 +320,7 @@ class TestFolderFileRenamed(OsfTestCase):
 
 class TestFileMoved(NotificationTestCase):
     def setUp(self):
-        super(TestFileMoved, self).setUp()
+        super().setUp()
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -361,7 +361,7 @@ class TestFileMoved(NotificationTestCase):
 
     def test_info_formed_correct(self):
         # Move Event: Ensures data is correctly formatted
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
+        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
         # assert_equal('moved file "<b>{}</b>".', self.event.html_message)
         # assert_equal('created folder "Three/".', self.event.text_message)
 
@@ -414,7 +414,7 @@ class TestFileMoved(NotificationTestCase):
 class TestFileCopied(NotificationTestCase):
     # Test the copying of files
     def setUp(self):
-        super(TestFileCopied, self).setUp()
+        super().setUp()
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -456,7 +456,7 @@ class TestFileCopied(NotificationTestCase):
 
     def test_info_correct(self):
         # Move Event: Ensures data is correctly formatted
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
+        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
         assert_equal(('copied file "<b>One/Paper13.txt</b>" from OSF Storage'
                       ' in Consolidate to "<b>Two/Paper13.txt</b>" in OSF'
                       ' Storage in Consolidate.'), self.event.html_message)
@@ -494,7 +494,7 @@ class TestFileCopied(NotificationTestCase):
 
 class TestCategorizeUsers(NotificationTestCase):
     def setUp(self):
-        super(TestCategorizeUsers, self).setUp()
+        super().setUp()
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -600,7 +600,7 @@ class TestCategorizeUsers(NotificationTestCase):
 
 class TestSubscriptionManipulations(OsfTestCase):
     def setUp(self):
-        super(TestSubscriptionManipulations, self).setUp()
+        super().setUp()
         self.emails_1 = {
             email_digest: ['a1234', 'b1234', 'c1234'],
             email_transactional: ['d1234', 'e1234', 'f1234'],
@@ -651,172 +651,172 @@ class TestSubscriptionManipulations(OsfTestCase):
             self.emails_1, self.emails_1, remove_same=True
         )
 
-        assert set(result['none']) == set(['h1234', 'g1234', 'i1234'])
+        assert set(result['none']) == {'h1234', 'g1234', 'i1234'}
         assert result['email_digest'] == []
         assert result['email_transactional'] == []
 
 
-wb_path = u'5581cb50a24f710b0f4623f9'
-materialized = u'/One/Paper13.txt'
-provider = u'osfstorage'
-name = u'Paper13.txt'
+wb_path = '5581cb50a24f710b0f4623f9'
+materialized = '/One/Paper13.txt'
+provider = 'osfstorage'
+name = 'Paper13.txt'
 
 
 file_payload = OrderedDict([
-    (u'action', u'update'),
-    (u'auth', OrderedDict([
-        (u'email', u'tgn6m@osf.io'), (u'id', u'tgn6m'), (u'name', u'aab')])),
-    (u'metadata', OrderedDict([
-        (u'contentType', None),
-        (u'etag', u'10485efa4069bb94d50588df2e7466a079d49d4f5fd7bf5b35e7c0d5b12d76b7'),
-        (u'extra', OrderedDict([
-            (u'downloads', 0),
-            (u'version', 30)])),
-        (u'kind', u'file'),
-        (u'materialized', materialized),
-        (u'modified', u'Wed, 24 Jun 2015 10:45:01 '),
-        (u'name', name),
-        (u'path', wb_path),
-        (u'provider', provider),
-        (u'size', 2008)])),
-    (u'provider', provider),
-    (u'time', 1435157161.979904)])
+    ('action', 'update'),
+    ('auth', OrderedDict([
+        ('email', 'tgn6m@osf.io'), ('id', 'tgn6m'), ('name', 'aab')])),
+    ('metadata', OrderedDict([
+        ('contentType', None),
+        ('etag', '10485efa4069bb94d50588df2e7466a079d49d4f5fd7bf5b35e7c0d5b12d76b7'),
+        ('extra', OrderedDict([
+            ('downloads', 0),
+            ('version', 30)])),
+        ('kind', 'file'),
+        ('materialized', materialized),
+        ('modified', 'Wed, 24 Jun 2015 10:45:01 '),
+        ('name', name),
+        ('path', wb_path),
+        ('provider', provider),
+        ('size', 2008)])),
+    ('provider', provider),
+    ('time', 1435157161.979904)])
 
 file_deleted_payload = OrderedDict([
-    (u'action', u'delete'),
-    (u'auth', OrderedDict([
-        (u'email', u'tgn6m@osf.io'), (u'id', u'tgn6m'), (u'name', u'aab')])),
-    (u'metadata', OrderedDict([
-        (u'materialized', materialized),
-        (u'path', materialized)])),  # Deleted files don't get wb_paths
-    (u'provider', u'osfstorage'),
-    (u'time', 1435157876.690203)])
+    ('action', 'delete'),
+    ('auth', OrderedDict([
+        ('email', 'tgn6m@osf.io'), ('id', 'tgn6m'), ('name', 'aab')])),
+    ('metadata', OrderedDict([
+        ('materialized', materialized),
+        ('path', materialized)])),  # Deleted files don't get wb_paths
+    ('provider', 'osfstorage'),
+    ('time', 1435157876.690203)])
 
 folder_created_payload = OrderedDict([
-    (u'action', u'create_folder'),
-    (u'auth', OrderedDict([
-        (u'email', u'tgn6m@osf.io'), (u'id', u'tgn6m'), (u'name', u'aab')])),
-    (u'metadata', OrderedDict([
-        (u'etag', u'5caf8ab73c068565297e455ebce37fd64b6897a2284ec9d7ecba8b6093082bcd'),
-        (u'extra', OrderedDict()),
-        (u'kind', u'folder'),
-        (u'materialized', u'/Three/'),
-        (u'name', u'Three'),
-        (u'path', u'558ac595a24f714eff336d66/'),
-        (u'provider', u'osfstorage')])),
-    (u'provider', u'osfstorage'),
-    (u'time', 1435157969.475282)])
+    ('action', 'create_folder'),
+    ('auth', OrderedDict([
+        ('email', 'tgn6m@osf.io'), ('id', 'tgn6m'), ('name', 'aab')])),
+    ('metadata', OrderedDict([
+        ('etag', '5caf8ab73c068565297e455ebce37fd64b6897a2284ec9d7ecba8b6093082bcd'),
+        ('extra', OrderedDict()),
+        ('kind', 'folder'),
+        ('materialized', '/Three/'),
+        ('name', 'Three'),
+        ('path', '558ac595a24f714eff336d66/'),
+        ('provider', 'osfstorage')])),
+    ('provider', 'osfstorage'),
+    ('time', 1435157969.475282)])
 
 
 def file_move_payload(new_node, old_node):
     return OrderedDict([
-        (u'action', u'move'),
-        (u'auth', OrderedDict([
-            (u'email', 'Bob'), (u'id', 'bob2'), (u'name', 'Bob')])),
-        (u'destination', OrderedDict([
-            (u'contentType', None),
-            (u'etag', u'10485efa4069bb94d50588df2e7466a079d49d4f5fd7bf5b35e7c0d5b12d76b7'),
-            (u'extra', OrderedDict([
-                (u'downloads', 0),
-                (u'version', 30)])),
-            (u'kind', u'file'),
-            (u'materialized', materialized),
-            (u'modified', None),
-            (u'name', name),
-            (u'nid', str(new_node)),
-            (u'path', wb_path),
-            (u'provider', provider),
-            (u'size', 2008),
+        ('action', 'move'),
+        ('auth', OrderedDict([
+            ('email', 'Bob'), ('id', 'bob2'), ('name', 'Bob')])),
+        ('destination', OrderedDict([
+            ('contentType', None),
+            ('etag', '10485efa4069bb94d50588df2e7466a079d49d4f5fd7bf5b35e7c0d5b12d76b7'),
+            ('extra', OrderedDict([
+                ('downloads', 0),
+                ('version', 30)])),
+            ('kind', 'file'),
+            ('materialized', materialized),
+            ('modified', None),
+            ('name', name),
+            ('nid', str(new_node)),
+            ('path', wb_path),
+            ('provider', provider),
+            ('size', 2008),
             ('url', '/project/nhgts/files/osfstorage/5581cb50a24f710b0f4623f9/'),
-            ('node', {'url': '/{}/'.format(new_node._id), '_id': new_node._id, 'title': u'Consolidate2'}),
+            ('node', {'url': f'/{new_node._id}/', '_id': new_node._id, 'title': 'Consolidate2'}),
             ('addon', 'OSF Storage')])),
-        (u'source', OrderedDict([
-            (u'materialized', materialized),
-            (u'name', u'Paper13.txt'),
-            (u'nid', str(old_node)),
-            (u'path', materialized),  # Not wb path
-            (u'provider', provider),
+        ('source', OrderedDict([
+            ('materialized', materialized),
+            ('name', 'Paper13.txt'),
+            ('nid', str(old_node)),
+            ('path', materialized),  # Not wb path
+            ('provider', provider),
             ('url', '/project/nhgts/files/osfstorage/One/Paper13.txt/'),
-            ('node', {'url': '/{}/'.format(old_node._id), '_id': old_node._id, 'title': u'Consolidate'}),
+            ('node', {'url': f'/{old_node._id}/', '_id': old_node._id, 'title': 'Consolidate'}),
             ('addon', 'OSF Storage')])),
-        (u'time', 1435158051.204264),
-        ('node', u'nhgts'),
+        ('time', 1435158051.204264),
+        ('node', 'nhgts'),
         ('project', None)])
 
 
 def file_copy_payload(new_node, old_node):
     return OrderedDict([
-        (u'action', u'copy'),
-        (u'auth', OrderedDict([
-            (u'email', u'tgn6m@osf.io'),
-            (u'id', u'tgn6m'),
-            (u'name', u'aab')])),
-        (u'destination', OrderedDict([
-            (u'contentType', None),
-            (u'etag', u'16075ae3e546971003095beef8323584de40b1fcbf52ed4bb9e7f8547e322824'),
-            (u'extra', OrderedDict([
-                (u'downloads', 0),
-                (u'version', 30)])),
-            (u'kind', u'file'),
-            (u'materialized', u'Two/Paper13.txt'),
-            (u'modified', None),
-            (u'name', u'Paper13.txt'),
-            (u'nid', u'nhgts'),
-            (u'path', wb_path),
-            (u'provider', u'osfstorage'),
-            (u'size', 2008),
+        ('action', 'copy'),
+        ('auth', OrderedDict([
+            ('email', 'tgn6m@osf.io'),
+            ('id', 'tgn6m'),
+            ('name', 'aab')])),
+        ('destination', OrderedDict([
+            ('contentType', None),
+            ('etag', '16075ae3e546971003095beef8323584de40b1fcbf52ed4bb9e7f8547e322824'),
+            ('extra', OrderedDict([
+                ('downloads', 0),
+                ('version', 30)])),
+            ('kind', 'file'),
+            ('materialized', 'Two/Paper13.txt'),
+            ('modified', None),
+            ('name', 'Paper13.txt'),
+            ('nid', 'nhgts'),
+            ('path', wb_path),
+            ('provider', 'osfstorage'),
+            ('size', 2008),
             ('url', '/project/nhgts/files/osfstorage/558ac45da24f714eff336d59/'),
-            ('node', {'url': '/nhgts/', '_id': old_node._id, 'title': u'Consolidate'}),
+            ('node', {'url': '/nhgts/', '_id': old_node._id, 'title': 'Consolidate'}),
             ('addon', 'OSF Storage')])),
-        (u'source', OrderedDict([
-            (u'materialized', u'One/Paper13.txt'),
-            (u'name', u'Paper13.txt'),
-            (u'nid', u'nhgts'),
-            (u'path', u'One/Paper13.txt'),
-            (u'provider', u'osfstorage'),
+        ('source', OrderedDict([
+            ('materialized', 'One/Paper13.txt'),
+            ('name', 'Paper13.txt'),
+            ('nid', 'nhgts'),
+            ('path', 'One/Paper13.txt'),
+            ('provider', 'osfstorage'),
             ('url', '/project/nhgts/files/osfstorage/One/Paper13.txt/'),
-            ('node', {'url': '/nhgts/', '_id': new_node._id, 'title': u'Consolidate'}),
+            ('node', {'url': '/nhgts/', '_id': new_node._id, 'title': 'Consolidate'}),
             ('addon', 'OSF Storage')])),
-        (u'time', 1435157658.036183),
-        ('node', u'nhgts'),
+        ('time', 1435157658.036183),
+        ('node', 'nhgts'),
         ('project', None)])
 
 
 def file_renamed_payload():
     return OrderedDict([
-        (u'action', u'move'),
-        (u'auth', OrderedDict([
-            (u'email', u'tgn6m@osf.io'),
-            (u'id', u'tgn6m'),
-            (u'name', u'aab')])),
-        (u'destination', OrderedDict([
-            (u'contentType', None),
-            (u'etag', u'0e9bfddcb5a59956ae60e93f32df06b174ad33b53d8a2f2cd08c780cf34a9d93'),
-            (u'extra', OrderedDict([
-                (u'downloads', 0),
-                (u'hashes', OrderedDict([
-                    (u'md5', u'79a64594dd446674ce1010007ac2bde7'),
-                    (u'sha256', u'bf710301e591f6f5ce35aa8971cfc938b39dae0fedcb9915656dded6ad025580')])),
-                (u'version', 1)])),
-            (u'kind', u'file'),
-            (u'materialized', u'Fibery/file2.pdf'),
-            (u'modified', u'2015-05-07T10:54:32'),
-            (u'name', u'file2.pdf'),
-            (u'nid', u'wp6xv'),
-            (u'path', u'/55f07134a24f71b2a24f4812'),
-            (u'provider', u'osfstorage'),
-            (u'size', 21209),
+        ('action', 'move'),
+        ('auth', OrderedDict([
+            ('email', 'tgn6m@osf.io'),
+            ('id', 'tgn6m'),
+            ('name', 'aab')])),
+        ('destination', OrderedDict([
+            ('contentType', None),
+            ('etag', '0e9bfddcb5a59956ae60e93f32df06b174ad33b53d8a2f2cd08c780cf34a9d93'),
+            ('extra', OrderedDict([
+                ('downloads', 0),
+                ('hashes', OrderedDict([
+                    ('md5', '79a64594dd446674ce1010007ac2bde7'),
+                    ('sha256', 'bf710301e591f6f5ce35aa8971cfc938b39dae0fedcb9915656dded6ad025580')])),
+                ('version', 1)])),
+            ('kind', 'file'),
+            ('materialized', 'Fibery/file2.pdf'),
+            ('modified', '2015-05-07T10:54:32'),
+            ('name', 'file2.pdf'),
+            ('nid', 'wp6xv'),
+            ('path', '/55f07134a24f71b2a24f4812'),
+            ('provider', 'osfstorage'),
+            ('size', 21209),
             ('url', '/project/wp6xv/files/osfstorage/55f07134a24f71b2a24f4812/'),
-            ('node', {'url': '/wp6xv/', '_id': u'wp6xv', 'title': u'File_Notify4'}),
+            ('node', {'url': '/wp6xv/', '_id': 'wp6xv', 'title': 'File_Notify4'}),
             ('addon', 'OSF Storage')])),
-        (u'source', OrderedDict([
-            (u'materialized', u'Fibery/!--i--2.pdf'),
-            (u'name', u'!--i--2.pdf'), (u'nid', u'wp6xv'),
-            (u'path', u'Fibery/!--i--2.pdf'),
-            (u'provider', u'osfstorage'),
+        ('source', OrderedDict([
+            ('materialized', 'Fibery/!--i--2.pdf'),
+            ('name', '!--i--2.pdf'), ('nid', 'wp6xv'),
+            ('path', 'Fibery/!--i--2.pdf'),
+            ('provider', 'osfstorage'),
             ('url', '/project/wp6xv/files/osfstorage/Fibery/%21--i--2.pdf/'),
-            ('node', {'url': '/wp6xv/', '_id': u'wp6xv', 'title': u'File_Notify4'}),
+            ('node', {'url': '/wp6xv/', '_id': 'wp6xv', 'title': 'File_Notify4'}),
             ('addon', 'OSF Storage')])),
-        (u'time', 1441905340.876648),
-        ('node', u'wp6xv'),
+        ('time', 1441905340.876648),
+        ('node', 'wp6xv'),
         ('project', None)])

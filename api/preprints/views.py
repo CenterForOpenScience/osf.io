@@ -193,7 +193,7 @@ class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.Retriev
         """
         Tells parser that type is required in request
         """
-        res = super(PreprintDetail, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['legacy_type_allowed'] = True
         return res
 
@@ -276,7 +276,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
                 citation = render_citation(node=preprint, style=style)
             except ValueError as err:  # style requested could not be found
                 csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
-                raise NotFound('{} is not a known style.'.format(csl_name))
+                raise NotFound(f'{csl_name} is not a known style.')
 
             return {'citation': citation, 'id': style}
 
@@ -407,7 +407,7 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         try:
             return preprint.preprintcontributor_set.get(user=user)
         except PreprintContributor.DoesNotExist:
-            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+            raise NotFound(f'{user} cannot be found in the list of contributors.')
 
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
@@ -580,7 +580,7 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
     def get_queryset(self):
         self.kwargs[self.path_lookup_url_kwarg] = '/'
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
-        return super(PreprintFilesList, self).get_queryset()
+        return super().get_queryset()
 
     def get_resource(self):
         return get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)

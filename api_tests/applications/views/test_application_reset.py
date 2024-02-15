@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from website.util import api_v2_url
 from api.base.settings import API_BASE
@@ -7,7 +7,7 @@ from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
 def _get_application_reset_route(app):
-    path = 'applications/{}/reset/'.format(app.client_id)
+    path = f'applications/{app.client_id}/reset/'
     return api_v2_url(path, base_route='/')
 
 
@@ -29,7 +29,7 @@ class TestApplicationReset:
 
     @pytest.fixture()
     def application_detail_url(self, user_app):
-        return '/{}applications/{}/?version=2.15'.format(API_BASE, user_app.client_id)
+        return f'/{API_BASE}applications/{user_app.client_id}/?version=2.15'
 
     @pytest.fixture()
     def deprecated_payload(self, user_app):
@@ -174,7 +174,7 @@ class TestApplicationReset:
         assert old_secret == user_app.client_secret
 
         # test reset with no client secret does not reset
-        del(payload['data']['attributes']['client_secret'])
+        del payload['data']['attributes']['client_secret']
         res = app.patch_json_api(
             application_detail_url,
             payload,

@@ -22,7 +22,7 @@ def update_user_from_activity(user_id, login_time, cas_login=False, updates=None
     from osf.models import OSFUser
     if not updates:
         updates = {}
-    if type(login_time) == float:
+    if isinstance(login_time, float):
         login_time = datetime.fromtimestamp(login_time, pytz.UTC)
     user = OSFUser.load(user_id)
     should_save = False

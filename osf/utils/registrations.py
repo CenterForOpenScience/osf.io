@@ -127,7 +127,7 @@ def build_file_ref(file):
     if view_url:
         url_match = FILE_VIEW_URL_REGEX.search(view_url)
         if not url_match:
-            raise SchemaBlockConversionError('Unexpected file viewUrl: {}'.format(view_url))
+            raise SchemaBlockConversionError(f'Unexpected file viewUrl: {view_url}')
         groupdict = url_match.groupdict()
         file_id = groupdict['file_id']
         node_id = groupdict['node_id']
@@ -138,7 +138,7 @@ def build_file_ref(file):
         node_id = file.get('nodeId')
 
     if not (file_id and node_id):
-        raise SchemaBlockConversionError('Could not find file and node ids in file info: {}'.format(file))
+        raise SchemaBlockConversionError(f'Could not find file and node ids in file info: {file}')
 
     file_name = file.get('selectedFileName')
     if file_data and not file_name:

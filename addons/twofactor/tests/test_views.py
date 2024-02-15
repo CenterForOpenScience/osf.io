@@ -10,7 +10,7 @@ pytestmark = pytest.mark.django_db
 
 class TestViews(OsfTestCase):
     def setUp(self):
-        super(TestViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.user_addon = self.user.get_or_add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')

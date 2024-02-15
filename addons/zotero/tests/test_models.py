@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 import pytest
 import unittest
-import mock
+from unittest import mock
 from framework.auth import Auth
 from nose.tools import (assert_equal, assert_is_none, assert_true, assert_false,
     assert_is, assert_in)
@@ -46,8 +45,8 @@ class ZoteroProviderTestCase(CitationAddonProviderTestSuiteMixin, unittest.TestC
 
         res = self.provider.handle_callback(response)
 
-        assert(res.get('display_name') == 'Fake User Name')
-        assert(res.get('provider_id') == 'Fake User ID')
+        assert (res.get('display_name') == 'Fake User Name')
+        assert (res.get('provider_id') == 'Fake User ID')
 
 
 class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unittest.TestCase):
@@ -62,7 +61,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
     UserSettingsFactory = ZoteroUserSettingsFactory
 
     def setUp(self):
-        super(ZoteroNodeSettingsTestCase, self).setUp()
+        super().setUp()
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
@@ -124,7 +123,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         assert_is(self.node_settings.library_id, None)
 
         last_log = self.node.logs.first()
-        assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_node_deauthorized')
         params = last_log.params
         assert_in('node', params)
         assert_in('project', params)
@@ -232,7 +231,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         )
 
         log = self.node.logs.latest()
-        assert_equal(log.action, '{}_library_selected'.format(self.short_name))
+        assert_equal(log.action, f'{self.short_name}_library_selected')
         assert_equal(log.params['library_id'], library_id)
         assert_equal(log.params['library_name'], library_name)
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 from future.moves.urllib.parse import urljoin
 
@@ -43,7 +41,7 @@ class GithubFile(GithubFileNode, File):
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
         revision = revision or ref or branch
-        return super(GithubFile, self).touch(auth_header, revision=revision, **kwargs)
+        return super().touch(auth_header, revision=revision, **kwargs)
 
 
 class GitHubProvider(ExternalProvider):
@@ -119,7 +117,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def folder_name(self):
         if self.complete:
-            return '{}/{}'.format(self.user, self.repo)
+            return f'{self.user}/{self.repo}'
         return None
 
     @property
@@ -166,7 +164,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.clear_auth()
 
     def delete(self, save=False):
-        super(NodeSettings, self).delete(save=False)
+        super().delete(save=False)
         self.deauthorize(log=False)
         if save:
             self.save()
@@ -174,7 +172,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def repo_url(self):
         if self.user and self.repo:
-            return 'https://github.com/{0}/{1}/'.format(
+            return 'https://github.com/{}/{}/'.format(
                 self.user, self.repo
             )
 
@@ -215,7 +213,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
-        ret = super(NodeSettings, self).to_json(user)
+        ret = super().to_json(user)
         user_settings = user.get_addon('github')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
@@ -231,7 +229,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'node_has_auth': True,
                 'github_user': self.user or '',
                 'github_repo': self.repo or '',
-                'github_repo_full_name': '{0}/{1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
+                'github_repo_full_name': f'{self.user}/{self.repo}' if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
@@ -266,14 +264,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         try:
             sha = metadata['extra']['commit']['sha']
             urls = {
-                'view': '{0}?ref={1}'.format(url, sha),
-                'download': '{0}?action=download&ref={1}'.format(url, sha)
+                'view': f'{url}?ref={sha}',
+                'download': f'{url}?action=download&ref={sha}'
             }
         except KeyError:
             pass
 
         self.owner.add_log(
-            'github_{0}'.format(action),
+            f'github_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,
@@ -358,7 +356,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         """
         try:
-            message = (super(NodeSettings, self).before_remove_contributor_message(node, removed) +
+            message = (super().before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
                 url=node.api_url + 'github/tarball/'
@@ -381,8 +379,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.user_settings = None
             self.save()
             message = (
-                u'Because the GitHub add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
+                'Because the GitHub add-on for {category} "{title}" was authenticated '
+                'by {user}, authentication information has been deleted.'
             ).format(
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
@@ -392,7 +390,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    ' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -405,7 +403,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         :param bool save: Save settings after callback
         :return the cloned settings
         """
-        clone = super(NodeSettings, self).after_fork(
+        clone = super().after_fork(
             node, fork, user, save=False
         )
 

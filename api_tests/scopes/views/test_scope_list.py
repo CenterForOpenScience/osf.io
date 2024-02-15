@@ -11,7 +11,7 @@ class TestScopeList:
         scope = ApiOAuth2ScopeFactory()
         second_scope = ApiOAuth2ScopeFactory()
 
-        url_scopes = '/{}scopes/'.format(API_BASE)
+        url_scopes = f'/{API_BASE}scopes/'
         res_scopes = app.get(url_scopes)
 
         # test_scope_list_success

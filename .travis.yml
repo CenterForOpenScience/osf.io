@@ -3,7 +3,7 @@
 language: python
 
 python:
-    - "3.6"
+    - "3.10"
 
 dist: trusty
 
@@ -132,7 +132,7 @@ install:
 
     - travis_retry pip install --upgrade pip
     - travis_retry pip install invoke==0.13.0
-    - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
+    - travis_retry pip install flake8==7.0.0 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons
 
     - |

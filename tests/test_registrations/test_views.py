@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
 import datetime as dt
-import mock
+from unittest import mock
 from rest_framework import status as http_status
 import pytz
 from django.utils import timezone

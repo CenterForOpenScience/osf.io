@@ -33,7 +33,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/review_actions/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/review_actions/'
 
     def test_unauthorized_user(self, app, url):
         res = app.get(url, expect_errors=True)
@@ -47,4 +47,4 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
 class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/review_actions/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/review_actions/'

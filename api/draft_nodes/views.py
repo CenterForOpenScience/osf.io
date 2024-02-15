@@ -24,7 +24,7 @@ from api.nodes.views import (
 from osf.models import DraftNode
 
 
-class DraftNodeMixin(object):
+class DraftNodeMixin:
     """Mixin with convenience methods for retrieving the current draft node based on the
     current URL. By default, fetches the current node based on the node_id kwarg.
     """

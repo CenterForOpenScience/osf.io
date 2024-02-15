@@ -28,7 +28,7 @@ from api.files.serializers import FileVersionSerializer
 from osf.utils.permissions import ADMIN
 
 
-class FileMixin(object):
+class FileMixin:
     """Mixin with convenience methods for retrieving the current file based on the
     current URL. By default, fetches the file based on the file_id kwarg.
     """

@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 """Views tests for the Box addon."""
 from django.utils import timezone
 from rest_framework import status as http_status
 from nose.tools import *  # noqa (PEP8 asserts)
-import mock
+from unittest import mock
 import pytest
 from urllib3.exceptions import MaxRetryError
 
@@ -32,18 +31,18 @@ class TestAuthViews(BoxAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseM
         self.mock_refresh = mock.patch('addons.box.models.Provider.refresh_oauth_key')
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
-        super(TestAuthViews, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_refresh.stop()
-        super(TestAuthViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch(
         'addons.box.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_delete_external_account(self):
-        super(TestAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
 
 class TestConfigViews(BoxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -62,20 +61,20 @@ class TestConfigViews(BoxAddonTestCase, views_testing.OAuthAddonConfigViewsTestC
             return_value=(self.folder['id'], self.folder['path'])
         )
         self.mock_data.start()
-        super(TestConfigViews, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_data.stop()
-        super(TestConfigViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch.object(BoxSerializer, 'credentials_are_valid', return_value=True)
     def test_import_auth(self, *args):
-        super(TestConfigViews, self).test_import_auth()
+        super().test_import_auth()
 
 class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
 
     def setUp(self):
-        super(TestFilebrowserViews, self).setUp()
+        super().setUp()
         self.user.add_addon('box')
         self.node_settings.external_account = self.user_settings.external_accounts[0]
         self.node_settings.save()

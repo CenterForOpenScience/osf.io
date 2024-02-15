@@ -27,7 +27,7 @@ class MultiEmailField(forms.Field):
         return [r.strip().lower() for r in value.split(',')]
 
     def validate(self, value):
-        super(MultiEmailField, self).validate(value)
+        super().validate(value)
         for email in value:
             validate_email(email)
 
@@ -171,6 +171,6 @@ class MeetingForm(forms.Form):
             user = get_user(email=email)
             if not user or user is None:
                 raise forms.ValidationError(
-                    '{} does not have an OSF account'.format(email)
+                    f'{email} does not have an OSF account'
                 )
         return emails

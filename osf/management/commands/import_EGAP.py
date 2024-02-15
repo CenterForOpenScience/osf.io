@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from datetime import datetime as dt
 import pytz
 import logging
@@ -56,11 +55,11 @@ def get_creator_auth_header(creator_username):
     if created:
         token.save()
 
-    return creator, {'Authorization': 'Bearer {}'.format(token.token_id)}
+    return creator, {'Authorization': f'Bearer {token.token_id}'}
 
 
 def create_node_from_project_json(egap_assets_path, egap_project_dir, creator):
-    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json'), 'r') as fp:
+    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json')) as fp:
         project_data = json.load(fp)
         title = project_data['title']
         node = Node(title=title, creator=creator)
@@ -88,14 +87,14 @@ def create_node_from_project_json(egap_assets_path, egap_project_dir, creator):
 
 
 def rollback_node_from_project_json(egap_assets_path, egap_project_dir, creator):
-    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json'), 'r') as fp:
+    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json')) as fp:
         project_data = json.load(fp)
         title = project_data['title']
         try:
             node = Node.objects.filter(title=title, creator=creator).get()
         except Exception:
             logger.error(
-                'Attempted rollback on Node titled {}. Node was not created.'.format(title)
+                f'Attempted rollback on Node titled {title}. Node was not created.'
             )
             return
         node.delete()
@@ -111,13 +110,13 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=None):
     try:
         for item in os.listdir(dir_path):
             item_path = os.path.join(dir_path, item)
-            base_url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, node._id, parent)
+            base_url = f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/{parent}'
             if os.path.isfile(item_path):
                 with open(item_path, 'rb') as fp:
-                    url = base_url + '?name={}&kind=file'.format(item)
+                    url = base_url + f'?name={item}&kind=file'
                     resp = requests.put(url, data=fp.read(), headers=auth)
             else:
-                url = base_url + '?name={}&kind=folder'.format(item)
+                url = base_url + f'?name={item}&kind=folder'
                 resp = requests.put(url, headers=auth)
                 metadata = recursive_upload(auth, node, item_path, parent=resp.json()['data']['attributes']['path'], metadata=metadata)
 
@@ -125,7 +124,7 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=None):
                 continue
 
             if resp.status_code != 201:
-                raise EGAPUploadException('Error waterbutler response is {}, with {}'.format(resp.status_code, resp.content))
+                raise EGAPUploadException(f'Error waterbutler response is {resp.status_code}, with {resp.content}')
 
             metadata.append(resp.json())
     except EGAPUploadException as e:
@@ -140,7 +139,7 @@ def get_egap_assets(guid, creator_auth):
     zip_file = node.files.first()
     temp_path = tempfile.mkdtemp()
 
-    url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, guid, zip_file._id)
+    url = f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{guid}/providers/osfstorage/{zip_file._id}'
     zip_file = requests.get(url, headers=creator_auth).content
 
     egap_assets_path = os.path.join(temp_path, 'egap_assets.zip')
@@ -202,7 +201,7 @@ def main(guid, creator_username):
     directory_list.sort()
     for egap_project_dir in directory_list:
         logger.info(
-            'Attempting to import the follow directory: {}'.format(egap_project_dir)
+            f'Attempting to import the follow directory: {egap_project_dir}'
         )
         # Node Creation
         try:
@@ -230,7 +229,7 @@ def main(guid, creator_username):
             anon_metadata = {}
 
         # DraftRegistration Metadata Handling
-        with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json'), 'r') as fp:
+        with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json')) as fp:
             registration_metadata = json.load(fp)
 
         # add selectedFileName Just so filenames are listed in the UIj
@@ -270,7 +269,7 @@ def main(guid, creator_username):
 
         # Registration Creation
         logger.info(
-            'Attempting to create a Registration for Project {}'.format(node._id)
+            f'Attempting to create a Registration for Project {node._id}'
         )
 
         # Retrieve EGAP registration date and potential embargo go-public date
@@ -298,7 +297,7 @@ def main(guid, creator_username):
             sanction_type = 'Embargo'
 
         logger.info(
-            'Attempting to register {} silently'.format(node._id)
+            f'Attempting to register {node._id} silently'
         )
         try:
             register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
@@ -325,7 +324,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '-c',
             '--creator',

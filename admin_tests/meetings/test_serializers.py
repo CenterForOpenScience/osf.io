@@ -8,7 +8,7 @@ from admin.meetings.serializers import serialize_meeting
 
 class TestsSerializeMeeting(AdminTestCase):
     def setUp(self):
-        super(TestsSerializeMeeting, self).setUp()
+        super().setUp()
         self.conf = ConferenceFactory()
 
     def test_serialize(self):

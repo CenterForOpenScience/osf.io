@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
@@ -13,7 +13,7 @@ class TestDefaultThrottleClasses(ApiTestCase):
         '''
         check DEFAULT_THROTTLE_CLASSES for throttles being tested.
         '''
-        base_url = '/{}nodes/'.format(API_BASE)
+        base_url = f'/{API_BASE}nodes/'
         res = self.app.get(base_url)
         assert_equal(res.status_code, 200)
         assert_equal(mock_base.call_count, 4)  # UserRateThrottle get_ident is called twice due to cache key
@@ -22,8 +22,8 @@ class TestDefaultThrottleClasses(ApiTestCase):
 class TestRootThrottle(ApiTestCase):
 
     def setUp(self):
-        super(TestRootThrottle, self).setUp()
-        self.url = '/{}'.format(API_BASE)
+        super().setUp()
+        self.url = f'/{API_BASE}'
         self.user = AuthUserFactory()
 
     @mock.patch('api.base.throttling.RootAnonThrottle.allow_request')
@@ -42,9 +42,9 @@ class TestRootThrottle(ApiTestCase):
 class TestUserRateThrottle(ApiTestCase):
 
     def setUp(self):
-        super(TestUserRateThrottle, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
-        self.url = '/{}nodes/'.format(API_BASE)
+        self.url = f'/{API_BASE}nodes/'
 
     @mock.patch('api.base.throttling.UserRateThrottle.allow_request')
     def test_user_rate_allow_request_called(self, mock_allow):
@@ -86,13 +86,13 @@ class TestNonCookieAuthThrottle(ApiTestCase):
 class TestAddContributorEmailThrottle(ApiTestCase):
 
     def setUp(self):
-        super(TestAddContributorEmailThrottle, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.user_two = AuthUserFactory()
 
         self.public_project = ProjectFactory(creator=self.user)
 
-        self.url = '/{}'.format(API_BASE)
+        self.url = f'/{API_BASE}'
         self.public_url = '/{}nodes/{}/contributors/'.format(
             API_BASE, self.public_project._id)
 

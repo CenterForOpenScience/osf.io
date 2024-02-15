@@ -1,8 +1,5 @@
-# encoding: utf-8
-from __future__ import unicode_literals
-
 import json
-import mock
+from unittest import mock
 import datetime
 
 import pytest
@@ -79,7 +76,7 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res.json, [])
 
     def test_file_metdata(self):
-        path = u'kind/of/magíc.mp3'
+        path = 'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
         record.add_version(version)
@@ -109,7 +106,7 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res.json, record.parent.serialize(True))
 
     def test_children_metadata(self):
-        path = u'kind/of/magíc.mp3'
+        path = 'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
         record.add_version(version)
@@ -290,7 +287,7 @@ class TestGetStorageQuotaHook(HookTestCase):
 class TestUploadFileHook(HookTestCase):
 
     def setUp(self):
-        super(TestUploadFileHook, self).setUp()
+        super().setUp()
         self.name = 'pízza.png'
         self.record = recursively_create_file(self.node_settings, self.name)
         self.auth = make_auth(self.user)
@@ -513,7 +510,7 @@ class TestUploadFileHook(HookTestCase):
 class TestUploadFileHookPreprint(TestUploadFileHook):
 
     def setUp(self):
-        super(TestUploadFileHookPreprint, self).setUp()
+        super().setUp()
         self.preprint = PreprintFactory(creator=self.user)
         self.name = self.preprint.primary_file.name
         self.record = self.preprint.primary_file
@@ -684,7 +681,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 class TestUpdateMetadataHook(HookTestCase):
 
     def setUp(self):
-        super(TestUpdateMetadataHook, self).setUp()
+        super().setUp()
         self.path = 'greasy/pízza.png'
         self.record = recursively_create_file(self.node_settings, self.path)
         self.version = factories.FileVersionFactory()
@@ -757,7 +754,7 @@ class TestUpdateMetadataHook(HookTestCase):
 class TestUpdateMetadataHookPreprints(HookTestCase):
 
     def setUp(self):
-        super(TestUpdateMetadataHookPreprints, self).setUp()
+        super().setUp()
         self.preprint = PreprintFactory()
         self.record = self.preprint.primary_file
         self.path = 'greasy/pízza.png'
@@ -831,7 +828,7 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
 class TestGetRevisions(StorageTestCase):
 
     def setUp(self):
-        super(TestGetRevisions, self).setUp()
+        super().setUp()
         self.path = 'tie/your/mother/down.mp3'
         self.record = recursively_create_file(self.node_settings, self.path)
         attach_versions(self.record, [factories.FileVersionFactory() for __ in range(15)])
@@ -875,7 +872,7 @@ class TestGetRevisions(StorageTestCase):
 class TestCreateFolder(HookTestCase):
 
     def setUp(self):
-        super(TestCreateFolder, self).setUp()
+        super().setUp()
         self.root_node = self.node_settings.get_root()
 
     def create_folder(self, name, parent=None, target=None, **kwargs):
@@ -936,7 +933,7 @@ class TestCreateFolder(HookTestCase):
 class DeleteHook(HookTestCase):
 
     def setUp(self):
-        super(DeleteHook, self).setUp()
+        super().setUp()
         self.root_node = self.node_settings.get_root()
 
     def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
@@ -1026,7 +1023,7 @@ class TestDeleteHookNode(DeleteHook):
 class TestDeleteHookPreprint(TestDeleteHookNode):
 
     def setUp(self):
-        super(TestDeleteHookPreprint, self).setUp()
+        super().setUp()
         self.preprint = PreprintFactory(creator=self.user)
         self.node = self.preprint
         self.root_node = self.preprint.root_folder
@@ -1066,7 +1063,7 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
 class TestMoveHook(HookTestCase):
 
     def setUp(self):
-        super(TestMoveHook, self).setUp()
+        super().setUp()
         self.root_node = self.node_settings.get_root()
 
     def test_move_hook(self):
@@ -1554,8 +1551,8 @@ class TestFileViews(StorageTestCase):
         responses.add(
             responses.Response(
                 responses.GET,
-                '{}/oauth2/profile'.format(cas_base_url),
-                body=json.dumps({'id': '{}'.format(self.user._id)}),
+                f'{cas_base_url}/oauth2/profile',
+                body=json.dumps({'id': f'{self.user._id}'}),
                 status=200,
             )
         )
@@ -1563,7 +1560,7 @@ class TestFileViews(StorageTestCase):
         download_url = base_url.format(file.get_guid()._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str('Bearer {}'.format(token.token_id))
+            'Authorization': str(f'Bearer {token.token_id}')
         }
         redirect = self.app.get(download_url, headers=headers)
 
@@ -1628,8 +1625,8 @@ class TestPreprintFileViews(StorageTestCase):
         responses.add(
             responses.Response(
                 responses.GET,
-                '{}/oauth2/profile'.format(cas_base_url),
-                body=json.dumps({'id': '{}'.format(self.user._id)}),
+                f'{cas_base_url}/oauth2/profile',
+                body=json.dumps({'id': f'{self.user._id}'}),
                 status=200,
             )
         )
@@ -1637,7 +1634,7 @@ class TestPreprintFileViews(StorageTestCase):
         download_url = base_url.format(file.get_guid(create=True)._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str('Bearer {}'.format(token.token_id))
+            'Authorization': str(f'Bearer {token.token_id}')
         }
         redirect = self.app.get(download_url, headers=headers)
 

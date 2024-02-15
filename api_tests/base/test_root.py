@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 import itsdangerous
-import mock
+from unittest import mock
 from nose.tools import *  # noqa:
 import unittest
 from django.utils import timezone
@@ -24,13 +23,13 @@ SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
-        super(TestWelcomeToApi, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
-        self.url = '/{}'.format(API_BASE)
+        self.url = f'/{API_BASE}'
 
     def tearDown(self):
         self.app.reset()
-        super(TestWelcomeToApi, self).tearDown()
+        super().tearDown()
 
     def test_returns_200_for_logged_out_user(self):
         res = self.app.get(self.url)
@@ -115,7 +114,7 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(
             self.url,
             headers={
-                'Authorization': 'Bearer {}'.format(token.token_id)
+                'Authorization': f'Bearer {token.token_id}'
             }
         )
 
@@ -146,7 +145,7 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(
             self.url,
             headers={
-                'Authorization': 'Bearer {}'.format(token.token_id)
+                'Authorization': f'Bearer {token.token_id}'
             }
         )
 

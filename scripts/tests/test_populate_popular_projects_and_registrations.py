@@ -1,6 +1,6 @@
 from nose.tools import *  # noqa
 
-import mock
+from unittest import mock
 
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory, RegistrationFactory
@@ -13,7 +13,7 @@ from scripts import populate_popular_projects_and_registrations as script
 class TestPopulateNewAndNoteworthy(OsfTestCase):
 
     def setUp(self):
-        super(TestPopulateNewAndNoteworthy, self).setUp()
+        super().setUp()
         self.pop1 = ProjectFactory(is_public=True)
         self.pop2 = ProjectFactory(is_public=True)
 
@@ -21,7 +21,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.popreg2 = RegistrationFactory(is_public=True)
 
     def tearDown(self):
-        super(TestPopulateNewAndNoteworthy, self).tearDown()
+        super().tearDown()
 
     @mock.patch('website.project.utils.get_keen_activity')
     def test_populate_popular_nodes_and_registrations(self, mock_client):

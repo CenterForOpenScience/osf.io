@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from addons.wiki.models import WikiVersion
@@ -314,7 +314,7 @@ class TestRegisterNode:
     def test_registered_get_absolute_url(self, registration):
         assert (
             registration.get_absolute_url() ==
-            '{}v2/registrations/{}/'.format(settings.API_DOMAIN, registration._id)
+            f'{settings.API_DOMAIN}v2/registrations/{registration._id}/'
         )
 
     def test_registration_list(self, registration, project):

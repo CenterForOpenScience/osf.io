@@ -10,7 +10,7 @@ pytestmark = pytest.mark.django_db
 
 class TestUtils(OsfTestCase):
     def setUp(self):
-        super(TestUtils, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user_addon = self.user.get_or_add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')

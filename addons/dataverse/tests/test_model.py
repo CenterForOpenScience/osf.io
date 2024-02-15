@@ -1,5 +1,5 @@
 from nose.tools import *  # noqa
-import mock
+from unittest import mock
 import pytest
 import unittest
 
@@ -62,7 +62,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
         assert_equal(self.node.logs.count(), nlog + 1)
         assert_equal(
             self.node.logs.latest().action,
-            '{0}_{1}'.format(self.short_name, action),
+            f'{self.short_name}_{action}',
         )
         assert_equal(
             self.node.logs.latest().params['filename'],
@@ -77,7 +77,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
         assert_equal(self.node_settings.folder_id, dataset.id)
         # Log was saved
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_dataset_linked'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_dataset_linked')
 
     def test_serialize_credentials(self):
         credentials = self.node_settings.serialize_waterbutler_credentials()

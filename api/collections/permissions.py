@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import io
 
 from rest_framework import permissions
@@ -51,7 +49,7 @@ class ReadOnlyIfCollectedRegistration(permissions.BasePermission):
 
 class CanSubmitToCollectionOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (CollectionSubmission, Collection, CollectionProvider)), 'obj must be a Collection or CollectionSubmission, got {}'.format(obj)
+        assert isinstance(obj, (CollectionSubmission, Collection, CollectionProvider)), f'obj must be a Collection or CollectionSubmission, got {obj}'
         if isinstance(obj, CollectionSubmission):
             obj = obj.collection
         elif isinstance(obj, CollectionProvider):
@@ -89,7 +87,7 @@ class CollectionWriteOrPublicForPointers(permissions.BasePermission):
     # Adapted from ContributorOrPublicForPointers
     # Will only work for refs that point to AbstractNodes/Collections
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (CollectionSubmission, Collection)), 'obj must be an Collection or CollectionSubmission, got {}'.format(obj)
+        assert isinstance(obj, (CollectionSubmission, Collection)), f'obj must be an Collection or CollectionSubmission, got {obj}'
         auth = get_user_auth(request)
         collection = Collection.load(request.parser_context['kwargs']['node_id'])
         pointer_node = collection.collectionsubmission_set.get(guid___id=request.parser_context['kwargs']['node_link_id']).guid.referent

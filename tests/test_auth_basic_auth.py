@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 '''Basic Authorization tests for the OSF.'''
 
-from __future__ import absolute_import
 
 import pytest
 from django.db import connection
@@ -26,7 +24,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
     TOTP_SECRET = 'b8f85986068f8079aa9d'
 
     def setUp(self):
-        super(TestAuthBasicAuthentication, self).setUp()
+        super().setUp()
 
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()

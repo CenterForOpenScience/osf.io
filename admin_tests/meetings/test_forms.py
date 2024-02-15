@@ -51,7 +51,7 @@ class TestMultiEmailField(AdminTestCase):
 
 class TestMeetingForm(AdminTestCase):
     def setUp(self):
-        super(TestMeetingForm, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
     def test_clean_admins_raise(self):

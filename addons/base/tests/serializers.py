@@ -1,6 +1,6 @@
 import abc
 
-import mock
+from unittest import mock
 from framework.auth import Auth
 from nose.tools import (assert_equal, assert_false, assert_in,
                         assert_is_not_none, assert_raises, assert_true)
@@ -9,15 +9,17 @@ from tests.utils import mock_auth
 from website.util import web_url_for
 
 
-class AddonSerializerTestSuiteMixin(object):
+class AddonSerializerTestSuiteMixin:
 
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def Serializer(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ExternalAccountFactory(self):
         pass
 
@@ -29,16 +31,18 @@ class AddonSerializerTestSuiteMixin(object):
     def set_node_settings(self, user_settings):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def required_settings(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def required_settings_authorized(self):
         pass
 
     def setUp(self):
-        super(AddonSerializerTestSuiteMixin, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.set_user_settings(self.user)
@@ -166,7 +170,8 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
     required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
     required_settings_authorized = ('ownerName', )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client(self):
         """Provide a mocked version of this provider's client (i.e. the client should not make
         acutal API calls).
@@ -217,7 +222,8 @@ class CitationAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
     required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
     required_settings_authorized = ('ownerName', )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder(self):
         pass
 

@@ -1,6 +1,6 @@
 import pytest
-import mock
-from mock import call
+from unittest import mock
+from unittest.mock import call
 
 from django.utils import timezone
 from osf.management.commands.add_notification_subscription import add_reviews_notification_setting

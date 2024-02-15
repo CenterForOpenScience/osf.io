@@ -28,7 +28,6 @@ if os.environ.get('API_REMOTE_DEBUG', None):
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
 
 #### WARNING: Here be monkeys ###############
-import six
 import sys
 from rest_framework.fields import Field
 from rest_framework.request import Request
@@ -46,7 +45,7 @@ def __getattr__(self, attr):
         return getattr(self._request, attr)
     except AttributeError:
         info = sys.exc_info()
-        six.reraise(info[0], info[1], info[2].tb_next)
+        raise info[1].with_traceback(info[2].tb_next)
 
 Field.context = context
 Request.__getattr__ = __getattr__

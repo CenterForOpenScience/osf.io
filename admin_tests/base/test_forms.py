@@ -7,7 +7,7 @@ from admin.base.forms import GuidForm
 
 class TestGuidForm(AdminTestCase):
     def setUp(self):
-        super(TestGuidForm, self).setUp()
+        super().setUp()
 
     def test_valid_data(self):
         guid = '12345'
@@ -21,5 +21,5 @@ class TestGuidForm(AdminTestCase):
         form = GuidForm({})
         assert_false(form.is_valid())
         assert_equal(form.errors, {
-            'guid': [u'This field is required.'],
+            'guid': ['This field is required.'],
         })

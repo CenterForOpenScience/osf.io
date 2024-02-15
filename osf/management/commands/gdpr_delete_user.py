@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',
@@ -41,6 +41,6 @@ class Command(BaseCommand):
                 user = OSFUser.load(guid)
                 user.gdpr_delete()
                 user.save()
-                logger.info('Deleted user {}'.format(user._id))
+                logger.info(f'Deleted user {user._id}')
             if dry_run:
                 raise RuntimeError('Dry run -- transaction rolled back.')

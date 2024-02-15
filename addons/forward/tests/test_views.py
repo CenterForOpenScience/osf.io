@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from nose.tools import assert_equal
@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db
 class TestForward(ForwardAddonTestCase, OsfTestCase):
 
     def setUp(self):
-        super(TestForward, self).setUp()
+        super().setUp()
         self.app.authenticate(*self.user.auth)
 
     def test_change_url_log_added(self):

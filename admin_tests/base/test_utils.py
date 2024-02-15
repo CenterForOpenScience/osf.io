@@ -30,7 +30,7 @@ pytestmark = pytest.mark.django_db
 class TestSubjectRules(AdminTestCase):
 
     def setUp(self):
-        super(TestSubjectRules, self).setUp()
+        super().setUp()
 
         self.parent_one = SubjectFactory()  # 0
         self.parent_two = SubjectFactory()  # 1
@@ -121,7 +121,7 @@ class TestSubjectRules(AdminTestCase):
 
 class TestNodeChanges(AdminTestCase):
     def setUp(self):
-        super(TestNodeChanges, self).setUp()
+        super().setUp()
         self.registration = RegistrationFactory(is_public=True)
         self.user = UserFactory()
         self.user.is_staff = True
@@ -181,7 +181,7 @@ class TestGroupCollectionsPreprints:
 
     @pytest.fixture()
     def admin_url(self, user):
-        return '/admin/osf/osfuser/{}/change/'.format(user.id)
+        return f'/admin/osf/osfuser/{user.id}/change/'
 
     @pytest.fixture()
     def preprint(self, user):
@@ -213,9 +213,9 @@ class TestGroupCollectionsPreprints:
         queryset = formfield.queryset
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group not in queryset)
+        assert (collections_group not in queryset)
 
-        assert(preprint.get_group('admin') not in queryset)
+        assert (preprint.get_group('admin') not in queryset)
 
     @pytest.mark.enable_bookmark_creation
     def test_admin_app_save_related_collections(self, post_request, osf_user_admin, user, preprint):
@@ -238,7 +238,7 @@ class TestGroupCollectionsPreprints:
             else:
                 data_dict[field] = '{}'
         post_form = form(data_dict, instance=user)
-        assert(post_form.is_valid())
+        assert (post_form.is_valid())
         post_form.save(commit=False)
         qdict = QueryDict('', mutable=True)
         qdict.update(data_dict)
@@ -246,6 +246,6 @@ class TestGroupCollectionsPreprints:
         osf_user_admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group in user.groups.all())
+        assert (collections_group in user.groups.all())
 
-        assert(preprint.get_group('admin') in user.groups.all())
+        assert (preprint.get_group('admin') in user.groups.all())

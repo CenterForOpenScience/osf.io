@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 import importlib
 import pkgutil
@@ -32,7 +31,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
         try:
             SER_MODULES.append(
                 importlib.import_module(
-                    'api.{}.serializers'.format(name)
+                    f'api.{name}.serializers'
                 )
             )
         except ImportError:
@@ -50,7 +49,7 @@ for mod in SER_MODULES:
             pass
 
 
-class FakeModel(object):
+class FakeModel:
 
     def null_field(self):
         return None
@@ -94,12 +93,12 @@ class TestSerializerMetaType(ApiTestCase):
         for ser in SER_CLASSES:
             assert hasattr(
                 ser, 'Meta'
-            ), 'Serializer {} has no Meta'.format(ser)
+            ), f'Serializer {ser} has no Meta'
             assert hasattr(
                 ser.Meta, 'type_'
             ) or hasattr(
                 ser.Meta, 'get_type'
-            ), 'Serializer {} has no Meta.type_ or Meta.get_type()'.format(ser)
+            ), f'Serializer {ser} has no Meta.type_ or Meta.get_type()'
 
     def test_serializers_types_are_kebab_case(self):
         serializers = JSONAPISerializer.__subclasses__()
@@ -127,7 +126,7 @@ class TestSerializerMetaType(ApiTestCase):
     def test_deprecation_warning_for_snake_case(self):
         user_auth = factories.AuthUserFactory()
         node = factories.NodeFactory(creator=user_auth)
-        url = '/{}nodes/{}/draft_registrations/?version={}'.format(API_BASE, node._id, KEBAB_CASE_VERSION)
+        url = f'/{API_BASE}nodes/{node._id}/draft_registrations/?version={KEBAB_CASE_VERSION}'
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=2)
@@ -158,13 +157,13 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
     """
 
     def setUp(self):
-        super(TestNodeSerializerAndRegistrationSerializerDifferences, self).setUp()
+        super().setUp()
 
         self.node = factories.ProjectFactory(is_public=True)
         self.registration = factories.RegistrationFactory(
             project=self.node, is_public=True)
 
-        self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+        self.url = f'/{API_BASE}nodes/{self.node._id}/'
         self.reg_url = '/{}registrations/{}/'.format(
             API_BASE, self.registration._id)
 
@@ -242,7 +241,7 @@ class TestNullLinks(ApiTestCase):
 class TestApiBaseSerializers(ApiTestCase):
 
     def setUp(self):
-        super(TestApiBaseSerializers, self).setUp()
+        super().setUp()
         self.user = factories.AuthUserFactory()
         self.auth = factories.Auth(self.user)
         self.node = factories.ProjectFactory(is_public=True)
@@ -253,7 +252,7 @@ class TestApiBaseSerializers(ApiTestCase):
             creator=self.user, is_public=True)
         self.node.add_pointer(self.linked_node, auth=self.auth)
 
-        self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+        self.url = f'/{API_BASE}nodes/{self.node._id}/'
 
     def test_serializers_have_get_absolute_url_method(self):
         serializers = JSONAPISerializer.__subclasses__()
@@ -521,11 +520,11 @@ class TestRelationshipField:
 
         relationship_field = data['relationships']['self_and_related_field']['links']
         assert_in(
-            '/v2/nodes/{}/contributors/'.format(node._id),
+            f'/v2/nodes/{node._id}/contributors/',
             relationship_field['self']['href']
         )
         assert_in(
-            '/v2/nodes/{}/'.format(node._id),
+            f'/v2/nodes/{node._id}/',
             relationship_field['related']['href']
         )
 
@@ -538,7 +537,7 @@ class TestRelationshipField:
         ).data['data']
         field = data['relationships']['two_url_kwargs']['links']
         assert_in(
-            '/v2/nodes/{}/node_links/{}/'.format(node._id, node._id),
+            f'/v2/nodes/{node._id}/node_links/{node._id}/',
             field['related']['href']
         )
 
@@ -574,13 +573,13 @@ class TestRelationshipField:
                 'request': req}
         ).data['data']
         field = data['relationships']['registered_from']['links']
-        assert_in('/v2/nodes/{}/'.format(node._id), field['related']['href'])
+        assert_in(f'/v2/nodes/{node._id}/', field['related']['href'])
 
 
 class TestShowIfVersion(ApiTestCase):
 
     def setUp(self):
-        super(TestShowIfVersion, self).setUp()
+        super().setUp()
         self.node = factories.NodeFactory()
         self.registration = factories.RegistrationFactory()
 
@@ -632,7 +631,7 @@ class TestShowIfVersion(ApiTestCase):
 class VersionedDateTimeField(DbTestCase):
 
     def setUp(self):
-        super(VersionedDateTimeField, self).setUp()
+        super().setUp()
         self.node = factories.NodeFactory()
         self.old_date = datetime.utcnow()   # naive dates before django-osf
         self.old_date_without_microseconds = self.old_date.replace(

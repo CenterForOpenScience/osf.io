@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import time
 import datetime
 from nose.tools import *  # noqa; PEP8 asserts
@@ -17,7 +15,7 @@ from website.profile import utils
 class TestContributorUtils(OsfTestCase):
 
     def setUp(self):
-        super(TestContributorUtils, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
 
     def test_serialize_user(self):
@@ -63,7 +61,7 @@ class TestContributorUtils(OsfTestCase):
 class TestContributorViews(OsfTestCase):
 
     def setUp(self):
-        super(TestContributorViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)

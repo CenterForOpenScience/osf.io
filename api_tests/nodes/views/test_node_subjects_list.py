@@ -18,4 +18,4 @@ class TestNodeSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def url(self, resource):
-        return '/{}nodes/{}/subjects/'.format(API_BASE, resource._id)
+        return f'/{API_BASE}nodes/{resource._id}/subjects/'

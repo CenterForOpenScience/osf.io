@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from past.builtins import basestring
 import requests
 from django.db import transaction
@@ -10,7 +9,7 @@ from api.base import settings
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
-class DummyRequest(object):
+class DummyRequest:
     pass
 dummy_request = DummyRequest()
 

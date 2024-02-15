@@ -75,7 +75,7 @@ class TestNodeFileList:
     def test_does_not_return_trashed_files(
             self, app, user, node, file, deleted_file):
         res = app.get(
-            '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
+            f'/{API_BASE}nodes/{node._id}/files/osfstorage/',
             auth=user.auth
         )
         data = res.json.get('data')
@@ -208,7 +208,7 @@ class TestFileFiltering:
             file_three, file_four
     ):
         res = app.get(
-            '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
+            f'/{API_BASE}nodes/{node._id}/files/osfstorage/',
             auth=user.auth
         )
         data = res.json.get('data')

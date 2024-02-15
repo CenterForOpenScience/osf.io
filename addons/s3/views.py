@@ -151,7 +151,7 @@ def create_bucket(auth, node_addon, **kwargs):
     except exception.S3CreateError as e:
         return {
             'message': e.message,
-            'title': "Problem creating bucket '{0}'".format(bucket_name),
+            'title': f"Problem creating bucket '{bucket_name}'",
         }, http_status.HTTP_400_BAD_REQUEST
     except exception.BotoClientError as e:  # Base class catchall
         return {

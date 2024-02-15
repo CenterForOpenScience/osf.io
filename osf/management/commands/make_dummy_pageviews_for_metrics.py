@@ -49,11 +49,11 @@ class Command(BaseCommand):
             label='timefilter:',
         )
 
-        date_keys = set(
+        date_keys = {
             k
             for r in results
             for k in r
-        )
+        }
         for date_key in sorted(date_keys):
             self._print_line(
                 (r.get(date_key, 0) for r in results),

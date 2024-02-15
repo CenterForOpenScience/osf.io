@@ -20,11 +20,11 @@ class TestMeetingSubmissionsList:
 
     @pytest.fixture()
     def url(self, meeting):
-        return '/_/meetings/{}/submissions/'.format(meeting.endpoint)
+        return f'/_/meetings/{meeting.endpoint}/submissions/'
 
     @pytest.fixture()
     def url_meeting_two(self, meeting_two):
-        return '/_/meetings/{}/submissions/'.format(meeting_two.endpoint)
+        return f'/_/meetings/{meeting_two.endpoint}/submissions/'
 
     @pytest.fixture()
     def user(self):
@@ -93,7 +93,7 @@ class TestMeetingSubmissionsList:
 
     def mock_download(self, project, file, download_count):
         pc, _ = PageCounter.objects.get_or_create(
-            _id='download:{}:{}'.format(project._id, file._id),
+            _id=f'download:{project._id}:{file._id}',
             resource=project.guids.first(),
             action='download',
             file=file
@@ -142,7 +142,7 @@ class TestMeetingSubmissionsList:
         assert len(data) == 2
         assert res.json['data'][0]['attributes']['meeting_category'] == 'poster'
         assert res.json['data'][1]['attributes']['meeting_category'] == 'poster'
-        assert set([submission['id'] for submission in res.json['data']]) == set([second, third])
+        assert {submission['id'] for submission in res.json['data']} == {second, third}
 
         # test search title, author, meeting_category combined (OR)
         res = app.get(url_meeting_two + '?filter[title,author_name,meeting_category]=cantaloupe')
@@ -163,7 +163,7 @@ class TestMeetingSubmissionsList:
         res = app.get(url_meeting_two + '?filter[title,author_name,meeting_category]=juice')
         assert len(res.json['data']) == 2
         # Results include an author match and a title match
-        assert set([first, second]) == set([sub['id'] for sub in res.json['data']])
+        assert {first, second} == {sub['id'] for sub in res.json['data']}
 
         # test sort title
         res = app.get(url_meeting_two + '?sort=title')

@@ -92,12 +92,12 @@ class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
 
     def __init__(cls, name, bases, dct):
-        super(ExternalProviderMeta, cls).__init__(name, bases, dct)
+        super().__init__(name, bases, dct)
         if not isinstance(cls.short_name, abc.abstractproperty):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
+class ExternalProvider(with_metaclass(ExternalProviderMeta)):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
@@ -119,7 +119,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
     expiry_time = 0  # If/When the refresh token expires (seconds). 0 indicates a non-expiring refresh token
 
     def __init__(self, account=None):
-        super(ExternalProvider, self).__init__()
+        super().__init__()
 
         # provide an unauthenticated session by default
         self.account = account
@@ -130,7 +130,8 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             status=self.account.provider_id if self.account else 'anonymous'
         )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def auth_url_base(self):
         """The base URL to begin the OAuth dance"""
         pass
@@ -196,29 +197,34 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         current_session.save()
         return url
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def callback_url(self):
         """The provider URL to exchange the code for a token"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client_id(self):
         """OAuth Client ID. a/k/a: Application ID"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client_secret(self):
         """OAuth Client Secret. a/k/a: Application Secret, Application Key"""
         pass
 
     default_scopes = list()
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self):
         """Human-readable name of the service. e.g.: ORCiD, GitHub"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def short_name(self):
         """Name of the service to be used internally. e.g.: orcid, github"""
         pass
@@ -473,7 +479,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
 
-class BasicAuthProviderMixin(object):
+class BasicAuthProviderMixin:
     """
         Providers utilizing BasicAuth can utilize this class to implement the
         storage providers framework by subclassing this mixin. This provides
@@ -483,7 +489,7 @@ class BasicAuthProviderMixin(object):
     """
 
     def __init__(self, account=None, host=None, username=None, password=None):
-        super(BasicAuthProviderMixin, self).__init__()
+        super().__init__()
         if account:
             self.account = account
         elif not account and host and password and username:
@@ -491,7 +497,7 @@ class BasicAuthProviderMixin(object):
                 display_name=username,
                 oauth_key=password,
                 oauth_secret=host,
-                provider_id='{}:{}'.format(host, username),
+                provider_id=f'{host}:{username}',
                 profile_url=host,
                 provider=self.short_name,
                 provider_name=self.name

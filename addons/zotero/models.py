@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from addons.base.models import BaseCitationsNodeSettings, BaseOAuthUserSettings
 from addons.base import exceptions
 from django.db import models
@@ -165,7 +163,7 @@ class Zotero(CitationsOauthProvider):
         """
         Add all_groups query param so Zotero API key will have permissions to user's groups
         """
-        url = super(Zotero, self).auth_url
+        url = super().auth_url
         return url + '&all_groups=read'
 
 

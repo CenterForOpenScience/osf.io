@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from past.builtins import basestring
 from nose.tools import *
 

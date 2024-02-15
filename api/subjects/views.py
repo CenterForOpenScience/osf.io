@@ -13,7 +13,7 @@ from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class SubjectMixin(object):
+class SubjectMixin:
     """Mixin with convenience methods for retrieving the current subject based on the
     current URL. By default, fetches the current subject based on the subject_id kwarg.
     """

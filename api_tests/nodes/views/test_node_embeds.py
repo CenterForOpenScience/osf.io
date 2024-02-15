@@ -80,7 +80,7 @@ class TestNodeEmbeds:
             child_one, child_two):
 
         #   test_embed_children
-        url = '/{}nodes/{}/?embed=children'.format(API_BASE, root_node._id)
+        url = f'/{API_BASE}nodes/{root_node._id}/?embed=children'
 
         res = app.get(url, auth=user.auth)
         embeds = res.json['data']['embeds']
@@ -89,24 +89,24 @@ class TestNodeEmbeds:
         children = [
             child['id'] for child in res.json['data']['embeds']['children']['data']
         ]
-        assert set([child_one._id, child_two._id]) == set(children)
+        assert {child_one._id, child_two._id} == set(children)
 
     #   test_embed_parent
-        url = '/{}nodes/{}/?embed=parent'.format(API_BASE, child_one._id)
+        url = f'/{API_BASE}nodes/{child_one._id}/?embed=parent'
 
         res = app.get(url, auth=user.auth)
         embeds = res.json['data']['embeds']
         assert embeds['parent']['data']['id'] == root_node._id
 
     #   test_embed_no_parent
-        url = '/{}nodes/{}/?embed=parent'.format(API_BASE, root_node._id)
+        url = f'/{API_BASE}nodes/{root_node._id}/?embed=parent'
 
         res = app.get(url, auth=user.auth)
         data = res.json['data']
         assert 'embeds' not in data
 
     #   test_embed_contributors
-        url = '/{}nodes/{}/?embed=contributors'.format(API_BASE, child_one._id)
+        url = f'/{API_BASE}nodes/{child_one._id}/?embed=contributors'
 
         res = app.get(url, auth=user.auth)
         embeds = res.json['data']['embeds']
@@ -121,7 +121,7 @@ class TestNodeEmbeds:
         assert set(formatted_ids) == set(embed_contrib_ids)
 
     #   test_embed_children_filters_unauthorized
-        url = '/{}nodes/{}/?embed=children'.format(API_BASE, root_node._id)
+        url = f'/{API_BASE}nodes/{root_node._id}/?embed=children'
 
         res = app.get(url, auth=write_contrib_one.auth)
         embeds = res.json['data']['embeds']
@@ -130,21 +130,21 @@ class TestNodeEmbeds:
         assert child_one._id in ids
 
     #   test_embed_parent_unauthorized
-        url = '/{}nodes/{}/?embed=parent'.format(API_BASE, subchild._id)
+        url = f'/{API_BASE}nodes/{subchild._id}/?embed=parent'
 
         res = app.get(url, auth=write_contrib_one.auth)
         assert 'errors' in res.json['data']['embeds']['parent']
         assert res.json['data']['embeds']['parent']['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_embed_attributes_not_relationships
-        url = '/{}nodes/{}/?embed=title'.format(API_BASE, root_node._id)
+        url = f'/{API_BASE}nodes/{root_node._id}/?embed=title'
 
         res = app.get(url, auth=write_contrib_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'The following fields are not embeddable: title'
 
     #   test_embed_contributors_pagination
-        url = '/{}nodes/{}/?embed=contributors'.format(API_BASE, root_node._id)
+        url = f'/{API_BASE}nodes/{root_node._id}/?embed=contributors'
         res = app.get(url, auth=write_contrib_one.auth)
         assert res.status_code == 200
         assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'] == 3

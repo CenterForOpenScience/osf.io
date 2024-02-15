@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import time
 from rest_framework import status as http_status
 import functools

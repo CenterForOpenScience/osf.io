@@ -1,7 +1,7 @@
 import jwt
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 from django.db.models import Q
 from nose.tools import *  # noqa
 
@@ -23,7 +23,7 @@ REJECTED_MSG = 'This registration {0} has been rejected.'
 class TestTokenHandler(OsfTestCase):
 
     def setUp(self, *args, **kwargs):
-        super(TestTokenHandler, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
 
         self.payload = {
             'user_id': 'abc123',
@@ -91,7 +91,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
         with mock_auth(self.user):
-            with mock.patch('osf.utils.tokens.handlers.{0}_handler'.format(self.kind)) as mock_handler:
+            with mock.patch(f'osf.utils.tokens.handlers.{self.kind}_handler') as mock_handler:
                 handler.to_response()
                 mock_handler.assert_called_with('approve', self.reg, self.reg.registered_from)
 

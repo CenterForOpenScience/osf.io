@@ -9,7 +9,7 @@ from osf import features
 from website.settings import PREPRINT_METRICS_START_DATE
 
 
-class MetricsViewMixin(object):
+class MetricsViewMixin:
     """Mixin for views that expose metrics via django-elasticsearch-metrics.
     Enables metrics to be requested with a query parameter, like so: ::
 
@@ -99,9 +99,9 @@ class MetricsViewMixin(object):
             metric_map = self.metric_map
             for metric, period in metrics_requested.items():
                 if metric not in metric_map:
-                    raise InvalidQueryStringError("Invalid metric in query string: '{}'".format(metric), parameter='metrics')
+                    raise InvalidQueryStringError(f"Invalid metric in query string: '{metric}'", parameter='metrics')
                 if period not in self.VALID_METRIC_PERIODS:
-                    raise InvalidQueryStringError("Invalid period for metric: '{}'".format(period), parameter='metrics')
+                    raise InvalidQueryStringError(f"Invalid period for metric: '{period}'", parameter='metrics')
                 metric_class = metric_map[metric]
                 if period == 'total':
                     after = self.metrics_default_after
@@ -120,10 +120,10 @@ class MetricsViewMixin(object):
 
     # Override get_default_queryset for convenience
     def get_default_queryset(self):
-        queryset = super(MetricsViewMixin, self).get_default_queryset()
+        queryset = super().get_default_queryset()
         return self.get_metrics_queryset(queryset)
 
-class MetricsSerializerMixin(object):
+class MetricsSerializerMixin:
     @property
     def available_metrics(self):
         raise NotImplementedError(
@@ -132,7 +132,7 @@ class MetricsSerializerMixin(object):
 
     # Override JSONAPISerializer
     def get_meta(self, obj):
-        meta = super(MetricsSerializerMixin, self).get_meta(obj)
+        meta = super().get_meta(obj)
         for metric in self.available_metrics:
             if hasattr(obj, metric):
                 meta = meta or {'metrics': {}}

@@ -10,7 +10,7 @@ from api.base.views import JSONAPIBaseView
 from api.brands.serializers import BrandSerializer
 
 
-class BrandMixin(object):
+class BrandMixin:
     """Mixin with convenience method get_brand
     """
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import functools
 from rest_framework import status as http_status
 import logging
@@ -178,7 +177,7 @@ def process_project_search_results(results, **kwargs):
         authors_html = ''
         for author in authors['contributors']:
             a = OSFUser.load(author['user_id'])
-            authors_html += '<a href="%s">%s</a>' % (a.url, a.fullname)
+            authors_html += '<a href="{}">{}</a>'.format(a.url, a.fullname)
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
 

@@ -1,4 +1,3 @@
-from __future__ import print_function
 from unittest import mock
 import logging
 import os
@@ -192,7 +191,7 @@ def mock_datacite(registration):
 
     doi = registration.get_doi_client().build_doi(registration)
 
-    with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml'), 'r') as fp:
+    with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml')) as fp:
         base_xml = ET.fromstring(fp.read())
         base_xml.find('{http://datacite.org/schema/kernel-4}identifier').text = doi
         data = ET.tostring(base_xml)

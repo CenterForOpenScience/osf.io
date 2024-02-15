@@ -34,7 +34,7 @@ def sync_collection_provider_indices(cp_ids=None, only_remove=False):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--collection_provider_ids',
             type=str,
@@ -50,12 +50,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_start_time = timezone.now()
-        logger.info('script started time: {}'.format(script_start_time))
+        logger.info(f'script started time: {script_start_time}')
         logger.debug(options)
 
         cp_ids = options.get('collection_provider_ids', None)
         sync_collection_provider_indices(cp_ids)
 
         script_finish_time = timezone.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f'Run time {script_finish_time - script_start_time}')

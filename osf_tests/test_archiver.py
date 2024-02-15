@@ -1,14 +1,13 @@
-#-*- coding: utf-8 -*-
 import datetime
 import functools
 import random
 from contextlib import ExitStack, contextmanager
 
 import responses
-import mock  # noqa
+from unittest import mock
 from django.utils import timezone
 from django.db import IntegrityError
-from mock import call
+from unittest.mock import call
 import pytest
 from nose.tools import *  # noqa: F403
 
@@ -187,7 +186,7 @@ WB_FILE_TREE = {
 }
 
 
-class MockAddon(object):
+class MockAddon:
 
     complete = True
     config = mock.MagicMock()
@@ -344,7 +343,7 @@ def generate_metadata(file_trees, selected_files, node_index):
         ('q_' + selected_file['name']): {
             'extra': [{
                 'sha256': sha256,
-                'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                'viewUrl': '/project/{}/files/osfstorage{}'.format(
                     node_index[sha256],
                     selected_file['path']
                 ),
@@ -355,7 +354,7 @@ def generate_metadata(file_trees, selected_files, node_index):
         for sha256, selected_file in selected_files.items()
     }
     other_questions = {
-        'q{}'.format(i): {
+        f'q{i}': {
             'value': fake.word()
         }
         for i in range(5)
@@ -365,7 +364,7 @@ def generate_metadata(file_trees, selected_files, node_index):
 class ArchiverTestCase(OsfTestCase):
 
     def setUp(self):
-        super(ArchiverTestCase, self).setUp()
+        super().setUp()
 
         handlers.celery_before_request()
         self.user = factories.UserFactory()
@@ -481,7 +480,7 @@ class TestArchiverTasks(ArchiverTestCase):
             'osfstorage',
             self.archive_job._id
         )
-        assert(mock_group.called_with(archive_osfstorage_signature))
+        assert (mock_group.called_with(archive_osfstorage_signature))
 
     @use_fake_addons
     def test_archive_node_fail(self):
@@ -525,14 +524,14 @@ class TestArchiverTasks(ArchiverTestCase):
             'dropbox',
             self.archive_job._id
         )
-        assert(mock_group.called_with(archive_dropbox_signature))
+        assert (mock_group.called_with(archive_dropbox_signature))
 
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
         archive_addon('osfstorage', self.archive_job._id)
         assert_equal(self.archive_job.get_target('osfstorage').status, ARCHIVER_INITIATED)
         cookie = self.user.get_or_create_cookie()
-        assert(mock_make_copy_request.called_with(
+        assert (mock_make_copy_request.called_with(
             self.archive_job._id,
             settings.WATERBUTLER_URL + '/ops/copy',
             data=dict(
@@ -596,7 +595,7 @@ class TestArchiverTasks(ArchiverTestCase):
             qid: {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
                         node._id,
                         fake_file['path']
                     ),
@@ -665,7 +664,7 @@ class TestArchiverTasks(ArchiverTestCase):
             ('q_' + fake_file['name']): {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
                         node._id,
                         fake_file['path']
                     ),
@@ -694,7 +693,7 @@ class TestArchiverTasks(ArchiverTestCase):
             ('q_' + fake_file['name']): {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
                         node._id,
                         fake_file['path']
                     ),
@@ -725,7 +724,7 @@ class TestArchiverTasks(ArchiverTestCase):
             ('q_' + selected['name']): {
                 'extra': [{
                     'sha256': selected['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
                         child._id,
                         selected['path']
                     ),
@@ -1217,7 +1216,7 @@ class TestArchiveTarget(OsfTestCase):
 class TestArchiveJobModel(OsfTestCase):
 
     def tearDown(self, *args, **kwargs):
-        super(TestArchiveJobModel, self).tearDown(*args, **kwargs)
+        super().tearDown(*args, **kwargs)
         with open(os.path.join(settings.ROOT, 'addons.json')) as fp:
             addon_settings = json.load(fp)
             settings.ADDONS_ARCHIVABLE = addon_settings['addons_archivable']

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import furl
 import waffle
 import itertools
@@ -268,7 +266,7 @@ def _build_guid_url(base, suffix=None):
     ])
     if not isinstance(url, str):
         url = url.decode('utf-8')
-    return u'/{0}/'.format(url)
+    return f'/{url}/'
 
 
 def resolve_guid(guid, suffix=None):
@@ -397,7 +395,7 @@ def legacy_share_v1_search(**kwargs):
     return HTTPError(
         http_status.HTTP_400_BAD_REQUEST,
         data=dict(
-            message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
+            message_long=f'Please use v2 of the SHARE search API available at {settings.SHARE_URL}api/v2/share/search/creativeworks/_search.'
         )
     )
 

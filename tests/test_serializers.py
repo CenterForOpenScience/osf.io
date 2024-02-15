@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-import mock
+from unittest import mock
 import datetime as dt
 from nose.tools import *  # noqa (PEP8 asserts)
 
@@ -205,7 +203,7 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['user']['is_admin'])
         assert_true(res['user']['can_edit'])
         assert_true(res['user']['has_read_permissions'])
-        assert_equal(set(res['user']['permissions']), set([permissions.READ, permissions.WRITE]))
+        assert_equal(set(res['user']['permissions']), {permissions.READ, permissions.WRITE})
         assert_true(res['user']['can_comment'])
 
     def test_serialize_node_search_returns_only_visible_contributors(self):
@@ -223,7 +221,7 @@ class TestNodeSerializers(OsfTestCase):
 class TestViewProject(OsfTestCase):
 
     def setUp(self):
-        super(TestViewProject, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.node = ProjectFactory(creator=self.user)
 
@@ -264,7 +262,7 @@ class TestViewProject(OsfTestCase):
 class TestViewProjectEmbeds(OsfTestCase):
 
     def setUp(self):
-        super(TestViewProjectEmbeds, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
 
@@ -426,7 +424,7 @@ class TestNodeLogSerializers(OsfTestCase):
 class TestAddContributorJson(OsfTestCase):
 
     def setUp(self):
-        super(TestAddContributorJson, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.profile = self.user.profile_url
         self.user_id = self.user._primary_key

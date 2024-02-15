@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
 import os
 from rest_framework import status as http_status
 import requests
@@ -93,7 +91,7 @@ def get_globals():
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=request.host, is_deleted=False)._id
-            request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
+            request_login_url = f'{settings.DOMAIN}institutions/{inst_id}'
         except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
@@ -185,7 +183,7 @@ class OsfWebRenderer(WebRenderer):
     """
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
-        super(OsfWebRenderer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, data, *args, **kwargs):
         """
@@ -193,7 +191,7 @@ class OsfWebRenderer(WebRenderer):
         waffle's own middleware code at https://github.com/django-waffle/django-waffle/blob/master/waffle/middleware.py
         """
 
-        resp = super(OsfWebRenderer, self).__call__(data, *args, **kwargs)
+        resp = super().__call__(data, *args, **kwargs)
         max_age = get_setting('MAX_AGE')
 
         if hasattr(request, 'waffles'):
@@ -1814,5 +1812,5 @@ def make_url_map(app):
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():
-            req = requests.get('{}/ember-cli-live-reload.js'.format(settings.LIVE_RELOAD_DOMAIN), stream=True)
+            req = requests.get(f'{settings.LIVE_RELOAD_DOMAIN}/ember-cli-live-reload.js', stream=True)
             return Response(stream_with_context(req.iter_content()), content_type=req.headers['content-type'])

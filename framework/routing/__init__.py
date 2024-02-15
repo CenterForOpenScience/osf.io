@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import copy
 import functools
 from rest_framework import status as http_status
@@ -57,7 +55,7 @@ REDIRECT_CODES = [
     http_status.HTTP_302_FOUND,
 ]
 
-class Rule(object):
+class Rule:
     """ Container for routing and rendering rules."""
 
     @staticmethod
@@ -193,7 +191,7 @@ def process_rules(app, rules, prefix=''):
                     methods=rule.methods,
                 )
             except AssertionError:
-                raise AssertionError('URLRule({}, {})\'s view function name is overwriting an existing endpoint'.format(prefix + url, view_func.__name__ + rule.endpoint_suffix))
+                raise AssertionError(f'URLRule({prefix + url}, {view_func.__name__ + rule.endpoint_suffix})\'s view function name is overwriting an existing endpoint')
 
 
 ### Renderer helpers ###
@@ -303,7 +301,7 @@ def call_url(url, view_kwargs=None):
 
 ### Renderers ###
 
-class Renderer(object):
+class Renderer:
 
     CONTENT_TYPE = 'text/html'
 
@@ -507,11 +505,11 @@ class WebRenderer(Renderer):
                 uri_data = call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
-                return '<div>URI {} not found</div>'.format(markupsafe.escape(uri)), is_replace
+                return f'<div>URI {markupsafe.escape(uri)} not found</div>', is_replace
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(markupsafe.escape(str(error_msg))), is_replace
+                    return f'<div>{markupsafe.escape(str(error_msg))}</div>', is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
@@ -555,8 +553,8 @@ class WebRenderer(Renderer):
         try:
             # TODO: Seems like Jinja2 and handlebars renderers would not work with this call sig
             rendered = renderer(self.template_dir, template_name, data, trust=self.trust)
-        except IOError:
-            return '<div>Template {} not found.</div>'.format(template_name)
+        except OSError:
+            return f'<div>Template {template_name} not found.</div>'
 
         ## Parse HTML using html5lib; lxml is too strict and e.g. throws
         ## errors if missing parent container; htmlparser mangles whitespace

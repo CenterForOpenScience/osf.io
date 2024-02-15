@@ -13,7 +13,7 @@ from addons.osfstorage.models import Region
 from osf.models import Node
 
 
-class RegionMixin(object):
+class RegionMixin:
     """Mixin with convenience method get_region
     """
 
