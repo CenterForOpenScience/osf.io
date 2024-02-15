@@ -70,6 +70,7 @@ RUN set -ex \
         postgresql-dev \
         # cryptography
         libffi-dev \
+    && pip3 install --upgrade pip \
     && for reqs_file in \
         /code/requirements.txt \
         /code/requirements/release.txt \
@@ -139,7 +140,6 @@ RUN \
     # OSF
     yarn install --frozen-lockfile \
     && mkdir -p ./website/static/built/ \
-    && pip3 install invoke==2.2.0 \
     && python3 -m invoke build-js-config-files \
     && yarn run webpack-prod \
     # Admin
