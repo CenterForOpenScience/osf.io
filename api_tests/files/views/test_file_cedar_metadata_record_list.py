@@ -74,18 +74,14 @@ class TestFileCedarMetadataRecordListPrivateFile(TestFileCedarMetadataRecord):
     def test_record_list_no_auth(self, app, file):
 
         file_guid = file.get_guid(create=False)
-        resp = app.get(f'/v2/files/{file_guid._id}/cedar_metadata_records/')
-        assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
-        assert len(data_set) == 0
+        resp = app.get(f'/v2/files/{file_guid._id}/cedar_metadata_records/', expect_errors=True)
+        assert resp.status_code == 401
 
     def test_record_list_with_invalid_auth(self, app, user_alt, file):
 
         file_guid = file.get_guid(create=False)
-        resp = app.get(f'/v2/files/{file_guid._id}/cedar_metadata_records/', auth=user_alt.auth)
-        assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
-        assert len(data_set) == 0
+        resp = app.get(f'/v2/files/{file_guid._id}/cedar_metadata_records/', auth=user_alt.auth, expect_errors=True)
+        assert resp.status_code == 403
 
     def test_record_list_with_read_auth(self, app, node, file, cedar_record_for_file, cedar_draft_record_for_file):
 

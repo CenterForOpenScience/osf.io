@@ -63,6 +63,9 @@ class FileMixin(object):
         return obj
 
 
+class FileCedarMetadataRecordMixin(FileMixin):
+    file_lookup_url_kwarg = 'file_id_or_guid'
+
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_detail).
     """
@@ -177,11 +180,12 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         return context
 
 
-class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, FileCedarMetadataRecordMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PermissionWithGetter(ContributorOrPublic, 'target'),
     )
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -192,6 +196,7 @@ class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     view_name = 'file-cedar-metadata-records-list'
 
     def get_default_queryset(self):
+        self.get_file()
         file_records = None
         file_id_or_guid = self.kwargs['file_id_or_guid']
         try:
