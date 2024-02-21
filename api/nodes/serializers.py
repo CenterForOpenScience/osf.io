@@ -547,7 +547,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             obj.creator, quota.get_project_storage_type(obj),
         )
         if max_quota == 0:
-            return float(used_quota) / float(used_quota)
+            return 1.0
         else:
             return float(used_quota) / (max_quota * api_settings.SIZE_UNIT_GB)
 

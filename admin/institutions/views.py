@@ -300,7 +300,7 @@ class QuotaUserList(ListView):
                 'fullname': user.fullname,
                 'eppn': user.eppn or '',
                 'username': user.username,
-                'ratio': float(used_quota) / float(used_quota) * 100,
+                'ratio': 100,
                 'usage': used_quota,
                 'usage_value': used_quota_abbr[0],
                 'usage_abbr': used_quota_abbr[1],
@@ -386,7 +386,7 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
             if max_quota == 0:
                 writer.writerow([user.guids.first()._id, user.username,
                                  user.fullname,
-                                 round(float(used_quota) / float(used_quota) * 100, 1),
+                                 round(100, 1),
                                  round(used_quota, 0),
                                  round(remaining_quota, 0),
                                  round(max_quota_bytes, 0)])

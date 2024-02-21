@@ -114,7 +114,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             used_quota_abbr = '{:.1f}[{}]'.format(used_quota_abbr[0], size_unit)
 
         if max_quota == 0:
-            used_rate = float(used_quota) / float(used_quota)
+            used_rate = 1.0
         else:
             used_rate = float(used_quota) / (max_quota * api_settings.SIZE_UNIT_GB)
         icon_name = None
