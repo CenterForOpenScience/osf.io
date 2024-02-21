@@ -9,13 +9,11 @@ from django.utils import timezone
 from django.db import IntegrityError
 from unittest.mock import call
 import pytest
-from nose.tools import *  # noqa: F403
 
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
 from website import mails
-from website import settings
 
 from website.archiver import (
     ARCHIVER_INITIATED,
@@ -422,14 +420,14 @@ class TestStorageAddonBase(ArchiverTestCase):
             'size': '100',
         }
         file_tree = addon._get_file_tree(root, self.user, cookie)
-        assert_equal(FILE_TREE, file_tree)
-        assert_equal(len(responses.calls), 2)
+        self.assertEqual(FILE_TREE, file_tree)
+        self.assertEqual(len(responses.calls), 2)
 
         # Makes a request for folders ('/qwerty') but not files ('/1234567', '/qwerty/asdfgh')
         requests_made_urls = [call.request.url for call in responses.calls]
-        assert_true(any('/qwerty' in url for url in requests_made_urls))
-        assert_false(any('/1234567' in url for url in requests_made_urls))
-        assert_false(any('/qwerty/asdfgh' in url for url in requests_made_urls))
+        self.assertTrue(any('/qwerty' in url for url in requests_made_urls))
+        self.assertFalse(any('/1234567' in url for url in requests_made_urls))
+        self.assertFalse(any('/qwerty/asdfgh' in url for url in requests_made_urls))
 
     def _test_addon(self, addon_short_name):
         self._test__get_file_tree(addon_short_name)
@@ -448,7 +446,7 @@ class TestArchiverTasks(ArchiverTestCase):
         archive(job_pk=self.archive_job._id)
         targets = [self.src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
         target_addons = [addon for addon in targets if (addon and addon.complete and isinstance(addon, BaseStorageAddon))]
-        assert_true(self.dst.archiving)
+        self.assertTrue(self.dst.archiving)
         mock_chain.assert_called_with(
             [
                 celery.group(
@@ -465,8 +463,8 @@ class TestArchiverTasks(ArchiverTestCase):
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             res = stat_addon('osfstorage', self.archive_job._id)
-        assert_equal(res.target_name, 'osfstorage')
-        assert_equal(res.disk_usage, 128 + 256)
+        self.assertEqual(res.target_name, 'osfstorage')
+        self.assertEqual(res.disk_usage, 128 + 256)
 
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_pass(self, mock_archive_addon):
@@ -506,8 +504,8 @@ class TestArchiverTasks(ArchiverTestCase):
             mock_get_addon.return_value = mock_addon
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage']]
             archive_node(results, job_pk=self.archive_job._id)
-        assert_false(mock_archive_addon.called)
-        assert_true(mock_send.called)
+        self.assertFalse(mock_archive_addon.called)
+        self.assertTrue(mock_send.called)
 
     @use_fake_addons
     @mock.patch('website.archiver.tasks.archive_addon.delay')
@@ -529,7 +527,7 @@ class TestArchiverTasks(ArchiverTestCase):
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
         archive_addon('osfstorage', self.archive_job._id)
-        assert_equal(self.archive_job.get_target('osfstorage').status, ARCHIVER_INITIATED)
+        self.assertEqual(self.archive_job.get_target('osfstorage').status, ARCHIVER_INITIATED)
         cookie = self.user.get_or_create_cookie()
         assert (mock_make_copy_request.called_with(
             self.archive_job._id,
@@ -680,7 +678,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[schema._id].items():
-                    assert_equal(question['extra'][0]['selectedFileName'], fake_file['name'])
+                    self.assertEqual(question['extra'][0]['selectedFileName'], fake_file['name'])
 
     def test_archive_failure_different_name_same_sha(self):
         file_tree = file_tree_factory(0, 0, 0)
@@ -707,7 +705,7 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                with assert_raises(ArchivedFileNotFound):
+                with self.assertRaises(ArchivedFileNotFound):
                     archive_success(registration._id, job._id)
 
     def test_archive_success_same_file_in_component(self):
@@ -742,7 +740,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 registration.reload()
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[schema._id].items():
-                    assert_in(child_reg._id, question['extra'][0]['viewUrl'])
+                    self.assertIn(child_reg._id, question['extra'][0]['viewUrl'])
 
 
 class TestArchiverUtils(ArchiverTestCase):
@@ -756,9 +754,9 @@ class TestArchiverUtils(ArchiverTestCase):
             self.user,
             {}
         )
-        assert_equal(mock_send_mail.call_count, 2)
+        self.assertEqual(mock_send_mail.call_count, 2)
         self.dst.reload()
-        assert_true(self.dst.is_deleted)
+        self.assertTrue(self.dst.is_deleted)
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail_copy(self, mock_send_mail):
@@ -825,28 +823,28 @@ class TestArchiverUtils(ArchiverTestCase):
 
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
-        assert_equal(a_stat_result.disk_usage, 128 + 256)
-        assert_equal(a_stat_result.num_files, 2)
-        assert_equal(len(a_stat_result.targets), 2)
+        self.assertEqual(a_stat_result.disk_usage, 128 + 256)
+        self.assertEqual(a_stat_result.num_files, 2)
+        self.assertEqual(len(a_stat_result.targets), 2)
 
     @use_fake_addons
     def test_archive_provider_for(self):
         provider = self.src.get_addon(settings.ARCHIVE_PROVIDER)
-        assert_equal(archiver_utils.archive_provider_for(self.src, self.user)._id, provider._id)
+        self.assertEqual(archiver_utils.archive_provider_for(self.src, self.user)._id, provider._id)
 
     @use_fake_addons
     def test_has_archive_provider(self):
-        assert_true(archiver_utils.has_archive_provider(self.src, self.user))
+        self.assertTrue(archiver_utils.has_archive_provider(self.src, self.user))
         wo = factories.NodeFactory(creator=self.user)
         wo.delete_addon(settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
-        assert_false(archiver_utils.has_archive_provider(wo, self.user))
+        self.assertFalse(archiver_utils.has_archive_provider(wo, self.user))
 
     @use_fake_addons
     def test_link_archive_provider(self):
         wo = factories.NodeFactory(creator=self.user)
         wo.delete_addon(settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         archiver_utils.link_archive_provider(wo, self.user)
-        assert_true(archiver_utils.has_archive_provider(wo, self.user))
+        self.assertTrue(archiver_utils.has_archive_provider(wo, self.user))
 
     def test_get_file_map(self):
         node = factories.NodeFactory(creator=self.user)
@@ -862,9 +860,9 @@ class TestArchiverUtils(ArchiverTestCase):
             item = stack.pop(0)
             if item['kind'] == 'file':
                 sha256 = item['extra']['hashes']['sha256']
-                assert_in(sha256, file_map)
+                self.assertIn(sha256, file_map)
                 map_file = file_map[sha256]
-                assert_equal(item, map_file)
+                self.assertEqual(item, map_file)
             else:
                 stack = stack + item['children']
 
@@ -886,9 +884,9 @@ class TestArchiverUtils(ArchiverTestCase):
                 item = stack.pop(0)
                 if item['kind'] == 'file':
                     sha256 = item['extra']['hashes']['sha256']
-                    assert_in(sha256, file_map)
+                    self.assertIn(sha256, file_map)
                     map_file = file_map[sha256]
-                    assert_equal(item, map_file)
+                    self.assertEqual(item, map_file)
                 else:
                     stack = stack + item['children']
 
@@ -906,7 +904,7 @@ class TestArchiverUtils(ArchiverTestCase):
             call_count = mock_get_file_tree.call_count
             # second call
             archiver_utils.get_file_map(node)
-            assert_equal(mock_get_file_tree.call_count, call_count)
+            self.assertEqual(mock_get_file_tree.call_count, call_count)
 
 
 class TestArchiverListeners(ArchiverTestCase):
@@ -929,9 +927,9 @@ class TestArchiverListeners(ArchiverTestCase):
         rc2 = rc1.nodes[0]
         mock_chain.reset_mock()
         listeners.after_register(c1, rc1, self.user)
-        assert_false(mock_chain.called)
+        self.assertFalse(mock_chain.called)
         listeners.after_register(c2, rc2, self.user)
-        assert_false(mock_chain.called)
+        self.assertFalse(mock_chain.called)
         listeners.after_register(proj, reg, self.user)
         for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, rc1, rc2]]:
             mock_archive.assert_any_call(**kwargs)
@@ -964,9 +962,9 @@ class TestArchiverListeners(ArchiverTestCase):
         with mock.patch('website.mails.send_mail') as mock_send:
             with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
                 listeners.archive_callback(self.dst)
-        assert_false(mock_send.called)
-        assert_false(mock_fail.called)
-        assert_true(mock_delay.called)
+        self.assertFalse(mock_send.called)
+        self.assertFalse(mock_fail.called)
+        self.assertTrue(mock_delay.called)
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')
@@ -974,7 +972,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.archive_job.save()
         listeners.archive_callback(self.dst)
-        assert_equal(mock_send.call_count, 1)
+        self.assertEqual(mock_send.call_count, 1)
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')
@@ -990,7 +988,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.save()
         listeners.archive_callback(self.dst)
-        assert_equal(mock_send.call_count, 1)
+        self.assertEqual(mock_send.call_count, 1)
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_FAILURE)
@@ -1014,12 +1012,12 @@ class TestArchiverListeners(ArchiverTestCase):
         child.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         child.save()
         listeners.archive_callback(child)
-        assert_false(child.archiving)
+        self.assertFalse(child.archiving)
 
     def test_archive_tree_finished_d1(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.save()
-        assert_true(self.dst.archive_job.archive_tree_finished())
+        self.assertTrue(self.dst.archive_job.archive_tree_finished())
 
     def test_archive_tree_finished_d3(self):
         proj = factories.NodeFactory()
@@ -1033,7 +1031,7 @@ class TestArchiverListeners(ArchiverTestCase):
         for node in [reg, rchild, rchild2]:
             node.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         for node in [reg, rchild, rchild2]:
-            assert_true(node.archive_job.archive_tree_finished())
+            self.assertTrue(node.archive_job.archive_tree_finished())
 
     def test_archive_tree_finished_false(self):
         proj = factories.NodeFactory()
@@ -1049,7 +1047,7 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
         rchild2.save()
         for node in [reg, rchild, rchild2]:
-            assert_false(node.archive_job.archive_tree_finished())
+            self.assertFalse(node.archive_job.archive_tree_finished())
 
     def test_archive_tree_finished_false_for_partial_archive(self):
         proj = factories.NodeFactory()
@@ -1065,7 +1063,7 @@ class TestArchiverListeners(ArchiverTestCase):
             node.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rsibling.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
         rsibling.save()
-        assert_false(reg.archive_job.archive_tree_finished())
+        self.assertFalse(reg.archive_job.archive_tree_finished())
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')
@@ -1083,16 +1081,16 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild.save()
         listeners.archive_callback(rchild)
-        assert_false(mock_send_success.called)
+        self.assertFalse(mock_send_success.called)
         reg.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         reg.save()
         listeners.archive_callback(reg)
-        assert_false(mock_send_success.called)
+        self.assertFalse(mock_send_success.called)
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild2.save()
         listeners.archive_callback(rchild2)
-        assert_equal(mock_send_success.call_count, 1)
-        assert_true(mock_send_success.called)
+        self.assertEqual(mock_send_success.call_count, 1)
+        self.assertTrue(mock_send_success.called)
 
 class TestArchiverScripts(ArchiverTestCase):
 
@@ -1130,14 +1128,14 @@ class TestArchiverScripts(ArchiverTestCase):
             archive_job.save()
             pending.append(reg)
         failed = Registration.find_failed_registrations()
-        assert_equal(len(failed), 5)
+        self.assertEqual(len(failed), 5)
         failures = list(failures)
         failures.sort()
         failed = list([f._id for f in failed])
         failed.sort()
-        assert_equals(failed, failures)
+        self.assertEquals(failed, failures)
         for pk in legacy:
-            assert_false(pk in failed)
+            self.assertFalse(pk in failed)
 
 
 class TestArchiverDecorators(ArchiverTestCase):
@@ -1163,7 +1161,7 @@ class TestArchiverBehavior(OsfTestCase):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
         reg.save()
-        assert_false(mock_update_search.called)
+        self.assertFalse(mock_update_search.called)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     @mock.patch('website.mails.send_mail')
@@ -1177,7 +1175,7 @@ class TestArchiverBehavior(OsfTestCase):
             mock.patch('osf.models.ArchiveJob.success', mock.PropertyMock(return_value=True))
         ) as (mock_finished, mock_success):
             listeners.archive_callback(reg)
-        assert_equal(mock_update_search.call_count, 1)
+        self.assertEqual(mock_update_search.call_count, 1)
 
     @pytest.mark.enable_search
     @mock.patch('website.search.elastic_search.delete_doc')
@@ -1191,7 +1189,7 @@ class TestArchiverBehavior(OsfTestCase):
                 mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
         ) as (mock_finished, mock_success):
             listeners.archive_callback(reg)
-        assert_true(mock_delete_index_node.called)
+        self.assertTrue(mock_delete_index_node.called)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     @mock.patch('website.mails.send_mail')
@@ -1201,7 +1199,7 @@ class TestArchiverBehavior(OsfTestCase):
         reg.save()
         with mock.patch('osf.models.ArchiveJob.archive_tree_finished', mock.Mock(return_value=False)):
             listeners.archive_callback(reg)
-        assert_false(mock_update_search.called)
+        self.assertFalse(mock_update_search.called)
 
 
 class TestArchiveTarget(OsfTestCase):
@@ -1209,8 +1207,8 @@ class TestArchiveTarget(OsfTestCase):
     def test_repr(self):
         target = ArchiveTarget()
         result = repr(target)
-        assert_in('ArchiveTarget', result)
-        assert_in(str(target._id), result)
+        self.assertIn('ArchiveTarget', result)
+        self.assertIn(str(target._id), result)
 
 
 class TestArchiveJobModel(OsfTestCase):
@@ -1224,9 +1222,9 @@ class TestArchiveJobModel(OsfTestCase):
     def test_repr(self):
         job = ArchiveJob()
         result = repr(job)
-        assert_in('ArchiveJob', result)
-        assert_in(str(job.done), result)
-        assert_in(str(job._id), result)
+        self.assertIn('ArchiveJob', result)
+        self.assertIn(str(job.done), result)
+        self.assertIn(str(job._id), result)
 
     def test_target_info(self):
         target = ArchiveTarget(name='neon-archive')
@@ -1235,14 +1233,14 @@ class TestArchiveJobModel(OsfTestCase):
         job.target_addons.add(target)
 
         result = job.target_info()
-        assert_equal(len(result), 1)
+        self.assertEqual(len(result), 1)
 
         item = result[0]
 
-        assert_equal(item['name'], target.name)
-        assert_equal(item['status'], target.status)
-        assert_equal(item['stat_result'], target.stat_result)
-        assert_equal(item['errors'], target.errors)
+        self.assertEqual(item['name'], target.name)
+        self.assertEqual(item['status'], target.status)
+        self.assertEqual(item['stat_result'], target.stat_result)
+        self.assertEqual(item['errors'], target.errors)
 
     def test_get_target(self):
         proj = factories.ProjectFactory()
@@ -1250,9 +1248,9 @@ class TestArchiveJobModel(OsfTestCase):
         job = ArchiveJob.objects.create(src_node=proj, dst_node=reg, initiator=proj.creator)
         job.set_targets()
         osfstorage = job.get_target('osfstorage')
-        assert_false(not osfstorage)
+        self.assertFalse(not osfstorage)
         none = job.get_target('fake')
-        assert_false(none)
+        self.assertFalse(none)
 
     def test_set_targets(self):
         proj = factories.ProjectFactory()
@@ -1261,7 +1259,7 @@ class TestArchiveJobModel(OsfTestCase):
         job.save()
         job.set_targets()
 
-        assert_equal(list(job.target_addons.values_list('name', flat=True)), ['osfstorage'])
+        self.assertEqual(list(job.target_addons.values_list('name', flat=True)), ['osfstorage'])
 
     def test_archive_tree_finished_with_nodes(self):
         proj = factories.NodeFactory()
@@ -1271,19 +1269,19 @@ class TestArchiveJobModel(OsfTestCase):
         reg = factories.RegistrationFactory(project=proj)
         rchild1 = reg._nodes.first()
         for node in reg.node_and_primary_descendants():
-            assert_false(node.archive_job.archive_tree_finished())
+            self.assertFalse(node.archive_job.archive_tree_finished())
 
         for target in rchild1.archive_job.target_addons.all():
             rchild1.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
             rchild1.archive_job.save()
 
-        assert_false(reg.archive_job.archive_tree_finished())
+        self.assertFalse(reg.archive_job.archive_tree_finished())
 
         for node in reg.node_and_primary_descendants():
             for target in node.archive_job.target_addons.all():
                 node.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
         for node in reg.node_and_primary_descendants():
-            assert_true(node.archive_job.archive_tree_finished())
+            self.assertTrue(node.archive_job.archive_tree_finished())
 
 # Regression test for https://openscience.atlassian.net/browse/OSF-9085
 def test_archiver_uncaught_error_mail_renders():
