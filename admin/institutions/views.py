@@ -294,20 +294,36 @@ class QuotaUserList(ListView):
         remaining_quota = max_quota_bytes - used_quota
         used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
         remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
-        return {
-            'id': user.guids.first()._id,
-            'fullname': user.fullname,
-            'eppn': user.eppn or '',
-            'username': user.username,
-            'ratio': float(used_quota) / max_quota_bytes * 100,
-            'usage': used_quota,
-            'usage_value': used_quota_abbr[0],
-            'usage_abbr': used_quota_abbr[1],
-            'remaining': remaining_quota,
-            'remaining_value': remaining_abbr[0],
-            'remaining_abbr': remaining_abbr[1],
-            'quota': max_quota
-        }
+        if max_quota == 0:
+            return {
+                'id': user.guids.first()._id,
+                'fullname': user.fullname,
+                'eppn': user.eppn or '',
+                'username': user.username,
+                'ratio': float(used_quota) / float(used_quota) * 100,
+                'usage': used_quota,
+                'usage_value': used_quota_abbr[0],
+                'usage_abbr': used_quota_abbr[1],
+                'remaining': remaining_quota,
+                'remaining_value': remaining_abbr[0],
+                'remaining_abbr': remaining_abbr[1],
+                'quota': max_quota
+            }
+        else:
+            return {
+                'id': user.guids.first()._id,
+                'fullname': user.fullname,
+                'eppn': user.eppn or '',
+                'username': user.username,
+                'ratio': float(used_quota) / max_quota_bytes * 100,
+                'usage': used_quota,
+                'usage_value': used_quota_abbr[0],
+                'usage_abbr': used_quota_abbr[1],
+                'remaining': remaining_quota,
+                'remaining_value': remaining_abbr[0],
+                'remaining_abbr': remaining_abbr[1],
+                'quota': max_quota
+            }
 
     def get_queryset(self):
         user_list = self.get_userlist()
@@ -367,12 +383,20 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
             max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
             remaining_quota = max_quota_bytes - used_quota
 
-            writer.writerow([user.guids.first()._id, user.username,
-                             user.fullname,
-                             round(float(used_quota) / max_quota_bytes * 100, 1),
-                             round(used_quota, 0),
-                             round(remaining_quota, 0),
-                             round(max_quota_bytes, 0)])
+            if max_quota == 0:
+                writer.writerow([user.guids.first()._id, user.username,
+                                 user.fullname,
+                                 round(float(used_quota) / float(used_quota) * 100, 1),
+                                 round(used_quota, 0),
+                                 round(remaining_quota, 0),
+                                 round(max_quota_bytes, 0)])
+            else:
+                writer.writerow([user.guids.first()._id, user.username,
+                                 user.fullname,
+                                 round(float(used_quota) / max_quota_bytes * 100, 1),
+                                 round(used_quota, 0),
+                                 round(remaining_quota, 0),
+                                 round(max_quota_bytes, 0)])
         query = 'attachment; filename=user_list_by_institution_{}_export.tsv'.format(
             institution_id)
         response['Content-Disposition'] = query

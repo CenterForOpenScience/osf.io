@@ -58,8 +58,9 @@
                             <form method="post" action="{% url 'users:institution_quota' current_user.id %}" class="row">
                                 {% csrf_token %}
                                 <div class="col-xs-2 storageLimitContainer">
-                                    <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" max="2147483647" required value="{{ current_user.quota }}"
-                                           oninvalid="this.setCustomValidity('{% trans 'Please enter Quota for Institutional Storage (GB) within 1~2147483647.' %}')" oninput="validateMaxQuotaInput()"
+                                    <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" required value="{{ current_user.quota }}" oninvalid="this.setCustomValidity('Value must be an integer number greater than or equal 0.')" oninput="setCustomValidity('')" />
+                                    <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="0" max="2147483647" required value="{{ current_user.quota }}"
+                                           oninvalid="this.setCustomValidity('{% trans 'Please enter Quota for Institutional Storage (GB) within 0~2147483647.' %}')" oninput="validateMaxQuotaInput()"
                                            onKeyDown="preventDotInput(event)" {% if current_user.disable_update_max_quota %}disabled{% endif %}/>
                                 </div>
                                 <input type="submit" id="applyMaxQuota" class="btn btn-success" value="{% trans 'Apply' %}"
