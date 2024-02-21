@@ -5,7 +5,6 @@ Unit tests for analytics logic in framework/analytics/__init__.py
 import pytest
 from django.utils import timezone
 from django.conf import settings as django_conf_settings
-from nose.tools import *  # noqa: F403
 
 from datetime import datetime
 from importlib import import_module
@@ -25,21 +24,21 @@ class TestAnalytics(OsfTestCase):
         user = UserFactory()
         date = timezone.now()
 
-        assert_equal(analytics.get_total_activity_count(user._id), 0)
-        assert_equal(analytics.get_total_activity_count(user._id), user.get_activity_points())
+        self.assertEqual(analytics.get_total_activity_count(user._id), 0)
+        self.assertEqual(analytics.get_total_activity_count(user._id), user.get_activity_points())
 
         analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat())
 
-        assert_equal(analytics.get_total_activity_count(user._id), 1)
-        assert_equal(analytics.get_total_activity_count(user._id), user.get_activity_points())
+        self.assertEqual(analytics.get_total_activity_count(user._id), 1)
+        self.assertEqual(analytics.get_total_activity_count(user._id), user.get_activity_points())
 
     def test_increment_user_activity_counters(self):
         user = UserFactory()
         date = timezone.now()
 
-        assert_equal(user.get_activity_points(), 0)
+        self.assertEqual(user.get_activity_points(), 0)
         analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat())
-        assert_equal(user.get_activity_points(), 1)
+        self.assertEqual(user.get_activity_points(), 1)
 
 
 @pytest.fixture()
