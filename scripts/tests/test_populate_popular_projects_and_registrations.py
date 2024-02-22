@@ -1,5 +1,3 @@
-from nose.tools import *  # noqa
-
 from unittest import mock
 
 from tests.base import OsfTestCase
@@ -82,16 +80,16 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
 
         mock_client.return_value = {'node_pageviews': node_pageviews, 'node_visits': node_visits}
 
-        assert_equal(len(self.popular_links_node.nodes), 0)
-        assert_equal(len(self.popular_links_registrations.nodes), 0)
+        self.assertEqual(len(self.popular_links_node.nodes), 0)
+        self.assertEqual(len(self.popular_links_registrations.nodes), 0)
 
         script.main(dry_run=False)
 
         self.popular_links_node.reload()
         self.popular_links_registrations.reload()
 
-        assert_equal(len(self.popular_links_node.nodes), 2)
-        assert_equal(len(self.popular_links_registrations.nodes), 2)
+        self.assertEqual(len(self.popular_links_node.nodes), 2)
+        self.assertEqual(len(self.popular_links_registrations.nodes), 2)
 
-        assert_equals(popular_nodes, self.popular_links_node.nodes)
-        assert_equals(popular_registrations, self.popular_links_registrations.nodes)
+        self.assertEqual(popular_nodes, self.popular_links_node.nodes)
+        self.assertEqual(popular_registrations, self.popular_links_registrations.nodes)

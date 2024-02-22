@@ -2,13 +2,13 @@ from unittest import mock
 from datetime import timedelta
 
 from django.utils import timezone
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, NodeFactory, EmbargoTerminationApprovalFactory, RegistrationFactory, EmbargoFactory
 from osf.models import Sanction, Registration
 
 from scripts.approve_embargo_terminations import main, get_pending_embargo_termination_requests
+
 
 class TestApproveEmbargoTerminations(OsfTestCase):
 
@@ -53,19 +53,19 @@ class TestApproveEmbargoTerminations(OsfTestCase):
 
     def test_get_pending_embargo_termination_requests_returns_only_unapproved(self):
         targets = get_pending_embargo_termination_requests()
-        assert_equal(targets.count(), 1)
-        assert_equal(targets.first()._id, self.registration2.embargo_termination_approval._id)
+        self.assertEqual(targets.count(), 1)
+        self.assertEqual(targets.first()._id, self.registration2.embargo_termination_approval._id)
 
     def test_main_auto_approves_embargo_termination_request(self):
         for node in self.registration2.node_and_primary_descendants():
-            assert_false(node.is_public)
-            assert_true(node.is_embargoed)
+            self.assertFalse(node.is_public)
+            self.assertTrue(node.is_embargoed)
         main()
         for node in self.registration2.node_and_primary_descendants():
             node.reload()
-            assert_true(node.is_public)
-            assert_equal(node.embargo_termination_approval.state, Sanction.APPROVED)
-            assert_false(node.is_embargoed)
+            self.assertTrue(node.is_public)
+            self.assertEqual(node.embargo_termination_approval.state, Sanction.APPROVED)
+            self.assertFalse(node.is_embargoed)
 
     def test_main_removes_embargo_termination_approvals_for_completed_embargos(self):
         self.registration2.embargo.mark_as_completed()
