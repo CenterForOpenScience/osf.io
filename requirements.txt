@@ -98,7 +98,7 @@ rdflib-jsonld==0.6.2
 
 # Metrics
 # git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6
-git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl
+# git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl
 
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0
