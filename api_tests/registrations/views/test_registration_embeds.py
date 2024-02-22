@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa:
 import functools
 
 from framework.auth.core import Auth
@@ -49,10 +48,10 @@ class TestRegistrationEmbeds(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         json = res.json
         embeds = json['data']['embeds']
-        assert_equal(len(embeds['children']['data']), 2)
+        self.assertEqual(len(embeds['children']['data']), 2)
         titles = [self.child1.title, self.child2.title]
         for child in embeds['children']['data']:
-            assert_in(child['attributes']['title'], titles)
+            self.assertIn(child['attributes']['title'], titles)
 
     def test_embed_contributors(self):
         url = '/{}registrations/{}/?embed=contributors'.format(
@@ -63,22 +62,22 @@ class TestRegistrationEmbeds(ApiTestCase):
         ids = [c._id for c in self.contribs] + [self.user._id]
         ids = [f'{self.registration._id}-{id_}' for id_ in ids]
         for contrib in embeds['contributors']['data']:
-            assert_in(contrib['id'], ids)
+            self.assertIn(contrib['id'], ids)
 
     def test_embed_identifiers(self):
         url = '/{}registrations/{}/?embed=identifiers'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
 
     def test_embed_attributes_not_relationships(self):
         url = '/{}registrations/{}/?embed=title'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.contrib1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(
             res.json['errors'][0]['detail'],
             'The following fields are not embeddable: title'
         )

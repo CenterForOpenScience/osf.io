@@ -1,5 +1,3 @@
-from nose.tools import *  # noqa:
-
 from osf_tests import factories
 from tests.base import ApiTestCase
 
@@ -28,28 +26,28 @@ class TestJSONAPIPagination(ApiTestCase):
 
     def test_pagination_links_v2(self):
         res = self.app.get(self.url_version_2_0, auth=self.user)
-        assert_equal(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         links = res.json['links']
         meta = res.json['links']['meta']
-        assert_not_in('self', links)
-        assert_in('first', links)
-        assert_in('next', links)
-        assert_in('last', links)
-        assert_in('prev', links)
-        assert_in('meta', links)
-        assert_in('total', meta)
-        assert_in('per_page', meta)
+        self.assertNotIn('self', links)
+        self.assertIn('first', links)
+        self.assertIn('next', links)
+        self.assertIn('last', links)
+        self.assertIn('prev', links)
+        self.assertIn('meta', links)
+        self.assertIn('total', meta)
+        self.assertIn('per_page', meta)
 
     def test_pagination_links_updated_version(self):
         res = self.app.get(self.url_version_2_1, auth=self.user)
-        assert_equal(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         links = res.json['links']
         meta = res.json['meta']
-        assert_in('self', links)
-        assert_in('first', links)
-        assert_in('next', links)
-        assert_in('last', links)
-        assert_in('prev', links)
-        assert_not_in('meta', links)
-        assert_in('total', meta)
-        assert_in('per_page', meta)
+        self.assertIn('self', links)
+        self.assertIn('first', links)
+        self.assertIn('next', links)
+        self.assertIn('last', links)
+        self.assertIn('prev', links)
+        self.assertNotIn('meta', links)
+        self.assertIn('total', meta)
+        self.assertIn('per_page', meta)

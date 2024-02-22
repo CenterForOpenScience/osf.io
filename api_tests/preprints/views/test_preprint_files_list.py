@@ -1,8 +1,6 @@
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 
-from nose.tools import *  # noqa: F403
-
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -148,34 +146,34 @@ class TestPreprintProvidersList(ApiTestCase):
 
     def test_return_published_files_logged_out(self):
         res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json['data']), 1)
+        self.assertEqual(
             res.json['data'][0]['attributes']['provider'],
             'osfstorage'
         )
 
     def test_does_not_return_storage_addons_link(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_not_in('storage_addons', res.json['data'][0]['links'])
+        self.assertNotIn('storage_addons', res.json['data'][0]['links'])
 
     def test_does_not_return_new_folder_link(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_not_in('new_folder', res.json['data'][0]['links'])
+        self.assertNotIn('new_folder', res.json['data'][0]['links'])
 
     def test_returns_provider_data(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(isinstance(res.json['data'], list))
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(isinstance(res.json['data'], list))
+        self.assertEqual(res.content_type, 'application/vnd.api+json')
         data = res.json['data'][0]
-        assert_equal(data['attributes']['kind'], 'folder')
-        assert_equal(data['attributes']['name'], 'osfstorage')
-        assert_equal(data['attributes']['provider'], 'osfstorage')
-        assert_equal(data['attributes']['preprint'], self.preprint._id)
-        assert_equal(data['attributes']['path'], '/')
-        assert_equal(data['attributes']['node'], None)
-        assert_equal(
+        self.assertEqual(data['attributes']['kind'], 'folder')
+        self.assertEqual(data['attributes']['name'], 'osfstorage')
+        self.assertEqual(data['attributes']['provider'], 'osfstorage')
+        self.assertEqual(data['attributes']['preprint'], self.preprint._id)
+        self.assertEqual(data['attributes']['path'], '/')
+        self.assertEqual(data['attributes']['node'], None)
+        self.assertEqual(
             data['relationships']['target']['links']['related']['href'],
             f'{settings.API_DOMAIN}v2/preprints/{self.preprint._id}/'
         )
@@ -183,17 +181,17 @@ class TestPreprintProvidersList(ApiTestCase):
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(
             f'{self.url}osfstorage/{self.preprint.primary_file._id}', auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        self.assertEqual(res.status_code, 404)
 
     def test_returns_osfstorage_folder_version_two(self):
         res = self.app.get(
             f'{self.url}osfstorage/', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
         res = self.app.get(
             f'{self.url}osfstorage/?version=2.2', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
 
     def test_osfstorage_folder_data_not_found(self):
         fobj = self.preprint.root_folder.append_folder('NewFolder')
@@ -201,7 +199,7 @@ class TestPreprintProvidersList(ApiTestCase):
 
         res = self.app.get(
             f'{self.url}osfstorage/{fobj._id}', auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        self.assertEqual(res.status_code, 404)
 
 
 class TestPreprintFilesList(ApiTestCase):
@@ -376,8 +374,8 @@ class TestPreprintFilesList(ApiTestCase):
         primary_file.move_under(subfolder)
         primary_file.save()
 
-        assert_equal(subfolder.children[0], primary_file)
-        assert_equal(primary_file.parent, subfolder)
+        self.assertEqual(subfolder.children[0], primary_file)
+        self.assertEqual(primary_file.parent, subfolder)
 
         res = self.app.get(self.url, auth=self.user.auth)
         assert len(res.json['data']) == 1

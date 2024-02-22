@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import *  # noqa:
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
@@ -12,7 +11,7 @@ from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
 from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
-from osf.utils import permissions
+from osf.utils import permissionsF
 from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
