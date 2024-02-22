@@ -70,10 +70,8 @@ jobs:
         sudo apt update
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
-    - name: List requirements
-      run: pip3 list || pip list
     - name: Run tests
-      run: python3 -m invoke test_travis_addons -n 1
+      run: invoke test-travis-addons -n 1
 
   website:
     runs-on: ubuntu-20.04
@@ -116,7 +114,7 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_website -n 1
+      run: invoke test-travis-website -n 1
 
   api1_and_js:
     runs-on: ubuntu-20.04
@@ -162,7 +160,7 @@ jobs:
         run: |
           invoke assets --dev
       - name: Run test
-        run: invoke test_travis_api1_and_js -n 1
+        run: invoke test-travis-api1-and-js -n 1
 
   api2:
     runs-on: ubuntu-20.04
@@ -205,7 +203,7 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_api2 -n 1
+      run: invoke test-travis-api2 -n 1
 
   api3_and_osf:
     runs-on: ubuntu-20.04
@@ -248,5 +246,5 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_api3_and_osf -n 1
+      run: invoke test-travis-api3-and-osf -n 1
 
