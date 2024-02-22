@@ -73,7 +73,7 @@ jobs:
     - name: List requirements
       run: pip3 list || pip list
     - name: Run tests
-      run: invoke test_travis_addons -n 1
+      run: python3 -m invoke test_travis_addons -n 1
 
   website:
     runs-on: ubuntu-20.04
