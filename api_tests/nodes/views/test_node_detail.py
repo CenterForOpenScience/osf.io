@@ -1,7 +1,6 @@
 from django.utils import timezone
 from future.moves.urllib.parse import urlparse
 from unittest import mock
-from nose.tools import *  # noqa:
 import pytest
 from rest_framework import exceptions
 

@@ -3,9 +3,6 @@ import pkgutil
 
 from unittest import mock
 
-from nose import SkipTest
-from nose.tools import *  # noqa:
-
 from tests.base import ApiTestCase
 from osf_tests import factories
 from osf.utils.permissions import READ, WRITE
@@ -61,24 +58,24 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_root_returns_200(self):
         res = self.app.get(f'/{API_BASE}')
-        assert_equal(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
 
     def test_does_not_exist_returns_404(self):
         res = self.app.get(
             '/{}{}'.format(API_BASE, 'notapage'),
             expect_errors=True
         )
-        assert_equal(res.status_code, 404)
+        self.assertEqual(res.status_code, 404)
 
     def test_does_not_exist_formatting(self):
         if DEBUG_MODE:
-            raise SkipTest
+            self.skipTest()
         else:
             url = '/{}{}/'.format(API_BASE, 'notapage')
             res = self.app.get(url, expect_errors=True)
             errors = res.json['errors']
             assert isinstance(errors, list)
-            assert_equal(errors[0], {'detail': 'Not found.'})
+            self.assertEqual(errors[0], {'detail': 'Not found.'})
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
@@ -91,29 +88,29 @@ class TestApiBaseViews(ApiTestCase):
             for cls in base_permissions:
                 if isinstance(cls, tuple):
                     has_cls = any([c in view.permission_classes for c in cls])
-                    assert_true(
+                    self.assertTrue(
                         has_cls,
                         f'{view} lacks the appropriate permission classes'
                     )
                 else:
-                    assert_in(
+                    self.assertIn(
                         cls,
                         view.permission_classes,
                         f'{view} lacks the appropriate permission classes'
                     )
             for key in [READ, WRITE]:
                 scopes = getattr(view, f'required_{key}_scopes', None)
-                assert_true(bool(scopes))
+                self.assertTrue(bool(scopes))
                 for scope in scopes:
-                    assert_is_not_none(scope)
+                    self.assertIsNotNone(scope)
                 if key == WRITE:
-                    assert_not_in(CoreScopes.ALWAYS_PUBLIC, scopes)
+                    self.assertNotIn(CoreScopes.ALWAYS_PUBLIC, scopes)
 
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
             if view in self.EXCLUDED_VIEWS:
                 continue
-            assert_true(
+            self.assertTrue(
                 hasattr(view, '_get_embed_partial'),
                 f'{view} lacks embed support'
             )
@@ -121,7 +118,7 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_define_or_override_serializer_class(self):
         for view in VIEW_CLASSES:
             has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
-            assert_true(
+            self.assertTrue(
                 has_serializer_class,
                 f'{view} should include serializer class or override get_serializer_class()'
             )
@@ -139,7 +136,7 @@ class TestApiBaseViews(ApiTestCase):
             auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch(
         'osf.models.OSFUser.is_disabled',
@@ -154,7 +151,7 @@ class TestApiBaseViews(ApiTestCase):
             auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 
 class TestStatusView(ApiTestCase):
@@ -162,20 +159,20 @@ class TestStatusView(ApiTestCase):
     def test_status_view(self):
         url = f'/{API_BASE}status/'
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_in('maintenance', res.json)
-        assert_equal(res.json['maintenance'], None)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('maintenance', res.json)
+        self.assertEqual(res.json['maintenance'], None)
 
     def test_status_view_with_maintenance(self):
         maintenance.set_maintenance(message='test')
         url = f'/{API_BASE}status/'
         res = self.app.get(url)
         m = maintenance.get_maintenance()
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['maintenance']['level'], 1)
-        assert_equal(res.json['maintenance']['start'], m['start'])
-        assert_equal(res.json['maintenance']['end'], m['end'])
-        assert_equal(res.json['maintenance']['message'], 'test')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json['maintenance']['level'], 1)
+        self.assertEqual(res.json['maintenance']['start'], m['start'])
+        self.assertEqual(res.json['maintenance']['end'], m['end'])
+        self.assertEqual(res.json['maintenance']['message'], 'test')
 
 
 class TestJSONAPIBaseView(ApiTestCase):
@@ -197,19 +194,19 @@ class TestJSONAPIBaseView(ApiTestCase):
     )
     def test_request_added_to_serializer_context(self, mock_to_representation):
         self.app.get(self.url, auth=self.user.auth)
-        assert_in('request', mock_to_representation.call_args[0][0].context)
+        self.assertIn('request', mock_to_representation.call_args[0][0].context)
 
     def test_reverse_sort_possible(self):
         response = self.app.get(
             'http://localhost:8000/v2/users/me/nodes/?sort=-title',
             auth=self.user.auth
         )
-        assert_equal(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
 
 class TestSwaggerDocs(ApiTestCase):
 
     def test_swagger_docs_redirect_to_root(self):
         res = self.app.get('/v2/docs/')
-        assert_equal(res.status_code, 302)
-        assert_equal(res.location, '/v2/')
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(res.location, '/v2/')
