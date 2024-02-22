@@ -1,5 +1,3 @@
-from nose.tools import *  # noqa
-
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory
 
@@ -32,15 +30,15 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
 
     def test_get_new_and_noteworthy_nodes(self):
         new_noteworthy = script.get_new_and_noteworthy_nodes(self.new_and_noteworthy_links_node)
-        assert_equal(set(new_noteworthy), self.all_ids)
+        self.assertEqual(set(new_noteworthy), self.all_ids)
 
     def test_populate_new_and_noteworthy(self):
-        assert_equal(self.new_and_noteworthy_links_node._nodes.count(), 0)
+        self.assertEqual(self.new_and_noteworthy_links_node._nodes.count(), 0)
 
         script.main(dry_run=False)
         self.new_and_noteworthy_links_node.reload()
 
-        assert_equal(self.new_and_noteworthy_links_node._nodes.count(), 5)
+        self.assertEqual(self.new_and_noteworthy_links_node._nodes.count(), 5)
 
         script.main(dry_run=False)
 
@@ -49,4 +47,4 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         # new_and_noteworthy_node_links = {pointer.node._id for pointer in self.new_and_noteworthy_links_node.nodes}
         new_and_noteworthy_node_links = self.new_and_noteworthy_links_node._nodes.all().values_list('guids___id', flat=True)
 
-        assert_equal(set(new_and_noteworthy_node_links), self.all_ids)
+        self.assertEqual(set(new_and_noteworthy_node_links), self.all_ids)
