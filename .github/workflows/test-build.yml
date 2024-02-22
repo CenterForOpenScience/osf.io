@@ -70,6 +70,8 @@ jobs:
         sudo apt update
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
+    - name: List requirements
+      run: pip3 list || pip list
     - name: Run tests
       run: invoke test_travis_addons -n 1
 
