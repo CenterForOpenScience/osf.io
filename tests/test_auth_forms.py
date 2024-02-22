@@ -1,4 +1,3 @@
-from nose.tools import *  # PEP8 asserts
 from wtforms import Form, Field
 
 from framework.auth import forms
@@ -15,7 +14,7 @@ class TestValidation(OsfTestCase):
         u = UserFactory()
         f = MockForm(username=u.username)
         f.validate()
-        assert_in('username', f.errors)
+        assert 'username' in f.errors
 
     def test_unique_email_validator_with_unreg_user(self):
         class MockForm(Form):
@@ -25,4 +24,4 @@ class TestValidation(OsfTestCase):
             )
         u = UnregUserFactory()
         f = MockForm(username=u.username)
-        assert_true(f.validate())
+        assert f.validate()

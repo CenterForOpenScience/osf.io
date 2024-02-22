@@ -32,7 +32,6 @@ from webtest_plus import TestApp
 
 from .json_api_test_app import JSONAPITestApp
 
-from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
 
 logger = logging.getLogger(__name__)
 
@@ -374,8 +373,7 @@ def assert_is_redirect(response, msg='Response is a redirect.'):
 
 def assert_before(lst, item1, item2):
     """Assert that item1 appears before item2 in lst."""
-    assert_less(lst.index(item1), lst.index(item2),
-        f'{item1!r} appears before {item2!r}')
+    assert lst.index(item1) < lst.index(item2), f"{item1!r} appears before {item2!r}"
 
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""

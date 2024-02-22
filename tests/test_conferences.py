@@ -1,10 +1,10 @@
 from unittest import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib
 from io import BytesIO
 
+import pytest
 from django.db import IntegrityError
 import furl
 
@@ -26,7 +26,7 @@ from osf_tests.factories import ConferenceFactory, ProjectFactory, UserFactory
 def assert_absolute(url):
     parsed_domain = furl.furl(settings.DOMAIN)
     parsed_url = furl.furl(url)
-    assert_equal(parsed_domain.host, parsed_url.host)
+    assert parsed_domain.host == parsed_url.host
 
 
 def assert_equal_urls(first, second):
@@ -34,7 +34,7 @@ def assert_equal_urls(first, second):
     parsed_first.port = None
     parsed_second = furl.furl(second)
     parsed_second.port = None
-    assert_equal(parsed_first, parsed_second)
+    assert parsed_first == parsed_second
 
 
 def create_fake_conference_nodes(n, conference):
@@ -45,6 +45,7 @@ def create_fake_conference_nodes(n, conference):
         node.save()
         nodes.append(node)
     return nodes
+
 
 def create_fake_conference_nodes_bad_data(conference, n, bad_n, endpoint):
     nodes = []
@@ -59,45 +60,45 @@ def create_fake_conference_nodes_bad_data(conference, n, bad_n, endpoint):
         nodes.append(node)
     return nodes
 
+
 class TestConferenceUtils(OsfTestCase):
 
     def test_get_or_create_user_exists(self):
         user = UserFactory()
         fetched, created = get_or_create_user(user.fullname, user.username, is_spam=True)
-        assert_false(created)
-        assert_equal(user._id, fetched._id)
-        assert_false('is_spam' in fetched.system_tags)
+        assert not created
+        assert user._id == fetched._id
+        assert 'is_spam' not in fetched.system_tags
 
     def test_get_or_create_user_not_exists(self):
         fullname = 'Roger Taylor'
         username = 'roger@queen.com'
         fetched, created = get_or_create_user(fullname, username, is_spam=False)
         fetched.save()  # in order to access m2m fields, e.g. tags
-        assert_true(created)
-        assert_equal(fetched.fullname, fullname)
-        assert_equal(fetched.username, username)
-        assert_false('is_spam' in fetched.system_tags)
+        assert created
+        assert fetched.fullname == fullname
+        assert fetched.username == username
+        assert 'is_spam' not in fetched.system_tags
 
     def test_get_or_create_user_is_spam(self):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
         fetched, created = get_or_create_user(fullname, username, is_spam=True)
         fetched.save()  # in order to access m2m fields, e.g. tags
-        assert_true(created)
-        assert_equal(fetched.fullname, fullname)
-        assert_equal(fetched.username, username)
-        assert_true('is_spam' in fetched.system_tags)
+        assert created
+        assert fetched.fullname == fullname
+        assert fetched.username == username
+        assert 'is_spam' in fetched.system_tags
 
     def test_get_or_create_user_with_blocked_domain(self):
         fullname = 'Kanye West'
         username = 'kanye@mailinator.com'
-        with assert_raises(BlockedEmailError) as e:
+        with pytest.raises(BlockedEmailError) as e:
             get_or_create_user(fullname, username, is_spam=True)
-        assert_equal(str(e.exception), 'Invalid Email')
+        assert str(e.exception) == 'Invalid Email'
 
 
 class ContextTestCase(OsfTestCase):
-
     MAILGUN_API_KEY = 'mailkimp'
 
     @classmethod
@@ -160,12 +161,12 @@ class TestProvisionNode(ContextTestCase):
         with self.make_context():
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
-        assert_true(self.node.is_public)
-        assert_in(self.conference.admins.first(), self.node.contributors)
-        assert_in('emailed', self.node.system_tags)
-        assert_in(self.conference.endpoint, self.node.system_tags)
+        assert self.node.is_public
+        assert self.conference.admins.first() in self.node.contributors
+        assert 'emailed' in self.node.system_tags
+        assert self.conference.endpoint in self.node.system_tags
         assert self.node in self.conference.submissions.all()
-        assert_not_in('spam', self.node.system_tags)
+        assert 'spam' not in self.node.system_tags
 
     def test_provision_private(self):
         self.conference.public_projects = False
@@ -173,19 +174,19 @@ class TestProvisionNode(ContextTestCase):
         with self.make_context():
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
-        assert_false(self.node.is_public)
-        assert_in(self.conference.admins.first(), self.node.contributors)
-        assert_in('emailed', self.node.system_tags)
-        assert_not_in('spam', self.node.system_tags)
+        assert not self.node.is_public
+        assert self.conference.admins.first() in self.node.contributors
+        assert 'emailed' in self.node.system_tags
+        assert 'spam' not in self.node.system_tags
 
     def test_provision_spam(self):
         with self.make_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
-        assert_false(self.node.is_public)
-        assert_in(self.conference.admins.first(), self.node.contributors)
-        assert_in('emailed', self.node.system_tags)
-        assert_in('spam', self.node.system_tags)
+        assert not self.node.is_public
+        assert self.conference.admins.first() in self.node.contributors
+        assert 'emailed' in self.node.system_tags
+        assert 'spam' in self.node.system_tags
 
     @mock.patch('website.conferences.utils.waterbutler_api_url_for')
     @mock.patch('website.conferences.utils.requests.put')
@@ -242,7 +243,6 @@ class TestProvisionNode(ContextTestCase):
 
 
 class TestMessage(ContextTestCase):
-
     PUSH_CONTEXT = False
 
     def test_verify_signature_valid(self):
@@ -254,7 +254,7 @@ class TestMessage(ContextTestCase):
         with self.make_context(data={'signature': 'fake'}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
-            with assert_raises(message.ConferenceError):
+            with pytest.raises(message.ConferenceError):
                 msg.verify_signature()
 
     def test_is_spam_false_missing_headers(self):
@@ -313,7 +313,7 @@ class TestMessage(ContextTestCase):
         )
         with ctx:
             msg = message.ConferenceMessage()
-            assert_equal(msg.subject, 'Hip Hopera')
+            assert msg.subject == 'Hip Hopera'
 
     def test_recipient(self):
         address = 'test-conference@osf.io'
@@ -323,7 +323,7 @@ class TestMessage(ContextTestCase):
         )
         with ctx:
             msg = message.ConferenceMessage()
-            assert_equal(msg.recipient, address)
+            assert msg.recipient == address
 
     def test_text(self):
         text = 'welcome to my nuclear family'
@@ -333,7 +333,7 @@ class TestMessage(ContextTestCase):
         )
         with ctx:
             msg = message.ConferenceMessage()
-            assert_equal(msg.text, text)
+            assert msg.text == text
 
     def test_sender_name(self):
         names = [
@@ -346,7 +346,7 @@ class TestMessage(ContextTestCase):
         for name in names:
             with self.make_context(data={'from': name[0]}):
                 msg = message.ConferenceMessage()
-                assert_equal(msg.sender_name, name[1])
+                assert msg.sender_name == name[1]
 
     def test_sender_email(self):
         emails = [
@@ -356,13 +356,13 @@ class TestMessage(ContextTestCase):
         for email in emails:
             with self.make_context(data={'from': email[0]}):
                 msg = message.ConferenceMessage()
-                assert_equal(msg.sender_email, email[1])
+                assert msg.sender_email == email[1]
 
     def test_route_invalid_pattern(self):
         with self.make_context(data={'recipient': 'spam@osf.io'}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
-            with assert_raises(message.ConferenceError):
+            with pytest.raises(message.ConferenceError):
                 msg.route
 
     def test_route_invalid_test(self):
@@ -370,7 +370,7 @@ class TestMessage(ContextTestCase):
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
-            with assert_raises(message.ConferenceError):
+            with pytest.raises(message.ConferenceError):
                 msg.route
 
     def test_route_valid_alternate(self):
@@ -382,8 +382,8 @@ class TestMessage(ContextTestCase):
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
-            assert_equal(msg.conference_name, 'chocolate')
-            assert_equal(msg.conference_category, 'data')
+            assert msg.conference_name == 'chocolate'
+            assert msg.conference_category == 'data'
         conf.__class__.delete(conf)
 
     def test_route_valid_b(self):
@@ -391,21 +391,21 @@ class TestMessage(ContextTestCase):
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
-            assert_equal(msg.conference_name, 'conf')
-            assert_equal(msg.conference_category, 'poster')
+            assert msg.conference_name == 'conf'
+            assert msg.conference_category == 'poster'
 
     def test_alternate_route_invalid(self):
         recipient = '{}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
-            with assert_raises(message.ConferenceError):
+            with pytest.raises(message.ConferenceError):
                 msg.route
 
     def test_attachments_count_zero(self):
         with self.make_context(data={'attachment-count': '0'}):
             msg = message.ConferenceMessage()
-            assert_equal(msg.attachments, [])
+            assert msg.attachments == []
 
     def test_attachments_count_one(self):
         content = b'slightly mad'
@@ -419,8 +419,8 @@ class TestMessage(ContextTestCase):
         )
         with ctx:
             msg = message.ConferenceMessage()
-            assert_equal(len(msg.attachments), 1)
-            assert_equal(msg.attachments[0].read(), content)
+            assert len(msg.attachments) == 1
+            assert msg.attachments[0].read() == content
 
 
 class TestConferenceEmailViews(OsfTestCase):
@@ -428,9 +428,9 @@ class TestConferenceEmailViews(OsfTestCase):
     def test_redirect_to_meetings_url(self):
         url = '/presentations/'
         res = self.app.get(url)
-        assert_equal(res.status_code, 302)
+        assert res.status_code == 302
         res = res.follow()
-        assert_equal(res.request.path, '/meetings/')
+        assert res.request.path == '/meetings/'
 
     def test_conference_submissions(self):
         AbstractNode.objects.all().delete()
@@ -448,13 +448,13 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_submissions')
         res = self.app.get(url)
-        assert_equal(res.json['success'], True)
+        assert res.json['success'] == True
 
     def test_conference_plain_returns_200(self):
         conference = ConferenceFactory()
         url = web_url_for('conference_results__plain', meeting=conference.endpoint)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_conference_data(self):
         conference = ConferenceFactory()
@@ -470,8 +470,8 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_data', meeting=conference.endpoint)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), n_conference_nodes)
+        assert res.status_code == 200
+        assert len(res.json) == n_conference_nodes
 
     # Regression for OSF-8864 to confirm bad project data does not make whole conference break
     def test_conference_bad_data(self):
@@ -491,8 +491,8 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_data', meeting=conference.endpoint)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), n_conference_nodes - n_conference_nodes_bad)
+        assert res.status_code == 200
+        assert len(res.json) == n_conference_nodes - n_conference_nodes_bad
 
     def test_conference_data_url_upper(self):
         conference = ConferenceFactory()
@@ -508,8 +508,8 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_data', meeting=conference.endpoint.upper())
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), n_conference_nodes)
+        assert res.status_code == 200
+        assert len(res.json) == n_conference_nodes
 
     def test_conference_data_tag_upper(self):
         conference = ConferenceFactory()
@@ -525,38 +525,38 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_data', meeting=conference.endpoint)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), n_conference_nodes)
+        assert res.status_code == 200
+        assert len(res.json) == n_conference_nodes
 
     def test_conference_results(self):
         conference = ConferenceFactory()
 
         url = web_url_for('conference_results', meeting=conference.endpoint)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_confererence_results_endpoint_is_case_insensitive(self):
         ConferenceFactory(endpoint='StudySwap')
         url = web_url_for('conference_results', meeting='studyswap')
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
 
 class TestConferenceModel(OsfTestCase):
 
     def test_endpoint_is_required(self):
-        with assert_raises(IntegrityError):
+        with pytest.raises(IntegrityError):
             ConferenceFactory(endpoint=None, name=fake.company()).save()
 
     def test_name_is_required(self):
-        with assert_raises(IntegrityError):
+        with pytest.raises(IntegrityError):
             ConferenceFactory(endpoint='spsp2014', name=None).save()
 
     def test_default_field_names(self):
         conf = ConferenceFactory(endpoint='cookie', name='Cookies Conference')
         conf.save()
-        assert_equal(conf.field_names['submission1'], 'poster')
-        assert_equal(conf.field_names['mail_subject'], 'Presentation title')
+        assert conf.field_names['submission1'] == 'poster'
+        assert conf.field_names['mail_subject'] == 'Presentation title'
 
     def test_conference_valid_submissions(self):
         conf = ConferenceFactory(endpoint='Hamburgers', name='Hamburger conference')
@@ -575,8 +575,8 @@ class TestConferenceModel(OsfTestCase):
         private_node = ProjectFactory(is_public=False)
         conf.submissions.add(private_node)
 
-        assert_equal(conf.submissions.count(), 5)
-        assert_equal(conf.valid_submissions.count(), 3)
+        assert conf.submissions.count() == 5
+        assert conf.valid_submissions.count() == 3
 
 
 class TestConferenceIntegration(ContextTestCase):
@@ -616,14 +616,14 @@ class TestConferenceIntegration(ContextTestCase):
                 ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
-        assert_true(mock_upload.called)
+        assert mock_upload.called
         users = OSFUser.objects.filter(username=username)
-        assert_equal(users.count(), 1)
+        assert users.count() == 1
         nodes = AbstractNode.objects.filter(title=title)
-        assert_equal(nodes.count(), 1)
+        assert nodes.count() == 1
         node = nodes[0]
-        assert_equal(WikiVersion.objects.get_for_node(node, 'home').content, body)
-        assert_true(mock_send_mail.called)
+        assert WikiVersion.objects.get_for_node(node, 'home').content == body
+        assert mock_send_mail.called
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
         assert_absolute(call_kwargs['set_password_url'])
@@ -662,10 +662,10 @@ class TestConferenceIntegration(ContextTestCase):
             },
             expect_errors=True,
         )
-        assert_equal(res.status_code, 406)
+        assert res.status_code == 406
         call_args, call_kwargs = mock_send_mail.call_args
-        assert_equal(call_args, (username, views.CONFERENCE_INACTIVE))
-        assert_equal(call_kwargs['fullname'], fullname)
+        assert call_args == (username, views.CONFERENCE_INACTIVE)
+        assert call_kwargs['fullname'] == fullname
         assert_equal_urls(
             call_kwargs['presentations_url'],
             web_url_for('conference_view', _absolute=True),
@@ -705,14 +705,14 @@ class TestConferenceIntegration(ContextTestCase):
                 ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
-        assert_true(mock_upload.called)
+        assert mock_upload.called
         users = OSFUser.objects.filter(username=username)
-        assert_equal(users.count(), 1)
+        assert users.count() == 1
         nodes = AbstractNode.objects.filter(title=title)
-        assert_equal(nodes.count(), 1)
+        assert nodes.count() == 1
         node = nodes[0]
-        assert_equal(WikiVersion.objects.get_for_node(node, 'home').content, body)
-        assert_true(mock_send_mail.called)
+        assert WikiVersion.objects.get_for_node(node, 'home').content == body
+        assert mock_send_mail.called
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
         assert_absolute(call_kwargs['set_password_url'])

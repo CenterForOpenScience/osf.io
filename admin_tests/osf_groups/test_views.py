@@ -3,7 +3,6 @@ from admin.osf_groups.views import (
     OSFGroupsFormView
 )
 from admin_tests.utilities import setup_log_view
-from nose import tools as nt
 from django.test import RequestFactory
 
 from tests.base import AdminTestCase
@@ -26,11 +25,11 @@ class TestOSFGroupsListView(AdminTestCase):
 
         queryset = view.get_queryset()
 
-        nt.assert_equal(len(queryset), 3)
+        assert len(queryset) == 3
 
-        nt.assert_in(self.group, queryset)
-        nt.assert_in(self.group2, queryset)
-        nt.assert_in(self.group3, queryset)
+        assert self.group in queryset
+        assert self.group2 in queryset
+        assert self.group3 in queryset
 
     def test_get_queryset_by_name(self):
         request = RequestFactory().post('/fake_path/?name=Brian')
@@ -38,10 +37,10 @@ class TestOSFGroupsListView(AdminTestCase):
 
         queryset = view.get_queryset()
 
-        nt.assert_equal(len(queryset), 2)
+        assert len(queryset) == 2
 
-        nt.assert_in(self.group, queryset)
-        nt.assert_in(self.group2, queryset)
+        assert self.group in queryset
+        assert self.group2 in queryset
 
 
 class TestOSFGroupsFormView(AdminTestCase):

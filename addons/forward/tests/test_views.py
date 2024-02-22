@@ -1,8 +1,6 @@
 from unittest import mock
 import pytest
 
-from nose.tools import assert_equal
-
 from addons.forward.tests.utils import ForwardAddonTestCase
 from tests.base import OsfTestCase
 from website import settings
@@ -24,10 +22,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
             ),
         )
         self.project.reload()
-        assert_equal(
-            self.project.logs.count(),
-            log_count + 1
-        )
+        assert self.project.logs.count() == log_count + 1
 
     def test_change_timeout_log_not_added(self):
         log_count = self.project.logs.count()
@@ -38,10 +33,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
             ),
         )
         self.project.reload()
-        assert_equal(
-            self.project.logs.count(),
-            log_count
-        )
+        assert self.project.logs.count() == log_count
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch('osf.models.node.Node.do_check_spam')
