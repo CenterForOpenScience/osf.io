@@ -162,19 +162,19 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 
 # TODO: Uncomment following RUN when python dependencies are ready
 
- RUN for module in \
-        api.base.settings \
-        admin.base.settings \
-    ; do \
-        export DJANGO_SETTINGS_MODULE=$module \
-        && python3 manage.py collectstatic --noinput --no-init-app \
-    ; done \
-    && for file in \
-        ./website/templates/_log_templates.mako \
-        ./website/static/built/nodeCategories.json \
-    ; do \
-        touch $file && chmod o+w $file \
-    ; done \
-    && rm ./website/settings/local.py ./api/base/settings/local.py
+RUN for module in \
+       api.base.settings \
+       admin.base.settings \
+   ; do \
+       export DJANGO_SETTINGS_MODULE=$module \
+       && python3 manage.py collectstatic --noinput --no-init-app \
+   ; done \
+   && for file in \
+       ./website/templates/_log_templates.mako \
+       ./website/static/built/nodeCategories.json \
+   ; do \
+       touch $file && chmod o+w $file \
+   ; done \
+   && rm ./website/settings/local.py ./api/base/settings/local.py
 
 CMD ["su-exec", "nobody", "invoke", "--list"]
