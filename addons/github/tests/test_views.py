@@ -67,12 +67,10 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
             'github_user': 'octocat',
             'github_repo': 'repo_name',
         }, auth=self.user.auth)
-        self.assertEqual(res.status_code, http_status.HTTP_200_OK)
+        assert res.status_code == http_status.HTTP_200_OK
         self.project.reload()
-        self.assertEqual(
-            self.project.logs.latest().action,
+        assert self.project.logs.latest().action == \
             f'{self.ADDON_SHORT_NAME}_repo_linked'
-        )
         mock_add_hook.assert_called_once_with(save=False)
 
 
@@ -143,15 +141,11 @@ class TestGithubViews(OsfTestCase):
         mock_repo.return_value = github_mock.repo.return_value
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings)
-        self.assertEqual(
-            branch,
+        assert branch == \
             github_mock.repo.return_value.default_branch
-        )
-        self.assertEqual(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
-        self.assertEqual(
-            branches,
+        assert sha == self._get_sha_for_branch(branch=None)  # Get refs for default branch
+        assert branches == \
             github_mock.branches.return_value
-        )
 
     @mock.patch('addons.github.api.GitHubClient.branches')
     @mock.patch('addons.github.api.GitHubClient.repo')
@@ -160,21 +154,19 @@ class TestGithubViews(OsfTestCase):
         mock_repo.return_value = github_mock.repo.return_value
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings, 'master')
-        self.assertEqual(branch, 'master')
+        assert branch == 'master'
         branch_sha = self._get_sha_for_branch('master')
-        self.assertEqual(sha, branch_sha)
-        self.assertEqual(
-            branches,
+        assert sha == branch_sha
+        assert branches == \
             github_mock.branches.return_value
-        )
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        self.assertEqual(len(res.json['prompts']), 1)
+        assert len(res.json['prompts']) == 1
 
     def test_get_refs_sha_no_branch(self):
-        with self.assertRaises(HTTPError):
+        with pytest.raises(HTTPError):
             utils.get_refs(self.node_settings, sha='12345')
 
     def test_get_refs_registered_missing_branch(self):
@@ -187,7 +179,7 @@ class TestGithubViews(OsfTestCase):
         }
         with mock.patch('osf.models.node.AbstractNode.is_registration', new_callable=mock.PropertyMock) as mock_is_reg:
             mock_is_reg.return_value = True
-            with self.assertRaises(HTTPError):
+            with pytest.raises(HTTPError):
                 utils.get_refs(self.node_settings, branch='nothere')
 
     # Tests for _check_permissions
@@ -199,7 +191,7 @@ class TestGithubViews(OsfTestCase):
         non_authenticated_user = UserFactory()
         non_authenticated_auth = Auth(user=non_authenticated_user)
         branch = 'master'
-        self.assertFalse(check_permissions(self.node_settings, non_authenticated_auth, connection, branch))
+        assert not check_permissions(self.node_settings, non_authenticated_auth, connection, branch)
 
     # make a repository that doesn't allow push access for this user;
     # make sure check_permissions returns false
@@ -215,7 +207,7 @@ class TestGithubViews(OsfTestCase):
         mock_repository.repo = 'mock-repo'
         mock_repository.permissions = dict(push=False)
         mock_repo.return_value = mock_repository
-        self.assertFalse(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
+        assert not check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository)
 
     # make a branch with a different commit than the commit being passed into check_permissions
     @mock.patch('addons.github.models.UserSettings.has_auth')
@@ -226,7 +218,7 @@ class TestGithubViews(OsfTestCase):
         mock_branch = mock.NonCallableMock()
         mock_branch.commit.sha = '67890'
         sha = '12345'
-        self.assertFalse(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
+        assert not check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha)
 
     # # make sure permissions are not granted for editing a registration
     @mock.patch('addons.github.models.UserSettings.has_auth')
@@ -236,7 +228,7 @@ class TestGithubViews(OsfTestCase):
         connection = github_mock
         with mock.patch('osf.models.node.AbstractNode.is_registration', new_callable=mock.PropertyMock) as mock_is_reg:
             mock_is_reg.return_value = True
-            self.assertFalse(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master'))
+            assert not check_permissions(self.node_settings, self.consolidated_auth, connection, 'master')
 
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='github')
@@ -245,8 +237,8 @@ class TestGithubViews(OsfTestCase):
             'download': f'{url}?action=download&ref={sha}'
         }
 
-        self.assertEqual(urls['view'], expected_urls['view'])
-        self.assertEqual(urls['download'], expected_urls['download'])
+        assert urls['view'] == expected_urls['view']
+        assert urls['download'] == expected_urls['download']
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
@@ -272,7 +264,7 @@ class TestGithubViews(OsfTestCase):
             content_type='application/json',
         ).maybe_follow()
         self.project.reload()
-        self.assertEqual(self.project.logs.latest().action, 'github_file_added')
+        assert self.project.logs.latest().action == 'github_file_added'
         urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
@@ -299,7 +291,7 @@ class TestGithubViews(OsfTestCase):
                               'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
             content_type='application/json').maybe_follow()
         self.project.reload()
-        self.assertEqual(self.project.logs.latest().action, 'github_file_updated')
+        assert self.project.logs.latest().action == 'github_file_updated'
         urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
@@ -325,9 +317,9 @@ class TestGithubViews(OsfTestCase):
                           'added': [], 'removed': ['PRJWN3TV'], 'modified':[]}]},
             content_type='application/json').maybe_follow()
         self.project.reload()
-        self.assertEqual(self.project.logs.latest().action, 'github_file_removed')
+        assert self.project.logs.latest().action == 'github_file_removed'
         urls = self.project.logs.latest().params['urls']
-        self.assertEqual(urls, {})
+        assert urls == {}
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
@@ -345,7 +337,7 @@ class TestGithubViews(OsfTestCase):
                           'added': ['PRJWN3TV'], 'removed':[], 'modified':[]}]},
             content_type='application/json').maybe_follow()
         self.project.reload()
-        self.assertNotEqual(self.project.logs.latest().action, 'github_file_added')
+        assert self.project.logs.latest().action != 'github_file_added'
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
@@ -363,7 +355,7 @@ class TestGithubViews(OsfTestCase):
                           'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
             content_type='application/json').maybe_follow()
         self.project.reload()
-        self.assertNotEqual(self.project.logs.latest().action, 'github_file_updated')
+        assert self.project.logs.latest().action != 'github_file_updated'
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
@@ -381,7 +373,7 @@ class TestGithubViews(OsfTestCase):
                           'added': [], 'removed':['PRJWN3TV'], 'modified':[]}]},
             content_type='application/json').maybe_follow()
         self.project.reload()
-        self.assertNotEqual(self.project.logs.latest().action, 'github_file_removed')
+        assert self.project.logs.latest().action != 'github_file_removed'
 
 
 class TestRegistrationsWithGithub(OsfTestCase):
@@ -440,9 +432,9 @@ class TestGithubSettings(OsfTestCase):
         self.project.reload()
         self.node_settings.reload()
 
-        self.assertEqual(self.node_settings.user, 'queen')
-        self.assertEqual(self.node_settings.repo, 'night at the opera')
-        self.assertEqual(self.project.logs.latest().action, 'github_repo_linked')
+        assert self.node_settings.user == 'queen'
+        assert self.node_settings.repo == 'night at the opera'
+        assert self.project.logs.latest().action == 'github_repo_linked'
         mock_add_hook.assert_called_once_with(save=False)
 
     @mock.patch('addons.github.models.NodeSettings.add_hook')
@@ -466,8 +458,8 @@ class TestGithubSettings(OsfTestCase):
         self.project.reload()
         self.node_settings.reload()
 
-        self.assertEqual(self.project.logs.count(), log_count)
-        self.assertFalse(mock_add_hook.called)
+        assert self.project.logs.count() == log_count
+        assert not mock_add_hook.called
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_link_repo_non_existent(self, mock_repo):
@@ -485,7 +477,7 @@ class TestGithubSettings(OsfTestCase):
             expect_errors=True
         ).maybe_follow()
 
-        self.assertEqual(res.status_code, 400)
+        assert res.status_code == 400
 
     @mock.patch('addons.github.api.GitHubClient.branches')
     def test_link_repo_registration(self, mock_branches):
@@ -524,7 +516,7 @@ class TestGithubSettings(OsfTestCase):
             expect_errors=True
         ).maybe_follow()
 
-        self.assertEqual(res.status_code, 400)
+        assert res.status_code == 400
 
     @mock.patch('addons.github.models.NodeSettings.delete_hook')
     def test_deauthorize(self, mock_delete_hook):
@@ -535,11 +527,11 @@ class TestGithubSettings(OsfTestCase):
 
         self.project.reload()
         self.node_settings.reload()
-        self.assertEqual(self.node_settings.user, None)
-        self.assertEqual(self.node_settings.repo, None)
-        self.assertEqual(self.node_settings.user_settings, None)
+        assert self.node_settings.user == None
+        assert self.node_settings.repo == None
+        assert self.node_settings.user_settings == None
 
-        self.assertEqual(self.project.logs.latest().action, 'github_node_deauthorized')
+        assert self.project.logs.latest().action == 'github_node_deauthorized'
 
 
 if __name__ == '__main__':

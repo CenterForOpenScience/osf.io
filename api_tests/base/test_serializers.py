@@ -197,16 +197,14 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
         non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'storage', 'children', 'groups', 'subjects_acceptable']
 
         for field in NodeSerializer._declared_fields:
-            self.assertIn(field, RegistrationSerializer._declared_fields)
+            assert field in RegistrationSerializer._declared_fields
             reg_field = RegistrationSerializer._declared_fields[field]
 
             if field not in visible_on_withdrawals and field not in non_registration_fields:
-                self.assertTrue(
-                    isinstance(reg_field, base_serializers.HideIfWithdrawal) or
-                    isinstance(reg_field, base_serializers.HideIfWithdrawalOrWikiDisabled) or
-                    isinstance(reg_field, base_serializers.ShowIfVersion) or
+                assert isinstance(reg_field, base_serializers.HideIfWithdrawal) or \
+                    isinstance(reg_field, base_serializers.HideIfWithdrawalOrWikiDisabled) or \
+                    isinstance(reg_field, base_serializers.ShowIfVersion) or \
                     isinstance(reg_field, base_serializers.ShowIfAdminScopeOrAnonymous)
-                )
 
     def test_hide_if_registration_fields(self):
 
@@ -222,8 +220,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
                 base_serializers.HideIfRegistration)]
 
         for field in hide_if_registration_fields:
-            self.assertIn(field, node_relationships)
-            self.assertNotIn(field, registration_relationships)
+            assert field in node_relationships
+            assert field not in registration_relationships
 
 
 class TestNullLinks(ApiTestCase):
@@ -232,9 +230,9 @@ class TestNullLinks(ApiTestCase):
         req = make_drf_request_with_version(version='2.0')
         rep = FakeSerializer(FakeModel, context={'request': req}).data['data']
 
-        self.assertNotIn('null_field', rep['links'])
-        self.assertIn('valued_field', rep['links'])
-        self.assertNotIn('null_link_field', rep['relationships'])
+        assert 'null_field' not in rep['links']
+        assert 'valued_field' in rep['links']
+        assert 'null_link_field' not in rep['relationships']
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -266,10 +264,8 @@ class TestApiBaseSerializers(ApiTestCase):
                     serializer, 'get_absolute_url'
                 ), 'No get_absolute_url method'
 
-                self.assertNotEqual(
-                    serializer.get_absolute_url,
+                assert serializer.get_absolute_url != \
                     base_get_absolute_url
-                )
 
     def test_counts_not_included_in_link_fields_by_default(self):
 
@@ -282,11 +278,11 @@ class TestApiBaseSerializers(ApiTestCase):
                 for item in relation:
                     link = list(item['links'].values())[0]
                     link_meta = link.get('meta', {})
-                    self.assertNotIn('count', link_meta)
+                    assert 'count' not in link_meta
             else:
                 link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
-                self.assertNotIn('count', link_meta)
+                assert 'count' not in link_meta
 
     def test_counts_included_in_link_fields_with_related_counts_query_param(
             self):
@@ -302,7 +298,7 @@ class TestApiBaseSerializers(ApiTestCase):
             related_meta = getattr(field, 'related_meta', {})
             if related_meta and related_meta.get('count', False):
                 link = list(relation['links'].values())[0]
-                self.assertIn('count', link['meta'], field)
+                assert 'count' in link['meta'], field
 
     def test_related_counts_excluded_query_param_false(self):
 
@@ -315,11 +311,11 @@ class TestApiBaseSerializers(ApiTestCase):
                 for item in relation:
                     link = item['links'].values()[0]
                     link_meta = link.get('meta', {})
-                    self.assertNotIn('count', link_meta)
+                    assert 'count' not in link_meta
             else:
                 link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
-                self.assertNotIn('count', link_meta)
+                assert 'count' not in link_meta
 
     def test_invalid_related_counts_value_raises_bad_request(self):
 
@@ -328,7 +324,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'fish'},
             expect_errors=True
         )
-        self.assertEqual(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
     def test_invalid_embed_value_raise_bad_request(self):
         res = self.app.get(
@@ -336,19 +332,15 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'embed': 'foo'},
             expect_errors=True
         )
-        self.assertEqual(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(
-            res.json['errors'][0]['detail'],
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert res.json['errors'][0]['detail'] == \
             'The following fields are not embeddable: foo'
-        )
 
     def test_embed_does_not_remove_relationship(self):
         res = self.app.get(self.url, params={'embed': 'root'})
-        self.assertEqual(res.status_code, 200)
-        self.assertIn(
-            self.url,
+        assert res.status_code == 200
+        assert self.url in \
             res.json['data']['relationships']['root']['links']['related']['href']
-        )
 
     def test_counts_included_in_children_field_with_children_related_counts_query_param(
             self):
@@ -366,16 +358,16 @@ class TestApiBaseSerializers(ApiTestCase):
                     link = item['links'].values()[0]
                     related_meta = getattr(field, 'related_meta', {})
                     if related_meta and related_meta.get('count', False) and key == 'children':
-                        self.assertIn('count', link['meta'])
+                        assert 'count' in link['meta']
                     else:
-                        self.assertNotIn('count', link.get('meta', {}))
+                        assert 'count' not in link.get('meta', {})
             elif relation != {'data': None}:
                 link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children':
-                    self.assertIn('count', link['meta'])
+                    assert 'count' in link['meta']
                 else:
-                    self.assertNotIn('count', link.get('meta', {}))
+                    assert 'count' not in link.get('meta', {})
 
     def test_counts_included_in_children_and_contributors_fields_with_field_csv_related_counts_query_param(
             self):
@@ -396,16 +388,16 @@ class TestApiBaseSerializers(ApiTestCase):
                     link = item['links'].values()[0]
                     related_meta = getattr(field, 'related_meta', {})
                     if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
-                        self.assertIn('count', link['meta'])
+                        assert 'count' in link['meta']
                     else:
-                        self.assertNotIn('count', link.get('meta', {}))
+                        assert 'count' not in link.get('meta', {})
             elif relation != {'data': None}:
                 link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
-                    self.assertIn('count', link['meta'])
+                    assert 'count' in link['meta']
                 else:
-                    self.assertNotIn('count', link.get('meta', {}))
+                    assert 'count' not in link.get('meta', {})
 
     def test_error_when_requesting_related_counts_for_attribute_field(self):
 
@@ -414,11 +406,9 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'title'},
             expect_errors=True
         )
-        self.assertEqual(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(
-            res.json['errors'][0]['detail'],
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert res.json['errors'][0]['detail'] == \
             "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'"
-        )
 
 
 @pytest.mark.django_db
@@ -486,9 +476,9 @@ class TestRelationshipField:
         ).data['data']
 
         meta = data['relationships']['parent_with_meta']['links']['related']['meta']
-        self.assertNotIn('count', meta)
-        self.assertIn('extra', meta)
-        self.assertEqual(meta['extra'], 'foo')
+        assert 'count' not in meta
+        assert 'extra' in meta
+        assert meta['extra'] == 'foo'
 
     def test_serializing_empty_to_one(self):
         req = make_drf_request_with_version(version='2.2')
@@ -518,14 +508,10 @@ class TestRelationshipField:
         ).data['data']
 
         relationship_field = data['relationships']['self_and_related_field']['links']
-        self.assertIn(
-            f'/v2/nodes/{node._id}/contributors/',
+        assert f'/v2/nodes/{node._id}/contributors/' in \
             relationship_field['self']['href']
-        )
-        self.assertIn(
-            f'/v2/nodes/{node._id}/',
+        assert f'/v2/nodes/{node._id}/' in \
             relationship_field['related']['href']
-        )
 
     def test_field_with_two_kwargs(self):
         req = make_drf_request_with_version(version='2.0')
@@ -535,10 +521,8 @@ class TestRelationshipField:
             node, context={'request': req}
         ).data['data']
         field = data['relationships']['two_url_kwargs']['links']
-        self.assertIn(
-            f'/v2/nodes/{node._id}/node_links/{node._id}/',
+        assert f'/v2/nodes/{node._id}/node_links/{node._id}/' in \
             field['related']['href']
-        )
 
     def test_field_with_two_filters(self):
         req = make_drf_request_with_version(version='2.0')
@@ -548,14 +532,10 @@ class TestRelationshipField:
             node, context={'request': req}
         ).data['data']
         field = data['relationships']['field_with_filters']['links']
-        self.assertIn(
-            quote('filter[target]=hello', safe='?='),
+        assert quote('filter[target]=hello', safe='?=') in \
             field['related']['href']
-        )
-        self.assertIn(
-            quote('filter[woop]=yea', safe='?='),
+        assert quote('filter[woop]=yea', safe='?=') in \
             field['related']['href']
-        )
 
     def test_field_with_callable_related_attrs(self):
         req = make_drf_request_with_version(version='2.0')
@@ -564,7 +544,7 @@ class TestRelationshipField:
         data = self.BasicNodeSerializer(
             node, context={'request': req}
         ).data['data']
-        self.assertNotIn('registered_from', data['relationships'])
+        assert 'registered_from' not in data['relationships']
 
         registration = factories.RegistrationFactory(project=node)
         data = self.BasicNodeSerializer(
@@ -572,7 +552,7 @@ class TestRelationshipField:
                 'request': req}
         ).data['data']
         field = data['relationships']['registered_from']['links']
-        self.assertIn(f'/v2/nodes/{node._id}/', field['related']['href'])
+        assert f'/v2/nodes/{node._id}/' in field['related']['href']
 
 
 class TestShowIfVersion(ApiTestCase):
@@ -585,12 +565,12 @@ class TestShowIfVersion(ApiTestCase):
     def test_node_links_allowed_version_node_serializer(self):
         req = make_drf_request_with_version(version='2.0')
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertIn('node_links', data['relationships'])
+        assert 'node_links' in data['relationships']
 
     def test_node_links_bad_version_node_serializer(self):
         req = make_drf_request_with_version(version='2.1')
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertNotIn('node_links', data['relationships'])
+        assert 'node_links' not in data['relationships']
 
     def test_node_links_allowed_version_registration_serializer(self):
         req = make_drf_request_with_version(version='2.0')
@@ -598,7 +578,7 @@ class TestShowIfVersion(ApiTestCase):
             self.registration,
             context={'request': req}
         ).data['data']
-        self.assertIn('node_links', data['relationships'])
+        assert 'node_links' in data['relationships']
 
     def test_node_links_bad_version_registration_serializer(self):
         req = make_drf_request_with_version(version='2.1')
@@ -606,7 +586,7 @@ class TestShowIfVersion(ApiTestCase):
             self.registration,
             context={'request': req}
         ).data['data']
-        self.assertNotIn('node_links', data['relationships'])
+        assert 'node_links' not in data['relationships']
 
     def test_node_links_withdrawn_registration(self):
         factories.WithdrawnRegistrationFactory(
@@ -617,14 +597,14 @@ class TestShowIfVersion(ApiTestCase):
             self.registration,
             context={'request': req}
         ).data['data']
-        self.assertNotIn('node_links', data['relationships'])
+        assert 'node_links' not in data['relationships']
 
         req = make_drf_request_with_version(version='2.1')
         data = RegistrationSerializer(
             self.registration,
             context={'request': req}
         ).data['data']
-        self.assertNotIn('node_links', data['relationships'])
+        assert 'node_links' not in data['relationships']
 
 
 class VersionedDateTimeField(DbTestCase):
@@ -647,85 +627,69 @@ class VersionedDateTimeField(DbTestCase):
         req = make_drf_request_with_version(version='2.0')
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(self.old_date, self.old_format),
+        assert datetime.strftime(self.old_date, self.old_format) == \
             data['attributes']['date_modified']
-        )
 
     def test_old_date_without_microseconds_formats_to_old_format(self):
         req = make_drf_request_with_version(version='2.0')
         setattr(self.node, 'last_logged', self.old_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(
+        assert datetime.strftime(
                 self.old_date_without_microseconds,
                 self.old_format_without_microseconds
-            ),
+            ) == \
             data['attributes']['date_modified']
-        )
 
     def test_old_date_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(self.old_date, self.new_format),
+        assert datetime.strftime(self.old_date, self.new_format) == \
             data['attributes']['date_modified']
-        )
 
     def test_old_date_without_microseconds_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'last_logged', self.old_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(
+        assert datetime.strftime(
                 self.old_date_without_microseconds,
                 self.new_format
-            ),
+            ) == \
             data['attributes']['date_modified']
-        )
 
     def test_new_date_formats_to_old_format(self):
         req = make_drf_request_with_version(version='2.0')
         setattr(self.node, 'last_logged', self.new_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(self.new_date, self.old_format),
+        assert datetime.strftime(self.new_date, self.old_format) == \
             data['attributes']['date_modified']
-        )
 
     def test_new_date_without_microseconds_formats_to_old_format(self):
         req = make_drf_request_with_version(version='2.0')
         setattr(self.node, 'last_logged', self.new_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(
+        assert datetime.strftime(
                 self.new_date_without_microseconds,
                 self.old_format_without_microseconds
-            ),
+            ) == \
             data['attributes']['date_modified']
-        )
 
     def test_new_date_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'last_logged', self.new_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(self.new_date, self.new_format),
+        assert datetime.strftime(self.new_date, self.new_format) == \
             data['attributes']['date_modified']
-        )
 
     def test_new_date_without_microseconds_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'last_logged', self.new_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(
+        assert datetime.strftime(
                 self.new_date_without_microseconds,
                 self.new_format
-            ),
+            ) == \
             data['attributes']['date_modified']
-        )
 
     # regression test for https://openscience.atlassian.net/browse/PLAT-1350
     # VersionedDateTimeField was treating version 2.10 and higher as decimals,
@@ -734,7 +698,5 @@ class VersionedDateTimeField(DbTestCase):
         req = make_drf_request_with_version(version='2.10')
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        self.assertEqual(
-            datetime.strftime(self.old_date, self.new_format),
+        assert datetime.strftime(self.old_date, self.new_format) == \
             data['attributes']['date_modified']
-        )

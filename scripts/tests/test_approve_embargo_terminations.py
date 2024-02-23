@@ -53,19 +53,19 @@ class TestApproveEmbargoTerminations(OsfTestCase):
 
     def test_get_pending_embargo_termination_requests_returns_only_unapproved(self):
         targets = get_pending_embargo_termination_requests()
-        self.assertEqual(targets.count(), 1)
-        self.assertEqual(targets.first()._id, self.registration2.embargo_termination_approval._id)
+        assert targets.count() == 1
+        assert targets.first()._id == self.registration2.embargo_termination_approval._id
 
     def test_main_auto_approves_embargo_termination_request(self):
         for node in self.registration2.node_and_primary_descendants():
-            self.assertFalse(node.is_public)
-            self.assertTrue(node.is_embargoed)
+            assert not node.is_public
+            assert node.is_embargoed
         main()
         for node in self.registration2.node_and_primary_descendants():
             node.reload()
-            self.assertTrue(node.is_public)
-            self.assertEqual(node.embargo_termination_approval.state, Sanction.APPROVED)
-            self.assertFalse(node.is_embargoed)
+            assert node.is_public
+            assert node.embargo_termination_approval.state == Sanction.APPROVED
+            assert not node.is_embargoed
 
     def test_main_removes_embargo_termination_approvals_for_completed_embargos(self):
         self.registration2.embargo.mark_as_completed()

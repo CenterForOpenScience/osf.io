@@ -22,112 +22,104 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.save()
 
     def test_new_embargo_should_be_unapproved(self):
-        self.assertTrue(self.registration.is_pending_embargo)
-        self.assertFalse(self.registration.embargo_end_date)
+        assert self.registration.is_pending_embargo
+        assert not self.registration.embargo_end_date
 
         main(dry_run=False)
-        self.assertTrue(self.registration.is_pending_embargo)
-        self.assertFalse(self.registration.embargo_end_date)
+        assert self.registration.is_pending_embargo
+        assert not self.registration.embargo_end_date
 
     def test_should_not_activate_pending_embargo_less_than_48_hours_old(self):
         self.registration.embargo.initiation_date = timezone.now() - timedelta(hours=47)
         self.registration.embargo.save()
-        self.assertFalse(self.registration.embargo_end_date)
+        assert not self.registration.embargo_end_date
 
         main(dry_run=False)
         self.registration.embargo.refresh_from_db()
         self.registration.refresh_from_db()
-        self.assertTrue(self.registration.is_pending_embargo)
-        self.assertFalse(self.registration.embargo_end_date)
+        assert self.registration.is_pending_embargo
+        assert not self.registration.embargo_end_date
 
     def test_should_activate_pending_embargo_that_is_48_hours_old(self):
         self.registration.embargo.initiation_date = timezone.now() - timedelta(hours=48)
         self.registration.embargo.save()
-        self.assertTrue(self.registration.is_pending_embargo)
-        self.assertFalse(self.registration.embargo_end_date)
+        assert self.registration.is_pending_embargo
+        assert not self.registration.embargo_end_date
 
         main(dry_run=False)
         self.registration.embargo.refresh_from_db()
         self.registration.refresh_from_db()
-        self.assertTrue(self.registration.is_embargoed)
-        self.assertTrue(self.registration.embargo_end_date)
+        assert self.registration.is_embargoed
+        assert self.registration.embargo_end_date
 
     def test_should_activate_pending_embargo_more_than_48_hours_old(self):
         self.registration.embargo.initiation_date = timezone.now() - timedelta(days=365)
         self.registration.embargo.save()
-        self.assertTrue(self.registration.is_pending_embargo)
-        self.assertFalse(self.registration.embargo_end_date)
+        assert self.registration.is_pending_embargo
+        assert not self.registration.embargo_end_date
 
         main(dry_run=False)
         self.registration.embargo.refresh_from_db()
         self.registration.refresh_from_db()
-        self.assertTrue(self.registration.is_embargoed)
-        self.assertFalse(self.registration.is_pending_embargo)
-        self.assertTrue(self.registration.embargo_end_date)
+        assert self.registration.is_embargoed
+        assert not self.registration.is_pending_embargo
+        assert self.registration.embargo_end_date
 
     def test_embargo_past_end_date_should_be_completed(self):
         self.registration.embargo.accept()
-        self.assertTrue(self.registration.embargo_end_date)
-        self.assertFalse(self.registration.is_pending_embargo)
+        assert self.registration.embargo_end_date
+        assert not self.registration.is_pending_embargo
 
         self.registration.embargo.end_date = timezone.now() - timedelta(days=1)
         self.registration.embargo.save()
 
-        self.assertFalse(self.registration.is_public)
+        assert not self.registration.is_public
         main(dry_run=False)
         self.registration.embargo.refresh_from_db()
         self.registration.refresh_from_db()
-        self.assertTrue(self.registration.is_public)
-        self.assertFalse(self.registration.embargo_end_date)
-        self.assertFalse(self.registration.is_pending_embargo)
-        self.assertEqual(self.registration.embargo.state, 'completed')
+        assert self.registration.is_public
+        assert not self.registration.embargo_end_date
+        assert not self.registration.is_pending_embargo
+        assert self.registration.embargo.state == 'completed'
 
     def test_embargo_before_end_date_should_not_be_completed(self):
         self.registration.embargo.accept()
-        self.assertTrue(self.registration.embargo_end_date)
-        self.assertFalse(self.registration.is_pending_embargo)
+        assert self.registration.embargo_end_date
+        assert not self.registration.is_pending_embargo
 
         self.registration.embargo.end_date = timezone.now() + timedelta(days=1)
         self.registration.embargo.save()
 
-        self.assertFalse(self.registration.is_public)
+        assert not self.registration.is_public
         main(dry_run=False)
         self.registration.embargo.refresh_from_db()
-        self.assertFalse(self.registration.is_public)
-        self.assertTrue(self.registration.embargo_end_date)
-        self.assertFalse(self.registration.is_pending_embargo)
+        assert not self.registration.is_public
+        assert self.registration.embargo_end_date
+        assert not self.registration.is_pending_embargo
 
     def test_embargo_approval_adds_to_parent_projects_log(self):
-        self.assertFalse(
-            self.registration.registered_from.logs.filter(
+        assert not self.registration.registered_from.logs.filter(
                 action=NodeLog.EMBARGO_APPROVED
             ).exists()
-        )
 
         self.registration.embargo.initiation_date = timezone.now() - timedelta(days=365)
         self.registration.embargo.save()
         main(dry_run=False)
 
-        self.assertTrue(
-            self.registration.registered_from.logs.filter(
+        assert self.registration.registered_from.logs.filter(
                 action=NodeLog.EMBARGO_APPROVED
             ).exists()
-        )
 
     def test_embargo_completion_adds_to_parent_projects_log(self):
-        self.assertFalse(
-            self.registration.registered_from.logs.filter(
+        assert not self.registration.registered_from.logs.filter(
                 action=NodeLog.EMBARGO_COMPLETED
             ).exists()
-        )
 
         self.registration.embargo.accept()
         self.registration.embargo.end_date = timezone.now() - timedelta(days=1)
         self.registration.embargo.save()
 
         main(dry_run=False)
-        self.assertTrue(
-            self.registration.registered_from.logs.filter(
+        assert self.registration.registered_from.logs.filter(
                 action=NodeLog.EMBARGO_COMPLETED
             ).exists()
-        )

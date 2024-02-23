@@ -80,16 +80,16 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
 
         mock_client.return_value = {'node_pageviews': node_pageviews, 'node_visits': node_visits}
 
-        self.assertEqual(len(self.popular_links_node.nodes), 0)
-        self.assertEqual(len(self.popular_links_registrations.nodes), 0)
+        assert len(self.popular_links_node.nodes) == 0
+        assert len(self.popular_links_registrations.nodes) == 0
 
         script.main(dry_run=False)
 
         self.popular_links_node.reload()
         self.popular_links_registrations.reload()
 
-        self.assertEqual(len(self.popular_links_node.nodes), 2)
-        self.assertEqual(len(self.popular_links_registrations.nodes), 2)
+        assert len(self.popular_links_node.nodes) == 2
+        assert len(self.popular_links_registrations.nodes) == 2
 
-        self.assertEqual(popular_nodes, self.popular_links_node.nodes)
-        self.assertEqual(popular_registrations, self.popular_links_registrations.nodes)
+        assert popular_nodes == self.popular_links_node.nodes
+        assert popular_registrations == self.popular_links_registrations.nodes

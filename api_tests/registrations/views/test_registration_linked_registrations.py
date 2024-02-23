@@ -98,24 +98,22 @@ class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
     def test_unauthenticated_can_view_public_registration_linked_registrations(
             self):
         res = self.make_request(registration_id=self.public_registration._id)
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertNotIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id not in \
+            linked_registration_ids
 
     def test_admin_can_view_private_registration_linked_registrations(self):
         res = self.make_request(
             registration_id=self.private_registration._id,
             auth=self.admin_contributor.auth
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertNotIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id not in \
+            linked_registration_ids
 
     def test_rw_contributor_can_view_private_registration_linked_registrations(
             self):
@@ -123,12 +121,11 @@ class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
             registration_id=self.private_registration._id,
             auth=self.rw_contributor.auth
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id in \
+            linked_registration_ids
 
     def test_read_only_contributor_can_view_private_registration_linked_registrations(
             self):
@@ -136,12 +133,11 @@ class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
             registration_id=self.private_registration._id,
             auth=self.read_contributor.auth
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertNotIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id not in \
+            linked_registration_ids
 
     def test_non_contributor_cannot_view_private_registration_linked_registrations(
             self):
@@ -150,10 +146,9 @@ class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
             auth=self.non_contributor.auth,
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 403)
-        self.assertEqual(
-            res.json['errors'][0]['detail'],
-            'You do not have permission to perform this action.')
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == \
+            'You do not have permission to perform this action.'
 
     def test_unauthenticated_cannot_view_private_registration_linked_registrations(
             self):
@@ -161,10 +156,9 @@ class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
             registration_id=self.private_registration._id,
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(
-            res.json['errors'][0]['detail'],
-            'Authentication credentials were not provided.')
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == \
+            'Authentication credentials were not provided.'
 
 
 class TestRegistrationsLinkedRegistrationsRelationship(
@@ -188,23 +182,21 @@ class TestRegistrationsLinkedRegistrationsRelationship(
     def test_public_registration_unauthenticated_user_can_view_linked_registrations_relationship(
             self):
         res = self.make_request(registration_id=self.public_registration._id)
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertNotIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id not in \
+            linked_registration_ids
         assert res.json['data'][0]['type'] == 'linked_registrations'
 
     def test_public_registration_unauthenticated_user_can_view_linked_registrations_relationship_2_13(
             self):
         res = self.make_request(registration_id=self.public_registration._id, version='2.13')
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertNotIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id not in \
+            linked_registration_ids
         assert res.json['data'][0]['type'] == 'registrations'
 
     def test_private_registration_admin_contributor_can_view_linked_registrations_relationship(
@@ -213,12 +205,11 @@ class TestRegistrationsLinkedRegistrationsRelationship(
             registration_id=self.private_registration._id,
             auth=self.admin_contributor.auth
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertNotIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id not in \
+            linked_registration_ids
 
     def test_private_registration_rw_contributor_can_view_linked_registrations_relationship(
             self):
@@ -226,12 +217,11 @@ class TestRegistrationsLinkedRegistrationsRelationship(
             registration_id=self.private_registration._id,
             auth=self.rw_contributor.auth
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id in \
+            linked_registration_ids
 
     def test_private_registration_read_contributor_can_view_linked_registrations_relationship(
             self):
@@ -239,12 +229,11 @@ class TestRegistrationsLinkedRegistrationsRelationship(
             registration_id=self.private_registration._id,
             auth=self.read_contributor.auth
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         linked_registration_ids = [r['id'] for r in res.json['data']]
-        self.assertIn(self.public_linked_registration._id, linked_registration_ids)
-        self.assertNotIn(
-            self.private_linked_registration._id,
-            linked_registration_ids)
+        assert self.public_linked_registration._id in linked_registration_ids
+        assert self.private_linked_registration._id not in \
+            linked_registration_ids
 
     def test_private_registration_non_contributor_cannot_view_linked_registrations_relationship(
             self):
@@ -253,10 +242,9 @@ class TestRegistrationsLinkedRegistrationsRelationship(
             auth=self.non_contributor.auth,
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 403)
-        self.assertEqual(
-            res.json['errors'][0]['detail'],
-            'You do not have permission to perform this action.')
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == \
+            'You do not have permission to perform this action.'
 
     def test_private_registration_unauthenticated_user_cannot_view_linked_registrations_relationship(
             self):
@@ -264,27 +252,27 @@ class TestRegistrationsLinkedRegistrationsRelationship(
             registration_id=self.private_registration._id,
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json['errors'][0]['detail'],
-                     'Authentication credentials were not provided.')
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == \
+                     'Authentication credentials were not provided.'
 
     def test_cannot_create_linked_registrations_relationship(self):
         res = self.app.post_json_api(
             self.public_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_cannot_update_linked_registrations_relationship(self):
         res = self.app.put_json_api(
             self.public_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_cannot_delete_linked_registrations_relationship(self):
         res = self.app.delete_json_api(
             self.public_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405

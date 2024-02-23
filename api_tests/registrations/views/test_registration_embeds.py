@@ -48,10 +48,10 @@ class TestRegistrationEmbeds(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         json = res.json
         embeds = json['data']['embeds']
-        self.assertEqual(len(embeds['children']['data']), 2)
+        assert len(embeds['children']['data']) == 2
         titles = [self.child1.title, self.child2.title]
         for child in embeds['children']['data']:
-            self.assertIn(child['attributes']['title'], titles)
+            assert child['attributes']['title'] in titles
 
     def test_embed_contributors(self):
         url = '/{}registrations/{}/?embed=contributors'.format(
@@ -62,22 +62,20 @@ class TestRegistrationEmbeds(ApiTestCase):
         ids = [c._id for c in self.contribs] + [self.user._id]
         ids = [f'{self.registration._id}-{id_}' for id_ in ids]
         for contrib in embeds['contributors']['data']:
-            self.assertIn(contrib['id'], ids)
+            assert contrib['id'] in ids
 
     def test_embed_identifiers(self):
         url = '/{}registrations/{}/?embed=identifiers'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.user.auth)
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_embed_attributes_not_relationships(self):
         url = '/{}registrations/{}/?embed=title'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.contrib1.auth, expect_errors=True)
-        self.assertEqual(res.status_code, 400)
-        self.assertEqual(
-            res.json['errors'][0]['detail'],
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == \
             'The following fields are not embeddable: title'
-        )

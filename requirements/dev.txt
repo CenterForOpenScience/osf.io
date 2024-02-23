@@ -28,7 +28,7 @@ pre-commit==1.10.5
 django-debug-toolbar==3.2.4
 
 # Ipdb
-#ipdb==0.10.1
+ipdb==0.10.1
 
 # PyDevD (Remote Debugging)
 pydevd==0.0.6

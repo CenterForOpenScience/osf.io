@@ -31,9 +31,9 @@ class TestRefreshTokens(OsfTestCase):
     def test_look_up_provider(self):
         for Provider in PROVIDER_CLASSES:
             result = look_up_provider(Provider.short_name)
-            self.assertEqual(result, Provider)
+            assert result == Provider
         fake_result = look_up_provider('fake_addon_name')
-        self.assertEqual(fake_result, None)
+        assert fake_result == None
 
     def test_get_targets(self):
         now = timezone.now()
@@ -48,12 +48,12 @@ class TestRefreshTokens(OsfTestCase):
         box_targets = list(get_targets(delta=relativedelta(days=3), addon_short_name='box'))
         drive_targets = list(get_targets(delta=relativedelta(days=3), addon_short_name='googledrive'))
         mendeley_targets = list(get_targets(delta=relativedelta(days=3), addon_short_name='mendeley'))
-        self.assertEqual(records[0]._id, box_targets[0]._id)
-        self.assertNotIn(records[1], box_targets)
-        self.assertEqual(records[2]._id, drive_targets[0]._id)
-        self.assertNotIn(records[3], drive_targets)
-        self.assertEqual(records[4]._id, mendeley_targets[0]._id)
-        self.assertNotIn(records[5], mendeley_targets)
+        assert records[0]._id == box_targets[0]._id
+        assert records[1] not in box_targets
+        assert records[2]._id == drive_targets[0]._id
+        assert records[3] not in drive_targets
+        assert records[4]._id == mendeley_targets[0]._id
+        assert records[5] not in mendeley_targets
 
     @mock.patch('scripts.refresh_addon_tokens.Mendeley.refresh_oauth_key')
     @mock.patch('scripts.refresh_addon_tokens.GoogleDriveProvider.refresh_oauth_key')
@@ -68,6 +68,6 @@ class TestRefreshTokens(OsfTestCase):
         for addon in self.addons:
             Provider = look_up_provider(addon)
             main(delta=relativedelta(days=3), Provider=Provider, rate_limit=(5, 1), dry_run=False)
-        self.assertEqual(1, mock_box_refresh.call_count)
-        self.assertEqual(1, mock_drive_refresh.call_count)
-        self.assertEqual(1, mock_mendeley_refresh.call_count)
+        assert 1 == mock_box_refresh.call_count
+        assert 1 == mock_drive_refresh.call_count
+        assert 1 == mock_mendeley_refresh.call_count

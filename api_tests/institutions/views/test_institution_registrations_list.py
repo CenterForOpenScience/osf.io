@@ -37,48 +37,48 @@ class TestInstitutionRegistrationList(ApiTestCase):
     def test_return_all_public_nodes(self):
         res = self.app.get(self.institution_node_url)
 
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        self.assertIn(self.registration1._id, ids)
-        self.assertNotIn(self.registration2._id, ids)
-        self.assertNotIn(self.registration3._id, ids)
+        assert self.registration1._id in ids
+        assert self.registration2._id not in ids
+        assert self.registration3._id not in ids
 
     def test_does_not_return_private_nodes_with_auth(self):
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
 
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        self.assertIn(self.registration1._id, ids)
-        self.assertNotIn(self.registration2._id, ids)
-        self.assertNotIn(self.registration3._id, ids)
+        assert self.registration1._id in ids
+        assert self.registration2._id not in ids
+        assert self.registration3._id not in ids
 
     def test_doesnt_return_retractions_without_auth(self):
         self.registration2.is_public = True
         self.registration2.save()
         WithdrawnRegistrationFactory(registration=self.registration2, user=self.user1)
-        self.assertTrue(self.registration2.is_retracted)
+        assert self.registration2.is_retracted
 
         res = self.app.get(self.institution_node_url)
 
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        self.assertNotIn(self.registration2._id, ids)
+        assert self.registration2._id not in ids
 
     def test_doesnt_return_retractions_with_auth(self):
         WithdrawnRegistrationFactory(
             registration=self.registration2, user=self.user1)
 
-        self.assertTrue(self.registration2.is_retracted)
+        assert self.registration2.is_retracted
 
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
 
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        self.assertNotIn(self.registration2._id, ids)
+        assert self.registration2._id not in ids
 
     def test_total_biographic_contributor_in_institution_registration(self):
         user3 = AuthUserFactory()
@@ -92,13 +92,9 @@ class TestInstitutionRegistrationList(ApiTestCase):
             API_BASE, registration3._id)
 
         res = self.app.get(registration3_url)
-        self.assertTrue(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
-        )
-        self.assertEqual(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'],
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'] == \
             2
-        )
 
 
 class TestRegistrationListFiltering(

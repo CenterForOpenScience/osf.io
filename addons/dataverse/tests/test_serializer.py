@@ -49,4 +49,4 @@ class TestDataverseSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
             'host': ea.oauth_key,
             'host_url': f'https://{ea.oauth_key}',
         }
-        self.assertEqual(self.ser.serialize_account(ea), expected)
+        assert self.ser.serialize_account(ea) == expected

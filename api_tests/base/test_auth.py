@@ -49,11 +49,9 @@ class TestBasicAuthenticationValidation(ApiTestCase):
 
     def test_missing_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=None, expect_errors=True)
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(
-            res.json.get('errors')[0]['detail'],
+        assert res.status_code == 401
+        assert res.json.get('errors')[0]['detail'] == \
             'Authentication credentials were not provided.'
-        )
 
     def test_invalid_credential_fails(self):
         res = self.app.get(
@@ -61,15 +59,13 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             auth=(self.user1.username, 'invalid password'),
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(
-            res.json.get('errors')[0]['detail'],
+        assert res.status_code == 401
+        assert res.json.get('errors')[0]['detail'] == \
             'Invalid username/password.'
-        )
 
     def test_valid_credential_authenticates_and_has_permissions(self):
         res = self.app.get(self.reachable_url, auth=self.user1.auth)
-        self.assertEqual(res.status_code, 200, msg=res.json)
+        assert res.status_code == 200, res.json
 
     def test_valid_credential_authenticates_but_user_lacks_object_permissions(
             self):
@@ -78,7 +74,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             auth=self.user1.auth,
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 403, msg=res.json)
+        assert res.status_code == 403, res.json
 
     def test_valid_credential_but_twofactor_required(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -92,12 +88,10 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             auth=self.user1.auth,
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.headers['X-OSF-OTP'], 'required; app')
-        self.assertEqual(
-            res.json.get('errors')[0]['detail'],
+        assert res.status_code == 401
+        assert res.headers['X-OSF-OTP'] == 'required; app'
+        assert res.json.get('errors')[0]['detail'] == \
             'Must specify two-factor authentication OTP code.'
-        )
 
     def test_valid_credential_twofactor_invalid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -112,12 +106,10 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             headers={'X-OSF-OTP': 'invalid otp'},
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401)
-        self.assertTrue('X-OSF-OTP' not in res.headers)
-        self.assertEqual(
-            res.json.get('errors')[0]['detail'],
+        assert res.status_code == 401
+        assert 'X-OSF-OTP' not in res.headers
+        assert res.json.get('errors')[0]['detail'] == \
             'Invalid two-factor authentication OTP code.'
-        )
 
     def test_valid_credential_twofactor_valid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -130,7 +122,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             self.reachable_url, auth=self.user1.auth,
             headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)}
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
 
 
 class TestOAuthValidation(ApiTestCase):
@@ -165,11 +157,9 @@ class TestOAuthValidation(ApiTestCase):
             auth=None, auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(
-            res.json.get('errors')[0]['detail'],
+        assert res.status_code == 401
+        assert res.json.get('errors')[0]['detail'] == \
             'Authentication credentials were not provided.'
-        )
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_invalid_token_fails(self, mock_user_info):
@@ -183,7 +173,7 @@ class TestOAuthValidation(ApiTestCase):
             auth='invalid_token', auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401, msg=res.json)
+        assert res.status_code == 401, res.json
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_returns_unknown_user_thus_fails(self, mock_user_info):
@@ -197,7 +187,7 @@ class TestOAuthValidation(ApiTestCase):
             auth='some_valid_token', auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 401, msg=res.json)
+        assert res.status_code == 401, res.json
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_and_has_permissions(
@@ -212,7 +202,7 @@ class TestOAuthValidation(ApiTestCase):
             auth='some_valid_token',
             auth_type='jwt'
         )
-        self.assertEqual(res.status_code, 200, msg=res.json)
+        assert res.status_code == 200, res.json
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_but_user_lacks_object_permissions(
@@ -226,7 +216,7 @@ class TestOAuthValidation(ApiTestCase):
             auth='some_valid_token', auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 403, msg=res.json)
+        assert res.status_code == 403, res.json
 
 
 class TestOAuthScopedAccess(ApiTestCase):
@@ -257,7 +247,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             auth='some_valid_token', auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_read_scope_cant_write_user_view(self, mock_user_info):
@@ -279,7 +269,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_write_scope_implies_read_permissions_for_user_view(
@@ -293,7 +283,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             auth='some_valid_token', auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_write_scope_can_write_user_view(self, mock_user_info):
@@ -315,11 +305,9 @@ class TestOAuthScopedAccess(ApiTestCase):
             auth='some_valid_token', auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(
-            res.json['data']['attributes'],
-            payload['data']['attributes'] | res.json['data']['attributes'],
-        )
+        assert res.status_code == 200
+        assert res.json['data']['attributes'] == \
+            payload['data']['attributes'] | res.json['data']['attributes']
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_node_write_scope_cant_read_user_view(self, mock_user_info):
@@ -334,7 +322,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             auth='some_valid_token', auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_full_read_scope_can_read_guid_view_and_user_can_view_project(
@@ -349,13 +337,11 @@ class TestOAuthScopedAccess(ApiTestCase):
         redirect_url = '{}{}nodes/{}/'.format(
             API_DOMAIN, API_BASE, project._id
         )
-        self.assertEqual(res.status_code, 302)
-        self.assertEqual(res.location, redirect_url)
+        assert res.status_code == 302
+        assert res.location == redirect_url
         redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
-        self.assertEqual(
-            redirect_res.json['data']['attributes']['title'],
+        assert redirect_res.json['data']['attributes']['title'] == \
             project.title
-        )
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_full_write_scope_can_read_guid_view_and_user_can_view_project(
@@ -370,13 +356,11 @@ class TestOAuthScopedAccess(ApiTestCase):
         redirect_url = '{}{}nodes/{}/'.format(
             API_DOMAIN, API_BASE, project._id
         )
-        self.assertEqual(res.status_code, 302)
-        self.assertEqual(res.location, redirect_url)
+        assert res.status_code == 302
+        assert res.location == redirect_url
         redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
-        self.assertEqual(
-            redirect_res.json['data']['attributes']['title'],
+        assert redirect_res.json['data']['attributes']['title'] == \
             project.title
-        )
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_full_read_scope_can_read_guid_view_and_user_cannot_view_project(
@@ -391,14 +375,14 @@ class TestOAuthScopedAccess(ApiTestCase):
         redirect_url = '{}{}nodes/{}/'.format(
             API_DOMAIN, API_BASE, project._id
         )
-        self.assertEqual(res.status_code, 302)
-        self.assertEqual(res.location, redirect_url)
+        assert res.status_code == 302
+        assert res.location == redirect_url
         redirect_res = res.follow(
             auth='some_valid_token',
             auth_type='jwt',
             expect_errors=True
         )
-        self.assertEqual(redirect_res.status_code, 403)
+        assert redirect_res.status_code == 403
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_full_write_scope_can_read_guid_view_and_user_cannot_view_project(
@@ -413,13 +397,13 @@ class TestOAuthScopedAccess(ApiTestCase):
         redirect_url = '{}{}nodes/{}/'.format(
             API_DOMAIN, API_BASE, project._id
         )
-        self.assertEqual(res.status_code, 302)
-        self.assertEqual(res.location, redirect_url)
+        assert res.status_code == 302
+        assert res.location == redirect_url
         redirect_res = res.follow(
             auth='some_valid_token',
             auth_type='jwt',
             expect_errors=True)
-        self.assertEqual(redirect_res.status_code, 403)
+        assert redirect_res.status_code == 403
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_email_scope_can_read_email(self, mock_user_info):
@@ -428,11 +412,9 @@ class TestOAuthScopedAccess(ApiTestCase):
         )
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(
-            res.json['data']['attributes']['email'],
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['email'] == \
             self.user.username
-        )
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_non_user_email_scope_cannot_read_email(self, mock_user_info):
@@ -441,9 +423,9 @@ class TestOAuthScopedAccess(ApiTestCase):
         )
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        self.assertEqual(res.status_code, 200)
-        self.assertNotIn('email', res.json['data']['attributes'])
-        self.assertNotIn(self.user.username, res.json)
+        assert res.status_code == 200
+        assert 'email' not in res.json['data']['attributes']
+        assert self.user.username not in res.json
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_email_scope_cannot_read_other_email(self, mock_user_info):
@@ -455,9 +437,9 @@ class TestOAuthScopedAccess(ApiTestCase):
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        self.assertEqual(res.status_code, 200)
-        self.assertNotIn('email', res.json['data']['attributes'])
-        self.assertNotIn(self.user2.username, res.json)
+        assert res.status_code == 200
+        assert 'email' not in res.json['data']['attributes']
+        assert self.user2.username not in res.json
 
 
 @pytest.mark.django_db

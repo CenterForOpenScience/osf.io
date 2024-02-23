@@ -20,27 +20,27 @@ class TestAddPreprintProviders(OsfTestCase):
     def test_add_prod_providers(self):
         populate_main('prod')
         providers = PreprintProvider.objects.all()
-        self.assertEqual(providers.count(), len(PROD_PREPRINT_PROVIDERS))
+        assert providers.count() == len(PROD_PREPRINT_PROVIDERS)
         ids = [provider._id for provider in providers]
         for id in PROD_PREPRINT_PROVIDERS:
-            self.assertIn(id, ids)
+            assert id in ids
         for id in set(STAGING_PREPRINT_PROVIDERS) - set(PROD_PREPRINT_PROVIDERS):
-            self.assertNotIn(id, ids)
+            assert id not in ids
 
     def test_add_default_providers(self):
         populate_main(None)
         providers = PreprintProvider.objects.all()
-        self.assertEqual(providers.count(), len(PROD_PREPRINT_PROVIDERS))
+        assert providers.count() == len(PROD_PREPRINT_PROVIDERS)
         ids = [provider._id for provider in providers]
         for id in PROD_PREPRINT_PROVIDERS:
-            self.assertIn(id, ids)
+            assert id in ids
         for id in set(STAGING_PREPRINT_PROVIDERS) - set(PROD_PREPRINT_PROVIDERS):
-            self.assertNotIn(id, ids)
+            assert id not in ids
 
     def test_add_staging_providers(self):
         populate_main('stage')
         providers = PreprintProvider.objects.all()
-        self.assertEqual(PreprintProvider.objects.all().count(), len(STAGING_PREPRINT_PROVIDERS))
+        assert PreprintProvider.objects.all().count() == len(STAGING_PREPRINT_PROVIDERS)
         ids = [provider._id for provider in providers]
         for id in STAGING_PREPRINT_PROVIDERS:
-            self.assertIn(id, ids)
+            assert id in ids

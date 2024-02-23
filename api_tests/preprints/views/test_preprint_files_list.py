@@ -146,52 +146,48 @@ class TestPreprintProvidersList(ApiTestCase):
 
     def test_return_published_files_logged_out(self):
         res = self.app.get(self.url)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json['data']), 1)
-        self.assertEqual(
-            res.json['data'][0]['attributes']['provider'],
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['provider'] == \
             'osfstorage'
-        )
 
     def test_does_not_return_storage_addons_link(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        self.assertNotIn('storage_addons', res.json['data'][0]['links'])
+        assert 'storage_addons' not in res.json['data'][0]['links']
 
     def test_does_not_return_new_folder_link(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        self.assertNotIn('new_folder', res.json['data'][0]['links'])
+        assert 'new_folder' not in res.json['data'][0]['links']
 
     def test_returns_provider_data(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        self.assertEqual(res.status_code, 200)
-        self.assertTrue(isinstance(res.json['data'], list))
-        self.assertEqual(res.content_type, 'application/vnd.api+json')
+        assert res.status_code == 200
+        assert isinstance(res.json['data'], list)
+        assert res.content_type == 'application/vnd.api+json'
         data = res.json['data'][0]
-        self.assertEqual(data['attributes']['kind'], 'folder')
-        self.assertEqual(data['attributes']['name'], 'osfstorage')
-        self.assertEqual(data['attributes']['provider'], 'osfstorage')
-        self.assertEqual(data['attributes']['preprint'], self.preprint._id)
-        self.assertEqual(data['attributes']['path'], '/')
-        self.assertEqual(data['attributes']['node'], None)
-        self.assertEqual(
-            data['relationships']['target']['links']['related']['href'],
+        assert data['attributes']['kind'] == 'folder'
+        assert data['attributes']['name'] == 'osfstorage'
+        assert data['attributes']['provider'] == 'osfstorage'
+        assert data['attributes']['preprint'] == self.preprint._id
+        assert data['attributes']['path'] == '/'
+        assert data['attributes']['node'] == None
+        assert data['relationships']['target']['links']['related']['href'] == \
             f'{settings.API_DOMAIN}v2/preprints/{self.preprint._id}/'
-        )
 
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(
             f'{self.url}osfstorage/{self.preprint.primary_file._id}', auth=self.user.auth, expect_errors=True)
-        self.assertEqual(res.status_code, 404)
+        assert res.status_code == 404
 
     def test_returns_osfstorage_folder_version_two(self):
         res = self.app.get(
             f'{self.url}osfstorage/', auth=self.user.auth)
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
         res = self.app.get(
             f'{self.url}osfstorage/?version=2.2', auth=self.user.auth)
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_osfstorage_folder_data_not_found(self):
         fobj = self.preprint.root_folder.append_folder('NewFolder')
@@ -199,7 +195,7 @@ class TestPreprintProvidersList(ApiTestCase):
 
         res = self.app.get(
             f'{self.url}osfstorage/{fobj._id}', auth=self.user.auth, expect_errors=True)
-        self.assertEqual(res.status_code, 404)
+        assert res.status_code == 404
 
 
 class TestPreprintFilesList(ApiTestCase):
@@ -374,8 +370,8 @@ class TestPreprintFilesList(ApiTestCase):
         primary_file.move_under(subfolder)
         primary_file.save()
 
-        self.assertEqual(subfolder.children[0], primary_file)
-        self.assertEqual(primary_file.parent, subfolder)
+        assert subfolder.children[0] == primary_file
+        assert primary_file.parent == subfolder
 
         res = self.app.get(self.url, auth=self.user.auth)
         assert len(res.json['data']) == 1

@@ -51,8 +51,8 @@ class TestConfigViews(GoogleDriveAddonTestCase, OAuthAddonConfigViewsTestCaseMix
 
         url = self.project.api_url_for('googledrive_folder_list', folder_id=folderId)
         res = self.app.get(url, auth=self.user.auth)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json), len(sample_folder_data['items']))
+        assert res.status_code == 200
+        assert len(res.json) == len(sample_folder_data['items'])
 
     @mock.patch.object(GoogleDriveClient, 'about')
     def test_folder_list(self, mock_about):

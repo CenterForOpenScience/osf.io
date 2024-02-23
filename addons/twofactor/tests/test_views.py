@@ -26,8 +26,8 @@ class TestViews(OsfTestCase):
         # reload the user settings object from the DB
         self.user_settings.reload()
 
-        self.assertTrue(self.user_settings.is_confirmed)
-        self.assertEqual(res.status_code, 200)
+        assert self.user_settings.is_confirmed
+        assert res.status_code == 200
 
     def test_confirm_code_failure(self):
         url = api_url_for('twofactor_settings_put')
@@ -37,11 +37,11 @@ class TestViews(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
         json = res.json
-        self.assertIn('verification code', json['message_long'])
+        assert 'verification code' in json['message_long']
 
         # reload the user settings object from the DB
         self.user_settings.reload()
 
-        self.assertFalse(self.user_settings.is_confirmed)
+        assert not self.user_settings.is_confirmed
