@@ -26,7 +26,7 @@ from osf.models import CedarMetadataRecord
 logger = logging.getLogger(__name__)
 
 
-class CedarMetadataRecordList(JSONAPIBaseView, CreateAPIView):
+class CedarMetadataRecordCreate(JSONAPIBaseView, CreateAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
