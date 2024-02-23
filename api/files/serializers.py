@@ -370,14 +370,6 @@ class BaseFileSerializer(JSONAPISerializer):
                 return guid._id
         return None
 
-    def get_file_guid_or_id(self, obj):
-        if obj:
-            guid = obj.get_guid()
-            if guid:
-                return guid._id
-            return obj._id
-        return None
-
     def get_absolute_url(self, obj):
         return api_v2_url('files/{}/'.format(obj._id))
 
