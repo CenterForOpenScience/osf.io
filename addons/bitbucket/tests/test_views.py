@@ -73,8 +73,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         }, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
         self.project.reload()
-        assert self.project.logs.latest().action == \
-            f'{self.ADDON_SHORT_NAME}_repo_linked'
+        assert self.project.logs.latest().action == f'{self.ADDON_SHORT_NAME}_repo_linked'
 
 
 class TestBitbucketViews(OsfTestCase):
@@ -136,8 +135,7 @@ class TestBitbucketViews(OsfTestCase):
         mock_branches.return_value = bitbucket_mock.branches.return_value
 
         branch, sha, branches = utils.get_refs(self.node_settings)
-        assert branch == \
-            bitbucket_mock.repo_default_branch.return_value
+        assert branch == bitbucket_mock.repo_default_branch.return_value
         assert sha == self._get_sha_for_branch(branch=None)  # Get refs for default branch
 
         expected_branches = [

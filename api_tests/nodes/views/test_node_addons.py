@@ -59,11 +59,10 @@ class NodeAddonListMixin:
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
             assert self.account_id == addon_data['external_account_id']
-            assert self.node_settings.has_auth == \
-                addon_data['node_has_auth']
+            assert self.node_settings.has_auth == addon_data['node_has_auth']
             assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
-            assert addon_data == None
+            assert addon_data is None
 
     def test_settings_list_GET_disabled(self):
         wrong_type = self.should_expect_errors()
@@ -118,8 +117,7 @@ class NodeAddonListMixin:
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
             assert self.account_id == addon_data['external_account_id']
-            assert self.node_settings.has_auth == \
-                addon_data['node_has_auth']
+            assert self.node_settings.has_auth == addon_data['node_has_auth']
             assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
             assert addon_data == None
@@ -141,8 +139,7 @@ class NodeAddonDetailMixin:
         if not wrong_type:
             addon_data = res.json['data']['attributes']
             assert self.account_id == addon_data['external_account_id']
-            assert self.node_settings.has_auth == \
-                addon_data['node_has_auth']
+            assert self.node_settings.has_auth == addon_data['node_has_auth']
             assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
             assert res.status_code == 404
@@ -350,8 +347,7 @@ class NodeAddonDetailMixin:
         )
         if not wrong_type:
             assert res.status_code == 409
-            assert 'Cannot set folder without authorization' == \
-                res.json['errors'][0]['detail']
+            assert 'Cannot set folder without authorization' == res.json['errors'][0]['detail']
         if wrong_type:
             assert res.status_code in [404, 501]
 
@@ -463,8 +459,7 @@ class NodeAddonDetailMixin:
             assert res.status_code == 200
             addon_data = res.json['data']['attributes']
             assert self.account_id == addon_data['external_account_id']
-            assert self.node_settings.has_auth == \
-                addon_data['node_has_auth']
+            assert self.node_settings.has_auth == addon_data['node_has_auth']
             assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
             assert res.status_code == 404
@@ -505,8 +500,7 @@ class NodeAddonFolderMixin:
             assert addon_data['kind'] in ('folder', 'repo')
             assert addon_data['name'] == self._mock_folder_result['name']
             assert addon_data['path'] == self._mock_folder_result['path']
-            assert addon_data['folder_id'] == \
-                self._mock_folder_result['id']
+            assert addon_data['folder_id'] == self._mock_folder_result['id']
         if wrong_type:
             assert res.status_code in [404, 501]
 
@@ -731,8 +725,7 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
         assert addon_data['kind'] in ('folder', 'repo')
         assert addon_data['name'] == self._mock_folder_result['name']
         assert addon_data['path'] == self._mock_folder_result['path']
-        assert addon_data['folder_id'] == \
-            self._mock_folder_result['id']
+        assert addon_data['folder_id'] == self._mock_folder_result['id']
 
     @property
     def _mock_folder_result(self):
@@ -769,8 +762,7 @@ class TestNodeMendeleyAddon(
         assert addon_data['kind'] == 'folder'
         assert addon_data['name'] == 'Test Mendeley Folder'
         assert addon_data['path'] == '/'
-        assert addon_data['folder_id'] == \
-            'fasdkljla-2341-4592-10po-fds0920dks0ds'
+        assert addon_data['folder_id'] == 'fasdkljla-2341-4592-10po-fds0920dks0ds'
 
 class TestNodeZoteroAddon(
         NodeOAuthCitationAddonTestSuiteMixin,
@@ -814,15 +806,13 @@ class TestNodeZoteroAddon(
         assert addon_data['kind'] == self._mock_folder_result['kind']
         assert addon_data['name'] == 'My Library'
         assert addon_data['path'] == 'personal'
-        assert addon_data['folder_id'] == \
-            'personal'
+        assert addon_data['folder_id'] == 'personal'
 
         addon_data = res.json['data'][1]['attributes']
         assert addon_data['kind'] == self._mock_folder_result['kind']
         assert addon_data['name'] == self._mock_folder_result['name']
         assert addon_data['path'] == self._mock_folder_result['path']
-        assert addon_data['folder_id'] == \
-            self._mock_folder_result['id']
+        assert addon_data['folder_id'] == self._mock_folder_result['id']
 
     @property
     def _mock_folder_result(self):
@@ -865,8 +855,7 @@ class TestNodeZoteroAddon(
         assert addon_data['kind'] == 'folder'
         assert addon_data['name'] == 'Test Folder'
         assert addon_data['path'] == '18497322'
-        assert addon_data['folder_id'] == \
-            'FSCFSLREF'
+        assert addon_data['folder_id'] == 'FSCFSLREF'
 
 # CONFIGURABLE
 
@@ -1111,9 +1100,7 @@ class TestNodeGoogleDriveAddon(
             auth=self.user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert 'Must specify both folder_id and folder_path for {}'.format(
-                self.short_name) == \
-            res.json['errors'][0]['detail']
+        assert f'Must specify both folder_id and folder_path for {self.short_name}' == res.json['errors'][0]['detail']
 
 
 class TestNodeForwardAddon(
@@ -1287,8 +1274,7 @@ class TestNodeForwardAddon(
             auth=self.user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == \
-            'Cannot set label without url'
+        assert res.json['errors'][0]['detail'] == 'Cannot set label without url'
 
     def test_settings_detail_PUT_only_url_sets_settings(self):
         self.node_settings.reset()

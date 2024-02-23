@@ -88,12 +88,9 @@ class TestApiBaseViews(ApiTestCase):
             for cls in base_permissions:
                 if isinstance(cls, tuple):
                     has_cls = any([c in view.permission_classes for c in cls])
-                    assert has_cls, \
-                        f'{view} lacks the appropriate permission classes'
+                    assert has_cls, f'{view} lacks the appropriate permission classes'
                 else:
-                    assert cls in \
-                        view.permission_classes, \
-                        f'{view} lacks the appropriate permission classes'
+                    assert cls in view.permission_classes, f'{view} lacks the appropriate permission classes'
             for key in [READ, WRITE]:
                 scopes = getattr(view, f'required_{key}_scopes', None)
                 assert bool(scopes)
@@ -106,14 +103,12 @@ class TestApiBaseViews(ApiTestCase):
         for view in VIEW_CLASSES:
             if view in self.EXCLUDED_VIEWS:
                 continue
-            assert hasattr(view, '_get_embed_partial'), \
-                f'{view} lacks embed support'
+            assert hasattr(view, '_get_embed_partial'), f'{view} lacks embed support'
 
     def test_view_classes_define_or_override_serializer_class(self):
         for view in VIEW_CLASSES:
             has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
-            assert has_serializer_class, \
-                f'{view} should include serializer class or override get_serializer_class()'
+            assert has_serializer_class, f'{view} should include serializer class or override get_serializer_class()'
 
     @mock.patch(
         'osf.models.OSFUser.is_confirmed',

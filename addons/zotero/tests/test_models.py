@@ -26,6 +26,7 @@ from addons.zotero.provider import ZoteroCitationsProvider
 
 pytestmark = pytest.mark.django_db
 
+
 class ZoteroProviderTestCase(CitationAddonProviderTestSuiteMixin, unittest.TestCase):
 
     short_name = 'zotero'
@@ -129,8 +130,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
     def test_fetch_library_name_personal(self):
         self.node_settings.library_id = 'personal'
 
-        assert self.node_settings.fetch_library_name == \
-            'My library'
+        assert self.node_settings.fetch_library_name == 'My library'
 
     @mock.patch('addons.zotero.models.Zotero._fetch_libraries')
     def test_get_folders_top_level(self, mock_libraries):
@@ -163,8 +163,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
     def test_selected_library_name_empty(self):
         self.node_settings.library_id = None
 
-        assert self.node_settings.fetch_library_name == \
-            ''
+        assert self.node_settings.fetch_library_name == ''
 
     def test_selected_library_name(self):
         # Mock the return from api call to get the library's name
@@ -174,8 +173,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         with mock.patch.object(self.OAuthProviderClass, '_library_metadata', return_value=mock_library):
             name = self.node_settings.fetch_library_name
 
-        assert name == \
-            'Fake Library'
+        assert name == 'Fake Library'
 
     def test_set_library(self):
         folder_id = 'fake-folder-id'
@@ -202,11 +200,9 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         )
 
         # instance was updated
-        assert self.node_settings.library_id == \
-            'fake-library-id'
+        assert self.node_settings.library_id == 'fake-library-id'
         # If library_id is being set, the folder_id is cleared.
-        assert self.node_settings.list_id == \
-            None
+        assert self.node_settings.list_id is None
 
         # user_settings was updated
         # TODO: the call to grant_oauth_access should be mocked
@@ -220,7 +216,6 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         assert log.action == f'{self.short_name}_library_selected'
         assert log.params['library_id'] == library_id
         assert log.params['library_name'] == library_name
-
 
 
 class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):

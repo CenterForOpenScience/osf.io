@@ -106,12 +106,10 @@ class TestFilterMixin(ApiTestCase):
 
         fields = self.view.parse_query_params(query_params)
         assert 'string_field' in fields['filter[string_field]']
-        assert fields['filter[string_field]']['string_field']['op'] == \
-            'icontains'
+        assert fields['filter[string_field]']['string_field']['op'] == 'icontains'
 
         assert 'list_field' in fields['filter[list_field]']
-        assert fields['filter[list_field]']['list_field']['op'] == \
-            'contains'
+        assert fields['filter[list_field]']['list_field']['op'] == 'contains'
 
         assert 'int_field' in fields['filter[int_field]']
         assert fields['filter[int_field]']['int_field']['op'] == 'eq'
@@ -129,19 +127,16 @@ class TestFilterMixin(ApiTestCase):
 
         fields = self.view.parse_query_params(query_params)
         assert 'string_field' in fields['filter[string_field]']
-        assert fields['filter[string_field]']['string_field']['value'] == \
-            'foo'
+        assert fields['filter[string_field]']['string_field']['value'] == 'foo'
 
         assert 'list_field' in fields['filter[list_field]']
-        assert fields['filter[list_field]']['list_field']['value'] == \
-            'bar'
+        assert fields['filter[list_field]']['list_field']['value'] == 'bar'
 
         assert 'int_field' in fields['filter[int_field]']
         assert fields['filter[int_field]']['int_field']['value'] == 42
 
         assert 'bool_field' in fields.get('filter[bool_field]')
-        assert fields['filter[bool_field]']['bool_field']['value'] == \
-            False
+        assert fields['filter[bool_field]']['bool_field']['value'] is False
 
     def test_parse_query_params_uses_field_source_attribute(self):
         query_params = {
