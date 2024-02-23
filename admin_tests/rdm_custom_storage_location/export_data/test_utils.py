@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 from jsonschema import ValidationError, SchemaError
 from mock import patch, MagicMock
 from nose import tools as nt
-from requests import ConnectionError
+from requests import ConnectionError, ReadTimeout, Timeout
 from rest_framework import status
 
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
@@ -2576,11 +2576,41 @@ class TestUtilsForRestoreData(AdminTestCase):
 
     def test_copy_file_to_other_storage_exception(self):
         mock_post = MagicMock()
-        mock_post.side_effect = ConnectionError('test_copy_file_to_other_storage_exception')
+        mock_post.side_effect = Exception('test_copy_file_to_other_storage_exception')
 
         with patch('requests.post', mock_post):
-            response_body = utils.copy_file_to_other_storage(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/test.txt', '/', 'test.txt',
-                                                                          None)
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
+            nt.assert_is_none(response_body)
+
+    def test_copy_file_to_other_storage_exception_timeout(self):
+        mock_post = MagicMock()
+        mock_post.side_effect = ConnectionError('test_copy_file_to_other_storage_exception')
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
+            nt.assert_is_none(response_body)
+
+        mock_post = MagicMock()
+        mock_post.side_effect = Timeout('test_copy_file_to_other_storage_exception')
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
+            nt.assert_is_none(response_body)
+
+        mock_post = MagicMock()
+        mock_post.side_effect = ReadTimeout('test_copy_file_to_other_storage_exception')
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
             nt.assert_is_none(response_body)
 
     # copy_file_from_location_to_destination
