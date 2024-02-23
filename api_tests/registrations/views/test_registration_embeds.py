@@ -77,5 +77,4 @@ class TestRegistrationEmbeds(ApiTestCase):
 
         res = self.app.get(url, auth=self.contrib1.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == \
-            'The following fields are not embeddable: title'
+        assert res.json['errors'][0]['detail'] == 'The following fields are not embeddable: title'

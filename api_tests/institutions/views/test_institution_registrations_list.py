@@ -93,8 +93,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
 
         res = self.app.get(registration3_url)
         assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
-        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'] == \
-            2
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'] == 2
 
 
 class TestRegistrationListFiltering(

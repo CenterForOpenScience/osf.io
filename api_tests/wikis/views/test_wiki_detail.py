@@ -201,8 +201,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_private_project_with_wiki_page()
         res = self.app.get(self.private_url, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == \
-                     'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
 
     def test_private_node_logged_in_non_contributor_cannot_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
@@ -211,8 +210,7 @@ class TestWikiDetailView(ApiWikiTestCase):
             auth=self.non_contributor.auth,
             expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == \
-            'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_private_node_logged_in_contributor_can_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
@@ -282,15 +280,13 @@ class TestWikiDetailView(ApiWikiTestCase):
             auth=self.user.auth,
             expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == \
-            'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_private_registration_logged_out_user_cannot_view_wiki(self):
         self._set_up_private_registration_with_wiki_page()
         res = self.app.get(self.private_registration_url, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == \
-                     'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
 
     def test_private_registration_logged_in_non_contributor_cannot_view_wiki(
             self):
@@ -300,8 +296,7 @@ class TestWikiDetailView(ApiWikiTestCase):
             auth=self.non_contributor.auth,
             expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == \
-            'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_private_registration_contributor_can_view_wiki(self):
         self._set_up_private_registration_with_wiki_page()
@@ -401,10 +396,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.public_project._id)
         expected_comments_relationship_url = '{}nodes/{}/comments/'.format(
             API_BASE, self.public_project._id)
-        assert expected_nodes_relationship_url in \
-            res.json['data']['relationships']['node']['links']['related']['href']
-        assert expected_comments_relationship_url in \
-            res.json['data']['relationships']['comments']['links']['related']['href']
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+                expected_comments_relationship_url in
+                res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_private_node_wiki_relationship_links(self):
         self._set_up_private_project_with_wiki_page()
@@ -413,10 +409,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.private_project._id)
         expected_comments_relationship_url = '{}nodes/{}/comments/'.format(
             API_BASE, self.private_project._id)
-        assert expected_nodes_relationship_url in \
-            res.json['data']['relationships']['node']['links']['related']['href']
-        assert expected_comments_relationship_url in \
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+            expected_comments_relationship_url in
             res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_public_registration_wiki_relationship_links(self):
         self._set_up_public_registration_with_wiki_page()
@@ -425,10 +422,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.public_registration._id)
         expected_comments_relationship_url = '{}registrations/{}/comments/'.format(
             API_BASE, self.public_registration._id)
-        assert expected_nodes_relationship_url in \
-            res.json['data']['relationships']['node']['links']['related']['href']
-        assert expected_comments_relationship_url in \
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+            expected_comments_relationship_url in
             res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_private_registration_wiki_relationship_links(self):
         self._set_up_private_registration_with_wiki_page()
@@ -437,10 +435,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.private_registration._id)
         expected_comments_relationship_url = '{}registrations/{}/comments/'.format(
             API_BASE, self.private_registration._id)
-        assert expected_nodes_relationship_url in \
-            res.json['data']['relationships']['node']['links']['related']['href']
-        assert expected_comments_relationship_url in \
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+            expected_comments_relationship_url in
             res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_do_not_return_disabled_wiki(self):
         self._set_up_public_project_with_wiki_page()

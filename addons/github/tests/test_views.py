@@ -141,11 +141,9 @@ class TestGithubViews(OsfTestCase):
         mock_repo.return_value = github_mock.repo.return_value
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings)
-        assert branch == \
-            github_mock.repo.return_value.default_branch
+        assert branch == github_mock.repo.return_value.default_branch
         assert sha == self._get_sha_for_branch(branch=None)  # Get refs for default branch
-        assert branches == \
-            github_mock.branches.return_value
+        assert branches == github_mock.branches.return_value
 
     @mock.patch('addons.github.api.GitHubClient.branches')
     @mock.patch('addons.github.api.GitHubClient.repo')
@@ -157,8 +155,7 @@ class TestGithubViews(OsfTestCase):
         assert branch == 'master'
         branch_sha = self._get_sha_for_branch('master')
         assert sha == branch_sha
-        assert branches == \
-            github_mock.branches.return_value
+        assert branches == github_mock.branches.return_value
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
@@ -527,9 +524,9 @@ class TestGithubSettings(OsfTestCase):
 
         self.project.reload()
         self.node_settings.reload()
-        assert self.node_settings.user == None
-        assert self.node_settings.repo == None
-        assert self.node_settings.user_settings == None
+        assert self.node_settings.user is None
+        assert self.node_settings.repo is None
+        assert self.node_settings.user_settings is None
 
         assert self.project.logs.latest().action == 'github_node_deauthorized'
 

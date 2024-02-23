@@ -61,8 +61,7 @@ class TestRegistrationList(ApiTestCase):
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert urlparse(url).path == \
-            f'/{API_BASE}nodes/{self.public_project._id}/'
+        assert urlparse(url).path == f'/{API_BASE}nodes/{self.public_project._id}/'
 
     def test_return_registrations_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -88,8 +87,7 @@ class TestRegistrationList(ApiTestCase):
 
         assert res.content_type == 'application/vnd.api+json'
 
-        assert registered_from == \
-            f'/{API_BASE}nodes/{self.public_project._id}/'
+        assert registered_from == f'/{API_BASE}nodes/{self.public_project._id}/'
 
     def test_total_biographic_contributor_in_registration(self):
         user3 = AuthUserFactory()
@@ -570,8 +568,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert res.status_code == 400
         errors = res.json['errors']
         assert len(errors) == 1
-        assert errors[0]['detail'] == \
-            "'notafield' is not a valid field for this endpoint."
+        assert errors[0]['detail'] == "'notafield' is not a valid field for this endpoint."
 
 
 class TestRegistrationSubjectFiltering(SubjectsFilterMixin):

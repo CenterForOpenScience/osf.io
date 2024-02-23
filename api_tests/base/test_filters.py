@@ -106,12 +106,10 @@ class TestFilterMixin(ApiTestCase):
 
         fields = self.view.parse_query_params(query_params)
         assert 'string_field' in fields['filter[string_field]']
-        assert fields['filter[string_field]']['string_field']['op'] == \
-            'icontains'
+        assert fields['filter[string_field]']['string_field']['op'] == 'icontains'
 
         assert 'list_field' in fields['filter[list_field]']
-        assert fields['filter[list_field]']['list_field']['op'] == \
-            'contains'
+        assert fields['filter[list_field]']['list_field']['op'] == 'contains'
 
         assert 'int_field' in fields['filter[int_field]']
         assert fields['filter[int_field]']['int_field']['op'] == 'eq'
@@ -129,19 +127,16 @@ class TestFilterMixin(ApiTestCase):
 
         fields = self.view.parse_query_params(query_params)
         assert 'string_field' in fields['filter[string_field]']
-        assert fields['filter[string_field]']['string_field']['value'] == \
-            'foo'
+        assert fields['filter[string_field]']['string_field']['value'] == 'foo'
 
         assert 'list_field' in fields['filter[list_field]']
-        assert fields['filter[list_field]']['list_field']['value'] == \
-            'bar'
+        assert fields['filter[list_field]']['list_field']['value'] == 'bar'
 
         assert 'int_field' in fields['filter[int_field]']
         assert fields['filter[int_field]']['int_field']['value'] == 42
 
         assert 'bool_field' in fields.get('filter[bool_field]')
-        assert fields['filter[bool_field]']['bool_field']['value'] == \
-            False
+        assert fields['filter[bool_field]']['bool_field']['value'] is False
 
     def test_parse_query_params_uses_field_source_attribute(self):
         query_params = {
@@ -501,65 +496,65 @@ def setUp(self):
     self.filter_fields = FakeListView.FILTER_FIELDS
 
     def test_single_field_filter(self):
-    filter_str = 'filter[name]'
-    match = self.filter_regex.match(filter_str)
-    fields = match.groupdict()['fields']
-    field_names = re.findall(self.filter_fields, fields)
-    assert fields == 'name'
-    assert field_names[0] == 'name'
+        filter_str = 'filter[name]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert fields == 'name'
+        assert field_names[0] == 'name'
 
     def test_double_field_filter(self):
-    filter_str = 'filter[name,id]'
-    match = self.filter_regex.match(filter_str)
-    fields = match.groupdict()['fields']
-    field_names = re.findall(self.filter_fields, fields)
-    assert fields == 'name,id'
-    assert field_names[0] == 'name'
-    assert field_names[1] == 'id'
+        filter_str = 'filter[name,id]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert fields == 'name,id'
+        assert field_names[0] == 'name'
+        assert field_names[1] == 'id'
 
     def test_multiple_field_filter(self):
-    filter_str = 'filter[name,id,another,field,here]'
-    match = self.filter_regex.match(filter_str)
-    fields = match.groupdict()['fields']
-    field_names = re.findall(self.filter_fields, fields)
-    assert fields == 'name,id,another,field,here'
-    assert len(field_names) == 5
+        filter_str = 'filter[name,id,another,field,here]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert fields == 'name,id,another,field,here'
+        assert len(field_names) == 5
 
     def test_single_field_filter_end_comma(self):
-    filter_str = 'filter[name,]'
-    match = self.filter_regex.match(filter_str)
-    assert not match
+        filter_str = 'filter[name,]'
+        match = self.filter_regex.match(filter_str)
+        assert not match
 
     def test_multiple_field_filter_end_comma(self):
-    filter_str = 'filter[name,id,]'
-    match = self.filter_regex.match(filter_str)
-    assert not match
+        filter_str = 'filter[name,id,]'
+        match = self.filter_regex.match(filter_str)
+        assert not match
 
     def test_multiple_field_filter_with_spaces(self):
-    filter_str = 'filter[name,  id]'
-    match = self.filter_regex.match(filter_str)
-    fields = match.groupdict()['fields']
-    field_names = re.findall(self.filter_fields, fields)
-    assert fields == 'name,  id'
-    assert field_names[0] == 'name'
-    assert field_names[1] == 'id'
+        filter_str = 'filter[name,  id]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert fields == 'name,  id'
+        assert field_names[0] == 'name'
+        assert field_names[1] == 'id'
 
     def test_multiple_field_filter_with_blank_field(self):
-    filter_str = 'filter[name,  ,  id]'
-    match = self.filter_regex.match(filter_str)
-    assert not match
+        filter_str = 'filter[name,  ,  id]'
+        match = self.filter_regex.match(filter_str)
+        assert not match
 
     def test_multiple_field_filter_non_match(self):
-    filter_str = 'filter[name; id]'
-    match = self.filter_regex.match(filter_str)
-    assert not match
+        filter_str = 'filter[name; id]'
+        match = self.filter_regex.match(filter_str)
+        assert not match
 
     def test_single_field_filter_non_match(self):
-    filter_str = 'fitler[name]'
-    match = self.filter_regex.match(filter_str)
-    assert not match
+        filter_str = 'fitler[name]'
+        match = self.filter_regex.match(filter_str)
+        assert not match
 
     def test_single_field_non_alphanumeric_character(self):
-    filter_str = 'fitler[<name>]'
-    match = self.filter_regex.match(filter_str)
-    assert not match
+        filter_str = 'fitler[<name>]'
+        match = self.filter_regex.match(filter_str)
+        assert not match

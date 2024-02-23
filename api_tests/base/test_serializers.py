@@ -201,10 +201,12 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             reg_field = RegistrationSerializer._declared_fields[field]
 
             if field not in visible_on_withdrawals and field not in non_registration_fields:
-                assert isinstance(reg_field, base_serializers.HideIfWithdrawal) or \
-                    isinstance(reg_field, base_serializers.HideIfWithdrawalOrWikiDisabled) or \
-                    isinstance(reg_field, base_serializers.ShowIfVersion) or \
+                assert (
+                    isinstance(reg_field, base_serializers.HideIfWithdrawal) or
+                    isinstance(reg_field, base_serializers.HideIfWithdrawalOrWikiDisabled) or
+                    isinstance(reg_field, base_serializers.ShowIfVersion) or
                     isinstance(reg_field, base_serializers.ShowIfAdminScopeOrAnonymous)
+                )
 
     def test_hide_if_registration_fields(self):
 
@@ -260,12 +262,8 @@ class TestApiBaseSerializers(ApiTestCase):
             if serializer == WaffleSerializer or serializer == BaseWaffleSerializer:
                 continue
             if not re.match('^(api_test|test).*', serializer.__module__):
-                assert hasattr(
-                    serializer, 'get_absolute_url'
-                ), 'No get_absolute_url method'
-
-                assert serializer.get_absolute_url != \
-                    base_get_absolute_url
+                assert hasattr(serializer, 'get_absolute_url'), 'No get_absolute_url method'
+                assert serializer.get_absolute_url != base_get_absolute_url
 
     def test_counts_not_included_in_link_fields_by_default(self):
 
@@ -333,14 +331,12 @@ class TestApiBaseSerializers(ApiTestCase):
             expect_errors=True
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
-        assert res.json['errors'][0]['detail'] == \
-            'The following fields are not embeddable: foo'
+        assert res.json['errors'][0]['detail'] == 'The following fields are not embeddable: foo'
 
     def test_embed_does_not_remove_relationship(self):
         res = self.app.get(self.url, params={'embed': 'root'})
         assert res.status_code == 200
-        assert self.url in \
-            res.json['data']['relationships']['root']['links']['related']['href']
+        assert self.url in res.json['data']['relationships']['root']['links']['related']['href']
 
     def test_counts_included_in_children_field_with_children_related_counts_query_param(
             self):
@@ -407,8 +403,11 @@ class TestApiBaseSerializers(ApiTestCase):
             expect_errors=True
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
-        assert res.json['errors'][0]['detail'] == \
-            "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'"
+        assert (
+            res.json['errors'][0]['detail'] ==
+            "Acceptable values for the related_counts query param are 'true', 'false', "
+            "or any of the relationship fields; got 'title'"
+        )
 
 
 @pytest.mark.django_db
@@ -508,10 +507,8 @@ class TestRelationshipField:
         ).data['data']
 
         relationship_field = data['relationships']['self_and_related_field']['links']
-        assert f'/v2/nodes/{node._id}/contributors/' in \
-            relationship_field['self']['href']
-        assert f'/v2/nodes/{node._id}/' in \
-            relationship_field['related']['href']
+        assert f'/v2/nodes/{node._id}/contributors/' in relationship_field['self']['href']
+        assert f'/v2/nodes/{node._id}/' in relationship_field['related']['href']
 
     def test_field_with_two_kwargs(self):
         req = make_drf_request_with_version(version='2.0')
@@ -521,8 +518,7 @@ class TestRelationshipField:
             node, context={'request': req}
         ).data['data']
         field = data['relationships']['two_url_kwargs']['links']
-        assert f'/v2/nodes/{node._id}/node_links/{node._id}/' in \
-            field['related']['href']
+        assert f'/v2/nodes/{node._id}/node_links/{node._id}/' in field['related']['href']
 
     def test_field_with_two_filters(self):
         req = make_drf_request_with_version(version='2.0')
@@ -532,10 +528,8 @@ class TestRelationshipField:
             node, context={'request': req}
         ).data['data']
         field = data['relationships']['field_with_filters']['links']
-        assert quote('filter[target]=hello', safe='?=') in \
-            field['related']['href']
-        assert quote('filter[woop]=yea', safe='?=') in \
-            field['related']['href']
+        assert quote('filter[target]=hello', safe='?=') in field['related']['href']
+        assert quote('filter[woop]=yea', safe='?=') in field['related']['href']
 
     def test_field_with_callable_related_attrs(self):
         req = make_drf_request_with_version(version='2.0')
@@ -627,8 +621,7 @@ class VersionedDateTimeField(DbTestCase):
         req = make_drf_request_with_version(version='2.0')
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        assert datetime.strftime(self.old_date, self.old_format) == \
-            data['attributes']['date_modified']
+        assert datetime.strftime(self.old_date, self.old_format) == data['attributes']['date_modified']
 
     def test_old_date_without_microseconds_formats_to_old_format(self):
         req = make_drf_request_with_version(version='2.0')
@@ -637,15 +630,13 @@ class VersionedDateTimeField(DbTestCase):
         assert datetime.strftime(
                 self.old_date_without_microseconds,
                 self.old_format_without_microseconds
-            ) == \
-            data['attributes']['date_modified']
+            ) == data['attributes']['date_modified']
 
     def test_old_date_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        assert datetime.strftime(self.old_date, self.new_format) == \
-            data['attributes']['date_modified']
+        assert datetime.strftime(self.old_date, self.new_format) == data['attributes']['date_modified']
 
     def test_old_date_without_microseconds_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
@@ -654,15 +645,13 @@ class VersionedDateTimeField(DbTestCase):
         assert datetime.strftime(
                 self.old_date_without_microseconds,
                 self.new_format
-            ) == \
-            data['attributes']['date_modified']
+            ) == data['attributes']['date_modified']
 
     def test_new_date_formats_to_old_format(self):
         req = make_drf_request_with_version(version='2.0')
         setattr(self.node, 'last_logged', self.new_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        assert datetime.strftime(self.new_date, self.old_format) == \
-            data['attributes']['date_modified']
+        assert datetime.strftime(self.new_date, self.old_format) == data['attributes']['date_modified']
 
     def test_new_date_without_microseconds_formats_to_old_format(self):
         req = make_drf_request_with_version(version='2.0')
@@ -671,15 +660,13 @@ class VersionedDateTimeField(DbTestCase):
         assert datetime.strftime(
                 self.new_date_without_microseconds,
                 self.old_format_without_microseconds
-            ) == \
-            data['attributes']['date_modified']
+            ) == data['attributes']['date_modified']
 
     def test_new_date_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'last_logged', self.new_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        assert datetime.strftime(self.new_date, self.new_format) == \
-            data['attributes']['date_modified']
+        assert datetime.strftime(self.new_date, self.new_format) == data['attributes']['date_modified']
 
     def test_new_date_without_microseconds_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
@@ -688,8 +675,7 @@ class VersionedDateTimeField(DbTestCase):
         assert datetime.strftime(
                 self.new_date_without_microseconds,
                 self.new_format
-            ) == \
-            data['attributes']['date_modified']
+            ) == data['attributes']['date_modified']
 
     # regression test for https://openscience.atlassian.net/browse/PLAT-1350
     # VersionedDateTimeField was treating version 2.10 and higher as decimals,
@@ -698,5 +684,4 @@ class VersionedDateTimeField(DbTestCase):
         req = make_drf_request_with_version(version='2.10')
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
-        assert datetime.strftime(self.old_date, self.new_format) == \
-            data['attributes']['date_modified']
+        assert datetime.strftime(self.old_date, self.new_format) == data['attributes']['date_modified']

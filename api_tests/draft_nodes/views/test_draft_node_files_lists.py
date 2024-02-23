@@ -70,17 +70,17 @@ class TestDraftNodeProvidersList(ApiTestCase):
         assert data['attributes']['provider'] == 'osfstorage'
         assert data['attributes']['node'] == self.draft_node._id
         assert data['attributes']['path'] == '/'
-        assert data['relationships']['target']['links']['related']['href'] == \
+        assert (
+            data['relationships']['target']['links']['related']['href'] ==
             f'{settings.API_DOMAIN}v2/draft_nodes/{self.draft_node._id}/'
+        )
 
     def test_returns_osfstorage_folder_version_two(self):
-        res = self.app.get(
-            f'{self.url}osfstorage/', auth=self.user.auth)
+        res = self.app.get(f'{self.url}osfstorage/', auth=self.user.auth)
         assert res.status_code == 200
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
-        res = self.app.get(
-            f'{self.url}osfstorage/?version=2.2', auth=self.user.auth)
+        res = self.app.get(f'{self.url}osfstorage/?version=2.2', auth=self.user.auth)
         assert res.status_code == 200
 
 
@@ -246,8 +246,7 @@ class TestNodeFilesList(ApiTestCase):
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['provider'] == \
-            'osfstorage'
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
 
     def test_returns_private_files_logged_in_non_contributor(self):
         res = self.app.get(
@@ -261,8 +260,7 @@ class TestNodeFilesList(ApiTestCase):
         user_auth = Auth(self.user)
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['provider'] == \
-            'osfstorage'
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
 
         self.draft_node.add_addon('github', auth=user_auth)
         addon = self.draft_node.get_addon('github')
@@ -447,8 +445,7 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert not self.draft_node.get_addon(provider)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == \
-            f'The {provider} provider is not configured for this project.'
+        assert res.json['errors'][0]['detail'] == f'The {provider} provider is not configured for this project.'
 
     @responses.activate
     def test_handles_bad_waterbutler_request(self):
@@ -700,8 +697,7 @@ class TestDraftNodeStorageProviderDetail(ApiTestCase):
     def test_can_view_if_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == \
-            f'{self.draft_node._id}:osfstorage'
+        assert res.json['data']['id'] == f'{self.draft_node._id}:osfstorage'
 
     def test_cannot_view_if_private(self):
         res = self.app.get(self.private_url, expect_errors=True)

@@ -38,10 +38,8 @@ class TestConfigViews(FigshareAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
         }, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
         self.project.reload()
-        assert self.project.logs.latest().action == \
-            f'{self.ADDON_SHORT_NAME}_folder_selected'
-        assert self.project.logs.latest().params['folder'] == \
-            self.folder['path']
+        assert self.project.logs.latest().action == f'{self.ADDON_SHORT_NAME}_folder_selected'
+        assert self.project.logs.latest().params['folder'] == self.folder['path']
         assert res.json['result']['folder']['path'] == self.folder['path']
 
     @mock.patch.object(FigshareClient, 'userinfo')

@@ -50,8 +50,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
     def test_missing_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=None, expect_errors=True)
         assert res.status_code == 401
-        assert res.json.get('errors')[0]['detail'] == \
-            'Authentication credentials were not provided.'
+        assert res.json.get('errors')[0]['detail'] == 'Authentication credentials were not provided.'
 
     def test_invalid_credential_fails(self):
         res = self.app.get(
@@ -60,8 +59,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             expect_errors=True
         )
         assert res.status_code == 401
-        assert res.json.get('errors')[0]['detail'] == \
-            'Invalid username/password.'
+        assert res.json.get('errors')[0]['detail'] == 'Invalid username/password.'
 
     def test_valid_credential_authenticates_and_has_permissions(self):
         res = self.app.get(self.reachable_url, auth=self.user1.auth)
@@ -90,8 +88,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         )
         assert res.status_code == 401
         assert res.headers['X-OSF-OTP'] == 'required; app'
-        assert res.json.get('errors')[0]['detail'] == \
-            'Must specify two-factor authentication OTP code.'
+        assert res.json.get('errors')[0]['detail'] == 'Must specify two-factor authentication OTP code.'
 
     def test_valid_credential_twofactor_invalid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -108,8 +105,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         )
         assert res.status_code == 401
         assert 'X-OSF-OTP' not in res.headers
-        assert res.json.get('errors')[0]['detail'] == \
-            'Invalid two-factor authentication OTP code.'
+        assert res.json.get('errors')[0]['detail'] == 'Invalid two-factor authentication OTP code.'
 
     def test_valid_credential_twofactor_valid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -158,8 +154,7 @@ class TestOAuthValidation(ApiTestCase):
             expect_errors=True
         )
         assert res.status_code == 401
-        assert res.json.get('errors')[0]['detail'] == \
-            'Authentication credentials were not provided.'
+        assert res.json.get('errors')[0]['detail'] == 'Authentication credentials were not provided.'
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_invalid_token_fails(self, mock_user_info):
@@ -306,8 +301,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             expect_errors=True
         )
         assert res.status_code == 200
-        assert res.json['data']['attributes'] == \
-            payload['data']['attributes'] | res.json['data']['attributes']
+        assert res.json['data']['attributes'] == payload['data']['attributes'] | res.json['data']['attributes']
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_node_write_scope_cant_read_user_view(self, mock_user_info):
@@ -340,8 +334,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         assert res.status_code == 302
         assert res.location == redirect_url
         redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
-        assert redirect_res.json['data']['attributes']['title'] == \
-            project.title
+        assert redirect_res.json['data']['attributes']['title'] == project.title
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_full_write_scope_can_read_guid_view_and_user_can_view_project(
@@ -359,8 +352,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         assert res.status_code == 302
         assert res.location == redirect_url
         redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
-        assert redirect_res.json['data']['attributes']['title'] == \
-            project.title
+        assert redirect_res.json['data']['attributes']['title'] == project.title
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_full_read_scope_can_read_guid_view_and_user_cannot_view_project(
@@ -372,9 +364,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        redirect_url = '{}{}nodes/{}/'.format(
-            API_DOMAIN, API_BASE, project._id
-        )
+        redirect_url = f'{API_DOMAIN}{API_BASE}nodes/{project._id}/'
         assert res.status_code == 302
         assert res.location == redirect_url
         redirect_res = res.follow(
@@ -394,9 +384,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             base_route='/', base_prefix='v2/'
         )
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        redirect_url = '{}{}nodes/{}/'.format(
-            API_DOMAIN, API_BASE, project._id
-        )
+        redirect_url = f'{API_DOMAIN}{API_BASE}nodes/{project._id}/'
         assert res.status_code == 302
         assert res.location == redirect_url
         redirect_res = res.follow(
@@ -413,8 +401,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert res.status_code == 200
-        assert res.json['data']['attributes']['email'] == \
-            self.user.username
+        assert res.json['data']['attributes']['email'] == self.user.username
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_non_user_email_scope_cannot_read_email(self, mock_user_info):

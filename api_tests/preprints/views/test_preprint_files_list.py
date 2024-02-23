@@ -148,8 +148,7 @@ class TestPreprintProvidersList(ApiTestCase):
         res = self.app.get(self.url)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['provider'] == \
-            'osfstorage'
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
 
     def test_does_not_return_storage_addons_link(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -170,9 +169,11 @@ class TestPreprintProvidersList(ApiTestCase):
         assert data['attributes']['provider'] == 'osfstorage'
         assert data['attributes']['preprint'] == self.preprint._id
         assert data['attributes']['path'] == '/'
-        assert data['attributes']['node'] == None
-        assert data['relationships']['target']['links']['related']['href'] == \
+        assert data['attributes']['node'] is None
+        assert (
+            data['relationships']['target']['links']['related']['href'] ==
             f'{settings.API_DOMAIN}v2/preprints/{self.preprint._id}/'
+        )
 
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(

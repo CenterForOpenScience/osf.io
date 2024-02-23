@@ -33,7 +33,7 @@ class TestRefreshTokens(OsfTestCase):
             result = look_up_provider(Provider.short_name)
             assert result == Provider
         fake_result = look_up_provider('fake_addon_name')
-        assert fake_result == None
+        assert fake_result is None
 
     def test_get_targets(self):
         now = timezone.now()

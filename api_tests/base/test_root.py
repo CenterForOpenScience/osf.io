@@ -35,28 +35,25 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(self.url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user'] == None
+        assert res.json['meta']['current_user'] is None
 
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user']['data']['attributes']['given_name'] == \
-            self.user.given_name
+        assert res.json['meta']['current_user']['data']['attributes']['given_name'] == self.user.given_name
 
     def test_current_user_accepted_tos(self):
         res = self.app.get(self.url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] == \
-            False
+        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] is False
         self.user.accepted_terms_of_service = timezone.now()
         self.user.save()
         res = self.app.get(self.url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] == \
-            True
+        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] is True
 
     def test_returns_302_redirect_for_base_url(self):
         res = self.app.get('/')

@@ -16,6 +16,7 @@ from addons.googledrive.tests.factories import (
 
 pytestmark = pytest.mark.django_db
 
+
 class TestGoogleDriveProvider(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -79,14 +80,12 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def test_selected_folder_name_root(self):
         self.node_settings.folder_id = 'root'
 
-        assert self.node_settings.selected_folder_name == \
-            'Full Google Drive'
+        assert self.node_settings.selected_folder_name == 'Full Google Drive'
 
     def test_selected_folder_name_empty(self):
         self.node_settings.folder_id = None
 
-        assert self.node_settings.selected_folder_name == \
-            ''
+        assert self.node_settings.selected_folder_name == ''
 
     ## Overrides ##
 
