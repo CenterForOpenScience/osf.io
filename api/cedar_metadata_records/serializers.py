@@ -79,15 +79,10 @@ class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
 
 
 class CedarMetadataRecordsListSerializer(CedarMetadataRecordsBaseSerializer):
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError
-
-    def create(self, validated_data):
-        raise NotImplementedError
+    pass
 
 
-class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerializer):
+class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsBaseSerializer):
 
     metadata = ser.DictField(read_only=False, required=True)
 
@@ -153,7 +148,6 @@ class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
     )
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, CedarMetadataRecord), 'instance must be a CedarMetadataRecord'
         for key, value in validated_data.items():
             if key == 'metadata':
                 instance.metadata = value

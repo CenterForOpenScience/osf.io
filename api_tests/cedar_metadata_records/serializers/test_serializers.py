@@ -5,7 +5,7 @@ from api.base.settings.defaults import API_BASE, API_PRIVATE_BASE
 from api.cedar_metadata_records.serializers import (
     CedarMetadataRecordsBaseSerializer,
     CedarMetadataRecordsListSerializer,
-    CedarMetadataRecordsListCreateSerializer,
+    CedarMetadataRecordsCreateSerializer,
     CedarMetadataRecordsDetailSerializer,
 )
 from api_tests.utils import create_test_file
@@ -151,7 +151,7 @@ class TestCedarMetadataRecordsListSerializer:
             is_published=True,
         )
         context = {'request': make_drf_request_with_version()}
-        data = CedarMetadataRecordsListCreateSerializer(cedar_record, context=context).data['data']
+        data = CedarMetadataRecordsCreateSerializer(cedar_record, context=context).data['data']
         assert data['id'] == cedar_record._id
         assert data['type'] == 'cedar-metadata-records'
 
@@ -179,7 +179,7 @@ class TestCedarMetadataRecordsListSerializer:
             is_published=True,
         )
         context = {'request': make_drf_request_with_version()}
-        data = CedarMetadataRecordsListCreateSerializer(cedar_record, context=context).data['data']
+        data = CedarMetadataRecordsCreateSerializer(cedar_record, context=context).data['data']
         assert data['id'] == cedar_record._id
         assert data['type'] == 'cedar-metadata-records'
 
@@ -207,7 +207,7 @@ class TestCedarMetadataRecordsListSerializer:
             is_published=True,
         )
         context = {'request': make_drf_request_with_version()}
-        data = CedarMetadataRecordsListCreateSerializer(cedar_record, context=context).data['data']
+        data = CedarMetadataRecordsCreateSerializer(cedar_record, context=context).data['data']
         assert data['id'] == cedar_record._id
         assert data['type'] == 'cedar-metadata-records'
 
@@ -226,7 +226,7 @@ class TestCedarMetadataRecordsListSerializer:
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record._id}/metadata_download/'
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordsListCreateSerializer:
+class TestCedarMetadataRecordsCreateSerializer:
 
     def test_serializer_when_target_is_node(self, node, cedar_template, cedar_record_metadata_json):
 
