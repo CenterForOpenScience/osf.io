@@ -2,8 +2,6 @@ import pytest
 import unittest
 from unittest import mock
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_is_none, assert_true, assert_false,
-    assert_is, assert_in)
 
 from addons.base.tests.utils import MockFolder, MockLibrary
 
@@ -80,16 +78,16 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
     def test_fields(self):
         node_settings = self.NodeSettingsClass(owner=ProjectFactory(), user_settings=self.user_settings)
         node_settings.save()
-        assert_true(node_settings.user_settings)
-        assert_equal(node_settings.user_settings.owner, self.user)
-        assert_true(hasattr(node_settings, 'folder_id'))
-        assert_true(hasattr(node_settings, 'library_id'))
-        assert_true(hasattr(node_settings, 'user_settings'))
+        self.assertTrue(node_settings.user_settings)
+        self.assertEqual(node_settings.user_settings.owner, self.user)
+        self.assertTrue(hasattr(node_settings, 'folder_id'))
+        self.assertTrue(hasattr(node_settings, 'library_id'))
+        self.assertTrue(hasattr(node_settings, 'user_settings'))
 
     def test_library_defaults_to_none(self):
         node_settings = self.NodeSettingsClass(user_settings=self.user_settings)
         node_settings.save()
-        assert_is_none(node_settings.library_id)
+        self.assertIsNone(node_settings.library_id)
 
     def test_clear_settings(self):
         node_settings = self.NodeSettingsFactory()
@@ -98,40 +96,40 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         node_settings.save()
 
         node_settings.clear_settings()
-        assert_is_none(node_settings.folder_id)
-        assert_is_none(node_settings.library_id)
+        self.assertIsNone(node_settings.folder_id)
+        self.assertIsNone(node_settings.library_id)
 
     def test_delete(self):
-        assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder_id)
+        self.assertTrue(self.node_settings.user_settings)
+        self.assertTrue(self.node_settings.folder_id)
         old_logs = list(self.node.logs.all())
         self.node_settings.delete()
         self.node_settings.save()
-        assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder_id, None)
-        assert_is(self.node_settings.library_id, None)
-        assert_true(self.node_settings.deleted)
-        assert_equal(list(self.node.logs.all()), list(old_logs))
+        self.assertIs(self.node_settings.user_settings, None)
+        self.assertIs(self.node_settings.folder_id, None)
+        self.assertIs(self.node_settings.library_id, None)
+        self.assertTrue(self.node_settings.deleted)
+        self.assertEqual(list(self.node.logs.all()), list(old_logs))
 
     def test_deauthorize(self):
-        assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder_id)
+        self.assertTrue(self.node_settings.user_settings)
+        self.assertTrue(self.node_settings.folder_id)
         self.node_settings.deauthorize(auth=Auth(self.user))
         self.node_settings.save()
-        assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder_id, None)
-        assert_is(self.node_settings.library_id, None)
+        self.assertIs(self.node_settings.user_settings, None)
+        self.assertIs(self.node_settings.folder_id, None)
+        self.assertIs(self.node_settings.library_id, None)
 
         last_log = self.node.logs.first()
-        assert_equal(last_log.action, f'{self.short_name}_node_deauthorized')
+        self.assertEqual(last_log.action, f'{self.short_name}_node_deauthorized')
         params = last_log.params
-        assert_in('node', params)
-        assert_in('project', params)
+        self.assertIn('node', params)
+        self.assertIn('project', params)
 
     def test_fetch_library_name_personal(self):
         self.node_settings.library_id = 'personal'
 
-        assert_equal(
+        self.assertEqual(
             self.node_settings.fetch_library_name,
             'My library'
         )
@@ -145,9 +143,9 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         # No path is specified, so top level libraries are fetched
         libraries = self.node_settings.get_folders()
 
-        assert_equal(len(libraries), 2)
-        assert_equal(libraries[0]['kind'], 'library')
-        assert_equal(libraries[1]['kind'], 'library')
+        self.assertEqual(len(libraries), 2)
+        self.assertEqual(libraries[0]['kind'], 'library')
+        self.assertEqual(libraries[1]['kind'], 'library')
 
     @mock.patch('addons.zotero.models.Zotero._get_folders')
     def test_get_folders_second_level(self, mock_folders):
@@ -158,16 +156,16 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         # Path - personal, is specified, so folders are fetched from personal library.
         folders = self.node_settings.get_folders('personal')
 
-        assert_equal(len(folders), 3)
-        assert_equal(folders[0]['kind'], 'folder')
-        assert_equal(folders[0]['name'], 'All Documents')
-        assert_equal(folders[1]['kind'], 'folder')
-        assert_equal(folders[2]['kind'], 'folder')
+        self.assertEqual(len(folders), 3)
+        self.assertEqual(folders[0]['kind'], 'folder')
+        self.assertEqual(folders[0]['name'], 'All Documents')
+        self.assertEqual(folders[1]['kind'], 'folder')
+        self.assertEqual(folders[2]['kind'], 'folder')
 
     def test_selected_library_name_empty(self):
         self.node_settings.library_id = None
 
-        assert_equal(
+        self.assertEqual(
             self.node_settings.fetch_library_name,
             ''
         )
@@ -180,7 +178,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         with mock.patch.object(self.OAuthProviderClass, '_library_metadata', return_value=mock_library):
             name = self.node_settings.fetch_library_name
 
-        assert_equal(
+        self.assertEqual(
             name,
             'Fake Library'
         )
@@ -195,7 +193,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         self.node_settings.save()
         self.node_settings.list_id = folder_id
         self.node_settings.save()
-        assert_equal(self.node_settings.list_id, folder_id)
+        self.assertEqual(self.node_settings.list_id, folder_id)
 
         provider = self.ProviderClass()
 
@@ -210,19 +208,19 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         )
 
         # instance was updated
-        assert_equal(
+        self.assertEqual(
             self.node_settings.library_id,
             'fake-library-id',
         )
         # If library_id is being set, the folder_id is cleared.
-        assert_equal(
+        self.assertEqual(
             self.node_settings.list_id,
             None,
         )
 
         # user_settings was updated
         # TODO: the call to grant_oauth_access should be mocked
-        assert_true(
+        self.assertTrue(
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
@@ -231,9 +229,9 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         )
 
         log = self.node.logs.latest()
-        assert_equal(log.action, f'{self.short_name}_library_selected')
-        assert_equal(log.params['library_id'], library_id)
-        assert_equal(log.params['library_name'], library_name)
+        self.assertEqual(log.action, f'{self.short_name}_library_selected')
+        self.assertEqual(log.params['library_id'], library_id)
+        self.assertEqual(log.params['library_name'], library_name)
 
 
 
@@ -264,7 +262,7 @@ class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.T
         )
         self.user_settings.save()
 
-        assert_true(
+        self.assertTrue(
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
@@ -272,7 +270,7 @@ class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.T
             )
         )
 
-        assert_false(
+        self.assertFalse(
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,

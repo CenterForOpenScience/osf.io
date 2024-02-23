@@ -1,6 +1,5 @@
 """Serializer tests for the Box addon."""
 from unittest import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
@@ -27,12 +26,12 @@ class TestGoogleDriveSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCas
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=False):
             serialized = self.ser.serialized_node_settings
         for setting in self.required_settings:
-            assert_in(setting, serialized['result'])
+            self.assertIn(setting, serialized['result'])
 
     def test_serialized_node_settings_authorized(self):
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=True):
             serialized = self.ser.serialized_node_settings
         for setting in self.required_settings:
-            assert_in(setting, serialized['result'])
+            self.assertIn(setting, serialized['result'])
         for setting in self.required_settings_authorized:
-            assert_in(setting, serialized['result'])
+            self.assertIn(setting, serialized['result'])
