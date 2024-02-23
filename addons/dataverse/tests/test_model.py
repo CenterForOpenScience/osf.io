@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa
 from unittest import mock
 import pytest
 import unittest
@@ -45,7 +44,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
             auth=Auth(user=self.node.creator),
             draft_registration=DraftRegistrationFactory(branched_from=self.node),
         )
-        assert_false(registration.has_addon('dataverse'))
+        self.assertFalse(registration.has_addon('dataverse'))
 
     ## Overrides ##
 
@@ -59,12 +58,12 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
             metadata={'path': filename, 'materialized': filename},
         )
         self.node.reload()
-        assert_equal(self.node.logs.count(), nlog + 1)
-        assert_equal(
+        self.assertEqual(self.node.logs.count(), nlog + 1)
+        self.assertEqual(
             self.node.logs.latest().action,
             f'{self.short_name}_{action}',
         )
-        assert_equal(
+        self.assertEqual(
             self.node.logs.latest().params['filename'],
             filename
         )
@@ -74,17 +73,17 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
         dataset = utils.create_mock_dataset()
         self.node_settings.set_folder(dataverse, dataset, auth=Auth(self.user))
         # Folder was set
-        assert_equal(self.node_settings.folder_id, dataset.id)
+        self.assertEqual(self.node_settings.folder_id, dataset.id)
         # Log was saved
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, f'{self.short_name}_dataset_linked')
+        self.assertEqual(last_log.action, f'{self.short_name}_dataset_linked')
 
     def test_serialize_credentials(self):
         credentials = self.node_settings.serialize_waterbutler_credentials()
 
-        assert_is_not_none(self.node_settings.external_account.oauth_secret)
+        self.assertIsNotNone(self.node_settings.external_account.oauth_secret)
         expected = {'token': self.node_settings.external_account.oauth_secret}
-        assert_equal(credentials, expected)
+        self.assertEqual(credentials, expected)
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
@@ -94,7 +93,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
             'id': self.node_settings.dataset_id,
             'name': self.node_settings.dataset,
         }
-        assert_equal(settings, expected)
+        self.assertEqual(settings, expected)
 
 
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):

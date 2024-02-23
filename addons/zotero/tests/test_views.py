@@ -4,7 +4,6 @@ from future.moves.urllib.parse import urlparse, urljoin
 import responses
 
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_true, assert_false)
 from addons.base.tests import views
 from addons.base.tests.utils import MockLibrary, MockFolder
 from addons.zotero.models import Zotero
@@ -69,13 +68,13 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
             self.library.json['id'],
             self.library.name
         )
-        assert_false(self.node_settings.complete)
-        assert_equal(self.node_settings.list_id, None)
-        assert_equal(self.node_settings.library_id, 'Fake Library Key')
+        self.assertFalse(self.node_settings.complete)
+        self.assertEqual(self.node_settings.list_id, None)
+        self.assertEqual(self.node_settings.library_id, 'Fake Library Key')
         res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
-        assert_false(res['complete'])
-        assert_equal(res['list_id'], None)
-        assert_equal(res['library_id'], 'Fake Library Key')
+        self.assertFalse(res['complete'])
+        self.assertEqual(res['list_id'], None)
+        self.assertEqual(res['library_id'], 'Fake Library Key')
 
     def test_widget_view_complete(self):
         # JSON: everything a widget needs
@@ -98,13 +97,13 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
             self.folder.name,
             Auth(self.user),
         )
-        assert_true(self.node_settings.complete)
-        assert_equal(self.node_settings.list_id, 'Fake Key')
-        assert_equal(self.node_settings.library_id, 'Fake Library Key')
+        self.assertTrue(self.node_settings.complete)
+        self.assertEqual(self.node_settings.list_id, 'Fake Key')
+        self.assertEqual(self.node_settings.library_id, 'Fake Library Key')
         res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
-        assert_true(res['complete'])
-        assert_equal(res['list_id'], 'Fake Key')
-        assert_equal(res['library_id'], 'Fake Library Key')
+        self.assertTrue(res['complete'])
+        self.assertEqual(res['list_id'], 'Fake Key')
+        self.assertEqual(res['library_id'], 'Fake Library Key')
 
     @responses.activate
     def test_citation_list_root_only_unfiled_items_included(self):
@@ -134,7 +133,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         children = res.json['contents']
         # There are three items, one folder and two files, but one of the files gets pulled out because it
         # belongs to a collection
-        assert_equal(len(children), 2)
-        assert_equal(children[0]['kind'], 'folder')
-        assert_equal(children[1]['kind'], 'file')
-        assert_true(children[1].get('csl') is not None)
+        self.assertEqual(len(children), 2)
+        self.assertEqual(children[0]['kind'], 'folder')
+        self.assertEqual(children[1]['kind'], 'file')
+        self.assertTrue(children[1].get('csl') is not None)

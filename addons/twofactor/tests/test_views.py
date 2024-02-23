@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import assert_equal, assert_false, assert_in, assert_true
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory
 from addons.twofactor.tests import _valid_code
@@ -27,8 +26,8 @@ class TestViews(OsfTestCase):
         # reload the user settings object from the DB
         self.user_settings.reload()
 
-        assert_true(self.user_settings.is_confirmed)
-        assert_equal(res.status_code, 200)
+        self.assertTrue(self.user_settings.is_confirmed)
+        self.assertEqual(res.status_code, 200)
 
     def test_confirm_code_failure(self):
         url = api_url_for('twofactor_settings_put')
@@ -38,11 +37,11 @@ class TestViews(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, 403)
+        self.assertEqual(res.status_code, 403)
         json = res.json
-        assert_in('verification code', json['message_long'])
+        self.assertIn('verification code', json['message_long'])
 
         # reload the user settings object from the DB
         self.user_settings.reload()
 
-        assert_false(self.user_settings.is_confirmed)
+        self.assertFalse(self.user_settings.is_confirmed)
