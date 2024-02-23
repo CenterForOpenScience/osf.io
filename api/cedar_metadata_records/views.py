@@ -32,7 +32,7 @@ class CedarMetadataRecordList(JSONAPIBaseView, CreateAPIView):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
+    required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
 
     serializer_class = CedarMetadataRecordsCreateSerializer
