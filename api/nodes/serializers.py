@@ -537,6 +537,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
+    cedar_metadata_records = RelationshipField(
+        related_view='nodes:node-cedar-metadata-records-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     subjects_acceptable = HideIfRegistration(RelationshipField(
         related_view='subjects:subject-list',
         related_view_kwargs={},

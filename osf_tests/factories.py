@@ -1207,3 +1207,11 @@ class RegistrationBulkUploadJobFactory(DjangoModelFactory):
 class RegistrationBulkUploadRowFactory(DjangoModelFactory):
     class Meta:
         model = models.RegistrationBulkUploadRow
+
+class CedarMetadataRecordFactory(DjangoModelFactory):
+    class Meta:
+        model = models.CedarMetadataRecord
+
+class CedarMetadataTemplateFactory(DjangoModelFactory):
+    class Meta:
+        model = models.CedarMetadataTemplate
