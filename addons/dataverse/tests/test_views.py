@@ -26,19 +26,19 @@ class TestAuthViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         self.app.delete(url, auth=self.user.auth)
 
         self.node_settings.reload()
-        self.assertFalse(self.node_settings.dataverse_alias)
-        self.assertFalse(self.node_settings.dataverse)
-        self.assertFalse(self.node_settings.dataset_doi)
-        self.assertFalse(self.node_settings.dataset)
-        self.assertFalse(self.node_settings.user_settings)
+        assert not self.node_settings.dataverse_alias
+        assert not self.node_settings.dataverse
+        assert not self.node_settings.dataset_doi
+        assert not self.node_settings.dataset
+        assert not self.node_settings.user_settings
 
         # Log states that node was deauthorized
         self.project.reload()
         last_log = self.project.logs.latest()
-        self.assertEqual(last_log.action, 'dataverse_node_deauthorized')
+        assert last_log.action == 'dataverse_node_deauthorized'
         log_params = last_log.params
-        self.assertEqual(log_params['node'], self.project._primary_key)
-        self.assertEqual(log_params['project'], None)
+        assert log_params['node'] == self.project._primary_key
+        assert log_params['project'] == None
 
     def test_user_config_get(self):
         url = api_url_for('dataverse_user_config_get')
@@ -46,9 +46,9 @@ class TestAuthViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         res = self.app.get(url, auth=new_user.auth)
 
         result = res.json.get('result')
-        self.assertFalse(result['userHasAuth'])
-        self.assertIn('hosts', result)
-        self.assertIn('create', result['urls'])
+        assert not result['userHasAuth']
+        assert 'hosts' in result
+        assert 'create' in result['urls']
 
         # userHasAuth is true with external accounts
         new_user.external_accounts.add(create_external_account())
@@ -56,7 +56,7 @@ class TestAuthViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         res = self.app.get(url, auth=self.user.auth)
 
         result = res.json.get('result')
-        self.assertTrue(result['userHasAuth'])
+        assert result['userHasAuth']
 
 class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     connection = create_mock_connection()
@@ -82,10 +82,10 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         params = {'alias': 'ALIAS1'}
         res = self.app.post_json(url, params, auth=self.user.auth)
 
-        self.assertEqual(len(res.json['datasets']), 3)
+        assert len(res.json['datasets']) == 3
         first = res.json['datasets'][0]
-        self.assertEqual(first['title'], 'Example (DVN/00001)')
-        self.assertEqual(first['doi'], 'doi:12.3456/DVN/00001')
+        assert first['title'] == 'Example (DVN/00001)'
+        assert first['doi'] == 'doi:12.3456/DVN/00001'
 
     @mock.patch('addons.dataverse.views.client.connect_from_settings')
     def test_set_config(self, mock_connection):
@@ -96,26 +96,24 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
             'dataverse': {'alias': 'ALIAS3'},
             'dataset': {'doi': 'doi:12.3456/DVN/00003'},
         }, auth=self.user.auth)
-        self.assertEqual(res.status_code, http_status.HTTP_200_OK)
+        assert res.status_code == http_status.HTTP_200_OK
         self.project.reload()
-        self.assertEqual(
-            self.project.logs.latest().action,
+        assert self.project.logs.latest().action == \
             f'{self.ADDON_SHORT_NAME}_dataset_linked'
-        )
-        self.assertEqual(res.json['dataverse'], self.connection.get_dataverse('ALIAS3').title)
-        self.assertEqual(res.json['dataset'],
-            self.connection.get_dataverse('ALIAS3').get_dataset_by_doi('doi:12.3456/DVN/00003').title)
+        assert res.json['dataverse'] == self.connection.get_dataverse('ALIAS3').title
+        assert res.json['dataset'] == \
+            self.connection.get_dataverse('ALIAS3').get_dataset_by_doi('doi:12.3456/DVN/00003').title
 
     def test_get_config(self):
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=self.user.auth)
-        self.assertEqual(res.status_code, http_status.HTTP_200_OK)
-        self.assertIn('result', res.json)
+        assert res.status_code == http_status.HTTP_200_OK
+        assert 'result' in res.json
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
             self.user,
         )
-        self.assertEqual(serialized, res.json['result'])
+        assert serialized == res.json['result']
 
     @mock.patch('addons.dataverse.views.client.connect_from_settings')
     def test_set_config_no_dataset(self, mock_connection):
@@ -135,14 +133,14 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         self.node_settings.reload()
 
         # Old settings did not change
-        self.assertEqual(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(self.node_settings.dataverse_alias, 'ALIAS2')
-        self.assertEqual(self.node_settings.dataset, 'Example (DVN/00001)')
-        self.assertEqual(self.node_settings.dataset_doi, 'doi:12.3456/DVN/00001')
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert self.node_settings.dataverse_alias == 'ALIAS2'
+        assert self.node_settings.dataset == 'Example (DVN/00001)'
+        assert self.node_settings.dataset_doi == 'doi:12.3456/DVN/00001'
 
         # Nothing was logged
         self.project.reload()
-        self.assertEqual(self.project.logs.count(), num_old_logs)
+        assert self.project.logs.count() == num_old_logs
 
 
 class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
@@ -173,16 +171,16 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
-        self.assertTrue(res.json[0]['permissions']['edit'])
-        self.assertTrue(res.json[0]['hasPublishedFiles'])
-        self.assertEqual(res.json[0]['version'], 'latest-published')
+        assert res.json[0]['permissions']['edit']
+        assert res.json[0]['hasPublishedFiles']
+        assert res.json[0]['version'] == 'latest-published'
 
         # Non-contributor gets published version, no options
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
-        self.assertFalse(res.json[0]['permissions']['edit'])
-        self.assertTrue(res.json[0]['hasPublishedFiles'])
-        self.assertEqual(res.json[0]['version'], 'latest-published')
+        assert not res.json[0]['permissions']['edit']
+        assert res.json[0]['hasPublishedFiles']
+        assert res.json[0]['version'] == 'latest-published'
 
     @mock.patch('addons.dataverse.views.client.get_custom_publish_text')
     @mock.patch('addons.dataverse.views.client.connect_from_settings')
@@ -210,14 +208,14 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
         # Contributor gets draft, no options
         res = self.app.get(url, auth=self.user.auth)
-        self.assertTrue(res.json[0]['permissions']['edit'])
-        self.assertFalse(res.json[0]['hasPublishedFiles'])
-        self.assertEqual(res.json[0]['version'], 'latest')
+        assert res.json[0]['permissions']['edit']
+        assert not res.json[0]['hasPublishedFiles']
+        assert res.json[0]['version'] == 'latest'
 
         # Non-contributor gets nothing
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
-        self.assertEqual(res.json, [])
+        assert res.json == []
 
     @mock.patch('addons.dataverse.views.client.connect_from_settings')
     @mock.patch('addons.dataverse.views.client.get_files')
@@ -230,7 +228,7 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
         mock_connection.return_value = None
         res = self.app.get(url, auth=self.user.auth)
-        self.assertEqual(res.json, [])
+        assert res.json == []
 
     def test_dataverse_root_incomplete(self):
         self.node_settings.dataset_doi = None
@@ -240,7 +238,7 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
                   pid=self.project._primary_key)
 
         res = self.app.get(url, auth=self.user.auth)
-        self.assertEqual(res.json, [])
+        assert res.json == []
 
 
 class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
@@ -256,8 +254,8 @@ class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         self.app.put_json(url, params={'publish_both': False}, auth=self.user.auth)
 
         # Only dataset was published
-        self.assertFalse(mock_publish_dv.called)
-        self.assertTrue(mock_publish_ds.called)
+        assert not mock_publish_dv.called
+        assert mock_publish_ds.called
 
     @mock.patch('addons.dataverse.views.client.connect_from_settings_or_401')
     @mock.patch('addons.dataverse.views.client.publish_dataset')
@@ -270,8 +268,8 @@ class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         self.app.put_json(url, params={'publish_both': True}, auth=self.user.auth)
 
         # Both Dataverse and dataset were published
-        self.assertTrue(mock_publish_dv.called)
-        self.assertTrue(mock_publish_ds.called)
+        assert mock_publish_dv.called
+        assert mock_publish_ds.called
 
 
 class TestDataverseRestrictions(DataverseAddonTestCase, OsfTestCase):
@@ -301,4 +299,4 @@ class TestDataverseRestrictions(DataverseAddonTestCase, OsfTestCase):
         }
         res = self.app.post_json(url, params, auth=self.contrib.auth,
                                  expect_errors=True)
-        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN

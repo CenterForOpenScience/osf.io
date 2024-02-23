@@ -26,28 +26,28 @@ class TestJSONAPIPagination(ApiTestCase):
 
     def test_pagination_links_v2(self):
         res = self.app.get(self.url_version_2_0, auth=self.user)
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         links = res.json['links']
         meta = res.json['links']['meta']
-        self.assertNotIn('self', links)
-        self.assertIn('first', links)
-        self.assertIn('next', links)
-        self.assertIn('last', links)
-        self.assertIn('prev', links)
-        self.assertIn('meta', links)
-        self.assertIn('total', meta)
-        self.assertIn('per_page', meta)
+        assert 'self' not in links
+        assert 'first' in links
+        assert 'next' in links
+        assert 'last' in links
+        assert 'prev' in links
+        assert 'meta' in links
+        assert 'total' in meta
+        assert 'per_page' in meta
 
     def test_pagination_links_updated_version(self):
         res = self.app.get(self.url_version_2_1, auth=self.user)
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         links = res.json['links']
         meta = res.json['meta']
-        self.assertIn('self', links)
-        self.assertIn('first', links)
-        self.assertIn('next', links)
-        self.assertIn('last', links)
-        self.assertIn('prev', links)
-        self.assertNotIn('meta', links)
-        self.assertIn('total', meta)
-        self.assertIn('per_page', meta)
+        assert 'self' in links
+        assert 'first' in links
+        assert 'next' in links
+        assert 'last' in links
+        assert 'prev' in links
+        assert 'meta' not in links
+        assert 'total' in meta
+        assert 'per_page' in meta

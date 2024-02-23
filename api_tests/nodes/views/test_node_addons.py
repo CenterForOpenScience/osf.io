@@ -58,13 +58,12 @@ class NodeAddonListMixin:
 
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            self.assertEqual(self.account_id, addon_data['external_account_id'])
-            self.assertEqual(
-                self.node_settings.has_auth,
-                addon_data['node_has_auth'])
-            self.assertEqual(self.node_settings.folder_id, addon_data['folder_id'])
+            assert self.account_id == addon_data['external_account_id']
+            assert self.node_settings.has_auth == \
+                addon_data['node_has_auth']
+            assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
-            self.assertEqual(addon_data, None)
+            assert addon_data == None
 
     def test_settings_list_GET_disabled(self):
         wrong_type = self.should_expect_errors()
@@ -78,7 +77,7 @@ class NodeAddonListMixin:
             auth=self.user.auth,
             expect_errors=wrong_type)
         addon_data = self.get_response_for_addon(res)
-        self.assertEqual(addon_data, None)
+        assert addon_data == None
 
     def test_settings_list_raises_error_if_PUT(self):
         res = self.app.put_json_api(
@@ -86,20 +85,20 @@ class NodeAddonListMixin:
             {'id': self.short_name, 'type': 'node-addons'},
             auth=self.user.auth, expect_errors=True
         )
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_settings_list_raises_error_if_PATCH(self):
         res = self.app.patch_json_api(
             self.setting_list_url,
             {'id': self.short_name, 'type': 'node-addons'},
             auth=self.user.auth, expect_errors=True)
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_settings_list_raises_error_if_DELETE(self):
         res = self.app.delete(
             self.setting_list_url,
             auth=self.user.auth, expect_errors=True)
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_settings_list_raises_error_if_noncontrib_not_public(self):
         noncontrib = AuthUserFactory()
@@ -107,7 +106,7 @@ class NodeAddonListMixin:
             self.setting_list_url,
             auth=noncontrib.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_settings_list_noncontrib_public_can_view(self):
         self.node.set_privacy('public', auth=self.auth)
@@ -118,13 +117,12 @@ class NodeAddonListMixin:
             auth=noncontrib.auth)
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            self.assertEqual(self.account_id, addon_data['external_account_id'])
-            self.assertEqual(
-                self.node_settings.has_auth,
-                addon_data['node_has_auth'])
-            self.assertEqual(self.node_settings.folder_id, addon_data['folder_id'])
+            assert self.account_id == addon_data['external_account_id']
+            assert self.node_settings.has_auth == \
+                addon_data['node_has_auth']
+            assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
-            self.assertEqual(addon_data, None)
+            assert addon_data == None
 
 
 class NodeAddonDetailMixin:
@@ -142,13 +140,12 @@ class NodeAddonDetailMixin:
 
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            self.assertEqual(self.account_id, addon_data['external_account_id'])
-            self.assertEqual(
-                self.node_settings.has_auth,
-                addon_data['node_has_auth'])
-            self.assertEqual(self.node_settings.folder_id, addon_data['folder_id'])
+            assert self.account_id == addon_data['external_account_id']
+            assert self.node_settings.has_auth == \
+                addon_data['node_has_auth']
+            assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
-            self.assertEqual(res.status_code, 404)
+            assert res.status_code == 404
 
     def test_settings_detail_GET_disabled(self):
         try:
@@ -160,7 +157,7 @@ class NodeAddonDetailMixin:
             self.setting_detail_url,
             auth=self.user.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 404)
+        assert res.status_code == 404
 
     def test_settings_detail_PUT_all_sets_settings(self):
         wrong_type = self.should_expect_errors(
@@ -187,11 +184,11 @@ class NodeAddonDetailMixin:
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            self.assertEqual(addon_data['external_account_id'], self.account_id)
-            self.assertEqual(addon_data['folder_id'], '0987654321')
-            self.assertTrue(addon_data['node_has_auth'])
+            assert addon_data['external_account_id'] == self.account_id
+            assert addon_data['folder_id'] == '0987654321'
+            assert addon_data['node_has_auth']
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
     def test_settings_detail_PUT_none_and_enabled_clears_settings(self):
         wrong_type = self.should_expect_errors(
@@ -210,11 +207,11 @@ class NodeAddonDetailMixin:
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            self.assertEqual(addon_data['external_account_id'], None)
-            self.assertEqual(addon_data['folder_id'], None)
-            self.assertFalse(addon_data['node_has_auth'])
+            assert addon_data['external_account_id'] == None
+            assert addon_data['folder_id'] == None
+            assert not addon_data['node_has_auth']
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
     def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
         wrong_type = self.should_expect_errors(
@@ -233,11 +230,11 @@ class NodeAddonDetailMixin:
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            self.assertEqual(addon_data['external_account_id'], None)
-            self.assertEqual(addon_data['folder_id'], None)
-            self.assertFalse(addon_data['node_has_auth'])
+            assert addon_data['external_account_id'] == None
+            assert addon_data['folder_id'] == None
+            assert not addon_data['node_has_auth']
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
     def test_settings_detail_DELETE_disables(self):
         wrong_type = self.should_expect_errors()
@@ -246,11 +243,11 @@ class NodeAddonDetailMixin:
             auth=self.user.auth,
             expect_errors=wrong_type)
         if not wrong_type:
-            self.assertEqual(res.status_code, 204)
+            assert res.status_code == 204
             self.node.reload()
-            self.assertFalse(self.node.has_addon(self.short_name))
+            assert not self.node.has_addon(self.short_name)
         if wrong_type:
-            self.assertIn(res.status_code, [404, 405])
+            assert res.status_code in [404, 405]
 
     def test_settings_detail_POST_enables(self):
         wrong_type = self.should_expect_errors()
@@ -271,11 +268,11 @@ class NodeAddonDetailMixin:
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            self.assertEqual(addon_data['external_account_id'], None)
-            self.assertEqual(addon_data['folder_id'], None)
-            self.assertFalse(addon_data['node_has_auth'])
+            assert addon_data['external_account_id'] == None
+            assert addon_data['folder_id'] == None
+            assert not addon_data['node_has_auth']
         if wrong_type:
-            self.assertIn(res.status_code, [404, 405])
+            assert res.status_code in [404, 405]
 
     def test_settings_detail_PATCH_to_enable_and_add_external_account_id(self):
         wrong_type = self.should_expect_errors(
@@ -299,11 +296,11 @@ class NodeAddonDetailMixin:
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            self.assertEqual(addon_data['external_account_id'], self.account_id)
-            self.assertEqual(addon_data['folder_id'], None)
-            self.assertTrue(addon_data['node_has_auth'])
+            assert addon_data['external_account_id'] == self.account_id
+            assert addon_data['folder_id'] == None
+            assert addon_data['node_has_auth']
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
     def test_settings_detail_PATCH_to_remove_external_account_id(self):
         wrong_type = self.should_expect_errors(
@@ -322,11 +319,11 @@ class NodeAddonDetailMixin:
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            self.assertEqual(addon_data['external_account_id'], None)
-            self.assertEqual(addon_data['folder_id'], None)
-            self.assertFalse(addon_data['node_has_auth'])
+            assert addon_data['external_account_id'] == None
+            assert addon_data['folder_id'] == None
+            assert not addon_data['node_has_auth']
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
     def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
         wrong_type = self.should_expect_errors(
@@ -352,13 +349,11 @@ class NodeAddonDetailMixin:
             expect_errors=True
         )
         if not wrong_type:
-            self.assertEqual(res.status_code, 409)
-            self.assertEqual(
-                'Cannot set folder without authorization',
+            assert res.status_code == 409
+            assert 'Cannot set folder without authorization' == \
                 res.json['errors'][0]['detail']
-            )
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
     def test_settings_detail_PATCH_readcontrib_raises_error(self):
         read_user = AuthUserFactory()
@@ -375,7 +370,7 @@ class NodeAddonDetailMixin:
             }},
             auth=read_user.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_settings_detail_DELETE_success(self):
         wrong_type = self.should_expect_errors()
@@ -384,9 +379,9 @@ class NodeAddonDetailMixin:
             auth=self.user.auth,
             expect_errors=True)
         if not wrong_type:
-            self.assertEqual(res.status_code, 204)
+            assert res.status_code == 204
         else:
-            self.assertEqual(res.status_code, 404)
+            assert res.status_code == 404
 
     def test_settings_detail_raises_error_if_DELETE_not_enabled(self):
         try:
@@ -398,7 +393,7 @@ class NodeAddonDetailMixin:
             self.setting_detail_url,
             auth=self.user.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 404)
+        assert res.status_code == 404
 
     def test_settings_detail_raises_error_if_POST_already_configured(self):
         wrong_type = self.should_expect_errors()
@@ -412,10 +407,10 @@ class NodeAddonDetailMixin:
             auth=self.user.auth,
             expect_errors=True)
         if not wrong_type:
-            self.assertEqual(res.status_code, 400)
-            self.assertIn('already enabled', res.body.decode())
+            assert res.status_code == 400
+            assert 'already enabled' in res.body.decode()
         else:
-            self.assertEqual(res.status_code, 404)
+            assert res.status_code == 404
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_GET(self):
         noncontrib = AuthUserFactory()
@@ -423,7 +418,7 @@ class NodeAddonDetailMixin:
             self.setting_detail_url,
             auth=noncontrib.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_PUT(self):
         noncontrib = AuthUserFactory()
@@ -438,7 +433,7 @@ class NodeAddonDetailMixin:
                 }
             }},
             auth=noncontrib.auth, expect_errors=True)
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_PATCH(self):
         noncontrib = AuthUserFactory()
@@ -453,7 +448,7 @@ class NodeAddonDetailMixin:
             }},
             auth=noncontrib.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_settings_detail_noncontrib_public_can_view(self):
         self.node.set_privacy('public', auth=self.auth)
@@ -465,15 +460,14 @@ class NodeAddonDetailMixin:
             expect_errors=wrong_type)
 
         if not wrong_type:
-            self.assertEqual(res.status_code, 200)
+            assert res.status_code == 200
             addon_data = res.json['data']['attributes']
-            self.assertEqual(self.account_id, addon_data['external_account_id'])
-            self.assertEqual(
-                self.node_settings.has_auth,
-                addon_data['node_has_auth'])
-            self.assertEqual(self.node_settings.folder_id, addon_data['folder_id'])
+            assert self.account_id == addon_data['external_account_id']
+            assert self.node_settings.has_auth == \
+                addon_data['node_has_auth']
+            assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
-            self.assertEqual(res.status_code, 404)
+            assert res.status_code == 404
 
     def test_settings_detail_noncontrib_public_cannot_edit(self):
         self.node.set_privacy('public', auth=self.auth)
@@ -489,7 +483,7 @@ class NodeAddonDetailMixin:
             }},
             auth=noncontrib.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
 
 class NodeAddonFolderMixin:
@@ -508,14 +502,13 @@ class NodeAddonFolderMixin:
 
         if not wrong_type:
             addon_data = res.json['data'][0]['attributes']
-            self.assertIn(addon_data['kind'], ('folder', 'repo'))
-            self.assertEqual(addon_data['name'], self._mock_folder_result['name'])
-            self.assertEqual(addon_data['path'], self._mock_folder_result['path'])
-            self.assertEqual(
-                addon_data['folder_id'],
-                self._mock_folder_result['id'])
+            assert addon_data['kind'] in ('folder', 'repo')
+            assert addon_data['name'] == self._mock_folder_result['name']
+            assert addon_data['path'] == self._mock_folder_result['path']
+            assert addon_data['folder_id'] == \
+                self._mock_folder_result['id']
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
     def test_folder_list_raises_error_if_PUT(self):
         res = self.app.put_json_api(
@@ -523,7 +516,7 @@ class NodeAddonFolderMixin:
             {'id': self.short_name, 'type': 'node-addon-folders'},
             auth=self.user.auth, expect_errors=True
         )
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_folder_list_raises_error_if_PATCH(self):
         res = self.app.patch_json_api(
@@ -531,14 +524,14 @@ class NodeAddonFolderMixin:
             {'id': self.short_name, 'type': 'node-addon-folders'},
             auth=self.user.auth, expect_errors=True
         )
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_folder_list_raises_error_if_DELETE(self):
         res = self.app.delete(
             self.folder_url,
             auth=self.user.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 405)
+        assert res.status_code == 405
 
     def test_folder_list_GET_raises_error_noncontrib_not_public(self):
         noncontrib = AuthUserFactory()
@@ -546,7 +539,7 @@ class NodeAddonFolderMixin:
             self.folder_url,
             auth=noncontrib.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
         wrong_type = self.should_expect_errors()
@@ -560,9 +553,9 @@ class NodeAddonFolderMixin:
             auth=write_user.auth,
             expect_errors=True)
         if wrong_type:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
         else:
-            self.assertEqual(res.status_code, 403)
+            assert res.status_code == 403
 
     def test_folder_list_GET_raises_error_admin_not_authorizer(self):
         wrong_type = self.should_expect_errors()
@@ -575,9 +568,9 @@ class NodeAddonFolderMixin:
             auth=admin_user.auth,
             expect_errors=True)
         if not wrong_type:
-            self.assertEqual(res.status_code, 403)
+            assert res.status_code == 403
         else:
-            self.assertIn(res.status_code, [404, 501])
+            assert res.status_code in [404, 501]
 
 
 class NodeAddonTestSuiteMixin(
@@ -735,12 +728,11 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             auth=self.user.auth)
 
         addon_data = res.json['data'][0]['attributes']
-        self.assertIn(addon_data['kind'], ('folder', 'repo'))
-        self.assertEqual(addon_data['name'], self._mock_folder_result['name'])
-        self.assertEqual(addon_data['path'], self._mock_folder_result['path'])
-        self.assertEqual(
-            addon_data['folder_id'],
-            self._mock_folder_result['id'])
+        assert addon_data['kind'] in ('folder', 'repo')
+        assert addon_data['name'] == self._mock_folder_result['name']
+        assert addon_data['path'] == self._mock_folder_result['path']
+        assert addon_data['folder_id'] == \
+            self._mock_folder_result['id']
 
     @property
     def _mock_folder_result(self):
@@ -774,12 +766,11 @@ class TestNodeMendeleyAddon(
             auth=self.user.auth)
 
         addon_data = res.json['data'][0]['attributes']
-        self.assertEqual(addon_data['kind'], 'folder')
-        self.assertEqual(addon_data['name'], 'Test Mendeley Folder')
-        self.assertEqual(addon_data['path'], '/')
-        self.assertEqual(
-            addon_data['folder_id'],
-            'fasdkljla-2341-4592-10po-fds0920dks0ds')
+        assert addon_data['kind'] == 'folder'
+        assert addon_data['name'] == 'Test Mendeley Folder'
+        assert addon_data['path'] == '/'
+        assert addon_data['folder_id'] == \
+            'fasdkljla-2341-4592-10po-fds0920dks0ds'
 
 class TestNodeZoteroAddon(
         NodeOAuthCitationAddonTestSuiteMixin,
@@ -820,20 +811,18 @@ class TestNodeZoteroAddon(
             auth=self.user.auth)
 
         addon_data = res.json['data'][0]['attributes']
-        self.assertEqual(addon_data['kind'], self._mock_folder_result['kind'])
-        self.assertEqual(addon_data['name'], 'My Library')
-        self.assertEqual(addon_data['path'], 'personal')
-        self.assertEqual(
-            addon_data['folder_id'],
-            'personal')
+        assert addon_data['kind'] == self._mock_folder_result['kind']
+        assert addon_data['name'] == 'My Library'
+        assert addon_data['path'] == 'personal'
+        assert addon_data['folder_id'] == \
+            'personal'
 
         addon_data = res.json['data'][1]['attributes']
-        self.assertEqual(addon_data['kind'], self._mock_folder_result['kind'])
-        self.assertEqual(addon_data['name'], self._mock_folder_result['name'])
-        self.assertEqual(addon_data['path'], self._mock_folder_result['path'])
-        self.assertEqual(
-            addon_data['folder_id'],
-            self._mock_folder_result['id'])
+        assert addon_data['kind'] == self._mock_folder_result['kind']
+        assert addon_data['name'] == self._mock_folder_result['name']
+        assert addon_data['path'] == self._mock_folder_result['path']
+        assert addon_data['folder_id'] == \
+            self._mock_folder_result['id']
 
     @property
     def _mock_folder_result(self):
@@ -873,12 +862,11 @@ class TestNodeZoteroAddon(
             auth=self.user.auth)
 
         addon_data = res.json['data'][0]['attributes']
-        self.assertEqual(addon_data['kind'], 'folder')
-        self.assertEqual(addon_data['name'], 'Test Folder')
-        self.assertEqual(addon_data['path'], '18497322')
-        self.assertEqual(
-            addon_data['folder_id'],
-            'FSCFSLREF')
+        assert addon_data['kind'] == 'folder'
+        assert addon_data['name'] == 'Test Folder'
+        assert addon_data['path'] == '18497322'
+        assert addon_data['folder_id'] == \
+            'FSCFSLREF'
 
 # CONFIGURABLE
 
@@ -1122,11 +1110,10 @@ class TestNodeGoogleDriveAddon(
             self.setting_detail_url, data,
             auth=self.user.auth, expect_errors=True)
 
-        self.assertEqual(res.status_code, 400)
-        self.assertEqual(
-            'Must specify both folder_id and folder_path for {}'.format(
-                self.short_name),
-            res.json['errors'][0]['detail'])
+        assert res.status_code == 400
+        assert 'Must specify both folder_id and folder_path for {}'.format(
+                self.short_name) == \
+            res.json['errors'][0]['detail']
 
 
 class TestNodeForwardAddon(
@@ -1161,7 +1148,7 @@ class TestNodeForwardAddon(
             self.folder_url,
             auth=admin_user.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 501)
+        assert res.status_code == 501
 
     def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
         write_user = AuthUserFactory()
@@ -1173,7 +1160,7 @@ class TestNodeForwardAddon(
             self.folder_url,
             auth=write_user.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 501)
+        assert res.status_code == 501
 
     def test_settings_detail_GET_enabled(self):
         res = self.app.get(
@@ -1181,8 +1168,8 @@ class TestNodeForwardAddon(
             auth=self.user.auth)
 
         addon_data = res.json['data']['attributes']
-        self.assertEqual(self.node_settings.url, addon_data['url'])
-        self.assertEqual(self.node_settings.label, addon_data['label'])
+        assert self.node_settings.url == addon_data['url']
+        assert self.node_settings.label == addon_data['label']
 
     def test_settings_detail_POST_enables(self):
         self.node.delete_addon(self.short_name, auth=self.auth)
@@ -1196,11 +1183,11 @@ class TestNodeForwardAddon(
             auth=self.user.auth)
 
         addon_data = res.json['data']['attributes']
-        self.assertEqual(addon_data['url'], None)
-        self.assertEqual(addon_data['label'], None)
+        assert addon_data['url'] == None
+        assert addon_data['label'] == None
 
         self.node.reload()
-        self.assertNotEqual(self.node.logs.latest().action, 'forward_url_changed')
+        assert self.node.logs.latest().action != 'forward_url_changed'
 
     def test_settings_detail_noncontrib_public_can_view(self):
         self.node.set_privacy('public', auth=self.auth)
@@ -1209,10 +1196,10 @@ class TestNodeForwardAddon(
             self.setting_detail_url,
             auth=noncontrib.auth)
 
-        self.assertEqual(res.status_code, 200)
+        assert res.status_code == 200
         addon_data = res.json['data']['attributes']
-        self.assertEqual(self.node_settings.url, addon_data['url'])
-        self.assertEqual(self.node_settings.label, addon_data['label'])
+        assert self.node_settings.url == addon_data['url']
+        assert self.node_settings.label == addon_data['label']
 
     def test_settings_list_GET_enabled(self):
         res = self.app.get(
@@ -1220,8 +1207,8 @@ class TestNodeForwardAddon(
             auth=self.user.auth)
 
         addon_data = self.get_response_for_addon(res)
-        self.assertEqual(self.node_settings.url, addon_data['url'])
-        self.assertEqual(self.node_settings.label, addon_data['label'])
+        assert self.node_settings.url == addon_data['url']
+        assert self.node_settings.label == addon_data['label']
 
     def test_settings_list_noncontrib_public_can_view(self):
         self.node.set_privacy('public', auth=self.auth)
@@ -1231,8 +1218,8 @@ class TestNodeForwardAddon(
             auth=noncontrib.auth)
         addon_data = self.get_response_for_addon(res)
 
-        self.assertEqual(self.node_settings.url, addon_data['url'])
-        self.assertEqual(self.node_settings.label, addon_data['label'])
+        assert self.node_settings.url == addon_data['url']
+        assert self.node_settings.label == addon_data['label']
 
     def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
         # This test doesn't apply forward, as it does not use ExternalAccounts.
@@ -1263,11 +1250,11 @@ class TestNodeForwardAddon(
         res = self.app.put_json_api(self.setting_detail_url,
                                     data, auth=self.user.auth)
         addon_data = res.json['data']['attributes']
-        self.assertEqual(addon_data['url'], self._mock_folder_info['url'])
-        self.assertEqual(addon_data['label'], self._mock_folder_info['label'])
+        assert addon_data['url'] == self._mock_folder_info['url']
+        assert addon_data['label'] == self._mock_folder_info['label']
 
         self.node.reload()
-        self.assertEqual(self.node.logs.latest().action, 'forward_url_changed')
+        assert self.node.logs.latest().action == 'forward_url_changed'
 
     def test_settings_detail_PUT_none_and_enabled_clears_settings(self):
         res = self.app.put_json_api(
@@ -1281,10 +1268,10 @@ class TestNodeForwardAddon(
                 }
             }}, auth=self.user.auth)
         addon_data = res.json['data']['attributes']
-        self.assertFalse(addon_data['url'])
-        self.assertFalse(addon_data['label'])
+        assert not addon_data['url']
+        assert not addon_data['label']
 
-        self.assertNotEqual(self.node.logs.latest().action, 'forward_url_changed')
+        assert self.node.logs.latest().action != 'forward_url_changed'
 
     def test_settings_detail_PUT_only_label_and_enabled_clears_settings(self):
         res = self.app.put_json_api(
@@ -1299,10 +1286,9 @@ class TestNodeForwardAddon(
             }},
             auth=self.user.auth,
             expect_errors=True)
-        self.assertEqual(res.status_code, 400)
-        self.assertEqual(
-            res.json['errors'][0]['detail'],
-            'Cannot set label without url')
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == \
+            'Cannot set label without url'
 
     def test_settings_detail_PUT_only_url_sets_settings(self):
         self.node_settings.reset()
@@ -1320,11 +1306,11 @@ class TestNodeForwardAddon(
             self.setting_detail_url,
             data, auth=self.user.auth)
         addon_data = res.json['data']['attributes']
-        self.assertEqual(addon_data['url'], self._mock_folder_info['url'])
-        self.assertFalse(addon_data['label'])
+        assert addon_data['url'] == self._mock_folder_info['url']
+        assert not addon_data['label']
 
         self.node.reload()
-        self.assertEqual(self.node.logs.latest().action, 'forward_url_changed')
+        assert self.node.logs.latest().action == 'forward_url_changed'
 
     def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
         # This test doesn't apply forward, as it does not use ExternalAccounts.

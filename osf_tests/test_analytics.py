@@ -24,21 +24,21 @@ class TestAnalytics(OsfTestCase):
         user = UserFactory()
         date = timezone.now()
 
-        self.assertEqual(analytics.get_total_activity_count(user._id), 0)
-        self.assertEqual(analytics.get_total_activity_count(user._id), user.get_activity_points())
+        assert analytics.get_total_activity_count(user._id) == 0
+        assert analytics.get_total_activity_count(user._id) == user.get_activity_points()
 
         analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat())
 
-        self.assertEqual(analytics.get_total_activity_count(user._id), 1)
-        self.assertEqual(analytics.get_total_activity_count(user._id), user.get_activity_points())
+        assert analytics.get_total_activity_count(user._id) == 1
+        assert analytics.get_total_activity_count(user._id) == user.get_activity_points()
 
     def test_increment_user_activity_counters(self):
         user = UserFactory()
         date = timezone.now()
 
-        self.assertEqual(user.get_activity_points(), 0)
+        assert user.get_activity_points() == 0
         analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat())
-        self.assertEqual(user.get_activity_points(), 1)
+        assert user.get_activity_points() == 1
 
 
 @pytest.fixture()
