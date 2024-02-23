@@ -3,26 +3,22 @@ import logging
 
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import Response
 
 from api.base import permissions as base_permissions
-from api.base.filters import ListFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
 from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
-from api.base.utils import get_user_auth
 from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
 from api.cedar_metadata_records.serializers import (
-    CedarMetadataRecordsListSerializer,
-    CedarMetadataRecordsListCreateSerializer,
+    CedarMetadataRecordsCreateSerializer,
     CedarMetadataRecordsDetailSerializer,
 )
-from api.cedar_metadata_records.utils import can_view_record
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import CedarMetadataRecord
@@ -30,7 +26,7 @@ from osf.models import CedarMetadataRecord
 logger = logging.getLogger(__name__)
 
 
-class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixin):
+class CedarMetadataRecordList(JSONAPIBaseView, CreateAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -39,7 +35,7 @@ class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixi
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
 
-    serializer_class = CedarMetadataRecordsListSerializer
+    serializer_class = CedarMetadataRecordsCreateSerializer
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
     model_class = CedarMetadataRecord
 
@@ -47,21 +43,6 @@ class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixi
     versioning_class = PrivateVersioning
     view_category = 'cedar-metadata-records'
     view_name = 'cedar-metadata-record-list'
-
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return CedarMetadataRecordsListCreateSerializer
-        else:
-            return CedarMetadataRecordsListSerializer
-
-    def get_default_queryset(self):
-        published_records = CedarMetadataRecord.objects.filter(is_published=True)
-        user_auth = get_user_auth(self.request)
-        record_ids = [record.id for record in published_records if can_view_record(user_auth, record)]
-        return CedarMetadataRecord.objects.filter(pk__in=record_ids)
-
-    def get_queryset(self):
-        return self.get_queryset_from_request()
 
 
 class CedarMetadataRecordDetail(JSONAPIBaseView, RetrieveUpdateDestroyAPIView):

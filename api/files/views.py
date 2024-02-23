@@ -63,9 +63,6 @@ class FileMixin(object):
         return obj
 
 
-class FileCedarMetadataRecordMixin(FileMixin):
-    file_lookup_url_kwarg = 'file_id_or_guid'
-
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_detail).
     """
@@ -180,7 +177,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         return context
 
 
-class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, FileCedarMetadataRecordMixin):
+class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, FileMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -197,19 +194,11 @@ class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     def get_default_queryset(self):
         self.get_file()
-        file_records = None
-        file_id_or_guid = self.kwargs['file_id_or_guid']
-        try:
-            Guid.objects.get(_id=file_id_or_guid)
-            file_records = CedarMetadataRecord.objects.filter(guid___id=file_id_or_guid)
-        except Guid.DoesNotExist:
-            file = BaseFileNode.load(file_id_or_guid)
-            if file:
-                guid = file.get_guid()
-                if guid:
-                    file_records = CedarMetadataRecord.objects.filter(guid___id=guid._id)
-        if not file_records:
+        obj = self.get_file()
+        guid = obj.get_guid()
+        if not guid:
             return CedarMetadataRecord.objects.none()
+        file_records = CedarMetadataRecord.objects.filter(guid___id=guid._id)
         user_auth = utils.get_user_auth(self.request)
         record_ids = [record.id for record in file_records if can_view_record(user_auth, record, guid_type=BaseFileNode)]
         return CedarMetadataRecord.objects.filter(pk__in=record_ids)
