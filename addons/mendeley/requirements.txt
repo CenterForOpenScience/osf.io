@@ -1,1 +1,2 @@
-git+https://github.com/CenterForOpenScience/mendeley-python-sdk.git@add_folders
+# bump dep on future, not currently up-to-date with mendeley/master or cos/add_folders
+git+https://github.com/opaduchak/mendeley-python-sdk.git@integration
