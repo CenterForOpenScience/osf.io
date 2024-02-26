@@ -76,6 +76,8 @@ from tests.utils import run_celery_tasks
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
+from osf.external.spam import tasks as spam_tasks
+
 
 pytestmark = pytest.mark.django_db
 
@@ -2191,11 +2193,13 @@ class TestUserValidation(OsfTestCase):
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)
 
+        previous_number_of_domains = NotableDomain.objects.all().count()
         fails_at_end = False
         for should_pass in data['testsPositive']:
             try:
                 self.user.social = {'profileWebsites': [should_pass]}
-                self.user.save()
+                with mock.patch.object(spam_tasks.requests, 'head'):
+                    self.user.save()
                 assert self.user.social['profileWebsites'] == [should_pass]
             except ValidationError:
                 fails_at_end = True
@@ -2205,16 +2209,26 @@ class TestUserValidation(OsfTestCase):
             self.user.social = {'profileWebsites': [should_fail]}
             try:
                 with pytest.raises(ValidationError):
-                    self.user.save()
+                    with mock.patch.object(spam_tasks.requests, 'head'):
+                        self.user.save()
             except AssertionError:
                 fails_at_end = True
                 print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
         if fails_at_end:
             raise
 
+        # Not all domains that are permissable are possible to use as spam,
+        # some are correctly not extracted and not kept in notable domain so spot
+        # check some, not all, because not all `testsPositive` urls should be in
+        # NotableDomains
+        assert NotableDomain.objects.all().count() == previous_number_of_domains + 12
+        assert NotableDomain.objects.get(domain='definitelyawebsite.com')
+        assert NotableDomain.objects.get(domain='a.b-c.de')
+
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social['profileWebsites'] == ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']
 
     def test_validate_social_profile_websites_invalid(self):
@@ -2233,7 +2247,8 @@ class TestUserValidation(OsfTestCase):
 
     def test_profile_website_unchanged(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links['profileWebsites'] == ['http://cos.io/']
         assert len(self.user.social_links) == 1
 
@@ -2244,7 +2259,8 @@ class TestUserValidation(OsfTestCase):
             'github': ['CenterForOpenScience'],
             'scholar': 'ztt_j28AAAAJ'
         }
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/'],
             'twitter': 'http://twitter.com/OSFramework',
@@ -2258,7 +2274,8 @@ class TestUserValidation(OsfTestCase):
             'twitter': ['OSFramework'],
             'github': ['CenterForOpenScience']
         }
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'http://twitter.com/OSFramework',

@@ -15,7 +15,7 @@ from osf.models.spam import SpamStatus
 class TestUserSpamOOPSpam:
 
     @pytest.fixture
-    def user(self):
+    def user(self, mock_spam_head_request):
         test_user = AuthUserFactory()
         test_user.schools = [
             {'insitution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}

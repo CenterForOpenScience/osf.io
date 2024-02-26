@@ -58,6 +58,7 @@ from website import filters, mails
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags
 from importlib import import_module
+from osf.utils.requests import get_headers_from_request
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -1025,8 +1026,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
-        dirty_fields = set(self.get_dirty_fields(check_relationship=True))
-        ret = super(OSFUser, self).save(*args, **kwargs)
+        dirty_fields = self.get_dirty_fields(check_relationship=True)
+        ret = super(OSFUser, self).save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
+        if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
+            request = get_current_request()
+            headers = get_headers_from_request(request)
+            self.check_spam(dirty_fields, request_headers=headers)
+
+        dirty_fields = set(dirty_fields)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
@@ -1859,28 +1866,37 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
     def _get_spam_content(self, saved_fields=None, **unused_kwargs):
-        spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS.keys())
-        spam_check_source = {}
-        if saved_fields:
-            spam_check_source = saved_fields
-            spam_check_fields = spam_check_fields.intersection(set(saved_fields.keys()))
-        else:
-            spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
+        """
+        Retrieves content for spam checking from specified fields.
+        Sometimes from validated serializer data, sometimes from
+        dirty_fields.
 
-        spam_check_contents = []
-        for spam_field in spam_check_fields:
-            spam_field_content = spam_check_source[spam_field]
-            if not spam_field_content:
-                continue
-            if spam_field in ['schools', 'jobs']:
-                spam_check_contents.extend(
-                    _get_nested_spam_check_content(spam_check_source, spam_field)
-                )
-            else:  # Only other currently checked field is social['profileWebsites']
-                spam_check_contents.extend(
-                    spam_check_source.get('social', dict()).get('profileWebsites', list())
-                )
-        return ' '.join(spam_check_contents).strip()
+        Parameters:
+        - saved_fields (dict): Fields that have been saved and their values.
+        - unused_kwargs: Ignored additional keyword arguments.
+
+        Returns:
+        - str: A string containing the spam check contents, joined by spaces.
+        """
+        # Determine which fields to check for spam, preferring saved_fields if provided.
+        spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS)
+        if saved_fields:
+            spam_check_fields = set(saved_fields).intersection(spam_check_fields)
+
+        spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
+
+        spam_contents = []
+        for field in spam_check_fields:
+            validated_data_from_serializer = spam_check_source.get(field)
+            # Validated fields aren't from dirty_fields, they have values.
+            if validated_data_from_serializer:
+                spam_contents.extend(_get_nested_spam_check_content(spam_check_source, field))
+            else:
+                # these are the changed fields from dirty_fields, they have need current model values before saving.
+                value = getattr(self, field, {})
+                spam_contents.extend(_get_nested_spam_check_content(value, field))
+
+        return ' '.join(spam_contents).strip()
 
     def check_spam(self, saved_fields, request_headers):
         is_spam = False
@@ -2101,11 +2117,30 @@ def create_bookmark_collection(sender, instance, created, **kwargs):
 
 
 def _get_nested_spam_check_content(spam_check_source, field_name):
-    spam_check_data = spam_check_source[field_name]
+    """
+    Social fields are formatted differently when coming from the serializer or save
+    """
+    if spam_check_source:
+        if field_name == 'social':
+            # Attempt to extract from the nested 'social' field first, then fall back to 'profileWebsites'.
+            data = spam_check_source.get('profileWebsites', [])
+            return spam_check_source.get('social', {}).get('profileWebsites', []) or data
+
     spam_check_content = []
-    for entry in spam_check_data:
-        for spam_check_subfield in OSFUser.SPAM_USER_PROFILE_FIELDS[field_name]:
-            subfield_content = entry.get(spam_check_subfield)
-            if subfield_content:
-                spam_check_content.append(subfield_content)
+    if spam_check_source and isinstance(spam_check_source, dict):
+        # Ensure spam_check_source[field_name] is always a list for uniform processing
+        source_data = spam_check_source.get(field_name, [])
+        if not isinstance(source_data, list):
+            source_data = [source_data]
+    elif spam_check_source and not isinstance(spam_check_source, dict):
+        source_data = spam_check_source
+    else:
+        return spam_check_content
+
+    keys = OSFUser.SPAM_USER_PROFILE_FIELDS.get(field_name, [])
+    for data in source_data:
+        for key in keys:
+            if data.get(key):
+                spam_check_content.append(data[key])
+
     return spam_check_content
