@@ -208,6 +208,9 @@ class TestSerializers(OsfTestCase):
                 doi_prefix='11.rp',
             ),
         )
+        osfdb.GuidMetadataRecord.objects.for_guid(self.registration._id).update({
+            'resource_type_general': 'StudyRegistration',
+        }, auth=self.user)
         self.guid_dict = {
             OSF.Project: self.project._id,
             OSF.Preprint: self.preprint._id,
@@ -222,13 +225,27 @@ class TestSerializers(OsfTestCase):
             'language': 'en',
             'resource_type_general': 'Dataset',
             'funding_info': [
-                {
+                {  # full funding reference:
                     'funder_name': 'Mx. Moneypockets',
                     'funder_identifier': 'https://doi.org/10.$$$$',
                     'funder_identifier_type': 'Crossref Funder ID',
                     'award_number': '10000000',
                     'award_uri': 'https://moneypockets.example/millions',
                     'award_title': 'because reasons',
+                }, {  # second funding award from the same funder:
+                    'funder_name': 'Mx. Moneypockets',
+                    'funder_identifier': 'https://doi.org/10.$$$$',
+                    'funder_identifier_type': 'Crossref Funder ID',
+                    'award_number': '2000000',
+                    'award_uri': 'https://moneypockets.example/millions-more',
+                    'award_title': 'because reasons!',
+                }, {  # no award info, just a funder:
+                    'funder_name': 'Caring Fan',
+                    'funder_identifier': 'https://doi.org/10.$',
+                    'funder_identifier_type': 'Crossref Funder ID',
+                    'award_number': '',
+                    'award_uri': '',
+                    'award_title': '',
                 },
             ],
         }, auth=self.user)

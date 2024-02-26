@@ -194,9 +194,11 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'current_user_is_contributor_or_group_member',
             'preprint',
             'subjects',
-            'wiki_enabled']
+            'wiki_enabled',
+            'cedar_metadata_records',
+        ]
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'storage', 'children', 'groups']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'storage', 'children', 'groups', 'subjects_acceptable']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)

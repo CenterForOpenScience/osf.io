@@ -85,8 +85,6 @@ var OPERATIONS = {
     }
 };
 
-// Cross browser key codes for the Command key
-var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
 
@@ -1573,12 +1571,7 @@ function gotoFileEvent (item, toUrl) {
             }
         }
     }
-
-    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(fileurl, '_blank');
-    } else {
-        window.open(fileurl, '_self');
-    }
+    window.open(fileurl, '_blank');
 }
 
 /**

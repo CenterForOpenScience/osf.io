@@ -72,7 +72,7 @@ CONTRIBUTOR_TYPE_MAP = {
 class DataciteTreeWalker:
     '''for walking in the shape of the DataCite XML Schema thru a gather.Basket of metadata
 
-    conforms with the structure in https://schema.datacite.org/meta/kernel-4.4/metadata.xsd
+    conforms with the structure in https://schema.datacite.org/meta/kernel-4.5/metadata.xsd
     but avoids assuming XML -- a callback function handles visiting tree branches along the
     walk to serialize the metadata (or whatever you're doing in the shape of DataCite XML),
     but the walker merely walks by.
@@ -268,33 +268,42 @@ class DataciteTreeWalker:
 
     def _visit_funding_references(self, parent_el):
         fundrefs_el = self.visit(parent_el, 'fundingReferences', is_list=True)
+        _visited_funders = set()
+        for _funding_award in sorted(self.basket[OSF.hasFunding]):
+            # datacite allows at most one funder per funding reference
+            _funder = next(self.basket[_funding_award:DCTERMS.contributor])
+            self._funding_reference(fundrefs_el, _funder, _funding_award)
+            _visited_funders.add(_funder)
         for _funder in self.basket[OSF.funder]:
-            fundref_el = self.visit(fundrefs_el, 'fundingReference')
-            self.visit(fundref_el, 'funderName', text=next(self.basket[_funder:FOAF.name], ''))
-            funder_identifier = next(self.basket[_funder:DCTERMS.identifier], '')
+            if _funder not in _visited_funders:
+                self._funding_reference(fundrefs_el, _funder)
+
+    def _funding_reference(self, fundrefs_el, funder, funding_award=None):
+        _fundref_el = self.visit(fundrefs_el, 'fundingReference')
+        self.visit(_fundref_el, 'funderName', text=next(self.basket[funder:FOAF.name], ''))
+        _funder_identifier = next(self.basket[funder:DCTERMS.identifier], '')
+        self.visit(
+            _fundref_el,
+            'funderIdentifier',
+            text=_funder_identifier,
+            attrib={
+                'funderIdentifierType': self._funder_identifier_type(_funder_identifier),
+            },
+        )
+        if funding_award is not None:
             self.visit(
-                fundref_el,
-                'funderIdentifier',
-                text=funder_identifier,
+                _fundref_el,
+                'awardNumber',
+                text=next(self.basket[funding_award:OSF.awardNumber], ''),
                 attrib={
-                    'funderIdentifierType': self._funder_identifier_type(funder_identifier),
+                    'awardURI': (
+                        str(funding_award)
+                        if isinstance(funding_award, rdflib.URIRef)
+                        else ''
+                    )
                 },
             )
-            for _funding_award in self.basket[OSF.hasFunding]:
-                if _funder in self.basket[_funding_award:DCTERMS.contributor]:
-                    self.visit(
-                        fundref_el,
-                        'awardNumber',
-                        text=next(self.basket[_funding_award:OSF.awardNumber], ''),
-                        attrib={
-                            'awardURI': (
-                                str(_funding_award)
-                                if isinstance(_funding_award, rdflib.URIRef)
-                                else ''
-                            )
-                        },
-                    )
-                    self.visit(fundref_el, 'awardTitle', text=next(self.basket[_funding_award:DCTERMS.title], ''))
+            self.visit(_fundref_el, 'awardTitle', text=next(self.basket[funding_award:DCTERMS.title], ''))
 
     def _visit_publication_year(self, parent_el, focus_iri):
         year_copyrighted = next(self.basket[focus_iri:DCTERMS.dateCopyrighted], None)

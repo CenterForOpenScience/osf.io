@@ -77,6 +77,7 @@ from osf.models import (
     QuickFilesNode,
     NotableDomain
 )
+from osf.external.spam import tasks as spam_tasks
 
 from tests.base import (
     assert_is_redirect,
@@ -1140,15 +1141,20 @@ class TestUserProfile(OsfTestCase):
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
-        self.app.put_json(
-            url,
-            payload,
-            auth=self.user.auth,
-        )
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            resp = self.app.put_json(
+                url,
+                payload,
+                auth=self.user.auth,
+            )
+
         self.user.reload()
         for key, value in payload.items():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
+
+        assert NotableDomain.objects.all()
+        assert NotableDomain.objects.get(domain='frozen.pizza.com')
 
     # Regression test for help-desk ticket
     def test_making_email_primary_is_not_case_sensitive(self):
@@ -1185,7 +1191,8 @@ class TestUserProfile(OsfTestCase):
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
         self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
             url,
@@ -1200,12 +1207,14 @@ class TestUserProfile(OsfTestCase):
         user2 = AuthUserFactory()
         self.user.social['twitter'] = 'howtopizza'
         self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
-        res = self.app.get(
-            url,
-            auth=user2.auth,
-        )
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            res = self.app.get(
+                url,
+                auth=user2.auth,
+            )
         assert_equal(res.json.get('twitter'), 'howtopizza')
         assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)

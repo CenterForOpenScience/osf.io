@@ -229,6 +229,8 @@
 - Populate preprint, registration, and collection providers:
   - After resetting your database or with a new install, the required providers and subjects will be created automatically **when you run migrations.** To create more:
     - `docker-compose run --rm web python3 manage.py populate_fake_providers`
+    - _NOTE: In case, you encounter error with missing data, when running the `'populate_fake_providers'` command. Fix this with 'update_taxonomies' command:_
+      - `docker-compose run --rm web python3 -m scripts.update_taxonomies`
 - Populate citation styles
   - Needed for api v2 citation style rendering.
     - `docker-compose run --rm web python3 -m scripts.parse_citation_styles`

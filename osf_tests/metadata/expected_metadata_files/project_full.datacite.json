@@ -59,6 +59,25 @@
         "funderIdentifierType": "Crossref Funder ID"
       },
       "funderName": "Mx. Moneypockets"
+    },
+    {
+      "awardNumber": {
+        "awardNumber": "2000000",
+        "awardURI": "https://moneypockets.example/millions-more"
+      },
+      "awardTitle": "because reasons!",
+      "funderIdentifier": {
+        "funderIdentifier": "https://doi.org/10.$$$$",
+        "funderIdentifierType": "Crossref Funder ID"
+      },
+      "funderName": "Mx. Moneypockets"
+    },
+    {
+      "funderIdentifier": {
+        "funderIdentifier": "https://doi.org/10.$",
+        "funderIdentifierType": "Crossref Funder ID"
+      },
+      "funderName": "Caring Fan"
     }
   ],
   "identifier": {
@@ -88,7 +107,7 @@
         "relatedItemIdentifier": "http://localhost:5000/w5ibb",
         "relatedItemIdentifierType": "URL"
       },
-      "relatedItemType": "Text",
+      "relatedItemType": "StudyRegistration",
       "relationType": "HasVersion",
       "titles": [
         {
