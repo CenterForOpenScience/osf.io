@@ -175,9 +175,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_equals(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_write)
+        assert res.json['data']['attributes']['current_user_permissions'] == permissions_write
 
     def test_top_level_project_has_no_parent(self, app, url_public):
         res = app.get(url_public)

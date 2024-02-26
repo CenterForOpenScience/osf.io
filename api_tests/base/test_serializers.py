@@ -628,9 +628,9 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert datetime.strftime(
-                self.old_date_without_microseconds,
-                self.old_format_without_microseconds
-            ) == data['attributes']['date_modified']
+            self.old_date_without_microseconds,
+            self.old_format_without_microseconds
+        ) == data['attributes']['date_modified']
 
     def test_old_date_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
@@ -643,9 +643,9 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert datetime.strftime(
-                self.old_date_without_microseconds,
-                self.new_format
-            ) == data['attributes']['date_modified']
+            self.old_date_without_microseconds,
+            self.new_format
+        ) == data['attributes']['date_modified']
 
     def test_new_date_formats_to_old_format(self):
         req = make_drf_request_with_version(version='2.0')
@@ -658,9 +658,9 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.new_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert datetime.strftime(
-                self.new_date_without_microseconds,
-                self.old_format_without_microseconds
-            ) == data['attributes']['date_modified']
+            self.new_date_without_microseconds,
+            self.old_format_without_microseconds
+        ) == data['attributes']['date_modified']
 
     def test_new_date_formats_to_new_format(self):
         req = make_drf_request_with_version(version='2.2')
@@ -673,9 +673,9 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.new_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert datetime.strftime(
-                self.new_date_without_microseconds,
-                self.new_format
-            ) == data['attributes']['date_modified']
+            self.new_date_without_microseconds,
+            self.new_format
+        ) == data['attributes']['date_modified']
 
     # regression test for https://openscience.atlassian.net/browse/PLAT-1350
     # VersionedDateTimeField was treating version 2.10 and higher as decimals,

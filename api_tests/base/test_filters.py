@@ -9,8 +9,6 @@ from django.utils import timezone
 from rest_framework import generics
 from rest_framework import serializers as ser
 
-from unittest import TestCase
-
 from tests.base import ApiTestCase
 
 from api.base.filters import ListFilterMixin
@@ -146,7 +144,7 @@ class TestFilterMixin(ApiTestCase):
         fields = self.view.parse_query_params(query_params)
         parsed_field = fields['filter[bool_field]']['bool_field']
         assert parsed_field['source_field_name'] == 'foobar'
-        assert parsed_field['value'] == False
+        assert parsed_field['value'] is False
         assert parsed_field['op'] == 'eq'
 
     def test_parse_query_params_generalizes_dates(self):
@@ -380,7 +378,7 @@ class TestListFilterMixin(ApiTestCase):
         fields = self.view.parse_query_params(query_params)
         parsed_field = fields['filter[bool_field]']['bool_field']
         assert parsed_field['source_field_name'] == 'foobar'
-        assert parsed_field['value'] == False
+        assert parsed_field['value'] is False
         assert parsed_field['op'] == 'eq'
 
 @pytest.mark.django_db
@@ -487,7 +485,6 @@ class TestOSFOrderingFilter(ApiTestCase):
         assert res_created.json['data'] == res_date_created.json['data']
         assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
         assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
-
 
 
 def setUp(self):
