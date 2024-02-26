@@ -340,12 +340,12 @@ class TestWikiDetailView(ApiWikiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == True
+        assert can_comment
 
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == False
+        assert not can_comment
 
     def test_any_loggedin_user_can_comment_on_open_project(self):
         self._set_up_public_project_with_wiki_page(
@@ -353,7 +353,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == True
+        assert can_comment
 
     def test_non_logged_in_user_cant_comment(self):
         self._set_up_public_project_with_wiki_page(
@@ -361,7 +361,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         res = self.app.get(self.public_url)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == False
+        assert not can_comment
 
     def test_wiki_has_download_link(self):
         self._set_up_public_project_with_wiki_page()
@@ -398,8 +398,8 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.public_project._id)
         assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
         assert (
-                expected_comments_relationship_url in
-                res.json['data']['relationships']['comments']['links']['related']['href']
+            expected_comments_relationship_url in
+            res.json['data']['relationships']['comments']['links']['related']['href']
         )
 
     def test_private_node_wiki_relationship_links(self):

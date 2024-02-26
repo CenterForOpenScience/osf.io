@@ -69,7 +69,7 @@ class TestWelcomeToApi(ApiTestCase):
 
         res = self.app.get(self.url)
         assert res.status_code == 200
-        assert res.json['meta'][ADMIN] == True
+        assert res.json['meta'][ADMIN] is True
 
     def test_basic_auth_does_not_have_admin(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -110,7 +110,7 @@ class TestWelcomeToApi(ApiTestCase):
         )
 
         assert res.status_code == 200
-        assert res.json['meta'][ADMIN] == True
+        assert res.json['meta'][ADMIN] is True
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_non_admin_scoped_token_does_not_have_admin(self, mock_auth):
