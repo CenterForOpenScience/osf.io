@@ -11,7 +11,7 @@ from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
 from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
-from osf.utils import permissionsF
+from osf.utils import permissions
 from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,

@@ -148,7 +148,7 @@ class TestStatusView(ApiTestCase):
         res = self.app.get(url)
         assert res.status_code == 200
         assert 'maintenance' in res.json
-        assert res.json['maintenance'] == None
+        assert res.json['maintenance'] is None
 
     def test_status_view_with_maintenance(self):
         maintenance.set_maintenance(message='test')

@@ -705,8 +705,8 @@ class TestNodeStorageProviderDetail(ApiTestCase):
         assert res.status_code == 200
         assert res.json['data']['id'] == f'{self.public_project._id}:osfstorage'
         assert (
-                res.json['data']['relationships']['target']['links']['related']['href'] ==
-                f'{settings.API_DOMAIN}v2/nodes/{self.public_project._id}/'
+            res.json['data']['relationships']['target']['links']['related']['href'] ==
+            f'{settings.API_DOMAIN}v2/nodes/{self.public_project._id}/'
         )
 
     def test_cannot_view_if_private(self):

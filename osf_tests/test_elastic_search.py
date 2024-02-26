@@ -1408,7 +1408,7 @@ class TestSearchMigration(OsfTestCase):
             if bucket['key'] == 'institution':
                 institution_bucket_found = True
 
-        assert institution_bucket_found == True
+        assert institution_bucket_found is True
 
     def test_migration_collections(self):
         provider = factories.CollectionProviderFactory()
@@ -1557,5 +1557,5 @@ class TestSearchFiles(OsfTestCase):
         find = query_file('Timber.mp3')['results']
         assert file_.path != ''
         assert file_.path == path
-        assert find[0]['guid_url'] == None
+        assert find[0]['guid_url'] is None
         assert find[0]['deep_url'] == deep_url
