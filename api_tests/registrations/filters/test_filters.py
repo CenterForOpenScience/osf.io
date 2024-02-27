@@ -1,5 +1,3 @@
-from nose.tools import *  # noqa:
-
 from osf.models import Node, Registration
 from framework.auth.core import Auth
 from osf_tests.factories import (
@@ -45,14 +43,14 @@ class RegistrationListFilteringMixin:
                 self.parent_url),
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(set(expected), set(actual))
+        assert set(expected) == set(actual)
 
     def test_parent_filter_ne_null(self):
         expected = list(Registration.objects.exclude(parent_nodes=None).values_list('guids___id', flat=True))
         res = self.app.get(self.parent_url_ne,
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(set(expected), set(actual))
+        assert set(expected) == set(actual)
 
     def test_parent_filter_equals_returns_one(self):
         expected = [n._id for n in self.node_B2.get_nodes()]
@@ -62,8 +60,8 @@ class RegistrationListFilteringMixin:
                 self.node_B2._id),
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(len(actual), 1)
-        assert_equal(expected, actual)
+        assert len(actual) == 1
+        assert expected == actual
 
     def test_parent_filter_equals_returns_multiple(self):
         expected = [n._id for n in self.node_A.get_nodes()]
@@ -73,8 +71,8 @@ class RegistrationListFilteringMixin:
                 self.node_A._id),
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(len(actual), 2)
-        assert_equal(set(expected), set(actual))
+        assert len(actual) == 2
+        assert set(expected) == set(actual)
 
     def test_root_filter_null(self):
         res = self.app.get(
@@ -82,8 +80,8 @@ class RegistrationListFilteringMixin:
                 self.root_url),
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['parameter'], 'filter')
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['parameter'] == 'filter'
 
     def test_root_filter_equals_returns_branch(self):
         expected = [n._id for n in Node.objects.get_children(self.node_B2)]
@@ -94,7 +92,7 @@ class RegistrationListFilteringMixin:
                 self.node_B2._id),
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(set(expected), set(actual))
+        assert set(expected) == set(actual)
 
     def test_root_filter_equals_returns_tree(self):
         expected = [n._id for n in Node.objects.get_children(self.node_A)]
@@ -105,19 +103,19 @@ class RegistrationListFilteringMixin:
                 self.node_A._id),
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(len(actual), 6)
-        assert_equal(set(expected), set(actual))
+        assert len(actual) == 6
+        assert set(expected) == set(actual)
 
     def test_tag_filter(self):
         self.node_A.add_tag('nerd', auth=Auth(self.node_A.creator), save=True)
         expected = [self.node_A._id]
         res = self.app.get(f'{self.tags_url}nerd', auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
         res = self.app.get(f'{self.tags_url}bird', auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal([], actual)
+        assert [] == actual
 
     def test_contributor_filter(self):
         expected = [self.node_A._id]
@@ -127,4 +125,4 @@ class RegistrationListFilteringMixin:
                 self.user_two._id),
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual

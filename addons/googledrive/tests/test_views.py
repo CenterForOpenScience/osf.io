@@ -1,5 +1,4 @@
 from unittest import mock
-from nose.tools import *  # noqa
 import pytest
 
 from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
@@ -52,8 +51,8 @@ class TestConfigViews(GoogleDriveAddonTestCase, OAuthAddonConfigViewsTestCaseMix
 
         url = self.project.api_url_for('googledrive_folder_list', folder_id=folderId)
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), len(sample_folder_data['items']))
+        assert res.status_code == 200
+        assert len(res.json) == len(sample_folder_data['items'])
 
     @mock.patch.object(GoogleDriveClient, 'about')
     def test_folder_list(self, mock_about):

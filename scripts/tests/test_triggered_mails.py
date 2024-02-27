@@ -2,13 +2,13 @@ from unittest import mock
 from datetime import timedelta
 
 from django.utils import timezone
-from nose.tools import * # noqa
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory
 
 from scripts.triggered_mails import main, find_inactive_users_with_no_inactivity_email_sent_or_queued
 from website import mails
+
 
 class TestTriggeredMails(OsfTestCase):
 
@@ -23,7 +23,7 @@ class TestTriggeredMails(OsfTestCase):
         self.user.date_last_login = timezone.now() - timedelta(seconds=6)
         self.user.save()
         main(dry_run=False)
-        assert_false(mock_queue.called)
+        assert not mock_queue.called
 
     @mock.patch('website.mails.queue_mail')
     def test_trigger_no_login_mail(self, mock_queue):
@@ -54,4 +54,4 @@ class TestTriggeredMails(OsfTestCase):
                          user=user_already_received_mail,
                          mail=mails.NO_LOGIN)
         users = find_inactive_users_with_no_inactivity_email_sent_or_queued()
-        assert_equal(len(users), 1)
+        assert len(users) == 1

@@ -1,7 +1,6 @@
 import dateutil.relativedelta
 from django.utils import timezone
 from unittest import mock
-from nose.tools import *  # noqa:
 import pytest
 
 from future.moves.urllib.parse import urljoin, urlparse
@@ -57,43 +56,38 @@ class TestRegistrationList(ApiTestCase):
 
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.url)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert len(res.json['data']) == 1
+        assert res.status_code == 200
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(
-            urlparse(url).path,
-            f'/{API_BASE}nodes/{self.public_project._id}/'
-        )
+        assert urlparse(url).path == f'/{API_BASE}nodes/{self.public_project._id}/'
 
     def test_return_registrations_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
-        assert_equal(res.status_code, 200)
+        assert len(res.json['data']) == 2
+        assert res.status_code == 200
 
         registered_from_one = urlparse(
             res.json['data'][0]['relationships']['registered_from']['links']['related']['href']).path
         registered_from_two = urlparse(
             res.json['data'][1]['relationships']['registered_from']['links']['related']['href']).path
 
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.content_type == 'application/vnd.api+json'
 
         assert [registered_from_one, registered_from_two] == [f'/{API_BASE}nodes/{self.public_project._id}/',
              f'/{API_BASE}nodes/{self.project._id}/']
 
     def test_return_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.user_two.auth)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.status_code, 200)
+        assert len(res.json['data']) == 1
+        assert res.status_code == 200
         registered_from = urlparse(
             res.json['data'][0]['relationships']['registered_from']['links']['related']['href']).path
 
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.content_type == 'application/vnd.api+json'
 
-        assert_equal(
-            registered_from,
-            f'/{API_BASE}nodes/{self.public_project._id}/')
+        assert registered_from == f'/{API_BASE}nodes/{self.public_project._id}/'
 
     def test_total_biographic_contributor_in_registration(self):
         user3 = AuthUserFactory()
@@ -106,20 +100,16 @@ class TestRegistrationList(ApiTestCase):
             API_BASE, registration._id)
 
         res = self.app.get(registration_url)
-        assert_true(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
-        )
-        assert_equal(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2
-        )
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'] == 2
 
     def test_exclude_nodes_from_registrations_endpoint(self):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.registration_project._id, ids)
-        assert_in(self.public_registration_project._id, ids)
-        assert_not_in(self.public_project._id, ids)
-        assert_not_in(self.project._id, ids)
+        assert self.registration_project._id in ids
+        assert self.public_registration_project._id in ids
+        assert self.public_project._id not in ids
+        assert self.project._id not in ids
 
 class TestSparseRegistrationList(ApiTestCase):
 
@@ -139,25 +129,25 @@ class TestSparseRegistrationList(ApiTestCase):
 
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.url)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert len(res.json['data']) == 1
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         assert 'registered_from' not in res.json['data'][0]['relationships']
 
     def test_return_registrations_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
-        assert_equal(res.status_code, 200)
+        assert len(res.json['data']) == 2
+        assert res.status_code == 200
         assert 'registered_from' not in res.json['data'][0]['relationships']
         assert 'registered_from' not in res.json['data'][1]['relationships']
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.content_type == 'application/vnd.api+json'
 
     def test_return_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.user_two.auth)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.status_code, 200)
+        assert len(res.json['data']) == 1
+        assert res.status_code == 200
         assert 'registered_from' not in res.json['data'][0]['relationships']
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.content_type == 'application/vnd.api+json'
 
     def test_total_biographic_contributor_in_registration(self):
         user3 = AuthUserFactory()
@@ -170,20 +160,16 @@ class TestSparseRegistrationList(ApiTestCase):
             API_BASE, registration._id)
 
         res = self.app.get(registration_url)
-        assert_true(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
-        )
-        assert_equal(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2
-        )
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'] == 2
 
     def test_exclude_nodes_from_registrations_endpoint(self):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.registration_project._id, ids)
-        assert_in(self.public_registration_project._id, ids)
-        assert_not_in(self.public_project._id, ids)
-        assert_not_in(self.project._id, ids)
+        assert self.registration_project._id in ids
+        assert self.public_registration_project._id in ids
+        assert self.public_project._id not in ids
+        assert self.project._id not in ids
 
 
 @pytest.mark.enable_bookmark_creation
@@ -247,11 +233,11 @@ class TestRegistrationFiltering(ApiTestCase):
         registration_json = res.json['data']
         ids = [each['id'] for each in registration_json]
 
-        assert_in(self.project_one_reg._id, ids)
-        assert_not_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id not in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
     def test_filtering_by_public(self):
         url = f'/{API_BASE}registrations/?filter[public]=false'
@@ -259,29 +245,25 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         # No public projects returned
-        assert_false(
-            any([each['attributes']['public'] for each in reg_json])
-        )
+        assert not any([each['attributes']['public'] for each in reg_json])
 
         ids = [each['id'] for each in reg_json]
-        assert_not_in(self.project_one_reg._id, ids)
-        assert_not_in(self.project_two_reg._id, ids)
+        assert self.project_one_reg._id not in ids
+        assert self.project_two_reg._id not in ids
 
         url = f'/{API_BASE}registrations/?filter[public]=true'
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
 
         # No private projects returned
-        assert_true(
-            all([each['attributes']['public'] for each in reg_json])
-        )
+        assert all([each['attributes']['public'] for each in reg_json])
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
     def test_filtering_tags(self):
 
@@ -292,11 +274,11 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
         # filtering two tags
         # project_one has both tags; project_two only has one
@@ -307,11 +289,11 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_not_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id not in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
     def test_filtering_tags_exact(self):
         self.project_one.add_tag('cats', Auth(self.user_one))
@@ -327,7 +309,7 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 1)
+        assert len(res.json.get('data')) == 1
 
     def test_filtering_tags_capitalized_query(self):
         self.project_one.add_tag('cat', Auth(self.user_one))
@@ -339,7 +321,7 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 1)
+        assert len(res.json.get('data')) == 1
 
     def test_filtering_tags_capitalized_tag(self):
         self.project_one.add_tag('CAT', Auth(self.user_one))
@@ -351,7 +333,7 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 1)
+        assert len(res.json.get('data')) == 1
 
     def test_filtering_on_multiple_tags(self):
         self.project_one.add_tag('cat', Auth(self.user_one))
@@ -364,7 +346,7 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 1)
+        assert len(res.json.get('data')) == 1
 
     def test_filtering_on_multiple_tags_must_match_both(self):
         self.project_one.add_tag('cat', Auth(self.user_one))
@@ -376,7 +358,7 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 0)
+        assert len(res.json.get('data')) == 0
 
     def test_filtering_tags_returns_distinct(self):
         # regression test for returning multiple of the same file
@@ -392,7 +374,7 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 1)
+        assert len(res.json.get('data')) == 1
 
     def test_filtering_contributors(self):
         res = self.app.get(
@@ -401,7 +383,7 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 3)
+        assert len(res.json.get('data')) == 3
 
     def test_filtering_contributors_bad_id(self):
         res = self.app.get(
@@ -410,45 +392,45 @@ class TestRegistrationFiltering(ApiTestCase):
             ),
             auth=self.user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 0)
+        assert len(res.json.get('data')) == 0
 
     def test_get_all_registrations_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_in(self.project_three_reg._id, ids)
-        assert_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id in ids
+        assert self.private_project_user_one_reg._id in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.project_one._id not in ids
+        assert self.project_two._id not in ids
+        assert self.project_three._id not in ids
+        assert self.private_project_user_one._id not in ids
+        assert self.private_project_user_two._id not in ids
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_get_all_registrations_with_no_filter_not_logged_in(self):
         res = self.app.get(self.url)
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.project_one._id not in ids
+        assert self.project_two._id not in ids
+        assert self.project_three._id not in ids
+        assert self.private_project_user_one._id not in ids
+        assert self.private_project_user_two._id not in ids
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_get_one_registration_with_exact_filter_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[title]=Project%20One'
@@ -457,14 +439,14 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_not_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id not in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_get_one_registration_with_exact_filter_not_logged_in(self):
         url = '/{}registrations/?filter[title]=Private%20Project%20User%20One'.format(
@@ -474,14 +456,14 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_not_in(self.project_one_reg._id, ids)
-        assert_not_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id not in ids
+        assert self.project_two_reg._id not in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_get_some_registrations_with_substring_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[title]=Two'
@@ -490,14 +472,14 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_not_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id not in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_get_some_registrations_with_substring_not_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[title]=One'
@@ -506,14 +488,14 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_not_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id not in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_get_only_public_or_my_registrations_with_filter_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[title]=Project'
@@ -522,14 +504,14 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_get_only_public_registrations_with_filter_not_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[title]=Project'
@@ -538,14 +520,14 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_alternate_filtering_field_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[description]=Three'
@@ -554,14 +536,14 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_not_in(self.project_one_reg._id, ids)
-        assert_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id not in ids
+        assert self.project_two_reg._id in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_alternate_filtering_field_not_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[description]=Two'
@@ -570,25 +552,23 @@ class TestRegistrationFiltering(ApiTestCase):
         reg_json = res.json['data']
 
         ids = [each['id'] for each in reg_json]
-        assert_in(self.project_one_reg._id, ids)
-        assert_not_in(self.project_two_reg._id, ids)
-        assert_not_in(self.project_three_reg._id, ids)
-        assert_not_in(self.private_project_user_one_reg._id, ids)
-        assert_not_in(self.private_project_user_two_reg._id, ids)
+        assert self.project_one_reg._id in ids
+        assert self.project_two_reg._id not in ids
+        assert self.project_three_reg._id not in ids
+        assert self.private_project_user_one_reg._id not in ids
+        assert self.private_project_user_two_reg._id not in ids
 
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert self.folder._id not in ids
+        assert self.bookmark_collection._id not in ids
 
     def test_incorrect_filtering_field_not_logged_in(self):
         url = f'/{API_BASE}registrations/?filter[notafield]=bogus'
 
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
         errors = res.json['errors']
-        assert_equal(len(errors), 1)
-        assert_equal(
-            errors[0]['detail'],
-            "'notafield' is not a valid field for this endpoint.")
+        assert len(errors) == 1
+        assert errors[0]['detail'] == "'notafield' is not a valid field for this endpoint."
 
 
 class TestRegistrationSubjectFiltering(SubjectsFilterMixin):

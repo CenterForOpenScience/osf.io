@@ -5,7 +5,6 @@ import datetime
 import unittest
 import pytest
 
-from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (
     ProjectFactory,
@@ -72,12 +71,9 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
             'bitbucket_user': 'octocat',
             'bitbucket_repo': 'repo_name',
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert res.status_code == http_status.HTTP_200_OK
         self.project.reload()
-        assert_equal(
-            self.project.logs.latest().action,
-            f'{self.ADDON_SHORT_NAME}_repo_linked'
-        )
+        assert self.project.logs.latest().action == f'{self.ADDON_SHORT_NAME}_repo_linked'
 
 
 class TestBitbucketViews(OsfTestCase):
@@ -139,17 +135,14 @@ class TestBitbucketViews(OsfTestCase):
         mock_branches.return_value = bitbucket_mock.branches.return_value
 
         branch, sha, branches = utils.get_refs(self.node_settings)
-        assert_equal(
-            branch,
-            bitbucket_mock.repo_default_branch.return_value
-        )
-        assert_equal(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
+        assert branch == bitbucket_mock.repo_default_branch.return_value
+        assert sha == self._get_sha_for_branch(branch=None)  # Get refs for default branch
 
         expected_branches = [
             {'name': x['name'], 'sha': x['target']['hash']}
             for x in bitbucket_mock.branches.return_value
         ]
-        assert_equal(branches, expected_branches)
+        assert branches == expected_branches
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.branches')
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
@@ -163,29 +156,29 @@ class TestBitbucketViews(OsfTestCase):
         mock_branches.return_value = bitbucket_mock.branches.return_value
 
         branch, sha, branches = utils.get_refs(self.node_settings, 'master')
-        assert_equal(branch, 'master')
+        assert branch == 'master'
         branch_sha = self._get_sha_for_branch('master')
-        assert_equal(sha, branch_sha)
+        assert sha == branch_sha
 
         expected_branches = [
             {'name': x['name'], 'sha': x['target']['hash']}
             for x in bitbucket_mock.branches.return_value
         ]
-        assert_equal(branches, expected_branches)
+        assert branches == expected_branches
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(len(res.json['prompts']), 1)
+        assert len(res.json['prompts']) == 1
 
     def test_before_register(self):
         url = self.project.api_url + 'beforeregister/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_true('Bitbucket' in res.json['prompts'][1])
+        assert 'Bitbucket' in res.json['prompts'][1]
 
     @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_get_refs_sha_no_branch(self, mock_account):
-        with assert_raises(HTTPError):
+        with pytest.raises(HTTPError):
             utils.get_refs(self.node_settings, sha='12345')
 
     def check_hook_urls(self, urls, node, path, sha):
@@ -195,8 +188,8 @@ class TestBitbucketViews(OsfTestCase):
             'download': f'{url}?action=download&ref={sha}'
         }
 
-        assert_equal(urls['view'], expected_urls['view'])
-        assert_equal(urls['download'], expected_urls['download'])
+        assert urls['view'] == expected_urls['view']
+        assert urls['download'] == expected_urls['download']
 
 
 class TestBitbucketSettings(OsfTestCase):
@@ -239,9 +232,9 @@ class TestBitbucketSettings(OsfTestCase):
         self.project.reload()
         self.node_settings.reload()
 
-        assert_equal(self.node_settings.user, 'queen')
-        assert_equal(self.node_settings.repo, 'night at the opera')
-        assert_equal(self.project.logs.latest().action, 'bitbucket_repo_linked')
+        assert self.node_settings.user == 'queen'
+        assert self.node_settings.repo == 'night at the opera'
+        assert self.project.logs.latest().action == 'bitbucket_repo_linked'
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
@@ -265,7 +258,7 @@ class TestBitbucketSettings(OsfTestCase):
         self.project.reload()
         self.node_settings.reload()
 
-        assert_equal(self.project.logs.count(), log_count)
+        assert self.project.logs.count() == log_count
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
@@ -284,7 +277,7 @@ class TestBitbucketSettings(OsfTestCase):
             expect_errors=True
         ).maybe_follow()
 
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
 
     @mock.patch('addons.bitbucket.api.BitbucketClient.branches')
     def test_link_repo_registration(self, mock_branches):
@@ -308,7 +301,7 @@ class TestBitbucketSettings(OsfTestCase):
             expect_errors=True
         ).maybe_follow()
 
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
 
     def test_deauthorize(self):
 
@@ -318,11 +311,11 @@ class TestBitbucketSettings(OsfTestCase):
 
         self.project.reload()
         self.node_settings.reload()
-        assert_equal(self.node_settings.user, None)
-        assert_equal(self.node_settings.repo, None)
-        assert_equal(self.node_settings.user_settings, None)
+        assert self.node_settings.user == None
+        assert self.node_settings.repo == None
+        assert self.node_settings.user_settings == None
 
-        assert_equal(self.project.logs.latest().action, 'bitbucket_node_deauthorized')
+        assert self.project.logs.latest().action == 'bitbucket_node_deauthorized'
 
 
 if __name__ == '__main__':

@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import *  # noqa: F403
 
 from osf_tests import factories
 from tests.base import OsfTestCase
@@ -38,65 +37,65 @@ class TestSearchViews(OsfTestCase):
         #Test search contributor
         url = api_url_for('search_contributor')
         res = self.app.get(url, {'query': self.contrib.fullname})
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         result = res.json['users']
-        assert_equal(len(result), 1)
+        assert len(result) == 1
         brian = result[0]
-        assert_equal(brian['fullname'], self.contrib.fullname)
-        assert_in('profile_image_url', brian)
-        assert_equal(brian['registered'], self.contrib.is_registered)
-        assert_equal(brian['active'], self.contrib.is_active)
+        assert brian['fullname'] == self.contrib.fullname
+        assert 'profile_image_url' in brian
+        assert brian['registered'] == self.contrib.is_registered
+        assert brian['active'] == self.contrib.is_active
 
         #Test search pagination
         res = self.app.get(url, {'query': 'fr'})
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(pages, 3)
-        assert_equal(page, 0)
+        assert len(result) == 5
+        assert pages == 3
+        assert page == 0
 
         #Test default page 1
         res = self.app.get(url, {'query': 'fr', 'page': 1})
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(page, 1)
+        assert len(result) == 5
+        assert page == 1
 
         #Test default page 2
         res = self.app.get(url, {'query': 'fr', 'page': 2})
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 4)
-        assert_equal(page, 2)
+        assert len(result) == 4
+        assert page == 2
 
         #Test smaller pages
         res = self.app.get(url, {'query': 'fr', 'size': 5})
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(page, 0)
-        assert_equal(pages, 3)
+        assert len(result) == 5
+        assert page == 0
+        assert pages == 3
 
         #Test smaller pages page 2
         res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 4)
-        assert_equal(page, 2)
-        assert_equal(pages, 3)
+        assert len(result) == 4
+        assert page == 2
+        assert pages == 3
 
         #Test search projects
         url = '/search/'
         res = self.app.get(url, {'q': self.project.title})
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
         #Test search node
         res = self.app.post_json(
@@ -104,7 +103,7 @@ class TestSearchViews(OsfTestCase):
             {'query': self.project.title},
             auth=factories.AuthUserFactory().auth
         )
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
         #Test search node includePublic true
         res = self.app.post_json(
@@ -113,10 +112,10 @@ class TestSearchViews(OsfTestCase):
             auth=self.user_one.auth
         )
         node_ids = [node['id'] for node in res.json['nodes']]
-        assert_in(self.project_private_user_one._id, node_ids)
-        assert_in(self.project_public_user_one._id, node_ids)
-        assert_in(self.project_public_user_two._id, node_ids)
-        assert_not_in(self.project_private_user_two._id, node_ids)
+        assert self.project_private_user_one._id in node_ids
+        assert self.project_public_user_one._id in node_ids
+        assert self.project_public_user_two._id in node_ids
+        assert self.project_private_user_two._id not in node_ids
 
         #Test search node includePublic false
         res = self.app.post_json(
@@ -125,25 +124,25 @@ class TestSearchViews(OsfTestCase):
             auth=self.user_one.auth
         )
         node_ids = [node['id'] for node in res.json['nodes']]
-        assert_in(self.project_private_user_one._id, node_ids)
-        assert_in(self.project_public_user_one._id, node_ids)
-        assert_not_in(self.project_public_user_two._id, node_ids)
-        assert_not_in(self.project_private_user_two._id, node_ids)
+        assert self.project_private_user_one._id in node_ids
+        assert self.project_public_user_one._id in node_ids
+        assert self.project_public_user_two._id not in node_ids
+        assert self.project_private_user_two._id not in node_ids
 
         #Test search user
         url = '/api/v1/search/user/'
         res = self.app.get(url, {'q': 'Umwali'})
-        assert_equal(res.status_code, 200)
-        assert_false(res.json['results'])
+        assert res.status_code == 200
+        assert not res.json['results']
 
         user_one = factories.AuthUserFactory(fullname='Joe Umwali')
         user_two = factories.AuthUserFactory(fullname='Joan Uwase')
 
         res = self.app.get(url, {'q': 'Umwali'})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['results']), 1)
-        assert_false(res.json['results'][0]['social'])
+        assert res.status_code == 200
+        assert len(res.json['results']) == 1
+        assert not res.json['results'][0]['social']
 
         user_one.social = {
             'github': user_one.given_name,
@@ -154,14 +153,14 @@ class TestSearchViews(OsfTestCase):
 
         res = self.app.get(url, {'q': 'Umwali'})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['results']), 1)
-        assert_not_in('Joan', res.body.decode())
-        assert_true(res.json['results'][0]['social'])
-        assert_equal(res.json['results'][0]['names']['fullname'], user_one.fullname)
-        assert_equal(res.json['results'][0]['social']['github'], f'http://github.com/{user_one.given_name}')
-        assert_equal(res.json['results'][0]['social']['twitter'], f'http://twitter.com/{user_one.given_name}')
-        assert_equal(res.json['results'][0]['social']['ssrn'], f'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={user_one.given_name}')
+        assert res.status_code == 200
+        assert len(res.json['results']) == 1
+        assert 'Joan' not in res.body.decode()
+        assert res.json['results'][0]['social']
+        assert res.json['results'][0]['names']['fullname'] == user_one.fullname
+        assert res.json['results'][0]['social']['github'] == f'http://github.com/{user_one.given_name}'
+        assert res.json['results'][0]['social']['twitter'] == f'http://twitter.com/{user_one.given_name}'
+        assert res.json['results'][0]['social']['ssrn'] == f'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={user_one.given_name}'
 
         user_two.social = {
             'profileWebsites': [f'http://me.com/{user_two.given_name}'],
@@ -182,25 +181,25 @@ class TestSearchViews(OsfTestCase):
 
         res = self.app.get(url, {'q': 'Umwali'})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['results']), 2)
-        assert_true(res.json['results'][0]['social'])
-        assert_true(res.json['results'][1]['social'])
-        assert_not_equal(res.json['results'][0]['social']['ssrn'], res.json['results'][1]['social']['ssrn'])
-        assert_not_equal(res.json['results'][0]['social']['github'], res.json['results'][1]['social']['github'])
+        assert res.status_code == 200
+        assert len(res.json['results']) == 2
+        assert res.json['results'][0]['social']
+        assert res.json['results'][1]['social']
+        assert res.json['results'][0]['social']['ssrn'] != res.json['results'][1]['social']['ssrn']
+        assert res.json['results'][0]['social']['github'] != res.json['results'][1]['social']['github']
 
         res = self.app.get(url, {'q': 'Uwase'})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['results']), 1)
-        assert_true(res.json['results'][0]['social'])
-        assert_not_in('ssrn', res.json['results'][0]['social'])
-        assert_equal(res.json['results'][0]['social']['profileWebsites'][0], f'http://me.com/{user_two.given_name}')
-        assert_equal(res.json['results'][0]['social']['impactStory'], f'https://impactstory.org/u/{user_two.given_name}')
-        assert_equal(res.json['results'][0]['social']['orcid'], f'http://orcid.org/{user_two.given_name}')
-        assert_equal(res.json['results'][0]['social']['baiduScholar'], f'http://xueshu.baidu.com/scholarID/{user_two.given_name}')
-        assert_equal(res.json['results'][0]['social']['linkedIn'], f'https://www.linkedin.com/{user_two.given_name}')
-        assert_equal(res.json['results'][0]['social']['scholar'], f'http://scholar.google.com/citations?user={user_two.given_name}')
+        assert res.status_code == 200
+        assert len(res.json['results']) == 1
+        assert res.json['results'][0]['social']
+        assert 'ssrn' not in res.json['results'][0]['social']
+        assert res.json['results'][0]['social']['profileWebsites'][0] == f'http://me.com/{user_two.given_name}'
+        assert res.json['results'][0]['social']['impactStory'] == f'https://impactstory.org/u/{user_two.given_name}'
+        assert res.json['results'][0]['social']['orcid'] == f'http://orcid.org/{user_two.given_name}'
+        assert res.json['results'][0]['social']['baiduScholar'] == f'http://xueshu.baidu.com/scholarID/{user_two.given_name}'
+        assert res.json['results'][0]['social']['linkedIn'] == f'https://www.linkedin.com/{user_two.given_name}'
+        assert res.json['results'][0]['social']['scholar'] == f'http://scholar.google.com/citations?user={user_two.given_name}'
 
 
 @pytest.mark.enable_bookmark_creation
@@ -232,24 +231,24 @@ class TestODMTitleSearch(OsfTestCase):
 
     def test_search_projects_by_title(self):
         res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+        assert res.status_code == 200
+        assert len(res.json) == 1
         res = self.app.get(self.url,
                            {
                                'term': self.public_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'no'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+        assert res.status_code == 200
+        assert len(res.json) == 1
         res = self.app.get(self.url,
                            {
                                'term': self.project.title,
                                'includePublic': 'no',
                                'includeContributed': 'yes'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+        assert res.status_code == 200
+        assert len(res.json) == 1
         res = self.app.get(self.url,
                            {
                                'term': self.project.title,
@@ -257,8 +256,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isRegistration': 'no'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+        assert res.status_code == 200
+        assert len(res.json) == 1
         res = self.app.get(self.url,
                            {
                                'term': self.project.title,
@@ -266,8 +265,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isRegistration': 'either'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+        assert res.status_code == 200
+        assert len(res.json) == 1
         res = self.app.get(self.url,
                            {
                                'term': self.public_project.title,
@@ -275,8 +274,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isRegistration': 'either'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+        assert res.status_code == 200
+        assert len(res.json) == 1
         res = self.app.get(self.url,
                            {
                                'term': self.registration_project.title,
@@ -284,8 +283,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isRegistration': 'either'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 2)
+        assert res.status_code == 200
+        assert len(res.json) == 2
         res = self.app.get(self.url,
                            {
                                'term': self.registration_project.title,
@@ -293,8 +292,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isRegistration': 'no'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+        assert res.status_code == 200
+        assert len(res.json) == 1
         res = self.app.get(self.url,
                            {
                                'term': self.folder.title,
@@ -302,7 +301,7 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
                            }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         assert len(res.json) == 0
         res = self.app.get(self.url,
                            {
@@ -311,8 +310,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'no'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 0)
+        assert res.status_code == 200
+        assert len(res.json) == 0
         res = self.app.get(self.url,
                            {
                                'term': self.dashboard.title,
@@ -320,8 +319,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'no'
                            }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 0)
+        assert res.status_code == 200
+        assert len(res.json) == 0
         res = self.app.get(self.url,
                            {
                                'term': self.dashboard.title,
@@ -329,5 +328,5 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
                            }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 0)
+        assert res.status_code == 200
+        assert len(res.json) == 0
