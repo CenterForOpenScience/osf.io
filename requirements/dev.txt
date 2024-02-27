@@ -14,6 +14,7 @@ asynctest==0.13.0
 factory-boy==3.3.0
 webtest-plus==1.0.0
 Faker==23.2.1
+nose
 schema==0.7.4
 responses==0.25.0
 
