@@ -5,7 +5,7 @@ import os
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
-from dropbox.dropbox import Dropbox
+from dropbox import Dropbox
 from dropbox.exceptions import ApiError, DropboxException
 from dropbox.files import FolderMetadata
 from furl import furl

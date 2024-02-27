@@ -1,4 +1,3 @@
-from past.builtins import basestring
 import os
 import itertools
 import builtins
@@ -236,8 +235,8 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
     options into their own schema blocks
     """
     for option in question.get('options', []):
-        answer_text = option if isinstance(option, basestring) else option.get('text')
-        help_text = '' if isinstance(option, basestring) else option.get('tooltip', '')
+        answer_text = option if isinstance(option, str) else option.get('text')
+        help_text = '' if isinstance(option, str) else option.get('tooltip', '')
 
         create_schema_block(
             state,

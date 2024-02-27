@@ -72,9 +72,8 @@ RUN set -ex \
         libffi-dev \
     && pip3 install --upgrade pip \
     && for reqs_file in \
-        /code/requirements.txt \
-        /code/requirements/release.txt \
         /code/addons/*/requirements.txt \
+        /code/requirements/release.txt \
     ; do \
         pip3 install --no-cache-dir -r "$reqs_file" \
     ; done \
