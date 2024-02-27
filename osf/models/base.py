@@ -14,7 +14,6 @@ from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
-from past.builtins import basestring
 
 from website import settings as website_settings
 from osf.utils.caching import cached_property
@@ -73,7 +72,7 @@ class QuerySetExplainMixin:
     def explain(self, *args):
         extra_arguments = ''
         for item in args:
-            extra_arguments = f'{extra_arguments} {item}' if isinstance(item, basestring) else extra_arguments
+            extra_arguments = f'{extra_arguments} {item}' if isinstance(item, str) else extra_arguments
         cursor = connections[self.db].cursor()
         query, params = self.query.sql_with_params()
         cursor.execute('explain analyze verbose %s' % query, params)
@@ -114,7 +113,7 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
-            if isinstance(data, basestring):
+            if isinstance(data, str):
                 # Some models (CitationStyle) have an _id that is not a bson
                 # Looking up things by pk will never work with a basestring
                 return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(

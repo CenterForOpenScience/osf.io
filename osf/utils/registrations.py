@@ -1,4 +1,3 @@
-from past.builtins import basestring
 import copy
 import re
 
@@ -182,7 +181,7 @@ def get_value_or_extra(nested_response, block_type, key, keys):
     """
     keyed_value = nested_response.get(key, '')
     # No guarantee that the key exists in the dictionary
-    if isinstance(keyed_value, basestring):
+    if isinstance(keyed_value, str):
         return keyed_value
 
     # If we are on the most deeply nested key (no more keys left in array),
@@ -219,7 +218,7 @@ def get_nested_answer(nested_response, block_type, keys):
     else:
         # Once we've drilled down through the entire dictionary, our nested_response
         # should be an array or a string
-        if not isinstance(nested_response, (list, basestring)):
+        if not isinstance(nested_response, (list, str)):
             raise SchemaBlockConversionError('Unexpected value type (expected list or string)', nested_response)
         return nested_response
 
