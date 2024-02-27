@@ -2,7 +2,7 @@ import framework.status as status
 
 from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField, \
-    SelectMultipleField, SubmitField, TextAreaField, TextField, FieldList, \
+    SelectMultipleField, SubmitField, TextAreaField, StringField as TextField, FieldList, \
     validators
 from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea, Select, CheckboxInput
 from wtforms.validators import ValidationError

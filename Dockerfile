@@ -72,9 +72,8 @@ RUN set -ex \
         libffi-dev \
     && pip3 install --upgrade pip \
     && for reqs_file in \
-        /code/requirements.txt \
-        /code/requirements/release.txt \
         /code/addons/*/requirements.txt \
+        /code/requirements/release.txt \
     ; do \
         pip3 install --no-cache-dir -r "$reqs_file" \
     ; done \
@@ -159,8 +158,6 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 
 # TODO: Admin/API should fully specify their bower static deps, and not include ./website/static in their defaults.py.
 #       (this adds an additional 300+mb to the build image)
-
-# TODO: Uncomment following RUN when python dependencies are ready
 
 RUN for module in \
        api.base.settings \
