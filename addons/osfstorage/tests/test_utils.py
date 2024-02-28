@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import pytest
-from nose.tools import *  # noqa
 from importlib import import_module
 
 from django.conf import settings as django_conf_settings
@@ -50,10 +49,10 @@ class TestSerializeRevision(StorageTestCase):
             self.versions[0],
             0,
         )
-        assert_equal(expected, observed)
-        assert_equal(self.record.get_download_count(), 3)
-        assert_equal(self.record.get_download_count(version=2), 1)
-        assert_equal(self.record.get_download_count(version=0), 2)
+        assert expected == observed
+        assert self.record.get_download_count() == 3
+        assert self.record.get_download_count(version=2) == 1
+        assert self.record.get_download_count(version=0) == 2
 
     def test_anon_revisions(self):
         s = SessionStore()
@@ -76,4 +75,4 @@ class TestSerializeRevision(StorageTestCase):
             1,
             anon=True
         )
-        assert_equal(expected, observed)
+        assert expected == observed

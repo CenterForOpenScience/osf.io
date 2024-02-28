@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 from unittest import mock
-from nose.tools import *
 
 from website.notifications.events.base import Event, register, event_registry
 from website.notifications.events.files import (
@@ -87,7 +86,7 @@ class TestListOfFiles(OsfTestCase):
         }
 
     def test_list_of_files(self):
-        assert_equal(['e', 'f', 'c', 'd'], utils.list_of_files(self.tree))
+        assert ['e', 'f', 'c', 'd'] == utils.list_of_files(self.tree)
 
 
 class TestEventExists(OsfTestCase):
@@ -102,42 +101,42 @@ class TestEventExists(OsfTestCase):
     def test_get_file_updated(self):
         # Event gets FileUpdated from file_updated
         event = event_registry['file_updated'](self.user, self.node, 'file_updated', payload=file_payload)
-        assert_is_instance(event, FileUpdated)
+        assert isinstance(event, FileUpdated)
 
     def test_get_file_added(self):
         # Event gets FileAdded from file_added
         event = event_registry['file_added'](self.user, self.node, 'file_added', payload=file_payload)
-        assert_is_instance(event, FileAdded)
+        assert isinstance(event, FileAdded)
 
     def test_get_file_removed(self):
         # Event gets FileRemoved from file_removed
         event = event_registry['file_removed'](self.user, self.node, 'file_removed', payload=file_deleted_payload)
-        assert_is_instance(event, FileRemoved)
+        assert isinstance(event, FileRemoved)
 
     def test_get_folder_created(self):
         # Event gets FolderCreated from folder_created
         event = event_registry['folder_created'](self.user, self.node, 'folder_created', payload=folder_created_payload)
-        assert_is_instance(event, FolderCreated)
+        assert isinstance(event, FolderCreated)
 
     def test_get_file_moved(self):
         # Event gets AddonFileMoved from addon_file_moved
         file_moved_payload = file_move_payload(self.node, self.node)
         event = event_registry['addon_file_moved'](self.user, self.node, 'addon_file_moved', payload=file_moved_payload)
-        assert_is_instance(event, AddonFileMoved)
+        assert isinstance(event, AddonFileMoved)
 
     def test_get_file_copied(self):
         # Event gets AddonFileCopied from addon_file_copied
         file_copied_payload = file_copy_payload(self.node, self.node)
         event = event_registry['addon_file_copied'](self.user, self.node, 'addon_file_copied',
                                                     payload=file_copied_payload)
-        assert_is_instance(event, AddonFileCopied)
+        assert isinstance(event, AddonFileCopied)
 
     def test_get_file_renamed(self):
         # Event gets AddonFileCopied from addon_file_copied
         file_rename_payload = file_renamed_payload()
         event = event_registry['addon_file_renamed'](self.user, self.node, 'addon_file_renamed',
                                                      payload=file_rename_payload)
-        assert_is_instance(event, AddonFileRenamed)
+        assert isinstance(event, AddonFileRenamed)
 
 
 class TestSignalEvent(OsfTestCase):
@@ -152,7 +151,7 @@ class TestSignalEvent(OsfTestCase):
         signals.file_updated.send(
             user=self.user, target=self.node, event_type='file_added', payload=file_payload
         )
-        assert_true(mock_perform.called)
+        assert mock_perform.called
 
 
 class TestFileUpdated(OsfTestCase):
@@ -172,15 +171,15 @@ class TestFileUpdated(OsfTestCase):
         self.event = event_registry['file_updated'](self.user_2, self.project, 'file_updated', payload=file_payload)
 
     def test_info_formed_correct(self):
-        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
-        assert_equal('updated file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
-        assert_equal('updated file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
+        assert f'{wb_path}_file_updated' == self.event.event_type
+        assert 'updated file "<b>{}</b>".'.format(materialized.lstrip('/')) == self.event.html_message
+        assert 'updated file "{}".'.format(materialized.lstrip('/')) == self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_updated(self, mock_notify):
         self.event.perform()
         # notify('exd', 'file_updated', 'user', self.project, timezone.now())
-        assert_true(mock_notify.called)
+        assert mock_notify.called
 
 
 class TestFileAdded(NotificationTestCase):
@@ -199,15 +198,15 @@ class TestFileAdded(NotificationTestCase):
         self.event = event_registry['file_added'](self.user2, self.project, 'file_added', payload=file_payload)
 
     def test_info_formed_correct(self):
-        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
-        assert_equal('added file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
-        assert_equal('added file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
+        assert f'{wb_path}_file_updated' == self.event.event_type
+        assert 'added file "<b>{}</b>".'.format(materialized.lstrip('/')) == self.event.html_message
+        assert 'added file "{}".'.format(materialized.lstrip('/')) == self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
         self.event.perform()
         # notify('exd', 'file_updated', 'user', self.project, timezone.now())
-        assert_true(mock_notify.called)
+        assert mock_notify.called
 
 
 class TestFileRemoved(NotificationTestCase):
@@ -228,21 +227,21 @@ class TestFileRemoved(NotificationTestCase):
         )
 
     def test_info_formed_correct_file(self):
-        assert_equal('file_updated', self.event.event_type)
-        assert_equal('removed file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
-        assert_equal('removed file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
+        assert 'file_updated' == self.event.event_type
+        assert 'removed file "<b>{}</b>".'.format(materialized.lstrip('/')) == self.event.html_message
+        assert 'removed file "{}".'.format(materialized.lstrip('/')) == self.event.text_message
 
     def test_info_formed_correct_folder(self):
-        assert_equal('file_updated', self.event.event_type)
+        assert 'file_updated' == self.event.event_type
         self.event.payload['metadata']['materialized'] += '/'
-        assert_equal('removed folder "<b>{}/</b>".'.format(materialized.lstrip('/')), self.event.html_message)
-        assert_equal('removed folder "{}/".'.format(materialized.lstrip('/')), self.event.text_message)
+        assert 'removed folder "<b>{}/</b>".'.format(materialized.lstrip('/')) == self.event.html_message
+        assert 'removed folder "{}/".'.format(materialized.lstrip('/')) == self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_removed(self, mock_notify):
         self.event.perform()
         # notify('exd', 'file_updated', 'user', self.project, timezone.now())
-        assert_true(mock_notify.called)
+        assert mock_notify.called
 
 
 class TestFolderCreated(NotificationTestCase):
@@ -263,14 +262,14 @@ class TestFolderCreated(NotificationTestCase):
         )
 
     def test_info_formed_correct(self):
-        assert_equal('file_updated', self.event.event_type)
-        assert_equal('created folder "<b>Three/</b>".', self.event.html_message)
-        assert_equal('created folder "Three/".', self.event.text_message)
+        assert 'file_updated' == self.event.event_type
+        assert 'created folder "<b>Three/</b>".' == self.event.html_message
+        assert 'created folder "Three/".' == self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_folder_added(self, mock_notify):
         self.event.perform()
-        assert_true(mock_notify.called)
+        assert mock_notify.called
 
 
 class TestFolderFileRenamed(OsfTestCase):
@@ -299,23 +298,23 @@ class TestFolderFileRenamed(OsfTestCase):
 
     def test_rename_file_html(self):
         self.event.payload['destination']['materialized'] = '/One/Paper14.txt'
-        assert_equal(self.event.html_message, 'renamed file "<b>/One/Paper13.txt</b>" to "<b>/One/Paper14.txt</b>".')
+        assert self.event.html_message == 'renamed file "<b>/One/Paper13.txt</b>" to "<b>/One/Paper14.txt</b>".'
 
     def test_rename_folder_html(self):
         self.event.payload['destination']['kind'] = 'folder'
         self.event.payload['destination']['materialized'] = '/One/Two/Four'
         self.event.payload['source']['materialized'] = '/One/Two/Three'
-        assert_equal(self.event.html_message, 'renamed folder "<b>/One/Two/Three</b>" to "<b>/One/Two/Four</b>".')
+        assert self.event.html_message == 'renamed folder "<b>/One/Two/Three</b>" to "<b>/One/Two/Four</b>".'
 
     def test_rename_file_text(self):
         self.event.payload['destination']['materialized'] = '/One/Paper14.txt'
-        assert_equal(self.event.text_message, 'renamed file "/One/Paper13.txt" to "/One/Paper14.txt".')
+        assert self.event.text_message == 'renamed file "/One/Paper13.txt" to "/One/Paper14.txt".'
 
     def test_rename_folder_text(self):
         self.event.payload['destination']['kind'] = 'folder'
         self.event.payload['destination']['materialized'] = '/One/Two/Four'
         self.event.payload['source']['materialized'] = '/One/Two/Three'
-        assert_equal(self.event.text_message, 'renamed folder "/One/Two/Three" to "/One/Two/Four".')
+        assert self.event.text_message == 'renamed folder "/One/Two/Three" to "/One/Two/Four".'
 
 
 class TestFileMoved(NotificationTestCase):
@@ -361,9 +360,9 @@ class TestFileMoved(NotificationTestCase):
 
     def test_info_formed_correct(self):
         # Move Event: Ensures data is correctly formatted
-        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
-        # assert_equal('moved file "<b>{}</b>".', self.event.html_message)
-        # assert_equal('created folder "Three/".', self.event.text_message)
+        assert f'{wb_path}_file_updated' == self.event.event_type
+        # assert 'moved file "<b>{}</b>".' == self.event.html_message
+        # assert 'created folder "Three/".' == self.event.text_message
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_user_performing_action_no_email(self, mock_store):
@@ -372,7 +371,7 @@ class TestFileMoved(NotificationTestCase):
         self.sub.email_digest.add(self.user_2)
         self.sub.save()
         self.event.perform()
-        assert_equal(0, mock_store.call_count)
+        assert 0 == mock_store.call_count
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_perform_store_called_once(self, mock_store):
@@ -380,7 +379,7 @@ class TestFileMoved(NotificationTestCase):
         self.sub.email_transactional.add(self.user_1)
         self.sub.save()
         self.event.perform()
-        assert_equal(1, mock_store.call_count)
+        assert 1 == mock_store.call_count
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_perform_store_one_of_each(self, mock_store):
@@ -398,7 +397,7 @@ class TestFileMoved(NotificationTestCase):
         self.file_sub.email_digest.add(self.user_4)
         self.file_sub.save()
         self.event.perform()
-        assert_equal(3, mock_store.call_count)
+        assert 3 == mock_store.call_count
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_remove_user_sent_once(self, mock_store):
@@ -408,7 +407,7 @@ class TestFileMoved(NotificationTestCase):
         self.file_sub.email_digest.add(self.user_3)
         self.file_sub.save()
         self.event.perform()
-        assert_equal(1, mock_store.call_count)
+        assert 1 == mock_store.call_count
 
 
 class TestFileCopied(NotificationTestCase):
@@ -456,13 +455,13 @@ class TestFileCopied(NotificationTestCase):
 
     def test_info_correct(self):
         # Move Event: Ensures data is correctly formatted
-        assert_equal(f'{wb_path}_file_updated', self.event.event_type)
-        assert_equal(('copied file "<b>One/Paper13.txt</b>" from OSF Storage'
+        assert f'{wb_path}_file_updated' == self.event.event_type
+        assert ('copied file "<b>One/Paper13.txt</b>" from OSF Storage'
                       ' in Consolidate to "<b>Two/Paper13.txt</b>" in OSF'
-                      ' Storage in Consolidate.'), self.event.html_message)
-        assert_equal(('copied file "One/Paper13.txt" from OSF Storage'
+                      ' Storage in Consolidate.') == self.event.html_message
+        assert ('copied file "One/Paper13.txt" from OSF Storage'
                       ' in Consolidate to "Two/Paper13.txt" in OSF'
-                      ' Storage in Consolidate.'), self.event.text_message)
+                      ' Storage in Consolidate.') == self.event.text_message
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_copied_one_of_each(self, mock_store):
@@ -480,7 +479,7 @@ class TestFileCopied(NotificationTestCase):
         self.file_sub.email_digest.add(self.user_4)
         self.file_sub.save()
         self.event.perform()
-        assert_equal(2, mock_store.call_count)
+        assert 2 == mock_store.call_count
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_user_performing_action_no_email(self, mock_store):
@@ -489,7 +488,7 @@ class TestFileCopied(NotificationTestCase):
         self.sub.email_digest.add(self.user_2)
         self.sub.save()
         self.event.perform()
-        assert_equal(0, mock_store.call_count)
+        assert 0 == mock_store.call_count
 
 
 class TestCategorizeUsers(NotificationTestCase):
@@ -552,8 +551,8 @@ class TestCategorizeUsers(NotificationTestCase):
             self.event.user, self.event.event_type, self.event.source_node,
             self.event.event_type, self.event.node
         )
-        assert_equal({email_transactional: [], email_digest: [self.user_3._id], 'none': []}, warn)
-        assert_equal({email_transactional: [self.user_1._id], email_digest: [], 'none': []}, moved)
+        assert {email_transactional: [], email_digest: [self.user_3._id], 'none': []} == warn
+        assert {email_transactional: [self.user_1._id], email_digest: [], 'none': []} == moved
 
     def test_moved_user(self):
         # Doesn't warn a user with two different subs, but does send a
@@ -570,8 +569,8 @@ class TestCategorizeUsers(NotificationTestCase):
             self.event.user, self.event.event_type, self.event.source_node,
             self.event.event_type, self.event.node
         )
-        assert_equal({email_transactional: [], email_digest: [], 'none': []}, warn)
-        assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, moved)
+        assert {email_transactional: [], email_digest: [], 'none': []} == warn
+        assert {email_transactional: [self.user_3._id], email_digest: [], 'none': []} == moved
 
     def test_remove_user(self):
         self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
@@ -582,7 +581,7 @@ class TestCategorizeUsers(NotificationTestCase):
             self.event.user, self.event.event_type, self.event.source_node,
             self.event.event_type, self.event.node
         )
-        assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, removed)
+        assert {email_transactional: [self.user_3._id], email_digest: [], 'none': []} == removed
 
     def test_node_permissions(self):
         self.private_node.add_contributor(self.user_3, permissions=WRITE)
@@ -594,8 +593,8 @@ class TestCategorizeUsers(NotificationTestCase):
             warn,
             remove
         )
-        assert_equal({email_transactional: [], email_digest: [self.user_3._id], 'none': []}, subbed)
-        assert_equal({email_transactional: [], email_digest: [self.user_4._id], 'none': []}, remove)
+        assert {email_transactional: [], email_digest: [self.user_3._id], 'none': []} == subbed
+        assert {email_transactional: [], email_digest: [self.user_4._id], 'none': []} == remove
 
 
 class TestSubscriptionManipulations(OsfTestCase):
@@ -630,7 +629,7 @@ class TestSubscriptionManipulations(OsfTestCase):
 
     def test_subscription_user_difference(self):
         result = utils.subscriptions_users_difference(self.emails_1, self.emails_3)
-        assert_equal(self.diff_1_3, result)
+        assert self.diff_1_3 == result
 
     def test_subscription_user_union(self):
         result = utils.subscriptions_users_union(self.emails_1, self.emails_2)

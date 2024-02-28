@@ -1,6 +1,5 @@
 from django.test import RequestFactory
 from django.utils import timezone
-from nose import tools as nt
 from datetime import timedelta
 
 from osf.models import Comment
@@ -73,7 +72,7 @@ class TestSpamListView(AdminTestCase):
 
     def test_get_spam(self):
         res = list(self.view.get_queryset())
-        nt.assert_equal(len(res), 6)
+        assert len(res) == 6
         response_list = [r._id for r in res]
         should_be = [
             self.comment_6._id,
@@ -83,7 +82,7 @@ class TestSpamListView(AdminTestCase):
             self.comment_2._id,
             self.comment_1._id
         ]
-        nt.assert_equal(set(should_be), set(response_list))
+        assert set(should_be) == set(response_list)
 
 
 class TestUserCommentListView(AdminTestCase):
@@ -121,4 +120,4 @@ class TestUserCommentListView(AdminTestCase):
 
     def test_get_user_spam(self):
         res = list(self.view.get_queryset())
-        nt.assert_equal(len(res), 4)
+        assert len(res) == 4
