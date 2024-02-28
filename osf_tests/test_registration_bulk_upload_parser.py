@@ -66,11 +66,11 @@ def assert_parsed(actual_parsed, expected_parsed):
 
 def assert_errors(actual_errors, expected_errors):
     for error in actual_errors:
-        assert 'header' in error is True
-        assert 'column_index' in error is True
-        assert 'row_index' in error is True
-        assert 'external_id' in error is True
-        assert error['header'] in expected_errors is True
+        assert 'header' in error
+        assert 'column_index' in error
+        assert 'row_index' in error
+        assert 'external_id' in error
+        assert error['header'] in expected_errors
         assert error['type'] == expected_errors[error['header']]
     assert len(actual_errors), len(expected_errors.keys())
 
