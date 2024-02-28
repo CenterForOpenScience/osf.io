@@ -72,8 +72,7 @@ def assert_errors(actual_errors, expected_errors):
         assert 'external_id' in error is True
         assert error['header'] in expected_errors is True
         assert error['type'] == expected_errors[error['header']]
-
-    assert len(actual_errors), len(expected_errors.keys()) is True
+    assert len(actual_errors), len(expected_errors.keys())
 
 
 @pytest.mark.django_db

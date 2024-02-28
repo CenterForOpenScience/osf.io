@@ -1,2 +1,3 @@
+# bump dep on future, not currently up-to-date with mendeley/master or cos/add_folders
 git+https://github.com/opaduchak/mendeley-python-sdk.git@integration
 future==1.0.0
