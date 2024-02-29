@@ -10,7 +10,7 @@ from waffle.testutils import override_switch
 
 from framework.auth import cas
 from website.util import api_v2_url
-from addons.twofactor.tests import _valid_code
+from addons.twofactor.tests.utils import _valid_code
 from website.settings import API_DOMAIN, COOKIE_NAME
 
 from tests.base import ApiTestCase
