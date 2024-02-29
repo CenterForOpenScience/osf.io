@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import status as http_status
 import functools
 import jwt
@@ -85,15 +87,15 @@ def process_token_or_pass(func):
     return wrapper
 
 
-def encode(payload):
+def encode(payload: dict[str, Any]) -> str:
     return jwt.encode(
         payload,
         settings.JWT_SECRET,
         algorithm=settings.JWT_ALGORITHM
-    ).decode()
+    )
 
 
-def decode(encoded_token):
+def decode(encoded_token: str | bytes) -> dict[str, Any]:
     return jwt.decode(
         encoded_token,
         settings.JWT_SECRET,

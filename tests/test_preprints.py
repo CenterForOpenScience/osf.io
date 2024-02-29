@@ -2037,7 +2037,7 @@ class TestPreprintOsfStorage(OsfTestCase):
             nid=self.preprint._id,
             provider='osfstorage'), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=500),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         return self.preprint.api_url_for('get_auth', **options)
 
     def test_auth_download(self):
