@@ -47,7 +47,6 @@ class TestExportData(TestCase):
         cls.file1 = file1 = OsfStorageFileFactory.create(
             name='file1.txt',
             created=datetime.now(),
-            target_object_id=project.id,
             target=target
         )
         file_version = FileVersionFactory(region=inst_region, size=3,)
@@ -87,8 +86,8 @@ class TestExportData(TestCase):
                 'materialized_path': file1.materialized_path,
                 'name': file1.name,
                 'provider': file1.provider,
-                'created_at': file1.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at': file1.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': str(file1.created),
+                'modified_at': str(file1.modified),
                 'project': {
                     'id': file1.target._id,
                     'name': file1.target.title,
@@ -96,8 +95,8 @@ class TestExportData(TestCase):
                 'tags': [],
                 'version': [{
                     'identifier': file_version.identifier,
-                    'created_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'created_at': str(file_version.created),
+                    'modified_at': str(file_version.modified),
                     'size': file_version.size,
                     'version_name': file_versions_through.version_name if file_versions_through else file1.name,
                     'contributor': file_version.creator.username,
@@ -107,6 +106,7 @@ class TestExportData(TestCase):
                 'size': 0,
                 'location': file_version.location,
                 'timestamp': {},
+                'checkout_id': None,
             }]
         }
 
@@ -225,7 +225,7 @@ class TestExportData(TestCase):
         self.inst_region.name = self.default_region.name
         self.inst_region.save()
 
-    def test_extract_file_information_json_from_source_storage__99_abnormal_file_data(self):
+    def test_extract_file_information_json_from_source_storage__05_abnormal_file_data(self):
         test_file_info_json = copy.deepcopy(self.file_info_json)
         test_export_data_json = copy.deepcopy(self.export_data_json)
         test_export_data_json['files_numb'] -= 1
