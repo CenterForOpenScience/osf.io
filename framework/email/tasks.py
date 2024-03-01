@@ -87,17 +87,21 @@ def _send_with_smtp(from_addr, to_addr, subject, message, ttls=True, login=True,
 
 def _send_with_sendgrid(from_addr, to_addr, subject, message, categories=None, attachment_name=None, attachment_content=None, client=None):
     if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:
-        client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
-        mail = sendgrid.Mail()
-        mail.set_from(from_addr)
-        mail.add_to(to_addr)
-        mail.set_subject(subject)
-        mail.set_html(message)
-
+        client = client or sendgrid.sendgrid.SendGridAPIClient(settings.SENDGRID_API_KEY)
+        mail = sendgrid.Mail(
+            from_email=from_addr,
+            html_content=message,
+            to_emails=to_addr,
+            subject=subject
+        )
         if categories:
-            mail.set_categories(categories)
+            mail.category = categories
         if attachment_name and attachment_content:
-            mail.add_attachment_stream(attachment_name, attachment_content)
+            attachment = sendgrid.Attachment(
+                file_content=attachment_content,
+                file_name=attachment_name
+            )
+            mail.add_attachment(attachment)
 
         status, msg = client.send(mail)
         if status >= 400:

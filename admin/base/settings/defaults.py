@@ -59,7 +59,8 @@ USE_L10N = False
 
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 # [DEVOPS] this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Updated backend as for replacement of sendgrid-django with django-sendgrid-v5
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend"'
 
 # Sendgrid Email Settings - Using OSF credentials.
 # Add settings references to local.py
