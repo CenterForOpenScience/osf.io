@@ -2,6 +2,15 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+24.01.0 (2024-02-26)
+====================
+- Support CEDAR Embeddable Editor
+- Support Datacite Schema 4.5
+- Expose Node-Subject relationship in API
+- Bug fix: Docker build
+- Bug fix: File navigation
+- Bug fix: Funder Metadata
+
 23.16.0 (2023-11-10)
 ====================
 - Boa Addon

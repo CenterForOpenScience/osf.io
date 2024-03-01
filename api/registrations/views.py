@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact
+from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact, CedarMetadataRecord
 from osf.utils.permissions import WRITE_NODE
 from osf.utils.workflows import ApprovalStates
 
@@ -35,6 +35,8 @@ from api.base.utils import (
     is_bulk_request,
     is_truthy,
 )
+from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
+from api.cedar_metadata_records.utils import can_view_record
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.draft_registrations.views import DraftMixin
 from api.identifiers.serializers import RegistrationIdentifierSerializer
@@ -969,3 +971,29 @@ class RegistrationResourceList(JSONAPIBaseView, generics.ListAPIView, ListFilter
 
     def get_permissions_proxy(self):
         return self.get_node()
+
+
+class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrModeratorOrPublic,
+    )
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = CedarMetadataRecordsListSerializer
+
+    view_category = 'registrations'
+    view_name = 'registration-cedar-metadata-records-list'
+
+    def get_default_queryset(self):
+        self.get_node()
+        registration_records = CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
+        user_auth = get_user_auth(self.request)
+        record_ids = [record.id for record in registration_records if can_view_record(user_auth, record, guid_type=Registration)]
+        return CedarMetadataRecord.objects.filter(pk__in=record_ids)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

@@ -18,7 +18,7 @@ from website import settings
 class TestUserSpamAkismet:
 
     @pytest.fixture
-    def user(self):
+    def user(self, mock_spam_head_request):
         test_user = AuthUserFactory()
         test_user.schools = [
             {'institution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
@@ -51,7 +51,7 @@ class TestUserSpamAkismet:
         assert returned_content_elements == expected_content_elements
 
     @pytest.mark.enable_enqueue_task
-    def test_do_check_spam(self, user, mock_akismet):
+    def test_do_check_spam(self, user, mock_akismet, mock_spam_head_request):
         suspicious_content = 'spam eggs sausage and spam'
         user.spam_data = {'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
         user.save()
@@ -78,7 +78,7 @@ class TestUserSpamAkismet:
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'AKISMET_ENABLED', True)
     @mock.patch('osf.models.OSFUser.do_check_spam')
-    def test_check_spam(self, mock_do_check_spam, user):
+    def test_check_spam(self, mock_do_check_spam, user, mock_spam_head_request):
 
         # test check_spam for other saved fields
         assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False

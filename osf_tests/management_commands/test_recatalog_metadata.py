@@ -1,9 +1,11 @@
 import pytest
 from unittest import mock
 from operator import attrgetter
+import random
 
 from django.core.management import call_command
 
+from osf.models.metadata import GuidMetadataRecord
 from osf_tests.factories import (
     PreprintProviderFactory,
     PreprintFactory,
@@ -76,7 +78,33 @@ class TestRecatalogMetadata:
             for preprint in preprints
         ])))
 
-    def test_recatalog_metadata(self, mock_update_share_task, preprint_provider, preprints, registration_provider, registrations, projects, files, users):
+    @pytest.fixture
+    def items_with_custom_datacite_type(self, preprints, registrations, projects, files):
+        _nonpreprint_sample = [
+            random.choice(_items)
+            for _items in (registrations, projects, files)
+        ]
+        for _item in _nonpreprint_sample:
+            _guid_record = GuidMetadataRecord.objects.for_guid(_item)
+            _guid_record.resource_type_general = 'BookChapter'  # datacite resourceTypeGeneral value
+            _guid_record.save()
+        return {
+            *preprints,  # every preprint has datacite type "Preprint"
+            *_nonpreprint_sample,
+        }
+
+    def test_recatalog_metadata(
+        self,
+        mock_update_share_task,
+        preprint_provider,
+        preprints,
+        registration_provider,
+        registrations,
+        projects,
+        files,
+        users,
+        items_with_custom_datacite_type,
+    ):
         # test preprints
         call_command(
             'recatalog_metadata',
@@ -153,6 +181,20 @@ class TestRecatalogMetadata:
         )
         assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(registrations[2:6])
 
+        mock_update_share_task.reset_mock()
+
+        # datacite custom types
+        call_command(
+            'recatalog_metadata',
+            '--datacite-custom-types',
+        )
+        _expected_osfids = set(_iter_osfids(items_with_custom_datacite_type))
+        _actual_osfids = {
+            _call[-1]['kwargs']['guid']
+            for _call in mock_update_share_task.apply_async.mock_calls
+        }
+        assert _expected_osfids == _actual_osfids
+
 
 ###
 # local utils
@@ -161,13 +203,18 @@ def expected_apply_async_calls(items):
     return [
         mock.call(
             kwargs={
-                'guid': _item.guids.values_list('_id', flat=True).first(),
+                'guid': _osfid,
                 'is_backfill': True,
             },
             queue='low',
         )
-        for _item in items
+        for _osfid in _iter_osfids(items)
     ]
+
+
+def _iter_osfids(items):
+    for _item in items:
+        yield _item.guids.values_list('_id', flat=True).first()
 
 
 def sorted_by_id(things_with_ids):

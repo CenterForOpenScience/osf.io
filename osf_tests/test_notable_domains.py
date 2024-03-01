@@ -25,122 +25,112 @@ class TestDomainExtraction:
 
     @pytest.mark.parametrize('protocol_component', ['', 'http://', 'https://', 'ftp://'])
     @pytest.mark.parametrize('www_component', ['', 'www.'])
-    def test_extract_domains__optional_components(self, protocol_component, www_component):
+    def test_extract_domains__optional_components(self, protocol_component, www_component, mock_spam_head_request):
         test_url = f'{protocol_component}{www_component}osf.io'
         sample_text = f'This is a link: {test_url}'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__url_in_quotes(self):
+    def test_extract_domains__url_in_quotes(self, mock_spam_head_request):
         sample_text = '"osf.io"'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__url_in_parens(self):
+    def test_extract_domains__url_in_parens(self, mock_spam_head_request):
         sample_text = '(osf.io)'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__captures_domain_with_multiple_subdomains(self):
+    def test_extract_domains__captures_domain_with_multiple_subdomains(self, mock_spam_head_request):
         sample_text = 'This is a link: https://api.test.osf.io'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == [('api.test.osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__captures_multiple_domains(self):
+    def test_extract_domains__captures_multiple_domains(self, mock_spam_head_request):
         sample_text = 'This is a domain: http://osf.io. This is another domain: www.cos.io'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = set(spam_tasks._extract_domains(sample_text))
+        domains = set(spam_tasks._extract_domains(sample_text))
         assert domains == {
             ('osf.io', NotableDomain.Note.UNKNOWN),
             ('cos.io', NotableDomain.Note.UNKNOWN),
         }
 
-    def test_extract_domains__no_domains(self):
+    def test_extract_domains__no_domains(self, mock_spam_head_request):
         sample_text = 'http://fakeout!'
-        with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
-            domains = set(spam_tasks._extract_domains(sample_text))
+        domains = set(spam_tasks._extract_domains(sample_text))
         assert not domains
-        mock_head.assert_not_called()
 
-    def test_extract_domains__unverfied_if_does_not_resolve(self):
+    def test_extract_domains__unverfied_if_does_not_resolve(self, mock_spam_head_request):
+        mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.ConnectionError
         sample_text = 'This.will.not.connect'
-        with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
-            mock_head.side_effect = spam_tasks.requests.exceptions.ConnectionError
-            domains = set(spam_tasks._extract_domains(sample_text))
+
+        domains = set(spam_tasks._extract_domains(sample_text))
         assert domains == {('This.will.not.connect', NotableDomain.Note.UNVERIFIED)}
 
-    def test_actract_domains__returned_on_error(self):
+    def test_actract_domains__returned_on_error(self, mock_spam_head_request):
         sample_text = 'This.will.timeout'
-        with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
-            mock_head.side_effect = spam_tasks.requests.exceptions.Timeout
-            domains = set(spam_tasks._extract_domains(sample_text))
+        mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.Timeout
+        domains = set(spam_tasks._extract_domains(sample_text))
         assert domains == {(sample_text, NotableDomain.Note.UNVERIFIED)}
 
     @pytest.mark.parametrize('status_code', [301, 302, 303, 307, 308])
-    def test_extract_domains__follows_redirect(self, status_code):
+    def test_extract_domains__follows_redirect(self, status_code, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = status_code
         mock_response.headers = {'location': 'redirected.com'}
-        sample_text = 'redirect.me'
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains('redirect.me'))
         assert domains == [('redirected.com', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_code_no_location(self):
+    def test_extract_domains__redirect_code_no_location(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {}
         sample_text = 'redirect.me'
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == [('redirect.me', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_code_bad_location(self):
+    def test_extract_domains__redirect_code_bad_location(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {'location': 'haha'}
+        mock_spam_head_request.return_value = mock_response
         sample_text = 'redirect.me'
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == [('redirect.me', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_with_full_url_no_protocol(self):
+    def test_extract_domains__redirect_with_full_url_no_protocol(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {'location': 'osf.io'}
         target_url = 'redirect.me/this-is-a-path/another-level-path/index.php'
         sample_text = target_url
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response) as mock_object:
-            domains = list(spam_tasks._extract_domains(sample_text))
-            mock_object.assert_called_once_with(f'https://{target_url}', timeout=60)
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains(sample_text))
+        mock_spam_head_request.assert_called_once_with(f'https://{target_url}', timeout=60)
         assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_with_full_url_and_protocol(self):
+    def test_extract_domains__redirect_with_full_url_and_protocol(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {'location': 'osf.io'}
         target_url = 'ftp://redirect.me/this-is-a-path/another-level-path/index.php'
         sample_text = target_url
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response) as mock_object:
-            domains = list(spam_tasks._extract_domains(sample_text))
-            mock_object.assert_called_once_with(target_url, timeout=60)
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains(sample_text))
+        mock_spam_head_request.assert_called_once_with(target_url, timeout=60)
         assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__deduplicates(self):
+    def test_extract_domains__deduplicates(self, mock_spam_head_request):
         sample_text = 'osf.io osf.io osf.io and, oh, yeah, osf.io'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__ignores_floats(self):
+    def test_extract_domains__ignores_floats(self, mock_spam_head_request):
         sample_text = 'this is a number 3.1415 not a domain'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert not domains
+
 
 @pytest.mark.django_db
 class TestNotableDomain:

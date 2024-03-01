@@ -20,7 +20,7 @@
         <http://localhost:8000/v2/subjects/subjwobb>,
         <http://localhost:8000/v2/subjects/subjwobbb> ;
     dcterms:title "this is a preprint title!" ;
-    dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Preprint> ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#Preprint> ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
     dcat:accessService <http://localhost:5000> ;
     osf:hostingInstitution <https://cos.io/> ;
@@ -65,7 +65,7 @@
 
 <https://doi.org/11.111/something-or-other> dcterms:identifier "https://doi.org/11.111/something-or-other" .
 
-<https://schema.datacite.org/meta/kernel-4.4/#Preprint> rdfs:label "Preprint"@en .
+<https://schema.datacite.org/meta/kernel-4/#Preprint> rdfs:label "Preprint"@en .
 
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;

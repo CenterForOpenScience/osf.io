@@ -337,10 +337,16 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         return use_ember_app()
 
+    elif isinstance(resource, Registration) and clean_suffix and clean_suffix.startswith('metadata') and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        return use_ember_app()
+
     elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return use_ember_app()
 
     elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+        return use_ember_app()
+
+    elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('metadata'):
         return use_ember_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):

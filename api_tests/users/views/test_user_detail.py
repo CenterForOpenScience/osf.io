@@ -8,7 +8,6 @@ from django.test.utils import CaptureQueriesContext
 from django.utils.timezone import now
 
 from api.base.settings.defaults import API_BASE
-from osf.external.spam import tasks as spam_tasks
 from osf.utils.sanitize import strip_html
 from osf_tests.factories import (
     AuthUserFactory,
@@ -913,7 +912,7 @@ class TestUserUpdate:
         assert user_one.suffix == 'The Millionth'
         assert user_one.social['github'] == ['even_newer_github']
 
-    def test_patch_all_social_fields(self, app, user_one, url_user_one):
+    def test_patch_all_social_fields(self, app, user_one, url_user_one, mock_spam_head_request):
         social_payload = {
             'github': ['the_coolest_coder'],
             'scholar': 'neat',
@@ -952,16 +951,15 @@ class TestUserUpdate:
         assert 'Additional properties are not allowed' in res.json['errors'][0]['detail']
 
         # Payload only containing fields in schema are OK
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            res = app.patch_json_api(url_user_one, {
-                'data': {
-                    'id': user_one._id,
-                    'type': 'users',
-                    'attributes': {
-                        'social': social_payload
-                    }
+        res = app.patch_json_api(url_user_one, {
+            'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'social': social_payload
                 }
-            }, auth=user_one.auth)
+            }
+        }, auth=user_one.auth)
 
         user_one.reload()
         for key, value in res.json['data']['attributes']['social'].items():

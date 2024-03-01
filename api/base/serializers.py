@@ -652,12 +652,16 @@ class RelationshipField(ser.Field):
         view = self.view_name
         if callable(view):
             view = self._handle_callable_view(resource, view)
-        return resolve(
-            reverse(
-                view,
-                kwargs=kwargs,
-            ),
-        )
+        try:
+            view_url = reverse(view, kwargs=kwargs)
+        except NoReverseMatch as e:
+            # Handle private endpoint view serialization when it is a relationship in a public one
+            if kwargs.get('version', False):
+                kwargs.pop('version')
+                view_url = drf_reverse(view, kwargs=kwargs)
+            else:
+                raise e
+        return resolve(view_url)
 
     def process_related_counts_parameters(self, params, value):
         """
@@ -779,7 +783,16 @@ class RelationshipField(ser.Field):
                         view = self._handle_callable_view(obj, view)
                     if request.parser_context['kwargs'].get('version', False):
                         kwargs.update({'version': request.parser_context['kwargs']['version']})
-                    url = drf_reverse(view, kwargs=kwargs, request=request, format=format)
+                    try:
+                        url = drf_reverse(view, kwargs=kwargs, request=request, format=format)
+                    except NoReverseMatch as e:
+                        # Handle private endpoint view serialization when it is a relationship in a public one
+                        if kwargs.get('version', False):
+                            kwargs.pop('version')
+                            url = utils.absolute_reverse(view, kwargs=kwargs)
+                        else:
+                            raise e
+
                     if self.filter:
                         formatted_filters = self.format_filter(obj)
                         if formatted_filters:
@@ -949,6 +962,8 @@ class RelationshipField(ser.Field):
                     elif related_type == 'custom-file-metadata':
                         related_id = resolved_url.kwargs['guid_id']
                         related_type = 'custom-file-metadata-records'
+                    elif related_type == 'cedar-metadata-templates' and related_class.view_name == 'cedar-metadata-template-detail':
+                        related_id = resolved_url.kwargs['template_id']
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:

@@ -72,7 +72,7 @@ CONTRIBUTOR_TYPE_MAP = {
 class DataciteTreeWalker:
     '''for walking in the shape of the DataCite XML Schema thru a gather.Basket of metadata
 
-    conforms with the structure in https://schema.datacite.org/meta/kernel-4.4/metadata.xsd
+    conforms with the structure in https://schema.datacite.org/meta/kernel-4.5/metadata.xsd
     but avoids assuming XML -- a callback function handles visiting tree branches along the
     walk to serialize the metadata (or whatever you're doing in the shape of DataCite XML),
     but the walker merely walks by.

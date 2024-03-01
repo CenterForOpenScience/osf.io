@@ -398,6 +398,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    cedar_metadata_records = RelationshipField(
+        related_view='registrations:registration-cedar-metadata-records-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin

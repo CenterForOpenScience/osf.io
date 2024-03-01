@@ -1,9 +1,12 @@
+from unittest import mock
+
 import pytest
 
 from osf_tests import factories
 from tests.base import OsfTestCase
 from website.util import api_url_for
 from website.views import find_bookmark_collection
+from osf.external.spam import tasks as spam_tasks
 
 
 @pytest.mark.enable_search
@@ -170,7 +173,8 @@ class TestSearchViews(OsfTestCase):
             'impactStory': user_two.given_name,
             'baiduScholar': user_two.given_name
         }
-        user_two.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            user_two.save()
 
         user_three = factories.AuthUserFactory(fullname='Janet Umwali')
         user_three.social = {

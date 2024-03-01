@@ -442,6 +442,7 @@ class CeleryConfig:
         'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
+        'osf.management.commands.ingest_cedar_metadata_templates',
     }
 
     med_pri_modules = {
@@ -1990,6 +1991,11 @@ SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 SPAM_AUTOBAN_IP_BLOCK = True
 SPAM_THROTTLE_AUTOBAN = True
 SPAM_CREATION_THROTTLE_LIMIT = 5
+
+# CEDAR API configs
+CEDAR_API_HOST = ''
+CEDAR_API_KEY = ''
+CEDAR_HOME_FOLDER_ID = ''
 
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
