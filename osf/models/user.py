@@ -1028,7 +1028,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.username = self.username.lower().strip() if self.username else None
 
         dirty_fields = self.get_dirty_fields(check_relationship=True)
-        ret = super(OSFUser, self).save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
+        ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
             request = get_current_request()
             headers = get_headers_from_request(request)

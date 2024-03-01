@@ -8,7 +8,7 @@ fake = Faker()
 
 
 @pytest.mark.django_db
-class TesRegistrationCedarMetadataRecord(object):
+class TesRegistrationCedarMetadataRecord:
 
     @pytest.fixture()
     def user(self):

@@ -21,7 +21,7 @@ from addons.zotero.tests.factories import ZoteroAccountFactory
 
 class UserAddonListMixin:
     def set_setting_list_url(self):
-        self.setting_list_url = '/{}users/{}/addons/'.format(API_BASE, self.user._id)
+        self.setting_list_url = f'/{API_BASE}users/{self.user._id}/addons/'
 
     def test_settings_list_GET_returns_user_settings_if_present(self):
         wrong_type = self.should_expect_errors()
@@ -82,7 +82,7 @@ class UserAddonListMixin:
 
 class UserAddonDetailMixin:
     def set_setting_detail_url(self):
-        self.setting_detail_url = '/{}users/{}/addons/{}/'.format(API_BASE, self.user._id, self.short_name)
+        self.setting_detail_url = f'/{API_BASE}users/{self.user._id}/addons/{self.short_name}/'
 
     def test_settings_detail_GET_returns_user_settings_if_present(self):
         wrong_type = self.should_expect_errors()
@@ -147,7 +147,7 @@ class UserAddonDetailMixin:
 
 class UserAddonAccountListMixin:
     def set_account_list_url(self):
-        self.account_list_url = '/{}users/{}/addons/{}/accounts/'.format(API_BASE, self.user._id, self.short_name)
+        self.account_list_url = f'/{API_BASE}users/{self.user._id}/addons/{self.short_name}/accounts/'
 
     def test_account_list_GET_returns_accounts_if_present(self):
         wrong_type = self.should_expect_errors()

@@ -224,7 +224,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         self, mock_change_identifier, app, user, provider_two, preprint_two, provider_url
     ):
         expected = [preprint_two._id]
-        res = app.get('{}{}'.format(provider_url, provider_two._id), auth=user.auth)
+        res = app.get(f'{provider_url}{provider_two._id}', auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 

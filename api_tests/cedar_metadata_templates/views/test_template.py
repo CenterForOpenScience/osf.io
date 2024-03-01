@@ -7,7 +7,7 @@ fake = Faker()
 
 
 @pytest.mark.django_db
-class TestCedarMetadataTemplate(object):
+class TestCedarMetadataTemplate:
 
     @pytest.fixture()
     def active_template(self):

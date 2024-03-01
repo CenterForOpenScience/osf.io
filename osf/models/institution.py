@@ -1,7 +1,7 @@
 from enum import Enum
 from future.moves.urllib.parse import urljoin
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from dirtyfields import DirtyFieldsMixin
 

@@ -177,7 +177,7 @@ def process_project_search_results(results, **kwargs):
         authors_html = ''
         for author in authors['contributors']:
             a = OSFUser.load(author['user_id'])
-            authors_html += '<a href="{}">{}</a>'.format(a.url, a.fullname)
+            authors_html += f'<a href="{a.url}">{a.fullname}</a>'
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
 
