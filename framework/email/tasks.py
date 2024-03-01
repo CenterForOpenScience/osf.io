@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @app.task
-def send_email(from_addr, to_addr, subject, message, ttls=True, login=True,
+def send_email(from_addr: str, to_addr: str, subject: str, message: str, ttls=True, login=True,
                 username=None, password=None, categories=None, attachment_name=None, attachment_content=None):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
@@ -85,7 +85,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, ttls=True, login=True,
     return True
 
 
-def _send_with_sendgrid(from_addr, to_addr, subject, message, categories=None, attachment_name=None, attachment_content=None, client=None):
+def _send_with_sendgrid(from_addr: str, to_addr: str, subject: str, message: str, categories=None, attachment_name=None, attachment_content=None, client=None):
     if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:
         client = client or sendgrid.sendgrid.SendGridAPIClient(settings.SENDGRID_API_KEY)
         mail = sendgrid.Mail(
@@ -98,6 +98,7 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, categories=None, a
             mail.category = categories
         if attachment_name and attachment_content:
             attachment = sendgrid.Attachment(
+                # TODO: there are some changes in api where sendgrid would accept IO objects, need to clarify
                 file_content=attachment_content,
                 file_name=attachment_name
             )
