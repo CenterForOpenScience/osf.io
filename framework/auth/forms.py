@@ -1,26 +1,25 @@
-# TODO: Most of the forms are no longer used, need clean up
-
-from wtforms import ValidationError
+from wtforms.widgets import CheckboxInput
+from website import language
+from wtforms import (
+    Form,
+    PasswordField,
+    BooleanField,
+    HiddenField,
+    StringField,
+    validators,
+    ValidationError
+)
 
 from framework import auth
 from framework.forms import (
-    Form,
     NoHtmlCharacters,
-    PasswordField,
-    TextField,
-    HiddenField,
-    validators,
     BootstrapTextInput,
     BootstrapPasswordInput,
     stripped,
     lowerstripped,
-    BooleanField,
-    CheckboxInput
 )
-from website import language
-
-
 ##### Custom validators #####
+
 
 class UniqueEmail:
     """Ensure that an email is not already in the database."""
@@ -52,7 +51,7 @@ class EmailExists:
 
 
 # The order fields are defined determines their order on the page.
-name_field = TextField(
+name_field = StringField(
     'Full Name',
     [
         validators.DataRequired(message='Full name is required'),
@@ -62,7 +61,7 @@ name_field = TextField(
     widget=BootstrapTextInput(),
 )
 
-name_field_not_required = TextField(
+name_field_not_required = StringField(
     'Full Name',
     [
         NoHtmlCharacters(),
@@ -71,7 +70,7 @@ name_field_not_required = TextField(
     widget=BootstrapTextInput(),
 )
 
-email_field = TextField('Email Address',
+email_field = StringField('Email Address',
     [
         validators.DataRequired(message='Email address is required'),
         validators.Length(min=6, message='Email address is too short'),
@@ -83,7 +82,7 @@ email_field = TextField('Email Address',
     widget=BootstrapTextInput())
 
 
-unique_email_field = TextField('Email Address',
+unique_email_field = StringField('Email Address',
     [
         validators.DataRequired(message='Email address is required'),
         validators.Length(min=6, message='Email address is too short'),
@@ -95,7 +94,7 @@ unique_email_field = TextField('Email Address',
     filters=[lowerstripped],
     widget=BootstrapTextInput())
 
-confirm_email_field = TextField(
+confirm_email_field = StringField(
     'Verify Email Address',
     [
         validators.EqualTo(

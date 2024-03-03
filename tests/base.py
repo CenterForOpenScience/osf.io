@@ -28,7 +28,6 @@ from website.notifications.listeners import (subscribe_contributor,
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
-from webtest_plus import TestApp
 
 from .json_api_test_app import JSONAPITestApp
 
@@ -111,7 +110,7 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.app = TestApp(test_app)
+        self.app = test_app.test_client()
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return

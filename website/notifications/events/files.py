@@ -13,7 +13,10 @@ from website.notifications import emails
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications import utils
 from website.notifications.events.base import (
-    register, Event, event_registry, RegistryError
+    register,
+    Event,
+    event_registry,
+    RegistryError,
 )
 from website.notifications.events import utils as event_utils
 from osf.models import AbstractNode, NodeLog, Preprint

@@ -4,6 +4,7 @@ from rest_framework import status as http_status
 import json
 import logging
 import os
+import pystache
 
 from flask import request, make_response
 from mako.lookup import TemplateLookup
@@ -197,7 +198,6 @@ def process_rules(app, rules, prefix=''):
 ### Renderer helpers ###
 
 def render_mustache_string(tpl_string, data):
-    import pystache
     return pystache.render(tpl_string, context=data)
 
 def render_jinja_string(tpl, data):
@@ -555,32 +555,6 @@ class WebRenderer(Renderer):
             rendered = renderer(self.template_dir, template_name, data, trust=self.trust)
         except OSError:
             return f'<div>Template {template_name} not found.</div>'
-
-        ## Parse HTML using html5lib; lxml is too strict and e.g. throws
-        ## errors if missing parent container; htmlparser mangles whitespace
-        ## and breaks replacement
-        #parsed = BeautifulSoup(rendered, 'html5lib')
-        #subtemplates = parsed.find_all(
-        #    lambda tag: tag.has_attr('mod-meta')
-        #)
-        #
-        #for element in subtemplates:
-        #
-        #    # Extract HTML of original element
-        #    element_html = str(element)
-        #
-        #    # Render nested template
-        #    template_rendered, is_replace = self.render_element(element, data)
-        #
-        #    # Build replacement
-        #    if is_replace:
-        #        replacement = template_rendered
-        #    else:
-        #        element.string = template_rendered
-        #        replacement = str(element)
-        #
-        #    # Replace
-        #    rendered = rendered.replace(element_html, replacement)
 
         return rendered
 

@@ -1,6 +1,8 @@
 import markupsafe
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings,
+    BaseOAuthUserSettings,
+    BaseStorageAddon,)
 from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -11,6 +13,7 @@ from addons.figshare import settings as figshare_settings
 from addons.figshare import messages
 from addons.figshare.client import FigshareClient
 from addons.figshare.serializer import FigshareSerializer
+
 
 class FigshareFileNode(BaseFileNode):
     _provider = 'figshare'

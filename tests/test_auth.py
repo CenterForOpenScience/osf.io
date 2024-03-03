@@ -2,7 +2,6 @@
 import unittest
 import pytest
 
-from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 from unittest import mock
 from future.moves.urllib.parse import urlparse, urljoin, quote
 from rest_framework import status as http_status
@@ -281,7 +280,7 @@ class TestPrivateLink(OsfTestCase):
         def project_get(**kwargs):
             return 'success', 200
 
-        self.app = WebtestApp(self.flaskapp)
+        self.app = self.flaskapp.test_client()
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
@@ -578,7 +577,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         @must_be_contributor_or_public_but_not_anonymized
         def project_get(**kwargs):
             return 'success', 200
-        self.app = WebtestApp(self.flaskapp)
+        self.app = self.flaskapp.test_client()
 
     def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor_or_public_but_not_anonymized(
