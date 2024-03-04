@@ -275,7 +275,7 @@ def get_auth(auth, **kwargs):
             jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
-            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM],
         )['data']
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
