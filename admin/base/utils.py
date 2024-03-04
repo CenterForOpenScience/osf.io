@@ -9,6 +9,8 @@ from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
+from django.template import loader
+from django.http import HttpResponseBadRequest
 
 from osf.models.admin_log_entry import (
     update_admin_log,
@@ -155,3 +157,8 @@ def change_embargo_date(registration, user, end_date):
         ),
         action_flag=EMBARGO_UPDATED
     )
+
+
+def render_bad_request_response(request, error_msgs):
+    template = loader.get_template('400.html')
+    return HttpResponseBadRequest(template.render(request=request, context={'exception': error_msgs}))

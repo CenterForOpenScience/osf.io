@@ -3,14 +3,14 @@ from future.moves.urllib.parse import urlencode
 from addons.bitbucket import settings
 
 from framework.exceptions import HTTPError
-
+from osf.utils.fields import ensure_str
 from website.util.client import BaseClient
 
 
 class BitbucketClient(BaseClient):
 
     def __init__(self, access_token=None):
-        self.access_token = access_token
+        self.access_token = ensure_str(access_token)
 
     @property
     def _default_headers(self):
@@ -72,18 +72,19 @@ class BitbucketClient(BaseClient):
 
         API docs::
 
-        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories
 
         :rtype:
         :return: list of repository objects
         """
         query_params = {
+            'role': 'contributor',
             'pagelen': 100,
             'fields': 'values.full_name'
         }
         res = self._make_request(
             'GET',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.username),
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories'),
             expects=(200, ),
             throws=HTTPError(401),
             params=query_params
@@ -106,7 +107,7 @@ class BitbucketClient(BaseClient):
         """
 
         query_params = {
-            'role': 'member',
+            'role': 'contributor',
             'pagelen': 100,
             'fields': 'values.links.repositories.href'
         }

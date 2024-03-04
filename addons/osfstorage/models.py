@@ -511,6 +511,11 @@ class Region(models.Model):
         return self._id
 
     @property
+    def institution(self):
+        from osf.models import Institution
+        return Institution.load(self._id)
+
+    @property
     def provider_name(self):
         waterbutler_settings = self.waterbutler_settings
         provider_name = None

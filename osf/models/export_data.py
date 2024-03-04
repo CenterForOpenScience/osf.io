@@ -23,8 +23,8 @@ from osf.models import (
 from admin.base import settings as admin_settings
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedJSONField
+from admin.base.settings import EACH_FILE_EXPORT_RESTORE_TIME_OUT
 from website.settings import INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
-from admin.base.settings import EACH_FILE_EXPORT_TIME_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -332,8 +332,8 @@ class ExportData(base.BaseModel):
 
                 file_info['version'] = file_versions_info
                 if file_versions_info:
-                    file_info['size'] = file_versions_info[-1]['size']
-                    file_info['location'] = file_versions_info[-1]['location']
+                    file_info['size'] = file_versions_info[0]['size']
+                    file_info['location'] = file_versions_info[0]['location']
             else:
                 file_version_url = waterbutler_api_url_for(
                     file.target._id, file_provider, file.path, _internal=True, versions='', **kwargs
@@ -402,8 +402,8 @@ class ExportData(base.BaseModel):
 
                 file_info['version'] = file_versions_info
                 if file_versions_info:
-                    file_info['size'] = file_versions_info[-1]['size']
-                    file_info['location'] = file_versions_info[-1]['location']
+                    file_info['size'] = file_versions_info[0]['size']
+                    file_info['location'] = file_versions_info[0]['location']
             files.append(file_info)
 
         file_info_json['folders'] = folders
@@ -459,7 +459,8 @@ class ExportData(base.BaseModel):
                     # Nextcloud for Institutions: fix download error if version is latest
                     identifier = None
                 metadata = version.get('metadata')
-                # get metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
+                # get metadata.get('sha256', metadata.get('md5',
+                #     metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
                 file_name = metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1'))))
                 if provider == 'onedrivebusiness':
                     # OneDrive Business: get new hash based on quickXorHash and file version modified time
@@ -701,7 +702,7 @@ class ExportData(base.BaseModel):
                              headers={'content-type': 'application/json'},
                              cookies=cookies,
                              json=request_body,
-                             timeout=EACH_FILE_EXPORT_TIME_OUT)
+                             timeout=EACH_FILE_EXPORT_RESTORE_TIME_OUT)
 
     def get_data_file_file_path(self, file_name):
         """get /export_{source.id}_{process_start_timestamp}/files/{file_name} file path"""

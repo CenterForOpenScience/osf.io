@@ -174,19 +174,32 @@ class NodeMixin(object):
             node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
 
         node_id = node_id or self.kwargs[self.node_lookup_url_kwarg]
-        try:
-            timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
-            timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
-            timestamp_pattern.save()
-        except Exception:
-            pass
-
         if node is None:
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
                 request=self.request,
                 display_name='node',
             )
+
+        try:
+            institution_id = None
+            user_institution = None
+            if self.request.user:
+                user_institution = self.request.user.affiliated_institutions.first()
+            for node_institution in node.affiliated_institutions.all():
+                if not user_institution or node_institution.id == user_institution.id:
+                    institution_id = node_institution.id
+                    break
+            if institution_id:
+                timestamp_pattern = RdmTimestampGrantPattern.objects.get(institution_id=institution_id, node_guid=self.kwargs['node_id'])
+            else:
+                timestamp_pattern = RdmTimestampGrantPattern.objects.filter(node_guid=self.kwargs['node_id']).first()
+            if timestamp_pattern:
+                timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
+                timestamp_pattern.save()
+        except Exception:
+            pass
+
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:

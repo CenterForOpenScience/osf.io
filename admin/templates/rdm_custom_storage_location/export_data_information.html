@@ -242,6 +242,7 @@
         <div class="modal middle fade" id="revert" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action={% url 'custom_storage_location:export_data:export_data_revert' %}>
+                    <input type='hidden' value={{institution.id}} id='institution_id' class='buckinput' name='institution_id' />
                     {% csrf_token %}
                     <div class="modal-content" id="bodyrevertmodal">
                         <!--<div class="modal-header">-->
@@ -263,7 +264,7 @@
         </div>
     {% else %}
         <div class="modal middle fade" id="checkExportDataModal" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <!--<div class="modal-header">-->
                     <!--    <h4 class="modal-title" id="checkExportDataLabel">The result of checking export data</h4>-->
@@ -275,9 +276,10 @@
                         <table class="table table-striped table-hover table-bordered table-responsive">
                             <thead>
                             <tr>
+                                <th style="text-align: center; width: 120px;">{% trans "Project ID" %}</th>
                                 <th style="text-align: center;">{% trans "File path" %}</th>
-                                <th style="text-align: center; width: 100px">{% trans "Size" %}</th>
-                                <th style="text-align: center; width: 120px">{% trans "Version ID" %}</th>
+                                <th style="text-align: center; width: 120px;">{% trans "Version ID" %}</th>
+                                <th style="text-align: center; width: 100px;">{% trans "Size" %}</th>
                                 <th style="text-align: center;">{% trans "NG Reason" %}</th>
                             </tr>
                             </thead>
@@ -297,6 +299,7 @@
         <div class="modal middle fade" id="deleteExport" tabindex="-1" aria-labelledby="deleteExportLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action={% url 'custom_storage_location:export_data:export_data_delete' %}>
+                    <input type='hidden' value={{institution.id}} id='institution_id' class='buckinput' name='institution_id' />
                     {% csrf_token %}
                     <div class="modal-content">
                         <!--<div class="modal-header">-->
@@ -361,9 +364,10 @@
                         <table class="table table-striped table-hover table-bordered table-responsive">
                             <thead>
                             <tr>
+                                <th style="text-align: center; width: 120px;">{% trans "Project ID" %}</th>
                                 <th style="text-align: center;">{% trans "File path" %}</th>
-                                <th style="text-align: center; width: 100px">{% trans "Size" %}</th>
-                                <th style="text-align: center; width: 120px">{% trans "Version ID" %}</th>
+                                <th style="text-align: center; width: 120px;">{% trans "Version ID" %}</th>
+                                <th style="text-align: center; width: 100px;">{% trans "Size" %}</th>
                                 <th style="text-align: center;">{% trans "NG Reason" %}</th>
                             </tr>
                             </thead>
