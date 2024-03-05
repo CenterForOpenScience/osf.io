@@ -32,6 +32,8 @@ def valid_suggestion_key(key):
         return True
     elif key.startswith('asset:'):
         return True
+    elif key.startswith('contributor:'):
+        return True
     return False
 
 
@@ -45,6 +47,8 @@ def suggestion_metadata(key, keyword, filepath, node):
         suggestions.extend(suggestion_erad(key, keyword, node))
     elif key.startswith('asset:'):
         suggestions.extend(suggestion_asset(key, keyword, node))
+    elif key.startswith('contributor:'):
+        suggestions.extend(suggestion_contributor(key, keyword, node))
     else:
         raise KeyError('Invalid key: {}'.format(key))
     return suggestions
@@ -164,3 +168,61 @@ def suggestion_asset(key, keyword, node):
                 'value': asset,
             })
     return res
+
+
+def suggestion_contributor(key, keyword, node):
+    contributors = [
+        {
+            'erad': user.erad,
+            'name-ja-full': '|'.join([
+                part for part in [
+                    user.family_name_ja,
+                    user.middle_names_ja,
+                    user.given_name_ja,
+                ]
+                if len(part) > 0
+            ]),
+            'name-en-full': '|'.join([
+                part for part in [
+                    user.family_name,
+                    user.middle_names,
+                    user.given_name,
+                ]
+                if len(part) > 0
+            ]),
+            'name-ja': {
+                'last': user.family_name_ja,
+                'middle': user.middle_names_ja,
+                'first': user.given_name_ja,
+            },
+            'name-en': {
+                'last': user.family_name,
+                'middle': user.middle_names,
+                'first': user.given_name,
+            },
+        }
+        for user in node.contributors
+    ]
+    search_key = key.split(':')[1]
+    if search_key == 'erad':
+        contributors = [
+            cont for cont in contributors
+            if keyword in cont['erad']
+        ]
+    elif search_key == 'name':
+        contributors = [
+            cont for cont in contributors
+            if any([
+                keyword in cont['name-ja-full'],
+                keyword in cont['name-en-full'],
+            ])
+        ]
+    else:
+        raise KeyError('Invalid key: {}'.format(key))
+    return [
+        {
+            'key': key,
+            'value': cont
+        }
+        for cont in contributors
+    ]

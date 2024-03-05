@@ -434,6 +434,10 @@ const TextFormField = oop.extend(FormFieldInterface, {
 
   setValue: function(value) {
     const self = this;
+    if (self.getValue() === '' && value === '') {
+      // to avoid typehead bug
+      return;
+    }
     if (self.usedTypeahead) {
       self.input.typeahead('val', value).change();
     } else {

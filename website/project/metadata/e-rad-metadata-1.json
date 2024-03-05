@@ -712,6 +712,15 @@
                     "name-ja": "kenkyusha_shimei_ja",
                     "name-en": "kenkyusha_shimei_en"
                   }
+                },
+                {
+                  "key": "contributor:erad",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                  "autofill": {
+                    "number": "erad",
+                    "name-ja": "name-ja",
+                    "name-en": "name-en"
+                  }
                 }
               ]
             },
@@ -738,6 +747,15 @@
                         "../name-ja": "kenkyusha_shimei_ja",
                         "../name-en": "kenkyusha_shimei_en"
                       }
+                    },
+                    {
+                      "key": "contributor:name",
+                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                      "autofill": {
+                        "../number": "erad",
+                        "../name-ja": "name-ja",
+                        "../name-en": "name-en"
+                      }
                     }
                   ]
                 },
@@ -757,6 +775,15 @@
                         "../name-ja": "kenkyusha_shimei_ja",
                         "../name-en": "kenkyusha_shimei_en"
                       }
+                    },
+                    {
+                      "key": "contributor:name",
+                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                      "autofill": {
+                        "../number": "erad",
+                        "../name-ja": "name-ja",
+                        "../name-en": "name-en"
+                      }
                     }
                   ]
                 },
@@ -775,6 +802,15 @@
                         "../number": "kenkyusha_no",
                         "../name-ja": "kenkyusha_shimei_ja",
                         "../name-en": "kenkyusha_shimei_en"
+                      }
+                    },
+                    {
+                      "key": "contributor:name",
+                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                      "autofill": {
+                        "../number": "erad",
+                        "../name-ja": "name-ja",
+                        "../name-en": "name-en"
                       }
                     }
                   ]
@@ -804,6 +840,15 @@
                         "../name-ja": "kenkyusha_shimei_ja",
                         "../name-en": "kenkyusha_shimei_en"
                       }
+                    },
+                    {
+                      "key": "contributor:name",
+                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                      "autofill": {
+                        "../number": "erad",
+                        "../name-ja": "name-ja",
+                        "../name-en": "name-en"
+                      }
                     }
                   ]
                 },
@@ -823,6 +868,15 @@
                         "../name-ja": "kenkyusha_shimei_ja",
                         "../name-en": "kenkyusha_shimei_en"
                       }
+                    },
+                    {
+                      "key": "contributor:name",
+                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                      "autofill": {
+                        "../number": "erad",
+                        "../name-ja": "name-ja",
+                        "../name-en": "name-en"
+                      }
                     }
                   ]
                 },
@@ -841,6 +895,15 @@
                         "../number": "kenkyusha_no",
                         "../name-ja": "kenkyusha_shimei_ja",
                         "../name-en": "kenkyusha_shimei_en"
+                      }
+                    },
+                    {
+                      "key": "contributor:name",
+                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                      "autofill": {
+                        "../number": "erad",
+                        "../name-ja": "name-ja",
+                        "../name-en": "name-en"
                       }
                     }
                   ]
@@ -941,6 +1004,15 @@
                 "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                 "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
               }
+            },
+            {
+              "key": "contributor:erad",
+              "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja",
+                "grdm-file:data-man-name-en": "name-en"
+              }
             }
           ]
         },
@@ -973,6 +1045,15 @@
                     "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                     "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
                   }
+                },
+                {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                  "autofill": {
+                    "../grdm-file:data-man-number": "erad",
+                    "../grdm-file:data-man-name-ja": "name-ja",
+                    "../grdm-file:data-man-name-en": "name-en"
+                  }
                 }
               ]
             },
@@ -994,6 +1075,15 @@
                     "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                     "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
                   }
+                },
+                {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                  "autofill": {
+                    "../grdm-file:data-man-number": "erad",
+                    "../grdm-file:data-man-name-ja": "name-ja",
+                    "../grdm-file:data-man-name-en": "name-en"
+                  }
                 }
               ]
             },
@@ -1014,6 +1104,15 @@
                     "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
                     "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                     "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
+                  }
+                },
+                {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                  "autofill": {
+                    "../grdm-file:data-man-number": "erad",
+                    "../grdm-file:data-man-name-ja": "name-ja",
+                    "../grdm-file:data-man-name-en": "name-en"
                   }
                 }
               ]
@@ -1049,6 +1148,15 @@
                     "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                     "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
                   }
+                },
+                {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                  "autofill": {
+                    "../grdm-file:data-man-number": "erad",
+                    "../grdm-file:data-man-name-ja": "name-ja",
+                    "../grdm-file:data-man-name-en": "name-en"
+                  }
                 }
               ]
             },
@@ -1070,6 +1178,15 @@
                     "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                     "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
                   }
+                },
+                {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                  "autofill": {
+                    "../grdm-file:data-man-number": "erad",
+                    "../grdm-file:data-man-name-ja": "name-ja",
+                    "../grdm-file:data-man-name-en": "name-en"
+                  }
                 }
               ]
             },
@@ -1090,6 +1207,15 @@
                     "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
                     "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                     "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
+                  }
+                },
+                {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}})</small></span></div>",
+                  "autofill": {
+                    "../grdm-file:data-man-number": "erad",
+                    "../grdm-file:data-man-name-ja": "name-ja",
+                    "../grdm-file:data-man-name-en": "name-en"
                   }
                 }
               ]
