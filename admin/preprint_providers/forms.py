@@ -1,8 +1,7 @@
-import bleach
-
 from django import forms
 from django.contrib.auth.models import Group
 
+from framework.utils import sanitize_html
 from osf.models import (
     CitationStyle,
     PreprintProvider,
@@ -55,7 +54,7 @@ class PreprintProviderForm(forms.ModelForm):
     def clean_advisory_board(self, *args, **kwargs):
         if not self.data.get('advisory_board'):
             return ''
-        return bleach.clean(
+        return sanitize_html(
             self.data.get('advisory_board'),
             tags=['a', 'b', 'br', 'div', 'em', 'h2', 'h3', 'li', 'p', 'strong', 'ul'],
             attributes=['class', 'style', 'href', 'title', 'target'],
@@ -66,7 +65,7 @@ class PreprintProviderForm(forms.ModelForm):
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):
             return ''
-        return bleach.clean(
+        return sanitize_html(
             self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
@@ -77,7 +76,7 @@ class PreprintProviderForm(forms.ModelForm):
     def clean_footer_links(self, *args, **kwargs):
         if not self.data.get('footer_links'):
             return ''
-        return bleach.clean(
+        return sanitize_html(
             self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],

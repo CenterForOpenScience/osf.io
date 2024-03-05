@@ -1,6 +1,6 @@
-import bleach
-
 from rest_framework import serializers as ser
+
+from framework.utils import sanitize_html
 from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
@@ -132,7 +132,7 @@ class CommentSerializer(JSONAPISerializer):
         ret = super().sanitize_data()
         content = self.validated_data.get('get_content', None)
         if content:
-            ret['get_content'] = bleach.clean(content)
+            ret['get_content'] = sanitize_html(content)
         return ret
 
 

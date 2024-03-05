@@ -1,6 +1,4 @@
-from past.builtins import basestring
-import bleach
-
+from framework.utils import sanitize_html
 from osf.utils.sanitize import is_iterable_but_not_string
 
 
@@ -22,8 +20,8 @@ def escape_html(data):
             escape_html(value)
             for value in data
         ]
-    if isinstance(data, basestring):
-        return bleach.clean(data)
+    if isinstance(data, str):
+        return sanitize_html(data)
     return data
 
 

@@ -1,7 +1,13 @@
 import re
+from typing import Iterable, Container, Final
+
+import bleach
 import pytz
 import time
 from datetime import datetime
+
+from bleach.sanitizer import Cleaner
+from bleach.css_sanitizer import CSSSanitizer
 from django.utils import timezone
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
@@ -30,6 +36,38 @@ def secure_filename(filename):
         pass
 
     return secure
+
+
+_sentinel: Final = object()
+
+
+def sanitize_html(
+    text: str,
+    tags: Iterable[str] = bleach.ALLOWED_TAGS,
+    attributes: dict[str, Iterable[str]] | Iterable[str] = _sentinel,
+    protocols: Iterable[str] = bleach.ALLOWED_PROTOCOLS,
+    strip: bool = False,
+    styles: Container[str] = bleach.css_sanitizer.ALLOWED_CSS_PROPERTIES,
+    strip_comments: bool = True,
+    filters: Iterable = None,
+) -> str:
+    css_sanitizer = None
+    if attributes == _sentinel:
+        attributes = bleach.ALLOWED_ATTRIBUTES
+    if styles:
+        css_sanitizer = CSSSanitizer(
+            allowed_css_properties=styles
+        )
+    cleaner = Cleaner(
+        tags=tags,
+        attributes=attributes,
+        protocols=protocols,
+        strip=strip,
+        strip_comments=strip_comments,
+        css_sanitizer=css_sanitizer,
+        filters=filters,
+    )
+    return cleaner.clean(text)
 
 
 def get_timestamp():
