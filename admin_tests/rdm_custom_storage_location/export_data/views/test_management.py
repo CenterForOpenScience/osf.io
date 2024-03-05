@@ -356,9 +356,11 @@ class TestCheckExportData(AdminTestCase):
             return '', FAKE_DATA_NEW
 
         mock_class.side_effect = side_effect
-        mock_export_data = mock.MagicMock()
+
         mock_check_exist.return_value = []
+
         self.export_data.source._id = 'vcu'
+        mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = self.export_data
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             mock_request = mock.MagicMock()
@@ -394,11 +396,13 @@ class TestCheckExportData(AdminTestCase):
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.check_for_file_existent_on_export_location')
     @mock.patch.object(ExportData, 'extract_file_information_json_from_source_storage')
     def test__dispatch_success(self, mock_class, mock_check_exist):
-        def side_effect():
+        def side_effect(cookie):
             return '', FAKE_DATA_NEW
 
         mock_class.side_effect = side_effect
+
         mock_check_exist.return_value = []
+
         self.export_data.source._id = 'vcu'
         mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = self.export_data
@@ -606,17 +610,18 @@ class TestCheckRestoreData(AdminTestCase):
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
     def test_check_restore_data__successful(self, mock_extract_file, mock_get_latest_restore):
-        def side_effect_export_data():
+        def side_effect_export_data(cookie):
             return '', FAKE_DATA_NEW
 
         def side_effect_export_data_restore(destination_id=100):
             return self.export_data_restore
 
         mock_extract_file.side_effect = side_effect_export_data
+
         mock_get_latest_restore.side_effect = side_effect_export_data_restore
 
-        mock_export_data = mock.MagicMock()
         self.export_data.source._id = 'vcu'
+        mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = self.export_data
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             mock_request = mock.MagicMock()

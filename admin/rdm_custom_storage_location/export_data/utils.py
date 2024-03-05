@@ -671,16 +671,16 @@ def create_folder_path(node_id, destination_region, folder_path, cookies, base_u
     provider = destination_region.provider_name
     is_destination_addon_storage = is_add_on_storage(provider)
 
-    if not is_destination_addon_storage:
-        _msg = 'Ignore check folder existence in institution storage bulk-mount method'
-        logger.warning(_msg)
-        raise Exception(_msg)
-
     paths = folder_path.split('/')[1:-1]
     created_path = '/'
     created_materialized_path = '/'
     for index, path in enumerate(paths):
         try:
+            if not is_destination_addon_storage:
+                _msg = 'Ignore check folder existence in institution storage bulk-mount method'
+                logger.warning(_msg)
+                raise Exception(_msg)
+
             response = get_file_data(node_id, provider, created_path, cookies, base_url, get_file_info=False, **kwargs)
             if response.status_code != 200:
                 raise Exception('Cannot get folder info')
