@@ -47,17 +47,15 @@ def sanitize_html(
     attributes: dict[str, Iterable[str]] | Iterable[str] = _sentinel,
     protocols: Iterable[str] = bleach.ALLOWED_PROTOCOLS,
     strip: bool = False,
-    styles: Container[str] = bleach.css_sanitizer.ALLOWED_CSS_PROPERTIES,
+    styles: Container[str] | None = bleach.css_sanitizer.ALLOWED_CSS_PROPERTIES,
     strip_comments: bool = True,
     filters: Iterable = None,
 ) -> str:
     css_sanitizer = None
     if attributes == _sentinel:
         attributes = bleach.ALLOWED_ATTRIBUTES
-    if styles:
-        css_sanitizer = CSSSanitizer(
-            allowed_css_properties=styles
-        )
+    if styles is not None:
+        css_sanitizer = CSSSanitizer(allowed_css_properties=styles)
     cleaner = Cleaner(
         tags=tags,
         attributes=attributes,
