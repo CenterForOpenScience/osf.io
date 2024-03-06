@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 from pytz import utc, UTC
-from responses import activate
+import responses
 from django.utils import timezone
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -3824,7 +3824,7 @@ class TestOnNodeUpdate:
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
 
-    @activate
+    @responses.activate
     @mock.patch('website.search.search.update_collected_metadata')
     def test_update_collection_elasticsearch_make_private(self, mock_update_collected_metadata, node_in_collection, collection, user):
         node_in_collection.is_public = False

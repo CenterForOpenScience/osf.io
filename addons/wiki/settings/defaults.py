@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+import datetime
 from os import environ
+
+import pytz
 
 from website import settings
 
@@ -11,4 +13,4 @@ SHAREJS_DB_NAME = 'sharejs'
 SHAREJS_DB_URL = environ.get('SHAREJS_DB_URL', f'mongodb://{settings.DB_HOST}:{settings.DB_PORT}/{SHAREJS_DB_NAME}')
 
 # TODO: Change to release date for wiki change
-WIKI_CHANGE_DATE = datetime.fromtimestamp(1423760098, timezone.utc)
+WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098).replace(tzinfo=pytz.utc)
