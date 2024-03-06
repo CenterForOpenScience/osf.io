@@ -20,8 +20,8 @@ lxml==5.1.0
 mailchimp3==3.0.21
 nameparser==1.1.3
 bcrypt==4.1.2
-python-dateutil==2.8.2
-pytz==2024.1
+python-dateutil==2.8.0
+pytz==2019.3
 bleach==6.1.0
 blinker==1.7.0
 furl==2.1.3
