@@ -47,7 +47,7 @@ SHAREJS_DB_NAME = 'sharejs'
 SHAREJS_DB_URL = f'mongodb://{settings.DB_HOST}:{settings.DB_PORT}/{SHAREJS_DB_NAME}'
 
 # TODO: Change to release date for wiki change
-WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098).replace(tzinfo=pytz.utc)
+WIKI_CHANGE_DATE = datetime.datetime.fromtimestamp(1423760098, pytz.utc)
 
 def validate_page_name(value):
     value = (value or '').strip()
@@ -160,7 +160,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             sharejs_version = doc_item['_v']
             sharejs_timestamp = doc_item['_m']['mtime']
             sharejs_timestamp /= 1000  # Convert to appropriate units
-            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
+            sharejs_date = datetime.datetime.fromtimestamp(sharejs_timestamp, pytz.utc)
 
             if sharejs_version > 1 and sharejs_date > self.created:
                 return doc_item['_data']

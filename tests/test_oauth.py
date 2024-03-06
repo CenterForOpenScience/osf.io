@@ -613,7 +613,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time.time() - 200, pytz.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -647,7 +647,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc),
+            expires_at=datetime.fromtimestamp(time.time() - 200, pytz.utc),
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -683,7 +683,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             oauth_key='old_key',
             oauth_secret='old_secret',
             refresh_token='old_refresh',
-            expires_at=datetime.utcfromtimestamp(time.time() + 200).replace(tzinfo=pytz.utc),
+            expires_at=datetime.fromtimestamp(time.time() + 200, pytz.utc),
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -720,7 +720,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() + 9999).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time.time() + 9999, pytz.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -747,7 +747,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time.time() - 200, pytz.utc)
         )
         self.provider.client_id = None
         self.provider.client_secret = None
@@ -776,7 +776,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() + 200).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time.time() + 200, pytz.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -802,7 +802,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 10000).replace(tzinfo=pytz.utc)  # Causes has_expired_credentials to be True
+            expires_at=datetime.fromtimestamp(time.time() - 10000, pytz.utc)  # Causes has_expired_credentials to be True
         )
         self.provider.account = external_account
 
@@ -829,7 +829,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 10000).replace(tzinfo=pytz.utc)  # Causes has_expired_credentials to be True
+            expires_at=datetime.fromtimestamp(time.time() - 10000, pytz.utc)  # Causes has_expired_credentials to be True
         )
         self.provider.account = external_account
 
