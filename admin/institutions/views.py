@@ -354,7 +354,10 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
     raise_exception = True
 
     def get(self, request, **kwargs):
-        institution_id = self.kwargs['institution_id']
+        institution_id = self.kwargs.get('institution_id')
+        if not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
+            raise Http404(f'Institution with id "{institution_id}" not found. Please double check.')
+
         response = HttpResponse(content_type='text/tsv')
         writer = csv.writer(response, delimiter='\t')
         writer.writerow(['GUID', 'Username', 'Fullname', 'Ratio (%)', 'Usage (Byte)', 'Remaining (Byte)', 'Quota (Byte)'])
@@ -397,7 +400,7 @@ class UserListByInstitutionID(RdmPermissionMixin, UserPassesTestMixin, QuotaUser
         guid = self.request.GET.get('guid')
         name = self.request.GET.get('info')
         email = self.request.GET.get('email')
-        queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
+        queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs.get('institution_id'))
 
         # Get institution by institution_id
         institution = self.get_institution()
@@ -442,7 +445,7 @@ class UserListByInstitutionID(RdmPermissionMixin, UserPassesTestMixin, QuotaUser
     def get_institution(self):
         """ Get institution by institution_id """
         # institution_id is already validated in Django URL resolver, no need to validate again
-        institution_id = self.kwargs['institution_id']
+        institution_id = self.kwargs.get('institution_id')
         return Institution.objects.filter(id=institution_id, is_deleted=False).first()
 
 
@@ -463,7 +466,7 @@ class UpdateQuotaUserListByInstitutionID(RdmPermissionMixin, UserPassesTestMixin
     def post(self, request, *args, **kwargs):
         """ Handle POST request """
         # institution_id is already validated in Django URL resolver, no need to validate again
-        institution_id = self.kwargs['institution_id']
+        institution_id = self.kwargs.get('institution_id')
 
         # Validate maxQuota parameter
         try:
@@ -474,7 +477,7 @@ class UpdateQuotaUserListByInstitutionID(RdmPermissionMixin, UserPassesTestMixin
             # Cannot convert maxQuota param to integer, redirect to the current page
             return redirect('institutions:institution_user_list', institution_id=institution_id)
 
-        institution = Institution.objects.filter(id=institution_id).first()
+        institution = Institution.objects.filter(id=institution_id, is_deleted=False).first()
         if not institution:
             # If institution is not found, redirect to HTTP 404 page
             raise Http404

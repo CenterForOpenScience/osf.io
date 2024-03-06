@@ -52,6 +52,9 @@ MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION = f'Cannot create folder or upload file to 
 # the delta seconds between call check data function
 # it is used to avoid too many check calls in a short period of time
 CHECK_DATA_INTERVAL_MIN_SECS = 10
+MSG_EXPORT_INVALID_INPUT = f'The input data must be a integer'
+MSG_EXPORT_MISSING_REQUIRED_INPUT = f'The required input data is missing'
+MSG_EXPORT_NOT_EXIST_INPUT = f'The data for input value is not exist'
 
 
 class ExportDataTaskException(CeleryError):
@@ -76,43 +79,54 @@ class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
     )
 
     def extract_input(self, request, *args, **kwargs):
-        institution_id = request.data.get('institution_id')
-        source_id = request.data.get('source_id')
-        location_id = request.data.get('location_id')
+        try:
+            institution_id = request.data.get('institution_id')
+            source_id = request.data.get('source_id')
+            location_id = request.data.get('location_id')
 
-        # admin isn't affiliated with this institution
-        if (not institution_id
-                or not Institution.objects.filter(pk=institution_id).exists()
-                or not (request.user.is_super_admin
-                        or (request.user.is_staff
-                            and request.user.is_affiliated_with_institution_id(institution_id)))):
+            if (not institution_id or not source_id or not location_id):
+                return self.response_render({
+                    'message': MSG_EXPORT_MISSING_REQUIRED_INPUT
+                }, status_code=status.HTTP_400_BAD_REQUEST)
+
+            if (not Institution.objects.filter(pk=int(institution_id), is_deleted=False).exists()
+                    or not Region.objects.filter(pk=int(source_id)).exists()
+                    or not ExportDataLocation.objects.filter(pk=int(location_id)).exists()):
+                return self.response_render({
+                    'message': MSG_EXPORT_NOT_EXIST_INPUT
+                }, status_code=status.HTTP_404_NOT_FOUND)
+
+            # admin isn't affiliated with this institution
+            if not (request.user.is_super_admin
+                    or (request.user.is_staff
+                        and request.user.is_affiliated_with_institution_id(institution_id))):
+                return self.response_render({
+                    'message': MSG_EXPORT_DENY_PERM_INST
+                }, status_code=status.HTTP_403_FORBIDDEN)
+
+            institution = Institution.objects.get(pk=institution_id)
+
+            # this institutional storage is not allowed
+            if not institution.is_allowed_institutional_storage_id(source_id):
+                return self.response_render({
+                    'message': MSG_EXPORT_DENY_PERM_STORAGE
+                }, status_code=status.HTTP_403_FORBIDDEN)
+
+            source_storage = Region.objects.get(pk=source_id)
+
+            # this storage location is not allowed
+            if not institution.have_allowed_storage_location_id(location_id):
+                return self.response_render({
+                    'message': MSG_EXPORT_DENY_PERM_LOCATION
+                }, status_code=status.HTTP_403_FORBIDDEN)
+
+            location = ExportDataLocation.objects.get(pk=location_id)
+
+            return institution, source_storage, location
+        except ValueError:
             return self.response_render({
-                'message': MSG_EXPORT_DENY_PERM_INST
+                'message': MSG_EXPORT_INVALID_INPUT
             }, status_code=status.HTTP_400_BAD_REQUEST)
-
-        institution = Institution.objects.get(pk=institution_id)
-
-        # this institutional storage is not allowed
-        if (not source_id
-                or not Region.objects.filter(pk=source_id).exists()
-                or not institution.is_allowed_institutional_storage_id(source_id)):
-            return self.response_render({
-                'message': MSG_EXPORT_DENY_PERM_STORAGE
-            }, status_code=status.HTTP_400_BAD_REQUEST)
-
-        source_storage = Region.objects.get(pk=source_id)
-
-        # this storage location is not allowed
-        if (not location_id
-                or not ExportDataLocation.objects.filter(pk=location_id).exists()
-                or not institution.have_allowed_storage_location_id(location_id)):
-            return self.response_render({
-                'message': MSG_EXPORT_DENY_PERM_LOCATION
-            }, status_code=status.HTTP_400_BAD_REQUEST)
-
-        location = ExportDataLocation.objects.get(pk=location_id)
-
-        return institution, source_storage, location
 
     def response_render(self, data, status_code):
         """render json response instance of rest framework"""
@@ -248,6 +262,20 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         logger.info(f'Created \'{export_data.export_data_folder_path}\' folder path.'
                     f' ({time.time() - _step_start_time}s)')
 
+        # temporary file
+        temp_file_path = export_data.export_data_temp_file_path
+        logger.debug(f'created temporary file')
+
+        if task.is_aborted():  # check before each steps
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
+        # create files' information file
+        logger.debug(f'creating files information file')
+        write_json_file(file_info_json, temp_file_path)
+        response = export_data.upload_file_info_full_data_file(cookies, temp_file_path, **kwargs)
+        if not task.is_aborted() and response.status_code not in [201, 204]:
+            raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
+        logger.debug(f'created files information file')
+
         # export target file and accompanying data
 
         # [Important] check process status before each step
@@ -346,15 +374,14 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             _prev_time, task_id, export_data_id, location_id, source_id)
 
         # temporary file
-        temp_file_path = export_data.export_data_temp_file_path
-        logger.debug(f'created temporary file')
+        # temp_file_path = export_data.export_data_temp_file_path
 
         # create files' information JSON file
         logger.debug(f'creating files information JSON file')
         _step_start_time = time.time()
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
-        if not task.is_aborted() and response.status_code != 201:
+        if not task.is_aborted() and response.status_code not in [201, 204]:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.info(f'Created files information JSON file.'
                     f' ({time.time() - _step_start_time}s)')
@@ -476,8 +503,8 @@ class StopExportDataActionView(ExportDataBaseActionView):
         if not task_id or not export_data_set.exists():
             return Response({
                 'task_id': task_id,
-                'message': MSG_EXPORT_DENY_PERM
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': MSG_EXPORT_NOT_EXIST_INPUT
+            }, status=status.HTTP_404_NOT_FOUND)
 
         export_data = export_data_set.first()
         export_data_task = AbortableAsyncResult(task_id)
@@ -639,8 +666,8 @@ class CheckStateExportDataActionView(ExportDataBaseActionView):
         export_data_set = ExportData.objects.filter(source=source_storage, location=location, task_id=task_id)
         if not task_id or not export_data_set.exists():
             return Response({
-                'message': MSG_EXPORT_DENY_PERM
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': MSG_EXPORT_NOT_EXIST_INPUT
+            }, status=status.HTTP_404_NOT_FOUND)
 
         export_data = export_data_set.first()
         task = AbortableAsyncResult(task_id)

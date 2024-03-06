@@ -351,5 +351,5 @@ LOCALE_PATHS = (
 # The directory to store data temporarily.
 TEMPORARY_PATH = '/tmp/'
 
-# Time out for calling copy API
-EACH_FILE_EXPORT_TIME_OUT = 1800
+# Time out for calling copy API in Export/Restore processes
+EACH_FILE_EXPORT_RESTORE_TIME_OUT = 1800

@@ -5,7 +5,7 @@ import os.path
 
 import requests
 from django.db import models
-from django.db.models import DateTimeField
+from django.db.models import DateTimeField, Q
 
 from addons.osfstorage.models import Region
 from api.base.utils import waterbutler_api_url_for
@@ -22,7 +22,7 @@ from osf.models import (
 from admin.base import settings as admin_settings
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedJSONField
-from admin.base.settings import EACH_FILE_EXPORT_TIME_OUT
+from admin.base.settings import EACH_FILE_EXPORT_RESTORE_TIME_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,10 @@ class ExportData(base.BaseModel):
             # type='osf.{}folder'.format(self.source.provider_short_name),
             type__endswith='folder',
             target_object_id__in=projects__ids,
-            deleted=None)
+        ).exclude(
+            # exclude deleted folders
+            Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+        )
         folders = []
         for folder in base_folder_nodes:
             folder_info = {
@@ -190,7 +193,11 @@ class ExportData(base.BaseModel):
         base_file_nodes = BaseFileNode.objects.filter(
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
-            deleted=None)
+        ).exclude(
+            # exclude deleted files
+            Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+        )
+
         total_size = 0
         total_file = 0
         files = []
@@ -414,6 +421,19 @@ class ExportData(base.BaseModel):
         kwargs.setdefault('file_name', file_name)
         return self.upload_export_data_file(cookies, file_path, **kwargs)
 
+    def get_file_info_full_data_filename(self, institution_guid=None):
+        """get file_info_{institution_guid}_{process_start_timestamp}_full_data.json file name for each institution"""
+        if not institution_guid:
+            institution_guid = self.source.guid
+        return f'file_info_{institution_guid}_{self.process_start_timestamp}_full_data.json'
+
+    def upload_file_info_full_data_file(self, cookies, file_path, **kwargs):
+        """Upload export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}_full_data.json file
+           to the storage location"""
+        file_name = self.get_file_info_full_data_filename(self.location.institution_guid)
+        kwargs.setdefault('file_name', file_name)
+        return self.upload_export_data_file(cookies, file_path, **kwargs)
+
     def get_file_info_file_path(self, institution_guid=None):
         """get /export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file path"""
         if not institution_guid:
@@ -514,7 +534,7 @@ class ExportData(base.BaseModel):
                              headers={'content-type': 'application/json'},
                              cookies=cookies,
                              json=request_body,
-                             timeout=EACH_FILE_EXPORT_TIME_OUT)
+                             timeout=EACH_FILE_EXPORT_RESTORE_TIME_OUT)
 
     def get_data_file_file_path(self, file_name):
         """get /export_{source.id}_{process_start_timestamp}/files/{file_name} file path"""

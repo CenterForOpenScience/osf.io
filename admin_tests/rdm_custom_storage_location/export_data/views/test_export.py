@@ -611,6 +611,7 @@ class TestExportDataProcess(unittest.TestCase):
             nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
 
     @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_full_data_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.write_json_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_file')
@@ -630,6 +631,7 @@ class TestExportDataProcess(unittest.TestCase):
             mock_upload_file_info_file,
             mock_upload_export_data_file,
             mock_write_json_file,
+            mock_upload_file_info_full_data_file
     ):
         mock_write_json_file.return_value = None
         mock_export_data.filter.return_value.first.return_value = self.export_data
@@ -661,6 +663,7 @@ class TestExportDataProcess(unittest.TestCase):
         mock_copy_export_data_file_to_location.return_value.status_code = status.HTTP_201_CREATED
         mock_upload_file_info_file.return_value.status_code = status.HTTP_201_CREATED
         mock_upload_export_data_file.return_value.status_code = status.HTTP_201_CREATED
+        mock_upload_file_info_full_data_file.return_value.status_code = status.HTTP_201_CREATED
 
         _task_result = export.export_data_process(
             self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
@@ -747,6 +750,7 @@ class TestExportDataProcess(unittest.TestCase):
             export_data_json.get('institution').get('guid'),
             self.export_data.process_start_timestamp
         ))
+
 
 class TestExportDataRollbackProcess(unittest.TestCase):
     def setUp(self):
@@ -1110,7 +1114,7 @@ class TestExportDataBaseActionView(AdminTestCase):
         res = self.view.extract_input(self.request)
 
         nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_MISSING_REQUIRED_INPUT)
 
     def test_extract_input__not_exists_institution_id(self):
         self.request.data = {
@@ -1121,8 +1125,8 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
+        nt.assert_equal(res.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_NOT_EXIST_INPUT)
 
     def test_extract_input__not_admin_not_superuser(self):
         self.user.is_staff = False
@@ -1136,7 +1140,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     def test_extract_input__admin_not_affiliated_institution_id(self):
@@ -1148,7 +1152,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     def test_extract_input__no_source_id(self):
@@ -1160,7 +1164,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_STORAGE)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_MISSING_REQUIRED_INPUT)
         nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_extract_input__not_exists_source_id(self):
@@ -1172,8 +1176,8 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_STORAGE)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_NOT_EXIST_INPUT)
+        nt.assert_equal(res.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_extract_input__not_allowed_source_id(self):
         self.request.data = {
@@ -1185,7 +1189,7 @@ class TestExportDataBaseActionView(AdminTestCase):
         res = self.view.extract_input(self.request)
 
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_STORAGE)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_extract_input__no_location_id(self):
         self.request.data = {
@@ -1196,7 +1200,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_LOCATION)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_MISSING_REQUIRED_INPUT)
         nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_extract_input__no_exists_location_id(self):
@@ -1208,8 +1212,8 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_LOCATION)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_NOT_EXIST_INPUT)
+        nt.assert_equal(res.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_extract_input__no_allowed_location_id(self):
         self.request.data = {
@@ -1221,7 +1225,7 @@ class TestExportDataBaseActionView(AdminTestCase):
         res = self.view.extract_input(self.request)
 
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_LOCATION)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_extract_input__success_as_admin_affiliated_institution(self):
         self.request.data = {
@@ -1299,7 +1303,7 @@ class TestExportDataActionView(AdminTestCase):
         self.view = export.ExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1312,7 +1316,7 @@ class TestExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1411,7 +1415,7 @@ class TestStopExportDataActionView(AdminTestCase):
         self.view = export.StopExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1424,7 +1428,7 @@ class TestStopExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1440,8 +1444,8 @@ class TestStopExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
         nt.assert_equal(response.data.get('task_id'), None)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1457,8 +1461,8 @@ class TestStopExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
         nt.assert_equal(response.data.get('task_id'), self.task.request.id)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1597,7 +1601,7 @@ class TestCheckStateExportDataActionView(AdminTestCase):
         self.view = export.CheckStateExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1610,7 +1614,7 @@ class TestCheckStateExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1626,8 +1630,8 @@ class TestCheckStateExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_post__400_no_export_data(self, mock_export_data):
@@ -1642,8 +1646,8 @@ class TestCheckStateExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult._get_task_meta')
@@ -1715,7 +1719,7 @@ class TestCheckDataExportDataActionView(AdminTestCase):
         self.view = export.CheckDataExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1727,7 +1731,7 @@ class TestCheckDataExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1800,7 +1804,7 @@ class TestCheckRunningExportActionView(AdminTestCase):
         self.view = export.CheckRunningExportActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1812,7 +1816,7 @@ class TestCheckRunningExportActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')

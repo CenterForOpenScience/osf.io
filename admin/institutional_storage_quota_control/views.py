@@ -88,6 +88,7 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
     template_name = 'institutional_storage_quota_control/list_institute.html'
     raise_exception = True
     paginate_by = 25
+    institution_id = None
 
     def test_func(self):
         """check user permissions"""
@@ -95,17 +96,17 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
             # If user is not authenticated then redirect to login page
             self.raise_exception = False
             return False
-        institution_id = int(self.kwargs.get('institution_id'))
-        if not Institution.objects.filter(id=institution_id).exists():
+        self.institution_id = int(self.kwargs.get('institution_id'))
+        if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
             # If institution_id does not exist, redirect to HTTP 404 page
             raise Http404
-        return self.has_auth(institution_id)
+        return self.has_auth(self.institution_id)
 
     def get_userlist(self):
         """ Get user list by institution_id """
         user_list = []
         for user in OSFUser.objects.filter(
-                affiliated_institutions=self.kwargs['institution_id']):
+                affiliated_institutions=self.institution_id):
             user_list.append(self.get_user_quota_info(
                 user, UserQuota.CUSTOM_STORAGE)
             )
@@ -113,12 +114,9 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
 
     def get_institution(self):
         """ Get institution that is not using NII Storage """
-        # institution_id is already validated in Django URL resolver, no need to validate again
-        institution_id = self.kwargs['institution_id']
-
         # Get institution that is not using NII Storage
         region__ids = Region.objects.filter(waterbutler_settings__storage__type=Region.INSTITUTIONS).values('_id')
-        institution = Institution.objects.filter(is_deleted=False, _id__in=region__ids, id=institution_id).first()
+        institution = Institution.objects.filter(is_deleted=False, _id__in=region__ids, id=self.institution_id).first()
         if not institution:
             # If institution is not found, redirect to HTTP 404 page
             raise Http404
@@ -128,6 +126,7 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
 class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, View):
     """ Change max quota for an institution's users if that institution is not using NII Storage. """
     raise_exception = True
+    institution_id = None
 
     def test_func(self):
         """check user permissions"""
@@ -135,17 +134,14 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
             # If user is not authenticated then redirect to login page
             self.raise_exception = False
             return False
-        institution_id = int(self.kwargs.get('institution_id'))
-        if not Institution.objects.filter(id=institution_id).exists():
+        self.institution_id = int(self.kwargs.get('institution_id'))
+        if not Institution.objects.filter(id=self.institution_id).exists():
             # If institution_id does not exist, redirect to HTTP 404 page
             raise Http404
-        return self.has_auth(institution_id)
+        return self.has_auth(self.institution_id)
 
     def post(self, request, *args, **kwargs):
         """ Handle POST request """
-        # institution_id is already validated in Django URL resolver, no need to validate again
-        institution_id = self.kwargs['institution_id']
-
         # Validate maxQuota parameter
         try:
             max_quota = self.request.POST.get('maxQuota')
@@ -155,12 +151,12 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
             # Cannot convert maxQuota param to integer, redirect to the current page
             return redirect(
                 'institutional_storage_quota_control:institution_user_list',
-                institution_id=institution_id
+                institution_id=self.institution_id
             )
 
         # Get institution that is not using NII Storage
         region__ids = Region.objects.filter(waterbutler_settings__storage__type=Region.INSTITUTIONS).values('_id')
-        institution = Institution.objects.filter(is_deleted=False, id=institution_id, _id__in=region__ids).first()
+        institution = Institution.objects.filter(is_deleted=False, id=self.institution_id, _id__in=region__ids).first()
         if not institution:
             # If institution is not found, redirect to HTTP 404 page
             raise Http404
@@ -168,7 +164,7 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
         if min_value < max_quota <= max_value:
             # If max quota value is between 1 and 2147483647, update or create used quota for each user in the institution
             for user in OSFUser.objects.filter(
-                    affiliated_institutions=institution_id):
+                    affiliated_institutions=self.institution_id):
                 UserQuota.objects.update_or_create(
                     user=user,
                     storage_type=UserQuota.CUSTOM_STORAGE,
@@ -176,5 +172,5 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
                 )
         return redirect(
             'institutional_storage_quota_control:institution_user_list',
-            institution_id=institution_id
+            institution_id=self.institution_id
         )

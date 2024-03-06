@@ -1,110 +1,65 @@
+import copy
+from datetime import datetime
+
 import mock
 import pytest
-from datetime import datetime
+from addons.osfstorage.tests.factories import FileVersionFactory
 from django.http import JsonResponse
 from django.test import TestCase
 from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
-from addons.osfstorage.tests.factories import FileVersionFactory
-from osf.models import AbstractNode
+from osf.models import AbstractNode, ExportData
 from osf.models.export_data import DateTruncMixin
 from osf_tests.factories import (
+    TagFactory,
+    RegionFactory,
+    ProjectFactory,
+    AuthUserFactory,
     ExportDataFactory,
     InstitutionFactory,
-    ProjectFactory,
     OsfStorageFileFactory,
-    RdmFileTimestamptokenVerifyResultFactory,
-    BaseFileVersionsThroughFactory,
     ExportDataRestoreFactory,
-    RegionFactory,
-    bulkmount_waterbutler_settings,
+    BaseFileVersionsThroughFactory,
+    RdmFileTimestamptokenVerifyResultFactory,
 )
-
-FAKE_DATA = {
-    'institution': {
-        'id': 66,
-        'guid': 'wustl',
-        'name': 'Washington University in St. Louis [Test]'
-    },
-    'files': [
-        {
-            'id': 1733,
-            'path': '/631879ebb71d8f1ae01f4c10',
-            'materialized_path': '/nii/ember-animated/-private/sprite.d.ts',
-            'name': 'sprite.d.ts',
-            'provider': 'osfstorage',
-            'created_at': '2022-09-07 11:00:59',
-            'modified_at': '2022-09-07 11:00:59',
-            'project': {
-                'id': 'wh6za',
-                'name': 'Project C0001'
-            },
-            'tags': [],
-            'version': [
-                {
-                    'identifier': '1',
-                    'created_at': '2022-09-07 11:00:59',
-                    'size': 150,
-                    'version_name': 'sprite.d.ts',
-                    'contributor': 'user001@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '2f1e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 150,
-                        'extra': {},
-                        'sha256': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '6f2617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 150,
-                        'modified': 'Fri, 12 Aug 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'modified_utc': '2022-08-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
-                },
-            ],
-            'size': 150,
-            'location': {
-                'host': 'de222e410dd7',
-                'folder': '/code/website/osfstoragecache',
-                'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                'address': '',
-                'service': 'filesystem',
-                'version': '0.0.1',
-                'provider': 'filesystem'
-            },
-            'timestamp': {}
-        },
-    ]
-}
+from admin_tests.rdm_custom_storage_location.export_data.test_utils import FAKE_DATA
 
 
 @pytest.mark.feature_202210
 @pytest.mark.django_db
 class TestExportData(TestCase):
+
     @classmethod
     def setUpTestData(cls):
-        cls.export_data = ExportDataFactory()
-        cls.institution = InstitutionFactory.create(_id='vcu')
+        cls.default_region = default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        cls.inst_region = inst_region = RegionFactory(
+            name=default_region.name,
+            waterbutler_credentials=default_region.waterbutler_credentials,
+            waterbutler_settings=default_region.waterbutler_settings
+        )
+        cls.institution = InstitutionFactory.create(_id=inst_region.guid)
+        cls.export_data = ExportDataFactory(source=inst_region)
         project = ProjectFactory()
-        cls.institution = InstitutionFactory.create(_id=cls.export_data.source.guid)
+        target = AbstractNode(id=project.id)
         cls.institution.nodes.set([project])
+        cls.file1 = file1 = OsfStorageFileFactory.create(
+            name='file1.txt',
+            created=datetime.now(),
+            target_object_id=project.id,
+            target=target
+        )
+        file_version = FileVersionFactory(region=inst_region, size=3,)
+        file_versions_through = BaseFileVersionsThroughFactory.create(
+            version_name=file1.name,
+            basefilenode=file1,
+            fileversion=file_version
+        )
+        file_versions = [file_version]
+        total_size = sum([f.size for f in file_versions])
+        files_numb = len(file_versions)
+
         cls.institution_json = {
             'id': cls.institution.id,
             'guid': cls.institution.guid,
@@ -119,41 +74,32 @@ class TestExportData(TestCase):
                 'name': cls.export_data.source.name,
                 'type': cls.export_data.source.provider_full_name
             },
-            'projects_numb': 1,
-            'files_numb': 1,
-            'size': -1,
-            'file_path': None
+            'projects_numb': cls.institution.nodes.filter(type='osf.node').count(),
+            'files_numb': files_numb,
+            'size': total_size,
+            'file_path': cls.export_data.get_file_info_file_path()
         }
-
-        projects = cls.institution.nodes.filter(type='osf.node')
-        projects__ids = projects.values_list('id', flat=True)
-        object_id = projects__ids[0]
-        target = AbstractNode(id=object_id)
-        node = OsfStorageFileFactory.create(target_object_id=object_id, target=target)
-        file_version = FileVersionFactory(region=cls.export_data.source)
-
-        file_versions_through = BaseFileVersionsThroughFactory.create(version_name='file.txt', basefilenode=node,
-                                                                      fileversion=file_version)
         cls.file_info_json = {
             'institution': cls.institution_json,
             'files': [{
-                'id': node.id,
-                'path': node.path,
-                'materialized_path': node.materialized_path,
-                'name': node.name,
-                'provider': node.provider,
-                'created_at': node.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at': node.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'id': file1.id,
+                'path': file1.path,
+                'materialized_path': file1.materialized_path,
+                'name': file1.name,
+                'provider': file1.provider,
+                'created_at': file1.created.strftime('%Y-%m-%d %H:%M:%S'),
+                'modified_at': file1.modified.strftime('%Y-%m-%d %H:%M:%S'),
                 'project': {
-                    'id': node.target._id,
-                    'name': node.target.title,
+                    'id': file1.target._id,
+                    'name': file1.target.title,
                 },
                 'tags': [],
                 'version': [{
                     'identifier': file_version.identifier,
                     'created_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'modified_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
                     'size': file_version.size,
-                    'version_name': file_versions_through.version_name if file_versions_through else node.name,
+                    'version_name': file_versions_through.version_name if file_versions_through else file1.name,
                     'contributor': file_version.creator.username,
                     'metadata': file_version.metadata,
                     'location': file_version.location,
@@ -163,19 +109,186 @@ class TestExportData(TestCase):
                 'timestamp': {},
             }]
         }
-        cls.file = node
+
+    def test_init(self):
+        nt.assert_is_not_none(self.export_data)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_COMPLETED)
 
     def test_repr(self):
-        expected_value = '"({}-{})[{}]"'.format(self.export_data.source, self.export_data.location, self.export_data.status)
+        expected_value = f'"({self.export_data.source}-{self.export_data.location})[{self.export_data.status}]"'
         nt.assert_equal(repr(self.export_data), expected_value)
 
+    def test_str(self):
+        expected_value = f'"({self.export_data.source}-{self.export_data.location})[{self.export_data.status}]"'
+        nt.assert_equal(repr(self.export_data), expected_value)
+
+    def test_extract_file_information_json_from_source_storage__00_not_institution(self):
+        export_data = ExportDataFactory()
+        result = export_data.extract_file_information_json_from_source_storage()
+        nt.assert_is_none(result)
+
+    def test_extract_file_information_json_from_source_storage__01_normal(self):
+        test_file_info_json = copy.deepcopy(self.file_info_json)
+
+        result = self.export_data.extract_file_information_json_from_source_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+        file_info_first_file = file_info_json.get('files', [{}])[0]
+        test_file_info_file = test_file_info_json.get('files', [{}])[0]
+
+        nt.assert_equal(export_data_json, self.export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
+        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
+        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
+        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+
+    def test_extract_file_information_json_from_source_storage__02_with_tags(self):
+        # Add tags to file info JSON and test DB
+        test_file_info_json = copy.deepcopy(self.file_info_json)
+        test_file_info_json['files'][0]['tags'] = ['tag1', 'tag2']
+        tag1 = TagFactory(name='tag1', system=False)
+        tag2 = TagFactory(name='tag2', system=False)
+        self.file1.tags.set([tag1, tag2])
+
+        result = self.export_data.extract_file_information_json_from_source_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_first_file = file_info_json.get('files', [{}])[0]
+        test_file_info_file = test_file_info_json.get('files', [{}])[0]
+
+        nt.assert_equal(export_data_json, self.export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
+        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
+        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
+        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+
+    def test_extract_file_information_json_from_source_storage__03_with_timestamp(self):
+        # Add timestamp to file info JSON and test DB
+        test_file_info_json = copy.deepcopy(self.file_info_json)
+        timestamp = RdmFileTimestamptokenVerifyResultFactory(
+            project_id=self.file1.target._id, file_id=self.file1._id)
+        test_file_info_json['files'][0]['timestamp'] = {
+            'timestamp_id': timestamp.id,
+            'inspection_result_status': timestamp.inspection_result_status,
+            'provider': timestamp.provider,
+            'upload_file_modified_user': timestamp.upload_file_modified_user,
+            'project_id': timestamp.project_id,
+            'path': timestamp.path,
+            'key_file_name': timestamp.key_file_name,
+            'upload_file_created_user': timestamp.upload_file_created_user,
+            'upload_file_size': timestamp.upload_file_size,
+            'verify_file_size': timestamp.verify_file_size,
+            'verify_user': timestamp.verify_user
+        }
+
+        result = self.export_data.extract_file_information_json_from_source_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_first_file = file_info_json.get('files', [{}])[0]
+        test_file_info_file = test_file_info_json.get('files', [{}])[0]
+
+        nt.assert_equal(export_data_json, self.export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
+        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
+        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
+        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+
+    def test_extract_file_information_json_from_source_storage__04_inst_region(self):
+        self.inst_region.name = 'inst'
+        self.inst_region.save()
+        test_file_info_json = copy.deepcopy(self.file_info_json)
+        test_export_data_json = copy.deepcopy(self.export_data_json)
+        test_export_data_json['projects_numb'] -= 1
+        test_export_data_json['files_numb'] -= 1
+        test_export_data_json['size'] -= self.file1.versions.first().size
+        test_export_data_json['storage']['name'] = self.inst_region.name
+
+        result = self.export_data.extract_file_information_json_from_source_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_files = file_info_json.get('files',)
+
+        nt.assert_equal(export_data_json, test_export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_files, [])
+
+        self.inst_region.name = self.default_region.name
+        self.inst_region.save()
+
+    def test_extract_file_information_json_from_source_storage__99_abnormal_file_data(self):
+        test_file_info_json = copy.deepcopy(self.file_info_json)
+        test_export_data_json = copy.deepcopy(self.export_data_json)
+        test_export_data_json['files_numb'] -= 1
+        test_export_data_json['size'] -= self.file1.versions.first().size
+        self.file1.deleted = datetime.now()
+        self.file1.deleted_on = None
+        self.file1.deleted_by_id = None
+        self.file1.save()
+
+        result = self.export_data.extract_file_information_json_from_source_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_files = file_info_json.get('files',)
+
+        nt.assert_equal(export_data_json, test_export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_files, [])
+
+        self.file1.deleted = None
+        self.file1.deleted_on = datetime.now()
+        self.file1.deleted_by_id = None
+        self.file1.save()
+
+        result = self.export_data.extract_file_information_json_from_source_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_files = file_info_json.get('files',)
+
+        nt.assert_equal(export_data_json, test_export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_files, [])
+
+        self.file1.deleted = None
+        self.file1.deleted_on = None
+        self.file1.deleted_by_id = AuthUserFactory()
+        self.file1.save()
+
+        result = self.export_data.extract_file_information_json_from_source_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_files = file_info_json.get('files',)
+
+        nt.assert_equal(export_data_json, test_export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_files, [])
+
+        self.file1.deleted = None
+        self.file1.deleted_on = None
+        self.file1.deleted_by_id = None
+        self.file1.save()
+
     def test_process_start_timestamp(self):
-        res = self.export_data.process_start_timestamp
-        nt.assert_greater(len(res), 0)
+        nt.assert_equal(self.export_data.process_start_timestamp, self.export_data.process_start.strftime('%s'))
 
     def test_process_start_display(self):
-        res = self.export_data.process_start_display
-        nt.assert_greater(len(res), 0)
+        nt.assert_equal(self.export_data.process_start_display,
+                        self.export_data.process_start.strftime('%Y%m%dT%H%M%S'))
 
     def test_export_data_folder_name(self):
         expected_value = 'export_{}_{}'.format(self.export_data.source.id, self.export_data.process_start_timestamp)
@@ -245,35 +358,6 @@ class TestExportData(TestCase):
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.read_file_info_from_location(cookie)
         nt.assert_equal(res.status_code, 200)
-
-    def test_extract_file_information_json_from_source_storage(self):
-        mock_obj = mock.MagicMock()
-        mock_obj.filter.return_value.first.return_value = RdmFileTimestamptokenVerifyResultFactory(
-            project_id=self.file.target.id, file_id=self.file.id)
-        with mock.patch('osf.models.export_data.RdmFileTimestamptokenVerifyResult.objects', mock_obj):
-            result = self.export_data.extract_file_information_json_from_source_storage()
-        nt.assert_is_not_none(result)
-
-    def test_extract_file_information_json_from_source_storage_with_default_storage_project(self):
-        region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
-        export_data = ExportDataFactory(source=region)
-        project = ProjectFactory()
-        institution = InstitutionFactory.create(_id=export_data.source.guid)
-        institution.nodes.set([project])
-        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
-        file_version = FileVersionFactory(region=default_region)
-        object_id = project.id
-        target = AbstractNode(id=object_id)
-        node = OsfStorageFileFactory.create(name='file2.txt', created=datetime.now(), target_content_type=self.file.target_content_type,
-                                            target_object_id=object_id, target=target)
-        BaseFileVersionsThroughFactory.create(version_name='file2.txt', basefilenode=node, fileversion=file_version)
-
-        mock_obj = mock.MagicMock()
-        mock_obj.filter.return_value.first.return_value = RdmFileTimestamptokenVerifyResultFactory(
-            project_id=self.file.target.id, file_id=self.file.id)
-        with mock.patch('osf.models.export_data.RdmFileTimestamptokenVerifyResult.objects', mock_obj):
-            result = export_data.extract_file_information_json_from_source_storage()
-        nt.assert_is_not_none(result)
 
     def test_read_export_data_from_location(self):
         mock_request = mock.MagicMock()
@@ -354,20 +438,15 @@ class TestExportData(TestCase):
 
     def test_get_export_data_filename(self):
         res = self.export_data.get_export_data_filename()
-        expected_value = 'export_data_{}_{}.json'.format(self.export_data.source.guid, self.export_data.process_start_timestamp)
+        expected_value = 'export_data_{}_{}.json'.format(self.export_data.source.guid,
+                                                         self.export_data.process_start_timestamp)
         nt.assert_equal(res, expected_value)
 
     def test_get_file_info_filename(self):
         res = self.export_data.get_file_info_filename()
-        expected_value = 'file_info_{}_{}.json'.format(self.export_data.source.guid, self.export_data.process_start_timestamp)
+        expected_value = 'file_info_{}_{}.json'.format(self.export_data.source.guid,
+                                                       self.export_data.process_start_timestamp)
         nt.assert_equal(res, expected_value)
-
-    def test_extract_file_information_json_from_source_storage_not_institution(self):
-        mock_obj = mock.MagicMock()
-        mock_obj.load.return_value = None
-        with mock.patch('osf.models.export_data.Institution', mock_obj):
-            result = self.export_data.extract_file_information_json_from_source_storage()
-        nt.assert_is_none(result)
 
 
 @pytest.mark.feature_202210
@@ -412,7 +491,8 @@ class TestExportDataWithRestoreData(TestCase):
 
     def test_get_latest_restored_data_with_destination_id(self):
         destination_id = self.export_data_restore.destination.id
-        nt.assert_equal(self.export_data.get_latest_restored_data_with_destination_id(destination_id), self.export_data_restore)
+        nt.assert_equal(self.export_data.get_latest_restored_data_with_destination_id(destination_id),
+                        self.export_data_restore)
 
 
 @pytest.mark.feature_202210

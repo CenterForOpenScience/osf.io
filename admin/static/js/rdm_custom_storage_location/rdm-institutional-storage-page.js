@@ -9,6 +9,8 @@ var sprintf = require('agh.sprintf').sprintf;
 
 var clipboard = require('js/clipboard');
 
+var constants = require('js/constants/constants');
+
 var no_storage_name_providers = ['osfstorage', 'onedrivebusiness'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
@@ -17,8 +19,8 @@ var preload_accounts_type2 = ['nextcloudinstitutions',
                 'ociinstitutions',
                 's3compatinstitutions']
 // delay time to show growl box; in millisecond
-var growlBoxDelay = 5000;
-var intervalCheckStatus = 5000;
+var growlBoxDelay = constants.GROWL_BOX_DELAY_TIME || 5000;
+var intervalCheckStatus = constants.CHECK_STATUS_INTERVAL || 10000;
 var list_file_info_export_fail = [];
 var list_file_info_restore_fail = [];
 var file_name_export_fail = '';
@@ -1481,8 +1483,13 @@ $('#checkExportData').on('click', function () {
             "NG: " + data_res.ng + "/" + data_res.total + " files</p>";
         var text_current = '';
         data_res.list_file_ng.forEach(function (file) {
-            text_current += "<tr><td>" + file.path + "</td><td>" + file.size + " Bytes</td>" +
-                "<td>" + file.version_id + "</td><td>" + file.reason + "</td></tr>";
+            text_current += "<tr>" +
+                "<td>" + file.project_id + "</td>" +
+                "<td>" + file.path + "</td>" +
+                "<td>" + file.version_id + "</td>" +
+                "<td>" + file.size + " Bytes</td>" +
+                "<td>" + file.reason + "</td>" +
+                "</tr>";
         });
         $('.text-check-export-data').html(text_check_export);
         $('.table-ng').html(text_current);
@@ -1789,8 +1796,13 @@ $('#check_restore_button').on('click', function () {
             "NG: " + data_res.ng + "/" + data_res.total + " files</p>";
         var text_current = '';
         data_res.list_file_ng.forEach(function (file) {
-            text_current += "<tr><td>" + file.path + "</td><td>" + file.size + " Bytes</td>" +
-                "<td>" + file.version_id + "</td><td>" + file.reason + "</td></tr>";
+            text_current += "<tr>" +
+                "<td>" + file.project_id + "</td>" +
+                "<td>" + file.path + "</td>" +
+                "<td>" + file.version_id + "</td>" +
+                "<td>" + file.size + " Bytes</td>" +
+                "<td>" + file.reason + "</td>" +
+                "</tr>";
         });
         $('.text-check-restore-data').html(text_check_export);
         $('.table-ng-restore').html(text_current);

@@ -272,6 +272,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_OAUTH_NO_REDIRECT = addon_settings['addons_oauth_no_redirect']
     INSTITUTIONAL_STORAGE_ADD_ON_METHOD = addon_settings['institutional_storage_add_on_method']
     INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD = addon_settings['institutional_storage_bulk_mount_method']
+    ADDONS_HAS_MAX_KEYS = addon_settings['addons_has_max_keys']
 
 SYSTEM_ADDED_ADDONS = {
     'user': [],
