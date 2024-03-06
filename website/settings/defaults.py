@@ -411,6 +411,7 @@ class CeleryConfig:
     task_med_queue = 'med'
     task_high_queue = 'high'
     task_remote_computing_queue = 'remote'
+    account_status_changes = 'account_status_changes'
 
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
@@ -471,6 +472,9 @@ class CeleryConfig:
         'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'api.share.utils',
     }
+    DEACTIVATED_ROUTING_KEY = 'user.deactivated'
+    REACTIVATED_ROUTING_KEY = 'user.reactivated'
+    MERGED_ROUTING_KEY = 'user.merged'
 
     try:
         from kombu import Queue, Exchange
@@ -488,6 +492,24 @@ class CeleryConfig:
                   routing_key=task_med_queue, consumer_arguments={'x-priority': 1}),
             Queue(task_high_queue, Exchange(task_high_queue),
                   routing_key=task_high_queue, consumer_arguments={'x-priority': 10}),
+            Queue(
+                account_status_changes,
+                Exchange(account_status_changes),
+                routing_key=DEACTIVATED_ROUTING_KEY,
+                consumer_arguments={'x-priority': 0}
+            ),
+            Queue(
+                account_status_changes,
+                Exchange(account_status_changes),
+                routing_key=REACTIVATED_ROUTING_KEY,
+                consumer_arguments={'x-priority': 0}
+            ),
+            Queue(
+                account_status_changes,
+                Exchange(account_status_changes),
+                routing_key=MERGED_ROUTING_KEY,
+                consumer_arguments={'x-priority': 0}
+            ),
         )
 
         task_default_exchange_type = 'direct'

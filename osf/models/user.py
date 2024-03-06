@@ -7,6 +7,7 @@ from copy import deepcopy
 
 from flask import Request as FlaskRequest
 from framework import analytics
+from framework.auth.signals import user_account_deactivated
 from guardian.shortcuts import get_perms
 from past.builtins import basestring
 
@@ -750,10 +751,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             for key, value in user.mailchimp_mailing_lists.items():
                 # subscribe to each list if either user was subscribed
                 subscription = value or self.mailchimp_mailing_lists.get(key)
-                signals.user_merged.send(self, list_name=key, subscription=subscription)
+                from website.profile.views import update_mailchimp_subscription
+                update_mailchimp_subscription(self, list_name=key, subscription=subscription)
 
                 # clear subscriptions for merged user
-                signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
+                update_mailchimp_subscription(user, list_name=key, subscription=False, send_goodbye=False)
 
         for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
@@ -872,6 +874,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
+        signals.user_merged.send(user)
+        signals.user_account_deactivated.send(self)
 
     def _merge_users_preprints(self, user):
         """
@@ -993,6 +997,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
+        self.save()
+        user_account_deactivated.send(user=self)
 
     def reactivate_account(self):
         """
@@ -1002,6 +1008,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.requested_deactivation = False
         from website.mailchimp_utils import subscribe_on_confirm
         subscribe_on_confirm(self)
+        signals.user_account_reactivated.send(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
