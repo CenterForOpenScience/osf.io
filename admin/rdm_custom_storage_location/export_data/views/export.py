@@ -21,13 +21,11 @@ from rest_framework.views import APIView
 from requests.exceptions import ReadTimeout, ConnectionError
 
 from addons.osfstorage.models import Region
-from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_custom_storage_location import tasks
-from osf.models import Institution, ExportDataLocation, ExportData, RegionExternalAccount
+from osf.models import Institution, ExportDataLocation, ExportData
 from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
 from ..utils import write_json_file
-from website.settings import INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
 
 logger = logging.getLogger(__name__)
 TASK_NO_WORKING_STATES = [
@@ -152,26 +150,10 @@ class ExportDataActionView(ExportDataBaseActionView):
 
         storage_credentials = source_storage.waterbutler_credentials['storage']
         source_waterbutler_credentials = None
-        if source_storage.provider_name in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
-            if storage_credentials and 'host' in storage_credentials:
-                source_waterbutler_credentials = {
-                    'host': storage_credentials['host'],
-                }
-        else:
-            external_account = None
-            if source_storage.provider_name == 'onedrivebusiness':
-                region_external_account = RegionExternalAccount.objects.filter(region=source_storage).first()
-                if region_external_account is not None:
-                    external_account = region_external_account.external_account
-            else:
-                addon_option = get_rdm_addon_option(institution.id, source_storage.provider_name, create=False)
-                if addon_option is not None:
-                    external_account = addon_option.external_accounts.first()
-            if external_account is not None:
-                provider_id = external_account.provider_id
-                source_waterbutler_credentials = {
-                    'host': provider_id,
-                }
+        if storage_credentials and 'host' in storage_credentials:
+            source_waterbutler_credentials = {
+                'host': storage_credentials['host'],
+            }
 
         # Create new process record
         try:
@@ -263,7 +245,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # extract file information
         _step_start_time = time.time()
-        export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage(**kwargs)
+        export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
         logger.info(f'Extracted file information.'
                     f' ({time.time() - _step_start_time}s)')
 

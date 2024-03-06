@@ -234,8 +234,8 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('s3compatinstitutions_access_key'),
                 data.get('s3compatinstitutions_secret_key'),
                 data.get('s3compatinstitutions_bucket'),
-                provider_short_name,
                 bool(strtobool(data.get('s3compatinstitutions_server_side_encryption'))),
+                provider_short_name,
             )
         elif provider_short_name == 'ociinstitutions':
             result = utils.save_ociinstitutions_credentials(
@@ -325,7 +325,6 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
         if status == http_status.HTTP_200_OK:
             utils.change_allowed_for_institutions(
                 institution, provider_short_name)
-            utils.add_node_settings_to_projects(institution, provider_short_name)
         return JsonResponse(result[0], status=status)
 
 

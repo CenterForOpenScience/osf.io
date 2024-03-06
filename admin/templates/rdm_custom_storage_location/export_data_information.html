@@ -390,7 +390,7 @@
     {% render_bundle 'rdm-institutional-storage-page' %}
      <script>
         var restore_task_id = null;
-        var no_hidden_modal_event = false;
+        var stop_restore_task_id = null;
         var data = {};
         data['destination_id'] = $('#destination_storage').val();
         window.contextVars = $.extend(true, {}, window.contextVars, {

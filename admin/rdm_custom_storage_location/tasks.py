@@ -11,6 +11,7 @@ __all__ = [
     'run_export_data_process',
     'run_export_data_rollback_process',
     'run_restore_export_data_process',
+    'run_restore_export_data_rollback_process',
 ]
 
 
@@ -33,3 +34,10 @@ def run_restore_export_data_process(
         self, cookies, export_id, export_data_restore_id, list_project_id, **kwargs):
     return restore.restore_export_data_process(
         self, cookies, export_id, export_data_restore_id, list_project_id, **kwargs)
+
+
+@celery_app.task(bind=True, base=AbortableTask, track_started=True)
+def run_restore_export_data_rollback_process(
+        self, cookies, export_id, export_data_restore_id, process_step, **kwargs):
+    return restore.restore_export_data_rollback_process(
+        self, cookies, export_id, export_data_restore_id, process_step, **kwargs)

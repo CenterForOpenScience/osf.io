@@ -15,14 +15,13 @@ from rest_framework.test import APIRequestFactory
 from admin.rdm_custom_storage_location.export_data.views import restore
 from admin.rdm_custom_storage_location.export_data.views.restore import ProcessError
 from framework.celery_tasks import app as celery_app
-from osf.models import RdmFileTimestamptokenVerifyResult, ExportData, FileVersion
+from osf.models import RdmFileTimestamptokenVerifyResult, ExportData, ExportDataRestore, FileVersion
 from osf_tests.factories import (
     AuthUserFactory,
     ExportDataFactory,
     RegionFactory,
     OsfStorageFileFactory,
     ExportDataRestoreFactory,
-    BaseFileNodeFactory,
     addon_waterbutler_settings,
     bulkmount_waterbutler_settings,
     UserFactory,
@@ -736,9 +735,10 @@ class TestRestoreDataFunction(AdminTestCase):
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.create_folder_in_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_tag_and_timestamp_to_database')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.copy_files_from_export_data_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_to_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
-    def test_restore_export_data_process(self, mock_read_file_info, mock_check_process, mock_copy_to_destination,
+    def test_restore_export_data_process(self, mock_read_file_info, mock_check_process, mock_move_to_backup, mock_copy_to_destination,
                                          mock_add_tag_and_timestamp, mock_create_folder_path):
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -746,6 +746,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.return_value = None
+        mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
@@ -754,15 +755,17 @@ class TestRestoreDataFunction(AdminTestCase):
                                               self.addon_data_restore.id, ['vcu'])
         mock_read_file_info.assert_called()
         mock_check_process.assert_called()
+        mock_move_to_backup.assert_called()
         mock_copy_to_destination.assert_called()
         mock_add_tag_and_timestamp.assert_called()
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.create_folder_in_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_tag_and_timestamp_to_database')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.copy_files_from_export_data_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_to_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
-    def test_restore_export_data_process_empty_file_info_list(self, mock_read_file_info, mock_check_process,
+    def test_restore_export_data_process_empty_file_info_list(self, mock_read_file_info, mock_check_process, mock_move_to_backup,
                                                               mock_copy_to_destination, mock_add_tag_and_timestamp, mock_create_folder_path):
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -770,6 +773,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         mock_read_file_info.return_value = {}
         mock_check_process.return_value = None
+        mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}]
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
@@ -778,16 +782,18 @@ class TestRestoreDataFunction(AdminTestCase):
                                               self.export_data_restore.id, [])
         mock_read_file_info.assert_called()
         mock_check_process.assert_not_called()
+        mock_move_to_backup.assert_not_called()
         mock_copy_to_destination.assert_not_called()
         mock_add_tag_and_timestamp.assert_not_called()
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.create_folder_in_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_tag_and_timestamp_to_database')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.copy_files_from_export_data_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_to_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
     def test_restore_export_data_process_bulk_mount_storage(
-            self, mock_read_file_info, mock_check_process, mock_copy_to_destination,
+            self, mock_read_file_info, mock_check_process, mock_move_to_backup, mock_copy_to_destination,
             mock_add_tag_and_timestamp, mock_create_folder_path):
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -795,6 +801,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.return_value = None
+        mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
@@ -803,15 +810,17 @@ class TestRestoreDataFunction(AdminTestCase):
                                               self.bulk_mount_data_restore.id, ['vcu'])
         mock_read_file_info.assert_called()
         mock_check_process.assert_called()
+        mock_move_to_backup.assert_not_called()
         mock_copy_to_destination.assert_called()
         mock_add_tag_and_timestamp.assert_called()
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.create_folder_in_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_tag_and_timestamp_to_database')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.copy_files_from_export_data_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_to_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
-    def test_restore_export_data_process_abort_exception(self, mock_read_file_info, mock_check_process, mock_copy_to_destination,
+    def test_restore_export_data_process_abort_exception(self, mock_read_file_info, mock_check_process, mock_move_to_backup, mock_copy_to_destination,
                                                          mock_add_tag_and_timestamp, mock_create_folder_path):
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -824,6 +833,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.side_effect = mock_callback_test_check_process_abort
+        mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}]
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
@@ -833,15 +843,17 @@ class TestRestoreDataFunction(AdminTestCase):
                                                   self.export_data_restore.id, [])
             mock_read_file_info.assert_called()
             mock_check_process.assert_called()
+            mock_move_to_backup.assert_not_called()
             mock_copy_to_destination.assert_not_called()
             mock_add_tag_and_timestamp.assert_not_called()
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.create_folder_in_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_tag_and_timestamp_to_database')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.copy_files_from_export_data_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_to_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
-    def test_restore_export_data_process_other_exception(self, mock_read_file_info, mock_check_process, mock_copy_to_destination,
+    def test_restore_export_data_process_other_exception(self, mock_read_file_info, mock_check_process, mock_move_to_backup, mock_copy_to_destination,
                                                          mock_add_tag_and_timestamp, mock_create_folder_path):
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -849,17 +861,24 @@ class TestRestoreDataFunction(AdminTestCase):
 
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.return_value = None
+        mock_move_to_backup.return_value = None
         mock_create_folder_path.return_value = None
         mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.side_effect = IntegrityError(f'Mock test for error when adding tag/timestamp')
+        mock_rollback_process = mock.MagicMock()
+        mock_rollback_process.return_value = None
 
-        with nt.assert_raises(IntegrityError):
-            self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
-                                                  self.export_data_restore.id, [])
-            mock_read_file_info.assert_called()
-            mock_check_process.assert_called()
-            mock_copy_to_destination.assert_called()
-            mock_add_tag_and_timestamp.assert_called()
+        with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.restore_export_data_rollback_process',
+                        mock_rollback_process):
+            with nt.assert_raises(IntegrityError):
+                self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
+                                                      self.export_data_restore.id, [])
+                mock_read_file_info.assert_called()
+                mock_check_process.assert_called()
+                mock_move_to_backup.assert_called()
+                mock_copy_to_destination.assert_called()
+                mock_add_tag_and_timestamp.assert_called()
+                mock_rollback_process.assert_called()
 
     # update_restore_process_state
     def test_update_restore_process_state(self):
@@ -1058,6 +1077,96 @@ class TestRestoreDataFunction(AdminTestCase):
         self.view.recalculate_user_quota(self.export_data_restore.destination)
         mock_update_user_used_quota.assert_called()
 
+    # generate_new_file_path
+    def test_generate_new_file_path_not_latest_version(self):
+        path = '/mock_test.txt'
+        new_path = self.view.generate_new_file_path(path, 2, True)
+        nt.assert_equal(new_path, '/_version_files/mock_test_2.txt')
+
+    def test_generate_new_file_path_latest_version(self):
+        path = '/mock_test.txt'
+        new_path = self.view.generate_new_file_path(path, 3, False)
+        nt.assert_equal(new_path, path)
+
+    # move_all_files_to_backup_folder
+    def test_move_all_files_to_backup_folder_addon_storage(self):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = True
+        mock_move_files = mock.MagicMock()
+        mock_move_files.return_value = None
+        mock_check_progress = mock.MagicMock()
+        mock_check_progress.return_value = None
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.addon_data_restore, None)
+                    mock_is_add_on.assert_called()
+                    mock_move_files.assert_called()
+                    mock_check_progress.assert_called()
+
+    def test_move_all_files_to_backup_folder_bulk_mount_storage(self):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
+        mock_move_files = mock.MagicMock()
+        mock_move_files.return_value = None
+        mock_check_progress = mock.MagicMock()
+        mock_check_progress.return_value = None
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.bulk_mount_data_restore, None)
+                    mock_is_add_on.assert_called()
+                    mock_move_files.assert_called()
+                    mock_check_progress.assert_called()
+
+    def test_move_all_files_to_backup_folder_error_response(self):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
+        mock_move_files = mock.MagicMock()
+        mock_move_files.return_value = {'error': 'Mock test error while moving files to backup folder'}
+        mock_check_progress = mock.MagicMock()
+        mock_check_progress.return_value = None
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    with nt.assert_raises(ProcessError):
+                        self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.export_data_restore, None)
+                        mock_is_add_on.assert_called()
+                        mock_move_files.assert_called()
+                        mock_check_progress.assert_called()
+
+    def test_move_all_files_to_backup_folder_exception(self):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
+        mock_move_files = mock.MagicMock()
+        mock_move_files.return_value = None
+        mock_check_progress = mock.MagicMock()
+        mock_check_progress.side_effect = ProcessError('Mock test exception in move all files.')
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    with nt.assert_raises(ProcessError):
+                        self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.export_data_restore, None)
+                        mock_is_add_on.assert_called()
+                        mock_move_files.assert_called()
+                        mock_check_progress.assert_called()
+
     # create_folder_in_destination
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
@@ -1087,9 +1196,9 @@ class TestRestoreDataFunction(AdminTestCase):
 
     # copy_files_from_export_data_to_destination
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.BaseFileNode.objects')
-    def test_copy_files_from_export_data_to_destination_addon_storage(self, mock_basefilenode, mock_check_progress, mock_copy):
+    def test_copy_files_from_export_data_to_destination_addon_storage(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         addon_export_file = self.test_export_data_files
         addon_export_file[0]['path'] = '/@ember-decorators/utils/collapse-proto.d.ts'
         addon_export_file[0]['provider'] = 'nextcloudinstitutions'
@@ -1101,27 +1210,19 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = True
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.return_value = {
             'data': {
                 'id': 'nextcloudinstitutions/fake_id'
             }
         }
-        basefilenode = BaseFileNodeFactory.create(id=11, _id='11', type='osf.nextcloudinstitutionsfile',
-                                                  provider='nextcloudinstitutions',
-                                                  _path='/61215649851ebb71d8f1ae01f4c99',
-                                                  path='/61215649851ebb71d8f1ae01f4c99',
-                                                  _materialized_path='/test.txt',
-                                                  target_content_type_id=59)
-        mock_file = mock.MagicMock()
-        mock_basefilenode.filter.return_value = mock_file
-        mock_file.exists.return_value = True
-        mock_file.first.return_value = basefilenode
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
             result = self.view.copy_files_from_export_data_to_destination(task, 1, addon_export_file,
                                                                           self.addon_data_restore, None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_called()
             mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
@@ -1129,9 +1230,10 @@ class TestRestoreDataFunction(AdminTestCase):
     @mock.patch('osf.models.BaseFileNode.objects')
     @mock.patch('osf.models.FileVersion.objects')
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     def test_copy_files_from_export_data_to_destination_osfstorage(self, mock_check_progress,
-                                                                   mock_copy,
+                                                                   mock_generate_new_file_path, mock_copy,
                                                                    mock_file_version, mock_file_node,
                                                                    mock_base_file_node):
         def create_node(*args, **kwargs):
@@ -1157,6 +1259,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.side_effect = create_node
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
@@ -1165,6 +1268,7 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_called()
             nt.assert_equal(len(result), 2)
             nt.assert_equal(result[0][0].get('file_tags'), ['hello', 'world'])
@@ -1172,9 +1276,10 @@ class TestRestoreDataFunction(AdminTestCase):
             nt.assert_equal(result[0][0].get('project_id'), 'pmockt')
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     def test_copy_files_from_export_data_to_destination_osfstorage_not_add_new_version(self, mock_check_progress,
-                                                                                       mock_copy):
+                                                                                       mock_generate_new_file_path, mock_copy):
         def create_node(*args, **kwargs):
             file = OsfStorageFileFactory.create(_id='fake_id')
             user = AuthUserFactory.create(username='fake_user')
@@ -1202,6 +1307,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.side_effect = create_node
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
@@ -1210,6 +1316,7 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_called()
             nt.assert_equal(len(result), 2)
             nt.assert_equal(len(result[0][0].get('node').versions.all()), 1)
@@ -1218,8 +1325,9 @@ class TestRestoreDataFunction(AdminTestCase):
             nt.assert_equal(result[0][0].get('project_id'), 'pmockt')
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_other_bulk_mount_storage(self, mock_check_progress, mock_copy):
+    def test_copy_files_from_export_data_to_destination_other_bulk_mount_storage(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
         bulkmount_export_files[0]['provider'] = 'box'
         other_bulk_mount_data_restore = self.bulk_mount_data_restore
@@ -1236,6 +1344,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.return_value = {
             'data': {
                 'id': 'box/fake_id'
@@ -1248,12 +1357,14 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_empty_file_info_list(self, mock_check_progress, mock_copy):
+    def test_copy_files_from_export_data_to_destination_empty_file_info_list(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
@@ -1261,6 +1372,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.return_value = {
             'data': {
                 'id': 'osfstorage/fake_id'
@@ -1272,12 +1384,14 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           self.export_data_restore, None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_not_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_not_called()
             nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_empty_version(self, mock_check_progress, mock_copy):
+    def test_copy_files_from_export_data_to_destination_empty_version(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
         bulkmount_export_files[0]['version'] = []
 
@@ -1288,6 +1402,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.return_value = {
             'data': {
                 'id': 'osfstorage/fake_id'
@@ -1299,12 +1414,14 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           self.export_data_restore, None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_not_called()
             nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_no_file_hash(self, mock_check_progress, mock_copy):
+    def test_copy_files_from_export_data_to_destination_no_file_hash(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
         bulkmount_export_files[0]['version'] = [{
             'identifier': '',
@@ -1321,6 +1438,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.return_value = {
             'data': {
                 'id': 'osfstorage/fake_id'
@@ -1332,12 +1450,14 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           self.export_data_restore, None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_not_called()
             nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_copy_error(self, mock_check_progress, mock_copy):
+    def test_copy_files_from_export_data_to_destination_copy_error(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
 
         task = AbortableTask()
@@ -1347,6 +1467,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.return_value = None
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
@@ -1354,12 +1475,14 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           self.addon_data_restore, None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_exception(self, mock_check_progress, mock_copy):
+    def test_copy_files_from_export_data_to_destination_exception(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
 
         test_response = requests.Response()
@@ -1373,6 +1496,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_copy.side_effect = Exception('Mock test exception while downloading file from export data')
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
@@ -1380,6 +1504,7 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                           self.addon_data_restore, None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
             mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
@@ -1449,6 +1574,255 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_check_process.assert_called_once()
         mock_add_tags.assert_not_called()
         mock_add_timestamp.assert_not_called()
+
+    # restore_export_data_rollback_process
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_bulk_mount_storage(self, mock_read_file_info,
+                                                                     mock_delete_all_files,
+                                                                     mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        response = self.view.restore_export_data_rollback_process(task, None, self.bulk_mount_data_restore.export.id,
+                                                                  self.bulk_mount_data_restore.id,
+                                                                  3)
+
+        mock_read_file_info.assert_not_called()
+        mock_delete_all_files.assert_not_called()
+        mock_move_all_files.assert_not_called()
+        nt.assert_equal(response, {'message': 'Stop restore data successfully.'})
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_nothing_to_rollback(self, mock_read_file_info,
+                                                                      mock_delete_all_files,
+                                                                      mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                  self.addon_data_restore.id,
+                                                                  0)
+
+        mock_read_file_info.assert_not_called()
+        mock_delete_all_files.assert_not_called()
+        mock_move_all_files.assert_not_called()
+        nt.assert_equal(response, {'message': 'Stop restore data successfully.'})
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_fail_to_get_file_info(self, mock_read_file_info,
+                                                                        mock_delete_all_files,
+                                                                        mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = None
+        mock_delete_all_files.return_value = None
+        mock_move_all_files.return_value = None
+
+        with nt.assert_raises(ProcessError):
+            response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                      self.addon_data_restore.id, 3)
+
+            mock_read_file_info.assert_called()
+            mock_delete_all_files.assert_called()
+            mock_move_all_files.assert_called()
+            nt.assert_is_none(response)
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_empty_file_info(self, mock_read_file_info,
+                                                                  mock_delete_all_files,
+                                                                  mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = {}
+        mock_delete_all_files.return_value = None
+        mock_move_all_files.return_value = None
+
+        response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                  self.addon_data_restore.id, 2)
+
+        mock_read_file_info.assert_called()
+        mock_delete_all_files.assert_not_called()
+        mock_move_all_files.assert_not_called()
+        nt.assert_equal(response, {'message': 'Stop restore data successfully.'})
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_delete_all_files_then_move_from_backup(self, mock_read_file_info,
+                                                                                         mock_delete_all_files,
+                                                                                         mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
+        mock_delete_all_files.return_value = None
+        mock_move_all_files.return_value = None
+
+        response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                  self.addon_data_restore.id, 3)
+
+        mock_read_file_info.assert_called()
+        mock_delete_all_files.assert_called()
+        mock_move_all_files.assert_called()
+        nt.assert_equal(response, {'message': 'Stop restore data successfully.'})
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_move_from_backup(self, mock_read_file_info,
+                                                                   mock_delete_all_files,
+                                                                   mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
+        mock_delete_all_files.return_value = None
+        mock_move_all_files.return_value = None
+
+        response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                  self.addon_data_restore.id, 1)
+
+        mock_read_file_info.assert_called()
+        mock_delete_all_files.assert_not_called()
+        mock_move_all_files.assert_called()
+        nt.assert_equal(response, {'message': 'Stop restore data successfully.'})
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_invalid_process_step(self, mock_read_file_info,
+                                                                       mock_delete_all_files,
+                                                                       mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
+        mock_delete_all_files.return_value = None
+        mock_move_all_files.return_value = None
+
+        response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                  self.addon_data_restore.id, 4)
+
+        mock_read_file_info.assert_called()
+        mock_delete_all_files.assert_not_called()
+        mock_move_all_files.assert_not_called()
+        nt.assert_equal(response, {'message': 'Stop restore data successfully.'})
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_exception(self, mock_read_file_info,
+                                                            mock_delete_all_files,
+                                                            mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
+        mock_delete_all_files.side_effect = ConnectionError('Mock test exception while deleting all files')
+        mock_move_all_files.return_value = None
+
+        with nt.assert_raises(ConnectionError):
+            response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                      self.addon_data_restore.id, 3)
+
+            mock_read_file_info.assert_called()
+            mock_delete_all_files.assert_called()
+            mock_move_all_files.assert_not_called()
+            nt.assert_is_none(response)
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_invalid_export_data_restore(self, mock_read_file_info,
+                                                                              mock_delete_all_files,
+                                                                              mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
+        mock_delete_all_files.return_value = None
+        mock_move_all_files.return_value = None
+
+        with nt.assert_raises(ExportDataRestore.DoesNotExist):
+            response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id, -1, 1)
+
+            mock_read_file_info.assert_not_called()
+            mock_delete_all_files.assert_not_called()
+            mock_move_all_files.assert_not_called()
+            nt.assert_is_none(response)
+
+    # delete_all_files_except_backup_folder
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.delete_all_files_except_backup')
+    def test_delete_all_files_except_backup_folder(self, mock_delete_all_files):
+        result = self.view.delete_all_files_except_backup_folder(self.export_data_restore, self.export_data.location.id,
+                                                                 self.project_id, None)
+        mock_delete_all_files.assert_called()
+        nt.assert_is_none(result)
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.delete_all_files_except_backup')
+    def test_delete_all_files_except_backup_folder_exception(self, mock_delete_all_files):
+        mock_delete_all_files.side_effect = ConnectionError(f'Mock text exception while deleting files')
+        with nt.assert_raises(ProcessError):
+            result = self.view.delete_all_files_except_backup_folder(self.export_data_restore,
+                                                                     self.export_data.location.id,
+                                                                     self.project_id, None)
+            mock_delete_all_files.assert_called()
+            nt.assert_is_none(result)
+
+    # move_all_files_from_backup_folder_to_root
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_from_backup')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_addon_storage(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = True
+        self.view.move_all_files_from_backup_folder_to_root(self.addon_data_restore, self.project_id, None)
+        mock_move_folder.assert_called()
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_from_backup')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_bulk_mount_storage(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = False
+        self.view.move_all_files_from_backup_folder_to_root(self.bulk_mount_data_restore, self.project_id, None)
+        mock_is_add_on.assert_called()
+        mock_move_folder.assert_called()
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_from_backup')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_error(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = True
+        mock_move_folder.return_value = {'error': 'Mock test response error while moving folder from back up'}
+        with nt.assert_raises(ProcessError):
+            self.view.move_all_files_from_backup_folder_to_root(self.addon_data_restore, self.project_id, None)
+            mock_is_add_on.assert_called()
+            mock_move_folder.assert_called()
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_from_backup')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_exception(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = True
+        mock_move_folder.side_effect = Exception(f'Mock test exception while moving folder from back up')
+        with nt.assert_raises(ProcessError):
+            self.view.move_all_files_from_backup_folder_to_root(self.addon_data_restore, self.project_id, None)
+            mock_is_add_on.assert_called()
+            mock_move_folder.assert_called()
 
 
 # Test cases for StopRestoreDataActionView
@@ -1521,33 +1895,40 @@ class TestStopRestoreDataActionView(AdminTestCase):
         nt.assert_equal(response.data, {'message': f'Missing required parameters.'})
         nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post(self):
+    @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
+    def test_post(self, mock_rollback_process):
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': FAKE_TASK_ID,
             'destination_id': self.export_data_restore.destination.id,
         })
         request.user = AuthUserFactory()
 
+        mock_rollback_process.return_value = self.new_task
         self.view.export_data_restore = self.export_data_restore
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
-        nt.assert_equal(response.data, {'message': 'Stop restore data successfully.'})
+        mock_rollback_process.assert_called()
+        nt.assert_equal(response.data, {'task_id': self.new_task_id})
         nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
-    def test_post_restore_data_not_found(self):
+    @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
+    def test_post_restore_data_not_found(self, mock_rollback_process):
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': self.new_task_id,
             'destination_id': self.export_data_restore.destination.id,
         })
         request.user = AuthUserFactory()
 
+        mock_rollback_process.return_value = self.new_task
         self.view.request = request
         response = self.view.dispatch(request, export_id=self.export_data_restore.export.id)
+        mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'The restore export data is not exist'})
         nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_post_task_no_result(self):
+    @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
+    def test_post_task_no_result(self, mock_rollback_process):
         self.task.update_state(state=states.PENDING, meta=None)
 
         request = APIRequestFactory().post('stop_restore_export_data', {
@@ -1556,14 +1937,18 @@ class TestStopRestoreDataActionView(AdminTestCase):
         })
         request.user = AuthUserFactory()
 
+        mock_rollback_process.return_value = self.new_task
+
         self.view.export_data_restore = self.export_data_restore
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
+        mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Stop restore data successfully.'})
         nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
-    def test_post_task_is_not_running(self):
+    @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
+    def test_post_task_is_not_running(self, mock_rollback_process):
         self.task.update_state(state=states.SUCCESS, meta={'message': 'Restore data successfully.'})
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': FAKE_TASK_ID,
@@ -1571,14 +1956,18 @@ class TestStopRestoreDataActionView(AdminTestCase):
         })
         request.user = AuthUserFactory()
 
+        mock_rollback_process.return_value = self.new_task
+
         self.view.export_data_restore = self.export_data_restore
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
+        mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Stop restore data successfully.'})
         nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
-    def test_post_task_done_moving_files(self):
+    @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
+    def test_post_task_done_moving_files(self, mock_rollback_process):
         self.task.update_state(state=states.PENDING, meta={'current_restore_step': 4})
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': FAKE_TASK_ID,
@@ -1586,15 +1975,19 @@ class TestStopRestoreDataActionView(AdminTestCase):
         })
         request.user = AuthUserFactory()
 
+        mock_rollback_process.return_value = self.new_task
+
         self.view.export_data_restore = self.export_data_restore
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
+        mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Cannot stop restore process at this time.'})
         nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @mock.patch.object(AbortableAsyncResult, 'abort')
-    def test_post_task_cannot_abort(self, mock_task_abort):
+    @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
+    def test_post_task_cannot_abort(self, mock_rollback_process, mock_task_abort):
         self.task.update_state(state=states.PENDING, meta={'current_restore_step': 1})
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': FAKE_TASK_ID,
@@ -1602,11 +1995,13 @@ class TestStopRestoreDataActionView(AdminTestCase):
         })
         request.user = AuthUserFactory()
 
+        mock_rollback_process.return_value = self.new_task
         self.view.export_data_restore = self.export_data_restore
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
         mock_task_abort.assert_called()
+        mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Cannot stop restore process at this time.'})
         nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
 
