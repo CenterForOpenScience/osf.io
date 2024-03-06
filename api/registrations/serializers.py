@@ -1,41 +1,34 @@
-import pytz
-import json
+from json import loads
 from unicodedata import normalize
 
 from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
-from rest_framework import serializers as ser
-from rest_framework import exceptions
-from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIException
-from api.base.serializers import is_anonymized
-from api.base.utils import absolute_reverse, get_user_auth, is_truthy
-from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
-from website.project.model import NodeUpdateError
+from rest_framework import exceptions, serializers as ser
+from pytz import utc
 
 from addons.osfstorage.models import OsfStorageFile
+from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIException
+from api.base.serializers import (
+    HideIfRegistration, HideIfWithdrawal, HideIfWithdrawalOrWikiDisabled,
+    FileRelationshipField, IDField, LinksField, NodeFileHyperLinkField,
+    RelationshipField, ShowIfVersion, ValuesListField, VersionedDateTimeField,
+    is_anonymized,
+)
+from api.base.utils import absolute_reverse, get_user_auth, is_truthy
+from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import (
-    NodeSerializer,
-    NodeStorageProviderSerializer,
-    NodeLicenseRelationshipField,
-    NodeLinksSerializer,
+    get_license_details, NodeContributorsSerializer, NodeLicenseRelationshipField,
+    NodeLicenseSerializer, NodeLinksSerializer, NodeSerializer,
+    NodeStorageProviderSerializer, RegistrationProviderRelationshipField,
     update_institutions,
-    NodeLicenseSerializer,
-    NodeContributorsSerializer,
-    RegistrationProviderRelationshipField,
-    get_license_details,
-)
-from api.base.serializers import (
-    IDField, RelationshipField, LinksField, HideIfWithdrawal,
-    FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
-    ShowIfVersion, VersionedDateTimeField, ValuesListField,
-    HideIfWithdrawalOrWikiDisabled,
 )
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
 from osf.models import Node
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
+from website.project.model import NodeUpdateError
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -425,7 +418,7 @@ class RegistrationSerializer(NodeSerializer):
         if obj.registered_meta:
             meta_values = self.anonymize_registered_meta(obj)
             try:
-                return json.loads(meta_values)
+                return loads(meta_values)
             except TypeError:
                 return meta_values
             except ValueError:
@@ -726,7 +719,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         if registration_choice == 'embargo':
             if not embargo_lifted:
                 raise exceptions.ValidationError('lift_embargo must be specified.')
-            embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
+            embargo_end_date = embargo_lifted.replace(tzinfo=utc)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
             except ValidationError as err:

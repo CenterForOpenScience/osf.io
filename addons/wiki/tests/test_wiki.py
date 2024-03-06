@@ -1,44 +1,42 @@
 # TODO: Port to pytest
 
 # PEP8 asserts
+from datetime import datetime
 from copy import deepcopy
-from rest_framework import status as http_status
-import time
+from time import time
 from unittest import mock
-import pytest
-import pytz
-import datetime
 
-from tests.base import OsfTestCase, fake
-from osf_tests.factories import (
-    UserFactory, NodeFactory, ProjectFactory,
-    AuthUserFactory, RegistrationFactory
-)
-from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from pytest import mark, raises
+from pytz import utc
+from django.utils import timezone
+from rest_framework import status as http_status
 
-from osf.exceptions import NodeStateError
-from osf.utils.permissions import ADMIN, WRITE, READ
-from addons.wiki import settings
-from addons.wiki import views
+from addons.wiki import settings, views
 from addons.wiki.exceptions import InvalidVersionError
 from addons.wiki.models import WikiPage, WikiVersion, render_content
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from addons.wiki.utils import (
-    get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget
+    delete_share_doc, format_wiki_version, generate_private_uuid,
+    get_sharejs_uuid, migrate_uuid, serialize_wiki_settings, 
+    serialize_wiki_widget, share_db, to_mongo_key
 )
 from framework.auth import Auth
-from django.utils import timezone
-from addons.wiki.utils import to_mongo_key
-
+from osf.exceptions import NodeStateError
+from osf.utils.permissions import ADMIN, READ, WRITE
+from osf_tests.factories import (
+    AuthUserFactory, NodeFactory, ProjectFactory, 
+    RegistrationFactory, UserFactory
+)
+from tests.base import OsfTestCase, fake
 from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
 
 # forward slashes are not allowed, typically they would be replaced with spaces
 SPECIAL_CHARACTERS_ALL = r'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 SPECIAL_CHARACTERS_ALLOWED = r'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
 
-@pytest.mark.enable_bookmark_creation
+@mark.enable_bookmark_creation
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
@@ -122,7 +120,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 200
 
-    @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')
+    @mark.skip('#TODO: Fix or mock mongodb for sharejs')
     def test_wiki_draft_returns_200(self):
         url = self.project.api_url_for('wiki_page_draft', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
@@ -328,7 +326,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert 'Add important information, links, or images here to describe your project.' in res
 
-    @pytest.mark.skip('Content rendering handled by front-end')
+    @mark.skip('Content rendering handled by front-end')
     def test_project_dashboard_wiki_wname_get_shows_non_ascii_characters(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
@@ -444,7 +442,7 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 200
         assert 'data-osf-panel="Edit"' not in res.text
 
-    @pytest.mark.skip('Content rendering handled by front-end. Also, this view is now ember')
+    @mark.skip('Content rendering handled by front-end. Also, this view is now ember')
     def test_wiki_widget_not_show_in_registration_for_contributor(self):
         registration = RegistrationFactory(project=self.project)
         res = self.app.get(
@@ -502,7 +500,7 @@ class TestWikiDelete(OsfTestCase):
             'project_wiki_delete',
             wname='Elephants'
         )
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.app.delete(
                 url,
@@ -515,7 +513,7 @@ class TestWikiDelete(OsfTestCase):
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_project_wiki_delete_w_valid_special_characters(self, mock_sharejs):
         # TODO: Need to understand why calling update_node_wiki with failure causes transaction rollback issue later
-        # with pytest.raises(NameInvalidError):
+        # with raises(NameInvalidError):
         #     self.project.update_node_wiki(SPECIAL_CHARACTERS_ALL, 'Hello Special Characters', self.consolidate_auth)
         self.special_characters_wiki = WikiPage.objects.create_for_node(self.project, SPECIAL_CHARACTERS_ALLOWED, 'Hello Special Characters', self.consolidate_auth)
         assert self.special_characters_wiki.page_name == SPECIAL_CHARACTERS_ALLOWED
@@ -523,7 +521,7 @@ class TestWikiDelete(OsfTestCase):
             'project_wiki_delete',
             wname=SPECIAL_CHARACTERS_ALLOWED
         )
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.app.delete(
                 url,
@@ -544,7 +542,7 @@ class TestWikiDelete(OsfTestCase):
         wiki_page.reload()
         assert wiki_page.current_version_number == 2
         # Deletes the wiki page
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             wiki_page.delete(self.consolidate_auth)
         wiki_page.reload()
@@ -556,7 +554,7 @@ class TestWikiDelete(OsfTestCase):
         wiki_page.reload()
         assert wiki_page.current_version_number == 2
 
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
@@ -736,7 +734,7 @@ class TestWikiLinks(OsfTestCase):
                 'rel="nofollow">http://httpbin.org/</a>"&gt;&lt;/iframe&gt;</p>') == wiki.html(node)
 
 
-@pytest.mark.enable_bookmark_creation
+@mark.enable_bookmark_creation
 class TestWikiUuid(OsfTestCase):
 
     def setUp(self):
@@ -841,7 +839,7 @@ class TestWikiUuid(OsfTestCase):
         assert project_uuid not in fork_res
         assert fork_uuid not in project_res
 
-    @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')
+    @mark.skip('#TODO: Fix or mock mongodb for sharejs')
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_migration_does_not_affect_forks(self, mock_sharejs):
         original_uuid = generate_private_uuid(self.project, self.wname)
@@ -921,7 +919,7 @@ class TestWikiUuid(OsfTestCase):
         assert original_sharejs_uuid not in res.body.decode()
 
 
-@pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')
+@mark.skip('#TODO: Fix or mock mongodb for sharejs')
 class TestWikiShareJSMongo(OsfTestCase):
 
     @classmethod
@@ -1037,7 +1035,7 @@ class TestWikiShareJSMongo(OsfTestCase):
         # modify the sharejs wiki page contents and ensure we
         # return the draft contents
         new_content = 'I am a teapot'
-        new_time = int(time.time() * 1000) + 10000
+        new_time = int(time() * 1000) + 10000
         new_version = self.example_docs[0]['_v'] + 1
         self.db.docs.update(
             {'_id': self.sharejs_uuid},
@@ -1116,17 +1114,17 @@ class TestWikiUtils(OsfTestCase):
         assert format_wiki_version('current', 0, False) == 'current'
         assert format_wiki_version('preview', 0, True) == 'preview'
 
-        with pytest.raises(InvalidVersionError):
+        with raises(InvalidVersionError):
             format_wiki_version('1', 0, False)
-        with pytest.raises(InvalidVersionError):
+        with raises(InvalidVersionError):
             format_wiki_version('previous', 0, False)
-        with pytest.raises(InvalidVersionError):
+        with raises(InvalidVersionError):
             format_wiki_version('6', 5, False)
-        with pytest.raises(InvalidVersionError):
+        with raises(InvalidVersionError):
             format_wiki_version('0', 5, False)
-        with pytest.raises(InvalidVersionError):
+        with raises(InvalidVersionError):
             format_wiki_version('preview', 5, False)
-        with pytest.raises(InvalidVersionError):
+        with raises(InvalidVersionError):
             format_wiki_version('nonsense', 5, True)
 
 class TestPublicWiki(OsfTestCase):
@@ -1157,7 +1155,7 @@ class TestPublicWiki(OsfTestCase):
         parent = ProjectFactory()
         parent.delete_addon('wiki', self.consolidate_auth)
         node = NodeFactory(parent=parent, category='project')
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             node.delete_addon('wiki', self.consolidate_auth)
         sub_component = NodeFactory(parent=node)
@@ -1177,7 +1175,7 @@ class TestPublicWiki(OsfTestCase):
         assert wiki.is_publicly_editable
         assert node.logs.latest().action == 'made_wiki_public'
         # Try to set public when the wiki is already public
-        with pytest.raises(NodeStateError):
+        with raises(NodeStateError):
             wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=False)
         # Turn off public editing
         wiki.set_editing(permissions=False, auth=self.consolidate_auth, log=True)
@@ -1188,11 +1186,11 @@ class TestPublicWiki(OsfTestCase):
         wiki = node.get_addon('wiki')
 
         # Try to set to private wiki already private
-        with pytest.raises(NodeStateError):
+        with raises(NodeStateError):
             wiki.set_editing(permissions=False, auth=self.consolidate_auth, log=False)
 
         # Try to set public when the project is private
-        with pytest.raises(NodeStateError):
+        with raises(NodeStateError):
             wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=False)
 
     def test_serialize_wiki_settings(self):
@@ -1271,7 +1269,7 @@ class TestPublicWiki(OsfTestCase):
 
         assert data == expected
 
-@pytest.mark.enable_bookmark_creation
+@mark.enable_bookmark_creation
 class TestWikiMenu(OsfTestCase):
 
     def setUp(self):

@@ -1,25 +1,23 @@
-from unittest import mock
-import pytz
-import pytest
-import itsdangerous
 from datetime import datetime, timedelta
 from importlib import import_module
+from unittest import mock
 
-from django.utils import timezone
+from itsdangerous import Signer
+from pytest import mark
+from pytz import utc
 from django.conf import settings as django_conf_settings
+from django.utils import timezone
 
-from website import settings
-
-from osf_tests.factories import (
-    AuthUserFactory,
-)
+from osf_tests.factories import AuthUserFactory
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
+from website import settings
+
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
-@pytest.mark.django_db
-@pytest.mark.enable_enqueue_task
+@mark.django_db
+@mark.enable_enqueue_task
 class TestUserLastLoginDate(OsfTestCase):
 
     def setUp(self):
@@ -31,11 +29,11 @@ class TestUserLastLoginDate(OsfTestCase):
         self.session['auth_user_id'] = self.user._id
         self.session['auth_user_username'] = self.user.username
         self.session.create()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
+        self.cookie = Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
 
     @mock.patch.object(timezone, 'now')
     def test_date_last_login_updated_from_none(self, mock_time):
-        now = datetime(2018, 2, 4, tzinfo=pytz.utc)
+        now = datetime(2018, 2, 4, tzinfo=utc)
         mock_time.return_value = now
         assert self.user.date_last_login is None
 
@@ -48,7 +46,7 @@ class TestUserLastLoginDate(OsfTestCase):
 
     @mock.patch.object(timezone, 'now')
     def test_date_last_login_updated_below_threshold(self, mock_time):
-        now = datetime(2018, 2, 4, tzinfo=pytz.utc)
+        now = datetime(2018, 2, 4, tzinfo=utc)
         mock_time.return_value = now
         self.user.date_last_login = now
         self.user.save()
@@ -65,7 +63,7 @@ class TestUserLastLoginDate(OsfTestCase):
 
     @mock.patch.object(timezone, 'now')
     def test_date_last_login_updated_above_threshold(self, mock_time):
-        now = datetime(2018, 2, 4, tzinfo=pytz.utc)
+        now = datetime(2018, 2, 4, tzinfo=utc)
         mock_time.return_value = now
         self.user.date_last_login = now
         self.user.save()

@@ -1,38 +1,38 @@
-import abc
-
+from abc import abstractmethod, ABCMeta
+from datetime import datetime
 from unittest import mock
-import pytest
-import pytz
-import datetime
-from addons.base.tests.utils import MockFolder
+
+from pytest import raises, mark, yield_fixture
 from django.utils import timezone
+from pytz import utc
+
+from addons.base import exceptions
+from addons.base.tests.utils import MockFolder
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.utils.permissions import ADMIN
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
-from addons.base import exceptions
-from osf_tests.conftest import request_context
 
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
 
 
 class OAuthAddonModelTestSuiteMixinBase:
 
-    ___metaclass__ = abc.ABCMeta
+    ___metaclass__ = ABCMeta
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def short_name(self):
         pass
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def full_name(self):
         pass
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def ExternalAccountFactory(self):
         pass
 
@@ -141,7 +141,7 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
 class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
-    @pytest.yield_fixture(autouse=True)
+    @yield_fixture(autouse=True)
     def _request_context(self, app):
         context = app.test_request_context(headers={
             'Remote-Addr': '146.9.219.56',
@@ -152,17 +152,17 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         context.pop()
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def NodeSettingsFactory(self):
         pass
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def NodeSettingsClass(self):
         pass
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def UserSettingsFactory(self):
         pass
 
@@ -195,7 +195,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
             **self._node_settings_class_kwargs(self.node, self.user_settings)
         )
 
-    @pytest.mark.django_db
+    @mark.django_db
     def test_configured_true(self):
         assert self.node_settings.has_auth
         assert self.node_settings.complete
@@ -297,7 +297,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert self.node_settings.user_settings
         assert self.node_settings.folder_id
         old_logs = list(self.node.logs.all())
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.node_settings.delete()
         self.node_settings.save()
@@ -373,7 +373,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def test_serialize_credentials_not_authorized(self):
         self.node_settings.user_settings = None
         self.node_settings.save()
-        with pytest.raises(exceptions.AddonError):
+        with raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_credentials()
 
     def test_serialize_settings(self):
@@ -384,7 +384,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def test_serialize_settings_not_configured(self):
         self.node_settings.clear_settings()
         self.node_settings.save()
-        with pytest.raises(exceptions.AddonError):
+        with raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
 
     def test_create_log(self):
@@ -451,12 +451,12 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
 class OAuthCitationsTestSuiteMixinBase(OAuthAddonModelTestSuiteMixinBase):
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def ProviderClass(self):
         pass
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def OAuthProviderClass(self):
         pass
 
@@ -608,7 +608,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
 class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def ApiExceptionClass(self):
         pass
 
@@ -616,7 +616,7 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
         super().setUp()
         self.provider = self.OAuthProviderClass()
 
-    @abc.abstractmethod
+    @abstractmethod
     def test_handle_callback(self):
         pass
 
@@ -661,6 +661,6 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
             mock_client.folders.list.side_effect = self.ApiExceptionClass(mock_error)
             mock_client.collections.side_effect = self.ApiExceptionClass(mock_error)
             mock_get_client.return_value = mock_client
-            with pytest.raises(HTTPError) as exc_info:
+            with raises(HTTPError) as exc_info:
                 self.provider.client
             assert exc_info.exception.code == 403

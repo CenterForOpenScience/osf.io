@@ -1,46 +1,43 @@
-import time
 from importlib import import_module
-
-import datetime
+from datetime import datetime
 from unittest import mock
-from factory import SubFactory
-from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+from time import clock
 
 import factory
-import pytz
 import factory.django
+from factory import SubFactory
 from factory.django import DjangoModelFactory
+from factory.fuzzy import FuzzyAttribute, FuzzyChoice, FuzzyDateTime
+from pytz import UTC, utc
 from django.apps import apps
 from django.conf import settings as django_conf_settings
-from django.core.exceptions import ValidationError
-from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
-from faker import Factory
+from django.utils import timezone
 from waffle.models import Flag, Sample, Switch
 
-from website.notifications.constants import NOTIFICATION_TYPES
-from osf.utils import permissions
-from website.archiver import ARCHIVER_SUCCESS
-from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
+from addons.osfstorage.models import OsfStorageFile, Region
 from framework.auth.core import Auth
-
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
+from osf.utils import permissions
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import (
+    ApprovalStates,
     DefaultStates,
     DefaultTriggers,
-    ApprovalStates,
     SchemaResponseTriggers
 )
-from addons.osfstorage.models import OsfStorageFile, Region
-fake = Factory.create()
+from website.archiver import ARCHIVER_SUCCESS
+from website.notifications.constants import NOTIFICATION_TYPES
+from website.settings import FAKE_EMAIL_DOMAIN, FAKE_EMAIL_NAME
+from tests.base import fake
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
-fake_email = lambda: f'{FAKE_EMAIL_NAME}+{int(time.clock() * 1000000)}@{FAKE_EMAIL_DOMAIN}'
+fake_email = lambda: f'{FAKE_EMAIL_NAME}+{int(clock() * 1000000)}@{FAKE_EMAIL_DOMAIN}'
 
 # Do this out of a cls context to avoid setting "t" as a local
 PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
@@ -65,7 +62,7 @@ class UserFactory(DjangoModelFactory):
     username = factory.LazyFunction(fake_email)
     password = factory.PostGenerationMethodCall('set_password', 'queenfan86', notify=False)
     is_registered = True
-    date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
+    date_confirmed = factory.Faker('date_time_this_decade', tzinfo=utc)
     merged_by = None
     verification_key = None
 
@@ -114,6 +111,7 @@ class UserFactory(DjangoModelFactory):
                     return
             self.emails.create(address=str(self.username).lower())
 
+
 class AuthUserFactory(UserFactory):
     """A user that automatically has an api key, for quick authentication.
 
@@ -126,15 +124,17 @@ class AuthUserFactory(UserFactory):
     def add_auth(self, create, extracted):
         self.auth = (self.username, 'queenfan86')
 
+
 class AuthFactory(factory.base.Factory):
     class Meta:
         model = Auth
     user = factory.SubFactory(UserFactory)
 
+
 class UnregUserFactory(DjangoModelFactory):
     email = factory.LazyFunction(fake_email)
     fullname = factory.Sequence(lambda n: f'Freddie Mercury{n}')
-    date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
+    date_registered = factory.Faker('date_time', tzinfo=utc)
 
     class Meta:
         model = models.OSFUser
@@ -172,7 +172,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
         instance = target_class.create_unconfirmed(
             username=username, password=password, fullname=fullname
         )
-        instance.date_registered = fake.date_time(tzinfo=pytz.utc)
+        instance.date_registered = fake.date_time(tzinfo=utc)
         return instance
 
     @classmethod
@@ -180,7 +180,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
         instance = target_class.create_unconfirmed(
             username=username, password=password, fullname=fullname
         )
-        instance.date_registered = fake.date_time(tzinfo=pytz.utc)
+        instance.date_registered = fake.date_time(tzinfo=utc)
 
         instance.save()
         return instance
@@ -923,7 +923,7 @@ def make_node_lineage():
 
 
 class NotificationDigestFactory(DjangoModelFactory):
-    timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
+    timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=UTC))
     node_lineage = FuzzyAttribute(fuzzer=make_node_lineage)
     user = factory.SubFactory(UserFactory)
     send_type = FuzzyChoice(choices=NOTIFICATION_TYPES.keys())
@@ -1156,7 +1156,7 @@ class BrandFactory(DjangoModelFactory):
 class SchemaResponseFactory(DjangoModelFactory):
     initiator = factory.SubFactory(AuthUserFactory)
     revision_justification = "We're talkin' about practice!"
-    submitted_timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
+    submitted_timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=UTC))
     registration = factory.SubFactory(RegistrationFactory)
 
     class Meta:
@@ -1207,9 +1207,11 @@ class RegistrationBulkUploadRowFactory(DjangoModelFactory):
     class Meta:
         model = models.RegistrationBulkUploadRow
 
+
 class CedarMetadataRecordFactory(DjangoModelFactory):
     class Meta:
         model = models.CedarMetadataRecord
+
 
 class CedarMetadataTemplateFactory(DjangoModelFactory):
     class Meta:

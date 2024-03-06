@@ -1,43 +1,41 @@
-import datetime
-import functools
-import logging
-
-import markdown
-import pytz
-from django.db.models.expressions import F
-from django.db.models.aggregates import Max
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from framework.auth.core import Auth
-from addons.base.models import BaseNodeSettings
-from bleach.callbacks import nofollow
-from bleach import Cleaner
+from datetime import datetime, timezone
+from logging import getLogger
 from functools import partial
+
+from bleach import Cleaner
+from bleach.callbacks import nofollow
 from bleach.linkifier import LinkifyFilter
-from django.db import models
-from framework.forms.utils import sanitize
+import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
-from osf.models import NodeLog, OSFUser, Comment
-from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
-from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import get_request_and_user_id, string_type_request_headers
-from osf.exceptions import NodeStateError
+
+from addons.base.models import BaseNodeSettings
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
     PageCannotRenameError,
     PageConflictError,
 )
-from website.util import api_v2_url
-from website.files.exceptions import VersionNotFoundError
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.db.models.aggregates import Max
+from django.db.models.expressions import F
+from django.utils import timezone
+from framework.auth.core import Auth
+from framework.forms.utils import sanitize
+from osf.exceptions import NodeStateError
+from osf.models import NodeLog, OSFUser, Comment
+from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
+from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from website import settings
-
-from .exceptions import (
+from website.files.exceptions import VersionNotFoundError
+from website.util import api_v2_url
+from addons.wiki.exceptions import (
     NameEmptyError,
     NameInvalidError,
     NameMaximumLengthError,
 )
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 SHAREJS_HOST = 'localhost'
 SHAREJS_PORT = 7007
@@ -47,7 +45,8 @@ SHAREJS_DB_NAME = 'sharejs'
 SHAREJS_DB_URL = f'mongodb://{settings.DB_HOST}:{settings.DB_PORT}/{SHAREJS_DB_NAME}'
 
 # TODO: Change to release date for wiki change
-WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098).replace(tzinfo=pytz.utc)
+WIKI_CHANGE_DATE = datetime.fromtimestamp(1423760098, timezone.utc)
+
 
 def validate_page_name(value):
     value = (value or '').strip()
@@ -61,6 +60,7 @@ def validate_page_name(value):
         raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
 
+
 def build_html_output(content, node):
     return markdown.markdown(
         content,
@@ -68,12 +68,13 @@ def build_html_output(content, node):
             wikilinks.WikiLinkExtension(
                 base_url='',
                 end_url='',
-                build_url=functools.partial(build_wiki_url, node)
+                build_url=partial(build_wiki_url, node)
             ),
             fenced_code.FencedCodeExtension(),
             codehilite.CodeHiliteExtension(css_class='highlight')
         ]
     )
+
 
 def render_content(content, node):
     html_output = build_html_output(content, node)
@@ -160,7 +161,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             sharejs_version = doc_item['_v']
             sharejs_timestamp = doc_item['_m']['mtime']
             sharejs_timestamp /= 1000  # Convert to appropriate units
-            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
+            sharejs_date = datetime.fromtimestamp(sharejs_timestamp, timezone.utc)
 
             if sharejs_version > 1 and sharejs_date > self.created:
                 return doc_item['_data']

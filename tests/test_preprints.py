@@ -1,14 +1,14 @@
-import jwe
-import jwt
+from jwe import kdf, encrypt, decrypt
+from jwt import encode, decode
 from unittest import mock
-import furl
-import pytest
-import time
+from furl import furl
+from pytest import mark, raises, fixture
+from time import time
 from future.moves.urllib.parse import urljoin
-import datetime
+from datetime import datetime, timedelta
 from django.utils import timezone
-import pytz
-import itsdangerous
+from pytz import utc
+from itsdangerous import Signer
 from importlib import import_module
 
 from django.contrib.auth.models import Group
@@ -16,7 +16,11 @@ from django.core.exceptions import ValidationError
 from django.conf import settings as django_conf_settings
 
 from website import settings, mails
-from website.preprints.tasks import on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
+from website.preprints.tasks import (
+    on_preprint_updated,
+    update_or_create_preprint_identifiers,
+    update_or_enqueue_on_preprint_updated,
+)
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from framework.auth import signing
@@ -49,29 +53,35 @@ from osf_tests.factories import (
     NodeFactory,
 )
 
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
 
-@pytest.fixture()
+
+@fixture()
 def user():
     return UserFactory()
 
-@pytest.fixture()
+
+@fixture()
 def node(user):
     return NodeFactory(creator=user)
 
-@pytest.fixture()
+
+@fixture()
 def project(user):
     return ProjectFactory(creator=user)
 
-@pytest.fixture()
+
+@fixture()
 def preprint(user):
     return PreprintFactory(creator=user)
 
-@pytest.fixture()
+
+@fixture()
 def auth(user):
     return Auth(user)
 
-@pytest.fixture()
+
+@fixture()
 def subject():
     return SubjectFactory()
 
@@ -99,7 +109,7 @@ class TestPreprintProperties:
         assert preprint.verified_publishable is False
 
         preprint.is_published = True
-        preprint.deleted = datetime.datetime.now()
+        preprint.deleted = datetime.now()
         assert preprint.verified_publishable is False
 
         preprint.deleted = None
@@ -165,7 +175,7 @@ class TestPreprintProperties:
 
 class TestPreprintSubjects:
 
-    @pytest.fixture()
+    @fixture()
     def write_contrib(self, preprint):
         write_contrib = AuthUserFactory()
         preprint.add_contributor(write_contrib, auth=Auth(preprint.creator), permissions=WRITE)
@@ -204,7 +214,7 @@ class TestLogging:
         last_log = preprint.logs.latest()
         assert last_log.action == PreprintLog.FILE_UPDATED
         # date is tzaware
-        assert last_log.created.tzinfo == pytz.utc
+        assert last_log.created.tzinfo == utc
 
         # updates preprint.modified
         assert_datetime_equal(preprint.modified, last_log.created)
@@ -248,7 +258,7 @@ class TestTagging:
 
     def test_add_system_tag_non_system_instance(self, preprint):
         tag = TagFactory(system=False)
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             preprint.add_system_tag(tag)
 
         assert tag not in preprint.all_tags.all()
@@ -441,12 +451,12 @@ class TestContributorMethods:
         assert preprint.logs.count() == original_log_count
 
     def test_set_visible_contributor_with_only_one_contributor(self, preprint, user):
-        with pytest.raises(ValueError) as excinfo:
+        with raises(ValueError) as excinfo:
             preprint.set_visible(user=user, visible=False, auth=None)
         assert str(excinfo.value) == 'Must have at least one visible contributor'
 
     def test_set_visible_missing(self, preprint):
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             preprint.set_visible(UserFactory(), True)
 
     def test_remove_contributor(self, preprint, auth):
@@ -511,7 +521,7 @@ class TestContributorMethods:
     def test_permission_override_fails_if_no_admins(self, preprint, user):
         # User has admin permissions because they are the creator
         # Cannot lower permissions
-        with pytest.raises(PreprintStateError):
+        with raises(PreprintStateError):
             preprint.add_contributor(user, permissions=WRITE)
 
     def test_update_contributor(self, preprint, auth):
@@ -537,7 +547,7 @@ class TestContributorMethods:
             permissions=WRITE,
             auth=auth
         )
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             preprint.update_contributor(
                 non_admin,
                 None,
@@ -546,7 +556,7 @@ class TestContributorMethods:
             )
 
     def test_update_contributor_only_admin_raises_error(self, preprint, auth):
-        with pytest.raises(PreprintStateError):
+        with raises(PreprintStateError):
             preprint.update_contributor(
                 auth.user,
                 WRITE,
@@ -556,7 +566,7 @@ class TestContributorMethods:
 
     def test_update_contributor_non_contrib_raises_error(self, preprint, auth):
         non_contrib = AuthUserFactory()
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             preprint.update_contributor(
                 non_contrib,
                 ADMIN,
@@ -576,12 +586,12 @@ class TestPreprintAddContributorRegisteredOrNot:
         assert contributor.is_registered is True
 
     def test_add_contributor_user_id_already_contributor(self, user, preprint):
-        with pytest.raises(ValidationError) as excinfo:
+        with raises(ValidationError) as excinfo:
             preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
         assert 'is already a contributor' in excinfo.value.message
 
     def test_add_contributor_invalid_user_id(self, user, preprint):
-        with pytest.raises(ValueError) as excinfo:
+        with raises(ValueError) as excinfo:
             preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
         assert 'was not found' in str(excinfo.value)
 
@@ -607,11 +617,11 @@ class TestPreprintAddContributorRegisteredOrNot:
 
 class TestContributorVisibility:
 
-    @pytest.fixture()
+    @fixture()
     def user2(self):
         return UserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def preprint2(self, user2, user, auth):
         preprint = PreprintFactory(creator=user)
         preprint.add_contributor(contributor=user2, auth=auth)
@@ -643,13 +653,13 @@ class TestContributorVisibility:
         assert list(preprint2.visible_contributors) == [preprint2.creator, user2]
 
     def test_set_visible_missing(self, preprint2):
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             preprint2.set_visible(UserFactory(), True)
 
 
 class TestPermissionMethods:
 
-    @pytest.fixture()
+    @fixture()
     def project(self, user):
         return ProjectFactory(creator=user)
 
@@ -710,7 +720,7 @@ class TestPermissionMethods:
     def test_remove_permission_not_granted(self, preprint, auth):
         contrib = UserFactory()
         preprint.add_contributor(contrib, permissions=WRITE, auth=auth)
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             preprint.remove_permission(contrib, ADMIN)
 
     def test_set_permissions(self, preprint):
@@ -733,7 +743,7 @@ class TestPermissionMethods:
 
     def test_set_permissions_raises_error_if_only_admins_permissions_are_reduced(self, preprint):
         # creator is the only admin
-        with pytest.raises(PreprintStateError) as excinfo:
+        with raises(PreprintStateError) as excinfo:
             preprint.set_permissions(preprint.creator, permissions=WRITE)
         assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
 
@@ -753,7 +763,7 @@ class TestPermissionMethods:
             preprint=preprint, user=user
         )
         preprint.add_permission(user, ADMIN)
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             preprint.add_permission(user, ADMIN)
 
     def test_contributor_can_edit(self, preprint, auth):
@@ -845,7 +855,7 @@ class TestPermissionMethods:
 
 
 # Copied from tests/test_models.py
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestAddUnregisteredContributor:
 
     def test_add_unregistered_contributor(self, preprint, user, auth):
@@ -884,7 +894,7 @@ class TestAddUnregisteredContributor:
 
     def test_add_unregistered_raises_error_if_user_is_registered(self, preprint, auth):
         user = UserFactory(is_registered=True)  # A registered user
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             preprint.add_unregistered_contributor(
                 email=user.username,
                 fullname=user.fullname,
@@ -898,10 +908,10 @@ class TestPreprintSpam:
         preprint.is_public = False
         preprint.save()
         with mock.patch.object(Preprint, 'is_spammy', mock.PropertyMock(return_value=True)):
-            with pytest.raises(PreprintStateError):
+            with raises(PreprintStateError):
                 preprint.set_privacy('public')
 
-    @pytest.mark.skip('Technically still true, but skipping because mocking is outdated')
+    @mark.skip('Technically still true, but skipping because mocking is outdated')
     def test_check_spam_disabled_by_default(self, preprint, user):
         # SPAM_SERVICES_ENABLED is False by default
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -966,11 +976,11 @@ class TestPreprintSpam:
                 assert preprint.is_spam is False
                 assert preprint.is_public is True
 
-    @pytest.mark.enable_enqueue_task
+    @mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @pytest.mark.skip('Technically still true, but skipping because mocking is outdated')
+    @mark.skip('Technically still true, but skipping because mocking is outdated')
     def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_send_mail, preprint, user):
         preprint.is_public = False
         preprint.save()
@@ -1006,7 +1016,7 @@ class TestPreprintSpam:
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.Preprint.do_check_spam', mock.Mock(return_value=True)):
-                preprint.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
+                preprint.creator.date_confirmed = timezone.now() - timedelta(days=9001)
                 preprint.set_privacy('public')
                 preprint.check_spam(user, None, None)
                 assert preprint.is_public is True
@@ -1073,7 +1083,7 @@ class TestManageContributors:
             ]
         )
         print(preprint.visible_contributor_ids)
-        with pytest.raises(ValueError) as e:
+        with raises(ValueError) as e:
             preprint.set_visible(user=reg_user1, visible=False, auth=None)
             preprint.set_visible(user=user, visible=False, auth=None)
             assert e.value.message == 'Must have at least one visible contributor'
@@ -1082,7 +1092,7 @@ class TestManageContributors:
         user2 = UserFactory()
         preprint.add_contributor(contributor=user2, permissions=WRITE, auth=auth)
         preprint.save()
-        with pytest.raises(PreprintStateError) as excinfo:
+        with raises(PreprintStateError) as excinfo:
             preprint.manage_contributors(
                 user_dicts=[{'id': user2._id,
                              'permissions': WRITE,
@@ -1179,14 +1189,14 @@ class TestManageContributors:
             {'id': user._id, 'permissions': READ, 'visible': True},
             {'id': preprint.creator._id, 'permissions': [READ, WRITE, ADMIN], 'visible': True},
         ]
-        with pytest.raises(ValueError) as excinfo:
+        with raises(ValueError) as excinfo:
             preprint.manage_contributors(
                 users, auth=auth, save=True
             )
         assert excinfo.value.args[0] == f'User {user.fullname} not in contributors'
 
     def test_manage_contributors_no_contributors(self, preprint, auth):
-        with pytest.raises(PreprintStateError):
+        with raises(PreprintStateError):
             preprint.manage_contributors(
                 [], auth=auth, save=True,
             )
@@ -1202,7 +1212,7 @@ class TestManageContributors:
             {'id': preprint.creator._id, 'permissions': READ, 'visible': True},
             {'id': user._id, 'permissions': READ, 'visible': True},
         ]
-        with pytest.raises(PreprintStateError):
+        with raises(PreprintStateError):
             preprint.manage_contributors(
                 users, auth=auth, save=True,
             )
@@ -1220,7 +1230,7 @@ class TestManageContributors:
             {'id': preprint.creator._id, 'permissions': READ, 'visible': True},
             {'id': unregistered._id, 'permissions': ADMIN, 'visible': True},
         ]
-        with pytest.raises(PreprintStateError):
+        with raises(PreprintStateError):
             preprint.manage_contributors(
                 users, auth=auth, save=True,
             )
@@ -1293,17 +1303,17 @@ class TestContributorOrdering:
         assert list(preprint.get_preprintcontributor_order()) == new_order
 
 
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestDOIValidation:
 
     def test_validate_bad_doi(self, preprint):
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             preprint.article_doi = 'nope'
             preprint.save()
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             preprint.article_doi = 'https://dx.doi.org/10.123.456'
             preprint.save()  # should save the bare DOI, not a URL
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             preprint.article_doi = 'doi:10.10.1038/nwooo1170'
             preprint.save() # should save without doi: prefix
 
@@ -1329,16 +1339,16 @@ class TestPreprintUpdate:
 
     def test_set_title_fails_if_empty_or_whitespace(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
-        with pytest.raises(ValidationValueError):
+        with raises(ValidationValueError):
             proj.set_title(' ', auth=auth)
-        with pytest.raises(ValidationValueError):
+        with raises(ValidationValueError):
             proj.set_title('', auth=auth)
         assert proj.title == 'That Was Then'
 
     def test_set_title_fails_if_too_long(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
         long_title = ''.join('a' for _ in range(513))
-        with pytest.raises(ValidationValueError):
+        with raises(ValidationValueError):
             proj.set_title(long_title, auth=auth)
 
     def test_set_description(self, preprint, auth):
@@ -1410,7 +1420,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         self.preprint.reload()
         assert not self.preprint.is_published
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         self.preprint.provider = PreprintProviderFactory()
@@ -1431,7 +1441,7 @@ class TestSetPreprintFile(OsfTestCase):
 
     def test_set_supplemental_node_deleted(self):
         project = ProjectFactory(creator=self.preprint.creator)
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             project.is_deleted= True
             project.save()
             self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
@@ -1449,7 +1459,7 @@ class TestSetPreprintFile(OsfTestCase):
         assert not self.preprint.is_public
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert not self.preprint.is_public
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         self.preprint.provider = PreprintProviderFactory()
@@ -1474,7 +1484,7 @@ class TestSetPreprintFile(OsfTestCase):
         assert self.preprint.primary_file._id == self.file_two._id
 
     def test_add_invalid_file(self):
-        with pytest.raises(AttributeError):
+        with raises(AttributeError):
             self.preprint.set_primary_file('inatlanta', auth=self.auth, save=True)
 
     def test_removing_primary_file_creates_orphan(self):
@@ -1497,7 +1507,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_published(True, auth=self.auth, save=False)
         self.preprint.primary_file = None
 
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.preprint.save()
 
     def test_cant_update_without_file(self):
@@ -1505,7 +1515,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.primary_file = None
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.preprint.save()
 
 
@@ -1530,14 +1540,14 @@ class TestPreprintPermissions(OsfTestCase):
 
     def test_noncontrib_cannot_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.noncontrib))
         self.preprint.reload()
         assert initial_subjects == list(self.preprint.subjects.all())
 
     def test_read_cannot_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.read_contrib))
 
         self.preprint.reload()
@@ -1558,14 +1568,14 @@ class TestPreprintPermissions(OsfTestCase):
 
     def test_noncontrib_cannot_set_file(self):
         initial_file = self.preprint.primary_file
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_primary_file(self.file, auth=Auth(self.noncontrib), save=True)
         self.preprint.reload()
         assert initial_file._id == self.preprint.primary_file._id
 
     def test_read_contrib_cannot_set_file(self):
         initial_file = self.preprint.primary_file
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_primary_file(self.file, auth=Auth(self.read_contrib), save=True)
         self.preprint.reload()
         assert initial_file._id == self.preprint.primary_file._id
@@ -1590,13 +1600,13 @@ class TestPreprintPermissions(OsfTestCase):
             materialized_path='/panda.txt')
         file.save()
 
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             self.preprint.set_primary_file(file, auth=Auth(self.user), save=True)
 
     def test_non_admin_cannot_publish(self):
         assert not self.preprint.is_published
 
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_published(True, auth=Auth(self.noncontrib), save=True)
 
         assert not self.preprint.is_published
@@ -1604,7 +1614,7 @@ class TestPreprintPermissions(OsfTestCase):
     def test_read_cannot_publish(self):
         assert not self.preprint.is_published
 
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_published(True, auth=Auth(self.read_contrib), save=True)
 
         assert not self.preprint.is_published
@@ -1612,7 +1622,7 @@ class TestPreprintPermissions(OsfTestCase):
     def test_write_cannot_publish(self):
         assert not self.preprint.is_published
 
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_published(True, auth=Auth(self.write_contrib), save=True)
 
         assert not self.preprint.is_published
@@ -1631,7 +1641,7 @@ class TestPreprintPermissions(OsfTestCase):
 
         assert self.preprint.is_published
 
-        with pytest.raises(ValueError) as e:
+        with raises(ValueError) as e:
             self.preprint.set_published(False, auth=Auth(self.user), save=True)
 
         assert 'Cannot unpublish' in str(e.exception)
@@ -1641,12 +1651,12 @@ class TestPreprintPermissions(OsfTestCase):
         new_title = 'My new preprint title'
 
         # noncontrib
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_title(new_title, auth=Auth(self.noncontrib), save=True)
         assert self.preprint.title == original_title
 
         # read
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_title(new_title, auth=Auth(self.read_contrib), save=True)
         assert self.preprint.title == original_title
 
@@ -1665,12 +1675,12 @@ class TestPreprintPermissions(OsfTestCase):
         new_abstract = 'This is my preprint abstract'
 
         # noncontrib
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_description(new_abstract, auth=Auth(self.noncontrib), save=True)
         assert self.preprint.description == original_abstract
 
         # read
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_description(new_abstract, auth=Auth(self.read_contrib), save=True)
         assert self.preprint.description == original_abstract
 
@@ -1690,12 +1700,12 @@ class TestPreprintPermissions(OsfTestCase):
         self.preprint.save()
 
         # noncontrib
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_privacy('public', auth=Auth(self.noncontrib), save=True)
         assert not self.preprint.is_public
 
         # read
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_privacy('public', auth=Auth(self.read_contrib), save=True)
         assert not self.preprint.is_public
 
@@ -1723,12 +1733,12 @@ class TestPreprintPermissions(OsfTestCase):
         self.preprint.add_contributor(self.noncontrib, ADMIN, save=True)
 
         # noncontrib
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.noncontrib), save=True)
         assert self.preprint.node is None
 
         # read
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.read_contrib), save=True)
         assert self.preprint.node is None
 
@@ -1753,12 +1763,12 @@ class TestPreprintPermissions(OsfTestCase):
         project.add_contributor(self.noncontrib, ADMIN, save=True)
 
         # noncontrib
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.noncontrib), save=True)
         assert self.preprint.node is None
 
         # read
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.read_contrib), save=True)
         assert self.preprint.node is None
 
@@ -1909,7 +1919,7 @@ class TestPreprintIdentifiers(OsfTestCase):
         assert not request_identifiers(preprint)
 
 
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -2013,9 +2023,9 @@ class TestPreprintOsfStorage(OsfTestCase):
         self.session = SessionStore()
         self.session['auth_user_id'] = self.user._id
         self.session.create()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
+        self.cookie = Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
         self.preprint = PreprintFactory(creator=self.user)
-        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.JWE_KEY = kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
     def test_create_log(self):
         action = 'file_added'
@@ -2032,7 +2042,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         assert self.preprint.logs.latest().params['path'] == path
 
     def build_url(self, **kwargs):
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
+        options = {'payload': encrypt(encode({'data': dict(dict(
             action='download',
             nid=self.preprint._id,
             provider='osfstorage'), **kwargs),
@@ -2043,11 +2053,11 @@ class TestPreprintOsfStorage(OsfTestCase):
     def test_auth_download(self):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, auth=Auth(user=self.user))
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = decode(decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert data['credentials'] == self.preprint.serialize_waterbutler_credentials()
         assert data['settings'] == self.preprint.serialize_waterbutler_settings()
-        expected_url = furl.furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
-        observed_url = furl.furl(data['callback_url'])
+        expected_url = furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
+        observed_url = furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert expected_url == observed_url
 
@@ -2071,14 +2081,14 @@ class TestCheckPreprintAuth(OsfTestCase):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
         self.preprint.save()
-        with pytest.raises(HTTPError) as exc_info:
+        with raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user=user2), 'download', None)
         assert exc_info.exception.code == 403
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
-        with pytest.raises(HTTPError) as exc_info:
+        with raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(), 'download', None)
         assert exc_info.exception.code == 401
 
@@ -2086,24 +2096,24 @@ class TestCheckPreprintAuth(OsfTestCase):
         self.preprint.date_withdrawn = timezone.now()
         self.preprint.save()
         # Unauthenticated
-        with pytest.raises(HTTPError) as exc_info:
+        with raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(), 'download', None)
         assert exc_info.exception.code == 401
 
         # Noncontributor
         user2 = AuthUserFactory()
-        with pytest.raises(HTTPError) as exc_info:
+        with raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user2), 'download', None)
         assert exc_info.exception.code == 403
 
         # Read contributor
         self.preprint.add_contributor(user2, READ, save=True)
-        with pytest.raises(HTTPError) as exc_info:
+        with raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user2), 'download', None)
         assert exc_info.exception.code == 403
 
         # Admin contributor
-        with pytest.raises(HTTPError) as exc_info:
+        with raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(self.user), 'download', None)
         assert exc_info.exception.code == 403
 
@@ -2128,7 +2138,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         self.session = SessionStore()
         self.session['auth_user_id'] = self.user._id
         self.session.create()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key)
+        self.cookie = Signer(settings.SECRET_KEY).sign(self.session.session_key)
 
     def build_payload(self, metadata, **kwargs):
         options = dict(
@@ -2136,7 +2146,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
             action='create',
             provider='osfstorage',
             metadata=metadata,
-            time=time.time() + 1000,
+            time=time() + 1000,
         )
         options.update(kwargs)
         options = {
@@ -2282,41 +2292,41 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         assert ('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestWithdrawnPreprint:
 
-    @pytest.fixture()
+    @fixture()
     def user(self):
         return AuthUserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def unpublished_preprint_pre_mod(self):
         return PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
 
-    @pytest.fixture()
+    @fixture()
     def preprint_pre_mod(self):
         return PreprintFactory(reviews_workflow='pre-moderation')
 
-    @pytest.fixture()
+    @fixture()
     def unpublished_preprint_post_mod(self):
         return PreprintFactory(reviews_workflow='post-moderation', is_published=False)
 
-    @pytest.fixture()
+    @fixture()
     def preprint_post_mod(self):
         return PreprintFactory(reviews_workflow='post-moderation')
 
-    @pytest.fixture()
+    @fixture()
     def preprint(self):
         return PreprintFactory()
 
-    @pytest.fixture()
+    @fixture()
     def admin(self):
         admin = AuthUserFactory()
         osf_admin = Group.objects.get(name='osf_admin')
         admin.groups.add(osf_admin)
         return admin
 
-    @pytest.fixture()
+    @fixture()
     def moderator(self, preprint_pre_mod, preprint_post_mod):
         moderator = AuthUserFactory()
         preprint_pre_mod.provider.add_to_group(moderator, 'moderator')
@@ -2327,7 +2337,7 @@ class TestWithdrawnPreprint:
 
         return moderator
 
-    @pytest.fixture()
+    @fixture()
     def make_withdrawal_request(self, user):
         def withdrawal_request(target):
             request = PreprintRequestFactory(
@@ -2339,7 +2349,7 @@ class TestWithdrawnPreprint:
             return request
         return withdrawal_request
 
-    @pytest.fixture()
+    @fixture()
     def crossref_client(self):
         return crossref.CrossRefClient(base_url='http://test.osf.crossref.test')
 
@@ -2369,11 +2379,11 @@ class TestWithdrawnPreprint:
         unpublished_preprint_pre_mod.ever_public = False
         unpublished_preprint_post_mod.ever_public = False
         preprint.ever_public = False
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             preprint.save()
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             unpublished_preprint_pre_mod.save()
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             unpublished_preprint_post_mod.save()
 
     def test_crossref_status_is_updated(self, make_withdrawal_request, preprint, preprint_post_mod, preprint_pre_mod, moderator, admin, crossref_client):

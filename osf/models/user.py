@@ -1,68 +1,58 @@
-import datetime as dt
-import logging
-import re
-from future.moves.urllib.parse import urljoin, urlencode
-import uuid
+from datetime import datetime
 from copy import deepcopy
+from importlib import import_module
+from logging import getLogger
+from re import sub
+from uuid import uuid4
 
-from flask import Request as FlaskRequest
-from framework import analytics
-from guardian.shortcuts import get_perms
-from past.builtins import basestring
-
-# OSF imports
-import itsdangerous
-import pytz
 from dirtyfields import DirtyFieldsMixin
+from flask import Request as FlaskRequest
+from future.moves.urllib.parse import urljoin, urlencode
+from guardian.shortcuts import get_objects_for_user, get_perms
+from itsdangerous import Signer, BadSignature
+from past.builtins import basestring
+from pytz import utc
 
+from api.share.utils import update_share
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
-from django.dispatch import receiver
 from django.db import models
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
-from guardian.shortcuts import get_objects_for_user
-
+from framework import analytics
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
-                                       InvalidTokenError,
-                                       MergeConfirmedRequiredError,
-                                       MergeConflictError)
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError, MergeConfirmedRequiredError, MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
-from api.share.utils import update_share
-from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
+from osf.utils.names import impute_names
+from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS, MANAGE, MANAGER, MEMBER
+from osf.utils.requests import check_select_for_update, get_current_request, get_headers_from_request
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
-from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
 from .mixins import AddonModelMixin
-from .spam import SpamMixin
+from .notable_domain import NotableDomain
 from .session import UserSessionMap
+from .spam import SpamMixin
 from .tag import Tag
 from .validators import validate_email, validate_social, validate_history_item
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
-from osf.utils.names import impute_names
-from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
-from website import settings as website_settings
-from website import filters, mails
+from website import filters, mails, settings as website_settings
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags
-from importlib import import_module
-from osf.utils.requests import get_headers_from_request
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
@@ -214,25 +204,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Per-project unclaimed user data:
     # TODO: add validation
     unclaimed_records = DateTimeAwareJSONField(default=dict, blank=True)
-    # Format: {
-    #   <project_id>: {
-    #       'name': <name that referrer provided>,
-    #       'referrer_id': <user ID of referrer>,
-    #       'token': <token used for verification urls>,
-    #       'email': <email the referrer provided or None>,
-    #       'claimer_email': <email the claimer entered or None>,
-    #       'last_sent': <timestamp of last email sent to referrer or None>
-    #   }
-    #   ...
-    # }
 
-    # Time of last sent notification email to newly added contributors
-    # Format : {
-    #   <project_id>: {
-    #       'last_sent': time.time()
-    #   }
-    #   ...
-    # }
     contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # Tracks last email sent where user was added to an OSF Group
@@ -250,10 +222,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # verification key v2: token, and expiration time
     # used for password reset, confirm account/email, claim account/contributor-ship
     verification_key_v2 = DateTimeAwareJSONField(default=dict, blank=True, null=True)
-    # Format: {
-    #   'token': <verification token>
-    #   'expires': <verification expiration time>
-    # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
     change_password_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
@@ -264,10 +232,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # email verification tokens
     #   see also ``unconfirmed_emails``
     email_verifications = DateTimeAwareJSONField(default=dict, blank=True)
-    # Format: {
-    #   <token> : {'email': <email address>,
-    #              'expiration': <datetime>}
-    # }
 
     # email lists to which the user has chosen a subscription setting
     mailchimp_mailing_lists = DateTimeAwareJSONField(default=dict, blank=True)
@@ -627,7 +591,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self._id:
             self.username = self._id
         else:
-            self.username = str(uuid.uuid4())
+            self.username = str(uuid4())
         return self.username
 
     def has_usable_username(self):
@@ -1136,7 +1100,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Not all tokens are guaranteed to have expiration dates
         if (
             'expiration' in verification and
-            verification['expiration'].replace(tzinfo=pytz.utc) < timezone.now()
+            verification['expiration'].replace(tzinfo=utc) < timezone.now()
         ):
             raise ExpiredTokenError
 
@@ -1570,7 +1534,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def display_absolute_url(self):
         url = self.absolute_url
         if url is not None:
-            return re.sub(r'https?:', '', url).strip('/')
+            return sub(r'https?:', '', url).strip('/')
 
     def display_full_name(self, node=None):
         """Return the full name , as it would display in a contributor list for a
@@ -1835,7 +1799,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user_session['auth_user_fullname'] = self.fullname
             user_session.create()
             UserSessionMap.objects.create(user=self, session_key=user_session.session_key)
-        signer = itsdangerous.Signer(secret)
+        signer = Signer(secret)
         return signer.sign(user_session.session_key)
 
     @classmethod
@@ -1849,8 +1813,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         secret = secret or website_settings.SECRET_KEY
 
         try:
-            session_key = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
-        except itsdangerous.BadSignature:
+            session_key = ensure_str(Signer(secret).unsign(cookie))
+        except BadSignature:
             return None
 
         if not SessionStore().exists(session_key=session_key):
@@ -1861,7 +1825,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def get_node_comment_timestamps(self, target_id):
         """ Returns the timestamp for when comments were last viewed on a node, file or wiki.
         """
-        default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
+        default_timestamp = datetime(1970, 1, 1, 12, 0, 0, tzinfo=utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
     def _get_spam_content(self, saved_fields=None, **unused_kwargs):

@@ -1,15 +1,15 @@
 from collections import defaultdict
 from datetime import datetime
-import logging
-import pytz
+from logging import getLogger
 
 from keen.client import KeenClient
+from pytz import utc
 
 from osf.metrics.utils import YearMonth
 from website.settings import KEEN as keen_settings
 
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class MonthlyReporter:
@@ -66,7 +66,7 @@ class DailyReporter:
                 report.report_date.year,
                 report.report_date.month,
                 report.report_date.day,
-                tzinfo=pytz.utc,
+                tzinfo=utc,
             )
 
             for collection_name, keen_events in self.keen_events_from_report(report).items():

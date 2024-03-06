@@ -1,53 +1,45 @@
-import pytz
-from furl import furl
 from datetime import datetime, timedelta
-from django.db.models import F
-from django.views.defaults import page_not_found
-from django.views.generic import (
-    View,
-    FormView,
-    ListView,
-    TemplateView
-)
+
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.shortcuts import redirect
 from django.core.paginator import Paginator
+from django.db.models import F
+from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy
+from django.views.defaults import page_not_found
+from django.views.generic import FormView, ListView, TemplateView, View
+from furl import furl
+from pytz import utc
 
-from osf.exceptions import UserStateError
-from osf.models.base import Guid
-from osf.models.user import OSFUser
-from osf.models.spam import SpamStatus
+from admin.base.views import GuidView
+from admin.users.forms import (
+    AddSystemTagForm,
+    EmailResetForm,
+    MergeUserForm,
+    UserSearchForm
+)
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
-
-from website import search
-
+from osf.exceptions import UserStateError
 from osf.models.admin_log_entry import (
-    update_admin_log,
+    CONFIRM_HAM,
+    CONFIRM_SPAM,
+    REINDEX_ELASTIC,
+    UNFLAG_SPAM,
     USER_2_FACTOR,
     USER_EMAILED,
+    USER_GDPR_DELETED,
     USER_REMOVED,
     USER_RESTORED,
-    USER_GDPR_DELETED,
-    CONFIRM_SPAM,
-    CONFIRM_HAM,
-    UNFLAG_SPAM,
-    REINDEX_ELASTIC,
+    update_admin_log
 )
-
-from admin.users.forms import (
-    EmailResetForm,
-    UserSearchForm,
-    MergeUserForm,
-    AddSystemTagForm
-)
-from admin.base.views import GuidView
+from osf.models.base import Guid
+from osf.models.spam import SpamStatus
+from osf.models.user import OSFUser
+from website import search
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
-from django.urls import reverse_lazy
 
 
 class UserMixin(PermissionRequiredMixin):
@@ -468,7 +460,7 @@ class GetUserConfirmationLink(GetUserLink):
 class GetPasswordResetLink(GetUserLink):
     def get_link(self, user):
         user.verification_key_v2 = generate_verification_key(verification_type='password')
-        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
+        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=utc) + timedelta(hours=48)
         user.save()
 
         url = furl(DOMAIN)

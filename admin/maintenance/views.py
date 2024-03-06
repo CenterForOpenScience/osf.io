@@ -1,14 +1,14 @@
-import pytz
-import datetime
+from datetime import datetime
 
-from osf.models import MaintenanceState
-import website.maintenance as maintenance
-from admin.maintenance.forms import MaintenanceForm
-
-from django.shortcuts import redirect
-from django.forms.models import model_to_dict
-from django.views.generic import DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.forms.models import model_to_dict
+from django.shortcuts import redirect
+from django.views.generic import DeleteView, TemplateView
+from pytz import timezone, utc
+
+from admin.maintenance.forms import MaintenanceForm
+import website.maintenance as maintenance
+from osf.models import MaintenanceState
 
 
 class DeleteMaintenance(PermissionRequiredMixin, DeleteView):
@@ -46,8 +46,8 @@ class MaintenanceDisplay(PermissionRequiredMixin, TemplateView):
 
 
 def convert_eastern_to_utc(date):
-    local = pytz.timezone('US/Eastern')
+    local = timezone('US/Eastern')
     naive = datetime.datetime.strptime(date, '%Y/%m/%d %H:%M')
     local_dt = local.localize(naive, is_dst=None)
-    utc_dt = local_dt.astimezone(pytz.utc)
+    utc_dt = local_dt.astimezone(utc)
     return utc_dt

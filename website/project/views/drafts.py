@@ -1,38 +1,37 @@
-import functools
-from rest_framework import status as http_status
-import itertools
-import html
-
+from functools import partial, wraps
+from html import unescape
+from itertools import islice
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
 from django.utils import timezone
-from flask import request, redirect
-import pytz
+from flask import redirect, request
+from rest_framework import status as http_status
+from pytz import utc
 
 from framework.database import autoload
 from framework.exceptions import HTTPError
 
 from osf import features
-from osf.utils.sanitize import strip_html
-from osf.utils.permissions import ADMIN
+from osf.models import DraftRegistration, RegistrationSchema
 from osf.utils.functional import rapply
-from osf.models import RegistrationSchema, DraftRegistration
+from osf.utils.permissions import ADMIN
+from osf.utils.sanitize import strip_html
 
-from website.project.decorators import (
-    must_be_valid_project,
-    must_be_contributor_and_not_group_member,
-    must_have_permission,
-)
 from website import settings
 from website.ember_osf_web.decorators import ember_flag_is_active
-
 from website.project import utils
+from website.project.decorators import (
+    must_be_contributor_and_not_group_member,
+    must_be_valid_project,
+    must_have_permission,
+)
 from website.project.metadata.schemas import METASCHEMA_ORDERING
-from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
+from website.project.metadata.utils import serialize_draft_registration, serialize_meta_schema
 from website.project.utils import serialize_node
 
-autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
+autoload_draft = partial(autoload, DraftRegistration, 'draft_id', 'draft')
+
 
 def get_schema_or_fail(schema_name, schema_version):
     try:
@@ -43,10 +42,11 @@ def get_schema_or_fail(schema_name, schema_version):
         ))
     return meta_schema
 
+
 def must_be_branched_from_node(func):
     @autoload_draft
     @must_be_valid_project
-    @functools.wraps(func)
+    @wraps(func)
     def wrapper(*args, **kwargs):
         node = kwargs['node']
         draft = kwargs['draft']
@@ -75,7 +75,7 @@ def validate_embargo_end_date(end_date_string, node):
     :raises: HTTPError if end_date is less than the approval window or greater than the
     max embargo end date
     """
-    end_date = parse_date(end_date_string, ignoretz=True).replace(tzinfo=pytz.utc)
+    end_date = parse_date(end_date_string, ignoretz=True).replace(tzinfo=utc)
     today = timezone.now()
     if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
@@ -143,7 +143,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     """
     #'updated': '2016-08-03T14:24:12Z'
     count = request.args.get('count', 100)
-    drafts = itertools.islice(node.draft_registrations_active, 0, count)
+    drafts = islice(node.draft_registrations_active, 0, count)
     serialized_drafts = [serialize_draft_registration(d, auth) for d in drafts]
     sorted_serialized_drafts = sorted(serialized_drafts, key=itemgetter('updated'), reverse=True)
     return {
@@ -223,10 +223,10 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
 
     # Unencodes HTML special characters in filenames
     if schema_data.get('uploader', {}).get('value'):
-        schema_data['uploader']['value'] = html.unescape(schema_data['uploader']['value'])
+        schema_data['uploader']['value'] = unescape(schema_data['uploader']['value'])
     if schema_data.get('uploader', {}).get('extra'):
         for extra in schema_data['uploader']['extra']:
-            extra['selectedFileName'] = html.unescape(extra['selectedFileName'])
+            extra['selectedFileName'] = unescape(extra['selectedFileName'])
 
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)
@@ -239,6 +239,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     draft.update_metadata(schema_data)
     draft.save()
     return serialize_draft_registration(draft, auth), http_status.HTTP_200_OK
+
 
 @must_have_permission(ADMIN)
 @must_be_contributor_and_not_group_member

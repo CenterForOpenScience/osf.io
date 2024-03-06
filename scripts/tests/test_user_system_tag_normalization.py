@@ -1,18 +1,32 @@
-import pytest
-import pytz
 from datetime import datetime
 
-from osf_tests.factories import PreprintFactory, UserFactory, ProjectFactory, TagFactory
-from osf.models import Tag
-from scripts.normalize_user_tags import normalize_source_tags, add_claimed_tags, add_osf_provider_tags, add_prereg_campaign_tags, PROVIDER_SOURCE_TAGS, CAMPAIGN_SOURCE_TAGS, PROVIDER_CLAIMED_TAGS, CAMPAIGN_CLAIMED_TAGS
-from website.util.metrics import OsfSourceTags, CampaignSourceTags, OsfClaimedTags, CampaignClaimedTags
+from pytest import mark, fixture
+from pytz import utc
 
-pytestmark = pytest.mark.django_db
+from osf.models import Tag
+from osf_tests.factories import UserFactory
+from scripts.normalize_user_tags import (
+    add_claimed_tags,
+    add_osf_provider_tags,
+    add_prereg_campaign_tags,
+    normalize_source_tags,
+    CAMPAIGN_CLAIMED_TAGS,
+    CAMPAIGN_SOURCE_TAGS,
+    PROVIDER_CLAIMED_TAGS,
+    PROVIDER_SOURCE_TAGS,
+)
+from website.util.metrics import (
+    CampaignSourceTags,
+    OsfClaimedTags,
+    OsfSourceTags,
+)
+
+pytestmark = mark.django_db
 
 
 class TestUserSystemTagNormalization:
 
-    @pytest.fixture()
+    @fixture()
     def legacy_system_tags(self):
         tags = []
         for item in [item[0] for item in PROVIDER_SOURCE_TAGS]:
@@ -23,17 +37,17 @@ class TestUserSystemTagNormalization:
             tag = Tag(name=item, system=True)
             tag.save()
 
-    @pytest.fixture()
+    @fixture()
     def prereg_challenge_user_created_before_cutoff(self):
         user = UserFactory()
-        user.date_registered = pytz.utc.localize(datetime(1998, 12, 1, 4, 48))
+        user.date_registered = utc.localize(datetime(1998, 12, 1, 4, 48))
         user.save()
         return user
 
-    @pytest.fixture()
+    @fixture()
     def prereg_challenge_user_created_after_cutoff(self):
         user = UserFactory()
-        user.date_registered = pytz.utc.localize(datetime(2019, 12, 1, 4, 48))
+        user.date_registered = utc.localize(datetime(2019, 12, 1, 4, 48))
         user.save()
         return user
 

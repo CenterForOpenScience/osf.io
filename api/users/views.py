@@ -1,8 +1,7 @@
-import pytz
-
 from django.apps import apps
 from django.db.models import F
 from guardian.shortcuts import get_objects_for_user
+from pytz import utc
 from rest_framework.throttling import UserRateThrottle
 
 from api.addons.views import AddonSettingsMixin
@@ -35,7 +34,6 @@ from api.preprints.serializers import PreprintSerializer
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.resources import annotations as resource_annotations
-
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
@@ -86,6 +84,7 @@ from osf.models import (
 )
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
+
 
 class UserMixin:
     """Mixin with convenience methods for retrieving the current user based on the
@@ -671,7 +670,7 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(
             user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE,
         ):
-            time_since_throttle = (timezone.now() - user.change_password_last_attempt.replace(tzinfo=pytz.utc)).total_seconds()
+            time_since_throttle = (timezone.now() - user.change_password_last_attempt.replace(tzinfo=utc)).total_seconds()
             wait_time = settings.CHANGE_PASSWORD_THROTTLE - time_since_throttle
             raise Throttled(wait=wait_time)
 

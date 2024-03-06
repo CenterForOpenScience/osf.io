@@ -1,37 +1,28 @@
-import datetime as dt
-import pytest
+from datetime import datetime, timedelta
 from unittest import mock
-import pytz
-import datetime
 
-from osf.models import AdminLogEntry, NodeLog, AbstractNode
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
+from django.test import RequestFactory
+from django.urls import reverse
+from django.utils import timezone
+from pytz import utc
+from pytest import raises, mark
+
 from admin.nodes.views import (
-    NodeDeleteView,
-    NodeRemoveContributorView,
-    NodeView,
-    NodeReindexShare,
-    NodeReindexElastic,
-    NodeFlaggedSpamList,
-    NodeKnownSpamList,
-    NodeKnownHamList,
-    NodeConfirmHamView,
-    AdminNodeLogView,
-    RestartStuckRegistrationsView,
-    RemoveStuckRegistrationsView
+    AdminNodeLogView, NodeConfirmHamView, NodeDeleteView, NodeFlaggedSpamList,
+    NodeKnownHamList, NodeKnownSpamList, NodeReindexElastic, NodeReindexShare,
+    NodeRemoveContributorView, NodeView, RemoveStuckRegistrationsView,
+    RestartStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
 from api_tests.share._utils import mock_update_share
-from website import settings
-from django.utils import timezone
-from django.test import RequestFactory
-from django.urls import reverse
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 from framework.auth.core import Auth
-
+from osf.models import AbstractNode, AdminLogEntry, NodeLog
+from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, UserFactory
 from tests.base import AdminTestCase
-from osf_tests.factories import UserFactory, AuthUserFactory, ProjectFactory, RegistrationFactory
+from website import settings
 
 
 def patch_messages(request):
@@ -88,7 +79,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get(reverse('nodes:node', kwargs={'guid': guid}))
         request.user = user
 
-        with pytest.raises(PermissionDenied):
+        with raises(PermissionDenied):
             NodeView.as_view()(request, guid=guid)
 
     def test_correct_view_permissions(self):
@@ -121,7 +112,7 @@ class TestNodeDeleteView(AdminTestCase):
 
     def test_remove_node(self):
         count = AdminLogEntry.objects.count()
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.view.post(self.request)
         self.node.refresh_from_db()
@@ -147,7 +138,7 @@ class TestNodeDeleteView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = user
 
-        with pytest.raises(PermissionDenied):
+        with raises(PermissionDenied):
             self.plain_view.as_view()(request, guid=guid)
 
     def test_correct_view_permissions(self):
@@ -220,7 +211,7 @@ class TestRemoveContributor(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with pytest.raises(PermissionDenied):
+        with raises(PermissionDenied):
             self.view.as_view()(request, guid=guid, user_id=self.user)
 
     def test_correct_view_permissions(self):
@@ -241,9 +232,9 @@ class TestRemoveContributor(AdminTestCase):
         assert response.status_code == 302
 
 
-@pytest.mark.enable_search
-@pytest.mark.enable_enqueue_task
-@pytest.mark.enable_implicit_clean
+@mark.enable_search
+@mark.enable_enqueue_task
+@mark.enable_implicit_clean
 class TestNodeReindex(AdminTestCase):
     def setUp(self):
         super().setUp()
@@ -387,7 +378,7 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
         # Make the registration "stuck"
         archive_job = self.registration.archive_job
         archive_job.datetime_initiated = (
-            timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA - dt.timedelta(hours=1)
+            timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA - timedelta(hours=1)
         )
         archive_job.save()
         self.registration.save()

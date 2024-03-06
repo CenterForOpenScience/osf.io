@@ -1,17 +1,20 @@
 from datetime import datetime
-import pytz
-import logging
-from django.apps import apps
-from website.app import init_app
-from scripts import utils as script_utils
+from logging import getLogger, StreamHandler, Formatter
 import sys
-from django.db import transaction, IntegrityError
-from website.util.metrics import OsfSourceTags, OsfClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag, provider_claimed_tag
 
-logger = logging.getLogger(__name__)
+from django.apps import apps
+from django.db import transaction, IntegrityError
+from pytz import utc
+
+from website.app import init_app
+from website.util.metrics import (OsfSourceTags, OsfClaimedTags, CampaignSourceTags,
+                                  CampaignClaimedTags, provider_source_tag, provider_claimed_tag)
+from scripts import utils as script_utils
+
+logger = getLogger(__name__)
 logger.propagate = False
-console_handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+console_handler = StreamHandler()
+formatter = Formatter('%(asctime)s %(levelname)s: %(message)s')
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
@@ -163,7 +166,7 @@ def add_prereg_campaign_tags():
         # Otherwise, we create the prereg source tag, and then migrate the users.
         prereg_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Prereg.value, system=True)
         logger.info('Added tag ' + prereg_source_tag.name)
-        prereg_challenge_cutoff_date = pytz.utc.localize(datetime(2019, 1, 1, 5, 59))
+        prereg_challenge_cutoff_date = utc.localize(datetime(2019, 1, 1, 5, 59))
         prereg_users_registered_after_january_first = OSFUser.objects.filter(tags__id=prereg_challenge_source_tag.id,
                                                                              date_registered__gt=prereg_challenge_cutoff_date)
         logger.info(

@@ -1,20 +1,21 @@
-import pytz
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from pytz import utc
+
+from .base import BaseModel, Guid, GuidMixin
+from .mixins import CommentableMixin
 from .node import Node
 from .nodelog import NodeLog
-from .base import GuidMixin, Guid, BaseModel
-from .mixins import CommentableMixin
 from .spam import SpamMixin
 from .validators import CommentMaxLength, string_required
 from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.exceptions import PermissionsError
 from website import settings
-from website.util import api_v2_url
 from website.project import signals as project_signals
 from website.project.model import get_valid_mentioned_users_guids
+from website.util import api_v2_url
 
 
 class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
@@ -124,7 +125,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 raise ValueError('Invalid page')
 
             if not view_timestamp.tzinfo:
-                view_timestamp = view_timestamp.replace(tzinfo=pytz.utc)
+                view_timestamp = view_timestamp.replace(tzinfo=utc)
 
             return cls.objects.filter(
                 Q(node=node) & ~Q(user=user) & Q(is_deleted=False) &

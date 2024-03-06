@@ -1,10 +1,10 @@
 import datetime as dt
-import json
-import logging
 from decimal import Decimal
+from json import dumps
+from logging import getLogger
 
-import pytz
 from dateutil.parser import isoparse
+from pytz import utc
 from django.contrib.postgres import lookups
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import JSONField
@@ -12,7 +12,7 @@ from django.forms import JSONField as JSONFormField
 
 from osf.exceptions import NaiveDatetimeException, ValidationError
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def coerce_nonnaive_datetimes(json_data):
@@ -24,9 +24,9 @@ def coerce_nonnaive_datetimes(json_data):
             coerced_data[key] = coerce_nonnaive_datetimes(value)
     elif isinstance(json_data, dt.datetime):
         try:
-            worked = json_data.astimezone(pytz.utc)  # aware object can be in any timezone # noqa
+            worked = json_data.astimezone(utc)  # aware object can be in any timezone # noqa
         except ValueError:  # naive
-            coerced_data = json_data.replace(tzinfo=pytz.utc)  # json_data must be in UTC
+            coerced_data = json_data.replace(tzinfo=utc)  # json_data must be in UTC
         else:
             coerced_data = json_data  # it's already aware
     else:
@@ -109,7 +109,7 @@ class DateTimeAwareJSONFormField(JSONFormField):
 
     def prepare_value(self, value):
         try:
-            return json.dumps(value, cls=DateTimeAwareJSONEncoder)
+            return dumps(value, cls=DateTimeAwareJSONEncoder)
         except TypeError:
             raise ValidationError(
                 self.error_messages['invalid'],

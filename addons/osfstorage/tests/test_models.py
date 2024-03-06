@@ -1,34 +1,29 @@
-from unittest import mock
-import unittest
-
-import pytest
-import pytz
-from django.utils import timezone
+from datetime import datetime
 from importlib import import_module
+from unittest import mock, skip
+
 from django.conf import settings as django_conf_settings
+from django.utils import timezone
+from pytz import UTC
+from pytest import fixture, mark, raises
 
-from framework.auth import Auth
+from addons.osfstorage import settings, utils
+from addons.osfstorage.listeners import delete_files_task
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
-from osf.models import BaseFileNode
-from osf.exceptions import ValidationError
-from osf.utils.permissions import WRITE, ADMIN
-
-from osf_tests.factories import ProjectFactory, UserFactory, PreprintFactory, RegionFactory, NodeFactory
-
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
-from addons.osfstorage.listeners import delete_files_task
-
-import datetime
-
+from framework.auth import Auth
 from osf import models
-from addons.osfstorage import utils
-from addons.osfstorage import settings
+from osf.exceptions import ValidationError
+from osf.models import BaseFileNode
+from osf.utils.permissions import ADMIN, WRITE
+from osf_tests.factories import NodeFactory, PreprintFactory, ProjectFactory, RegionFactory, UserFactory
 from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
-@pytest.mark.django_db
+
+@mark.django_db
 class TestOsfstorageFileNode(StorageTestCase):
     def test_root_node_exists(self):
         assert self.node_settings.root_node is not None
@@ -38,28 +33,6 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_node_reference(self):
         assert self.project == self.node_settings.root_node.target
-
-    # def test_get_folder(self):
-    #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
-    #     folder = models.OsfStorageFolder(name='MOAR PYLONS', node=self.node)
-
-    #     _id = folder._id
-
-    #     file.save()
-    #     folder.save()
-
-    #     assert folder == models.OsfStorageFileNode.get_folder(_id, self.node_settings)
-
-    # def test_get_file(self):
-    #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
-    #     folder = models.OsfStorageFolder(name='MOAR PYLONS', node=self.node)
-
-    #     file.save()
-    #     folder.save()
-
-    #     _id = file._id
-
-    #     assert file == models.OsfStorageFileNode.get_file(_id, self.node_settings)
 
     def test_serialize(self):
         file = OsfStorageFile(name='MOAR PYLONS', target=self.node_settings.owner)
@@ -165,7 +138,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_append_to_file(self):
         child = self.node_settings.get_root().append_file('Test')
-        with pytest.raises(AttributeError):
+        with raises(AttributeError):
             child.append_file('Cant')
 
     def test_children(self):
@@ -194,7 +167,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert child.get_download_count(1) == 1
         assert child.get_download_count(2) == 1
 
-    @unittest.skip
+    @skip
     def test_create_version(self):
         pass
 
@@ -254,7 +227,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         preprint.save()
         file = preprint.files.all()[0]
 
-        with pytest.raises(FileNodeIsPrimaryFile):
+        with raises(FileNodeIsPrimaryFile):
             file.delete()
 
     def test_delete_file_no_guid(self):
@@ -442,7 +415,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert to_move.is_preprint_primary
 
         move_to = self.node_settings.get_root().append_folder('Cloud')
-        with pytest.raises(FileNodeIsPrimaryFile):
+        with raises(FileNodeIsPrimaryFile):
             moved = to_move.move_under(move_to, name='Tuna')
 
     def test_move_preprint_primary_file_within_preprint(self):
@@ -460,35 +433,35 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert to_move.parent == folder
         assert folder.target == preprint
 
-    @unittest.skip
+    @skip
     def test_move_folder(self):
         pass
 
-    @unittest.skip
+    @skip
     def test_move_folder_and_rename(self):
         pass
 
-    @unittest.skip
+    @skip
     def test_rename_folder(self):
         pass
 
-    @unittest.skip
+    @skip
     def test_rename_file(self):
         pass
 
-    @unittest.skip
+    @skip
     def test_move_across_nodes(self):
         pass
 
-    @unittest.skip
+    @skip
     def test_move_folder_across_nodes(self):
         pass
 
-    @unittest.skip
+    @skip
     def test_copy_across_nodes(self):
         pass
 
-    @unittest.skip
+    @skip
     def test_copy_folder_across_nodes(self):
         pass
 
@@ -679,18 +652,18 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert [] == all_guids
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestNodeSettingsModel:
 
-    @pytest.fixture()
+    @fixture()
     def region(self):
         return RegionFactory()
 
-    @pytest.fixture()
+    @fixture()
     def region2(self):
         return RegionFactory()
 
-    @pytest.fixture()
+    @fixture()
     def user(self, region):
         user = UserFactory()
         user_settings = user.get_addon('osfstorage')
@@ -698,7 +671,7 @@ class TestNodeSettingsModel:
         user_settings.save()
         return user
 
-    @pytest.fixture()
+    @fixture()
     def user2(self, region2):
         user = UserFactory()
         user_settings = user.get_addon('osfstorage')
@@ -706,11 +679,11 @@ class TestNodeSettingsModel:
         user_settings.save()
         return user
 
-    @pytest.fixture()
+    @fixture()
     def node(self, user):
         return ProjectFactory(creator=user, is_public=True)
 
-    @pytest.fixture()
+    @fixture()
     def child_node_with_different_region(self, user, node, region2):
         child = NodeFactory(parent=node, creator=user, is_public=True)
         child_settings = child.get_addon('osfstorage')
@@ -718,15 +691,15 @@ class TestNodeSettingsModel:
         child_settings.save()
         return child
 
-    @pytest.fixture()
+    @fixture()
     def node_settings(sel, node):
         return node.get_addon('osfstorage')
 
-    @pytest.fixture()
+    @fixture()
     def user_settings(sel, user):
         return user.get_addon('osfstorage')
 
-    @pytest.fixture()
+    @fixture()
     def auth_obj(self, node):
         return Auth(user=node.creator)
 
@@ -786,13 +759,13 @@ class TestNodeSettingsModel:
         assert region.waterbutler_credentials == new_test_creds
 
 
-@pytest.mark.django_db
-@pytest.mark.enable_implicit_clean
+@mark.django_db
+@mark.enable_implicit_clean
 class TestOsfStorageFileVersion(StorageTestCase):
     def setUp(self):
         super().setUp()
         self.user = factories.AuthUserFactory()
-        self.mock_date = datetime.datetime(1991, 10, 31, tzinfo=pytz.UTC)
+        self.mock_date = datetime(1991, 10, 31, tzinfo=UTC)
 
     def test_fields(self):
         version = factories.FileVersionFactory(
@@ -836,7 +809,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
     def test_validate_location(self):
         creator = factories.AuthUserFactory()
         version = factories.FileVersionFactory.build(creator=creator, location={'invalid': True})
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             version.save()
         version.location = {
             'service': 'cloud',
@@ -922,7 +895,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         )._find_matching_archive()
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestOsfStorageCheckout(StorageTestCase):
     def setUp(self):
         super().setUp()
@@ -957,17 +930,17 @@ class TestOsfStorageCheckout(StorageTestCase):
         assert self.node.logs.latest().action == 'checked_out'
         assert self.node.logs.latest().user == self.user
 
-        with pytest.raises(FileNodeCheckedOutError):
+        with raises(FileNodeCheckedOutError):
             self.file.check_in_or_out(non_admin, None, save=True)
 
-        with pytest.raises(FileNodeCheckedOutError):
+        with raises(FileNodeCheckedOutError):
             self.file.check_in_or_out(non_admin, non_admin, save=True)
 
     def test_delete_checked_out_file(self):
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert self.file.checkout == self.user
-        with pytest.raises(FileNodeCheckedOutError):
+        with raises(FileNodeCheckedOutError):
             self.file.delete()
 
     def test_delete_folder_with_checked_out_file(self):
@@ -976,7 +949,7 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert self.file.checkout == self.user
-        with pytest.raises(FileNodeCheckedOutError):
+        with raises(FileNodeCheckedOutError):
             folder.delete()
 
     def test_move_checked_out_file(self):
@@ -984,7 +957,7 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.reload()
         assert self.file.checkout == self.user
         folder = self.root_node.append_folder('folder')
-        with pytest.raises(FileNodeCheckedOutError):
+        with raises(FileNodeCheckedOutError):
             self.file.move_under(folder)
 
     def test_checked_out_merge(self):

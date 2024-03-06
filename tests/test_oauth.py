@@ -1,38 +1,39 @@
-from datetime import datetime
-import logging
-
-import pytest
-from rest_framework import status as http_status
-import json
-import logging
+from datetime import datetime, timezone
+from json import dumps
+from logging import getLogger, ERROR
+from time import time
 from unittest import mock
-import time
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
-import responses
-import pytz
+from future.moves.urllib.parse import parse_qs, urlparse
+from pytest import raises
+from responses import add, POST, Response, activate
+from rest_framework import status as http_status
 from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from framework.auth import authenticate
-from framework.exceptions import PermissionsError, HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import get_session
-from osf.models.external import ExternalAccount, ExternalProvider, OAUTH1, OAUTH2
-from website.settings import ADDONS_OAUTH_NO_REDIRECT
-from website.util import api_url_for, web_url_for
-
-from tests.base import OsfTestCase
+from osf.models.external import (
+    ExternalAccount,
+    ExternalProvider,
+    OAUTH1,
+    OAUTH2
+)
 from osf_tests.factories import (
     AuthUserFactory,
     ExternalAccountFactory,
     MockOAuth2Provider,
     UserFactory,
 )
+from tests.base import OsfTestCase
+from website.settings import ADDONS_OAUTH_NO_REDIRECT
+from website.util import api_url_for, web_url_for
 
 SILENT_LOGGERS = ['oauthlib', 'requests_oauthlib']
 
 for logger in SILENT_LOGGERS:
-    logging.getLogger(logger).setLevel(logging.ERROR)
+    getLogger(logger).setLevel(ERROR)
 
 
 class MockOAuth1Provider(ExternalProvider):
@@ -55,13 +56,13 @@ class MockOAuth1Provider(ExternalProvider):
 
 def _prepare_mock_oauth2_handshake_response(expires_in=3600):
 
-    responses.add(
-        responses.Response(
-            responses.POST,
+    add(
+        Response(
+            POST,
             'https://mock2.com/callback',
-            body=json.dumps({
+            body=dumps({
                 'access_token': 'mock_access_token',
-                'expires_at': time.time() + expires_in,
+                'expires_at': time() + expires_in,
                 'expires_in': expires_in,
                 'refresh_token': 'mock_refresh_token',
                 'scope': ['all'],
@@ -73,9 +74,9 @@ def _prepare_mock_oauth2_handshake_response(expires_in=3600):
     )
 
 def _prepare_mock_500_error():
-    responses.add(
-        responses.Response(
-            responses.POST,
+    add(
+        Response(
+            POST,
             'https://mock2.com/callback',
             body='{"error": "not found"}',
             status=503,
@@ -84,9 +85,9 @@ def _prepare_mock_500_error():
     )
 
 def _prepare_mock_401_error():
-    responses.add(
-        responses.Response(
-            responses.POST,
+    add(
+        Response(
+            POST,
             'https://mock2.com/callback',
             body='{"error": "user denied access"}',
             status=401,
@@ -182,12 +183,12 @@ class TestExternalProviderOAuth1(OsfTestCase):
         self.user = UserFactory()
         self.provider = MockOAuth1Provider()
 
-    @responses.activate
+    @activate
     def test_start_flow(self):
         # Request temporary credentials from provider, provide auth redirect
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 'http://mock1a.com/request',
                 body='{"oauth_token_secret": "temp_secret", '
                        '"oauth_token": "temp_token", '
@@ -216,15 +217,15 @@ class TestExternalProviderOAuth1(OsfTestCase):
             assert creds['token'] == 'temp_token'
             assert creds['secret'] == 'temp_secret'
 
-    @responses.activate
+    @activate
     def test_callback(self):
         # Exchange temporary credentials for permanent credentials
 
         # mock a successful call to the provider to exchange temp keys for
         #   permanent keys
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 'http://mock1a.com/callback',
                 body=(
                     'oauth_token=perm_token'
@@ -263,7 +264,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         assert account.provider_id == 'mock_provider_id'
         assert account.provider_name == 'Mock OAuth 1.0a Provider'
 
-    @responses.activate
+    @activate
     def test_callback_wrong_user(self):
         # Reject temporary credentials not assigned to the user
         #
@@ -278,9 +279,9 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
         # mock a successful call to the provider to exchange temp keys for
         #   permanent keys
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 'http://mock1a.com/callback',
                 body='oauth_token=perm_token'
                      '&oauth_token_secret=perm_secret'
@@ -310,7 +311,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
             # make sure the user is logged in
             authenticate(user=malicious_user, response=None)
 
-            with pytest.raises(PermissionsError):
+            with raises(PermissionsError):
                 # do the key exchange
                 self.provider.auth_callback(user=malicious_user)
 
@@ -465,7 +466,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         # Reset the `ADDONS_OAUTH_NO_REDIRECT` list.
         ADDONS_OAUTH_NO_REDIRECT.remove(self.provider.short_name)
 
-    @responses.activate
+    @activate
     def test_callback(self):
         # Exchange temporary credentials for permanent credentials
 
@@ -498,7 +499,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert account.oauth_key == 'mock_access_token'
         assert account.provider_id == 'mock_provider_id'
 
-    @responses.activate
+    @activate
     def test_provider_down(self):
 
         # Create a 500 error
@@ -522,12 +523,12 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             # do the key exchange
 
-            with pytest.raises(HTTPError) as error_raised:
+            with raises(HTTPError) as error_raised:
                 self.provider.auth_callback(user=user)
 
             assert error_raised.exception.code == 503
 
-    @responses.activate
+    @activate
     def test_user_denies_access(self):
 
         # Create a 401 error
@@ -551,7 +552,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             assert not self.provider.auth_callback(user=user)
 
-    @responses.activate
+    @activate
     def test_multiple_users_associated(self):
         # Create only one ExternalAccount for multiple OSF users
         #
@@ -605,7 +606,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         assert ExternalAccount.objects.all().count() == 1
 
-    @responses.activate
+    @activate
     def test_force_refresh_oauth_key(self):
         external_account = ExternalAccountFactory(
             provider='mock2',
@@ -613,15 +614,15 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time() - 200, timezone.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'access_token': 'refreshed_access_token',
                     'expires_in': 3600,
                     'refresh_token': 'refreshed_refresh_token'
@@ -639,7 +640,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert external_account.expires_at != old_expiry
         assert external_account.expires_at > old_expiry
 
-    @responses.activate
+    @activate
     def test_does_need_refresh(self):
         external_account = ExternalAccountFactory(
             provider='mock2',
@@ -647,15 +648,15 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc),
+            expires_at=datetime.fromtimestamp(time() - 200, timezone.utc),
         )
 
         # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'access_token': 'refreshed_access_token',
                     'expires_in': 3600,
                     'refresh_token': 'refreshed_refresh_token'
@@ -673,7 +674,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert external_account.expires_at != old_expiry
         assert external_account.expires_at > old_expiry
 
-    @responses.activate
+    @activate
     def test_does_not_need_refresh(self):
         self.provider.refresh_time = 1
         external_account = ExternalAccountFactory(
@@ -683,15 +684,15 @@ class TestExternalProviderOAuth2(OsfTestCase):
             oauth_key='old_key',
             oauth_secret='old_secret',
             refresh_token='old_refresh',
-            expires_at=datetime.utcfromtimestamp(time.time() + 200).replace(tzinfo=pytz.utc),
+            expires_at=datetime.fromtimestamp(time() + 200, timezone.utc),
         )
 
         # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'err_msg': 'Should not be hit'
                 }),
                 status=500
@@ -712,7 +713,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert external_account.refresh_token == 'old_refresh'
         assert external_account.expires_at == old_expiry
 
-    @responses.activate
+    @activate
     def test_refresh_oauth_key_does_not_need_refresh(self):
         external_account = ExternalAccountFactory(
             provider='mock2',
@@ -720,15 +721,15 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() + 9999).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time() + 9999, timezone.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'err_msg': 'Should not be hit'
                 }),
                 status=500
@@ -739,7 +740,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         ret = self.provider.refresh_oauth_key(force=False)
         assert not ret
 
-    @responses.activate
+    @activate
     def test_refresh_with_broken_provider(self):
         external_account = ExternalAccountFactory(
             provider='mock2',
@@ -747,18 +748,18 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time() - 200, timezone.utc)
         )
         self.provider.client_id = None
         self.provider.client_secret = None
         self.provider.account = external_account
 
         # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'err_msg': 'Should not be hit'
                 }),
                 status=500
@@ -768,7 +769,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         ret = self.provider.refresh_oauth_key(force=False)
         assert not ret
 
-    @responses.activate
+    @activate
     def test_refresh_without_account_or_refresh_url(self):
         external_account = ExternalAccountFactory(
             provider='mock2',
@@ -776,15 +777,15 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() + 200).replace(tzinfo=pytz.utc)
+            expires_at=datetime.fromtimestamp(time() + 200, timezone.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'err_msg': 'Should not be hit'
                 }),
                 status=500
@@ -794,7 +795,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         ret = self.provider.refresh_oauth_key(force=False)
         assert not ret
 
-    @responses.activate
+    @activate
     def test_refresh_with_expired_credentials(self):
         external_account = ExternalAccountFactory(
             provider='mock2',
@@ -802,16 +803,16 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 10000).replace(tzinfo=pytz.utc)  # Causes has_expired_credentials to be True
+            expires_at=datetime.fromtimestamp(time() - 10000, timezone.utc)  # Causes has_expired_credentials to be True
         )
         self.provider.account = external_account
 
         # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'err': 'Should not be hit'
                 }),
                 status=500
@@ -821,7 +822,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         ret = self.provider.refresh_oauth_key(force=False)
         assert not ret
 
-    @responses.activate
+    @activate
     def test_force_refresh_with_expired_credentials(self):
         external_account = ExternalAccountFactory(
             provider='mock2',
@@ -829,21 +830,21 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 10000).replace(tzinfo=pytz.utc)  # Causes has_expired_credentials to be True
+            expires_at=datetime.fromtimestamp(time() - 10000, timezone.utc)  # Causes has_expired_credentials to be True
         )
         self.provider.account = external_account
 
         # mock a failing call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
+        add(
+            Response(
+                POST,
                 self.provider.auto_refresh_url,
-                body=json.dumps({
+                body=dumps({
                     'error': 'invalid_grant',
                 }),
                 status=401
             )
         )
 
-        with pytest.raises(OAuth2Error):
+        with raises(OAuth2Error):
             self.provider.refresh_oauth_key(force=True)

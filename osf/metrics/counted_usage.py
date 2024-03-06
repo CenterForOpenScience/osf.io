@@ -1,19 +1,19 @@
 from datetime import datetime
-import enum
-import logging
+from enum import Enum
+from logging import getLogger
 from urllib.parse import urlsplit
 
 from elasticsearch_dsl import InnerDoc, analyzer, tokenizer
 from elasticsearch_metrics import metrics
 from elasticsearch_metrics.signals import pre_save
 from django.dispatch import receiver
-import pytz
+from pytz import utc
 
 from osf.metrics.utils import stable_key
 from osf.models import Guid
 
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 route_prefix_analyzer = analyzer(
     'route_prefix_analyzer',
@@ -63,7 +63,8 @@ class CountedAuthUsage(metrics.Metric):
     user_is_authenticated = metrics.Boolean()
 
     action_labels = metrics.Keyword(multi=True)
-    class ActionLabel(enum.Enum):
+
+    class ActionLabel(Enum):
         SEARCH = 'search'       # counter:Search
         VIEW = 'view'           # counter:Investigation
         DOWNLOAD = 'download'   # counter:Request
@@ -130,7 +131,7 @@ def _fill_document_id(counted_usage):
         counted_usage.timestamp.year,
         counted_usage.timestamp.month,
         counted_usage.timestamp.day,
-        tzinfo=pytz.utc,
+        tzinfo=utc,
     )
     time_in_seconds = (counted_usage.timestamp - day_start).total_seconds()
     time_window = int(time_in_seconds / 30)

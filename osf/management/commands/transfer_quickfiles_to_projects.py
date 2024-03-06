@@ -1,33 +1,32 @@
-import pytz
-import logging
-import datetime
+from datetime import datetime
+from logging import getLogger
 
+from pytz import utc
+from django.contrib.contenttypes.models import ContentType
+from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Exists, F, Func, OuterRef, Value
-from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
+from addons.osfstorage.models import OsfStorageFile
 from osf.models import (
-    OSFUser,
-    QuickFilesNode,
-    NodeLog,
     AbstractNode,
     Guid,
+    NodeLog,
+    OSFUser,
+    QuickFilesNode,
+    QueuedMail,
 )
 from osf.models.base import generate_guid
 from osf.models.quickfiles import get_quickfiles_project_title
-from osf.models.queued_mail import QueuedMail
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-
-from addons.osfstorage.models import OsfStorageFile
 from website import mails, settings
-from django.contrib.contenttypes.models import ContentType
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files were migrated into this Project on March' \
                   ' 11, 2022. The file URL’s will still resolve properly, and the Quick Files logs are available in' \
                   ' the Project’s Recent Activity.'
-QUICKFILES_DATE = datetime.datetime(2022, 3, 11, tzinfo=pytz.utc)
+QUICKFILES_DATE = datetime(2022, 3, 11, tzinfo=utc)
 
 
 def remove_quickfiles():

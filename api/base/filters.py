@@ -1,9 +1,9 @@
-import datetime
-import functools
-import operator
-import re
+from datetime import timedelta
+from functools import cmp_to_key, reduce
+from operator import eq, lt, le, gt, ge, and_, or_
+from re import compile, findall
 
-import pytz
+from pytz import utc
 from api.base import utils
 from api.base.exceptions import (
     InvalidFilterComparisonType,
@@ -20,7 +20,7 @@ from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-from functools import cmp_to_key
+
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -136,8 +136,8 @@ class ElasticOSFOrderingFilter(OSFOrderingFilter):
 class FilterMixin:
     """ View mixin with helper functions for filtering. """
 
-    QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
-    FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
+    QUERY_PATTERN = compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
+    FILTER_FIELDS = compile(r'(?:,*\s*(\w+)+)')
 
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
@@ -151,7 +151,7 @@ class FilterMixin:
     NUMERIC_FIELDS = (ser.IntegerField, ser.DecimalField, ser.FloatField)
 
     DATE_FIELDS = (ser.DateTimeField, ser.DateField)
-    DATETIME_PATTERN = re.compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?)$')
+    DATETIME_PATTERN = compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?)$')
 
     COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
     COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS
@@ -232,7 +232,7 @@ class FilterMixin:
             }
         else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
             start = self.convert_value(value, field)
-            stop = start + datetime.timedelta(days=1)
+            stop = start + timedelta(days=1)
             return [
                 {
                     'op': 'gte',
@@ -274,7 +274,7 @@ class FilterMixin:
             if match:
                 match_dict = match.groupdict()
                 fields = match_dict['fields']
-                field_names = re.findall(self.FILTER_FIELDS, fields.strip())
+                field_names = findall(self.FILTER_FIELDS, fields.strip())
                 query.update({key: {}})
 
                 for field_name in field_names:
@@ -371,7 +371,7 @@ class FilterMixin:
             try:
                 ret = date_parser.parse(value, ignoretz=False)
                 if not ret.tzinfo:
-                    ret = ret.replace(tzinfo=pytz.utc)
+                    ret = ret.replace(tzinfo=utc)
                 return ret
             except ValueError:
                 raise InvalidFilterValue(
@@ -405,11 +405,11 @@ class ListFilterMixin(FilterMixin):
     filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
     """
     FILTERS = {
-        'eq': operator.eq,
-        'lt': operator.lt,
-        'lte': operator.le,
-        'gt': operator.gt,
-        'gte': operator.ge,
+        'eq': eq,
+        'lt': lt,
+        'lte': le,
+        'gt': gt,
+        'gte': ge,
     }
 
     def __init__(self, *args, **kwargs):
@@ -445,15 +445,15 @@ class ListFilterMixin(FilterMixin):
                             queryset = self.get_filtered_queryset(field_name, operation, queryset)
                     else:
                         sub_query_parts.append(
-                            functools.reduce(
-                                operator.and_, [
+                            reduce(
+                                and_, [
                                     self.build_query_from_field(field_name, operation)
                                     for operation in operations
                                 ],
                             ),
                         )
                 if not isinstance(queryset, list):
-                    sub_query = functools.reduce(operator.or_, sub_query_parts)
+                    sub_query = reduce(or_, sub_query_parts)
                     query_parts.append(sub_query)
 
             if not isinstance(queryset, list):

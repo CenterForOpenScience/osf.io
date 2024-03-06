@@ -1,100 +1,68 @@
-# Tests ported from tests/test_models.py and tests/test_user.py
-import os
-import json
-import datetime as dt
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
+from datetime import timedelta, datetime
+from importlib import import_module
+from json import load
+from os import path
+from future.moves.urllib.parse import parse_qs, urljoin, urlparse
+from unittest import mock
 
-from django.db import connection, transaction
+from itsdangerous import Signer
+from pytest import fixture, mark, raises, fail, yield_fixture
+from pytz import utc
+from django.conf import settings as django_conf_settings
 from django.contrib.auth.models import Group
+from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from django.conf import settings as django_conf_settings
-from unittest import mock
-import itsdangerous
-import pytest
-import pytz
-from importlib import import_module
 
-from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
-from framework.auth.signals import user_merged
-from framework.analytics import get_total_activity_count
-from framework.exceptions import PermissionsError
-from framework.celery_tasks import handlers
-from website import settings
-from website import filters
-from website.project.signals import contributor_added
-from website.project.views.contributor import notify_added_contributor
-from website.views import find_bookmark_collection
-from website.util.metrics import OsfSourceTags
-
-from osf.models import (
-    AbstractNode,
-    OSFUser,
-    OSFGroup,
-    Tag,
-    Contributor,
-    NotableDomain,
-    PreprintContributor,
-    DraftRegistrationContributor,
-    DraftRegistration,
-    DraftNode,
-    UserSessionMap,
-)
-from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
+from framework.analytics import get_total_activity_count
 from framework.auth.core import Auth
-from osf.utils.names import impute_names_model
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError, InvalidTokenError
+from framework.auth.signals import user_merged
+from framework.celery_tasks import handlers
+from framework.exceptions import PermissionsError
+from osf.exceptions import (BlockedEmailError, InstitutionAffiliationStateError, UserStateError, ValidationError)
+from osf.external.spam import tasks as spam_tasks
+from osf.models import (AbstractNode, Contributor, DraftNode, DraftRegistration, DraftRegistrationContributor,
+                         NotableDomain, OSFGroup, OSFUser, PreprintContributor, Tag, UserSessionMap)
+from osf.models.institution_affiliation import get_user_by_institution_identity
 from osf.utils import permissions
-from osf.exceptions import ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError
-
+from osf.utils.names import impute_names_model
+from website import filters, settings
+from website.project.signals import contributor_added
+from website.project.views.contributor import notify_added_contributor
+from website.util.metrics import OsfSourceTags
+from website.views import find_bookmark_collection
+from .factories import (AuthUserFactory, CollectionFactory, DraftNodeFactory, DraftRegistrationFactory,
+                        ExternalAccountFactory, InstitutionFactory, NodeFactory, OSFGroupFactory, PreprintFactory,
+                        PreprintProviderFactory, ProjectFactory, RegistrationFactory, TagFactory, UnconfirmedUserFactory,
+                        UnregUserFactory, UserFactory, fake, fake_email)
 from .utils import capture_signals
-from .factories import (
-    fake,
-    fake_email,
-    AuthUserFactory,
-    CollectionFactory,
-    DraftRegistrationFactory,
-    ExternalAccountFactory,
-    InstitutionFactory,
-    NodeFactory,
-    OSFGroupFactory,
-    PreprintProviderFactory,
-    ProjectFactory,
-    TagFactory,
-    UnconfirmedUserFactory,
-    UnregUserFactory,
-    UserFactory,
-    RegistrationFactory,
-    PreprintFactory,
-    DraftNodeFactory
-)
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
-from osf.external.spam import tasks as spam_tasks
 
-
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
 
 def test_factory():
     user = UserFactory.build()
     user.save()
 
-@pytest.fixture()
+@fixture()
 def user():
     return UserFactory()
 
 
-@pytest.fixture()
+@fixture()
 def auth(user):
     return Auth(user)
 
 # Tests copied from tests/test_models.py
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestOSFUser:
 
     def test_create(self):
@@ -194,7 +162,7 @@ class TestOSFUser:
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
         dupe = OSFUser.create_unregistered(fullname=fake.name(), email=u.username)
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             dupe.save()
 
     def test_merged_user_is_not_active(self):
@@ -216,7 +184,7 @@ class TestOSFUser:
             fullname='Freddie Mercury',
             is_registered=True,
         )
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             u.save()
 
     def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self, user):
@@ -476,7 +444,7 @@ class TestOSFUser:
 
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             u.save()
 
     def test_date_registered_upon_saving(self):
@@ -484,11 +452,11 @@ class TestOSFUser:
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
-        assert u.date_registered.tzinfo == pytz.utc
+        assert u.date_registered.tzinfo == utc
 
     def test_cant_create_user_without_full_name(self):
         u = OSFUser(username=fake_email())
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             u.save()
 
     def test_add_blocked_domain_unconfirmed_email(self, user):
@@ -496,7 +464,7 @@ class TestOSFUser:
             domain='mailinator.com',
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
-        with pytest.raises(BlockedEmailError) as e:
+        with raises(BlockedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
         assert str(e.value) == 'Invalid Email'
 
@@ -519,10 +487,10 @@ class TestOSFUser:
     def test_get_confirmation_token_when_token_is_expired_raises_error(self):
         u = UserFactory()
         # Make sure token is already expired
-        expiration = timezone.now() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
-        with pytest.raises(ExpiredTokenError):
+        with raises(ExpiredTokenError):
             u.get_confirmation_token('foo@bar.com')
 
     @mock.patch('website.security.random_string')
@@ -530,11 +498,11 @@ class TestOSFUser:
         random_string.return_value = '12345'
         u = UserFactory()
         # Make sure token is already expired
-        expiration = timezone.now() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
-        with pytest.raises(ExpiredTokenError):
+        with raises(ExpiredTokenError):
             u.get_confirmation_token('foo@bar.com')
 
         random_string.return_value = '54321'
@@ -554,7 +522,7 @@ class TestOSFUser:
         del u.email_verifications[token]['expiration']
         u.save()
 
-        with pytest.raises(ExpiredTokenError):
+        with raises(ExpiredTokenError):
             u.get_confirmation_token(email)
 
     @mock.patch('website.security.random_string')
@@ -570,10 +538,10 @@ class TestOSFUser:
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
         # Make sure token is already expired
-        expiration = timezone.now() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
-        with pytest.raises(ExpiredTokenError):
+        with raises(ExpiredTokenError):
             u.get_confirmation_url('foo@bar.com')
 
     @mock.patch('website.security.random_string')
@@ -581,11 +549,11 @@ class TestOSFUser:
         random_string.return_value = '12345'
         u = UserFactory()
         # Make sure token is already expired
-        expiration = timezone.now() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
-        with pytest.raises(ExpiredTokenError):
+        with raises(ExpiredTokenError):
             u.get_confirmation_token('foo@bar.com')
 
         random_string.return_value = '54321'
@@ -659,15 +627,15 @@ class TestOSFUser:
         u.add_unconfirmed_email('foo@bar.com')
         u.save()
 
-        with pytest.raises(InvalidTokenError):
+        with raises(InvalidTokenError):
             u.get_unconfirmed_email_for_token('badtoken')
 
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert bool(u.get_unconfirmed_email_for_token(valid_token)) is True
-        manual_expiration = timezone.now() - dt.timedelta(0, 10)
+        manual_expiration = timezone.now() - timedelta(0, 10)
         u.email_verifications[valid_token]['expiration'] = manual_expiration
 
-        with pytest.raises(ExpiredTokenError):
+        with raises(ExpiredTokenError):
             u.get_unconfirmed_email_for_token(valid_token)
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
@@ -760,7 +728,7 @@ class TestOSFUser:
         # Do not return bad token and removes it from user.email_verifications
         email = 'test@example.com'
         token = 'blahblahblah'
-        user.email_verifications[token] = {'expiration': (timezone.now() + dt.timedelta(days=1)),
+        user.email_verifications[token] = {'expiration': (timezone.now() + timedelta(days=1)),
                                                 'email': email,
                                                 'confirmed': False}
         user.save()
@@ -891,7 +859,7 @@ class TestCookieMethods:
     def test_user_get_cookie(self):
         user = UserFactory()
         super_secret_key = 'children need maps'
-        signer = itsdangerous.Signer(super_secret_key)
+        signer = Signer(super_secret_key)
         session = SessionStore()
         session['auth_user_id'] = user._id
         session['auth_user_username'] = user.username
@@ -904,7 +872,7 @@ class TestCookieMethods:
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
         super_secret_key = 'children need maps'
-        signer = itsdangerous.Signer(super_secret_key)
+        signer = Signer(super_secret_key)
         assert (
             UserSessionMap.objects.filter(user=user).count() == 0
         )
@@ -992,7 +960,7 @@ class TestChangePassword:
         user = UserFactory()
         user.set_password('password')
         user.save()
-        with pytest.raises(ChangePasswordError, match=error_message):
+        with raises(ChangePasswordError, match=error_message):
             user.change_password(old_password, new_password, confirm_password)
             user.save()
 
@@ -1050,7 +1018,7 @@ class TestChangePassword:
 
 class TestIsActive:
 
-    @pytest.fixture()
+    @fixture()
     def make_user(self):
         def func(**attrs):
             # By default, return an active user
@@ -1126,11 +1094,11 @@ class TestAddUnconfirmedEmail:
         random_string.return_value = token
         u = UserFactory()
         u.add_unconfirmed_email('test@osf.io')
-        assert isinstance(u.email_verifications[token]['expiration'], dt.datetime)
+        assert isinstance(u.email_verifications[token]['expiration'], datetime)
 
     def test_add_blank_unconfirmed_email(self):
         user = UserFactory()
-        with pytest.raises(ValidationError) as exc_info:
+        with raises(ValidationError) as exc_info:
             user.add_unconfirmed_email('')
         assert exc_info.value.message == 'Enter a valid email address.'
 
@@ -1138,15 +1106,15 @@ class TestAddUnconfirmedEmail:
 
 class TestUnregisteredUser:
 
-    @pytest.fixture()
+    @fixture()
     def referrer(self):
         return UserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def email(self):
         return fake_email()
 
-    @pytest.fixture()
+    @fixture()
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
         given_name = 'Fredd Merkury'
@@ -1156,14 +1124,14 @@ class TestUnregisteredUser:
         user.save()
         return user
 
-    @pytest.fixture()
+    @fixture()
     def provider(self, referrer):
         provider = PreprintProviderFactory()
         provider.add_to_group(referrer, 'moderator')
         provider.save()
         return provider
 
-    @pytest.fixture()
+    @fixture()
     def unreg_moderator(self, referrer, provider, email):
         user = UnregUserFactory()
         given_name = 'Freddie Merkkury'
@@ -1173,7 +1141,7 @@ class TestUnregisteredUser:
         user.save()
         return user
 
-    @pytest.fixture()
+    @fixture()
     def project(self, referrer):
         return NodeFactory(creator=referrer)
 
@@ -1230,14 +1198,14 @@ class TestUnregisteredUser:
         )
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self, unreg_user, unreg_moderator):
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             unreg_user.get_claim_url('invalidinput')
             unreg_moderator.get_claim_url('invalidinput')
 
     def test_cant_add_unclaimed_record_if_referrer_has_no_permissions(self, referrer, unreg_moderator, unreg_user, provider):
         # test_referrer_is_not_contrib
         project = NodeFactory()
-        with pytest.raises(PermissionsError) as e:
+        with raises(PermissionsError) as e:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
@@ -1245,7 +1213,7 @@ class TestUnregisteredUser:
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
-        with pytest.raises(PermissionsError) as e:
+        with raises(PermissionsError) as e:
             unreg_moderator.add_unclaimed_record(provider,
                 given_name='hodor', referrer=referrer)
             unreg_user.save()
@@ -1351,7 +1319,7 @@ class TestRecentlyAdded:
         assert len(list(user.get_recently_added())) == 15
 
 
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestTagging:
     def test_add_system_tag(self, user):
         tag_name = fake.word()
@@ -1370,7 +1338,7 @@ class TestTagging:
 
     def test_add_system_tag_with_non_system_instance(self, user):
         tag = TagFactory(system=False)
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             user.add_system_tag(tag)
         assert tag not in user.all_tags.all()
 
@@ -1390,15 +1358,15 @@ class TestTagging:
 
 class TestCitationProperties:
 
-    @pytest.fixture()
+    @fixture()
     def referrer(self):
         return UserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def email(self):
         return fake_email()
 
-    @pytest.fixture()
+    @fixture()
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
         user.add_unclaimed_record(project,
@@ -1407,7 +1375,7 @@ class TestCitationProperties:
         user.save()
         return user
 
-    @pytest.fixture()
+    @fixture()
     def project(self, referrer):
         return NodeFactory(creator=referrer)
 
@@ -1451,17 +1419,17 @@ class TestCitationProperties:
         )
 
 # copied from tests/test_models.py
-@pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_implicit_clean
+@mark.enable_bookmark_creation
+@mark.enable_implicit_clean
 class TestMergingUsers:
 
-    @pytest.yield_fixture()
+    @yield_fixture()
     def email_subscriptions_enabled(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
         yield
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
-    @pytest.fixture()
+    @fixture()
     def master(self):
         return UserFactory(
             fullname='Joe Shmo',
@@ -1469,14 +1437,14 @@ class TestMergingUsers:
             emails=['joe@mail.com'],
         )
 
-    @pytest.fixture()
+    @fixture()
     def dupe(self):
         return UserFactory(
             fullname='Joseph Shmo',
             emails=['joseph123@hotmail.com']
         )
 
-    @pytest.fixture()
+    @fixture()
     def merge_dupe(self, master, dupe):
         def f():
             """Do the actual merge."""
@@ -1508,7 +1476,7 @@ class TestMergingUsers:
             merge_dupe()
             assert mock_signals.signals_sent() == {user_merged}
 
-    @pytest.mark.enable_enqueue_task
+    @mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
@@ -1600,7 +1568,7 @@ class TestMergingUsers:
         assert project.get_permissions(master) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_merge_user_into_self_fails(self, master):
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             master.merge_user(master)
 
     def test_merging_user_moves_all_institution_affiliations(self):
@@ -1627,7 +1595,7 @@ class TestMergingUsers:
             assert user_by_identity == user_1
             assert is_identity_eligible is True
         except InstitutionAffiliationStateError:
-            pytest.fail('get_user_by_institution_identity() failed with InstitutionAffiliationStateError')
+            fail('get_user_by_institution_identity() failed with InstitutionAffiliationStateError')
         # Verify that user is not found when identity is empty
         user_by_identity, is_identity_eligible = get_user_by_institution_identity(institution_2, None)
         assert user_by_identity is None
@@ -1647,7 +1615,7 @@ class TestDisablingUsers(OsfTestCase):
         self.user.is_disabled = True
         self.user.save()
 
-        assert isinstance(self.user.date_disabled, dt.datetime)
+        assert isinstance(self.user.date_disabled, datetime)
         assert self.user.is_disabled is True
         assert self.user.is_active is False
 
@@ -1691,7 +1659,7 @@ class TestDisablingUsers(OsfTestCase):
         self.user.deactivate_account()
 
         assert self.user.is_disabled is True
-        assert isinstance(self.user.date_disabled, dt.datetime)
+        assert isinstance(self.user.date_disabled, datetime)
         assert self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] is False
 
         assert not SessionStore().exists(session_key=session1.session_key)
@@ -1699,7 +1667,7 @@ class TestDisablingUsers(OsfTestCase):
 
 
 # Copied from tests/modes/test_user.py
-@pytest.mark.enable_bookmark_creation
+@mark.enable_bookmark_creation
 class TestUser(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1771,7 +1739,7 @@ class TestUser(OsfTestCase):
         assert u.is_confirmed is True
 
     def test_cannot_remove_primary_email_from_email_list(self):
-        with pytest.raises(PermissionsError) as e:
+        with raises(PermissionsError) as e:
             self.user.remove_email(self.user.username)
         assert str(e.value) == 'Can\'t remove primary email'
 
@@ -1789,7 +1757,7 @@ class TestUser(OsfTestCase):
         assert token1 != self.user.get_confirmation_token(email)
         assert token2 == self.user.get_confirmation_token(email)
         assert email == self.user.get_unconfirmed_email_for_token(token2)
-        with pytest.raises(InvalidTokenError):
+        with raises(InvalidTokenError):
             self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
@@ -1899,8 +1867,8 @@ class TestUser(OsfTestCase):
 
 
 # Copied from tests/models/test_user.py
-@pytest.mark.enable_implicit_clean
-@pytest.mark.enable_bookmark_creation
+@mark.enable_implicit_clean
+@mark.enable_bookmark_creation
 class TestUserMerging(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1927,7 +1895,7 @@ class TestUserMerging(OsfTestCase):
         )
         self.project_with_unreg_contrib.save()
 
-    @pytest.mark.enable_enqueue_task
+    @mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
         def is_mrm_field(value):
@@ -1943,7 +1911,7 @@ class TestUserMerging(OsfTestCase):
 
         # define values for users' fields
         today = timezone.now()
-        yesterday = today - dt.timedelta(days=1)
+        yesterday = today - timedelta(days=1)
 
         self.user.comments_viewed_timestamp['shared_gt'] = today
         other_user.comments_viewed_timestamp['shared_gt'] = yesterday
@@ -2164,7 +2132,7 @@ class TestUserMerging(OsfTestCase):
         assert mock_notify.called is False
 
 
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestUserValidation(OsfTestCase):
 
     def setUp(self):
@@ -2173,12 +2141,12 @@ class TestUserValidation(OsfTestCase):
 
     def test_validate_fullname_none(self):
         self.user.fullname = None
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.user.save()
 
     def test_validate_fullname_empty(self):
         self.user.fullname = ''
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.user.save()
 
     def test_validate_social_profile_websites_empty(self):
@@ -2187,10 +2155,10 @@ class TestUserValidation(OsfTestCase):
         assert self.user.social['profileWebsites'] == []
 
     def test_validate_social_profile_website_many_different(self):
-        basepath = os.path.dirname(__file__)
-        url_data_path = os.path.join(basepath, '../website/static/urlValidatorTest.json')
+        basepath = path.dirname(__file__)
+        url_data_path = path.join(basepath, '../website/static/urlValidatorTest.json')
         with open(url_data_path) as url_test_data:
-            data = json.load(url_test_data)
+            data = load(url_test_data)
 
         previous_number_of_domains = NotableDomain.objects.all().count()
         fails_at_end = False
@@ -2207,7 +2175,7 @@ class TestUserValidation(OsfTestCase):
         for should_fail in data['testsNegative']:
             self.user.social = {'profileWebsites': [should_fail]}
             try:
-                with pytest.raises(ValidationError):
+                with raises(ValidationError):
                     with mock.patch.object(spam_tasks.requests, 'head'):
                         self.user.save()
             except AssertionError:
@@ -2232,12 +2200,12 @@ class TestUserValidation(OsfTestCase):
 
     def test_validate_social_profile_websites_invalid(self):
         self.user.social = {'profileWebsites': ['help computer']}
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.user.save()
 
     def test_validate_multiple_profile_social_profile_websites_invalid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'help computer', 'http://dinosaurs.com']}
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.user.save()
 
     def test_empty_social_links(self):
@@ -2285,7 +2253,7 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {
             'foo': 'bar',
         }
-        with pytest.raises(ValidationError) as exc_info:
+        with raises(ValidationError) as exc_info:
             self.user.save()
         assert isinstance(exc_info.value.args[0], dict)
         assert self.user.social_links == {}
@@ -2304,7 +2272,7 @@ class TestUserValidation(OsfTestCase):
 
     def test_validate_jobs_institution_empty(self):
         self.user.jobs = [{'institution': ''}]
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.user.save()
 
     def test_validate_jobs_bad_end_date(self):
@@ -2318,7 +2286,7 @@ class TestUserValidation(OsfTestCase):
             'endMonth': 1,
             'endYear': '1960',
         }]
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.user.save()
 
     def test_validate_schools_bad_end_date(self):
@@ -2332,7 +2300,7 @@ class TestUserValidation(OsfTestCase):
             'endMonth': 1,
             'endYear': '1960',
         }]
-        with pytest.raises(ValidationError):
+        with raises(ValidationError):
             self.user.save()
 
     def test_validate_jobs_bad_year(self):
@@ -2347,7 +2315,7 @@ class TestUserValidation(OsfTestCase):
                 'endMonth': 1,
                 'endYear': '1960',
             }]
-            with pytest.raises(ValidationError):
+            with raises(ValidationError):
                 self.user.save()
 
     def test_validate_schools_bad_year(self):
@@ -2362,17 +2330,17 @@ class TestUserValidation(OsfTestCase):
                 'endMonth': 1,
                 'endYear': '1960',
             }]
-            with pytest.raises(ValidationError):
+            with raises(ValidationError):
                 self.user.save()
 
 
 class TestUserGdprDelete:
 
-    @pytest.fixture()
+    @fixture()
     def user(self):
         return AuthUserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def project_with_two_admins(self, user):
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
@@ -2381,7 +2349,7 @@ class TestUserGdprDelete:
         project.save()
         return project
 
-    @pytest.fixture()
+    @fixture()
     def project_with_two_admins_and_addon_credentials(self, user):
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
@@ -2400,31 +2368,31 @@ class TestUserGdprDelete:
         project.save()
         return project
 
-    @pytest.fixture()
+    @fixture()
     def registration(self, user):
         registration = RegistrationFactory(creator=user)
         registration.save()
         return registration
 
-    @pytest.fixture()
+    @fixture()
     def registration_with_draft_node(self, user, registration):
         registration.branched_from = DraftNodeFactory(creator=user)
         registration.save()
         return registration
 
-    @pytest.fixture()
+    @fixture()
     def project(self, user):
         project = ProjectFactory(creator=user)
         project.save()
         return project
 
-    @pytest.fixture()
+    @fixture()
     def preprint(self, user):
         preprint = PreprintFactory(creator=user)
         preprint.save()
         return preprint
 
-    @pytest.fixture()
+    @fixture()
     def project_user_is_only_admin(self, user):
         non_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
@@ -2462,7 +2430,7 @@ class TestUserGdprDelete:
         assert DraftRegistration.objects.all().count() == 1
         assert DraftNode.objects.all().count() == 1
 
-        with pytest.raises(UserStateError) as exc_info:
+        with raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
@@ -2496,21 +2464,21 @@ class TestUserGdprDelete:
 
     def test_cant_gdpr_delete_registrations(self, user, registration):
 
-        with pytest.raises(UserStateError) as exc_info:
+        with raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
 
     def test_cant_gdpr_delete_preprints(self, user, preprint):
 
-        with pytest.raises(UserStateError) as exc_info:
+        with raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more preprints.'
 
     def test_cant_gdpr_delete_shared_node_if_only_admin(self, user, project_user_is_only_admin):
 
-        with pytest.raises(UserStateError) as exc_info:
+        with raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete Node {} because it would' \
@@ -2524,7 +2492,7 @@ class TestUserGdprDelete:
         member = AuthUserFactory()
         group.make_member(member)
 
-        with pytest.raises(UserStateError) as exc_info:
+        with raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete this user because ' \
@@ -2534,7 +2502,7 @@ class TestUserGdprDelete:
         unregistered = group.add_unregistered_member('fake_user', 'fake_email@cos.io', Auth(user), 'manager')
         assert len(group.managers) == 2
 
-        with pytest.raises(UserStateError) as exc_info:
+        with raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete this user because ' \
@@ -2559,7 +2527,7 @@ class TestUserGdprDelete:
 
     def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
 
-        with pytest.raises(UserStateError) as exc_info:
+        with raises(UserStateError) as exc_info:
             user.gdpr_delete()
         assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)

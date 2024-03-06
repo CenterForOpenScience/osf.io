@@ -1,45 +1,47 @@
-import pytz
+from datetime import datetime
 from unittest import mock
-import datetime
-import pytest
 
+from pytz import utc
+from pytest import mark, fixture
 from django.utils import timezone
+
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import (
-    ProjectFactory,
-    AuthUserFactory,
-    PrivateLinkFactory,
-    NodeFactory
-)
 from osf.utils import permissions
+from osf_tests.factories import (
+    AuthUserFactory,
+    NodeFactory,
+    PrivateLinkFactory,
+    ProjectFactory,
+)
 
 
-@pytest.fixture()
+@fixture()
 def url(public_project, view_only_link):
     return '/{}nodes/{}/view_only_links/{}/'.format(
         API_BASE, public_project._id, view_only_link._id)
 
-@pytest.fixture()
+
+@fixture()
 def user():
     return AuthUserFactory()
 
 
-@pytest.fixture()
+@fixture()
 def read_contrib():
     return AuthUserFactory()
 
 
-@pytest.fixture()
+@fixture()
 def write_contrib():
     return AuthUserFactory()
 
 
-@pytest.fixture()
+@fixture()
 def non_contrib():
     return AuthUserFactory()
 
 
-@pytest.fixture()
+@fixture()
 def public_project(user, read_contrib, write_contrib):
     public_project = ProjectFactory(is_public=True, creator=user)
     public_project.add_contributor(
@@ -50,7 +52,7 @@ def public_project(user, read_contrib, write_contrib):
     return public_project
 
 
-@pytest.fixture()
+@fixture()
 def view_only_link(public_project):
     view_only_link = PrivateLinkFactory(name='testlink')
     view_only_link.nodes.add(public_project)
@@ -58,7 +60,7 @@ def view_only_link(public_project):
     return view_only_link
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestViewOnlyLinksDetail:
 
     def test_non_mutating_view_only_links_detail_tests(
@@ -108,20 +110,20 @@ class TestViewOnlyLinksDetail:
         assert view_only_link.is_deleted
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestViewOnlyLinksUpdate:
 
-    @pytest.fixture()
+    @fixture()
     def public_project_admin(self, public_project):
         return AuthUserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def public_project(self, public_project_admin, public_project):
         public_project.add_contributor(
             public_project_admin, permissions=permissions.ADMIN)
         return public_project
 
-    @pytest.fixture()
+    @fixture()
     def public_project_component(self, user, public_project):
         return NodeFactory(is_public=True, creator=user, parent=public_project)
 
@@ -226,10 +228,10 @@ class TestViewOnlyLinksUpdate:
         assert res.status_code == 401
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestViewOnlyLinksDelete:
     def test_admin_can_delete_vol(self, app, user, url, view_only_link):
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             res = app.delete(url, auth=user.auth)
         view_only_link.reload()

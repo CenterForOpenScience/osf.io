@@ -1,49 +1,25 @@
-import datetime
-
+from datetime import datetime, timedelta
 from unittest import mock
+
 import pytest
-import pytz
-import responses
-
+from pytz import utc, UTC
+from responses import activate
 from django.utils import timezone
-from framework.celery_tasks import handlers
-from framework.exceptions import PermissionsError
-from api.caching import settings as cache_settings
-from api.caching.utils import storage_usage_cache
-from website.project.model import has_anonymous_link
-from website.project.signals import contributor_added, contributor_removed, after_create_registration
-from osf.exceptions import NodeStateError
-from osf.utils import permissions
-from website.util import api_url_for, web_url_for
-from api_tests.utils import disconnected_from_listeners
-from website.citations.utils import datetime_to_csl
-from website import language, settings
-from website.project.tasks import on_node_updated
-from website.project.views.node import serialize_collections
-from website.views import find_bookmark_collection
-
-from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
-
-from osf.models import (
-    AbstractNode,
-    Email,
-    Node,
-    Tag,
-    NodeLog,
-    Contributor,
-    RegistrationSchema,
-    NodeRelation,
-    Registration,
-    DraftRegistration,
-    CollectionSubmission
-)
 
 from addons.wiki.models import WikiPage, WikiVersion
-from osf.models.node import AbstractNodeQuerySet
-from osf.exceptions import ValidationError, ValidationValueError, UserStateError
-from osf.utils.workflows import DefaultStates, CollectionSubmissionStates
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
+from api_tests.utils import disconnected_from_listeners
 from framework.auth.core import Auth
-
+from framework.celery_tasks import handlers
+from framework.exceptions import PermissionsError
+from osf.exceptions import NodeStateError, ValidationError, ValidationValueError, UserStateError
+from osf.models import (
+    AbstractNode, Email, Node, Tag, NodeLog, Contributor, RegistrationSchema, NodeRelation, Registration,
+    DraftRegistration, CollectionSubmission
+)
+from osf.models.node import AbstractNodeQuerySet
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -65,9 +41,19 @@ from osf_tests.factories import (
     CollectionFactory,
     CollectionProviderFactory,
 )
-from .factories import get_default_metaschema
-from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
+from osf.utils import permissions
+from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from osf.utils.workflows import DefaultStates, CollectionSubmissionStates
 from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
+from osf_tests.factories import get_default_metaschema
+from website import language, settings
+from website.citations.utils import datetime_to_csl
+from website.project.model import has_anonymous_link
+from website.project.signals import contributor_added, contributor_removed, after_create_registration
+from website.project.tasks import on_node_updated
+from website.project.views.node import serialize_collections
+from website.util import api_url_for, web_url_for
+from website.views import find_bookmark_collection
 
 pytestmark = pytest.mark.django_db
 
@@ -689,7 +675,7 @@ class TestProject:
                     for addon in node.addons
                     if addon.config.short_name == addon_config.short_name
                 ])
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             deleted_node = NodeFactory(is_deleted=True)
         assert deleted_node.is_deleted
@@ -699,10 +685,6 @@ class TestProject:
         node = ProjectFactory()
         assert node.category == 'project'
         assert bool(node._id)
-        # assert_almost_equal(
-        #     node.created, timezone.now(),
-        #     delta=datetime.timedelta(seconds=5),
-        # )
         assert node.is_public is False
         assert node.is_deleted is False
         assert hasattr(node, 'deleted_date')
@@ -763,7 +745,7 @@ class TestLogging:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.EMBARGO_INITIATED
         # date is tzaware
-        assert last_log.date.tzinfo == pytz.utc
+        assert last_log.date.tzinfo == utc
 
         # updates node.modified
         assert_datetime_equal(node.modified, last_log.date)
@@ -2283,7 +2265,7 @@ class TestSetPrivacy:
         registration = RegistrationFactory(project=node)
         registration.embargo_registration(
             user,
-            timezone.now() + datetime.timedelta(days=10)
+            timezone.now() + timedelta(days=10)
         )
         assert bool(registration.is_pending_embargo) is True
 
@@ -2298,7 +2280,7 @@ class TestSetPrivacy:
         registration = RegistrationFactory(project=node)
         registration.embargo_registration(
             user,
-            timezone.now() + datetime.timedelta(days=10)
+            timezone.now() + timedelta(days=10)
         )
         assert len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]) == 4
         embargo = registration.embargo
@@ -2396,7 +2378,7 @@ class TestNodeSpam:
         project.save()
         with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(return_value=True)):
-                project.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
+                project.creator.date_confirmed = timezone.now() - timedelta(days=9001)
                 project.set_privacy('public')
                 project.check_spam(user, None, None)
                 assert project.is_public is True
@@ -3073,7 +3055,7 @@ class TestForkNode:
         assert fork._id in [n._id for n in original.forks.all()]
         # Note: Must cast ForeignList to list for comparison
         assert list(fork.contributors.all()) == [fork_user]
-        assert (fork_date - fork.created) < datetime.timedelta(seconds=30)
+        assert (fork_date - fork.created) < timedelta(seconds=30)
         assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
@@ -3842,7 +3824,7 @@ class TestOnNodeUpdate:
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
 
-    @responses.activate
+    @activate
     @mock.patch('website.search.search.update_collected_metadata')
     def test_update_collection_elasticsearch_make_private(self, mock_update_collected_metadata, node_in_collection, collection, user):
         node_in_collection.is_public = False
@@ -4196,7 +4178,7 @@ class TestNodeLog:
         assert bool(log.action)
 
     def test_tz_date(self, log):
-        assert log.date.tzinfo == pytz.UTC
+        assert log.date.tzinfo == UTC
 
     def test_original_node_and_current_node_for_registration_logs(self):
         user = UserFactory()

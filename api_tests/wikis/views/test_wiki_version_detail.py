@@ -1,16 +1,14 @@
+from datetime import datetime
 from unittest import mock
-import furl
-import datetime
-import pytz
+
+from furl import furl
+from pytz import utc
 from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
-
-from addons.wiki.models import WikiVersion, WikiPage
-
+from addons.wiki.models import WikiPage, WikiVersion
+from osf_tests.factories import ProjectFactory, RegistrationFactory, PrivateLinkFactory
 from tests.base import ApiWikiTestCase
-from osf_tests.factories import (ProjectFactory, RegistrationFactory,
-                                 PrivateLinkFactory)
 
 
 class TestWikiVersionDetailView(ApiWikiTestCase):
@@ -85,7 +83,7 @@ class TestWikiVersionDetailView(ApiWikiTestCase):
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(self.private_url).add(query_params={'view_only': private_link.key}).url
+        url = furl(self.private_url).add(query_params={'view_only': private_link.key}).url
         res = self.app.get(url)
         assert res.status_code == 200
         assert res.json['data']['id'] == str(self.private_wiki_version.identifier)
@@ -95,7 +93,7 @@ class TestWikiVersionDetailView(ApiWikiTestCase):
         private_link = PrivateLinkFactory(anonymous=False)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(self.private_url).add(query_params={'view_only': private_link.key}).url
+        url = furl(self.private_url).add(query_params={'view_only': private_link.key}).url
         res = self.app.get(url)
         assert res.status_code == 200
         assert res.json['data']['id'] == str(self.private_wiki_version.identifier)
@@ -183,7 +181,7 @@ class TestWikiVersionDetailView(ApiWikiTestCase):
         url = f'/{API_BASE}wikis/{self.public_wiki_page._id}/versions/{str(self.public_wiki_version.identifier)}/'
         res = self.app.get(url)
         assert res.status_code == 200
-        self.public_wiki_version.wiki_page.deleted = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        self.public_wiki_version.wiki_page.deleted = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         self.public_wiki_version.wiki_page.save()
 
         res = self.app.get(url, expect_errors=True)

@@ -1,54 +1,50 @@
-from datetime import datetime
 from collections import OrderedDict
+from datetime import datetime
 
-from django.urls import resolve, reverse
+from furl import furl
 from django.core.exceptions import ValidationError
-
-import furl
-import pytz
-
-from framework.auth.core import Auth
-
-from osf.models import (
-    BaseFileNode,
-    DraftNode,
-    OSFUser,
-    Comment,
-    Preprint,
-    AbstractNode,
-    Registration,
-    Guid,
-    Node,
-)
-
+from django.urls import resolve, reverse
+from pytz import utc
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
-from website import settings
-from website.util import api_v2_url
 
 from addons.base.utils import get_mfr_url
-
+from api.base.exceptions import Conflict
 from api.base.serializers import (
     FileRelationshipField,
     format_relationship_links,
-    IDField,
     GuidOrIDField,
+    IDField,
     JSONAPIListField,
     JSONAPISerializer,
     Link,
     LinksField,
     NodeFileHyperLinkField,
     RelationshipField,
-    TypeField,
-    WaterbutlerLink,
-    VersionedDateTimeField,
     TargetField,
+    TypeField,
+    VersionedDateTimeField,
+    WaterbutlerLink,
     HideIfPreprint,
     ShowIfVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.exceptions import Conflict
 from api.base.versioning import get_kebab_snake_case_field
+from framework.auth.core import Auth
+from osf.models import (
+    AbstractNode,
+    BaseFileNode,
+    Comment,
+    DraftNode,
+    Guid,
+    Node,
+    OSFUser,
+    Preprint,
+    Registration,
+)
+from website import settings
+from website.util import api_v2_url
+
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -260,7 +256,7 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
-            url = furl.furl(settings.DOMAIN).set(
+            url = furl(settings.DOMAIN).set(
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
             )
             if obj.provider == 'dataverse':
@@ -298,7 +294,7 @@ class BaseFileSerializer(JSONAPISerializer):
         if self.context['request'].version >= '2.2' and obj.is_file and creat_dt:
             return datetime.strftime(creat_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
-        return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
+        return creat_dt and creat_dt.replace(tzinfo=utc)
 
     def get_extra(self, obj):
         metadata = {}
@@ -496,7 +492,7 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         fobj = self.context['file']
-        return furl.furl(settings.DOMAIN).set(
+        return furl(settings.DOMAIN).set(
             path=(fobj.target._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier},  # TODO this can probably just be changed to revision or version
         ).url
@@ -522,7 +518,7 @@ def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
     # Add '' to the path to ensure thare's a trailing slash
     # The trailing slash avoids a 301
-    url = furl.furl(settings.DOMAIN).set(
+    url = furl(settings.DOMAIN).set(
         path=('download', guid._id if guid else obj._id, ''),
     )
 
@@ -542,10 +538,10 @@ def get_file_render_link(mfr_url, download_url, version=None):
     download_url_args['direct'] = None
     download_url_args['mode'] = 'render'
 
-    render_url = furl.furl(mfr_url).set(
+    render_url = furl(mfr_url).set(
         path=['render'],
         args={
-            'url': furl.furl(download_url).set(
+            'url': furl(download_url).set(
                 args=download_url_args,
             ),
         },

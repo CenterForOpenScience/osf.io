@@ -1,8 +1,9 @@
-import re
-import pytz
-import time
 from datetime import datetime
+from re import search
+from time import time
+
 from django.utils import timezone
+from pytz import utc
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
 
@@ -25,7 +26,7 @@ def secure_filename(filename):
 
     # Check for leading underscores, and add them back in
     try:
-        secure = re.search('^_+', filename).group() + secure
+        secure = search('^_+', filename).group() + secure
     except AttributeError:
         pass
 
@@ -33,7 +34,7 @@ def secure_filename(filename):
 
 
 def get_timestamp():
-    return int(time.time())
+    return int(time())
 
 
 def throttle_period_expired(timestamp, throttle):
@@ -43,6 +44,6 @@ def throttle_period_expired(timestamp, throttle):
         if timestamp.tzinfo:
             return (timezone.now() - timestamp).total_seconds() > throttle
         else:
-            return (timezone.now() - timestamp.replace(tzinfo=pytz.utc)).total_seconds() > throttle
+            return (timezone.now() - timestamp.replace(tzinfo=utc)).total_seconds() > throttle
     else:
         return (get_timestamp() - timestamp) > throttle

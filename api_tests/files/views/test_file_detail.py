@@ -1,10 +1,11 @@
-import itsdangerous
-from unittest import mock
-import pytest
-import pytz
-from django.utils import timezone
 from importlib import import_module
+from unittest import mock
+
 from django.conf import settings as django_conf_settings
+from django.utils import timezone
+from itsdangerous import Signer
+from pytest import fixture, mark
+from pytz import utc
 
 from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
@@ -39,31 +40,31 @@ def _dt_to_iso8601(value):
     return iso8601
 
 
-@pytest.fixture()
+@fixture()
 def user():
     return AuthUserFactory()
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestFileView:
 
-    @pytest.fixture()
+    @fixture()
     def node(self, user):
         return ProjectFactory(creator=user, comment_level='public')
 
-    @pytest.fixture()
+    @fixture()
     def quickfiles_node(self, user):
         return QuickFilesNode.objects.get(creator=user)
 
-    @pytest.fixture()
+    @fixture()
     def file(self, user, node):
         return api_utils.create_test_file(node, user, create_guid=False)
 
-    @pytest.fixture()
+    @fixture()
     def file_url(self, file):
         return f'/{API_BASE}files/{file._id}/'
 
-    @pytest.fixture()
+    @fixture()
     def file_guid_url(self, file):
         return f'/{API_BASE}files/{file.get_guid(create=True)._id}/'
 
@@ -131,7 +132,7 @@ class TestFileView:
         session = SessionStore()
         session['auth_user_id'] = user._id
         session.create()
-        cookie = itsdangerous.Signer(
+        cookie = Signer(
             website_settings.SECRET_KEY
         ).sign(session.session_key)
         app.set_cookie(website_settings.COOKIE_NAME, cookie.decode())
@@ -163,10 +164,10 @@ class TestFileView:
         assert attributes['size'] == file.versions.first().size
         assert attributes['current_version'] == len(file.history)
         assert attributes['date_modified'] == _dt_to_iso8601(
-            file.versions.first().created.replace(tzinfo=pytz.utc)
+            file.versions.first().created.replace(tzinfo=utc)
         )
         assert attributes['date_created'] == _dt_to_iso8601(
-            file.versions.last().created.replace(tzinfo=pytz.utc)
+            file.versions.last().created.replace(tzinfo=utc)
         )
         assert attributes['extra']['hashes']['md5'] is None
         assert attributes['extra']['hashes']['sha256'] is None
@@ -609,22 +610,22 @@ class TestFileView:
         assert node.id not in split_href
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestFileVersionView:
 
-    @pytest.fixture()
+    @fixture()
     def node(self, user):
         return ProjectFactory(creator=user)
 
-    @pytest.fixture()
+    @fixture()
     def osfstorage(self, node):
         return node.get_addon('osfstorage')
 
-    @pytest.fixture()
+    @fixture()
     def root_node(self, osfstorage):
         return osfstorage.get_root()
 
-    @pytest.fixture()
+    @fixture()
     def file(self, root_node, user):
         file = root_node.append_file('test_file')
         file.create_version(user, {
@@ -704,21 +705,21 @@ class TestFileVersionView:
         ).status_code == 405
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestFileTagging:
 
-    @pytest.fixture
+    @fixture
     def node(self, user, request):
         if request.param == 'project':
             return ProjectFactory(creator=user)
         if request.param == 'registration':
             return RegistrationFactory(creator=user)
 
-    @pytest.fixture()
+    @fixture()
     def file(self, user, node):
         return api_utils.create_test_file(node, user, filename='file_one')
 
-    @pytest.fixture()
+    @fixture()
     def payload(self, file):
         payload = {
             'data': {
@@ -733,11 +734,11 @@ class TestFileTagging:
             payload['data']['attributes']['checkout'] = None
         return payload
 
-    @pytest.fixture()
+    @fixture()
     def url(self, file):
         return f'/{API_BASE}files/{file._id}/'
 
-    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
+    @mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_tags_add_and_update_properly(self, app, user, url, payload):
         # test_tags_add_properly
         res = app.put_json_api(url, payload, auth=user.auth)
@@ -754,7 +755,7 @@ class TestFileTagging:
         assert len(res.json['data']['attributes']['tags']) == 1
         assert res.json['data']['attributes']['tags'][0] == 'goofier'
 
-    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
+    @mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_tags_add_and_remove_properly(self, app, user, url, payload):
         app.put_json_api(url, payload, auth=user.auth)
         payload['data']['attributes']['tags'] = []
@@ -762,7 +763,7 @@ class TestFileTagging:
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 0
 
-    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
+    @mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_put_wo_tags_doesnt_remove_tags(self, app, user, url, payload):
         app.put_json_api(url, payload, auth=user.auth)
         res = app.put_json_api(url, payload, auth=user.auth)
@@ -771,7 +772,7 @@ class TestFileTagging:
         assert len(res.json['data']['attributes']['tags']) == 1
         assert res.json['data']['attributes']['tags'][0] == 'goofy'
 
-    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
+    @mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_add_and_remove_tag_adds_log(self, app, user, url, payload, node):
         # test_add_tag_adds_log
         count = node.logs.count()
@@ -787,22 +788,22 @@ class TestFileTagging:
         assert NodeLog.FILE_TAG_REMOVED == node.logs.latest().action
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestPreprintFileView:
 
-    @pytest.fixture()
+    @fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
 
-    @pytest.fixture()
+    @fixture()
     def primary_file(self, preprint):
         return preprint.primary_file
 
-    @pytest.fixture()
+    @fixture()
     def file_url(self, primary_file):
         return f'/{API_BASE}files/{primary_file._id}/'
 
-    @pytest.fixture()
+    @fixture()
     def other_user(self):
         return AuthUserFactory()
 
@@ -929,20 +930,20 @@ class TestPreprintFileView:
         res = app.get(file_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
-@pytest.mark.django_db
+@mark.django_db
 class TestShowAsUnviewed:
 
-    @pytest.fixture
+    @fixture
     def node(self, user):
         return ProjectFactory(creator=user, is_public=True)
 
-    @pytest.fixture
+    @fixture
     def test_file(self, user, node):
         test_file = api_utils.create_test_file(node, user, create_guid=False)
         test_file.add_version(FileVersionFactory())
         return test_file
 
-    @pytest.fixture
+    @fixture
     def url(self, test_file):
         return f'/{API_BASE}files/{test_file._id}/'
 

@@ -1,70 +1,71 @@
-from unittest import mock
-import pytz
-import pytest
-import datetime
-from django.utils import timezone
 from collections import OrderedDict
+from datetime import datetime
+from unittest import mock
+
+from pytz import utc
+from pytest import mark, raises, fixture
+from django.utils import timezone
 
 from addons.box.models import BoxFile
 from addons.dropbox.models import DropboxFile
 from addons.github.models import GithubFile
 from addons.googledrive.models import GoogleDriveFile
 from addons.osfstorage.models import OsfStorageFile
-from addons.s3.models import S3File
-from website import settings
 from addons.osfstorage import settings as osfstorage_settings
-from website.project.views.comment import update_file_guid_referent
-from website.project.signals import comment_added, mention_added
-from framework.exceptions import PermissionsError
-from tests.base import capture_signals
-from osf.models import Comment, NodeLog, Guid, BaseFileNode
-from osf.utils import permissions
+from addons.s3.models import S3File
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
+from osf.models import BaseFileNode, Comment, Guid, NodeLog
+from osf.utils import permissions
+from tests.base import capture_signals
+from website import settings
+from website.project.signals import comment_added, mention_added
+from website.project.views.comment import update_file_guid_referent
 from .factories import (
-    CommentFactory,
-    ProjectFactory,
-    NodeFactory,
-    UserFactory,
-    UnregUserFactory,
     AuthUserFactory,
+    CommentFactory,
+    NodeFactory,
     OSFGroupFactory,
+    ProjectFactory,
+    UnregUserFactory,
+    UserFactory,
 )
 
 # All tests will require a databse
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
 
 
-@pytest.fixture()
+@fixture()
 def user():
     return UserFactory()
 
 
-@pytest.fixture()
+@fixture()
 def user_without_nodes():
     return UserFactory()
 
 
-@pytest.fixture()
+@fixture()
 def node(user):
     return NodeFactory(creator=user)
 
 
-@pytest.fixture()
+@fixture()
 def auth(user):
     return Auth(user)
 
 
-@pytest.fixture()
+@fixture()
 def project(user):
     return ProjectFactory(creator=user)
 
 
-@pytest.fixture()
+@fixture()
 def comment(user, project):
     return CommentFactory(user=user, target=project.guids.last(), node=project)
 
 
-@pytest.fixture()
+@fixture()
 def unreg_contributor(project):
     unreg_user = UnregUserFactory()
     unreg_user.save()
@@ -73,82 +74,82 @@ def unreg_contributor(project):
     return unreg_user
 
 
-@pytest.fixture()
+@fixture()
 def contributor(project):
     user = UserFactory()
     project.add_contributor(user)
     return user
 
 
-@pytest.fixture()
+@fixture()
 def component(user, project):
     return NodeFactory(parent=project, creator=user)
 
 
-@pytest.fixture()
+@fixture()
 def project_with_contributor(user, contributor):
     project = ProjectFactory(creator=user)
     project.add_contributor(contributor)
     return project
 
 
-@pytest.fixture()
+@fixture()
 def comment_self_mentioned(user):
     return f'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{user._id}/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_contributor_mentioned(contributor):
     return f'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{contributor._id}/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_invalid_user_mentioned():
     return 'This is a comment with a good mention [@Mentioned User](http://localhost:5000/qwerty/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_too_long():
     return ''.join(['c' for _ in range(settings.COMMENT_MAXLENGTH + 3)])
 
 
-@pytest.fixture()
+@fixture()
 def comment_too_long_with_mention(user):
     mention = f'[@George Ant](http://localhost:5000/{user._id}/)'
     return ''.join(['c' for _ in range(settings.COMMENT_MAXLENGTH - 8)]) + mention
 
 
-@pytest.fixture()
+@fixture()
 def comment_valid():
     return 'This is a good comment'
 
 
-@pytest.fixture()
+@fixture()
 def comment_mention_valid(contributor):
     return f'This is a comment [@User](http://localhost:5000/{contributor._id}/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_mention_project_with_contributor(contributor, project_with_contributor):
     return f'This is a comment [@User](http://localhost:5000/{contributor._id}/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_mention_unreg_contributor(unreg_contributor):
     return f'This is a comment [@Unconfirmed User](http://localhost:5000/{unreg_contributor._id}/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_mention_non_contributor(user_without_nodes):
     return f'This is a comment [@User](http://localhost:5000/{user_without_nodes._id}/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_mention_edited_twice(comment, node):
     return f'This is a new comment [@User](http://localhost:5000/{comment.user}/).'
 
 
-@pytest.fixture()
+@fixture()
 def comment_mentioned_with_contributors(user):
     return f'This is a new comment [@User](http://localhost:5000/{user._id}/).'
 
@@ -177,7 +178,7 @@ def pytest_generate_tests(metafunc):
 
 
 # copied from tests/test_comments.py
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestCommentModel:
 
     create_and_edit_cases = [
@@ -371,7 +372,7 @@ class TestCommentModel:
     def test_delete(self, node):
         comment = CommentFactory(node=node)
         auth = Auth(comment.user)
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             comment.delete(auth=auth, save=True)
         assert comment.is_deleted, True
@@ -424,7 +425,7 @@ class TestCommentModel:
     def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
         project = ProjectFactory(is_public=False)
         comment = CommentFactory(node=project, is_deleted=True)
-        with pytest.raises(PermissionsError):
+        with raises(PermissionsError):
             comment.get_content(auth=None)
 
     def test_find_unread_is_zero_when_no_comments(self):
@@ -462,7 +463,7 @@ class TestCommentModel:
 class FileCommentMoveRenameTestMixin:
     id_based_providers = ['osfstorage']
 
-    @pytest.fixture()
+    @fixture()
     def project(self, user):
         p = ProjectFactory(creator=user)
         p_settings = p.get_or_add_addon(self.provider, Auth(user))
@@ -471,7 +472,7 @@ class FileCommentMoveRenameTestMixin:
         p.save()
         return p
 
-    @pytest.fixture()
+    @fixture()
     def component(self, user, project):
         c = NodeFactory(parent=project, creator=user)
         c_settings = c.get_or_add_addon(self.provider, Auth(user))
@@ -861,7 +862,7 @@ class FileCommentMoveRenameTestMixin:
         file_comments = Comment.objects.filter(root_target=self.guid.pk)
         assert file_comments.count() == 1
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ['destination_provider', 'destination_path'],
         [('box', '/1234567890'), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt')]
     )
@@ -895,7 +896,7 @@ class FileCommentMoveRenameTestMixin:
         file_comments = Comment.objects.filter(root_target=self.guid.pk)
         assert file_comments.count() == 1
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ['destination_provider', 'destination_path'],
         [('box', '/1234567890'), ('dropbox', '/subfolder/file.txt'), ('github', '/subfolder/file.txt'), ('googledrive', '/subfolder/file.txt'), ('s3', '/subfolder/file.txt'), ]
     )

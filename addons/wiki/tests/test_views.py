@@ -1,22 +1,32 @@
 """Views tests for the wiki addon."""
-import pytest
+from pytest import mark, raises
 from unittest import mock
-import pytz
-import datetime
+from pytz import utc
+from datetime import datetime
 from django.utils import timezone
 
 from addons.wiki.models import WikiPage, WikiVersion
-from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
-     PageCannotRenameError, PageConflictError, PageNotFoundError)
+from addons.wiki.exceptions import (
+    NameInvalidError,
+    NameMaximumLengthError,
+    PageCannotRenameError,
+    PageConflictError
+)
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from addons.wiki.utils import serialize_wiki_widget
 from framework.auth import Auth
 from osf.exceptions import ValidationError
 from osf.models import Guid
-from osf_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, NodeFactory, CommentFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    UserFactory,
+    ProjectFactory,
+    NodeFactory,
+    CommentFactory,
+)
 from tests.base import OsfTestCase
 
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
 
 
 class TestUpdateNodeWiki(OsfTestCase):
@@ -104,11 +114,11 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert WikiVersion.objects.get_for_node(self.project, 'home').content == 'Hello world'
         assert WikiVersion.objects.get_for_node(self.project, 'second').content == 'Hola mundo'
 
-    @pytest.mark.enable_implicit_clean
+    @mark.enable_implicit_clean
     def test_update_name_invalid(self):
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
-        with pytest.raises(NameInvalidError):
+        with raises(NameInvalidError):
             WikiPage.objects.create_for_node(self.project, invalid_name, 'more valid content', self.auth)
 
     def test_update_wiki_updates_comments_and_user_comments_viewed_timestamp(self):
@@ -193,7 +203,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert res['more']
 
 
-@pytest.mark.enable_implicit_clean
+@mark.enable_implicit_clean
 class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):
@@ -211,26 +221,26 @@ class TestRenameNodeWiki(OsfTestCase):
     def test_rename_new_name_invalid_none_or_blank(self):
         name = 'New Page'
         for invalid_name in [None, '', '   ']:
-            with pytest.raises(ValidationError):
+            with raises(ValidationError):
                 self.second_wiki.rename(invalid_name, self.auth)
 
     def test_rename_new_name_invalid_special_characters(self):
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
-        with pytest.raises(NameInvalidError):
+        with raises(NameInvalidError):
             self.second_wiki.rename(invalid_name, self.auth)
 
     def test_rename_name_maximum_length(self):
         new_name = 'a' * 101
-        with pytest.raises(NameMaximumLengthError):
+        with raises(NameMaximumLengthError):
             self.second_wiki.rename(new_name, self.auth)
 
     def test_rename_cannot_rename(self):
-        with pytest.raises(PageCannotRenameError):
+        with raises(PageCannotRenameError):
             wp = WikiPage.objects.get_for_node(self.project, 'home')
             wp.rename('New Home', self.auth)
 
-        with pytest.raises(PageCannotRenameError):
+        with raises(PageCannotRenameError):
             wp = WikiPage.objects.get_for_node(self.project, 'HOME')
             wp.rename('New Home', self.auth)
 
@@ -284,7 +294,7 @@ class TestRenameNodeWiki(OsfTestCase):
         assert WikiPage.objects.get_for_node(self.project, existing_name).page_name == existing_name
         new_page = WikiPage.objects.create_for_node(self.project, new_name, 'new content', self.auth)
         assert WikiPage.objects.get_for_node(self.project, new_name).page_name == new_name
-        with pytest.raises(PageConflictError):
+        with raises(PageConflictError):
             new_page.rename(existing_name, self.auth)
 
     def test_rename_log(self):
@@ -332,7 +342,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Number of versions is correct
         assert self.wiki_page.current_version_number == 1
         # Delete wiki
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.wiki_page.delete(self.auth)
         # Number of versions is still correct
@@ -343,7 +353,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         assert WikiPage.objects.get_for_node(self.project, 'not home') is None
 
     def test_wiki_delete(self):
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.wiki_page.delete(self.auth)
         # page was deleted

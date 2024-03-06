@@ -1,13 +1,13 @@
 from datetime import datetime as dt
-import pytz
-import logging
+from pytz import utc
+from logging import getLogger
 
-import re
-import os
-import json
-import shutil
-import requests
-import tempfile
+from re import match
+from os import path, listdir, rmdir
+from json import load
+from shutil import move, rmtree
+from requests import put, get
+from tempfile import mkdtemp
 from django.core.management.base import BaseCommand
 
 from osf.utils.permissions import ADMIN, WRITE
@@ -24,10 +24,10 @@ from website.settings import WATERBUTLER_INTERNAL_URL
 from framework.auth.core import Auth
 from zipfile import ZipFile
 
-logger = logging.getLogger(__name__)
-HERE = os.path.dirname(os.path.abspath(__file__))
+logger = getLogger(__name__)
+HERE = path.dirname(path.abspath(__file__))
 
-check_id = lambda item: re.match(r'(^[0-9]{8}[A-Z]{2})', item)
+check_id = lambda item: match(r'(^[0-9]{8}[A-Z]{2})', item)
 
 
 class EGAPUploadException(Exception):
@@ -59,8 +59,8 @@ def get_creator_auth_header(creator_username):
 
 
 def create_node_from_project_json(egap_assets_path, egap_project_dir, creator):
-    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json')) as fp:
-        project_data = json.load(fp)
+    with open(path.join(egap_assets_path, egap_project_dir, 'project.json')) as fp:
+        project_data = load(fp)
         title = project_data['title']
         node = Node(title=title, creator=creator)
         node.save()  # must save before adding contribs for auth reasons
@@ -87,8 +87,8 @@ def create_node_from_project_json(egap_assets_path, egap_project_dir, creator):
 
 
 def rollback_node_from_project_json(egap_assets_path, egap_project_dir, creator):
-    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json')) as fp:
-        project_data = json.load(fp)
+    with open(path.join(egap_assets_path, egap_project_dir, 'project.json')) as fp:
+        project_data = load(fp)
         title = project_data['title']
         try:
             node = Node.objects.filter(title=title, creator=creator).get()
@@ -108,16 +108,16 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=None):
         metadata = []
 
     try:
-        for item in os.listdir(dir_path):
-            item_path = os.path.join(dir_path, item)
+        for item in listdir(dir_path):
+            item_path = path.join(dir_path, item)
             base_url = f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/{parent}'
-            if os.path.isfile(item_path):
+            if path.isfile(item_path):
                 with open(item_path, 'rb') as fp:
                     url = base_url + f'?name={item}&kind=file'
-                    resp = requests.put(url, data=fp.read(), headers=auth)
+                    resp = put(url, data=fp.read(), headers=auth)
             else:
                 url = base_url + f'?name={item}&kind=folder'
-                resp = requests.put(url, headers=auth)
+                resp = put(url, headers=auth)
                 metadata = recursive_upload(auth, node, item_path, parent=resp.json()['data']['attributes']['path'], metadata=metadata)
 
             if resp.status_code == 409:  # if we retry something already uploaded just skip.
@@ -137,26 +137,26 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=None):
 def get_egap_assets(guid, creator_auth):
     node = Node.load(guid)
     zip_file = node.files.first()
-    temp_path = tempfile.mkdtemp()
+    temp_path = mkdtemp()
 
     url = f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{guid}/providers/osfstorage/{zip_file._id}'
-    zip_file = requests.get(url, headers=creator_auth).content
+    zip_file = get(url, headers=creator_auth).content
 
-    egap_assets_path = os.path.join(temp_path, 'egap_assets.zip')
+    egap_assets_path = path.join(temp_path, 'egap_assets.zip')
 
     with open(egap_assets_path, 'wb') as fp:
         fp.write(zip_file)
 
     with ZipFile(egap_assets_path, 'r') as zipObj:
         zipObj.extractall(temp_path)
-        zip_parent = [file for file in os.listdir(temp_path) if file not in ('__MACOSX', 'egap_assets.zip') and not check_id(file)]
+        zip_parent = [file for file in listdir(temp_path) if file not in ('__MACOSX', 'egap_assets.zip') and not check_id(file)]
         if zip_parent:
             zip_parent = zip_parent[0]
-            for i in os.listdir(os.path.join(temp_path, zip_parent)):
-                shutil.move(os.path.join(temp_path, zip_parent, i), os.path.join(temp_path, i))
+            for i in listdir(path.join(temp_path, zip_parent)):
+                move(path.join(temp_path, zip_parent, i), path.join(temp_path, i))
 
     if zip_parent:
-        os.rmdir(os.path.join(temp_path, zip_parent))
+        rmdir(path.join(temp_path, zip_parent))
 
     return temp_path
 
@@ -180,7 +180,7 @@ def register_silently(draft_registration, auth, sanction_type, external_register
             'registration': registration._id
         },
         auth=auth,
-        log_date=dt.now().replace(tzinfo=pytz.utc))
+        log_date=dt.now().replace(tzinfo=utc))
 
     if sanction_type == 'Embargo':
         registration.embargo_registration(auth.user, embargo_end_date)
@@ -196,7 +196,7 @@ def main(guid, creator_username):
     egap_assets_path = get_egap_assets(guid, creator_auth)
 
     # __MACOSX is a hidden file created by the os when zipping
-    directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX') and not directory.startswith('.')]
+    directory_list = [directory for directory in listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX') and not directory.startswith('.')]
 
     directory_list.sort()
     for egap_project_dir in directory_list:
@@ -219,18 +219,18 @@ def main(guid, creator_username):
             continue
 
         # Node File Upload
-        non_anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'nonanonymous')
+        non_anon_files = path.join(egap_assets_path, egap_project_dir, 'data', 'nonanonymous')
         non_anon_metadata = recursive_upload(creator_auth, node, non_anon_files)
 
-        anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'anonymous')
-        if os.path.isdir(anon_files):
+        anon_files = path.join(egap_assets_path, egap_project_dir, 'data', 'anonymous')
+        if path.isdir(anon_files):
             anon_metadata = recursive_upload(creator_auth, node, anon_files)
         else:
             anon_metadata = {}
 
         # DraftRegistration Metadata Handling
-        with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json')) as fp:
-            registration_metadata = json.load(fp)
+        with open(path.join(egap_assets_path, egap_project_dir, 'registration-schema.json')) as fp:
+            registration_metadata = load(fp)
 
         # add selectedFileName Just so filenames are listed in the UIj
         non_anon_metadata_dict = []
@@ -275,7 +275,7 @@ def main(guid, creator_username):
         # Retrieve EGAP registration date and potential embargo go-public date
         if registration_metadata.get('q4'):
             egap_registration_date_string = registration_metadata['q4']['value']
-            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y - %H:%M').replace(tzinfo=pytz.UTC)
+            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y - %H:%M').replace(tzinfo=utc)
         else:
             logger.error(
                 'DraftRegistration associated with Project {} '
@@ -286,14 +286,14 @@ def main(guid, creator_username):
         if embargo_date:
             if embargo_date.get('value'):
                 egap_embargo_public_date_string = embargo_date['value']
-                egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%y').replace(tzinfo=pytz.UTC)
+                egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%y').replace(tzinfo=utc)
             else:
                 egap_embargo_public_date = None
         else:
             egap_embargo_public_date = None
 
         sanction_type = 'RegistrationApproval'
-        if egap_embargo_public_date and (egap_embargo_public_date > dt.today().replace(tzinfo=pytz.UTC)):
+        if egap_embargo_public_date and (egap_embargo_public_date > dt.today().replace(tzinfo=utc)):
             sanction_type = 'Embargo'
 
         logger.info(
@@ -316,7 +316,7 @@ def main(guid, creator_username):
             else:
                 node.update_contributor(contributor.user, permission=ADMIN, visible=True, auth=Auth(creator), save=True)
 
-    shutil.rmtree(egap_assets_path)
+    rmtree(egap_assets_path)
 
 
 class Command(BaseCommand):

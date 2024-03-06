@@ -1,52 +1,27 @@
-import pytz
 from datetime import datetime
-from framework import status
 
-from django.utils import timezone
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.urls import NoReverseMatch
-from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Case, F, IntegerField, When
 from django.http import HttpResponse
-from django.views.generic import (
-    View,
-    FormView,
-    ListView,
-    TemplateView,
-)
 from django.shortcuts import redirect, reverse
-from django.urls import reverse_lazy
+from django.urls import NoReverseMatch, reverse_lazy
+from django.utils import timezone
+from django.views.generic import FormView, ListView, TemplateView, View
+from pytz import utc
 
+from admin.base.forms import GuidForm
 from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidView
-from admin.base.forms import GuidForm
-
-from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
-
+from api.share.utils import update_share
+from framework import status
 from osf.exceptions import NodeStateError
-from osf.models import (
-    OSFUser,
-    NodeLog,
-    AbstractNode,
-    Registration,
-    SpamStatus
-)
-from osf.models.admin_log_entry import (
-    update_admin_log,
-    NODE_REMOVED,
-    NODE_RESTORED,
-    CONTRIBUTOR_REMOVED,
-    CONFIRM_SPAM,
-    CONFIRM_HAM,
-    UNFLAG_SPAM,
-    REINDEX_SHARE,
-    REINDEX_ELASTIC,
-)
+from osf.models import AbstractNode, NodeLog, OSFUser, Registration, SpamStatus
+from osf.models.admin_log_entry import CONFIRM_HAM, CONFIRM_SPAM, CONTRIBUTOR_REMOVED, NODE_REMOVED, NODE_RESTORED, REINDEX_ELASTIC, REINDEX_SHARE, UNFLAG_SPAM, update_admin_log
 from osf.utils.permissions import ADMIN
-
-from website import settings, search
+from website import search, settings
 
 
 class NodeMixin(PermissionRequiredMixin):
@@ -318,7 +293,7 @@ class RegistrationUpdateEmbargoView(NodeMixin, View):
         registration = self.get_object()
 
         try:
-            end_date = pytz.utc.localize(datetime.strptime(end_date, '%m/%d/%Y'))
+            end_date = utc.localize(datetime.strptime(end_date, '%m/%d/%Y'))
         except ValueError:
             return HttpResponse('Please enter a valid date.', status=400)
 

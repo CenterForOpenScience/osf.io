@@ -1,9 +1,9 @@
 from datetime import datetime
-import itertools
-import logging
+from itertools import chain
+from logging import getLogger
 
 from lxml import etree
-import pytz
+from pytz import UTC
 import requests
 
 from framework import sentry
@@ -14,7 +14,7 @@ from website.settings import (DATE_LAST_LOGIN_THROTTLE_DELTA, EXTERNAL_IDENTITY_
                               ORCID_RECORD_EDUCATION_PATH, ORCID_RECORD_EMPLOYMENT_PATH)
 
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 @celery_app.task()
@@ -23,7 +23,7 @@ def update_user_from_activity(user_id, login_time, cas_login=False, updates=None
     if not updates:
         updates = {}
     if isinstance(login_time, float):
-        login_time = datetime.fromtimestamp(login_time, pytz.UTC)
+        login_time = datetime.fromtimestamp(login_time, UTC)
     user = OSFUser.load(user_id)
     should_save = False
     if not user.date_last_login or user.date_last_login < login_time - DATE_LAST_LOGIN_THROTTLE_DELTA:
@@ -85,7 +85,7 @@ def check_institution_affiliation(orcid_id):
         is_deleted=False
     )
     # Check both employment and education records
-    for source in itertools.chain(employment_source_list, education_source_list):
+    for source in chain(employment_source_list, education_source_list):
         # Check source against all "affiliation-via-orcid" institutions
         for institution in via_orcid_institutions:
             if source == institution.orcid_record_verified_source:

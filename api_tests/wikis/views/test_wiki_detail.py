@@ -1,19 +1,15 @@
-from unittest import mock
-import pytest
-import furl
-import pytz
-import datetime
+from datetime import datetime
 from future.moves.urllib.parse import urlparse
+from unittest import mock
+
+from furl import furl
+from pytest import fixture, mark
+from pytz import utc
 
 from addons.wiki.models import WikiPage
-from addons.wiki.tests.factories import (
-    WikiFactory,
-    WikiVersionFactory,
-)
-
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-
 from osf.models import Guid
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -40,14 +36,14 @@ def make_rename_payload(wiki_page):
     return payload, new_page_name
 
 
-@pytest.mark.django_db
+@mark.django_db
 class WikiCRUDTestCase:
 
-    @pytest.fixture()
+    @fixture()
     def user_creator(self):
         return AuthUserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def project_public(self, user_creator):
         project_public = ProjectFactory(
             is_public=True,
@@ -57,7 +53,7 @@ class WikiCRUDTestCase:
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return project_public
 
-    @pytest.fixture()
+    @fixture()
     def project_private(self, user_creator):
         project_private = ProjectFactory(
             is_public=False,
@@ -67,77 +63,77 @@ class WikiCRUDTestCase:
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return project_private
 
-    @pytest.fixture()
+    @fixture()
     def user_non_contributor(self):
         return AuthUserFactory()
 
-    @pytest.fixture()
+    @fixture()
     def user_write_contributor(self, project_public, project_private):
         user = AuthUserFactory()
         project_public.add_contributor(user, permissions=permissions.WRITE)
         project_private.add_contributor(user, permissions=permissions.WRITE)
         return user
 
-    @pytest.fixture()
+    @fixture()
     def user_read_contributor(self, project_public, project_private):
         user = AuthUserFactory()
         project_public.add_contributor(user, permissions=permissions.READ)
         project_private.add_contributor(user, permissions=permissions.READ)
         return user
 
-    @pytest.fixture()
+    @fixture()
     def wiki_public(self, project_public, user_creator):
         wiki_page = WikiFactory(node=project_public, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
-    @pytest.fixture()
+    @fixture()
     def wiki_private(self, project_private, user_creator):
         wiki_page = WikiFactory(node=project_private, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
-    @pytest.fixture()
+    @fixture()
     def wiki_publicly_editable(self, project_public, user_creator):
         pass
 
-    @pytest.fixture()
+    @fixture()
     def wiki_registration_public(self, project_public, user_creator):
         registration = RegistrationFactory(project=project_public, is_public=True)
         wiki_page = WikiFactory(node=registration, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
-    @pytest.fixture()
+    @fixture()
     def wiki_registration_private(self, project_public, user_creator):
         registration = RegistrationFactory(project=project_public, is_public=False)
         wiki_page = WikiFactory(node=registration, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
-    @pytest.fixture()
+    @fixture()
     def url_wiki_public(self, wiki_public):
         return f'/{API_BASE}wikis/{wiki_public._id}/'
 
-    @pytest.fixture()
+    @fixture()
     def url_wiki_home(self, project_public):
         wiki_home = project_public.wikis.get(page_name='home')
         return f'/{API_BASE}wikis/{wiki_home._id}/'
 
-    @pytest.fixture()
+    @fixture()
     def url_wiki_private(self, wiki_private):
         return f'/{API_BASE}wikis/{wiki_private._id}/'
 
-    @pytest.fixture()
+    @fixture()
     def url_wiki_publicly_editable(self, wiki_publicly_editable):
         # return '/{}wikis/{}/'.format(API_BASE, wiki_publicly_editable._id)
         pass
 
-    @pytest.fixture()
+    @fixture()
     def url_registration_wiki_public(self, wiki_registration_public):
         return f'/{API_BASE}wikis/{wiki_registration_public._id}/'
 
-    @pytest.fixture()
+    @fixture()
     def url_registration_wiki_private(self, wiki_registration_private):
         return f'/{API_BASE}wikis/{wiki_registration_private._id}/'
 
@@ -223,7 +219,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(
+        url = furl(
             self.private_url).add(
             query_params={
                 'view_only': private_link.key}).url
@@ -236,7 +232,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         private_link = PrivateLinkFactory(anonymous=False)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(
+        url = furl(
             self.private_url).add(
             query_params={
                 'view_only': private_link.key}).url
@@ -383,7 +379,7 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.public_wiki_page._id)
         res = self.app.get(url)
         assert res.status_code == 200
-        self.public_wiki_page.deleted = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        self.public_wiki_page.deleted = datetime(2017, 3, 16, 11, 00, tzinfo=utc)
         self.public_wiki_page.save()
 
         res = self.app.get(url, expect_errors=True)
@@ -448,7 +444,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         assert res.status_code == 404
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestWikiDelete(WikiCRUDTestCase):
 
     def test_delete_public_wiki_page(
@@ -510,7 +506,7 @@ class TestWikiDelete(WikiCRUDTestCase):
         assert res.status_code == 405
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestWikiUpdate(WikiCRUDTestCase):
 
     def test_rename_public_wiki_page(

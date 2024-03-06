@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-import pytz
+from pytz import UTC
 from dateutil.parser import parse
 from django.utils import timezone
 
@@ -23,10 +23,10 @@ def set_maintenance(message, level=1, start=None, end=None):
     end = parse(end) if end else start + timedelta(1)
 
     if not start.tzinfo:
-        start = start.replace(tzinfo=pytz.UTC)
+        start = start.replace(tzinfo=UTC)
 
     if not end.tzinfo:
-        end = end.replace(tzinfo=pytz.UTC)
+        end = end.replace(tzinfo=UTC)
 
     if start > end:
         start = end - timedelta(1)

@@ -1,9 +1,8 @@
-import re
+from datetime import datetime, timedelta
+from re import match
 
-import pytz
-
-from datetime import timedelta, datetime
 from django.utils import timezone
+from pytz import utc
 from rest_framework.exceptions import ValidationError
 
 
@@ -49,8 +48,8 @@ def parse_datetimes(query_params):
 
         format_to_use = DATETIME_FORMAT if using_time else DATE_FORMAT
         try:
-            start_datetime = datetime.strptime(start_datetime, format_to_use).replace(tzinfo=pytz.utc) if start_datetime else default_start
-            end_datetime = datetime.strptime(end_datetime, format_to_use).replace(tzinfo=pytz.utc) if end_datetime else default_end
+            start_datetime = datetime.strptime(start_datetime, format_to_use).replace(tzinfo=utc) if start_datetime else default_start
+            end_datetime = datetime.strptime(end_datetime, format_to_use).replace(tzinfo=utc) if end_datetime else default_end
         except ValueError:
             raise ValidationError('You cannot use a mixture of date format and datetime format.')
         # if not using time, make sure to ensure start date is at midnight, and end_date is 11:59
@@ -100,7 +99,7 @@ def parse_date_range(query_params, is_monthly=False):
     elif query_params.get('timeframe', False):
         timeframe = query_params.get('timeframe')
         if timeframe is not None:
-            m = re.match(r'previous_(\d+)_days?', timeframe)
+            m = match(r'previous_(\d+)_days?', timeframe)
             if m:
                 days_back = m.group(1)
             else:

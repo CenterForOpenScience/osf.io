@@ -1,23 +1,25 @@
-import pytest
-import pytz
-import datetime
-from addons.wiki.exceptions import NameMaximumLengthError
+from datetime import datetime
 
+from pytest import mark, raises
+from pytz import utc
+
+from addons.wiki.exceptions import NameMaximumLengthError
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.factories import NodeFactory, UserFactory, ProjectFactory
 from tests.base import OsfTestCase, fake
 
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
+
 
 # from website/addons/wiki/tests/test_wiki.py
 class TestWikiPageModel:
 
-    @pytest.mark.enable_implicit_clean
+    @mark.enable_implicit_clean
     def test_page_name_cannot_be_greater_than_100_characters(self):
         bad_name = 'a' * 101
         page = WikiPage(page_name=bad_name)
-        with pytest.raises(NameMaximumLengthError):
+        with raises(NameMaximumLengthError):
             page.save()
 
     def test_is_current_with_single_version(self):
@@ -44,7 +46,7 @@ class TestWikiPageModel:
         page = WikiPage(page_name='foo', node=node)
         page.save()
         ver1 = page.update(user=user, content='draft1')
-        page.deleted = datetime.datetime(2017, 1, 1, 1, 00, tzinfo=pytz.utc)
+        page.deleted = datetime.datetime(2017, 1, 1, 1, 00, tzinfo=utc)
         page.save()
         assert ver1.is_current is False
 

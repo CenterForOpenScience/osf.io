@@ -3,7 +3,7 @@ from datetime import datetime
 from django.db import models
 from django.utils import timezone
 from elasticsearch.exceptions import NotFoundError
-import pytz
+from pytz import utc
 
 
 class MetricMixin:
@@ -33,7 +33,7 @@ class MetricMixin:
         all_indices = cls._get_all_indices()
         relevant_indices = [
             # get_index_name takes a datetime, so get Jan 1 for each relevant year
-            cls.get_index_name(datetime(year, 1, 1, tzinfo=pytz.utc))
+            cls.get_index_name(datetime(year, 1, 1, tzinfo=utc))
             for year in year_range
         ]
         return [index for index in relevant_indices if index in all_indices]

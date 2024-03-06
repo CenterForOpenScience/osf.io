@@ -1,19 +1,15 @@
-import datetime
-import re
-import pytest
-import pytz
+from datetime import datetime, timedelta
+from functools import cmp_to_key
+from re import search, findall
+from unittest import TestCase
 
 from dateutil import parser
 from django.utils import timezone
-
+from pytz import utc
+from pytest import mark, raises
 from rest_framework import generics
 from rest_framework import serializers as ser
 
-from unittest import TestCase
-
-from tests.base import ApiTestCase
-
-from api.base.filters import ListFilterMixin
 import api.base.filters as filters
 from api.base.exceptions import (
     InvalidFilterError,
@@ -21,17 +17,17 @@ from api.base.exceptions import (
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
 )
-from osf_tests.factories import (
-    NodeFactory,
-    AuthUserFactory,
-)
-from api.base.settings.defaults import API_BASE
+from api.base.filters import ListFilterMixin
 from api.base.serializers import RelationshipField
+from api.base.settings.defaults import API_BASE
+from osf_tests.factories import (
+    AuthUserFactory,
+    NodeFactory,
+)
+from tests.base import ApiTestCase
 
-from functools import cmp_to_key
 
 class FakeSerializer(ser.Serializer):
-
     filterable_fields = (
         'id',
         'string_field',
@@ -155,8 +151,8 @@ class TestFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        start = parser.parse('2014-12-12').replace(tzinfo=pytz.utc)
-        stop = start + datetime.timedelta(days=1)
+        start = parser.parse('2014-12-12').replace(tzinfo=utc)
+        stop = start + timedelta(days=1)
         for key, field_name in fields.items():
             for match in field_name['date_field']:
                 if match['op'] == 'gte':
@@ -198,28 +194,28 @@ class TestFilterMixin(ApiTestCase):
         query_params = {
             'filter[fake]': 'foo'
         }
-        with pytest.raises(InvalidFilterError):
+        with raises(InvalidFilterError):
             self.view.parse_query_params(query_params)
 
     def test_parse_query_params_raises_InvalidFilterComparisonType(self):
         query_params = {
             'filter[string_field][gt]': 'foo'
         }
-        with pytest.raises(InvalidFilterComparisonType):
+        with raises(InvalidFilterComparisonType):
             self.view.parse_query_params(query_params)
 
     def test_parse_query_params_raises_InvalidFilterMatchType(self):
         query_params = {
             'filter[date_field][icontains]': '2015'
         }
-        with pytest.raises(InvalidFilterMatchType):
+        with raises(InvalidFilterMatchType):
             self.view.parse_query_params(query_params)
 
     def test_parse_query_params_raises_InvalidFilterOperator(self):
         query_params = {
             'filter[int_field][bar]': 42
         }
-        with pytest.raises(InvalidFilterOperator):
+        with raises(InvalidFilterOperator):
             self.view.parse_query_params(query_params)
 
     def test_InvalidFilterOperator_parameterizes_valid_operators(self):
@@ -229,7 +225,7 @@ class TestFilterMixin(ApiTestCase):
         try:
             self.view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
-            ops = re.search(
+            ops = search(
                 r'one of (?P<ops>.+)\.$',
                 err.detail
             ).groupdict()['ops']
@@ -241,7 +237,7 @@ class TestFilterMixin(ApiTestCase):
         try:
             self.view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
-            ops = re.search(
+            ops = search(
                 r'one of (?P<ops>.+)\.$',
                 err.detail
             ).groupdict()['ops']
@@ -260,6 +256,7 @@ class TestFilterMixin(ApiTestCase):
         for key, field_name in fields.items():
             self.assertIn(field_name['string_field']['value'], ('foo', 'bar'))
         """
+
     def test_convert_value_bool(self):
         value = 'true'
         field = FakeSerializer._declared_fields['bool_field']
@@ -271,9 +268,9 @@ class TestFilterMixin(ApiTestCase):
         value = '2014-12-12'
         field = FakeSerializer._declared_fields['date_field']
         value = self.view.convert_value(value, field)
-        assert isinstance(value, datetime.datetime)
+        assert isinstance(value, datetime)
         assert value == \
-            parser.parse('2014-12-12').replace(tzinfo=pytz.utc)
+               parser.parse('2014-12-12').replace(tzinfo=utc)
 
     def test_convert_value_int(self):
         value = '9000'
@@ -297,14 +294,14 @@ class TestFilterMixin(ApiTestCase):
         query_params = {
             'filter[string_field, not_a_field]': 'test'
         }
-        with pytest.raises(InvalidFilterError):
+        with raises(InvalidFilterError):
             self.view.parse_query_params(query_params)
 
     def test_bad_filter_operator(self):
         query_params = {
             'filter[relationship_field][invalid]': 'false',
         }
-        with pytest.raises(InvalidFilterOperator):
+        with raises(InvalidFilterOperator):
             self.view.parse_query_params(query_params)
 
 
@@ -383,7 +380,8 @@ class TestListFilterMixin(ApiTestCase):
         assert parsed_field['value'] is False
         assert parsed_field['op'] == 'eq'
 
-@pytest.mark.django_db
+
+@mark.django_db
 class TestOSFOrderingFilter(ApiTestCase):
     class query:
         title = ' '
@@ -500,7 +498,7 @@ class TestQueryPatternRegex(TestCase):
         filter_str = 'filter[name]'
         match = self.filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
+        field_names = findall(self.filter_fields, fields)
         assert fields == 'name'
         assert field_names[0] == 'name'
 
@@ -508,7 +506,7 @@ class TestQueryPatternRegex(TestCase):
         filter_str = 'filter[name,id]'
         match = self.filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
+        field_names = findall(self.filter_fields, fields)
         assert fields == 'name,id'
         assert field_names[0] == 'name'
         assert field_names[1] == 'id'
@@ -517,7 +515,7 @@ class TestQueryPatternRegex(TestCase):
         filter_str = 'filter[name,id,another,field,here]'
         match = self.filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
+        field_names = findall(self.filter_fields, fields)
         assert fields == 'name,id,another,field,here'
         assert len(field_names) == 5
 
@@ -535,7 +533,7 @@ class TestQueryPatternRegex(TestCase):
         filter_str = 'filter[name,  id]'
         match = self.filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
+        field_names = findall(self.filter_fields, fields)
         assert fields == 'name,  id'
         assert field_names[0] == 'name'
         assert field_names[1] == 'id'

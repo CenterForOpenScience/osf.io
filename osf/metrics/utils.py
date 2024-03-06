@@ -1,9 +1,9 @@
-import re
-import datetime
-import typing
+from datetime import datetime
 from hashlib import sha256
+from re import compile
+from typing import NamedTuple
 
-import pytz
+from pytz import utc
 
 
 def stable_key(*key_parts):
@@ -20,15 +20,15 @@ def stable_key(*key_parts):
     return sha256(bytes(plain_key, encoding='utf')).hexdigest()
 
 
-class YearMonth(typing.NamedTuple):
+class YearMonth(NamedTuple):
     year: int
     month: int
 
-    YEARMONTH_RE = re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
+    YEARMONTH_RE = compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
 
     @classmethod
     def from_date(cls, date):
-        assert isinstance(date, (datetime.datetime, datetime.date))
+        assert isinstance(date, (datetime, date))
         return cls(date.year, date.month)
 
     @classmethod
@@ -46,9 +46,9 @@ class YearMonth(typing.NamedTuple):
         return f'{self.year}-{self.month:0>2}'
 
     def target_month(self):
-        return datetime.datetime(self.year, self.month, 1, tzinfo=pytz.utc)
+        return datetime(self.year, self.month, 1, tzinfo=utc)
 
     def next_month(self):
         if self.month == 12:
-            return datetime.datetime(self.year + 1, 1, 1, tzinfo=pytz.utc)
-        return datetime.datetime(self.year, self.month + 1, 1, tzinfo=pytz.utc)
+            return datetime(self.year + 1, 1, 1, tzinfo=utc)
+        return datetime(self.year, self.month + 1, 1, tzinfo=utc)

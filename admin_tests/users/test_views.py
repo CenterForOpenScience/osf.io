@@ -1,33 +1,29 @@
-from unittest import mock
-import furl
-import pytz
-import pytest
 from datetime import datetime, timedelta
+from unittest import mock
 
-from django.test import RequestFactory
-from django.urls import reverse
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 from django.contrib.messages.storage.fallback import FallbackStorage
-
-from tests.base import AdminTestCase
-from website import settings
-from framework.auth import Auth
-from osf.models.user import OSFUser
-from osf.models.spam import SpamStatus
-from osf_tests.factories import (
-    UserFactory,
-    AuthUserFactory,
-    ProjectFactory,
-    UnconfirmedUserFactory
-)
-from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
+from django.core.exceptions import PermissionDenied
+from django.test import RequestFactory
+from django.urls import reverse
+from furl import furl
+from pytz import utc
+from pytest import mark, raises
 
 from admin.users import views
-from admin.users.forms import UserSearchForm, MergeUserForm
+from admin.users.forms import MergeUserForm, UserSearchForm
+from admin_tests.utilities import setup_form_view, setup_log_view, setup_view
+from framework.auth import Auth
 from osf.models.admin_log_entry import AdminLogEntry
+from osf.models.spam import SpamStatus
+from osf.models.user import OSFUser
+from osf_tests.factories import (
+    AuthUserFactory, ProjectFactory, UnconfirmedUserFactory, UserFactory
+)
+from tests.base import AdminTestCase
+from website import settings
 
-pytestmark = pytest.mark.django_db
+pytestmark = mark.django_db
 
 
 def patch_messages(request):
@@ -169,7 +165,7 @@ class TestDisableUser(AdminTestCase):
 
     def test_no_user(self):
         view = setup_view(views.UserDisableView(), self.request, guid='meh')
-        with pytest.raises(OSFUser.DoesNotExist):
+        with raises(OSFUser.DoesNotExist):
             view.post(self.request)
 
     def test_no_user_permissions_raises_error(self):
@@ -235,7 +231,7 @@ class TestDisableSpamUser(AdminTestCase):
 
     def test_no_user(self):
         view = setup_view(self.view(), self.request, guid='meh')
-        with pytest.raises(OSFUser.DoesNotExist):
+        with raises(OSFUser.DoesNotExist):
             view.post(self.request)
 
     def test_no_user_permissions_raises_error(self):
@@ -489,7 +485,7 @@ class TestGetLinkView(AdminTestCase):
         user_token = list(user.email_verifications.keys())[0]
         ideal_link_path = f'/confirm/{user._id}/{user_token}/'
         link = view.get_link(user)
-        link_path = str(furl.furl(link).path)
+        link_path = str(furl(link).path)
 
         assert link_path == ideal_link_path
 
@@ -500,13 +496,13 @@ class TestGetLinkView(AdminTestCase):
         view = setup_view(view, request, guid=user._id)
 
         old_user_token = list(user.email_verifications.keys())[0]
-        user.email_verifications[old_user_token]['expiration'] = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=24)
+        user.email_verifications[old_user_token]['expiration'] = datetime.utcnow().replace(tzinfo=utc) - timedelta(hours=24)
         user.save()
 
         link = view.get_link(user)
         new_user_token = list(user.email_verifications.keys())[0]
 
-        link_path = str(furl.furl(link).path)
+        link_path = str(furl(link).path)
         ideal_link_path = f'/confirm/{user._id}/{new_user_token}/'
 
         assert link_path == ideal_link_path
@@ -523,7 +519,7 @@ class TestGetLinkView(AdminTestCase):
         assert user_token is not None
 
         ideal_link_path = f'/resetpassword/{user._id}/{user_token}'
-        link_path = str(furl.furl(link).path)
+        link_path = str(furl(link).path)
 
         assert link_path == ideal_link_path
 

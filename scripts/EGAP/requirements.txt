@@ -50,8 +50,8 @@ ptyprocess==0.6.0
 pycparser==2.19
 Pygments==2.4.2
 pyrsistent==0.15.4
-python-dateutil==2.8.0
-pytz==2019.3
+python-dateutil==2.9.0
+pytz==2024.1
 pyzmq==18.1.0
 qtconsole==4.5.5
 Send2Trash==1.5.0

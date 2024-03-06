@@ -1,47 +1,54 @@
-import pytz
-import markupsafe
-import logging
+from logging import getLogger
+from pytz import utc
 
 from django.apps import apps
-from django.contrib.auth.models import Group, AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Group
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
-from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
+from guardian.shortcuts import assign_perm, get_group_perms, get_perms, remove_perm
+from markupsafe import escape
 
-from api.providers.workflows import Workflows, PUBLIC_STATES
+from api.providers.workflows import PUBLIC_STATES, Workflows
 from framework import status
+from framework.analytics import increment_user_activity_counters
 from framework.auth import Auth
 from framework.auth.core import get_user
-from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import (
-    InvalidTriggerError,
-    ValidationValueError,
-    UserStateError,
-    UserNotAffiliatedError,
-    InvalidTagError,
     BlockedEmailError,
+    InvalidTagError,
+    InvalidTriggerError,
+    UserNotAffiliatedError,
+    UserStateError,
+    ValidationValueError,
 )
-from .node_relation import NodeRelation
-from .nodelog import NodeLog
-from .subject import Subject
-from .spam import SpamMixin, SpamStatus
-from .validators import validate_title
-from .tag import Tag
+from osf.models.nodelog import NodeLog
+from osf.models.node_relation import NodeRelation
+from osf.models.spam import SpamMixin, SpamStatus
+from osf.models.subject import Subject
+from osf.models.tag import Tag
+from osf.models.validators import (
+    validate_email,
+    validate_subject_hierarchy,
+    validate_title,
+    expand_subject_hierarchy,
+)
 from osf.utils import sanitize
-from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
-from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import (
-    ReviewsMachine,
     NodeRequestMachine,
     PreprintRequestMachine,
+    ReviewsMachine,
 )
-
-from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
-from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
+from osf.utils.permissions import ADMIN, READ, REVIEW_GROUPS, WRITE
+from osf.utils.registrations import (
+    expand_registration_responses,
+    flatten_registration_metadata,
+)
+from osf.utils.requests import get_request_and_user_id
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
@@ -49,13 +56,8 @@ from osf.utils.workflows import (
     ReviewTriggers,
 )
 
-from osf.utils.requests import get_request_and_user_id
-from website.project import signals as project_signals
-from website import settings, mails, language
-from website.project.licenses import set_license
+logger = getLogger(__name__)
 
-
-logger = logging.getLogger(__name__)
 
 class Versioned(models.Model):
     """A Model mixin class that saves delta versions."""
@@ -132,7 +134,7 @@ class Loggable(models.Model):
     def _complete_add_log(self, log, action, user=None, save=True):
         if self.logs.count() == 1:
             log_date = log.date if hasattr(log, 'date') else log.created
-            self.last_logged = log_date.replace(tzinfo=pytz.utc)
+            self.last_logged = log_date.replace(tzinfo=utc)
         else:
             recent_log = self.logs.first()
             log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
@@ -1967,10 +1969,10 @@ class ContributorMixin(models.Model):
                     # Because addons can return HTML strings, addons are responsible
                     # for markupsafe-escaping any messages returned
                     status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
-                        'addon': markupsafe.escape(addon.config.full_name),
-                        'category': markupsafe.escape(self.category_display),
-                        'title': markupsafe.escape(self.title),
-                        'user': markupsafe.escape(user.fullname)
+                        'addon': escape(addon.config.full_name),
+                        'category': escape(self.category_display),
+                        'title': escape(self.title),
+                        'user': escape(user.fullname)
                     })
 
 

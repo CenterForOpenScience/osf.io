@@ -1,18 +1,18 @@
-import logging
-import pytz
-import sys
 from datetime import datetime
+from logging import getLogger
+import sys
 
 from django.db import transaction
+from pytz import UTC
 
-from website.app import setup_django
-setup_django()
 from osf.models import OSFUser
 from scripts import utils as script_utils
-from website.mailchimp_utils import subscribe_mailchimp
 from website import settings
+from website.app import setup_django
+from website.mailchimp_utils import subscribe_mailchimp
 
-logger = logging.getLogger(__name__)
+setup_django()
+logger = getLogger(__name__)
 
 
 def main():
@@ -22,8 +22,8 @@ def main():
         script_utils.add_file_logger(logger, __file__)
 
     with transaction.atomic():
-        start_time = datetime(2017, 12, 20, 8, 25, 25, tzinfo=pytz.UTC)
-        end_time = datetime(2017, 12, 20, 18, 5, 1, tzinfo=pytz.UTC)
+        start_time = datetime(2017, 12, 20, 8, 25, 25, tzinfo=UTC)
+        end_time = datetime(2017, 12, 20, 18, 5, 1, tzinfo=UTC)
 
         users = OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, date_registered__range=[start_time, end_time])
 

@@ -2,47 +2,38 @@
 
 import datetime as dt
 from unittest import mock
-from rest_framework import status as http_status
-import pytz
-from django.utils import timezone
 
-import pytest
+from django.utils import timezone
+from pytest import mark, fixture
+from rest_framework import status as http_status
+from pytz import utc
 
 from api.base.settings.defaults import API_BASE
 from api.providers.workflows import Workflows
-
-from waffle.testutils import override_switch
-
 from framework.exceptions import HTTPError
-
-from osf import features
 from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
-from website.project.metadata.schemas import _name_to_id
-from website.util import api_url_for
-from website.project.views import drafts as draft_views
-
 from osf_tests.factories import (
-    Auth,
     AuthUserFactory,
     DraftRegistrationFactory,
     EmbargoFactory,
     NodeFactory,
     RegistrationFactory,
-    RegistrationProviderFactory
+    RegistrationProviderFactory,
 )
+from tests.base import get_default_metaschema
 from tests.json_api_test_app import JSONAPITestApp
 from tests.test_registrations.base import RegistrationsTestBase
-
-from tests.base import get_default_metaschema
-from osf.models import Registration
+from website.project.metadata.schemas import _name_to_id
+from website.project.views import drafts as draft_views
+from website.util import api_url_for
 
 SCHEMA_VERSION = 2
 
 
-@pytest.mark.django_db
-@pytest.mark.enable_bookmark_creation
+@mark.django_db
+@mark.enable_bookmark_creation
 class TestRegistrationViews(RegistrationsTestBase):
 
     def test_node_register_page_not_registration_redirects(self):
@@ -105,7 +96,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         assert res.status_code == http_status.HTTP_302_FOUND
 
 
-@pytest.mark.enable_bookmark_creation
+@mark.enable_bookmark_creation
 class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_draft_before_register_page(self):
@@ -414,7 +405,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_validate_embargo_end_date_too_soon(self):
         registration = RegistrationFactory(project=self.node)
-        today = dt.datetime.today().replace(tzinfo=pytz.utc)
+        today = dt.datetime.today().replace(tzinfo=utc)
         too_soon = today + dt.timedelta(days=5)
         try:
             draft_views.validate_embargo_end_date(too_soon.isoformat(), registration)
@@ -425,7 +416,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_validate_embargo_end_date_too_late(self):
         registration = RegistrationFactory(project=self.node)
-        today = dt.datetime.today().replace(tzinfo=pytz.utc)
+        today = dt.datetime.today().replace(tzinfo=utc)
         too_late = today + dt.timedelta(days=(4 * 365) + 1)
         try:
             draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
@@ -436,7 +427,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_validate_embargo_end_date_ok(self):
         registration = RegistrationFactory(project=self.node)
-        today = dt.datetime.today().replace(tzinfo=pytz.utc)
+        today = dt.datetime.today().replace(tzinfo=utc)
         too_late = today + dt.timedelta(days=12)
         try:
             draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
@@ -471,18 +462,18 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             self.fail()
 
 
-@pytest.mark.django_db
+@mark.django_db
 class TestModeratorRegistrationViews:
 
-    @pytest.fixture
+    @fixture
     def app(self):
         return JSONAPITestApp()
 
-    @pytest.fixture
+    @fixture
     def moderator(self):
         return AuthUserFactory()
 
-    @pytest.fixture
+    @fixture
     def provider(self, moderator):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
@@ -491,7 +482,7 @@ class TestModeratorRegistrationViews:
         provider.save()
         return provider
 
-    @pytest.fixture
+    @fixture
     def embargoed_registration(self, provider):
         embargo = EmbargoFactory()
         registration = embargo.target_registration
@@ -526,7 +517,7 @@ class TestModeratorRegistrationViews:
         'subjects',
         'wikis',
     ]
-    @pytest.fixture(params=PROTECTED_REGISTRATION_SUB_ROUTES)
+    @fixture(params=PROTECTED_REGISTRATION_SUB_ROUTES)
     def registration_subpath(self, request, embargoed_registration):
         url = f'/{API_BASE}registrations/{embargoed_registration._id}/{request.param}'
         if request.param:

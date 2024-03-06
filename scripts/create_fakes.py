@@ -32,20 +32,27 @@ Examples:
 
 """
 
-import ast
+from ast import literal_eval
 import sys
 from unittest import mock
-import argparse
-import logging
-
+from argparse import ArgumentParser
+from logging import getLogger, CRITICAL
 import django
-import pytz
+from pytz import UTC
 from faker import Factory
 from faker.providers import BaseProvider
+
 django.setup()
 
 from framework.auth import Auth
-from osf_tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory, fake_email
+from osf_tests.factories import (
+    UserFactory,
+    ProjectFactory,
+    NodeFactory,
+    RegistrationFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    fake_email)
 from osf import models
 from website.app import init_app
 
@@ -134,7 +141,7 @@ class Sciencer(BaseProvider):
                  'resources', 'response', 'role', 'section', 'select', 'significant ', 'similar',
                  'source', 'specific', 'strategies', 'structure', 'theory', 'transfer', 'variables',
                  'corvidae', 'passerine', 'Pica pica', 'Chinchilla lanigera', 'Nymphicus hollandicus',
-                 'Melopsittacus undulatus', )
+                 'Melopsittacus undulatus',)
 
     def science_word(cls):
         """
@@ -253,13 +260,13 @@ class Sciencer(BaseProvider):
         return ''.join(text)
 
 
-logger = logging.getLogger('create_fakes')
+logger = getLogger('create_fakes')
 SILENT_LOGGERS = [
     'factory',
     'website.mails',
 ]
 for logger_name in SILENT_LOGGERS:
-    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+    getLogger(logger_name).setLevel(CRITICAL)
 fake = Factory.create()
 fake.add_provider(Sciencer)
 
@@ -269,8 +276,8 @@ def create_fake_user():
     name = fake.name()
     user = UserFactory(username=email, fullname=name,
                        is_registered=True, emails=[email],
-                       date_registered=fake.date_time(tzinfo=pytz.UTC),
-                   )
+                       date_registered=fake.date_time(tzinfo=UTC),
+                       )
     user.set_password('faker123')
     user.save()
     logger.info(f'Created user: {user.fullname} <{user.username}>')
@@ -278,7 +285,7 @@ def create_fake_user():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Create fake data.')
+    parser = ArgumentParser(description='Create fake data.')
     parser.add_argument('-u', '--user', dest='user', required=True)
     parser.add_argument('--nusers', dest='n_users', type=int, default=3)
     parser.add_argument('--nprojects', dest='n_projects', type=int, default=3)
@@ -292,11 +299,13 @@ def parse_args():
     parser.add_argument('-preprovider', '--preprintprovider', dest='preprint_provider', type=str, default=None)
     return parser.parse_args()
 
+
 def evaluate_argument(string):
-    return ast.literal_eval(string)
+    return literal_eval(string)
 
 
-def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration, is_preprint, preprint_provider):
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration,
+                        is_preprint, preprint_provider):
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
     if is_preprint:
@@ -311,7 +320,8 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         privacy = 'public'
         mock_change_identifier_preprints = mock.patch('website.identifiers.client.CrossRefClient.update_identifier')
         mock_change_identifier_preprints.start()
-        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
+        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator,
+                                  provider=provider)
         node = project.node
     elif is_registration:
         project = RegistrationFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
