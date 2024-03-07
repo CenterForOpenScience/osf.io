@@ -274,7 +274,7 @@ def get_auth(auth, **kwargs):
         data = jwt.decode(
             jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
-            options={'require_exp': True},
+            options={'require': ['exp']},
             algorithms=[settings.WATERBUTLER_JWT_ALGORITHM],
         )['data']
     except (jwt.InvalidTokenError, KeyError) as err:
