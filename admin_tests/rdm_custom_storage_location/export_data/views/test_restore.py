@@ -1080,10 +1080,13 @@ class TestRestoreDataFunction(AdminTestCase):
 
         mock_check_progress.return_value = None
         mock_create_folder.return_value = None
-        result = self.view.create_folder_in_destination(task, 1, export_data_folder, self.addon_data_restore, None)
+        result = self.view.create_folder_in_destination(
+            task, 1,
+            export_data_folder, self.addon_data_restore,
+            None)
         mock_check_progress.assert_called()
         mock_create_folder.assert_called()
-        nt.assert_equal(result, None)
+        nt.assert_equal(result, [])
 
     # copy_files_from_export_data_to_destination
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
@@ -1118,8 +1121,11 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_file.first.return_value = basefilenode
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, addon_export_file,
-                                                                          self.addon_data_restore, None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                addon_export_file,
+                self.addon_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_called()
@@ -1160,9 +1166,11 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_copy.side_effect = create_node
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          self.bulk_mount_data_restore,
-                                                                          None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                bulkmount_export_files,
+                self.bulk_mount_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_called()
@@ -1205,9 +1213,11 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_copy.side_effect = create_node
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          self.bulk_mount_data_restore,
-                                                                          None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                bulkmount_export_files,
+                self.bulk_mount_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_called()
@@ -1243,9 +1253,11 @@ class TestRestoreDataFunction(AdminTestCase):
         }
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          other_bulk_mount_data_restore,
-                                                                          None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                bulkmount_export_files,
+                other_bulk_mount_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_called()
@@ -1268,8 +1280,10 @@ class TestRestoreDataFunction(AdminTestCase):
         }
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, [],
-                                                                          self.export_data_restore, None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                [], self.export_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_not_called()
             mock_copy.assert_not_called()
@@ -1295,8 +1309,11 @@ class TestRestoreDataFunction(AdminTestCase):
         }
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          self.export_data_restore, None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                bulkmount_export_files,
+                self.export_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_not_called()
@@ -1328,8 +1345,11 @@ class TestRestoreDataFunction(AdminTestCase):
         }
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          self.export_data_restore, None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                bulkmount_export_files,
+                self.export_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_not_called()
@@ -1350,8 +1370,11 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_copy.return_value = None
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          self.addon_data_restore, None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                bulkmount_export_files,
+                self.addon_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_called()
@@ -1376,8 +1399,11 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_copy.side_effect = Exception('Mock test exception while downloading file from export data')
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          self.addon_data_restore, None)
+            result = self.view.copy_files_from_export_data_to_destination(
+                task, 1,
+                bulkmount_export_files,
+                self.addon_data_restore,
+                [], None)
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_copy.assert_called()
@@ -1398,7 +1424,7 @@ class TestRestoreDataFunction(AdminTestCase):
                     task, 1,
                     bulkmount_export_files,
                     self.export_data_restore,
-                    None)
+                    [], None)
                 nt.assert_equal(result, None)
 
     # add_tag_and_timestamp_to_database

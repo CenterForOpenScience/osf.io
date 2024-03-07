@@ -183,6 +183,9 @@
     ],
     "addons_has_max_keys": [
         "s3",
-        "s3compat"
+        "s3compat",
+        "s3compatinstitutions",
+        "s3compatb3",
+        "ociinstitutions"
     ]
 }

@@ -14,6 +14,8 @@ from osf.models import (
 from django.utils import timezone
 
 
+# for used quota calculation when uploading files
+# providers supports addon method
 PROVIDERS = ['s3', 's3compat']
 
 # import inspect

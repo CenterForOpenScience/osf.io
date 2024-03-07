@@ -584,6 +584,7 @@ def get_files_in_path(node_id, provider, path, cookies, **kwargs):
     file_list = []
     next_token = None
     _retries = 2
+    new_file_list = []
     while next_token or _retries:
         # Get list file in export storage location
         if next_token:
@@ -600,14 +601,21 @@ def get_files_in_path(node_id, provider, path, cookies, **kwargs):
             # request again if it has next_token
             next_token = response_body.get('next_token')
             _retries = 0
+        elif response.status_code == 404:
+            next_token = None
+            _retries = 0
+            logger.warning('Nothing else.')
         else:
             _retries = max(_retries - 1, 0)
-            message = (f'Failed to get info of path "{path}" on destination storage,'
-                       f' create new folder on destination storage')
             if _retries:
                 message = 'Try to get object list again'
+                logger.warning(message)
+                continue  # request again
+
+            next_token = None
+            message = (f'Failed to get info of path "{path}" on destination storage,'
+                       f' create new folder on destination storage')
             logger.warning(message)
-            continue  # request again
 
         # stop if response new_file_list is empty
         if not new_file_list:
@@ -663,47 +671,102 @@ def update_existing_file(node_id, provider, file_path, file_data, cookies, base_
         return None, None
 
 
-def create_folder_path(node_id, destination_region, folder_path, cookies, base_url=WATERBUTLER_URL, **kwargs):
-    if not folder_path.startswith('/') and not folder_path.endswith('/'):
+def create_folder_path(destination_region, destination_node_id, destination_folder_path,
+                       created_folders,
+                       cookies, base_url=WATERBUTLER_URL, **kwargs):
+    if not destination_folder_path.startswith('/') and not destination_folder_path.endswith('/'):
         # Invalid folder path, return immediately
-        return
+        logger.warning('Invalid folder path, return immediately')
+        return None
 
-    provider = destination_region.provider_name
-    is_destination_addon_storage = is_add_on_storage(provider)
+    destination_provider = destination_region.provider_name
+    folder_paths = destination_folder_path.split('/')[1:-1]
+    create_folders(destination_provider, destination_node_id,
+                   folder_paths, created_folders,
+                   cookies, base_url, **kwargs)
 
-    paths = folder_path.split('/')[1:-1]
-    created_path = '/'
-    created_materialized_path = '/'
-    for index, path in enumerate(paths):
+
+def create_folders(destination_provider, destination_node_id,
+                   folder_paths, created_folders,
+                   cookies, base_url=WATERBUTLER_URL, **kwargs):
+    created_folder_path = '/'
+    created_folder_materialized_path = '/'
+    is_destination_addon_storage = is_add_on_storage(destination_provider)
+    if not is_destination_addon_storage:
+        _msg = 'Ignore check folder existence in institution storage bulk-mount method'
+        logger.warning(_msg)
+        return created_folder_path
+
+    if not isinstance(created_folders, list):
+        created_folders = []
+
+    for index, path in enumerate(folder_paths):
+        new_folder_materialized_path = f'{created_folder_materialized_path}{path}/'
         try:
-            if not is_destination_addon_storage:
-                _msg = 'Ignore check folder existence in institution storage bulk-mount method'
-                logger.warning(_msg)
-                raise Exception(_msg)
+            created_folder_info = next((
+                (item[2], item[3]) for item in created_folders if (
+                    item[0] == destination_node_id
+                    and item[1] == new_folder_materialized_path
+                )
+            ), None)
 
-            response = get_file_data(node_id, provider, created_path, cookies, base_url, get_file_info=False, **kwargs)
-            if response.status_code != 200:
-                raise Exception('Cannot get folder info')
-            response_body = response.json()
-            new_path = f'{created_materialized_path}{path}/'
-            existing_path_info = next((item for item in response_body['data'] if
-                                       item['attributes']['materialized'] == new_path),
-                                      None)
-            if existing_path_info is None:
-                raise Exception('Folder not found')
+            if created_folder_info is None:
+                # Try to get path information
+                file_list = get_files_in_path(destination_node_id,
+                                              destination_provider,
+                                              created_folder_path,
+                                              cookies,
+                                              base_url=base_url,
+                                              get_file_info=False,
+                                              **kwargs)
+                logger.info(f'got all objects under "{created_folder_path}" objects.length=[{len(file_list)}]')
+                if not file_list:
+                    raise Exception('Empty folder')
 
-            created_path = existing_path_info['attributes']['path']
-            created_materialized_path = existing_path_info['attributes']['materialized']
+                existing_path_info = next(
+                    (item for item in file_list if item['attributes']['materialized'] == new_folder_materialized_path),
+                    None
+                )
+
+                if existing_path_info is None:
+                    message = (f'Path "{new_folder_materialized_path}" is not found in the restore destination storage,'
+                               f' create new folder in the restore destination storage')
+                    logger.warning(message)
+                    raise Exception(message)
+
+                created_folder_path = existing_path_info['attributes']['path']
+                created_folder_materialized_path = existing_path_info['attributes']['materialized']
+            else:
+                created_folder_path, created_folder_materialized_path = created_folder_info
+
+            logger.info(f'existed folder {created_folder_materialized_path} in the restore destination storage')
+            created_folders.append((
+                destination_node_id, new_folder_materialized_path,
+                created_folder_materialized_path, created_folder_path
+            ))
         except Exception:
             # If currently at folder, create folder
+            logger.info(f'creating folder {new_folder_materialized_path} in the restore destination storage')
             response_body, status_code = create_folder(
-                node_id, provider, created_path, path, cookies,
+                destination_node_id, destination_provider, created_folder_path, path, cookies,
                 callback_log=True, base_url=base_url, **kwargs)
             if response_body is not None:
-                created_path = response_body['data']['attributes']['path']
-                created_materialized_path = response_body['data']['attributes']['materialized']
+                created_folder_path = response_body['data']['attributes']['path']
+                created_folder_materialized_path = response_body['data']['attributes']['materialized']
+                logger.info(f'created folder {created_folder_materialized_path} in the restore destination storage')
+                created_folders.append((
+                    destination_node_id, new_folder_materialized_path,
+                    created_folder_materialized_path, created_folder_path
+                ))
+            elif status_code in (409,):
+                logger.warning(f'existed folder {created_folder_materialized_path} in the restore destination storage')
+                return None
             else:
-                return
+                logger.info(f'cannot create folder {created_folder_materialized_path}')
+                return None
+
+    # end for
+    return created_folder_path
 
 
 def upload_file_path(node_id, provider, file_path, file_data, cookies, base_url=WATERBUTLER_URL, **kwargs):
@@ -796,55 +859,30 @@ def copy_file_to_other_storage(export_data, destination_node_id, destination_pro
 
 
 def copy_file_from_location_to_destination(
-        export_data, destination_node_id, destination_provider, location_file_path, destination_file_path, cookies,
-        base_url=WATERBUTLER_URL, **kwargs):
+        export_data, destination_provider,
+        destination_node_id, destination_file_path,
+        location_file_path, created_folders,
+        cookies, base_url=WATERBUTLER_URL, **kwargs):
     if not destination_file_path.startswith('/') or destination_file_path.endswith('/'):
         # Invalid file path, return immediately
+        logger.warning('Invalid file path, return immediately')
         return None
 
-    folder_paths = destination_file_path.split('/')[1:-1]
     file_name = destination_file_path.split('/')[-1]
-    created_folder_path = '/'
-    created_folder_materialized_path = '/'
+    folder_paths = destination_file_path.split('/')[1:-1]
+    created_folder_path = create_folders(destination_provider, destination_node_id,
+                                         folder_paths, created_folders,
+                                         cookies, base_url, **kwargs)
 
-    # Get file's parent folder path for copy API
-    for path in folder_paths:
-        try:
-            # Try to get path information
-            file_list = get_files_in_path(destination_node_id, destination_provider, created_folder_path, cookies,
-                                          base_url=base_url,
-                                          get_file_info=True,
-                                          **kwargs)
-            if not file_list:
-                raise Exception('Empty folder')
-
-            new_folder_path = f'{created_folder_materialized_path}{path}/'
-            existing_path_info = next((item for item in file_list if
-                                       item['attributes']['materialized'] == new_folder_path),
-                                      None)
-
-            if existing_path_info is None:
-                message = (f'Path "{new_folder_path}" is not found on destination storage,'
-                           f' create new folder on destination storage')
-                logger.warning(message)
-                raise Exception(message)
-
-            created_folder_path = existing_path_info['attributes']['path']
-            created_folder_materialized_path = existing_path_info['attributes']['materialized']
-        except Exception:
-            # If currently at folder, create folder
-            response_body, status_code = create_folder(
-                destination_node_id, destination_provider, created_folder_path, path, cookies,
-                callback_log=True, base_url=base_url, **kwargs)
-            if response_body is not None:
-                created_folder_path = response_body['data']['attributes']['path']
-                created_folder_materialized_path = response_body['data']['attributes']['materialized']
-            else:
-                return None
+    if created_folder_path is None:
+        return None
 
     # Call API to copy file from location storage to destination storage
-    copy_response_body = copy_file_to_other_storage(export_data, destination_node_id, destination_provider, location_file_path,
-                                                    created_folder_path, file_name, cookies, **kwargs)
+    logger.info(f'copying file {file_name} to the restore destination storage')
+    copy_response_body = copy_file_to_other_storage(
+        export_data, destination_node_id, destination_provider,
+        location_file_path, created_folder_path, file_name,
+        cookies, **kwargs)
     return copy_response_body
 
 

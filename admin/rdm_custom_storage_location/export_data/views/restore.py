@@ -258,12 +258,16 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         update_restore_process_state(task, current_process_step)
 
         # create folders in destination
-        create_folder_in_destination(task, current_process_step, export_data_folders, export_data_restore, cookies, **kwargs)
+        created_folders = create_folder_in_destination(
+            task, current_process_step,
+            export_data_folders, export_data_restore,
+            cookies, **kwargs)
 
         # Download files from export data, then upload files to destination. Returns list of created file node in DB
         list_created_file_nodes, list_file_restore_fail = copy_files_from_export_data_to_destination(
             task, current_process_step,
             export_data_files, export_data_restore,
+            created_folders,
             cookies, **kwargs)
 
         check_if_restore_process_stopped(task, current_process_step)
@@ -606,6 +610,8 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
                                  export_data_restore, cookies, **kwargs):
     destination_region = export_data_restore.destination
     destination_base_url = destination_region.waterbutler_url
+
+    created_folders = []
     list_updated_projects = []
     for folder in export_data_folders:
         check_if_restore_process_stopped(task, current_process_step)
@@ -616,17 +622,24 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
         list_updated_projects = update_region_id(task, current_process_step,
                                                  destination_region, folder_project_id, list_updated_projects)
 
-        utils.create_folder_path(folder_project_id, destination_region, folder_materialized_path,
-                                 cookies, base_url=destination_base_url, **kwargs)
+        utils.create_folder_path(
+            destination_region, folder_project_id, folder_materialized_path,
+            created_folders,
+            cookies, base_url=destination_base_url, **kwargs)
 
     # recalculate user quota for all updated projects
     if list_updated_projects:
         # recalculate user quota
         recalculate_user_quota(destination_region)
 
+    return created_folders
 
-def copy_files_from_export_data_to_destination(task, current_process_step,
-                                               export_data_files, export_data_restore, cookies, **kwargs):
+
+def copy_files_from_export_data_to_destination(
+        task, current_process_step,
+        export_data_files, export_data_restore,
+        created_folders,
+        cookies, **kwargs):
     export_data = export_data_restore.export
 
     destination_region = export_data_restore.destination
@@ -680,8 +693,11 @@ def copy_files_from_export_data_to_destination(task, current_process_step,
                 file_hash_path = f'/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}'
 
                 # Copy file from location to destination storage
-                response_body = utils.copy_file_from_location_to_destination(export_data, file_project_id, destination_provider, file_hash_path,
-                                                                             file_materialized_path, cookies, base_url=destination_base_url, **kwargs)
+                response_body = utils.copy_file_from_location_to_destination(
+                    export_data, destination_provider,
+                    file_project_id, file_materialized_path, file_hash_path,
+                    created_folders,
+                    cookies, base_url=destination_base_url, **kwargs)
                 if response_body is None:
                     if file_id not in files_versions_restore_fail:
                         files_versions_restore_fail[file_id] = [version_id]
