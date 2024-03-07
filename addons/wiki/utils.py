@@ -1,19 +1,30 @@
 # -*- coding: utf-8 -*-
 import os
-from future.moves.urllib.parse import quote
+import json
+import logging
+import unicodedata
 import uuid
 
 import ssl
+from future.moves.urllib.parse import quote
+
 from pymongo import MongoClient
 import requests
 from bs4 import BeautifulSoup
 from django.apps import apps
 
+from django.core import serializers
+from django.core.exceptions import ObjectDoesNotExist
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
+from osf.models.files import BaseFileNode
 from osf.utils.permissions import ADMIN, READ, WRITE
+from framework.exceptions import HTTPError
+from rest_framework import status as http_status
 # MongoDB forbids field names that begin with "$" or contain ".". These
 # utilities map to and from Mongo field names.
+
+logger = logging.getLogger(__name__)
 
 mongo_map = {
     '.': '__!dot!__',
@@ -259,3 +270,122 @@ def serialize_wiki_widget(node):
     }
     wiki_widget_data.update(wiki.config.to_json())
     return wiki_widget_data
+
+def get_node_guid(node):
+    qs_guid = node._prefetched_objects_cache['guids'].only()
+    guid_serializer = serializers.serialize('json', qs_guid, ensure_ascii=False)
+    guid_json = json.loads(guid_serializer)
+    guid = guid_json[0]['fields']['_id']
+    return guid
+
+def get_all_wiki_name_import_directory(dir_id):
+    import_directory_root = BaseFileNode.objects.get(_id=dir_id)
+    children = import_directory_root._children.filter(type='osf.osfstoragefolder', deleted__isnull=True)
+    all_dir_name_list = []
+    all_wiki_obj_list = []
+    for child in children:
+        wiki_obj = BaseFileNode.objects.get(_id=child._id)
+        all_wiki_obj_list.append(wiki_obj)
+        all_dir_name_list.append(child.name)
+        all_child_name_list, all_child_obj_list = _get_all_child_directory(child._id)
+        all_dir_name_list.extend(all_child_name_list)
+        all_wiki_obj_list.extend(all_child_obj_list)
+    return all_dir_name_list, all_wiki_obj_list
+
+def _get_all_child_directory(dir_id):
+    parent_dir = BaseFileNode.objects.get(_id=dir_id)
+    children = parent_dir._children.filter(type='osf.osfstoragefolder', deleted__isnull=True)
+    dir_name_list = []
+    wiki_obj_list = []
+    for child in children:
+        wiki_obj = BaseFileNode.objects.get(_id=child._id)
+        wiki_obj_list.append(wiki_obj)
+        dir_name_list.append(child.name)
+        child_name_list, child_obj_list = _get_all_child_directory(child._id)
+        dir_name_list.extend(child_name_list)
+        wiki_obj_list.extend(child_obj_list)
+
+    return dir_name_list, wiki_obj_list
+
+def get_wiki_directory(wiki_name, dir_id):
+    import_directory_root = BaseFileNode.objects.get(_id=dir_id)
+    children = import_directory_root._children.filter(type='osf.osfstoragefolder', deleted__isnull=True)
+    # normalize NFC
+    wiki_name = unicodedata.normalize('NFC', wiki_name)
+    for child in children:
+        if child.name == wiki_name:
+            return child
+        wiki = get_wiki_directory(wiki_name, child._id)
+        if wiki:
+            return wiki
+    return None
+
+def get_wiki_fullpath(node, w_name):
+    WikiPage = apps.get_model('addons_wiki.WikiPage')
+    wiki = WikiPage.objects.get_for_node(node, w_name)
+    if wiki is None:
+        return ''
+    fullpath = '/' + _get_wiki_parent(wiki, w_name)
+    return fullpath
+
+def _get_wiki_parent(wiki, path):
+    WikiPage = apps.get_model('addons_wiki.WikiPage')
+    try:
+        parent_wiki_page = WikiPage.objects.get(id=wiki.parent)
+        path = parent_wiki_page.page_name + '/' + path
+        return _get_wiki_parent(parent_wiki_page, path)
+    except Exception as e:
+        return path
+
+def get_wiki_numbering(node, w_name):
+    max_value = 1000
+    index = 1
+    WikiPage = apps.get_model('addons_wiki.WikiPage')
+    wiki = WikiPage.objects.get_for_node(node, w_name)
+    if wiki is None:
+        return ''
+
+    for index in range(index, max_value+1):
+        wiki = WikiPage.objects.get_for_node(node, w_name + '('+ str(index) + ')')
+        if wiki is None:
+            return index
+    return None
+
+def get_max_depth(wiki_info):
+    max_depth = 0
+    for info in wiki_info:
+        now = info['path'].count('/')
+        max_depth = max(max_depth, now)
+    return max_depth - 1
+
+def create_import_error_list(wiki_info, imported_list):
+    import_errors = []
+    info_path =[]
+    imported_path = []
+    for info in wiki_info:
+        info_path.append(info['path'])
+    for imported in imported_list:
+        imported_path.append(imported['path'])
+    import_errors = list(set(info_path) ^ set(imported_path))
+    return import_errors
+
+def check_dir_id(dir_id, node):
+    try:
+        target = BaseFileNode.objects.get(_id=dir_id)
+    except ObjectDoesNotExist:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+            message_short='directory id does not exist',
+            message_long='directory id does not exist'
+        ))
+    node_id = target.target_object_id
+    if node.id != node_id:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+            message_short='directory id is invalid',
+            message_long='directory id is invalid'
+        ))
+    return True
+
+def extract_err_msg(err):
+    str_err = str(err)
+    message_long = str_err.split('\\t')[1]
+    return message_long

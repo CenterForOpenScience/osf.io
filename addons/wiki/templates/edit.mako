@@ -1,5 +1,8 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} ${_("Wiki")}</%def>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+</head>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
@@ -11,6 +14,13 @@
 % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
+<style >
+
+.ProseMirror:focus {
+    outline: none;
+  }
+
+</style>
 
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
@@ -33,6 +43,27 @@
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
                             <i class="fa fa-plus text-success"></i><span>${_("New")}</span>
                         </div>
+                        % if len(sortable_pages) > 1:
+                            <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#sortWiki">
+                                <i class="fa fa-sort text-info"></i><span>${_("Reorder")}</span>
+                            </div>
+                        % endif
+                        % if user['can_wiki_import']:
+                            % if len(import_dirs) > 0:
+                                % if alive_task_id:
+                                    <div class="wiki-toolbar-icon text-success" style="pointer-events:none; opacity: 0.4;">
+                                      <i class="fa fa-upload text-success"></i><span>${_("Importing")}</span>
+                                    </div>
+                                    <div class="wiki-toolbar-icon text-danger" data-toggle="modal" data-target="#abortWikiImport">
+                                      <i class="fa fa-trash-o text-danger"></i><span>${_("Abort")}</span>
+                                    </div>
+                                % else:
+                                    <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#importWiki">
+                                      <i class="fa fa-upload text-success"></i><span>${_("Import")}</span>
+                                    </div>
+                                % endif
+                            % endif
+                        % endif
                         % if wiki_id and wiki_name != 'home':
                             <div class="wiki-toolbar-icon text-danger" data-toggle="modal" data-target="#deleteWiki">
                                 <i class="fa fa-trash-o text-danger"></i><span>${_("Delete")}</span>
@@ -78,12 +109,12 @@
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
                 <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row wiki-view-icon-container">
-                        <div class="col-lg-4">
-                            <div class="panel-title" > <i class="fa fa-eye"> </i>  ${_("View")}</div>
-                        </div>
-                        <div class="col-sm-8">
+                        <div class="col-sm-8" style="width:100%">
 
-                            <div class="pull-right">
+                            <div id="editWysiwyg" class="wiki-toolbar-icon text-info" data-bind="click: editMode">
+                                <i class="fa fa-edit text-info"></i><span>Edit</span>
+                            </div>
+                            <div class="pull-right" style="margin-right:20px;">
                                 <!-- Version Picker -->
                                 <span>${_("Wiki Version:")}</span>
                                 <div style="display: inline-block">
@@ -102,104 +133,80 @@
                                         % endfor
                                     % endif
                                 </select>
-                              </div>
                             </div>
+                                <div class="pull-right" style="margin-left: 20px;>
+                                  <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
+                                      <div role="progressbar" data-bind="attr: progressBar">
+                                          <span class="progress-bar-content p-h-sm">
+                                              <span data-bind="text: statusDisplay"></span>
+                                              <span class="sharejs-info-btn">
+                                                  <i class="fa fa-question-circle fa-large"></i>
+                                              </span>
+                                          </span>
+                                      </div>
+                                  </div>
+                                </div>
 
                         </div>
                     </div>
                 </div>
 
                 <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
-                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class="markdown-it-view scripted">
-                      % if wiki_content:
-                          ${wiki_content}
+                  <div id="mMenuBar" style="display: none; border-bottom: 1px solid; border-bottom-color: #d1d5db">
+                    <button id="undoWiki" class="menuItem" data-bind="click: undoWiki" disabled><span id="msoUndo" class="material-symbols-outlined" style="opacity: 0.3">undo</span></button>
+                    <button id="redoWiki" class="menuItem" data-bind="click: redoWiki" disabled><span id="msoRedo" class="material-symbols-outlined" style="opacity: 0.3">redo</span></button>
+                    <button id="strongWiki" class="menuItem" data-bind="click: strong"><span class="material-symbols-outlined" >format_bold</span></button>
+                    <button id="italicWiki" class="menuItem" data-bind="click: italic"><span class="material-symbols-outlined">format_italic</span></button>
+                    <button class="menuItem" data-toggle="modal" data-target="#toggleLink"><span class="material-symbols-outlined" >link</span></button>
+                    <button class="menuItem" data-bind="click: quote"><span class="material-symbols-outlined">format_quote</span></button>
+                    <button class="menuItem" data-bind="click: code"><span class="material-symbols-outlined">code</span></button>
+                    <button class="menuItem" data-toggle="modal" data-target="#toggleImage"><span class="material-symbols-outlined">image</span></button>
+                    <button class="menuItem" data-bind="click: listNumbered"><span class="material-symbols-outlined">format_list_numbered</span></button>
+                    <button class="menuItem" data-bind="click: listBulleted"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+                    <button class="menuItem" data-bind="click: head"><span class="material-symbols-outlined">view_headline</span></button>
+                    <button class="menuItem" data-bind="click: horizontal"><span class="material-symbols-outlined">horizontal_rule</span></button>
+                    <div style="display: inline-block; position:absolute">
+                    <button id="tableBtn" class="menuItem" data-bind="click: table"><span class="material-symbols-outlined">table</span><span id="arrowDropDown" class="material-symbols-outlined" style="margin-left: -7px; display: none;">arrow_drop_down</span></button>
+                      <div id="tableMenu" class="table-dropdown-menu" style="display: none; border: 1px solid #aaa; padding: 2px; font-size: 90%; background: white; z-index: 15; white-space: nowrap; position: absolute">
+                        <div class="table-dropdown-item" data-bind="click: addColumnBef"><div style="">Insert column before</div></div>
+                        <div class="table-dropdown-item" data-bind="click: addColumnAft"><div style="">Insert column after</div></div>
+                        <div class="table-dropdown-item" data-bind="click: addRowBef"><div style="">Insert row before</div></div>
+                        <div class="table-dropdown-item" data-bind="click: addRowAft"><div style="">Insert row after</div></div>
+                        <div class="table-dropdown-item" data-bind="click: deleteSelectedCell"><div style="">delete cell</div></div>
+                        <div class="table-dropdown-item" data-bind="click: deleteTable"><div style="">delete table</div></div>
+                      </div>
+                    </div>
+                    <button class="menuItem" style="margin-left: 40px;" data-toggle="modal" data-target="#wiki-help-modal" style="margin-left: -7px"><span class="material-symbols-outlined">help</span></button>
+                  </div>
+                  <div id="mEditor" style="overflow: auto;height: 400px; ${'' if version_settings['view'] == 'preview' else 'display: none'}"></div>
+
+                  <div id="wikiViewRender">
+                      % if wiki_markdown:
+                          <div id="mView" style="overflow: auto;height: 400px;"></div>
                       % else:
                           <p class="text-muted"><em>${_("Add important information, links, or images here to describe your project.")}</em></p>
                       % endif
                   </div>
                 </div>
-              </div>
-          </div>
-
-          % if user['can_edit_wiki_body']:
-            <div data-bind="with: $root.editVM.wikiEditor.viewModel"
-                 data-osf-panel="${_('Edit')}"
-                 class="${'col-sm-{0}'.format(12 / num_columns)}"
-                 style="${'' if 'edit' in panels_used else 'display: none' | n}">
-              <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                <div class="osf-panel panel panel-default osf-panel-edit" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
-                    <div class="row">
-                      <div class="col-md-6">
-                           <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   ${_("Edit")} </h3>
-                      </div>
-                        <div class="col-md-6">
-                          <div class="pull-right">
-                            <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
-                                <div role="progressbar" data-bind="attr: progressBar">
-                                    <span class="progress-bar-content p-h-sm">
-                                        <span data-bind="text: statusDisplay"></span>
-                                        <span class="sharejs-info-btn">
-                                            <i class="fa fa-question-circle fa-large"></i>
-                                        </span>
-                                    </span>
-                                </div>
-                            </div>
-                          </div>
-                        </div>
-
-                    </div>
-                  </div>
-                  <div class="panel-body">
-                        <div class="row">
-                        <div class="col-xs-12">
-                          <div class="form-group wmd-panel">
-                          <ul class="list-inline pull-right">
-                          <!-- ko foreach: showCollaborators -->
-                             <!-- ko ifnot: id === ${ user_id | sjson, n } -->
-                                <li><a data-bind="attr: { href: url }" >
-                                          ## our shareJS explicitly passes back 'gravatar' despite our generalization
-                                          <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
-                                               style="border: 1px solid black;" width="30px" height="30px">
-                                      </a></li>
-                             <!-- /ko -->
-                          <!-- /ko -->
-                                <li><span data-bind="text: andOthersMessage"></span></li>
-                              </ul>
-                              <div id="wmd-button-bar"></div>
-                              <div id="aceLoadingBall" class="ball-scale ball-scale-blue absolute-center">
-                                  <div></div>
-                              </div>
-                              <div id="editor" class="wmd-input wiki-editor"
-                                   data-bind="ace: currentText">${_("Loading. . .")}</div>
-                          </div>
-                        </div>
-                      </div>
-                  </div>
-                  <div class="panel-footer">
+                  <div id="mEditorFooter" class="panel-footer" style="display: none">
                       <div class="row">
                         <div class="col-xs-12">
-                           <div class="pull-right">
+                          <div class="pull-right">
                               <button id="revert-button"
-                                      class="btn btn-danger"
-                                      data-bind="click: revertChanges"
-                                      >${_("Revert")}</button>
+                                      class="btn"
+                                      data-bind="click: editModeOff"
+                                      >Finish</button>
                               <input type="submit"
-                                     class="btn btn-success"
-                                     value="${_('Save')}"
-                                     onclick=$(window).off('beforeunload')>
+                                    class="btn btn-success"
+                                    value="Save"
+                                    data-bind="click: submitMText">
                           </div>
                         </div>
                       </div>
-                        <!-- Invisible textarea for form submission -->
-                        <textarea name="content" style="display: none;"
-                                  data-bind="value: currentText"></textarea>
-                  </div>
-                </div>
-                </form>
 
-            </div>
-          % endif
+                  </div>
+              </div>
+          </div>
 
 
           <div data-osf-panel="${_('Compare')}"
@@ -244,6 +251,9 @@
 
 <!-- Wiki modals should also be placed here! -->
   <%include file="wiki/templates/add_wiki_page.mako"/>
+  <%include file="wiki/templates/import_wiki_page.mako"/>
+  <%include file="wiki/templates/sort_wiki_page.mako"/>
+  <%include file="wiki/templates/abort_wiki_import.mako"/>
   <%include file="wiki/templates/wiki-bar-modal-help.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>
@@ -364,6 +374,61 @@
   </div>
 </div>
 
+<div class="modal fade" id="toggleLink" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Add hyperlink</h4>
+      </div>
+      <div class="modal-body">
+        <div><p style="display: inline-block; margin-right: 10px;">href:</p><input id="linkHref" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
+        <div><p style="display: inline-block; margin-right: 12px;">title:</p><input id="linkTitle" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the Title"></div>
+      </div>
+      <div class="modal-footer">
+        <div class="pull-right">
+          <button
+            class="btn"
+            data-dismiss="modal"
+          >Cancel</button>
+          <button
+            id="addLink"
+            class="btn btn-success"
+          >Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="toggleImage" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Add image</h4>
+      </div>
+      <div class="modal-body">
+        <div><p style="display: inline-block; margin-right: 16px;">src:</p><input id="imageSrc" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
+        <div><p style="display: inline-block; margin-right: 10px;">title:</p><input id="imageTitle" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
+        <div><p style="display: inline-block; margin-right: 19px;">alt:</p><input id="imageAlt" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
+      </div>
+      <div class="modal-footer">
+        <div class="pull-right">
+          <button
+            class="btn"
+            data-dismiss="modal"
+          >Cancel</button>
+          <button
+            id="addImage"
+            class="btn btn-success"
+          >Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
 <script>
@@ -387,9 +452,11 @@ ${parent.javascript_bottom()}
             content: ${urls['api']['content'] | sjson, n },
             rename: ${urls['api']['rename'] | sjson, n },
             grid: ${urls['api']['grid'] | sjson, n },
+            sort: ${urls['api']['sort'] | sjson, n },
             page: ${urls['web']['page'] | sjson, n },
             base: ${urls['web']['base'] | sjson, n },
-            sharejs: ${ sharejs_url | sjson, n }
+            sharejs: ${ sharejs_url | sjson, n },
+            y_websocket: ${ y_websocket_url | sjson, n }
         },
         metadata: {
             registration: true,
@@ -412,5 +479,5 @@ ${parent.javascript_bottom()}
 <script src="//${sharejs_url}/share.js"></script>
 <link href="${node['mfr_url']}/static/css/mfr.css" media="all" rel="stylesheet" />
 <script src="${node['mfr_url']}/static/js/mfr.js"></script>
-<script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
+<script src=${"/static/js/pages/wiki-edit-page.js"}></script>
 </%def>
