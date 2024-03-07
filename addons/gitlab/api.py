@@ -11,8 +11,9 @@ from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
 
 # Initialize caches
-https_cache = cachecontrol.CacheControlAdapter()
-default_adapter = HTTPAdapter()
+https_cache = cachecontrol.CacheControlAdapter()  # isn't used anywhere, maybe delete?
+default_adapter = HTTPAdapter()  # isn't being used anywhere, maybe delete?
+
 
 class GitLabClient:
 
@@ -133,8 +134,7 @@ class GitLabClient:
     def _get_api_request(self, uri):
         headers = {'PRIVATE-TOKEN': f'{self.access_token}'}
 
-        return requests.get('https://{}/{}/{}'.format(self.host, 'api/v4', uri),
-                            verify=True, headers=headers)
+        return requests.get(f'https://{self.host}/api/v4/{uri}', verify=True, headers=headers)
 
     def revoke_token(self):
         return False

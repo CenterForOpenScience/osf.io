@@ -4,6 +4,7 @@ from addons.dropbox.settings import MAX_UPLOAD_SIZE
 
 dropbox_root_folder = generic_root_folder('dropbox')
 
+
 class DropboxAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.dropbox'

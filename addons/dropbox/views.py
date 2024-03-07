@@ -22,6 +22,7 @@ dropbox_import_auth = generic_views.import_auth(
     DropboxSerializer
 )
 
+
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 def dropbox_folder_list(node_addon, **kwargs):
@@ -31,15 +32,18 @@ def dropbox_folder_list(node_addon, **kwargs):
 
     return node_addon.get_folders(folder_id=folder_id)
 
+
 dropbox_get_config = generic_views.get_config(
     SHORT_NAME,
     DropboxSerializer
 )
 
+
 def _set_folder(node_addon, folder, auth):
     uid = folder['id']
     node_addon.set_folder(uid, auth=auth)
     node_addon.save()
+
 
 dropbox_set_config = generic_views.set_config(
     SHORT_NAME,

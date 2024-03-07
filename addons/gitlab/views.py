@@ -255,6 +255,7 @@ def gitlab_root_folder(*args, **kwargs):
 # Repos #
 #########
 
+# gitlab parameter shadows import statement
 def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,
                  sha=None, save=False):
     """Add log event for commit from webhook payload.

@@ -91,7 +91,7 @@ django-bulk-update==2.2.0
 transitions==0.8.2
 
 # identifiers
-datacite==1.1.2
+datacite==1.1.3
 
 # metadata
 rdflib==7.0.0

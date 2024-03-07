@@ -2,6 +2,8 @@ from future.moves.urllib.parse import urlencode
 
 import github3
 import cachecontrol
+from github3 import GitHub
+from github3.session import GitHubSession
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError
 
@@ -19,18 +21,19 @@ class GitHubClient:
     def __init__(self, external_account=None, access_token=None):
 
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
+        session = GitHubSession()
+        # Caching libary
+        if github_settings.CACHE:
+            session.mount('https://api.github.com/user', default_adapter)
+            session.mount('https://', https_cache)
+
         if self.access_token:
-            self.gh3 = github3.login(token=self.access_token)
+            self.gh3 = GitHub(session=session, token=self.access_token)
             self.gh3.set_client_id(
                 github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
             )
         else:
-            self.gh3 = github3.GitHub()
-
-        # Caching libary
-        if github_settings.CACHE:
-            self.gh3._session.mount('https://api.github.com/user', default_adapter)
-            self.gh3._session.mount('https://', https_cache)
+            self.gh3 = github3.GitHub(session=session)
 
     def user(self, user=None):
         """Fetch a user or the authenticated user.

@@ -96,6 +96,7 @@ def can_list(access_key, secret_key):
         return False
     return True
 
+
 def get_user_info(access_key, secret_key):
     """Returns an S3 User with .display_name and .id, or None
     """
@@ -106,7 +107,7 @@ def get_user_info(access_key, secret_key):
         return connect_s3(access_key, secret_key).get_all_buckets().owner
     except exception.S3ResponseError:
         return None
-    return None
+
 
 def get_bucket_location_or_error(access_key, secret_key, bucket_name):
     """Returns the location of a bucket or raises AddonError

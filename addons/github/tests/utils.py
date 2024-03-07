@@ -1,6 +1,8 @@
 from unittest import mock
 from json import dumps
 import github3
+from github3.session import GitHubSession
+
 from addons.github.api import GitHubClient
 from github3.repos.branch import Branch
 
@@ -42,6 +44,7 @@ def create_mock_github(user='octo-cat', private=False):
     :return: An autospecced GitHub Mock object
     """
     github_mock = mock.create_autospec(GitHubClient)
+    session_mock = mock.create_autospec(GitHubSession)
     github_mock.repo.return_value = github3.repos.Repository.from_json(dumps({
      'archive_url': f'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}',
      'assignees_url': f'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}',
@@ -130,7 +133,7 @@ def create_mock_github(user='octo-cat', private=False):
      'watchers_count': 1469,
      # NOTE: permissions are only available if authorized on the repo
      'permissions': { 'push': True }
-     }))
+     }), session_mock)
 
     github_mock.branches.return_value = [
         Branch.from_json(dumps({'commit': {'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
