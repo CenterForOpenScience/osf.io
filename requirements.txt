@@ -62,7 +62,7 @@ django-celery-results==2.5.1
 pyjwe==1.0.0
 # Required by pyjwe and ndg-httpsclient
 # Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
-cryptography==42.0.2
+cryptography==42.0.5
 #rpds-py==0.18.0
 jsonschema==4.21.1
 

@@ -1,7 +1,7 @@
 import pytest
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory
-from addons.twofactor.tests import _valid_code
+from addons.twofactor.tests.utils import _valid_code
 from website.util import api_url_for
 
 pytestmark = pytest.mark.django_db

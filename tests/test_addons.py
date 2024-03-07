@@ -89,13 +89,13 @@ class TestAddonAuth(OsfTestCase):
             metrics={'uri': settings.MFR_SERVER_URL},
             provider=self.node_addon.config.short_name), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
         assert data['auth'] == views.make_auth(self.user)
         assert data['credentials'] == self.node_addon.serialize_waterbutler_credentials()
         assert data['settings'] == self.node_addon.serialize_waterbutler_settings()
@@ -134,7 +134,11 @@ class TestAddonAuth(OsfTestCase):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, expect_errors=True)
         assert res.status_code == 200
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(
+            jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY),
+            settings.WATERBUTLER_JWT_SECRET,
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
+        )['data']
         assert data['auth'] == views.make_auth(self.user)
         assert data['credentials'] == self.node_addon.serialize_waterbutler_credentials()
         assert data['settings'] == self.node_addon.serialize_waterbutler_settings()

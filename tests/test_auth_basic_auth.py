@@ -6,7 +6,7 @@ import pytest
 from importlib import import_module
 from django.conf import settings as django_conf_settings
 
-from addons.twofactor.tests import _valid_code
+from addons.twofactor.tests.utils import _valid_code
 from website import settings
 
 from tests.base import OsfTestCase
