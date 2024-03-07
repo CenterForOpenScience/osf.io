@@ -173,12 +173,13 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
         return self.content
 
-    def save(self, *args, **kwargs):
+    def save(self, wiki_import=False, *args, **kwargs):
         rv = super(WikiVersion, self).save(*args, **kwargs)
         if self.wiki_page.node:
-            self.wiki_page.node.update_search()
+            if not wiki_import:
+                self.wiki_page.node.update_search()
         self.wiki_page.modified = self.created
-        self.wiki_page.save()
+        self.wiki_page.save(wiki_import=wiki_import)
         self.check_spam()
         return rv
 
@@ -241,7 +242,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
 class WikiPageNodeManager(models.Manager):
 
-    def create_for_node(self, node, name, content, auth):
+    def create_for_node(self, node, name, content, auth, parent=None, wiki_import=False):
         existing_wiki_page = WikiPage.objects.get_for_node(node, name)
         if existing_wiki_page:
             raise NodeStateError('Wiki Page already exists.')
@@ -249,28 +250,47 @@ class WikiPageNodeManager(models.Manager):
         wiki_page = WikiPage.objects.create(
             node=node,
             page_name=name,
-            user=auth.user
+            user=auth.user,
+            parent=parent,
+            wiki_import=wiki_import
         )
         # Creates a WikiVersion object
-        wiki_page.update(auth.user, content)
+        wiki_page.update(auth.user, content, wiki_import)
         return wiki_page
 
-    def get_for_node(self, node, name=None, id=None):
+    def get_for_node(self, node, name=None, id=None, parent=None):
         if name:
             try:
                 name = (name or '').strip()
                 return WikiPage.objects.get(page_name__iexact=name, deleted__isnull=True, node=node)
             except WikiPage.DoesNotExist:
                 return None
+
+        if parent:
+            try:
+                return WikiPage.objects.filter(parent__exact=parent, deleted__isnull=True, node=node)
+            except WikiPage.DoesNotExist:
+                return None
+
         return WikiPage.load(id)
 
     def get_wiki_pages_latest(self, node):
         wiki_page_ids = node.wikis.filter(deleted__isnull=True).values_list('id', flat=True)
-        return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids)
+        return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids, wiki_page__parent__isnull=True)
+
+    def get_wiki_child_pages_latest(self, node, parent):
+        wiki_page_ids = node.wikis.filter(deleted__isnull=True).values_list('id', flat=True)
+        return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids, wiki_page__parent=parent)
 
     def include_wiki_settings(self, node):
         """Check if node meets requirements to make publicly editable."""
         return node.get_descendants_recursive()
+
+    def create(self, wiki_import=False, **kwargs):
+        obj = self.model(**kwargs)
+        self._for_write = True
+        obj.save(force_insert=True, using=self.db, wiki_import=wiki_import)
+        return obj
 
 class WikiPage(GuidMixin, BaseModel):
     objects = WikiPageNodeManager()
@@ -278,6 +298,8 @@ class WikiPage(GuidMixin, BaseModel):
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE, related_name='wikis')
+    parent = models.IntegerField(blank=True, null=True)
+    sort_order = models.IntegerField(blank=True, null=True)
     deleted = NonNaiveDateTimeField(blank=True, null=True, db_index=True)
 
     class Meta:
@@ -285,13 +307,14 @@ class WikiPage(GuidMixin, BaseModel):
             models.Index(fields=['page_name', 'node'])
         ]
 
-    def save(self, *args, **kwargs):
+    def save(self, wiki_import=False, *args, **kwargs):
         rv = super(WikiPage, self).save(*args, **kwargs)
         if self.node and (self.node.is_public or settings.ENABLE_PRIVATE_SEARCH):
-            self.node.update_search(wiki_page=self)
+            if not wiki_import:
+                self.node.update_search(wiki_page=self)
         return rv
 
-    def update(self, user, content):
+    def update(self, user, content, wiki_import=False):
         """
         Updates the wiki with the provided content by creating a new version
 
@@ -299,7 +322,7 @@ class WikiPage(GuidMixin, BaseModel):
         :param content: Latest content for wiki
         """
         version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
-        version.save()
+        version.save(wiki_import)
 
         self.node.add_log(
             action=NodeLog.WIKI_UPDATED,
@@ -565,3 +588,24 @@ class NodeSettings(BaseNodeSettings):
 
     def to_json(self, user):
         return {}
+
+class WikiImportTask(BaseModel):
+
+    STATUS_RUNNING = 'Running'
+    STATUS_COMPLETED = 'Completed'
+    STATUS_STOPPED = 'Stopped'
+    STATUS_ERROR = 'Error'
+
+    WIKI_IMPORT_STATUS_CHOICES = (
+        (STATUS_RUNNING, STATUS_RUNNING.title()),
+        (STATUS_COMPLETED, STATUS_COMPLETED.title()),
+        (STATUS_STOPPED, STATUS_STOPPED.title()),
+        (STATUS_ERROR, STATUS_ERROR.title()),
+    )
+
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE)
+    task_id = models.CharField(max_length=255, unique=True)
+    process_start = models.DateTimeField(auto_now=False, auto_now_add=True)
+    process_end = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
+    status = models.CharField(choices=WIKI_IMPORT_STATUS_CHOICES, max_length=255, default=STATUS_RUNNING)
+    creator = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)

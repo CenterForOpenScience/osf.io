@@ -345,3 +345,47 @@ select.form-control {
     display: inherit;
     overflow-y: hidden;
 }
+
+.menuItem {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #4B5563;
+}
+
+.wiki-radio-group {
+    display:flex;
+}
+
+.wiki-radio-item {
+    margin-right: 10px;
+}
+
+.menuItem:hover{
+    background: #d1d5db;
+}
+
+.table-dropdown-item {
+  padding: 2px 8px 2px 4px;
+}
+
+.milkdown .editor img.emoji {
+    width: 1em;
+    height: 1em;
+}
+
+.milkdown .editor table {
+    width: 80%;
+}
+
+.sort-item {
+    padding: 5px;
+  }
+
+.ko_container li {
+    list-style: none;
+}
+
+.sort-children:empty {
+    min-height: 7px;
+  }

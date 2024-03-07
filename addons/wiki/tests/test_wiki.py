@@ -323,6 +323,41 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
+    def test_project_wiki_validate_name_with_parent(self):
+        WikiPage.objects.create_for_node(self.project, 'parent', '', Auth(self.user))
+        url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        parent = WikiPage.objects.get_for_node(self.project, 'parent')
+        child = WikiPage.objects.get_for_node(self.project, 'child')
+        assert_equal(parent.id, child.parent)
+
+    def test_project_wiki_validate_name_no_parent(self):
+        parent = WikiPage.objects.get_for_node(self.project, 'parent')
+        assert_is_none(parent)
+        url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_project_wiki_validate_name_no_parent_home(self):
+        project = ProjectFactory(creator=self.user)
+        parent = WikiPage.objects.get_for_node(project, 'home')
+        assert_is_none(parent)
+        url = project.api_url_for('project_wiki_validate_name', wname='child', p_wname='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        parent = WikiPage.objects.get_for_node(project, 'home')
+        child = WikiPage.objects.get_for_node(project, 'child')
+        assert_equal(parent.id, child.parent)
+
+    def test_project_wiki_validate_name_parent_home(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        parent = WikiPage.objects.get_for_node(self.project, 'home')
+        child = WikiPage.objects.get_for_node(self.project, 'child')
+        assert_equal(parent.id, child.parent)
+
     def test_project_dashboard_shows_no_wiki_content_text(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
@@ -491,6 +526,8 @@ class TestWikiDelete(OsfTestCase):
         self.auth = creator.auth
         self.elephant_wiki = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
         self.lion_wiki = WikiPage.objects.create_for_node(self.project, 'Lions', 'Hello Lions', self.consolidate_auth)
+        self.koala_wiki = WikiPage.objects.create_for_node(self.project, 'Koalas', 'Hello Koalas', self.consolidate_auth)
+        self.kangaroo_wiki = WikiPage.objects.create_for_node(self.project, 'kangaroos', 'Hello kangaroos', self.consolidate_auth, self.koala_wiki.id)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_project_wiki_delete(self, mock_shrejs):
@@ -554,6 +591,33 @@ class TestWikiDelete(OsfTestCase):
         wiki_page.update(self.user, 'Hello again hippopotamus')
         wiki_page.reload()
         assert_equal(wiki_page.current_version_number, 2)
+
+    @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
+    def test_project_wiki_delete_hierarchy(self, mock_shrejs):
+        parent_wiki = self.koala_wiki
+        assert_equal(parent_wiki.page_name.lower(), 'koalas')
+        assert_equal(parent_wiki.deleted, None)
+
+        child_wiki = self.kangaroo_wiki
+        assert_equal(child_wiki.page_name.lower(), 'kangaroos')
+        assert_equal(child_wiki.deleted, None)
+
+
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wname='Koalas'
+        )
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.app.delete(
+                url,
+                auth=self.auth
+            )
+        self.project.reload()
+        parent_wiki.reload()
+        assert_equal(parent_wiki.deleted, mock_now)
+        child_wiki.reload()
+        assert_equal(child_wiki.deleted, mock_now)
 
 @pytest.mark.enable_implicit_clean
 class TestWikiRename(OsfTestCase):
@@ -1322,7 +1386,8 @@ class TestWikiMenu(OsfTestCase):
                     'url': self.project.web_url_for('project_wiki_view', wname='zoo', _guid=True),
                     'name': 'zoo',
                     'id': zoo_page._primary_key,
-                }
+                },
+                'children': [],
             }
         ]
         assert_equal(data, expected)
@@ -1358,7 +1423,7 @@ class TestWikiMenu(OsfTestCase):
                             'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                             'name': 'Home',
                             'id': self.component._primary_key,
-                        }
+                        },
                     },
                     {
                         'page': {
@@ -1366,6 +1431,7 @@ class TestWikiMenu(OsfTestCase):
                             'name': 'zoo',
                             'id': zoo_page._primary_key,
                         },
+                        'children': [],
                     }
                 ],
                 'kind': 'component',
@@ -1384,6 +1450,29 @@ class TestWikiMenu(OsfTestCase):
     def test_project_wiki_grid_data(self):
         WikiPage.objects.create_for_node(self.project, 'home', 'project content', self.consolidate_auth)
         WikiPage.objects.create_for_node(self.component, 'home', 'component content', self.consolidate_auth)
+        data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
+        expected = [
+            {
+                'title': 'Project Wiki Pages',
+                'kind': 'folder',
+                'type': 'heading',
+                'children': views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth),
+            },
+            {
+                'title': 'Component Wiki Pages',
+                'kind': 'folder',
+                'type': 'heading',
+                'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_project_wiki_grid_data_has_child(self):
+        WikiPage.objects.create_for_node(self.project, 'home', 'project content', self.consolidate_auth)
+        project_parent_wiki = WikiPage.objects.create_for_node(self.project, 'parent', 'project content', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, 'child', 'project content', self.consolidate_auth, project_parent_wiki.id)
+        component_parent_wiki = WikiPage.objects.create_for_node(self.component, 'home', 'component content', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.component, 'parent', 'component content', self.consolidate_auth, component_parent_wiki.id)
         data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
         expected = [
             {

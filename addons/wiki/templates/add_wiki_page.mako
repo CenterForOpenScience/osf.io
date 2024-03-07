@@ -8,8 +8,23 @@
                     <h3 class="modal-title">${_("Add new wiki page")}</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
+                    <div class='form-group wiki-radio-group'>
+                        <div class="wiki-radio-item">
+                            <label>
+                                <input type="radio" name="addHierarchy" value="same" checked>
+                                ${_("Add to same hierarchy")}
+                            </label>
+                        </div>
+                        <div class="wiki-radio-item">
+                            <label>
+                                <input type="radio" name="addHierarchy" value="${wiki_name}">
+                                ${_("Add to child hierarchy")}
+                            </label>
+                        </div>
+                    </div>
                     <div class='form-group'>
                         <input id="data" placeholder="${_('New Wiki Name')}" type="text" class='form-control'>
+                        <input id="parent-wiki-name" type="hidden" value="${parent_wiki_name}">
                     </div>
                     <p id="alert" class="text-danger"> </p>
                 </div><!-- end modal-body -->
@@ -32,6 +47,7 @@
             var $data = $newWikiForm.find('#data');
             var $submitForm = $newWikiForm.find('#add-wiki-submit');
             var $alert = $newWikiForm.find('#alert');
+            var $parentWikiName = $newWikiForm.find('#parent-wiki-name');
 
             $submitForm
                 .attr('disabled', 'disabled')
@@ -56,18 +72,33 @@
             } else {
                 // TODO: helper to eliminate slashes in the url.
                 var wikiName = $data.val();
+                var validateUrl = "";
+                var addHierarchy = $newWikiForm.find('input:radio[name="addHierarchy"]:checked').val();
+                if (addHierarchy === "same"){
+                    var parent_wiki_name = $newWikiForm.find('#parent-wiki-name').val();
+                    if (parent_wiki_name){
+                        validateUrl = ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/parent/' + encodeURIComponent(parent_wiki_name) + '/validate/';
+                    } else {
+                        validateUrl = ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/';
+                    }
+                } else {
+                    validateUrl = ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/parent/' + encodeURIComponent(addHierarchy) + '/validate/';
+                }
                 var request = $.ajax({
                     type: 'GET',
                     cache: false,
-                    url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
+                    url: validateUrl,
                     dataType: 'json'
                 });
                 request.done(function (response) {
-                    window.location.href = ${ urls['web']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/edit/';
+                    window.location.href = ${ urls['web']['base'] | sjson, n } + encodeURIComponent(wikiName);
                 });
                 request.fail(function (response, textStatus, error) {
                     if (response.status === 409) {
                         $alert.text('${_("A wiki page with that name already exists.")}');
+                    }
+                    else if (response.status === 404){
+                        $alert.text('${_("The parent wiki page does not exist.")}');
                     }
                     else if (response.status === 403){
                         $alert.text('${_("You do not have permission to perform this action.")}');
