@@ -17,6 +17,8 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     process_data_information,
     validate_exported_data,
     count_files_ng_ok,
+    is_add_on_storage,
+    check_file_metadata,
     check_for_file_existent_on_export_location,
 )
 from osf.models import ExportData, Institution, ExportDataLocation, ExportDataRestore
@@ -177,7 +179,7 @@ class ExportDataDeletedListView(ExportBaseView):
         source_name_list.sort()
 
         self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id,
-                                          deleted=True, selected_source_name=selected_source_name)
+                                         deleted=True, selected_source_name=selected_source_name)
         self.page_size = self.get_paginate_by(self.query_set)
         _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
         context = {
@@ -649,7 +651,7 @@ class CheckExportData(RdmPermissionMixin, UserPassesTestMixin, View):
                 return JsonResponse({'message': message}, status=400)
 
             # Get data from current source storage
-            _, storage_file_info = self.export_data.extract_file_information_json_from_source_storage()
+            _, storage_file_info = self.export_data.extract_file_information_json_from_source_storage(cookie=cookie)
             exported_file_versions = process_data_information(exported_file_info['files'])
             storage_file_versions = process_data_information(storage_file_info['files'])
             exclude_keys = []
@@ -717,8 +719,10 @@ class CheckRestoreData(RdmPermissionMixin, UserPassesTestMixin, View):
         if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
+        export_data_inst_id = None
         if self.export_data:
             export_data_inst_id = get_institution_id_by_region(self.export_data.source)
+
         if not export_data_inst_id:
             return True
         elif not self.destination_id:
@@ -761,11 +765,35 @@ class CheckRestoreData(RdmPermissionMixin, UserPassesTestMixin, View):
                 return JsonResponse({'message': message}, status=400)
 
             # Get data from current destination storage
-            _, storage_file_info = restore_data.extract_file_information_json_from_destination_storage()
-            exported_file_versions = process_data_information(exported_file_info['files'])
-            storage_file_versions = process_data_information(storage_file_info['files'])
-            exclude_keys = ['location']
+            _, storage_file_info = restore_data.extract_file_information_json_from_destination_storage(cookie=cookie)
+            exported_provider_name = self.export_data.source_waterbutler_settings.get('storage', {}).get('provider')
+            destination_provider_name = restore_data.destination.provider_name
+            if is_add_on_storage(exported_provider_name) or is_add_on_storage(destination_provider_name):
+                # If either source or destination is add-on storage, only check the latest file version
+                exported_file_versions = process_data_information(exported_file_info['files'], True)
+                storage_file_versions = process_data_information(storage_file_info['files'], True)
+            else:
+                exported_file_versions = process_data_information(exported_file_info['files'])
+                storage_file_versions = process_data_information(storage_file_info['files'])
+
+            if is_add_on_storage(exported_provider_name) or is_add_on_storage(destination_provider_name):
+                # If either source or destination is add-on storage then exclude the following keys
+                exclude_keys = ['id', 'provider', 'path', 'created_at', 'modified_at', 'timestamp_id', 'identifier', 'contributor',
+                                # location/
+                                'location',
+                                # metadata/
+                                'metadata',
+                                # timestamp/
+                                'timestamp_id', 'verify_user']
+            else:
+                # If source and destination are bulk-mount storages then exclude the following keys
+                exclude_keys = ['location',
+                                # metadata/
+                                'etag', 'extra']
             data = count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=exclude_keys)
+
+            # Check addons_metadata_filemetadata
+            check_file_metadata(data, restore_data, storage_file_info)
 
             return JsonResponse(data, status=200)
         except Exception:

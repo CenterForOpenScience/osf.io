@@ -17,7 +17,8 @@ from osf.models import (
     RdmFileTimestamptokenVerifyResult,
     AbstractNode,
 )
-from osf.models.export_data import SecondDateTimeField
+from osf.models.export_data import SecondDateTimeField, get_hashes_from_metadata
+from website.settings import INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class ExportDataRestore(base.BaseModel):
 
     __str__ = __repr__
 
-    def extract_file_information_json_from_destination_storage(self):
+    def extract_file_information_json_from_destination_storage(self, **kwargs):
         # Get region guid == institution guid
         destination_storage_guid = self.destination.guid
 
@@ -79,13 +80,6 @@ class ExportDataRestore(base.BaseModel):
             'institution': institution_json,
         }
 
-        # get list FileVersion linked to destination storage
-        file_versions = self.destination.fileversion_set.all()
-
-        # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
-        base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
-        base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
-
         # get project list, includes public/private/deleted projects
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         institution_users = institution.osfuser_set.all()
@@ -93,28 +87,76 @@ class ExportDataRestore(base.BaseModel):
         # Combine two project lists and remove duplicates if have
         projects = projects.union(institution_users_projects)
         projects__ids = projects.values_list('id', flat=True)
-        destination_project_ids = set()
 
-        # get base_file_nodes
-        base_file_nodes = BaseFileNode.objects.filter(
-            id__in=base_file_nodes__ids,
+        # get folder nodes
+        base_folder_nodes = BaseFileNode.objects.filter(
+            # type='osf.{}folder'.format(self.source.provider_short_name),
+            type__endswith='folder',
             target_object_id__in=projects__ids,
         ).exclude(
-            # exclude deleted files
+            # exclude deleted folder
             Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
         )
+        folders = []
+        for folder in base_folder_nodes:
+            folder_info = {
+                'path': folder.path,
+                'materialized_path': folder.materialized_path,
+                'project': {}
+            }
+            # project
+            project = folder.target
+            project_info = {
+                'id': project._id,
+                'name': project.title,
+            }
+            folder_info['project'] = project_info
+            folders.append(folder_info)
+
+        if self.destination.provider_name in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
+            # Bulk-mount storage
+            # get list FileVersion linked to destination storage
+            file_versions = self.destination.fileversion_set.all()
+            # but the creator must be affiliated with current institution
+            file_versions = file_versions.filter(creator__affiliated_institutions___id=destination_storage_guid)
+
+            # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
+            base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
+            base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
+
+            # get base_file_nodes
+            base_file_nodes = BaseFileNode.objects.filter(
+                id__in=base_file_nodes__ids,
+                target_object_id__in=projects__ids,
+            ).exclude(
+                # exclude deleted files
+                Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+            )
+        else:
+            # Add-on storage: get base_file_nodes based on type, provider name and project ids
+            base_file_nodes = BaseFileNode.objects.filter(
+                type=f'osf.{self.destination.provider_name}file',
+                provider=self.destination.provider_name,
+                target_object_id__in=projects__ids,
+                _materialized_path__isnull=False,
+            ).exclude(
+                # exclude deleted files
+                Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+            )
 
         total_size = 0
         total_file = 0
         files = []
         # get file information
         for file in base_file_nodes:
+            file_provider = file.provider
             file_info = {
                 'id': file.id,
+                'guid': file.get_guid()._id if file.get_guid() is not None else None,
                 'path': file.path,
                 'materialized_path': file.materialized_path,
                 'name': file.name,
-                'provider': file.provider,
+                'provider': file_provider,
                 'created_at': file.created.strftime('%Y-%m-%d %H:%M:%S'),
                 'modified_at': file.modified.strftime('%Y-%m-%d %H:%M:%S'),
                 'project': {},
@@ -128,7 +170,6 @@ class ExportDataRestore(base.BaseModel):
 
             # project
             project = file.target
-            destination_project_ids.add(project.id)
             project_info = {
                 'id': project._id,
                 'name': project.title,
@@ -159,35 +200,106 @@ class ExportDataRestore(base.BaseModel):
                 }
                 file_info['timestamp'] = timestamp_info
 
-            # file versions
-            file_versions = file.versions.order_by('-created')
-            file_versions_info = []
-            for version in file_versions:
-                file_version_thru = version.get_basefilenode_version(file)
-                version_info = {
-                    'identifier': version.identifier,
-                    'created_at': version.created.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at': version.modified.strftime('%Y-%m-%d %H:%M:%S'),
-                    'size': version.size,
-                    'version_name': file_version_thru.version_name if file_version_thru else file.name,
-                    'contributor': version.creator.username,
-                    'metadata': version.metadata,
-                    'location': version.location,
-                }
-                file_versions_info.append(version_info)
-                total_file += 1
-                total_size += version.size
+            if file_provider == 'osfstorage':
+                # file versions
+                file_versions = file.versions.order_by('-created')
+                file_versions_info = []
+                for version in file_versions:
+                    file_version_thru = version.get_basefilenode_version(file)
+                    version_info = {
+                        'identifier': version.identifier,
+                        'created_at': version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                        'modified_at': version.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                        'size': version.size,
+                        'version_name': file_version_thru.version_name if file_version_thru else file.name,
+                        'contributor': version.creator.username,
+                        'metadata': version.metadata,
+                        'location': version.location,
+                    }
+                    file_versions_info.append(version_info)
+                    total_file += 1
+                    total_size += version.size
 
-            file_info['version'] = file_versions_info
-            file_info['size'] = file_versions_info[0]['size']
-            file_info['location'] = file_versions_info[0]['location']
+                file_info['version'] = file_versions_info
+                if file_versions_info:
+                    file_info['size'] = file_versions_info[-1]['size']
+                    file_info['location'] = file_versions_info[-1]['location']
+            else:
+                file_version_url = waterbutler_api_url_for(
+                    file.target._id, file_provider, file.path, _internal=True, versions='', **kwargs
+                )
+                file_versions_res = requests.get(file_version_url)
+                if file_versions_res.status_code != 200:
+                    continue
+
+                # Get file versions
+                file_versions = file_versions_res.json().get('data', [])
+                file_versions_info = []
+
+                for version in file_versions:
+                    version_attributes = version.get('attributes', {})
+                    version_identifier = version_attributes.get('version')
+                    version_info = {
+                        'identifier': version_identifier,
+                        'contributor': '',  # External storage does not store who really uploaded file
+                        'location': {},
+                    }
+
+                    # Get metadata with file version
+                    metadata_url = waterbutler_api_url_for(
+                        file.target._id, file_provider, file.path, _internal=True, meta='', version=version_identifier, **kwargs
+                    )
+                    metadata_res = requests.get(metadata_url)
+                    if metadata_res.status_code != 200:
+                        continue
+
+                    metadata_data = metadata_res.json().get('data', {})
+                    metadata_attributes = metadata_data.get('attributes', {})
+                    metadata_extra = metadata_attributes.get('extra', {})
+
+                    sha256 = get_hashes_from_metadata(file_provider, metadata_extra, 'sha256')
+                    md5 = get_hashes_from_metadata(file_provider, metadata_extra, 'md5')
+                    sha1 = get_hashes_from_metadata(file_provider, metadata_extra, 'sha1')
+                    sha512 = get_hashes_from_metadata(file_provider, metadata_extra, 'sha512')
+                    if sha256 is not None:
+                        metadata_attributes['sha256'] = sha256
+                    if md5 is not None:
+                        metadata_attributes['md5'] = md5
+                    if sha1 is not None:
+                        metadata_attributes['sha1'] = sha1
+                    if sha512 is not None:
+                        metadata_attributes['sha512'] = sha512
+                    version_info['version_name'] = metadata_attributes.get('name', file.name)
+                    version_info['created_at'] = metadata_attributes.get('created_utc')
+                    version_info['size'] = metadata_attributes.get('sizeInt')
+                    version_info['modified_at'] = metadata_attributes.get('modified_utc', metadata_attributes.get('modified'))
+                    if file_provider == 'onedrivebusiness':
+                        # Get quick XOR hash
+                        quick_xor_hash = get_hashes_from_metadata(file_provider, metadata_extra, 'quickXorHash')
+                        metadata_attributes['quickXorHash'] = quick_xor_hash
+                        # OneDrive Business does not keep old version info in metadata API, get some info from version API instead
+                        version_extra = version_attributes.get('extra', {})
+                        version_info['metadata'] = metadata_attributes
+                        version_info['size'] = version_extra.get('size')
+                        version_info['modified_at'] = version_attributes.get('modified_utc', version_attributes.get('modified'))
+                    version_info['metadata'] = metadata_attributes
+
+                    total_file += 1
+                    total_size += version_info['size']
+                    file_versions_info.append(version_info)
+
+                file_info['version'] = file_versions_info
+                if file_versions_info:
+                    file_info['size'] = file_versions_info[-1]['size']
+                    file_info['location'] = file_versions_info[-1]['location']
             files.append(file_info)
 
+        file_info_json['folders'] = folders
         file_info_json['files'] = files
 
         export_data_json['files_numb'] = total_file
         export_data_json['size'] = total_size
-        export_data_json['projects_numb'] = len(destination_project_ids)
+        export_data_json['projects_numb'] = len(projects__ids)
 
         return export_data_json, file_info_json
 

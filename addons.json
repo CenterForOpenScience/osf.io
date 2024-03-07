@@ -168,9 +168,7 @@
         "dropboxbusiness",
         "s3compatinstitutions",
         "ociinstitutions",
-        "s3",
-        "s3compat",
-        "owncloud"
+        "onedrivebusiness"
     ],
     "institutional_storage_bulk_mount_method": [
         "box",
