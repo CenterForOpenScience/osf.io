@@ -13,7 +13,7 @@ def is_iterable_but_not_string(obj):
     return is_iterable(obj) and not hasattr(obj, 'strip')
 
 
-def strip_html(unclean, tags=None):
+def strip_html(unclean: str | bytes, tags: set[str] = None):
     """Sanitize a string, removing (as opposed to escaping) HTML tags
 
     :param unclean: A string to be stripped of HTML tags
@@ -25,19 +25,19 @@ def strip_html(unclean, tags=None):
         unclean = unclean.decode()
 
     if not tags:
-        tags = []
+        tags = set()
 
     if unclean is None:
         return ''
     elif isinstance(unclean, dict) or isinstance(unclean, list):
-        return sanitize_html(str(unclean), strip=True, tags=[], attributes=[], styles=[])
+        return sanitize_html(str(unclean), strip=True, tags=set(), attributes=[], styles=set())
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
     # If it's not a string and not an iterable (string, list, dict, return unclean)
     elif not isinstance(unclean, str) and not is_iterable(unclean):
         return unclean
     else:
-        return sanitize_html(unclean, strip=True, tags=tags, attributes=[], styles=[])
+        return sanitize_html(unclean, strip=True, tags=tags, attributes=[], styles=set())
 
 
 # TODO: Remove unescape_entities when mako html safe comes in

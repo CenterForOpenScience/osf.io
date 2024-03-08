@@ -45,9 +45,9 @@ class CollectionProviderForm(forms.ModelForm):
             return ''
         return sanitize_html(
             self.data.get('description'),
-            tags=['a', 'br', 'em', 'p', 'span', 'strong'],
+            tags={'a', 'br', 'em', 'p', 'span', 'strong'},
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles={'text-align', 'vertical-align'},
             strip=True
         )
 
@@ -56,9 +56,9 @@ class CollectionProviderForm(forms.ModelForm):
             return ''
         return sanitize_html(
             self.data.get('footer_links'),
-            tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
+            tags={'a', 'br', 'div', 'em', 'p', 'span', 'strong'},
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles={'text-align', 'vertical-align'},
             strip=True
         )
 

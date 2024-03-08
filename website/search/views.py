@@ -198,8 +198,8 @@ def search_contributor(auth):
     nid = request.args.get('excludeNode')
     exclude = AbstractNode.load(nid).contributors if nid else []
     # TODO: Determine whether bleach is appropriate for ES payload. Also, inconsistent with website.sanitize.util.strip_html
-    query = sanitize_html(request.args.get('query', ''), tags=[], strip=True)
-    page = int(sanitize_html(request.args.get('page', '0'), tags=[], strip=True))
-    size = int(sanitize_html(request.args.get('size', '5'), tags=[], strip=True))
+    query = sanitize_html(request.args.get('query', ''), tags=set(), strip=True)
+    page = int(sanitize_html(request.args.get('page', '0'), tags=set(), strip=True))
+    size = int(sanitize_html(request.args.get('size', '5'), tags=set(), strip=True))
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)

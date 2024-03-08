@@ -1,13 +1,12 @@
 import re
-from typing import Iterable, Container, Final
+from typing import Iterable, Final
 
-import bleach
 import pytz
 import time
 from datetime import datetime
 
-from bleach.sanitizer import Cleaner
-from bleach.css_sanitizer import CSSSanitizer
+from bleach.sanitizer import Cleaner, ALLOWED_TAGS, ALLOWED_PROTOCOLS, ALLOWED_ATTRIBUTES
+from bleach.css_sanitizer import CSSSanitizer, ALLOWED_CSS_PROPERTIES
 from django.utils import timezone
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
@@ -43,17 +42,17 @@ _sentinel: Final = object()
 
 def sanitize_html(
     text: str,
-    tags: Iterable[str] = bleach.ALLOWED_TAGS,
+    tags: set[str] = ALLOWED_TAGS,
     attributes: dict[str, Iterable[str]] | Iterable[str] = _sentinel,
-    protocols: Iterable[str] = bleach.ALLOWED_PROTOCOLS,
+    protocols: set[str] = ALLOWED_PROTOCOLS,
     strip: bool = False,
-    styles: Container[str] | None = bleach.css_sanitizer.ALLOWED_CSS_PROPERTIES,
+    styles: set[str] | None = ALLOWED_CSS_PROPERTIES,
     strip_comments: bool = True,
-    filters: Iterable = None,
+    filters: list = None,
 ) -> str:
     css_sanitizer = None
     if attributes == _sentinel:
-        attributes = bleach.ALLOWED_ATTRIBUTES
+        attributes = ALLOWED_ATTRIBUTES
     if styles is not None:
         css_sanitizer = CSSSanitizer(allowed_css_properties=styles)
     cleaner = Cleaner(

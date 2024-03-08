@@ -212,7 +212,7 @@ PROFILE_IMAGE_PROVIDER = 'gravatar'
 CONFERENCE_MIN_COUNT = 5
 
 WIKI_WHITELIST = {
-    'tags': [
+    'tags': {
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
         'center', 'cite', 'code',
         'dd', 'del', 'dfn', 'div', 'dl', 'dt', 'em', 'embed', 'font',
@@ -221,7 +221,7 @@ WIKI_WHITELIST = {
         's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup',
         'table', 'tbody', 'td', 'th', 'thead', 'tr', 'tt', 'ul', 'u',
         'var', 'wbr',
-    ],
+    },
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
         'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
@@ -229,11 +229,11 @@ WIKI_WHITELIST = {
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    'styles': [
+    'styles': {
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
-    ]
+    },
 }
 
 # Maps category identifier => Human-readable representation for use in
