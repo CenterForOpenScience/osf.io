@@ -304,7 +304,7 @@
                 if (response.status !== 0) {
                     $importErrorMsg.text(response.status + ' : Error occurred when wiki validate.');
                 }
-            });  
+            });
         }
 
         async function requestWikiImportTask(wikiImportUrl, data) {
@@ -331,7 +331,7 @@
                         $importErrorMsg.text('Error occurred when wiki import.');
                     }
                 }
-            });  
+            });
         }
 
         function showErrModal($importResult, $alertInfoForm) {
@@ -398,7 +398,7 @@
                     }
                     return;
                 }
-            });     
+            });
         }
 
         function cleanCeleryTask() {

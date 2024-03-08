@@ -334,7 +334,7 @@ def _get_wiki_parent(wiki, path):
         parent_wiki_page = WikiPage.objects.get(id=wiki.parent)
         path = parent_wiki_page.page_name + '/' + path
         return _get_wiki_parent(parent_wiki_page, path)
-    except Exception as e:
+    except Exception:
         return path
 
 def get_wiki_numbering(node, w_name):
@@ -345,8 +345,8 @@ def get_wiki_numbering(node, w_name):
     if wiki is None:
         return ''
 
-    for index in range(index, max_value+1):
-        wiki = WikiPage.objects.get_for_node(node, w_name + '('+ str(index) + ')')
+    for index in range(index, max_value + 1):
+        wiki = WikiPage.objects.get_for_node(node, w_name + '(' + str(index) + ')')
         if wiki is None:
             return index
     return None
@@ -360,7 +360,7 @@ def get_max_depth(wiki_info):
 
 def create_import_error_list(wiki_info, imported_list):
     import_errors = []
-    info_path =[]
+    info_path = []
     imported_path = []
     for info in wiki_info:
         info_path.append(info['path'])

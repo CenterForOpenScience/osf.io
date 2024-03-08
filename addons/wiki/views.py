@@ -746,7 +746,7 @@ def project_wiki_validate_import(dir_id, node, **kwargs):
     node_id = wiki_utils.get_node_guid(node)
     task = tasks.run_project_wiki_validate_import.delay(dir_id, node_id)
     task_id = task.id
-    return { 'taskId': task_id }
+    return {'taskId': task_id}
 
 def project_wiki_validate_import_process(dir_id, node):
     global can_start_import
@@ -779,7 +779,7 @@ def project_wiki_validate_import_process(dir_id, node):
 
 def _validate_import_folder(node, folder, parent_path):
     index = parent_path.rfind('/')
-    parent_wiki_name = parent_path[index+1:] if index != -1 else None
+    parent_wiki_name = parent_path[index + 1:] if index != -1 else None
     parent_wiki_fullpath = wiki_utils.get_wiki_fullpath(node, parent_wiki_name)
     p_numbering = None
     # check duplication of parent_wiki_name
@@ -787,7 +787,7 @@ def _validate_import_folder(node, folder, parent_path):
         p_numbering = wiki_utils.get_wiki_numbering(node, parent_wiki_name)
     if isinstance(p_numbering, int):
         parent_wiki_name = parent_wiki_name + '(' + str(p_numbering) + ')'
-        path = parent_path[:index+1] + parent_wiki_name + '/' + folder.name
+        path = parent_path[:index + 1] + parent_wiki_name + '/' + folder.name
     else:
         path = parent_path + '/' + folder.name
     info_list = []
@@ -830,7 +830,6 @@ def _validate_import_folder(node, folder, parent_path):
 
 def _validate_import_wiki_exists_duplicated(node, info):
     w_name = info['wiki_name']
-    p_wname = info['parent_wiki_name']
 
     global can_start_import
     # get wiki full path
@@ -872,7 +871,7 @@ def project_wiki_import(dir_id, auth, node, **kwargs):
     data_json = json.dumps(data)
     task = tasks.run_project_wiki_import.delay(data_json, dir_id, current_user_id, node_id)
     task_id = task.id
-    return { 'taskId': task_id }
+    return {'taskId': task_id}
 
 def project_wiki_import_process(data, dir_id, task_id, auth, node):
     logger.info('----WIKI IMPORT DIRECTORY_ID: {}, PROJECT_NAME: {} ----'.format(dir_id, node.title))
@@ -892,13 +891,13 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
     if wiki_info is None:
         set_wiki_import_task_proces_end(node)
         logger.info('wiki import process is stopped')
-        return { 'aborted': True }
+        return {'aborted': True}
     logger.info('got markdown content from wb')
     # Get or create 'Wiki images'
     root_id = BaseFileNode.objects.get(target_object_id=node.id, is_root=True).id
     wiki_images_folder_id, wiki_images_folder_path = _get_or_create_wiki_folder(osf_cookie, node, root_id, user, creator_auth, WIKI_IMAGE_FOLDER)
     logger.info('got or created Wiki images folder')
-     # Get or create 'Imported Wiki workspace (temporary)'
+    # Get or create 'Imported Wiki workspace (temporary)'
     wiki_import_folder_id, wiki_import_folder_path = _get_or_create_wiki_folder(osf_cookie, node, wiki_images_folder_id, user, creator_auth, WIKI_IMPORT_FOLDER, wiki_images_folder_path)
     logger.info('got or created Imported Wiki workspace (temporary) folder')
     random_name = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
@@ -915,7 +914,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
     if replaced_wiki_info is None:
         set_wiki_import_task_proces_end(node)
         logger.info('wiki import process is stopped')
-        return { 'aborted': True }
+        return {'aborted': True}
     # Import top hierarchy wiki page
     for info in replaced_wiki_info:
         if info['parent_wiki_name'] is None:
@@ -927,13 +926,13 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
                 tasks.run_update_search_and_bulk_index.delay(pid, wiki_id_list)
                 set_wiki_import_task_proces_end(node)
                 logger.info('wiki import process is stopped')
-                return { 'aborted': True }
+                return {'aborted': True}
             except Exception as err:
                 logger.error(err)
     logger.info('imported top hierarchy wiki pages')
     max_depth = wiki_utils.get_max_depth(replaced_wiki_info)
     # Import child wiki pages
-    for depth in range(1, max_depth+1):
+    for depth in range(1, max_depth + 1):
         try:
             res_child, child_wiki_id_list = _import_same_level_wiki(replaced_wiki_info, depth, auth, node, task)
             ret.extend(res_child)
@@ -1011,7 +1010,6 @@ def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, m
             else:
                 wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](' + url + ')')
         elif notation == 'link':
-            file_obj = BaseFileNode.objects.get(_id=file_id)
             url = website_settings.DOMAIN + node_guid + '/files/osfstorage/' + file_id
             if tooltip_match:
                 wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](' + url + ' "' + tooltip_match['tooltip'] + '")')
@@ -1023,7 +1021,7 @@ def _exclude_symbols(path):
     has_slash = '/' in path
     has_sharp = '#' in path
     has_dot = '.' in path
-    rep_url = r"^https?://[\w/:%#\$&\?\(\)~\.=\+\-]+$"
+    rep_url = r'^https?://[\w/:%#\$&\?\(\)~\.=\+\-]+$'
     is_url = re.match(rep_url, path)
     return has_slash, has_sharp, has_dot, is_url
 
@@ -1069,7 +1067,7 @@ def _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, a
         replaced_file_name = unicodedata.normalize('NFC', replaced_file_name)
         child_file = parent_directory._children.get(name=replaced_file_name, type='osf.osfstoragefile', deleted__isnull=True)
         return child_file._id
-    except Exception as err:
+    except Exception:
         pass
 
     return None
@@ -1110,10 +1108,10 @@ def _create_wiki_folder(osf_cookie, p_guid, folder_name, parent_path):
     try:
         folder_response = waterbutler.create_folder(osf_cookie, p_guid, folder_name, parent_path)
         folder_response.raise_for_status()
-    except Exception as err:
+    except Exception:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_short='Error when create wiki folder',
-            message_long= '\t' + 'An error occures when create wiki folder : ' + folder_name + '\t'
+            message_long='\t' + 'An error occures when create wiki folder : ' + folder_name + '\t'
         ))
     folder_path = folder_response.json()['data']['id']
     _id = (folder_response.json()['data']['attributes']['path']).strip('/')
@@ -1149,7 +1147,7 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
     for info in wiki_info:
         if task.is_aborted():
             return None
-        if not 'wiki_content' in info:
+        if 'wiki_content' not in info:
             continue
         gc.collect()
         wiki_content = info['wiki_content']
@@ -1219,7 +1217,7 @@ def _import_same_level_wiki(wiki_info, depth, auth, node, task):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def project_get_task_result(task_id, node, **kwargs):
-    res = AsyncResult(task_id,app=celery_app)
+    res = AsyncResult(task_id, app=celery_app)
     result = None
     if not res.ready():
         return None
@@ -1248,7 +1246,7 @@ def project_get_abort_wiki_import_result(node, **kwargs):
     result = None
     process_end_list = WikiImportTask.objects.values_list('process_end', flat=True).filter(status=WikiImportTask.STATUS_STOPPED, node=node)
     if None not in process_end_list:
-        return { 'aborted' : True}
+        return {'aborted': True}
     return result
 
 def check_running_task(task_id, node):
@@ -1276,7 +1274,7 @@ def set_wiki_import_task_proces_end(node):
 def project_update_wiki_page_sort(node, **kwargs):
     data = request.get_json()
     sorted_data = data['sortedData']
-    sort_id_list, sort_num_list, sort_parent_wiki_id_list  = _get_sorted_list(sorted_data, None)
+    sort_id_list, sort_num_list, sort_parent_wiki_id_list = _get_sorted_list(sorted_data, None)
     _bulk_update_wiki_sort(node, sort_id_list, sort_num_list, sort_parent_wiki_id_list)
 
 def _get_sorted_list(sorted_data, parent_wiki_id):
