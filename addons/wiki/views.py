@@ -941,7 +941,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
             tasks.run_update_search_and_bulk_index.delay(pid, wiki_id_list)
             set_wiki_import_task_proces_end(node)
             logger.info('wiki import process is stopped')
-            return { 'aborted': True }
+            return {'aborted': True}
         except Exception as err:
             logger.error(err)
     logger.info('imported child hierarchy wiki pages')
@@ -1003,7 +1003,7 @@ def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, m
         # replace process of file name
         node_guid = wiki_utils.get_node_guid(node)
         if notation == 'image':
-            url = website_settings.WATERBUTLER_URL + '/v1/resources/' +  node_guid + '/providers/osfstorage/' + file_id + '?mode=render'
+            url = website_settings.WATERBUTLER_URL + '/v1/resources/' + node_guid + '/providers/osfstorage/' + file_id + '?mode=render'
             #wurl = waterbutler_api_url_for(node_guid, 'osfstorage', path='/{}?mode=render'.format(file_id), _internal=True)
             if tooltip_match:
                 wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](' + url + ' "' + tooltip_match['tooltip'] + '")')
