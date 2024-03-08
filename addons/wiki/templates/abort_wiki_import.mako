@@ -49,7 +49,7 @@
             if (response.status !== 0) {
                 $abortErrorMsg.text('Error occurred when abort wiki import.');
             }
-        });  
+        });
     }
 
     async function intervalGetAbortWikiImportResult(url, ms, timeout, operation) {
@@ -92,6 +92,6 @@
                 alert('abort error');
                 return;
             }
-        });     
+        });
     }
 </script>
