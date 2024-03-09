@@ -72,8 +72,8 @@ django-guardian==2.4.0
 
 # Admin requirements
 django-webpack-loader==3.0.1
-#sendgrid-django==4.2.0  # looks like this module doesn't support Python 3.10
 django-sendgrid-v5==1.2.3 # metadata says python 3.10 not supported, but tests pass
+
 # Analytics requirements
 keen==0.7.0
 maxminddb-geolite2==2018.703
