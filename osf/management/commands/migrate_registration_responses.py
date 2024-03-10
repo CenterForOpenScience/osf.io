@@ -5,7 +5,6 @@ from django.core.management.base import BaseCommand
 from django.apps import apps
 from tqdm import tqdm
 
-from bulk_update.helper import bulk_update
 from framework.celery_tasks import app as celery_app
 from framework import sentry
 
@@ -48,7 +47,7 @@ def migrate_registrations(dry_run, rows='all', AbstractNodeModel=None):
     ).exclude(
         registration_responses_migrated=True,
     )
-    return migrate_responses(registrations, 'registrations', dry_run, rows)
+    return migrate_responses(AbstractNodeModel, registrations, 'registrations', dry_run, rows)
 
 def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None):
     """
@@ -63,10 +62,10 @@ def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None
     draft_registrations = DraftRegistrationModel.objects.exclude(
         registration_responses_migrated=True
     )
-    return migrate_responses(draft_registrations, 'draft registrations', dry_run, rows)
+    return migrate_responses(DraftRegistrationModel, draft_registrations, 'draft registrations', dry_run, rows)
 
 
-def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
+def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'):
     """
     DRY method to be used to migrate both DraftRegistration.registration_responses
     and Registration.registration_responses.
@@ -118,8 +117,8 @@ def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
         logger.info('DRY RUN; discarding changes.')
     else:
         logger.info('Saving changes...')
-        bulk_update(successes_to_save, update_fields=['registration_responses', 'registration_responses_migrated'])
-        bulk_update(errors_to_save, update_fields=['registration_responses_migrated'])
+        model.objects.bulk_update(successes_to_save, update_fields=['registration_responses', 'registration_responses_migrated'])
+        model.objects.bulk_update(errors_to_save, update_fields=['registration_responses_migrated'])
 
     return total_count
 
