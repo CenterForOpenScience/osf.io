@@ -1,8 +1,7 @@
 from future.moves.urllib.parse import urlencode
 
-import github3
 import cachecontrol
-from github3 import GitHub
+from github3 import GitHub, GitHubError
 from github3.session import GitHubSession
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError
@@ -33,7 +32,7 @@ class GitHubClient:
                 github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
             )
         else:
-            self.gh3 = github3.GitHub(session=session)
+            self.gh3 = GitHub(session=session)
 
     def user(self, user=None):
         """Fetch a user or the authenticated user.
@@ -125,7 +124,7 @@ class GitHubClient:
         """
         try:
             hook = self.repo(user, repo).create_hook(name, config, events, active)
-        except github3.GitHubError:
+        except GitHubError:
             # TODO Handle this case - if '20 hooks' in e.errors[0].get('message'):
             return None
         else:
