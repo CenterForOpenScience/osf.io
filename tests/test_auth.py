@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import unittest
 import pytest
+import logging
 
 from unittest import mock
-from future.moves.urllib.parse import urlparse, urljoin, quote
+from future.moves.urllib.parse import urlparse, quote
 from rest_framework import status as http_status
-
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
 
@@ -36,6 +36,8 @@ from website.project.decorators import (
 from website.util import api_url_for
 
 from tests.test_cas_authentication import generate_external_user_with_resp
+
+logger = logging.getLogger(__name__)
 
 
 class TestAuthUtils(OsfTestCase):
@@ -281,6 +283,8 @@ class TestPrivateLink(OsfTestCase):
             return 'success', 200
 
         self.app = self.flaskapp.test_client()
+
+        logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
@@ -578,6 +582,8 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         def project_get(**kwargs):
             return 'success', 200
         self.app = self.flaskapp.test_client()
+
+        logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
 
     def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor_or_public_but_not_anonymized(

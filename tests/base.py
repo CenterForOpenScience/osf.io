@@ -111,6 +111,9 @@ class AppTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.app = test_app.test_client()
+
+        logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
+
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return
@@ -268,6 +271,7 @@ class ApiAddonTestCase(ApiTestCase):
 class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
 
+
 class NotificationTestCase(OsfTestCase):
     """An `OsfTestCase` to use when testing specific subscription behavior.
     Use when you'd like to manually create all Node subscriptions and subscriptions
@@ -363,8 +367,10 @@ def capture_signals():
     """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
     return CaptureSignals(ALL_SIGNALS)
 
+
 def assert_dict_contains_subset(a, b):
     assert set(a.items()).issubset(set(b.items()))
+
 
 def assert_is_redirect(response, msg='Response is a redirect.'):
     assert 300 <= response.status_code < 400, msg
@@ -373,6 +379,7 @@ def assert_is_redirect(response, msg='Response is a redirect.'):
 def assert_before(lst, item1, item2):
     """Assert that item1 appears before item2 in lst."""
     assert lst.index(item1) < lst.index(item2), f"{item1!r} appears before {item2!r}"
+
 
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""
