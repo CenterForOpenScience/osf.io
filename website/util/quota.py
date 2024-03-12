@@ -262,13 +262,19 @@ def node_removed(target, user, payload, file_node, storage_type):
 
         for removed_file in get_node_file_list(file_node):
             try:
-                file_info = FileInfo.objects.get(file=removed_file)
+                if check_select_for_update():
+                    file_info = FileInfo.objects.filter(file=removed_file).select_for_update().get()
+                else:
+                    file_info = FileInfo.objects.get(file=removed_file)
             except FileInfo.DoesNotExist:
                 logging.error('FileInfo not found, cannot update used quota!')
                 continue
 
-            file_size = min(file_info.file_size, user_quota.used)
-            user_quota.used -= file_size
+            user_quota.used -= file_info.file_size
+            if user_quota.used < 0:
+                user_quota.used = 0
+            file_info.file_size = 0
+            file_info.save()
         user_quota.save()
 
 def file_modified(target, user, payload, file_node, storage_type):
@@ -290,7 +296,10 @@ def file_modified(target, user, payload, file_node, storage_type):
         )
 
     try:
-        file_info = FileInfo.objects.get(file=file_node)
+        if check_select_for_update():
+            file_info = FileInfo.objects.filter(file=file_node).select_for_update().get()
+        else:
+            file_info = FileInfo.objects.get(file=file_node)
     except FileInfo.DoesNotExist:
         file_info = FileInfo(file=file_node, file_size=0)
 
