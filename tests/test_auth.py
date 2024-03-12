@@ -7,7 +7,7 @@ from unittest import mock
 from future.moves.urllib.parse import urlparse, quote
 from rest_framework import status as http_status
 from flask import Flask
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Response
 
 from framework import auth
 from framework.auth import cas
@@ -712,7 +712,7 @@ class TestPermissionDecorators(AuthAppTestCase):
     def test_must_be_logged_in_decorator_with_no_user(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth()
         resp = protected()
-        assert isinstance(resp, BaseResponse)
+        assert isinstance(resp, Response)
         login_url = cas.get_login_url(service_url='http://localhost/')
         assert login_url == resp.headers.get('location')
 

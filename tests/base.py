@@ -3,12 +3,10 @@ import abc
 import datetime as dt
 import functools
 import logging
-import re
 import unittest
 import uuid
 
 import blinker
-import responses
 from unittest import mock
 import pytest
 
@@ -111,6 +109,7 @@ class AppTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.app = test_app.test_client()
+        self.app.config.update({"TESTING": True, })
 
         logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
 
@@ -168,7 +167,6 @@ class SearchTestCase(unittest.TestCase):
 
         from website.search import elastic_search
         elastic_search.delete_index(settings.ELASTIC_INDEX)
-
 
 
 class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
