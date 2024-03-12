@@ -131,8 +131,9 @@ class SanctionTokenHandlerBase(OsfTestCase):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http_status.HTTP_410_GONE if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_400_BAD_REQUEST)
-                assert_equal(e.data['message_long'], REJECTED_MSG.format(self.sanction.DISPLAY_NAME))
+                assert e.code == http_status.HTTP_410_GONE if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_400_BAD_REQUEST
+                assert e.data['message_long'] == REJECTED_MSG.format(self.sanction.DISPLAY_NAME)
+
 
 class TestEmbargoTokenHandler(SanctionTokenHandlerBase):
 

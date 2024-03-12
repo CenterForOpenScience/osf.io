@@ -71,7 +71,7 @@ class TestAnUnregisteredUser(OsfTestCase):
         res = self.app.get(url)
         res = res.follow()
         assert res.status_code == 308
-        assert_in('/login/', res.headers['Location'])
+        assert '/login/' in res.headers['Location']
 
 
 @pytest.mark.enable_bookmark_creation
