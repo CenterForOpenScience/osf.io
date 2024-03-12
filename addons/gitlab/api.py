@@ -2,7 +2,6 @@ from future.moves.urllib.parse import urlencode
 import requests
 
 import gitlab
-import cachecontrol
 from requests.adapters import HTTPAdapter
 from rest_framework import status as http_status
 from framework.exceptions import HTTPError
@@ -10,9 +9,6 @@ from framework.exceptions import HTTPError
 from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
 
-# Initialize caches
-https_cache = cachecontrol.CacheControlAdapter()  # isn't used anywhere, maybe delete?
-default_adapter = HTTPAdapter()  # isn't being used anywhere, maybe delete?
 
 
 class GitLabClient:
