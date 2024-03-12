@@ -1,4 +1,3 @@
 cachecontrol==0.14.0
 github3.py==4.0.1
-python-magic==0.4.27
 uritemplate.py==4.1.1
