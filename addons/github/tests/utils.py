@@ -138,13 +138,13 @@ def create_mock_github(user='octo-cat', private=False):
     github_mock.branches.return_value = [
         Branch.from_json(dumps({'commit': {'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
            'url': f'https://api.github.com/repos/{user}/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
-          'name': 'dev'})),
+          'name': 'dev'}), session_mock),
          Branch.from_json(dumps({'commit': {'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
            'url': f'https://api.github.com/repos/{user}/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c'},
-          'name': 'master'})),
+          'name': 'master'}), session_mock),
          Branch.from_json(dumps({'commit': {'sha': 'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
            'url': f'https://api.github.com/repos/{user}/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'},
-          'name': 'no-bundle'}))
+          'name': 'no-bundle'}), session_mock)
       ]
 
     return github_mock
