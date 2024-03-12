@@ -2,7 +2,6 @@ from future.moves.urllib.parse import urlencode
 import requests
 
 import gitlab
-import cachecontrol
 from requests.adapters import HTTPAdapter
 from rest_framework import status as http_status
 from framework.exceptions import HTTPError
@@ -10,9 +9,7 @@ from framework.exceptions import HTTPError
 from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
 
-# Initialize caches
-https_cache = cachecontrol.CacheControlAdapter()
-default_adapter = HTTPAdapter()
+
 
 class GitLabClient:
 
@@ -80,7 +77,7 @@ class GitLabClient:
         if branch:
             return self.gitlab.projects.get(repo_id).branches.get(branch)
 
-        return self.gitlab.projects.get(repo_id).branches.list()
+        return self.gitlab.projects.get(repo_id).branches.list(all=True)
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
@@ -133,8 +130,7 @@ class GitLabClient:
     def _get_api_request(self, uri):
         headers = {'PRIVATE-TOKEN': f'{self.access_token}'}
 
-        return requests.get('https://{}/{}/{}'.format(self.host, 'api/v4', uri),
-                            verify=True, headers=headers)
+        return requests.get(f'https://{self.host}/api/v4/{uri}', verify=True, headers=headers)
 
     def revoke_token(self):
         return False
