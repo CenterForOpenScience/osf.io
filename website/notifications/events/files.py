@@ -79,10 +79,10 @@ class FileEvent(Event):
     def url(self):
         """Basis of making urls, this returns the url to the node."""
         if self._url is None:
-            self._url = furl(self.node.absolute_url)
-            self._url.path.segments = self.node.web_url_for(
-                'collect_file_trees'
-            ).split('/')
+            self._url = furl(
+                self.node.absolute_url,
+                path=self.node.web_url_for('collect_file_trees').split('/')
+            )
 
         return self._url.url
 
@@ -186,9 +186,10 @@ class ComplexFileEvent(FileEvent):
 
     @property
     def source_url(self):
-        url = furl(self.source_node.absolute_url)
-        url.path.segments = self.source_node.web_url_for('collect_file_trees').split('/')
-
+        url = furl(
+            self.source_node.absolute_url,
+            path=self.source_node.web_url_for('collect_file_trees').split('/')
+        )
         return url.url
 
 

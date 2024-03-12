@@ -3,7 +3,7 @@ from flask import (
     request,
     redirect as flask_redirect,
 )
-import furl
+from furl import furl
 
 from website import settings
 
@@ -86,7 +86,7 @@ def redirect(location, code=302):
     """
     view_only = request.args.get('view_only', '')
     if view_only:
-        url = furl.furl(location)
+        url = furl(location)
         url.args['view_only'] = view_only
         location = url.url
     return flask_redirect(location, code=code)

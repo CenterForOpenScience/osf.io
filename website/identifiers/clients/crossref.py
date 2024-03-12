@@ -1,4 +1,4 @@
-import furl
+from furl import furl
 import lxml
 import lxml.builder
 import time
@@ -216,7 +216,7 @@ class CrossRefClient(AbstractIdentifierClient):
         return elements
 
     def _build_url(self, **query):
-        url = furl.furl(self.base_url)
+        url = furl(self.base_url)
         url.args.update(query)
         return url.url
 

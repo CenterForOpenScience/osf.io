@@ -1,5 +1,5 @@
 from unittest import mock
-import furl
+from furl import furl
 import pytz
 import pytest
 from datetime import datetime, timedelta
@@ -489,7 +489,7 @@ class TestGetLinkView(AdminTestCase):
         user_token = list(user.email_verifications.keys())[0]
         ideal_link_path = f'/confirm/{user._id}/{user_token}/'
         link = view.get_link(user)
-        link_path = str(furl.furl(link).path)
+        link_path = str(furl(link).path)
 
         assert link_path == ideal_link_path
 
@@ -506,7 +506,7 @@ class TestGetLinkView(AdminTestCase):
         link = view.get_link(user)
         new_user_token = list(user.email_verifications.keys())[0]
 
-        link_path = str(furl.furl(link).path)
+        link_path = str(furl(link).path)
         ideal_link_path = f'/confirm/{user._id}/{new_user_token}/'
 
         assert link_path == ideal_link_path
@@ -523,7 +523,7 @@ class TestGetLinkView(AdminTestCase):
         assert user_token is not None
 
         ideal_link_path = f'/resetpassword/{user._id}/{user_token}'
-        link_path = str(furl.furl(link).path)
+        link_path = str(furl(link).path)
 
         assert link_path == ideal_link_path
 

@@ -1,4 +1,4 @@
-import furl
+from furl import furl
 import waffle
 import itertools
 from rest_framework import status as http_status
@@ -393,7 +393,7 @@ def redirect_to_cos_news(**kwargs):
 
 def redirect_to_registration_workflow(**kwargs):
     # Redirect to making new registration
-    return redirect(furl.furl(DOMAIN).add(path='registries/osf/new').url)
+    return redirect(furl(DOMAIN).add(path='registries/osf/new').url)
 
 
 # Return error for legacy SHARE v1 search route

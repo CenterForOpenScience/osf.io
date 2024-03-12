@@ -1,6 +1,6 @@
 from unittest import mock
 import pytest
-import furl
+from furl import furl
 import pytz
 import datetime
 from future.moves.urllib.parse import urlparse
@@ -223,10 +223,9 @@ class TestWikiDetailView(ApiWikiTestCase):
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(
-            self.private_url).add(
-            query_params={
-                'view_only': private_link.key}).url
+        url = furl(self.private_url).add(
+            query_params={'view_only': private_link.key}
+        ).url
         res = self.app.get(url)
         assert res.status_code == 200
         assert res.json['data']['id'] == self.private_wiki._id
@@ -236,10 +235,9 @@ class TestWikiDetailView(ApiWikiTestCase):
         private_link = PrivateLinkFactory(anonymous=False)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(
-            self.private_url).add(
-            query_params={
-                'view_only': private_link.key}).url
+        url = furl(self.private_url).add(
+            query_params={'view_only': private_link.key}
+        ).url
         res = self.app.get(url)
         assert res.status_code == 200
         assert res.json['data']['id'] == self.private_wiki._id

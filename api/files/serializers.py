@@ -4,7 +4,7 @@ from collections import OrderedDict
 from django.urls import resolve, reverse
 from django.core.exceptions import ValidationError
 
-import furl
+from furl import furl
 import pytz
 
 from framework.auth.core import Auth
@@ -260,7 +260,8 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
-            url = furl.furl(settings.DOMAIN).set(
+            url = furl(
+                settings.DOMAIN,
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
             )
             if obj.provider == 'dataverse':
@@ -496,7 +497,8 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         fobj = self.context['file']
-        return furl.furl(settings.DOMAIN).set(
+        return furl(
+            settings.DOMAIN,
             path=(fobj.target._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier},  # TODO this can probably just be changed to revision or version
         ).url
@@ -522,7 +524,8 @@ def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
     # Add '' to the path to ensure thare's a trailing slash
     # The trailing slash avoids a 301
-    url = furl.furl(settings.DOMAIN).set(
+    url = furl(
+        settings.DOMAIN,
         path=('download', guid._id if guid else obj._id, ''),
     )
 
@@ -542,10 +545,12 @@ def get_file_render_link(mfr_url, download_url, version=None):
     download_url_args['direct'] = None
     download_url_args['mode'] = 'render'
 
-    render_url = furl.furl(mfr_url).set(
+    render_url = furl(
+        mfr_url,
         path=['render'],
         args={
-            'url': furl.furl(download_url).set(
+            'url': furl(
+                download_url,
                 args=download_url_args,
             ),
         },

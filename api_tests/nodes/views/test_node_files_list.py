@@ -1,7 +1,7 @@
 import datetime
 import json
 
-import furl
+from furl import furl
 import responses
 from django.utils import timezone
 
@@ -261,7 +261,7 @@ class TestNodeFilesList(ApiTestCase):
             API_BASE, self.project._id, vol.key)
         res = self.app.get(url, auth=self.user_two.auth)
         wb_request = responses.calls[-1].request
-        url = furl.furl(wb_request.url)
+        url = furl(wb_request.url)
 
         assert url.query == f'meta=True&view_only={str(vol.key)}'
         assert res.json['data'][0]['attributes']['name'] == 'NewFile'
