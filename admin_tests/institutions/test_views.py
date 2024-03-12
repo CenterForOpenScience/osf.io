@@ -24,8 +24,6 @@ from admin_tests.utilities import setup_form_view, setup_user_view, setup_view
 from admin.institutions import views
 from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
-from django.http import Http404
-from django.contrib.auth.models import AnonymousUser
 
 
 class TestInstitutionList(AdminTestCase):
@@ -520,6 +518,7 @@ class TestStatisticalStatusDefaultStorage(AdminTestCase):
         nt.assert_false(self.view.raise_exception)
 
     def test_user_login(self):
+        self.request.user = self.normal_user
         nt.assert_false(self.view.test_func())
         nt.assert_true(self.view.raise_exception)
 
@@ -554,8 +553,8 @@ class TestStatisticalStatusDefaultStorage(AdminTestCase):
             self.view.get(self.request)
 
     def test_institution_deleted(self):
-        self.institution.is_deleted = True
-        self.institution.save()
+        self.institution01.is_deleted = True
+        self.institution01.save()
         with nt.assert_raises(Http404):
             self.view.get(self.request)
 
@@ -1356,7 +1355,6 @@ class TestRecalculateQuota(AdminTestCase):
         nt.assert_equal(response.url, self.url)
         mock_osfuser.filter.assert_called()
         mock_update_user_used_quota_method.assert_called()
-
 
     @mock.patch('website.util.quota.update_user_used_quota')
     @mock.patch('admin.institutions.views.OSFUser.objects')
