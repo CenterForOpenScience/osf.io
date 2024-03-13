@@ -12,7 +12,6 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0228_ensure_schema_and_reports'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('addons_wiki', '0013_wikipage_parent'),
     ]
