@@ -158,7 +158,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
         self.project.reload()
         # page was updated with new content
@@ -171,7 +171,7 @@ class TestWikiViews(OsfTestCase):
         old_wiki_page_count = WikiVersion.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
-        res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'markdown': ''}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
         new_wiki_page_count = WikiVersion.objects.all().count()
@@ -191,7 +191,7 @@ class TestWikiViews(OsfTestCase):
         old_wiki_page_count = WikiVersion.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
-        res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'markdown': page_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
         new_wiki_page_count = WikiVersion.objects.all().count()
@@ -210,21 +210,21 @@ class TestWikiViews(OsfTestCase):
         # wname doesn't exist in the db, so it will be created
         new_wname = u'øˆ∆´ƒøßå√ß'
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
-        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
         self.project.reload()
         wiki = WikiPage.objects.get_for_node(self.project, new_wname)
         assert_equal(wiki.page_name, new_wname)
 
         # updating content should return correct url as well.
-        res = self.app.post(url, {'content': 'updated content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'markdown': 'updated content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
     def test_project_wiki_edit_post_with_special_characters(self):
         new_wname = 'title: ' + SPECIAL_CHARACTERS_ALLOWED
         new_wiki_content = 'content: ' + SPECIAL_CHARACTERS_ALL
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
-        res = self.app.post(url, {'content': new_wiki_content}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'markdown': new_wiki_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
         self.project.reload()
         wiki =  WikiVersion.objects.get_for_node(self.project, new_wname)
@@ -269,7 +269,7 @@ class TestWikiViews(OsfTestCase):
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
         # wname has a trailing space
         url = self.project.web_url_for('project_wiki_view', wname='cupcake ')
-        res = self.app.post(url, {'content': 'blah'}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'markdown': 'blah'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
         self.project.reload()
@@ -1385,6 +1385,7 @@ class TestWikiMenu(OsfTestCase):
                 'page': {
                     'url': self.project.web_url_for('project_wiki_view', wname='zoo', _guid=True),
                     'name': 'zoo',
+                    'sort_order': None,
                     'id': zoo_page._primary_key,
                 },
                 'children': [],
@@ -1429,6 +1430,7 @@ class TestWikiMenu(OsfTestCase):
                         'page': {
                             'url': self.component.web_url_for('project_wiki_view', wname='zoo', _guid=True),
                             'name': 'zoo',
+                            'sort_order': None,
                             'id': zoo_page._primary_key,
                         },
                         'children': [],
