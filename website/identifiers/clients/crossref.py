@@ -27,6 +27,7 @@ CROSSREF_SUFFIX_LIMIT = 10
 CROSSREF_SURNAME_LIMIT = 60
 CROSSREF_GIVEN_NAME_LIMIT = 60
 
+
 class CrossRefClient(AbstractIdentifierClient):
 
     def __init__(self, base_url):

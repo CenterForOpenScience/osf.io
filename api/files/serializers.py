@@ -260,6 +260,7 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
+            # NOTE: furl encoding to be verified later
             url = furl(
                 settings.DOMAIN,
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
@@ -497,6 +498,7 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         fobj = self.context['file']
+        # NOTE: furl encoding to be verified later
         return furl(
             settings.DOMAIN,
             path=(fobj.target._id, 'files', fobj.provider, fobj.path.lstrip('/')),
@@ -524,6 +526,7 @@ def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
     # Add '' to the path to ensure thare's a trailing slash
     # The trailing slash avoids a 301
+    # NOTE: furl encoding to be verified later
     url = furl(
         settings.DOMAIN,
         path=('download', guid._id if guid else obj._id, ''),
@@ -545,6 +548,7 @@ def get_file_render_link(mfr_url, download_url, version=None):
     download_url_args['direct'] = None
     download_url_args['mode'] = 'render'
 
+    # NOTE: furl encoding to be verified later
     render_url = furl(
         mfr_url,
         path=['render'],

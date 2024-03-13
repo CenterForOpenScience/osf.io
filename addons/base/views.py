@@ -829,6 +829,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
+        # NOTE: furl encoding to be verified later
         return redirect(furl(f'/{guid._id}/', args=extras).url)
     if isinstance(target, Preprint):
         # Redirecting preprint file guids to the preprint detail page
@@ -913,6 +914,7 @@ def addon_view_file(auth, node, file_node, version):
     )
 
     mfr_url = get_mfr_url(node, file_node.provider)
+    # NOTE: furl encoding to be verified later
     render_url = furl(
         mfr_url,
         path=['render'],

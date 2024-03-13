@@ -1316,7 +1316,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
             data = data.get('data', None)
         if enable_esi:
             ret = [
-                self.child.to_esi_representation(item, envelope=None) for item in data
+                self.child.urlto_esi_representation(item, envelope=None) for item in data
             ]
         else:
             ret = [
@@ -1446,6 +1446,7 @@ class JSONAPISerializer(BaseAPISerializer):
         query_params_blacklist = ['page[size]']
         href = self.get_absolute_url(data)
         if href and href != '{}':
+            # NOTE: furl encoding to be verified later
             esi_url = furl(href).add(args=dict(self.context['request'].query_params)).remove(
                 args=query_params_blacklist,
             ).remove(args=['envelope']).add(args={'envelope': envelope}).url

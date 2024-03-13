@@ -223,6 +223,7 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_u
     assert path.startswith('/'), 'Path must always start with /'
     if provider != 'osfstorage':
         base_url = None
+    # NOTE: furl encoding to be verified later
     url = furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL))
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
     url.add(path=[urlquote(x) for x in segments])
