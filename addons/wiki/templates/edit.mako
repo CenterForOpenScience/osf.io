@@ -34,7 +34,7 @@
 </div>
 
     <div class="row wiki-wrapper">
-        <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1'}">
+        <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1'}" style="width: 26%">
 
             <!-- Menu with toggle normal -->
             <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden visible-xs'}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
@@ -100,7 +100,7 @@
         </div>
 
     <div class="wiki" id="wikiPageContext">
-    <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11'}">
+    <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11'}" style="width: 74%">
       <div class="row">
 
           <div data-osf-panel="${_('View')}"

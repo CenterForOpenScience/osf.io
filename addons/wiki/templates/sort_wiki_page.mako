@@ -15,7 +15,7 @@
                 </div><!-- end modal-body -->
                 <div class="modal-footer" style="border-top: 1px solid #e5e5e5">
                     <a id="close" class="btn btn-default" data-dismiss="modal">${_("Close")}</a>
-                    <button id="treeSave" data-bind="click: submit" id="add-wiki-submit" type="submit" class="btn btn-success">${_("Save")}</button>
+                    <button id="treeSave" data-bind="click: submit" id="add-wiki-submit" type="submit" class="btn btn-success" disabled>${_("Save")}</button>
                 </div><!-- end modal-footer -->
             </form>
         </div><!-- end modal- content -->
@@ -23,7 +23,7 @@
 </div><!-- end modal -->
 
 <script id="wikitreeRow" type="text/html">
-  <li data-bind="attr: {class: $parent.id}, event: { mousedown: $root.mouseDown}">
+  <li data-bind="attr: {class: $parent.id}">
     <!-- ko if: $data.name -->
     <div style="border-bottom: 1px solid #ddd;" data-bind="attr: {class: 'sort-item', id: $data.id}, event: { click: $root.expandOrCollapse}">
     <div style="display: inline;"><i class="fa fa-bars" style="color: #ddd; margin-right: 1px;"></i></div>
@@ -36,7 +36,7 @@
     <div style="display: inline;"><a href="#" data-bind="text: $data.name"></a></div>
     </div>
     <!-- /ko -->
-    <!-- ko if: $data.children -->
+    <!-- ko if: $data.children() -->
     <ul class="sort-children" data-bind="sortable: { template: 'wikitreeRow', data: $data.children, afterMove: $root.afterMove}"></ul>
     <!-- /ko -->
   </li>
