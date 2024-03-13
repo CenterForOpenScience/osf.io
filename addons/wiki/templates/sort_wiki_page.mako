@@ -25,7 +25,7 @@
 <script id="wikitreeRow" type="text/html">
   <li data-bind="attr: {class: $parent.id}">
     <!-- ko if: $data.name -->
-    <div style="border-bottom: 1px solid #ddd;" data-bind="attr: {class: 'sort-item', id: $data.id}, event: { click: $root.expandOrCollapse}">
+    <div style="border-bottom: 1px solid #ddd;" data-bind="attr: {class: 'sort-item', id: $data.id}, event: { click: $data.expandOrCollapse}">
     <div style="display: inline;"><i class="fa fa-bars" style="color: #ddd; margin-right: 1px;"></i></div>
     <!-- ko if: $data.children().length -->
     <div style="display: inline; margin-right: 2px;"><i class="fa fa-angle-down angle"></i></div>
