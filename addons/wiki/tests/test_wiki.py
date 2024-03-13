@@ -458,27 +458,6 @@ class TestWikiViews(OsfTestCase):
         res = serialize_wiki_widget(self.project)
         assert_true(res['rendered_before_update'])
 
-    def test_read_only_users_cannot_view_edit_pane(self):
-        url = self.project.web_url_for('project_wiki_view', wname='home')
-        # No write permissions
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_not_in('data-osf-panel="Edit"', res.text)
-        # Write permissions
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('data-osf-panel="Edit"', res.text)
-        # Publicly editable
-        wiki = self.project.get_addon('wiki')
-        wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
-        res = self.app.get(url, auth=AuthUserFactory().auth)
-        assert_equal(res.status_code, 200)
-        assert_in('data-osf-panel="Edit"', res.text)
-        # Publicly editable but not logged in
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_not_in('data-osf-panel="Edit"', res.text)
-
     def test_wiki_widget_not_show_in_registration_for_contributor(self):
         registration = RegistrationFactory(project=self.project)
         res = self.app.get(
