@@ -1,40 +1,40 @@
 from framework.celery_tasks import app as celery_app
+from osf.models import OSFUser
 from kombu import Exchange
 
 
-def publish_deactivated_user(user):
+def publish_deactivated_user(user: OSFUser):
     _publish_user_status_change(
         body={
+            'action': 'deactivate',
             'user_uri': user.url,
         },
-        routing_key=celery_app.conf.DEACTIVATED_ROUTING_KEY
     )
 
 
-def publish_reactivate_user(user):
+def publish_reactivate_user(user: OSFUser):
     _publish_user_status_change(
         body={
+            'action': 'reactivate',
             'user_uri': user.url,
         },
-        routing_key=celery_app.conf.REACTIVATED_ROUTING_KEY
     )
 
 
-def publish_merged_user(user):
+def publish_merged_user(user: OSFUser):
     _publish_user_status_change(
         body={
+            'action': 'merge',
             'user_uri': user.url,
             'merged_user_uri': user.merged_by.url,
         },
-        routing_key=celery_app.conf.MERGED_ROUTING_KEY
     )
 
 
-def _publish_user_status_change(body, routing_key):
+def _publish_user_status_change(body: dict):
     with celery_app.producer_pool.acquire(block=True) as producer:
         producer.publish(
             body=body,
             exchange=Exchange(celery_app.conf.account_status_changes),
-            routing_key=routing_key,
             serializer='json'
         )
