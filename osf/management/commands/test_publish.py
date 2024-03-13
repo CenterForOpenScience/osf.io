@@ -17,7 +17,7 @@ class Command(BaseCommand):
             'action',
             type=str,
             help='The action to perform on the user (deactivate, reactivate, merge).',
-            choices=['deactivate', 'reactivate', 'merge']  # Limiting the choices to specific actions
+            choices=['deactivate', 'reactivate', 'merge']
         )
 
     def handle(self, *args, **options):

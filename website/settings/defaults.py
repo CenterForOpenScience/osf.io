@@ -492,22 +492,7 @@ class CeleryConfig:
                   routing_key=task_med_queue, consumer_arguments={'x-priority': 1}),
             Queue(task_high_queue, Exchange(task_high_queue),
                   routing_key=task_high_queue, consumer_arguments={'x-priority': 10}),
-            Queue(
-                account_status_changes,
-                Exchange(account_status_changes),
-                routing_key=DEACTIVATED_ROUTING_KEY,
-                consumer_arguments={'x-priority': 0}
-            ),
-            Queue(
-                account_status_changes,
-                Exchange(account_status_changes),
-                routing_key=REACTIVATED_ROUTING_KEY,
-                consumer_arguments={'x-priority': 0}
-            ),
-            Queue(
-                account_status_changes,
-                Exchange(account_status_changes),
-                routing_key=MERGED_ROUTING_KEY,
+            Queue(account_status_changes, Exchange(account_status_changes), routing_key=account_status_changes,
                 consumer_arguments={'x-priority': 0}
             ),
         )
