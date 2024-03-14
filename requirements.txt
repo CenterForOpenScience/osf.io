@@ -83,7 +83,7 @@ django-storages==1.14.2
 google-cloud-storage==2.14.0  # dependency of django-storages, hard-pin to version
 django-dirtyfields==1.9.2
 django-extensions==3.2.3
-psycopg2==2.8.4 --no-binary psycopg2
+psycopg2==2.9.9 --no-binary psycopg2
 django-bulk-update==2.2.0
 
 # Reviews requirements
@@ -96,7 +96,7 @@ datacite==1.1.3
 rdflib==7.0.0
 rdflib-jsonld==0.6.2
 
-
+colorlog==6.8.2
 # Metrics
 # git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6
 git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl

@@ -65,6 +65,7 @@ def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None
     )
     return migrate_responses(draft_registrations, 'draft registrations', dry_run, rows)
 
+
 def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
     """
     DRY method to be used to migrate both DraftRegistration.registration_responses
