@@ -491,7 +491,7 @@ class CeleryConfig:
                   routing_key=task_high_queue, consumer_arguments={'x-priority': 10}),
             Queue(account_status_changes, Exchange(account_status_changes),
                   routing_key=account_status_changes, consumer_arguments={'x-priority': 0}
-            ),
+            )
         )
 
         task_default_exchange_type = 'direct'
