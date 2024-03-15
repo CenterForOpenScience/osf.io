@@ -10,14 +10,16 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Count
-import progressbar
+from tqdm import tqdm
 
 from scripts import utils as script_utils
-from osf.management.commands.reindex_preprint_provider import reindex_provider
+# There is no such file as reindex_preprint_provider, so it was replaced with reindex_provider
+from osf.management.commands.reindex_provider import reindex_provider
 from osf.models import PreprintProvider
 from osf.utils.migrations import disable_auto_now_fields
 
 logger = logging.getLogger(__name__)
+
 
 def rebrand_provider(src_id, dst_id):
     assert src_id != 'osf', 'Cannot rebrand OSF Preprints'
@@ -36,12 +38,12 @@ def rebrand_provider(src_id, dst_id):
 
     logger.info(f'Updating preprint subjects with {dst_id} equivalent subjects')
     target_preprints = dst_prov.preprints.all()
-    pbar = progressbar.ProgressBar(maxval=target_preprints.count() or 1).start()
+    pbar = tqdm(total=target_preprints.count() or 1)
     for i, pp in enumerate(target_preprints, 1):
-        pbar.update(i)
+        pbar.update()
         # M2M .set does not require .save
         pp.subjects.set(dst_prov.subjects.filter(text__in=list(pp.subjects.values_list('text', flat=True))))
-    pbar.finish()
+    pbar.close()
 
     logger.info(f'Updating {dst_id} moderators')
     dst_prov.get_group('admin').user_set.set(src_prov.get_group('admin').user_set.all())
@@ -57,6 +59,7 @@ def rebrand_provider(src_id, dst_id):
     logger.info(f'Updating {dst_id} notification digests')
     src_prov.notificationdigest_set.update(provider_id=dst_prov.id)
 
+
 def delete_old_provider(src_id):
     src_prov = PreprintProvider.load(src_id)
     assert src_prov.preprints.count() == 0, f'Provider {src_id} still has preprints'
@@ -70,12 +73,14 @@ def delete_old_provider(src_id):
     logger.warning(f'Deleting Subscriptions: {src_prov.notification_subscriptions.all().delete()}')
     logger.warning(f'Deleting Provider: {src_prov.delete()}')
 
+
 def reindex_share(dst_id, dry_run):
     dst_prov = PreprintProvider.load(dst_id)
     if dry_run:
         logger.info(f'Would send {dst_prov.preprints.count()} preprints to SHARE...')
     else:
         reindex_provider(dst_prov)
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):

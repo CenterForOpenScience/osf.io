@@ -146,7 +146,7 @@ install:
 
     - travis_retry invoke travis_addon_settings
     # bumped psycopg to match requirements.txt, as otherwise build would fail
-    - travis_retry pip install psycopg2==2.8.4 --no-binary psycopg2
+    - travis_retry pip install psycopg2==2.9.9 --no-binary psycopg2
     - travis_retry invoke requirements --dev --addons
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
     - pip uninstall uritemplate.py --yes
