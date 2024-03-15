@@ -750,10 +750,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             for key, value in user.mailchimp_mailing_lists.items():
                 # subscribe to each list if either user was subscribed
                 subscription = value or self.mailchimp_mailing_lists.get(key)
-                signals.update_mailchimp_subscription.send(self, list_name=key, subscription=subscription)
+                signals.user_update_mailchimp.send(self, list_name=key, subscription=subscription)
 
                 # clear subscriptions for merged user
-                signals.update_mailchimp_subscription(user, list_name=key, subscription=False, send_goodbye=False)
+                signals.user_update_mailchimp.send(user, list_name=key, subscription=False, send_goodbye=False)
 
         for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):

@@ -20,7 +20,7 @@ from framework.auth.signals import (
     user_merged,
     user_account_deactivated,
     user_account_reactivated,
-    update_mailchimp_subscription
+    user_update_mailchimp
 )
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
@@ -517,7 +517,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': all_mailing_lists}, 200
 
 
-@update_mailchimp_subscription.connect
+@user_update_mailchimp.connect
 def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
     """ Update mailing list subscription in mailchimp.
 
@@ -542,23 +542,6 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
 def send_account_merged_message(user):
     """ Sends a message using Celery messaging to alert other services that an osf.io user has been merged."""
     publish_merged_user(user)
-
-
-@user_account_deactivated.connect
-def send_mailchimp_unsubscribe(user):
-    """ Sends a signal using Celery messaging to alert other services that an osf.io user has been merged."""
-    if not settings.RUNNING_MIGRATION:
-        for key, value in user.mailchimp_mailing_lists.items():
-            update_mailchimp_subscription(user, list_name=key, subscription=False, send_goodbye=False)
-
-
-@user_merged.connect
-def send_mailchimp_merge(user):
-    """ Sends a signal using Celery messaging to alert other services that an osf.io user has been merged."""
-    if not settings.RUNNING_MIGRATION:
-        for key, value in user.merged_by.mailchimp_mailing_lists.items():
-            subscription = value or user.mailchimp_mailing_lists.get(key)
-            update_mailchimp_subscription(user, list_name=key, subscription=subscription, send_goodbye=False)
 
 
 @user_account_deactivated.connect
