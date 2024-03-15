@@ -739,7 +739,11 @@ msgstr ""
 msgid "Some errors occurred"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:369
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:407
+msgid "Export Data Storage location set successfully"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:409
 msgid "Institutional Storage set successfully"
 msgstr ""
 

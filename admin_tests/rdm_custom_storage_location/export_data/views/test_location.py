@@ -88,6 +88,57 @@ class TestExportStorageLocationViewBaseView(AdminTestCase):
         self.request.user = self.institution02_admin
         nt.assert_false(setup_view(self.view, self.request).test_func())
 
+    def test__admin_login_having_institution_id(self):
+        self.request.user = self.institution02_admin
+        nt.assert_false(setup_view(self.view, self.request, institution_id=1).test_func())
+
+    def test__super_login_with_institution_id(self):
+        self.request.user = self.superuser
+        nt.assert_true(setup_view(self.view, self.request, institution_id=1).test_func())
+
+    def test__super_login_missing_institution_id(self):
+        self.request.user = self.superuser
+        nt.assert_true(setup_view(self.view, self.request).test_func())
+
+
+class TestExportStorageLocationInstitutionListView(AdminTestCase):
+    def setUp(self):
+        super(TestExportStorageLocationInstitutionListView, self).setUp()
+        self.user = AuthUserFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.user.save()
+        self.view_permission = location.ExportStorageLocationViewBaseView
+        self.view = location.ExportStorageLocationInstitutionListView()
+
+    def test_unauthorized(self):
+        self.user = AnonymousUser()
+        view = setup_view(self.view, self.request)
+        nt.assert_false(view.test_func())
+
+    def test_admin_login(self):
+        self.user.is_superuser = False
+        self.user.is_staff = True
+        view = setup_view(self.view, self.request)
+        nt.assert_false(view.test_func())
+
+    def test_superuser_login(self):
+        self.user.is_superuser = True
+        view = setup_view(self.view, self.request)
+        nt.assert_true(view.test_func())
+
+    def test_get_queryset(self):
+        institution = InstitutionFactory()
+        res = self.view.get_queryset()
+        nt.assert_equal(len(res), 1)
+        nt.assert_equal(res[0], institution)
+
+    def test_get_context_data(self):
+        self.view.object_list = self.view.get_queryset()
+        view = setup_view(self.view, self.request)
+        res = view.get_context_data()
+        nt.assert_is_not_none(res)
+
 
 @pytest.mark.feature_202210
 class ExportStorageLocationView(AdminTestCase):
@@ -101,8 +152,27 @@ class ExportStorageLocationView(AdminTestCase):
         self.request.user = self.user
         self.user.save()
 
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
     def test_get(self):
         view = setup_view(self.view, self.request)
+        view.get(self.request)
+
+    def test_get_superuser_login(self):
+        self.request.user = self.superuser
+        view = setup_view(self.view, self.request)
+        view.get(self.request)
+
+    def test_get_superuser_login_with_institution_id(self):
+        self.request.user = self.superuser
+        view = setup_view(self.view, self.request, institution_id=1)
+        view.get(self.request)
+
+    def test_get_admin_login_with_institution_id(self):
+        view = setup_view(self.view, self.request, institution_id=self.institution.id)
         view.get(self.request)
 
     def test_get_queryset(self):
@@ -370,7 +440,7 @@ class TestDeleteCredentialsView(AdminTestCase):
     def test__test_func_super_user(self):
         self.request.user = self.superuser
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
-        view = setup_view(self.view, self.request, export_location.id)
+        view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=self.institution.id)
         nt.assert_true(view.test_func())
 
     def test__test_func_admin_not_inst(self):
@@ -396,3 +466,16 @@ class TestDeleteCredentialsView(AdminTestCase):
         export_location = ExportDataLocation.objects.create(institution_guid=InstitutionFactory().guid)
         view = setup_view(self.view, self.request, export_location.id)
         nt.assert_false(view.test_func())
+
+    def test__test_func_admin(self):
+        self.user.is_staff = True
+        self.user.save()
+        self.request.user = self.user
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
+        view = setup_view(self.view, self.request, location_id=export_location.id)
+        nt.assert_true(view.test_func())
+
+    def test__test_func_no_storage_location(self):
+        self.request.user = self.superuser
+        view = setup_view(self.view, self.request)
+        nt.assert_true(view.test_func())

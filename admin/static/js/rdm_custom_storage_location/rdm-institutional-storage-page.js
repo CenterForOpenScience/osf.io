@@ -334,10 +334,11 @@ $.ajaxSetup({
 });
 
 function ajaxCommon(type, params, providerShortName, route, callback) {
+    var currentUrlPart = cutAndStoreInstitution(document.location.href);
+    var url = currentUrlPart.newUrl + '../' + route + '/' + currentUrlPart.institutionPart;
     if (type === 'POST') {
         params = JSON.stringify(params);
     }
-    var url = '../' + route + '/'
     $.ajax({
         url: url,
         type: type,
@@ -402,7 +403,11 @@ var afterRequest = {
             $('.modal').modal('hide');
             $('#' + id + '_message').addClass('text-success');
             $('#' + id + '_message').removeClass('text-danger');
-            $osf.growl('Success', _('Institutional Storage set successfully'), 'success', growlBoxDelay);
+            if (window.contextVars.is_location) {
+                $osf.growl('Success', _('Export Data Storage location set successfully'), 'success', growlBoxDelay);
+            } else {
+                $osf.growl('Success', _('Institutional Storage set successfully'), 'success', growlBoxDelay);
+            }
             setTimeout(function() {
                 location.reload(true);
             }, growlBoxDelay);
@@ -793,9 +798,29 @@ $('.delete-location').click(function () {
     });
 });
 
+function cutAndStoreInstitution(url) {
+    var institutionRegex = /\/institutions\/(\d+)/;
+
+    var match = url.match(institutionRegex);
+    var institutionPart = '';
+    var newUrl = url;
+
+    if (match !== null) {
+        institutionPart = match[1];
+        newUrl = url.replace(match[0], '');
+    }
+
+    return {
+        institutionPart: institutionPart,
+        newUrl: newUrl
+    };
+}
+
 function deleteLocation(id) {
     var route = 'delete';
-    var url = id + '/' + route + '/';
+    var currentUrlPart = cutAndStoreInstitution(document.location.href);
+    var url = currentUrlPart.newUrl + id + '/' + route + '/' + currentUrlPart.institutionPart;
+
     $.ajax({
         url: url,
         type: 'DELETE',

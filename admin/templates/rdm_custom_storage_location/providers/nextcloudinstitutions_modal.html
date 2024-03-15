@@ -109,7 +109,9 @@ ABCDE,ext_user2,User2<br/>
                     <div class="help-block">
                         <p id="nextcloudinstitutions_message" class="text-danger"></p>
                     </div>
+                    {% if not is_location_setting %}
                     <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#options" style="margin: 0.8em;">{%trans "Options" %}</button>
+                    {% endif %}
                     <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
                     <button type="button" class="btn btn-success test-connection" id="nextcloudinstitutions_connect" disabled>{% trans "Connect" %}</button>
                     <button type="button" class="btn btn-default save-credentials" id="nextcloudinstitutions_save" disabled>{% trans "Save" %}</button>

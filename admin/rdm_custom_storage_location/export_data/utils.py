@@ -29,6 +29,7 @@ from osf.models import (
     ExportDataRestore,
     ExportDataLocation,
     ExternalAccount,
+    Institution
 )
 from website.settings import (
     WATERBUTLER_URL,
@@ -242,14 +243,17 @@ def save_basic_storage_institutions_credentials_common(
     wb_credentials['external_account'] = external_account
     wb_settings['extended'] = extended
 
-    update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
+    institution_guid = Institution.INSTITUTION_DEFAULT
+    if institution is not None:
+        institution_guid = institution.guid
+    update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings)
 
     return {'message': 'Saved credentials successfully!!'}, http_status.HTTP_200_OK
 
 
 def save_nextcloudinstitutions_credentials(
         institution, storage_name, host_url, username, password, folder,
-        notification_secret, provider_name):
+        provider_name):
     test_connection_result = test_owncloud_connection(host_url, username, password, folder, provider_name)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -261,13 +265,8 @@ def save_nextcloudinstitutions_credentials(
         username=username, password=password
     )
 
-    extended_data = {
-        KEYNAME_NOTIFICATION_SECRET: notification_secret
-    }
-
     return save_basic_storage_institutions_credentials_common(
-        institution, storage_name, folder, provider_name,
-        provider, extended_data=extended_data)
+        institution, storage_name, folder, provider_name, provider)
 
 
 def validate_exported_data(data_json, schema_filename='file-info-schema.json'):
