@@ -747,16 +747,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured = user.notifications_configured.copy()
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
-        if not website_settings.RUNNING_MIGRATION:
-            for key, value in user.mailchimp_mailing_lists.items():
-                # subscribe to each list if either user was subscribed
-                subscription = value or self.mailchimp_mailing_lists.get(key)
-                from website.profile.views import update_mailchimp_subscription
-                update_mailchimp_subscription(self, list_name=key, subscription=subscription)
-
-                # clear subscriptions for merged user
-                update_mailchimp_subscription(user, list_name=key, subscription=False, send_goodbye=False)
-
         for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
                 self.comments_viewed_timestamp[target_id] = timestamp

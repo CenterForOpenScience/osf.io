@@ -519,7 +519,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
     :param str list_name: mailing list
     :param boolean subscription: true if user is subscribed
     """
-    if subscription:
+    if subscription or settings.TEST_ENV:  # don't wait for mailchimp response in tests
         try:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
         except (MailChimpError, OSFError):
@@ -534,19 +534,36 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
 
 @user_merged.connect
 def send_account_merged_message(user):
-    """ Sends a signal using Celery messaging to alert other services that an osf.io user has been merged."""
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been merged."""
     publish_merged_user(user)
 
 
 @user_account_deactivated.connect
+def send_mailchimp_unsubscribe(user):
+    """ Sends a signal using Celery messaging to alert other services that an osf.io user has been merged."""
+    if not settings.RUNNING_MIGRATION:
+        for key, value in user.mailchimp_mailing_lists.items():
+            update_mailchimp_subscription(user, list_name=key, subscription=False, send_goodbye=False)
+
+
+@user_merged.connect
+def send_mailchimp_merge(user):
+    """ Sends a signal using Celery messaging to alert other services that an osf.io user has been merged."""
+    if not settings.RUNNING_MIGRATION:
+        for key, value in user.merged_by.mailchimp_mailing_lists.items():
+            subscription = value or user.mailchimp_mailing_lists.get(key)
+            update_mailchimp_subscription(user, list_name=key, subscription=subscription, send_goodbye=False)
+
+
+@user_account_deactivated.connect
 def send_account_deactivation_message(user):
-    """ Sends a signal using Celery messaging to alert other services that an osf.io user has been deactivated."""
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been deactivated."""
     publish_deactivated_user(user)
 
 
 @user_account_reactivated.connect
 def send_account_reactivation_message(user):
-    """ Sends a signal using Celery messaging to alert other services that an osf.io user has been reactivated."""
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been reactivated."""
     publish_reactivate_user(user)
 
 
