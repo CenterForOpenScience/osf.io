@@ -1808,7 +1808,7 @@ def make_url_map(app):
 
         @app.route('/assets/<filename>')
         def provider_static(filename):
-            return send_from_directory(provider_static_path, filename)
+            return send_from_directory(directory=provider_static_path, path=filename)
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():

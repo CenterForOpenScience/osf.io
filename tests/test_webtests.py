@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Functional tests using WebTest."""
-import datetime as dt
-from rest_framework import status as http_status
+from rest_framework import status
 import logging
 import unittest
 
@@ -12,7 +11,7 @@ import re
 
 from django.utils import timezone
 from addons.wiki.utils import to_mongo_key
-from framework.auth import exceptions as auth_exc
+from framework.auth import exceptions
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
 from tests.base import fake
@@ -33,11 +32,8 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
-from website import settings, language
-from addons.osfstorage.models import OsfStorageFile
+from website import language
 from website.util import web_url_for, api_url_for
-
-from api_tests import utils as test_utils
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
@@ -75,7 +71,7 @@ class TestAnUnregisteredUser(OsfTestCase):
         res = self.app.get(url)
         res = res.follow()
         assert res.status_code == 308
-        assert_in('/login/', res.headers['Location'])
+        assert '/login/' in res.headers['Location']
 
 
 @pytest.mark.enable_bookmark_creation
@@ -645,8 +641,8 @@ class TestConfirmingEmail(OsfTestCase):
         self.user.save()
         res = self.app.get(self.confirmation_url, expect_errors=True)
 
-        assert auth_exc.InvalidTokenError.message_short in res
-        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert exceptions.InvalidTokenError.message_short in res
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.enable_implicit_clean

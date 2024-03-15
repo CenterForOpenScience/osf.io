@@ -1,13 +1,17 @@
+import logging
 import unittest
 
 from flask import Flask
-from webtest_plus import TestApp
 
 from framework.exceptions import HTTPError
 from framework.routing import json_renderer, process_rules, Rule
 
+logger = logging.getLogger(__name__)
+
+
 def error_view():
     raise HTTPError(400)
+
 
 def error_with_msg():
     raise HTTPError(400, data={
@@ -15,13 +19,16 @@ def error_with_msg():
         'message_long': 'Invalid request'
     })
 
+
 class TestJSONRenderer(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
         self.app.debug = True
 
-        self.wt = TestApp(self.app)
+        self.wt = self.app.test_client()
+
+        logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
 
     def test_error_handling(self):
         rule = Rule(['/error/'], 'get', error_view, renderer=json_renderer)

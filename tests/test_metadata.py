@@ -1,15 +1,12 @@
 '''Unit tests for models and their factories.'''
 import unittest
-
 import pytest
 from django.core.exceptions import ValidationError
 
 from framework.forms.utils import process_payload
-
 from osf.models import RegistrationSchema
 from osf.utils.migrations import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMA_FILES
-
 from tests.base import OsfTestCase
 
 

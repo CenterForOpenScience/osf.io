@@ -10,6 +10,7 @@ def get_mfr_url(target, provider_name):
         return target.osfstorage_region.mfr_url
     return MFR_SERVER_URL
 
+
 def serialize_addon_config(config, user):
     lookup = config.template_lookup
 

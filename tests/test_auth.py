@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import unittest
 import pytest
+import logging
 
-from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 from unittest import mock
-from future.moves.urllib.parse import urlparse, urljoin, quote
+from future.moves.urllib.parse import urlparse, quote
 from rest_framework import status as http_status
-
 from flask import Flask
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Response
 
 from framework import auth
 from framework.auth import cas
@@ -37,6 +36,8 @@ from website.project.decorators import (
 from website.util import api_url_for
 
 from tests.test_cas_authentication import generate_external_user_with_resp
+
+logger = logging.getLogger(__name__)
 
 
 class TestAuthUtils(OsfTestCase):
@@ -281,7 +282,9 @@ class TestPrivateLink(OsfTestCase):
         def project_get(**kwargs):
             return 'success', 200
 
-        self.app = WebtestApp(self.flaskapp)
+        self.app = self.flaskapp.test_client()
+
+        logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
@@ -578,7 +581,9 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         @must_be_contributor_or_public_but_not_anonymized
         def project_get(**kwargs):
             return 'success', 200
-        self.app = WebtestApp(self.flaskapp)
+        self.app = self.flaskapp.test_client()
+
+        logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
 
     def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor_or_public_but_not_anonymized(
@@ -707,7 +712,7 @@ class TestPermissionDecorators(AuthAppTestCase):
     def test_must_be_logged_in_decorator_with_no_user(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth()
         resp = protected()
-        assert isinstance(resp, BaseResponse)
+        assert isinstance(resp, Response)
         login_url = cas.get_login_url(service_url='http://localhost/')
         assert login_url == resp.headers.get('location')
 

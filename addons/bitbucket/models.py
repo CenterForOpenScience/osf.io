@@ -3,9 +3,10 @@ import markupsafe
 from django.db import models
 
 from addons.base import exceptions
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
-
+from addons.base.models import (
+    BaseOAuthNodeSettings,
+    BaseOAuthUserSettings,
+    BaseStorageAddon,)
 from addons.bitbucket.api import BitbucketClient
 from addons.bitbucket.serializer import BitbucketSerializer
 from addons.bitbucket import settings as bitbucket_settings
