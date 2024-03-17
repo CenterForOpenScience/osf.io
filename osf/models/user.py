@@ -746,15 +746,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured = user.notifications_configured.copy()
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
-        if not website_settings.RUNNING_MIGRATION:
-            for key, value in user.mailchimp_mailing_lists.items():
-                # subscribe to each list if either user was subscribed
-                subscription = value or self.mailchimp_mailing_lists.get(key)
-                signals.user_merged.send(self, list_name=key, subscription=subscription)
-
-                # clear subscriptions for merged user
-                signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
-
         for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
                 self.comments_viewed_timestamp[target_id] = timestamp
@@ -872,6 +863,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
+        signals.user_account_merged.send(user)
+        signals.user_account_deactivated.send(self)
 
     def _merge_users_preprints(self, user):
         """
@@ -993,6 +986,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
+        signals.user_account_deactivated.send(self)
 
     def reactivate_account(self):
         """
@@ -1002,6 +996,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.requested_deactivation = False
         from website.mailchimp_utils import subscribe_on_confirm
         subscribe_on_confirm(self)
+        signals.user_account_reactivated.send(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that

@@ -6,7 +6,8 @@ from addons.base import signals as event
 from website.conferences import signals as conference
 from website.reviews import signals as reviews
 
-ALL_SIGNALS = [
+
+ALL_SIGNALS = [  # TODO: Fix
     project.comment_added,
     project.mention_added,
     project.unreg_contributor_added,
@@ -17,7 +18,9 @@ ALL_SIGNALS = [
     auth.user_confirmed,
     auth.user_email_removed,
     auth.user_registered,
-    auth.user_merged,
+    auth.user_account_deactivated,
+    auth.user_account_reactivated,
+    auth.user_account_merged,
     auth.unconfirmed_user_created,
     event.file_updated,
     conference.osf4m_user_created,
