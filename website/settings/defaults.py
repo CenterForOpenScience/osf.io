@@ -411,6 +411,7 @@ class CeleryConfig:
     task_med_queue = 'med'
     task_high_queue = 'high'
     task_remote_computing_queue = 'remote'
+    account_status_changes = 'account_status_changes'
 
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
