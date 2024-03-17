@@ -72,7 +72,7 @@ class ExportStorageLocationView(ExportStorageLocationViewBaseView, ListView):
 
     def get(self, request, *args, **kwargs):
 
-        institution_id = kwargs.get('institution_id', None)
+        institution_id = self.kwargs.get('institution_id', None)
         institution_id = int(institution_id) if institution_id else None
 
         institution = None
@@ -219,7 +219,7 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
                 institution_guid = institution.guid
         elif self.is_admin:
             institution = self.request.user.affiliated_institutions.first()
-            if institution.id != institution_id:
+            if institution_id and institution.id != institution_id:
                 return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
             institution_guid = institution.guid
 

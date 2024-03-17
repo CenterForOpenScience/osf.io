@@ -12,7 +12,6 @@ from rest_framework import status as http_status
 
 from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
-from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.osfstorage.models import Region
 from admin.base.schemas.utils import from_json
