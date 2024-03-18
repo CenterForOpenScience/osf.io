@@ -89,7 +89,7 @@ class TestMeetingFormView(AdminTestCase):
         view.conf = self.conf
         res = view.get_context_data()
         assert isinstance(res, dict)
-        assert'endpoint' in res
+        assert 'endpoint' in res
         assert res['endpoint'] == self.conf.endpoint
 
     def test_get_initial(self):
@@ -147,7 +147,7 @@ class TestMeetingCreateFormView(AdminTestCase):
 
     def test_get_initial(self):
         self.view().get_initial()
-        assert self.view().initial['edit'] == False
+        assert not self.view().initial['edit']
         assert self.view.initial['submission1'] == DEFAULT_FIELD_NAMES['submission1']
 
     def test_form_valid(self):

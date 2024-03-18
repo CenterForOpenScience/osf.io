@@ -3832,7 +3832,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             # campaign login: user without auth
             data = login_and_register_handler(self.no_auth, campaign=campaign)
             assert data.get('status_code') == http_status.HTTP_302_FOUND
-            assert data.get('next_url') == web_url_for('auth_register', campaign=campaign, 
+            assert data.get('next_url') == web_url_for('auth_register', campaign=campaign,
                                                        next=campaign_url_for(campaign))
 
     def test_campaign_register_with_auth(self):
@@ -3856,7 +3856,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                 assert data.get('next_url') == campaign_url_for(campaign)
             elif is_proxy_login(campaign):
                 # proxy campaign: preprints and branded ones
-                assert data.get('next_url') == web_url_for('auth_login', next=campaign_url_for(campaign), 
+                assert data.get('next_url') == web_url_for('auth_login', next=campaign_url_for(campaign),
                                                            _absolute=True)
 
     def test_campaign_next_url_login_with_auth(self):

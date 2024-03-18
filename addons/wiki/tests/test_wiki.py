@@ -962,7 +962,7 @@ class TestWikiShareJSMongo(OsfTestCase):
 
         new_sharejs_uuid = get_sharejs_uuid(self.project, self.wname)
         assert EXAMPLE_DOCS[0]['_data'] == self.db.docs.find_one({'_id': new_sharejs_uuid})['_data']
-        assert len([item for item in self.example_ops if item['name'] == self.sharejs_uuid]) == len([item for item 
+        assert len([item for item in self.example_ops if item['name'] == self.sharejs_uuid]) == len([item for item
                                                             in self.db.docs_ops.find({'name': new_sharejs_uuid})])
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')

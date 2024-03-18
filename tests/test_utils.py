@@ -253,7 +253,7 @@ class TestWebpackFilter(unittest.TestCase):
 
 
 def r_assert(s):
-    assert s.upper() == s, f"{s.upper()} is not equal to {s}"
+    assert s.upper() == s, f'{s.upper()} is not equal to {s}'
 
 
 class TestWebsiteUtils(unittest.TestCase):
