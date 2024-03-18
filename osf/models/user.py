@@ -986,6 +986,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
+        signals.user_account_deactivated.send(self)
 
     def reactivate_account(self):
         """
