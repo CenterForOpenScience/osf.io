@@ -11,8 +11,9 @@ from addons.s3.tests.factories import (S3NodeSettingsFactory, S3AccountFactory, 
 from addons.weko.tests.factories import WEKONodeSettingsFactory, WEKOAccountFactory
 from admin.user_identification_information import utils
 from admin.user_identification_information import views
+from osf.models import ExternalAccount
 from osf_tests.factories import (
-    AuthUserFactory,
+    AuthUserFactory, ExternalAccountFactory,
 )
 from tests.base import AdminTestCase
 
@@ -45,11 +46,25 @@ class TestUtils(AdminTestCase):
         nt.assert_equal(results[0], 90)
         nt.assert_equal(results[1], 'KB')
 
+    def test_get_list_extend_storage__no_external_accounts(self):
+        ExternalAccount.objects.all().delete()
+        results = utils.get_list_extend_storage()
+        nt.assert_is_instance(results, dict)
+        nt.assert_equal(len(results), 0)
+
+    def test_get_list_extend_storage_with_branch_name_is_not_defined(self):
+        ExternalAccount.objects.all().delete()
+        ExternalAccountFactory()
+
+        results = utils.get_list_extend_storage()
+        nt.assert_is_instance(results, dict)
+        nt.assert_equal(len(results), 0)
+
     def test_get_list_extend_storage_with_branch_name_is_folder_name(self):
         """
-        this case check get_list_extend_storage() include  s3, s3compat, s3compatb3, azureblobstorage, box, figshare, onedrivebusiness, swift
-            return storage_branch_name = 'folder_name'
+        this case check for s3, s3compat, s3compatb3, azureblobstorage, box, figshare, swift
         """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('s3')
         self.user_settings = self.user.get_addon('s3')
         self.external_account = S3AccountFactory(provider_name='Amazon S3')
@@ -76,9 +91,9 @@ class TestUtils(AdminTestCase):
 
     def test_get_list_extend_storage_with_branch_name_is_repo(self):
         """
-        this case check get_list_extend_storage() include  bitbucket, github, gitlab
-            return storage_branch_name = 'repo'
+        this case check for bitbucket, github, gitlab
         """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('github')
         self.user_settings = self.user.get_addon('github')
         self.external_account = GitHubAccountFactory(provider_name='Github name')
@@ -95,9 +110,9 @@ class TestUtils(AdminTestCase):
 
     def test_get_list_extend_storage_with_branch_name_is_folder_path(self):
         """
-        this case check get_list_extend_storage() include  googledrive, onedrive, iqbrims
-            return storage_branch_name = 'folder_path'
+        this case check for googledrive, onedrive, iqbrims
         """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('googledrive')
         self.user_settings = self.user.get_addon('googledrive')
         self.external_account = GoogleDriveAccountFactory(provider_name='googledrive name')
@@ -115,9 +130,9 @@ class TestUtils(AdminTestCase):
 
     def test_get_list_extend_storage_with_branch_name_is_folder(self):
         """
-        this case check get_list_extend_storage() dropbox
-            return storage_branch_name = 'folder'
+        this case check for dropbox
         """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('dropbox')
         self.user_settings = self.user.get_addon('dropbox')
         self.external_account = DropboxAccountFactory(provider_name='dropbox name')
@@ -134,7 +149,10 @@ class TestUtils(AdminTestCase):
         nt.assert_in('/dropbox name', list_name[0])
 
     def test_get_list_extend_storage_with_branch_name_is_index_title(self):
-
+        """
+        this case check for weko
+        """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('weko')
         self.user_settings = self.user.get_addon('weko')
         self.external_account = WEKOAccountFactory(provider_name='weko name')
@@ -152,9 +170,9 @@ class TestUtils(AdminTestCase):
 
     def test_get_list_extend_storage_with_branch_name_is_list_id(self):
         """
-        this case check get_list_extend_storage() include mendeley, zotero
-            return storage_branch_name = 'list_id'
+        this case check for mendeley, zotero
         """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('mendeley')
         self.user_settings = self.user.get_addon('mendeley')
         self.external_account = MendeleyAccountFactory(provider_name='mendeley name')
@@ -171,6 +189,10 @@ class TestUtils(AdminTestCase):
         nt.assert_in('/mendeley name', list_name[0])
 
     def test_get_list_extend_storage_with_branch_name_is_folder_id(self):
+        """
+        this case check for owncloud, nextcloud
+        """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('owncloud')
         self.user_settings = self.user.get_addon('owncloud')
         self.external_account = OwnCloudAccountFactory(provider_name='owncloud name')
@@ -187,6 +209,10 @@ class TestUtils(AdminTestCase):
         nt.assert_in('/owncloud name', list_name[0])
 
     def test_get_list_extend_storage_with_branch_name_is_dataverse(self):
+        """
+        this case check for dataverse
+        """
+        ExternalAccount.objects.all().delete()
         self.user.add_addon('dataverse')
         self.user_settings = self.user.get_addon('dataverse')
         self.external_account = DataverseAccountFactory(provider_name='dataverse name')
