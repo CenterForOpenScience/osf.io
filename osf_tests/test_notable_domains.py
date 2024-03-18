@@ -320,7 +320,6 @@ class TestNotableDomainReclassification:
             note=NotableDomain.Note.IGNORED,
         )
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_unknown_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
@@ -339,7 +338,6 @@ class TestNotableDomainReclassification:
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert len(obj_one.spam_data['domains']) == 0
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_unknown_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
@@ -358,7 +356,6 @@ class TestNotableDomainReclassification:
         assert obj_two.spam_status == SpamStatus.SPAM
         assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_unknown_marked_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_three = factory()
@@ -379,7 +376,6 @@ class TestNotableDomainReclassification:
         assert obj_three.spam_status == SpamStatus.SPAM
         assert len(obj_three.spam_data['domains']) == 0
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_ignored_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
@@ -398,7 +394,6 @@ class TestNotableDomainReclassification:
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert len(obj_one.spam_data['domains']) == 0
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_ignored_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
@@ -417,7 +412,6 @@ class TestNotableDomainReclassification:
         assert obj_two.spam_status == SpamStatus.SPAM
         assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_ignored_makred_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_three = factory()
@@ -438,7 +432,6 @@ class TestNotableDomainReclassification:
         assert obj_three.spam_status == SpamStatus.SPAM
         assert len(obj_three.spam_data['domains']) == 0
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_unknown_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
@@ -457,7 +450,6 @@ class TestNotableDomainReclassification:
         assert obj_one.spam_status == SpamStatus.SPAM
         assert set(obj_one.spam_data['domains']) == set([self.unknown_domain.netloc])
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_unknown_to_spam_unknown_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
@@ -476,7 +468,6 @@ class TestNotableDomainReclassification:
         assert obj_two.spam_status == SpamStatus.SPAM
         assert set(obj_two.spam_data['domains']) == set([self.unknown_domain.netloc])
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_ignored_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
@@ -495,7 +486,6 @@ class TestNotableDomainReclassification:
         assert obj_one.spam_status == SpamStatus.SPAM
         assert set(obj_one.spam_data['domains']) == set([self.ignored_domain.netloc])
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_ignored_to_spam_ignored_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()

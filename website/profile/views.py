@@ -19,7 +19,8 @@ from framework.auth.views import send_confirm_email
 from framework.auth.signals import (
     user_account_merged,
     user_account_deactivated,
-    user_account_reactivated
+    user_account_reactivated,
+    user_update_mailchimp_subscription
 )
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
@@ -45,7 +46,6 @@ from osf.external.messages.celery_publishers import (
     publish_deactivated_user,
     publish_merged_user
 )
-
 
 from api.waffle.utils import storage_i18n_flag_active
 
@@ -515,8 +515,8 @@ def user_choose_mailing_lists(auth, **kwargs):
     all_mailing_lists.update(user.osf_mailing_lists)
     return {'message': 'Successfully updated mailing lists', 'result': all_mailing_lists}, 200
 
-
-def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
+@user_update_mailchimp_subscription.connect
+def update_mailchimp_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -530,7 +530,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
             pass
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
+            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
         except (MailChimpError, OSFError):
             # User has already unsubscribed, so nothing to do
             pass
@@ -540,23 +540,6 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
 def send_account_merged_message(user):
     """ Sends a message using Celery messaging to alert other services that an osf.io user has been merged."""
     publish_merged_user(user)
-
-
-@user_account_deactivated.connect
-def send_mailchimp_unsubscribe(user):
-    """ Tells mailchimp a to unsubscribe a merged user """
-    if not settings.RUNNING_MIGRATION:
-        for key, value in user.mailchimp_mailing_lists.items():
-            update_mailchimp_subscription(user, list_name=key, subscription=False, send_goodbye=False)
-
-
-@user_account_merged.connect
-def send_mailchimp_merge(user):
-    """ Tells mailchimp a to merge a users subscriptions """
-    if not settings.RUNNING_MIGRATION:
-        for key, value in user.merged_by.mailchimp_mailing_lists.items():
-            subscription = value or user.merged_by.mailchimp_mailing_lists.get(key)
-            update_mailchimp_subscription(user, list_name=key, subscription=subscription, send_goodbye=False)
 
 
 @user_account_deactivated.connect

@@ -11,3 +11,4 @@ user_account_deactivated = signals.signal('user-account-deactivated')
 user_account_reactivated = signals.signal('user-account-reactivated')
 
 unconfirmed_user_created = signals.signal('unconfirmed-user-created')
+user_update_mailchimp_subscription = signals.signal('user-update-mailchimp-subscription')

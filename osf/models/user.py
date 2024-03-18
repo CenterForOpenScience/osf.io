@@ -746,6 +746,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured = user.notifications_configured.copy()
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
+        if not website_settings.RUNNING_MIGRATION:
+            for key, value in user.mailchimp_mailing_lists.items():
+                # subscribe to each list if either user was subscribed
+                subscription = value or self.mailchimp_mailing_lists.get(key)
+                signals.user_update_mailchimp_subscription.send(self, list_name=key, subscription=subscription)
+
+                # clear subscriptions for merged user
+                signals.user_update_mailchimp_subscription.send(user, list_name=key, subscription=False)
+
         for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
                 self.comments_viewed_timestamp[target_id] = timestamp
@@ -979,6 +988,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
         self.is_disabled = True
+        self.save()
+        signals.user_account_deactivated.send(self)
 
         # we must call both methods to ensure the current session is cleared and all existing
         # sessions are revoked.
@@ -986,7 +997,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
-        signals.user_account_deactivated.send(self)
 
     def reactivate_account(self):
         """
