@@ -15,7 +15,7 @@ factory-boy==2.10.0
 webtest-plus==0.3.3
 mock==2.0.0
 Faker==4.0.1
-schema==0.3.1
+schema==0.7.5
 responses==0.10.6
 
 # Syntax checking
