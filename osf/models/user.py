@@ -750,10 +750,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             for key, value in user.mailchimp_mailing_lists.items():
                 # subscribe to each list if either user was subscribed
                 subscription = value or self.mailchimp_mailing_lists.get(key)
-                signals.user_merged.send(self, list_name=key, subscription=subscription)
+                signals.user_update_mailchimp_subscription.send(self, list_name=key, subscription=subscription)
 
                 # clear subscriptions for merged user
-                signals.user_merged.send(user, list_name=key, subscription=False)
+                signals.user_update_mailchimp_subscription.send(user, list_name=key, subscription=False)
 
         for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
@@ -872,9 +872,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
-        from osf.external.messages.celery_publishers import publish_deactivated_user, publish_merged_user
-        publish_deactivated_user(self)
-        publish_merged_user(self)
+        signals.user_account_merged.send(user)
+        signals.user_account_deactivated.send(self)
 
     def _merge_users_preprints(self, user):
         """
@@ -989,6 +988,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
         self.is_disabled = True
+        signals.user_account_deactivated.send(self)
 
         # we must call both methods to ensure the current session is cleared and all existing
         # sessions are revoked.
@@ -996,8 +996,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
-        from osf.external.messages.celery_publishers import publish_deactivated_user
-        publish_deactivated_user(self)
 
     def reactivate_account(self):
         """
@@ -1007,8 +1005,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.requested_deactivation = False
         from website.mailchimp_utils import subscribe_on_confirm
         subscribe_on_confirm(self)
-        from osf.external.messages.celery_publishers import publish_reactivate_user
-        publish_reactivate_user(self)
+        signals.user_account_reactivated.send(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that

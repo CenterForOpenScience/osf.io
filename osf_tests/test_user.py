@@ -17,7 +17,7 @@ import pytz
 from importlib import import_module
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
-from framework.auth.signals import user_merged
+from framework.auth.signals import user_account_merged, user_account_deactivated, user_update_mailchimp_subscription
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.celery_tasks import handlers
@@ -1507,7 +1507,7 @@ class TestMergingUsers:
 
         with capture_signals() as mock_signals:
             merge_dupe()
-            assert mock_signals.signals_sent() == set([user_merged])
+            assert mock_signals.signals_sent() == set([user_account_merged, user_account_deactivated, user_update_mailchimp_subscription])
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
