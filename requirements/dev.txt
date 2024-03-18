@@ -24,7 +24,7 @@ flake8-mutable==1.2.0
 pre-commit==1.10.5
 
 # Django Debug Toolbar for local development
-django-debug-toolbar==3.2.4
+django-debug-toolbar==4.3.0
 
 # Ipdb
 ipdb==0.10.1
@@ -36,4 +36,4 @@ pydevd==0.0.6
 nplusone==0.8.2
 
 # Profiling
-django-silk==4.2.0  # pyup: <3.0 # Remove this when we're using MIDDLEWARE
+django-silk==5.1.0

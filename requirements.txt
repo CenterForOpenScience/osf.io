@@ -52,7 +52,7 @@ raven==6.10.0
 django-redis==5.4.0
 
 # API requirements
-Django==3.2.24
+Django==3.2.25
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 djangorestframework-bulk==0.2.1
@@ -84,7 +84,6 @@ google-cloud-storage==2.14.0  # dependency of django-storages, hard-pin to versi
 django-dirtyfields==1.9.2
 django-extensions==3.2.3
 psycopg2==2.9.9 --no-binary psycopg2
-django-bulk-update==2.2.0
 
 # Reviews requirements
 transitions==0.8.2
