@@ -72,6 +72,7 @@ def get_bannable_urls(instance):
     return bannable_urls, parsed_absolute_url.hostname
 
 
+# this task is not runnable with celery as instance is not json serializable
 @app.task(max_retries=5, default_retry_delay=60)
 def ban_url(instance):
     # TODO: Refactor; Pull url generation into postcommit_task handling so we only ban urls once per request
