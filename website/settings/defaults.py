@@ -411,7 +411,7 @@ class CeleryConfig:
     task_med_queue = 'med'
     task_high_queue = 'high'
     task_remote_computing_queue = 'remote'
-    account_status_changes = 'account_status_changes'
+    task_account_status_changes_queue = 'account_status_changes'
 
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
@@ -489,7 +489,7 @@ class CeleryConfig:
                   routing_key=task_med_queue, consumer_arguments={'x-priority': 1}),
             Queue(task_high_queue, Exchange(task_high_queue),
                   routing_key=task_high_queue, consumer_arguments={'x-priority': 10}),
-            Queue(account_status_changes, Exchange(account_status_changes), routing_key=account_status_changes)
+            Queue(task_account_status_changes_queue, Exchange(task_account_status_changes_queue), routing_key=task_account_status_changes_queue)
         )
 
         task_default_exchange_type = 'direct'
