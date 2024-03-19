@@ -546,12 +546,9 @@ def unsubscribe_old_merged_account_from_mailchimp(user):
     """ This is a merged account (an old account that was merged into an active one) so it needs to be unsubscribed
     from mailchimp."""
     if not settings.RUNNING_MIGRATION:
-        for key, value in user.merged_by.mailchimp_mailing_lists.items():
-            # subscribe to each list if either user was subscribed
-            subscription = value or user.mailchimp_mailing_lists.get(key)
-            update_mailchimp_subscription(user, list_name=key, subscription=subscription)
-
-            # clear subscriptions for merged user
+        for key, value in user.mailchimp_mailing_lists.items():
+            if value:
+                update_mailchimp_subscription(user, list_name=key, subscription=key)
             update_mailchimp_subscription(user.merged_by, list_name=key, subscription=False)
 
 
