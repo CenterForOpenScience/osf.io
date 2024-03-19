@@ -21,8 +21,7 @@ ALL_SIGNALS = [  # TODO: Fix
     auth.user_account_deactivated,
     auth.user_account_reactivated,
     auth.user_account_merged,
-    auth.user_update_mailchimp_subscription,
-    auth.unconfirmed_user_created,
+`    auth.unconfirmed_user_created,
     event.file_updated,
     conference.osf4m_user_created,
     reviews.reviews_email
