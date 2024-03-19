@@ -864,7 +864,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         user.save()
         signals.user_account_merged.send(user)
-        signals.user_account_deactivated.send(self)
 
     def _merge_users_preprints(self, user):
         """
