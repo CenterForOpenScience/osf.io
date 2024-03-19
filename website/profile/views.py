@@ -542,24 +542,23 @@ def send_account_merged_message(user):
 
 
 @user_account_merged.connect
-def unsubscribe_merge_account_from_mailchimp(user):
-    """ Sends a message using Celery messaging to alert other services that an osf.io user has been deactivated."""
-    for key, value in user.merged_by.mailchimp_mailing_lists.items():
-        if value:
-            mailchimp_utils.subscribe_mailchimp(key, user._id, username=user.username)
+def unsubscribe_old_merged_account_from_mailchimp(user):
+    """ This is a merged account (an old account that was merged into an active one) so it needs to be unsubscribed
+    from mailchimp."""
+    if not settings.RUNNING_MIGRATION:
+        for key, value in user.merged_by.mailchimp_mailing_lists.items():
+            # subscribe to each list if either user was subscribed
+            subscription = value or user.mailchimp_mailing_lists.get(key)
+            update_mailchimp_subscription(user, list_name=key, subscription=subscription)
+
+            # clear subscriptions for merged user
+            update_mailchimp_subscription(user.merged_by, list_name=key, subscription=False)
 
 
 @user_account_deactivated.connect
 def send_account_deactivation_message(user):
     """ Sends a message using Celery messaging to alert other services that an osf.io user has been deactivated."""
     publish_deactivated_user(user)
-
-
-@user_account_deactivated.connect
-def unsubscribe_deactivated_account_from_mailchimp(user):
-    """ Sends a message using Celery messaging to alert other services that an osf.io user has been deactivated."""
-    for key, value in user.mailchimp_mailing_lists.items():
-        mailchimp_utils.unsubscribe_mailchimp_async(key, user._id, username=user.username)
 
 
 @user_account_reactivated.connect
