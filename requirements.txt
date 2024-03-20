@@ -52,13 +52,13 @@ raven==6.10.0
 django-redis==5.4.0
 
 # API requirements
-Django==3.2.24
+Django==3.2.25
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 djangorestframework-bulk==0.2.1
 hashids==1.3.1
 pyjwt==2.8.0
-django-celery-beat==2.1.0
+django-celery-beat==2.5.0
 django-celery-results==2.5.1
 pyjwe==1.0.0
 # Required by pyjwe and ndg-httpsclient
@@ -84,7 +84,6 @@ google-cloud-storage==2.14.0  # dependency of django-storages, hard-pin to versi
 django-dirtyfields==1.9.2
 django-extensions==3.2.3
 psycopg2==2.9.9 --no-binary psycopg2
-django-bulk-update==2.2.0
 
 # Reviews requirements
 transitions==0.8.2
@@ -101,5 +100,5 @@ colorlog==6.8.2
 git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl
 
 # Impact Metrics CSV Export
-djangorestframework-csv==2.1.0
+djangorestframework-csv==3.0.2
 gevent==23.9.1
