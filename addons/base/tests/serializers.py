@@ -48,7 +48,7 @@ class AddonSerializerTestSuiteMixin:
         self.set_user_settings(self.user)
         assert getattr(self, 'user_settings') is not None, "'set_user_settings' should set the 'user_settings' attribute of the instance to an instance of \
              the appropriate user settings model."
-        
+
         self.set_node_settings(self.user_settings)
         assert getattr(self, 'node_settings') is not None, "'set_node_settings' should set the 'user_settings' attribute of the instance to an instance of \
             the appropriate node settings model."

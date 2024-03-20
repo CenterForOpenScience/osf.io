@@ -499,7 +499,7 @@ class TestUploadFileHook(HookTestCase):
 
         assert res.status_code == 200
         assert res.json['status'] == 'success'
-        assert res.json['archive'] is False 
+        assert res.json['archive'] is False
 
     # def test_upload_update_deleted(self):
     #     pass
