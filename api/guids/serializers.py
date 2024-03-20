@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.urls import resolve, reverse
 

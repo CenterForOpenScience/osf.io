@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 import cachecontrol
 from github3 import GitHub, GitHubError

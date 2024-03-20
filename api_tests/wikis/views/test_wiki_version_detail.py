@@ -2,7 +2,7 @@ from unittest import mock
 from furl import furl
 import datetime
 import pytz
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 

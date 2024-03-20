@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import quote, unquote
+from urllib.parse import quote, unquote
 
 from framework.utils import sanitize_html
 

@@ -1,6 +1,6 @@
 import hmac
 import uuid
-from future.moves.urllib.parse import unquote_plus
+from urllib.parse import unquote_plus
 import hashlib
 from rest_framework import status as http_status
 from github3.repos.branch import Branch

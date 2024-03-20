@@ -1,7 +1,7 @@
 from importlib import import_module
 
 from rest_framework import status as http_status
-from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone

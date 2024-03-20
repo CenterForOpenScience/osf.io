@@ -5,7 +5,7 @@ from unittest import mock
 import shutil
 import tempfile
 import xml
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from django.utils import timezone
 
 from scripts import generate_sitemap

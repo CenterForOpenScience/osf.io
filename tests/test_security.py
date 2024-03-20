@@ -1,4 +1,3 @@
-from past.builtins import basestring
 
 from framework.encryption import encrypt, decrypt
 from website import security
@@ -6,7 +5,7 @@ from website import security
 
 def test_random_string():
     s = security.random_string(length=30)
-    assert isinstance(s, basestring)
+    assert isinstance(s, str)
     assert len(s) == 30
     s2 = security.random_string(30)
     assert s != s2

@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import requests
-from future.moves.urllib.parse import unquote
+from urllib.parse import unquote
 
 from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context

@@ -1,9 +1,8 @@
-from past.builtins import basestring
 import functools
 import itertools
 import logging
 import re
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import warnings
 from rest_framework import status as http_status
 
@@ -148,7 +147,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, basestring):
+            if not isinstance(private_link, str):
                 raise TypeError(f'"private_link" must be either {str} or {PrivateLink}. Got {private_link!r}')
 
             return self.filter(private_links__is_deleted=False, private_links__key=private_link).filter(is_deleted=False)
