@@ -1,7 +1,7 @@
 import logging
 import datetime
 import html
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
 from django.db import models

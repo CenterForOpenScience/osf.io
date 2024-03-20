@@ -5,7 +5,7 @@ import pkgutil
 import pytest
 from pytz import utc
 from datetime import datetime
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 
 import re
 

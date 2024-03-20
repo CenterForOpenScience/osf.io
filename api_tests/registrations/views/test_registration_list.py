@@ -3,7 +3,7 @@ from django.utils import timezone
 from unittest import mock
 import pytest
 
-from future.moves.urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION

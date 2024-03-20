@@ -1,5 +1,5 @@
 from django.utils import timezone
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from unittest import mock
 import pytest
 from rest_framework import exceptions

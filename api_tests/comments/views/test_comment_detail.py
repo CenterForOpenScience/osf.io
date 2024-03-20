@@ -1,6 +1,6 @@
 from unittest import mock
 import pytest
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from addons.wiki.tests.factories import WikiFactory
 from api.base.settings.defaults import API_BASE

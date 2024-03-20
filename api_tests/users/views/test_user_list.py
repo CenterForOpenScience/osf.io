@@ -5,7 +5,7 @@ from django.conf import settings as django_conf_settings
 from unittest import mock
 import pytest
 import unittest
-from future.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from uuid import UUID
 
 from api.base.settings.defaults import API_BASE

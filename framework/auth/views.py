@@ -1,6 +1,6 @@
 import furl
 from rest_framework import status as http_status
-from future.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 import markupsafe
 from django.core.exceptions import ValidationError

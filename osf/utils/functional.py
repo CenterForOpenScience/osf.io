@@ -1,4 +1,3 @@
-from past.builtins import basestring
 import collections
 
 # Function courtesy of @brianjgeiger and @abought
@@ -12,7 +11,7 @@ def rapply(data, func, *args, **kwargs):
             key: rapply(value, func, *args, **kwargs)
             for key, value in data.items()
         }
-    elif isinstance(data, collections.abc.Iterable) and not isinstance(data, basestring):
+    elif isinstance(data, collections.abc.Iterable) and not isinstance(data, str):
         desired_type = type(data)
         return desired_type(
             rapply(item, func, *args, **kwargs) for item in data

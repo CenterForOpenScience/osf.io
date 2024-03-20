@@ -1,5 +1,4 @@
 import pytest
-from past.builtins import basestring
 from unittest import mock
 from django.utils import timezone
 
@@ -49,7 +48,7 @@ class TestStoredFileNode(FilesTestCase):
 
     def test_deep_url(self):
         url = self.test_file.deep_url
-        assert isinstance(url, basestring)
+        assert isinstance(url, str)
         assert self.node._id in url
         assert self.test_file.path in url
         assert self.test_file.provider in url
@@ -58,7 +57,7 @@ class TestStoredFileNode(FilesTestCase):
         self.test_file.path = '༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
         self.test_file.save()
         url = self.test_file.deep_url
-        assert isinstance(url, basestring)
+        assert isinstance(url, str)
         assert self.node._id in url
         # Path is url encode
         # assert_in(self.sfn.path, url)
@@ -469,7 +468,7 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name',
         )
 
-        assert isinstance(child.__repr__(), basestring)
+        assert isinstance(child.__repr__(), str)
 
 
 class TestFileObj(FilesTestCase):

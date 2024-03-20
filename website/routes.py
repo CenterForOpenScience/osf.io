@@ -1,7 +1,7 @@
 import os
 from rest_framework import status as http_status
 import requests
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import json
 
 import waffle

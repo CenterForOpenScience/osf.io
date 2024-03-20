@@ -5,7 +5,7 @@ import datetime
 import gzip
 import os
 import shutil
-from future.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 import xml
 
 import django

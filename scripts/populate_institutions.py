@@ -4,7 +4,7 @@
 import argparse
 import logging
 import sys
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 
 import django
 from django.db import transaction

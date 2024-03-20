@@ -3,7 +3,7 @@ from rest_framework import status as http_status
 import os
 import uuid
 import markupsafe
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 from django.utils import timezone
 
 from flask import make_response

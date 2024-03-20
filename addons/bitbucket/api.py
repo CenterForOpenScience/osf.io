@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 from addons.bitbucket import settings
 

@@ -1,5 +1,5 @@
 import pytest
-from future.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from unittest import mock
 import responses
 from rest_framework import status as http_status
