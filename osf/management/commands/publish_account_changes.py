@@ -28,7 +28,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         user_guid = options['user_guid']
-        user = OSFUser.objects.get(guids___id=user_guid)
+        user = OSFUser.load(user_guid)
         action = options['action']
 
         # Using a mapping of action to function to simplify the control flow

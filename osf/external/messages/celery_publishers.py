@@ -31,8 +31,8 @@ def publish_merged_user(user):
         _publish_user_status_change.s(
             body={
                 'action': 'merge',
-                'into_user_uri': user.get_semantic_iri(),
-                'from_user_uri': user.merged_by.get_semantic_iri(),
+                'into_user_uri': user.merged_by.get_semantic_iri(),
+                'from_user_uri': user.get_semantic_iri(),
             },
         )
     )
