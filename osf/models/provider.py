@@ -407,17 +407,6 @@ class PreprintProvider(AbstractProvider):
             return rules_to_subjects(self.subjects_acceptable)
 
     @property
-    def has_highlighted_subjects(self):
-        return self.subjects.filter(highlighted=True).exists()
-
-    @property
-    def highlighted_subjects(self):
-        if self.has_highlighted_subjects:
-            return self.subjects.filter(highlighted=True).order_by('text')
-        else:
-            return sorted(self.top_level_subjects, key=lambda s: s.text)
-
-    @property
     def top_level_subjects(self):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
