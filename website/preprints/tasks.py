@@ -39,7 +39,7 @@ def should_update_preprint_identifiers(preprint, saved_fields):
 
 def update_or_create_preprint_identifiers(preprint):
     try:
-        preprint.request_identifier_update(category='doi')
+        preprint.request_identifier_update(category='doi', create=True)
     except HTTPError as err:
         sentry.log_exception()
         sentry.log_message(err.args[0])
