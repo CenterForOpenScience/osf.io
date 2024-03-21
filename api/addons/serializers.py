@@ -44,7 +44,8 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
 
 class AddonSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
-        'categories',
+        'category',
+        'name',
     ])
 
     class Meta:
@@ -54,7 +55,10 @@ class AddonSerializer(JSONAPISerializer):
     name = ser.CharField(source='full_name', read_only=True)
     description = ser.CharField(read_only=True)
     url = ser.CharField(read_only=True)
-    categories = ser.ListField(read_only=True)
+    category = ser.SerializerMethodField(read_only=True)
+
+    def get_category(self, obj):
+        return obj.categories[0]
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

@@ -263,7 +263,19 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
     Overrides UserSerializer to make id required.
     """
     id = ser.CharField(source='config.short_name', read_only=True)
+    name = ser.CharField(read_only=True)
     user_has_auth = ser.BooleanField(source='has_auth', read_only=True)
+    category = ser.SerializerMethodField(read_only=True)
+
+    def get_category(self, obj):
+        return obj.config.categories[0]
+
+    filterable_fields = frozenset([
+        'id',
+        'name',
+        'node_has_auth',
+        'category',
+    ])
 
     links = LinksField({
         'self': 'get_absolute_url',

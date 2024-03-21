@@ -913,16 +913,36 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
         def get_type(request):
             return get_kebab_snake_case_field(request.version, 'node-addons')
 
-    id = ser.CharField(source='config.short_name', read_only=True)
+    filterable_fields = frozenset([
+        'id',
+        'name',
+        'node_has_auth',
+        'configured',
+        'folder_id',
+        'category',
+    ])
+
+    id = ser.SerializerMethodField(read_only=True)
+    name = ser.CharField(read_only=True)
     node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
     configured = ser.BooleanField(read_only=True)
     external_account_id = ser.CharField(source='external_account._id', required=False, allow_null=True)
     folder_id = ser.CharField(required=False, allow_null=True)
     folder_path = ser.CharField(required=False, allow_null=True)
+    category = ser.SerializerMethodField(read_only=True)
+
+    def get_category(self, obj):
+        return obj.config.categories[0]
 
     # Forward-specific
     label = ser.CharField(required=False, allow_blank=True)
     url = ser.URLField(required=False, allow_blank=True)
+
+    provider = RelationshipField(
+        read_only=True,
+        related_view='addons:addon-detail',
+        related_view_kwargs={'provider_id': '<config.short_name>'},
+    )
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -938,12 +958,21 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
             kwargs=kwargs,
         )
 
+    def get_id(self, obj):
+        return f'{obj.owner._id}-{obj.config.short_name}'
+
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-        addon = self.context['request'].parser_context['kwargs']['provider']
+        addon = self.context['request'].parser_context['kwargs'].get('provider')
+        if not addon:
+            addon = validated_data.get('provider')
+
+        if not addon:
+            raise exceptions.NotFound('Requested addon not found')
 
         return node.get_or_add_addon(addon, auth=auth)
+
 
 class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
@@ -1002,6 +1031,15 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
 
 class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
+
+    filterable_fields = frozenset([
+        'id',
+        'name',
+        'node_has_auth',
+        'configured',
+        'folder_id',
+        'category',
+    ])
 
     def check_for_update_errors(self, node_settings, folder_info, external_account_id):
         if (not node_settings.has_auth and folder_info and not external_account_id):

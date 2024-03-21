@@ -1,4 +1,5 @@
 import re
+import io
 
 from distutils.version import StrictVersion
 from django.apps import apps
@@ -11,6 +12,9 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
 from addons.base.exceptions import InvalidAuthError
+from api.base.parsers import JSONSchemaParser
+from api.nodes.schemas import create_addon_payload
+
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
@@ -1342,7 +1346,7 @@ class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
         return context
 
 
-class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):
+class NodeAddonList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addons_list).
 
     """
@@ -1355,24 +1359,49 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     )
 
     required_read_scopes = [CoreScopes.NODE_ADDON_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
 
     serializer_class = NodeAddonSettingsSerializer
     view_category = 'nodes'
     view_name = 'node-addons'
+    ordering_field = ('name',)
 
-    ordering = ('-id',)
+    create_payload_schema = create_addon_payload
 
     def get_default_queryset(self):
         qs = []
         for addon in ADDONS_OAUTH:
             obj = self.get_addon_settings(provider=addon, fail_if_absent=False, check_object_permissions=False)
+            # Since there's no queryset, just a list, we have to map short_name to it's serializer field.
             if obj:
+                obj.name = obj.config.short_name
                 qs.append(obj)
-        sorted(qs, key=lambda addon: addon.id, reverse=True)
+
         return qs
 
-    get_queryset = get_default_queryset
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        request_json = JSONSchemaParser().parse(
+            io.BytesIO(self.request.body),
+            parser_context={
+                'request': self.request,
+                'json_schema': self.create_payload_schema,
+            },
+        )
+        addon = request_json['data']['relationships']['provider']['data']['id']
+        serializer.validated_data['provider'] = addon
+        if addon not in ADDONS_OAUTH:
+            raise NotFound('Requested addon unavailable')
+
+        node = self.get_node()
+        if node.has_addon(addon):
+            raise InvalidModelValueError(
+                detail='Add-on {} already enabled for node {}'.format(addon, node._id),
+            )
+
+        return super().perform_create(serializer)
 
 
 class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin, AddonSettingsMixin):
