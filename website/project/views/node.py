@@ -320,6 +320,7 @@ def node_setting(auth, node, **kwargs):
 @must_not_be_registration
 @must_be_logged_in
 @must_have_permission(WRITE)
+@ember_flag_is_active(features.ENABLE_GV)
 def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
