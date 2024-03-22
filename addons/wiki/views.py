@@ -1163,7 +1163,7 @@ def _wiki_import_create_or_update(path, data, auth, node, task, p_wname=None, **
     updated_wiki_id = None
     # normalize NFC
     data = unicodedata.normalize('NFC', data)
-    wiki_name = os.path.splitext(os.path.basename(unicodedata.normalize('NFC', path)))[0]
+    wiki_name = os.path.basename(unicodedata.normalize('NFC', path))
     ret = {}
     if p_wname:
         p_wname = unicodedata.normalize('NFC', p_wname)
