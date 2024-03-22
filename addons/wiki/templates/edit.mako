@@ -43,7 +43,7 @@
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
                             <i class="fa fa-plus text-success"></i><span>${_("New")}</span>
                         </div>
-                        % if len(sortable_pages) > 1:
+                        % if sortable_pages_ctn > 1:
                             <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#sortWiki">
                                 <i class="fa fa-sort text-info"></i><span>${_("Reorder")}</span>
                             </div>
