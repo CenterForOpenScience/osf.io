@@ -45,7 +45,7 @@ except AssertionError:  # Routes have already been set up
 rm_handlers(test_app, django_handlers)
 rm_handlers(test_app, celery_handlers)
 
-test_app.testing = True
+test_app.config['TESTING'] = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
