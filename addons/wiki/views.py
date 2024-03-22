@@ -337,9 +337,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             import_dirs.append(dict)
 
     alive_task_id = WikiImportTask.objects.values_list('task_id').filter(status=WikiImportTask.STATUS_RUNNING, node=node)
-
-    pages_current = _get_wiki_pages_latest(node)
-    sortable_pages = [item for item in pages_current if item['name'] != 'home']
+    sortable_pages_ctn = node.wikis.filter(deleted__isnull=True).exclude(page_name='home').count()
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
@@ -359,7 +357,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'is_current': is_current,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_latest(node),
-        'sortable_pages': sortable_pages,
+        'sortable_pages_ctn': sortable_pages_ctn,
         'category': node.category,
         'panels_used': panels_used,
         'num_columns': num_columns,
