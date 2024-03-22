@@ -10,7 +10,7 @@
                 <div class="modal-body" style="height: 550px; overflow: auto;">
                     <h3 style="padding: 10px; border-bottom: 2px solid #ddd;">${_("Wiki Tree")}</h3>
                     <div id="manageWikitree" class="scripted">
-                        <ul style="margin-top: 25px;" data-bind="sortable: {template: 'wikitreeRow', data: $root.data, afterMove: $root.afterMove}"></ul>
+                        <ul style="margin-top: 25px;" data-bind="sortable: {template: 'wikitreeRow', data: $root.data, afterMove: $root.afterMove, beforeMove: $root.beforeMove}"></ul>
                     </div>
                 </div><!-- end modal-body -->
                 <div class="modal-footer" style="border-top: 1px solid #e5e5e5">
@@ -37,7 +37,7 @@
     </div>
     <!-- /ko -->
     <!-- ko if: $data.children() -->
-    <ul class="sort-children" data-bind="sortable: { template: 'wikitreeRow', data: $data.children, afterMove: $root.afterMove}"></ul>
+    <ul class="sort-children" data-bind="sortable: { template: 'wikitreeRow', data: $data.children, afterMove: $root.afterMove, beforeMove: $root.beforeMove}"></ul>
     <!-- /ko -->
   </li>
 </script>
