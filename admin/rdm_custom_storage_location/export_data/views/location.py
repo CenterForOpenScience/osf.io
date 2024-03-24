@@ -128,8 +128,8 @@ class ExportStorageLocationInstitutionListView(ExportStorageLocationViewBaseView
     template_name = 'rdm_custom_storage_location/export_data_storage_location_list_institutions.html'
     paginate_by = 25
     ordering = 'name'
-    permission_required = 'osf.view_institution'
     model = Institution
+    raise_exception = False
 
     def test_func(self):
         """ Check user permissions """
@@ -158,7 +158,17 @@ class TestConnectionView(ExportStorageLocationViewBaseView, View):
     """ View for testing the credentials to connect to a provider.
     Called when clicking the 'Connect' Button.
     """
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
+        institution_id = kwargs.get('institution_id', None)
+        institution_id = int(institution_id) if institution_id else None
+        if institution_id:
+            institution = Institution.objects.filter(id=institution_id, is_deleted=False).first()
+            if not institution:
+                return JsonResponse({'message': INSTITUTION_NOT_FOUND_MESSAGE}, status=http_status.HTTP_404_NOT_FOUND)
+        if request.user.is_institutional_admin:
+            if institution_id and institution.id != institution_id:
+                return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
+
         data = json.loads(request.body)
 
         provider_short_name = data.get('provider_short_name')
@@ -190,8 +200,13 @@ class TestConnectionView(ExportStorageLocationViewBaseView, View):
                 provider_short_name,
             )
         elif provider_short_name == 'dropboxbusiness':
-            institution = request.user.affiliated_institutions.first()
-            result = export_data_utils.test_dropboxbusiness_connection(institution)
+            if request.user.is_institutional_admin:
+                institution = request.user.affiliated_institutions.first()
+                result = export_data_utils.test_dropboxbusiness_connection(institution)
+            elif request.user.is_super_admin and institution_id:
+                result = export_data_utils.test_dropboxbusiness_connection(institution)
+            else:
+                result = ({'message': 'Can not setting Dropbox business.'}, http_status.HTTP_400_BAD_REQUEST)
 
         else:
             result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
@@ -210,6 +225,7 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
         institution = None
 
         institution_id = kwargs.get('institution_id', None)
+        institution_id = int(institution_id) if institution_id else None
         if self.is_super_admin:
             if institution_id:
                 institution = Institution.objects.filter(id=institution_id, is_deleted=False).first()
@@ -300,20 +316,23 @@ class DeleteCredentialsView(ExportStorageLocationViewBaseView, View):
                                         'dropboxbusiness', 'nextcloudinstitutions']
         location_id = self.kwargs.get('location_id')
         institution_id = self.kwargs.get('institution_id')
+        institution = None
+        if institution_id:
+            institution = Institution.objects.filter(id=institution_id, is_deleted=False).first()
+            if not institution:
+                # Raise 404 Not Found
+                raise Http404
         self.storage_location = ExportDataLocation.objects.filter(pk=location_id).first()
         if self.storage_location:
-            if user.is_affiliated_institution:
+            if user.is_institutional_admin:
                 institution = user.affiliated_institutions.first()
                 self.institution_guid = institution.guid
-            elif institution_id:
-                institution = Institution.objects.filter(id=institution_id, is_deleted=False).first()
-                if not institution:
-                    # Raise 404 Not Found
-                    raise Http404
+            elif institution:
                 self.institution_guid = institution.guid
             return (self.storage_location.institution_guid == self.institution_guid)
         else:
-            return True
+            # Raise 404 Not Found if no location
+            raise Http404
 
     def delete(self, request, location_id, **kwargs):
         message = 'Do nothing'

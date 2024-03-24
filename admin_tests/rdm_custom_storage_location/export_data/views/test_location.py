@@ -539,7 +539,8 @@ class TestDeleteCredentialsView(AdminTestCase):
         self.request.user = self.user
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.id)
         view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=-1)
-        nt.assert_false(view.test_func())
+        with nt.assert_raises(Http404):
+            view.test_func()
 
     def test__test_func_super_admin_institution_not_exist(self):
         self.request.user = self.superuser
@@ -551,4 +552,5 @@ class TestDeleteCredentialsView(AdminTestCase):
     def test__test_func_no_storage_location(self):
         self.request.user = self.superuser
         view = setup_view(self.view, self.request)
-        nt.assert_true(view.test_func())
+        with nt.assert_raises(Http404):
+            view.test_func()

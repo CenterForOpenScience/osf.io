@@ -176,7 +176,7 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
-    fm = dropboxbusiness_utils.get_two_addon_options(institution.id)
+    fm = dropboxbusiness_utils.get_two_addon_options(institution.id, allowed_check=False)
     if fm is None:
         # Institution has no valid oauth keys.
         return  # disabled

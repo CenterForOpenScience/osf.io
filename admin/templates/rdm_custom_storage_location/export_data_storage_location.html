@@ -125,7 +125,9 @@
             'export_control': false,
             'restore_control': false,
             'is_location': true,
-            'institution_id': {{ institution.id }},
+            {% if institution %}
+                'institution_id': {{ institution.id }},
+            {% endif %}
         });
         window.page = {
             perPage: {{ page.paginator.per_page }},
