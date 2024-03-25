@@ -373,14 +373,45 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
 
         if first_subq_text:
             # the first subquestion has text, so this seems like an actual [sub]section
-            create_schema_block(
-                state,
-                rs.id,
-                block_type='subsection-heading' if sub else 'section-heading',
-                display_text=question.get('title', '') or question.get('description', ''),
-                schema_block_group_key=generate_object_id(),
-                registration_response_key=get_registration_response_key(question),
-            )
+            if question.get('type') == 'array':
+                schema_block_group_key = generate_object_id()
+                create_schema_block(
+                    state,
+                    rs.id,
+                    block_type='subsection-heading' if sub else 'section-heading',
+                    display_text=question.get('title', '') or question.get('description', ''),
+                    schema_block_group_key=schema_block_group_key,
+                )
+                create_schema_block(
+                    state,
+                    rs.id,
+                    block_type='array-input',
+                    schema_block_group_key=schema_block_group_key,
+                    registration_response_key=get_registration_response_key(question),
+                    required=question.get('required', False),
+                    pattern=question.get('pattern', None),
+                    space_normalization=question.get('space_normalization', False),
+                    required_if=question.get('required_if', None),
+                    message_required_if=question.get('message_required_if', None),
+                    enabled_if=question.get('enabled_if', None),
+                    suggestion=question.get('suggestion', None),
+                )
+            else:
+                create_schema_block(
+                    state,
+                    rs.id,
+                    block_type='subsection-heading' if sub else 'section-heading',
+                    display_text=question.get('title', '') or question.get('description', ''),
+                    schema_block_group_key=generate_object_id(),
+                    registration_response_key=get_registration_response_key(question),
+                    required=question.get('required', False),
+                    pattern=question.get('pattern', None),
+                    space_normalization=question.get('space_normalization', False),
+                    required_if=question.get('required_if', None),
+                    message_required_if=question.get('message_required_if', None),
+                    enabled_if=question.get('enabled_if', None),
+                    suggestion=question.get('suggestion', None),
+                )
         else:
             # the first subquestion has no text, so the "section" heading is better interpreted as a question label
             first_subquestion['title'] = question.get('title', '')

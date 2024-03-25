@@ -420,7 +420,8 @@ class RegistrationResponsesValidator:
                                      'file-data-number-input',
                                      'file-url-input', 'file-institution-ja-input',
                                      'file-institution-en-input',
-                                     'file-institution-id-input'):
+                                     'file-institution-id-input',
+                                     'array-input'):
             if self.required_fields and question.required:
                 return {
                     'type': 'string',
