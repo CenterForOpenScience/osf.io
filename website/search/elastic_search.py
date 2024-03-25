@@ -10,8 +10,8 @@ from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
-                            RequestError, TransportError, helpers)
+from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
+                           RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
 from osf.models import AbstractNode
@@ -130,7 +130,7 @@ def requires_search(func):
                 raise exceptions.SearchException(e.error)
             except TransportError as e:
                 # Catch and wrap generic uncaught ES error codes. TODO: Improve fix for https://openscience.atlassian.net/browse/OSF-4538
-                raise exceptions.SearchException(e.error)
+                raise exceptions.SearchException(e.errors)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
         raise exceptions.SearchUnavailableError('Failed to connect to elasticsearch')

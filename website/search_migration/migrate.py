@@ -6,7 +6,7 @@ import logging
 
 from django.db import connection
 from django.core.paginator import Paginator
-from elasticsearch2 import helpers
+from elasticsearch import helpers
 
 import website.search.search as search
 from website.search.elastic_search import client
@@ -24,6 +24,7 @@ from website.search.search import update_institution, bulk_update_collection_sub
 
 
 logger = logging.getLogger(__name__)
+
 
 def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.
