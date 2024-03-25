@@ -76,7 +76,7 @@ django-sendgrid-v5==1.2.3 # metadata says python 3.10 not supported, but tests p
 
 # Analytics requirements
 keen==0.7.0
-geoip2==4.8.0
+geoip2==4.7.0
 
 # OSF models
 django-typed-models==0.14.0
