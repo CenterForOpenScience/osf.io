@@ -24,13 +24,8 @@ from website.util import web_url_for, api_url_for, is_json_request, conjunct, ap
 from website.project import utils as project_utils
 from website.profile import utils as profile_utils
 
-try:
-    import magic  # noqa
-    LIBMAGIC_AVAILABLE = True
-except ImportError:
-    LIBMAGIC_AVAILABLE = False
-
 HERE = os.path.dirname(os.path.abspath(__file__))
+
 
 class TestTimeUtils(unittest.TestCase):
     def test_throttle_period_expired_no_timestamp(self):
