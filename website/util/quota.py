@@ -12,6 +12,7 @@ from osf.models import (
     ProjectStorageType
 )
 from django.utils import timezone
+from osf.utils.requests import check_select_for_update
 
 
 PROVIDERS = ['s3', 's3compat']
@@ -53,10 +54,16 @@ def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE):
     used = used_quota(user._id, storage_type)
 
     try:
-        user_quota = UserQuota.objects.get(
-            user=user,
-            storage_type=storage_type,
-        )
+        if check_select_for_update():
+            user_quota = UserQuota.objects.filter(
+                user=user,
+                storage_type=storage_type,
+            ).select_for_update().get()
+        else:
+            user_quota = UserQuota.objects.get(
+                user=user,
+                storage_type=storage_type,
+            )
         user_quota.used = used
         user_quota.save()
     except UserQuota.DoesNotExist:
@@ -215,10 +222,16 @@ def file_added(target, payload, file_node, storage_type):
     if file_size < 0:
         return
     try:
-        user_quota = UserQuota.objects.get(
-            user=target.creator,
-            storage_type=storage_type
-        )
+        if check_select_for_update():
+            user_quota = UserQuota.objects.filter(
+                user=target.creator,
+                storage_type=storage_type
+            ).select_for_update().get()
+        else:
+            user_quota = UserQuota.objects.get(
+                user=target.creator,
+                storage_type=storage_type
+            )
         user_quota.used += file_size
         user_quota.save()
     except UserQuota.DoesNotExist:
@@ -232,10 +245,16 @@ def file_added(target, payload, file_node, storage_type):
     FileInfo.objects.create(file=file_node, file_size=file_size)
 
 def node_removed(target, user, payload, file_node, storage_type):
-    user_quota = UserQuota.objects.filter(
-        user=target.creator,
-        storage_type=storage_type
-    ).first()
+    if check_select_for_update():
+        user_quota = UserQuota.objects.filter(
+            user=target.creator,
+            storage_type=storage_type
+        ).select_for_update().first()
+    else:
+        user_quota = UserQuota.objects.filter(
+            user=target.creator,
+            storage_type=storage_type
+        ).first()
     if user_quota is not None:
         if 'osf.trashed' not in file_node.type:
             logging.error('FileNode is not trashed, cannot update used quota!')
@@ -243,13 +262,19 @@ def node_removed(target, user, payload, file_node, storage_type):
 
         for removed_file in get_node_file_list(file_node):
             try:
-                file_info = FileInfo.objects.get(file=removed_file)
+                if check_select_for_update():
+                    file_info = FileInfo.objects.filter(file=removed_file).select_for_update().get()
+                else:
+                    file_info = FileInfo.objects.get(file=removed_file)
             except FileInfo.DoesNotExist:
                 logging.error('FileInfo not found, cannot update used quota!')
                 continue
 
-            file_size = min(file_info.file_size, user_quota.used)
-            user_quota.used -= file_size
+            user_quota.used -= file_info.file_size
+            if user_quota.used < 0:
+                user_quota.used = 0
+            file_info.file_size = 0
+            file_info.save()
         user_quota.save()
 
 def file_modified(target, user, payload, file_node, storage_type):
@@ -257,14 +282,24 @@ def file_modified(target, user, payload, file_node, storage_type):
     if file_size < 0:
         return
 
-    user_quota, _ = UserQuota.objects.get_or_create(
-        user=target.creator,
-        storage_type=storage_type,
-        defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
-    )
+    if check_select_for_update():
+        user_quota, _ = UserQuota.objects.select_for_update().get_or_create(
+            user=target.creator,
+            storage_type=storage_type,
+            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+        )
+    else:
+        user_quota, _ = UserQuota.objects.get_or_create(
+            user=target.creator,
+            storage_type=storage_type,
+            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+        )
 
     try:
-        file_info = FileInfo.objects.get(file=file_node)
+        if check_select_for_update():
+            file_info = FileInfo.objects.filter(file=file_node).select_for_update().get()
+        else:
+            file_info = FileInfo.objects.get(file=file_node)
     except FileInfo.DoesNotExist:
         file_info = FileInfo(file=file_node, file_size=0)
 
