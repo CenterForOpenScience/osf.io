@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 from website.util import api_v2_url
 
 from .base import BaseModel, ObjectIDMixin
-from .validators import validate_subject_hierarchy_length, validate_subject_highlighted_count
+from .validators import validate_subject_hierarchy_length
 
 class SubjectQuerySet(QuerySet):
     def include_children(self):
@@ -86,7 +86,6 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
 
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields() or []
-        validate_subject_highlighted_count(self.provider, bool('highlighted' in saved_fields and self.highlighted))
         if 'text' in saved_fields and self.pk and (self.preprints.exists() or self.abstractnodes.exists()):
             raise ValidationError('Cannot edit a used Subject')
         return super(Subject, self).save()
