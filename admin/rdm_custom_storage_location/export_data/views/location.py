@@ -142,7 +142,7 @@ class ExportStorageLocationInstitutionListView(ExportStorageLocationViewBaseView
 
     def get_queryset(self):
         """ GET: set to self.object_list """
-        return Institution.objects.all().order_by(self.ordering)
+        return Institution.objects.filter(is_deleted=False).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -226,12 +226,13 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
 
         institution_id = kwargs.get('institution_id', None)
         institution_id = int(institution_id) if institution_id else None
+        if institution_id is not None:
+            institution = Institution.objects.filter(id=institution_id, is_deleted=False).first()
+            if not institution:
+                # Return 404 Not Found
+                return JsonResponse({'message': INSTITUTION_NOT_FOUND_MESSAGE}, status=http_status.HTTP_404_NOT_FOUND)
         if self.is_super_admin:
-            if institution_id:
-                institution = Institution.objects.filter(id=institution_id, is_deleted=False).first()
-                if not institution:
-                    # Return 404 Not Found
-                    return JsonResponse({'message': INSTITUTION_NOT_FOUND_MESSAGE}, status=http_status.HTTP_404_NOT_FOUND)
+            if institution_id is not None:
                 institution_guid = institution.guid
         elif self.is_admin:
             institution = self.request.user.affiliated_institutions.first()
