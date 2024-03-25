@@ -10,7 +10,7 @@ import os
 from celery.canvas import Signature
 from celery.local import PromiseProxy
 from gevent.pool import Pool
-from flask import _app_ctx_stack as context_stack
+from flask import current_app, has_app_context
 
 from website import settings
 
@@ -71,7 +71,7 @@ def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=Tru
     """
     Any task queued with this function where celery=True will be run asynchronously.
     """
-    if context_stack.top and context_stack.top.app.testing:
+    if has_app_context() and current_app.config.get('TESTING', False):
         # For testing purposes only: run fn directly
         fn(*args, **kwargs)
     else:
