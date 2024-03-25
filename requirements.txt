@@ -24,6 +24,7 @@ python-dateutil==2.9.0
 pytz==2024.1
 bleach==6.1.0
 bleach[css]==6.1.0
+pillow==10.2.0
 Markupsafe==2.1.5
 blinker==1.7.0
 furl==2.1.3
@@ -75,7 +76,7 @@ django-sendgrid-v5==1.2.3 # metadata says python 3.10 not supported, but tests p
 
 # Analytics requirements
 keen==0.7.0
-maxminddb-geolite2==2018.703
+geoip2==4.7.0
 
 # OSF models
 django-typed-models==0.14.0
@@ -86,7 +87,7 @@ django-extensions==3.2.3
 psycopg2==2.9.9 --no-binary psycopg2
 
 # Reviews requirements
-transitions==0.8.2
+transitions==0.9.0
 
 # identifiers
 datacite==1.1.3
@@ -101,4 +102,4 @@ git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl
 
 # Impact Metrics CSV Export
 djangorestframework-csv==3.0.2
-gevent==23.9.1
+gevent==24.2.1
