@@ -1,7 +1,6 @@
 from django.db import IntegrityError
 from django.utils import timezone
 from unittest import mock
-from past.builtins import basestring
 import pytest
 
 from addons.osfstorage.models import Region
@@ -19,7 +18,7 @@ from website import mails, settings
 @pytest.mark.django_db
 def test_factory():
     inst = InstitutionFactory()
-    assert isinstance(inst.name, basestring)
+    assert isinstance(inst.name, str)
     assert len(inst.domains) > 0
     assert len(inst.email_domains) > 0
 

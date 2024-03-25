@@ -6,7 +6,6 @@
 # To install release requirements: inv requirements --release
 wheel==0.42.0
 setuptools<58.0.0
-future==1.0.0
 invoke==2.2.0
 Werkzeug==3.0.1
 Flask==3.0.2

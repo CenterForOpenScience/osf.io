@@ -7,7 +7,7 @@ import json
 import logging
 from unittest import mock
 import time
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
+from urllib.parse import urlparse, urljoin, parse_qs
 
 import responses
 import pytz

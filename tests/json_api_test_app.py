@@ -51,7 +51,7 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
         self.auth_type = 'basic'
 
     def get_wsgi_handler(self):
-        return StaticFilesHandler(WSGIHandler())
+        return StaticFilesHandler(WSGTestAppIHandler())
 
     # From django-webtest (MIT Licensed, see NOTICE for license details)
     def do_request(self, req, status, expect_errors):

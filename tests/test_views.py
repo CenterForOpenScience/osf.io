@@ -12,7 +12,7 @@ from unittest import mock
 from http.cookies import SimpleCookie
 
 import unittest
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from flask import request
 import pytest

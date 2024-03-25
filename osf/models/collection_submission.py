@@ -1,4 +1,3 @@
-from past.builtins import basestring
 import logging
 
 from django.db import models
@@ -370,7 +369,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         else:
             if collection_submission_id and collection_id:
                 try:
-                    if isinstance(data, basestring):
+                    if isinstance(data, str):
                         return (cls.objects.get(guid___id=collection_submission_id, collection__guids___id=collection_id) if not select_for_update
                                 else cls.objects.filter(guid___id=collection_submission_id, collection__guids___id=collection_id).select_for_update().get())
                 except cls.DoesNotExist:

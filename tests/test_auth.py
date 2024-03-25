@@ -4,7 +4,7 @@ import pytest
 import logging
 
 from unittest import mock
-from future.moves.urllib.parse import urlparse, quote
+from urllib.parse import urlparse, quote
 from rest_framework import status as http_status
 from flask import Flask
 from werkzeug.wrappers import Response

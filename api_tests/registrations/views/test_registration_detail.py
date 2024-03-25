@@ -1,7 +1,7 @@
 from unittest import mock
 import pytest
 import datetime
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from rest_framework import exceptions
 from django.utils import timezone

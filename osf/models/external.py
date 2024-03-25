@@ -8,8 +8,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 from flask import request
-from oauthlib.oauth2 import (AccessDeniedError, InvalidGrantError,
-    TokenExpiredError, MissingTokenError)
+from oauthlib.oauth2 import AccessDeniedError, InvalidGrantError, TokenExpiredError, MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
@@ -21,7 +20,6 @@ from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.settings import ADDONS_OAUTH_NO_REDIRECT
 from website.util import web_url_for
-from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +27,7 @@ OAUTH1 = 1
 OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
+
 
 class ExternalAccount(ObjectIDMixin, BaseModel):
     """An account on an external service.
@@ -97,7 +96,7 @@ class ExternalProviderMeta(abc.ABCMeta):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(with_metaclass(ExternalProviderMeta)):
+class ExternalProvider(ExternalProviderMeta):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
@@ -478,6 +477,7 @@ class ExternalProvider(with_metaclass(ExternalProviderMeta)):
         if self.expiry_time and self.account.expires_at:
             return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
+
 
 class BasicAuthProviderMixin:
     """
