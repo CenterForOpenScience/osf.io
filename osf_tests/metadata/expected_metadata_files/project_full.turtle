@@ -20,7 +20,7 @@
     dcterms:rightsHolder "Me",
         "You" ;
     dcterms:title "this is a project title!"@en ;
-    dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Dataset> ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#Dataset> ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
     dcat:accessService <http://localhost:5000> ;
     osf:contains <http://localhost:5000/w3ibb> ;
@@ -38,7 +38,7 @@
         "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
     dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
     dcterms:title "this is a preprint title!" ;
-    dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Preprint> ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#Preprint> ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> .
 
 <http://localhost:5000/w5ibb> a osf:Registration ;
@@ -50,7 +50,8 @@
     dcterms:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
     dcterms:rightsHolder "Me",
         "You" ;
-    dcterms:title "this is a project title!" .
+    dcterms:title "this is a project title!" ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#StudyRegistration> .
 
 <http://localhost:5000/w3ibb> a osf:File ;
     dcterms:created "2123-05-04" ;
@@ -110,6 +111,8 @@
     dcterms:identifier "http://localhost:5000" ;
     foaf:name "OSF" .
 
-<https://schema.datacite.org/meta/kernel-4.4/#Preprint> rdfs:label "Preprint"@en .
+<https://schema.datacite.org/meta/kernel-4/#Preprint> rdfs:label "Preprint"@en .
 
-<https://schema.datacite.org/meta/kernel-4.4/#Dataset> rdfs:label "Dataset"@en .
+<https://schema.datacite.org/meta/kernel-4/#Dataset> rdfs:label "Dataset"@en .
+
+<https://schema.datacite.org/meta/kernel-4/#StudyRegistration> rdfs:label "StudyRegistration"@en .

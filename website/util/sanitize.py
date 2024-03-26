@@ -1,5 +1,4 @@
-import bleach
-
+from framework.utils import sanitize_html
 from osf.utils.sanitize import is_iterable_but_not_string
 
 
@@ -22,7 +21,7 @@ def escape_html(data):
             for value in data
         ]
     if isinstance(data, str):
-        return bleach.clean(data)
+        return sanitize_html(data)
     return data
 
 

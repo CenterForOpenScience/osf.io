@@ -67,8 +67,7 @@ def owncloud_add_user_account(auth, **kwargs):
             'message': 'ownCloud Login failed.'
         }, http_status.HTTP_401_UNAUTHORIZED
 
-    provider = OwnCloudProvider(account=None, host=host.url,
-                            username=username, password=password)
+    provider = OwnCloudProvider(account=None, host=host.url, username=username, password=password)
     try:
         provider.account.save()
     except ValidationError:

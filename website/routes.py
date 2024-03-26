@@ -15,9 +15,8 @@ from flask import g
 from django.conf import settings as api_settings
 from django.utils.encoding import smart_str
 from werkzeug.http import dump_cookie
-
-
-from geolite2 import geolite2
+from geoip2.database import Reader
+from geoip2.errors import AddressNotFoundError
 
 from framework import status
 from framework import sentry
@@ -66,6 +65,7 @@ from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
 from api.waffle.utils import flag_is_active
 
+
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
@@ -80,6 +80,7 @@ def set_status_message(user):
             extra={}
         )
 
+
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -87,7 +88,11 @@ def get_globals():
     user = _get_current_user()
     set_status_message(user)
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.get_affiliated_institutions()] if user else []
-    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
+    try:
+        location = Reader('GeoLite2-City.mmdb').city(request.remote_addr)
+    except AddressNotFoundError:
+        location = None
+
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=request.host, is_deleted=False)._id
@@ -1808,7 +1813,7 @@ def make_url_map(app):
 
         @app.route('/assets/<filename>')
         def provider_static(filename):
-            return send_from_directory(provider_static_path, filename)
+            return send_from_directory(directory=provider_static_path, path=filename)
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():

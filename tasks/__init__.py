@@ -347,6 +347,8 @@ API_TESTS1 = [
     'api_tests/users',
 ]
 API_TESTS2 = [
+    'api_tests/cedar_metadata_records',
+    'api_tests/cedar_metadata_templates',
     'api_tests/chronos',
     'api_tests/meetings',
     'api_tests/metrics',

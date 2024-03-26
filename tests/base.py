@@ -3,12 +3,10 @@ import abc
 import datetime as dt
 import functools
 import logging
-import re
 import unittest
 import uuid
 
 import blinker
-import responses
 from unittest import mock
 import pytest
 
@@ -28,11 +26,9 @@ from website.notifications.listeners import (subscribe_contributor,
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
-from webtest_plus import TestApp
 
 from .json_api_test_app import JSONAPITestApp
 
-from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +45,7 @@ except AssertionError:  # Routes have already been set up
 rm_handlers(test_app, django_handlers)
 rm_handlers(test_app, celery_handlers)
 
-test_app.testing = True
+test_app.config['TESTING'] = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -112,7 +108,11 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.app = TestApp(test_app)
+        self.app = test_app.test_client()
+        self.app.config.update({'TESTING': True, })
+
+        logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
+
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return
@@ -167,7 +167,6 @@ class SearchTestCase(unittest.TestCase):
 
         from website.search import elastic_search
         elastic_search.delete_index(settings.ELASTIC_INDEX)
-
 
 
 class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
@@ -270,6 +269,7 @@ class ApiAddonTestCase(ApiTestCase):
 class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
 
+
 class NotificationTestCase(OsfTestCase):
     """An `OsfTestCase` to use when testing specific subscription behavior.
     Use when you'd like to manually create all Node subscriptions and subscriptions
@@ -365,8 +365,10 @@ def capture_signals():
     """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
     return CaptureSignals(ALL_SIGNALS)
 
+
 def assert_dict_contains_subset(a, b):
     assert set(a.items()).issubset(set(b.items()))
+
 
 def assert_is_redirect(response, msg='Response is a redirect.'):
     assert 300 <= response.status_code < 400, msg
@@ -374,8 +376,8 @@ def assert_is_redirect(response, msg='Response is a redirect.'):
 
 def assert_before(lst, item1, item2):
     """Assert that item1 appears before item2 in lst."""
-    assert_less(lst.index(item1), lst.index(item2),
-        f'{item1!r} appears before {item2!r}')
+    assert lst.index(item1) < lst.index(item2), f'{item1!r} appears before {item2!r}'
+
 
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""

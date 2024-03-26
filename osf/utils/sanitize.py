@@ -1,7 +1,7 @@
 import json
 import collections
 
-import bleach
+from framework.utils import sanitize_html
 
 
 def is_iterable(obj):
@@ -10,10 +10,10 @@ def is_iterable(obj):
 
 def is_iterable_but_not_string(obj):
     """Return True if ``obj`` is an iterable object that isn't a string."""
-    return (is_iterable(obj) and not hasattr(obj, 'strip'))
+    return is_iterable(obj) and not hasattr(obj, 'strip')
 
 
-def strip_html(unclean, tags=None):
+def strip_html(unclean: str | bytes, tags: set[str] = None):
     """Sanitize a string, removing (as opposed to escaping) HTML tags
 
     :param unclean: A string to be stripped of HTML tags
@@ -25,21 +25,19 @@ def strip_html(unclean, tags=None):
         unclean = unclean.decode()
 
     if not tags:
-        tags = []
+        tags = set()
 
     if unclean is None:
         return ''
     elif isinstance(unclean, dict) or isinstance(unclean, list):
-        # removed styles as this argument is removed in new versions of bleach
-        return bleach.clean(str(unclean), strip=True, tags=[], attributes=[])
+        return sanitize_html(str(unclean), strip=True, tags=set(), attributes=[], styles=set())
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
     # If it's not a string and not an iterable (string, list, dict, return unclean)
     elif not isinstance(unclean, str) and not is_iterable(unclean):
         return unclean
     else:
-        # removed styles as this argument is removed in new versions of bleach
-        return bleach.clean(unclean, strip=True, tags=tags, attributes=[])
+        return sanitize_html(unclean, strip=True, tags=tags, attributes=[], styles=set())
 
 
 # TODO: Remove unescape_entities when mako html safe comes in
@@ -119,18 +117,20 @@ def is_a11y(value_one, value_two='#FFFFFF', min_ratio=1 / 3):
     color_luminance_two = calculate_luminance(color_rgb_two)
 
     if color_luminance_one > color_luminance_two:
-        contrast_ratio = ((color_luminance_two + 0.05) / (color_luminance_one + 0.05))
+        contrast_ratio = (color_luminance_two + 0.05) / (color_luminance_one + 0.05)
     else:
-        contrast_ratio = ((color_luminance_one + 0.05) / (color_luminance_two + 0.05))
+        contrast_ratio = (color_luminance_one + 0.05) / (color_luminance_two + 0.05)
 
     if contrast_ratio < min_ratio:
         return True
     else:
         return False
 
+
 def hex_to_rgb(value):
     color = value[1:]
-    return tuple(int(color[i:i + 2], 16) for i in range(0, 6, 6 // 3))
+    return tuple(int(color[i: i + 2], 16) for i in range(0, 6, 6 // 3))
+
 
 def calculate_luminance(rgb_color):
     rgb_list = []

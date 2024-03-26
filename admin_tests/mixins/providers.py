@@ -14,11 +14,11 @@ pytestmark = pytest.mark.django_db
 class ProviderListMixinBase:
 
     @pytest.fixture()
-    def provider_factory():
+    def provider_factory(self):
         raise NotImplementedError
 
     @pytest.fixture()
-    def provider_class():
+    def provider_class(self):
         raise NotImplementedError
 
     @pytest.fixture()
@@ -60,7 +60,7 @@ class ProviderListMixinBase:
 class ProcessCustomTaxonomyMixinBase:
 
     @pytest.fixture()
-    def provider_factory():
+    def provider_factory(self):
         raise NotImplementedError
 
     @pytest.fixture()

@@ -85,7 +85,7 @@ def validate_email(email):
 
 
 def impute_names(name):
-    human = HumanName(name)
+    human = HumanName(name, encoding="UTF-8")
     return {
         'given': human.first,
         'middle': human.middle,
@@ -95,7 +95,7 @@ def impute_names(name):
 
 
 def impute_names_model(name):
-    human = HumanName(name)
+    human = HumanName(name, encoding="UTF-8")
     return {
         'given_name': human.first,
         'middle_names': human.middle,
@@ -167,5 +167,5 @@ def generate_csl_given_name(given_name, middle_names='', suffix=''):
         parts.extend(each[0] for each in re.split(r'\s+', middle_names))
     given = ' '.join(parts)
     if suffix:
-        given = '{}, {}'.format(given, suffix)
+        given = f'{given}, {suffix}'
     return given

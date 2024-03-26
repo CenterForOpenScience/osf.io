@@ -1,6 +1,6 @@
 import json
+import pytest
 
-from nose import tools as nt
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -35,20 +35,20 @@ class TestInstitutionList(AdminTestCase):
 
     def test_get_list(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_get_queryset(self):
         institutions_returned = list(self.view.get_queryset())
         inst_list = [self.institution1, self.institution2]
-        nt.assert_equals(set(institutions_returned), set(inst_list))
-        nt.assert_is_instance(institutions_returned[0], Institution)
+        assert set(institutions_returned) == set(inst_list)
+        assert isinstance(institutions_returned[0], Institution)
 
     def test_context_data(self):
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(len(res['institutions']), 2)
-        nt.assert_is_instance(res['institutions'][0], Institution)
+        assert isinstance(res, dict)
+        assert len(res['institutions']) == 2
+        assert isinstance(res['institutions'][0], Institution)
 
 
 class TestInstitutionDisplay(AdminTestCase):
@@ -67,20 +67,20 @@ class TestInstitutionDisplay(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view.get_object()
-        nt.assert_is_instance(obj, Institution)
-        nt.assert_equal(obj.name, self.institution.name)
+        assert isinstance(obj, Institution)
+        assert obj.name == self.institution.name
 
     def test_context_data(self):
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['institution'], dict)
-        nt.assert_equal(res['institution']['name'], self.institution.name)
-        nt.assert_is_instance(res['change_form'], InstitutionForm)
-        nt.assert_is_instance(res['import_form'], ImportFileForm)
+        assert isinstance(res, dict)
+        assert isinstance(res['institution'], dict)
+        assert res['institution']['name'] == self.institution.name
+        assert isinstance(res['change_form'], InstitutionForm)
+        assert isinstance(res['import_form'], ImportFileForm)
 
     def test_get(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
 
 class TestInstitutionDelete(AdminTestCase):
@@ -96,20 +96,20 @@ class TestInstitutionDelete(AdminTestCase):
 
     def test_unaffiliated_institution_delete(self):
         redirect = self.view.delete(self.request)
-        nt.assert_equal(redirect.url, '/institutions/')
-        nt.assert_equal(redirect.status_code, 302)
+        assert redirect.url == '/institutions/'
+        assert redirect.status_code == 302
 
     def test_unaffiliated_institution_get(self):
         res = self.view.get(self.request)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_cannot_delete_if_nodes_affiliated(self):
         node = ProjectFactory(creator=self.user)
         node.affiliated_institutions.add(self.institution)
 
         redirect = self.view.delete(self.request)
-        nt.assert_equal(redirect.url, f'/institutions/{self.institution.id}/cannot_delete/')
-        nt.assert_equal(redirect.status_code, 302)
+        assert redirect.url == f'/institutions/{self.institution.id}/cannot_delete/'
+        assert redirect.status_code == 302
 
 
 class TestInstitutionChangeForm(AdminTestCase):
@@ -129,8 +129,8 @@ class TestInstitutionChangeForm(AdminTestCase):
     def test_get_context_data(self):
         self.view.object = self.institution
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['import_form'], ImportFileForm)
+        assert isinstance(res, dict)
+        assert isinstance(res['import_form'], ImportFileForm)
 
     def test_institution_form(self):
         new_data = {
@@ -140,7 +140,7 @@ class TestInstitutionChangeForm(AdminTestCase):
             '_id': 'newawesomeprov'
         }
         form = InstitutionForm(data=new_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
 
 
 class TestInstitutionExport(AdminTestCase):
@@ -159,10 +159,9 @@ class TestInstitutionExport(AdminTestCase):
     def test_get(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)[0]
-        nt.assert_equal(content_dict['model'], 'osf.institution')
-        nt.assert_equal(content_dict['fields']['name'], self.institution.name)
-        nt.assert_equal(res.__getitem__('content-type'), 'text/json')
-
+        assert content_dict['model'] == 'osf.institution'
+        assert content_dict['fields']['name'] == self.institution.name
+        assert res.__getitem__('content-type') == 'text/json'
 
 class TestCreateInstitution(AdminTestCase):
     def setUp(self):
@@ -185,20 +184,20 @@ class TestCreateInstitution(AdminTestCase):
     def test_get_context_data(self):
         self.view.object = self.institution
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['import_form'], ImportFileForm)
+        assert isinstance(res, dict)
+        assert isinstance(res['import_form'], ImportFileForm)
 
     def test_no_permission_raises(self):
         user2 = AuthUserFactory()
-        nt.assert_false(user2.has_perm('osf.change_institution'))
+        assert not user2.has_perm('osf.change_institution')
         self.request.user = user2
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.base_view.as_view()(self.request)
 
     def test_get_view(self):
         res = self.view.get(self.request)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
 
 class TestAffiliatedNodeList(AdminTestCase):
@@ -231,23 +230,23 @@ class TestAffiliatedNodeList(AdminTestCase):
     def test_get_context_data(self):
         self.view.object_list = [self.node1, self.node2]
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['institution'], Institution)
+        assert isinstance(res, dict)
+        assert isinstance(res['institution'], Institution)
 
     def test_no_permission_raises(self):
         user2 = AuthUserFactory()
-        nt.assert_false(user2.has_perm('osf.view_node'))
+        assert not user2.has_perm('osf.view_node')
         self.request.user = user2
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.base_view.as_view()(self.request)
 
     def test_get_view(self):
         res = self.view.get(self.request)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_get_queryset(self):
         nodes_returned = list(self.view.get_queryset())
         node_list = [self.node1, self.node2]
-        nt.assert_equals(nodes_returned, node_list)
-        nt.assert_is_instance(nodes_returned[0], Node)
+        assert nodes_returned == node_list
+        assert isinstance(nodes_returned[0], Node)

@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa: F403
 import jwe
 import jwt
 from unittest import mock
@@ -47,6 +46,7 @@ from osf_tests.factories import (
     UnregUserFactory,
     PreprintProviderFactory,
     PreprintRequestFactory,
+    NodeFactory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -1406,24 +1406,24 @@ class TestSetPreprintFile(OsfTestCase):
 
     @assert_preprint_logs(PreprintLog.PUBLISHED, 'preprint')
     def test_is_preprint_property_new_file_to_published(self):
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         self.preprint.reload()
-        assert_false(self.preprint.is_published)
-        with assert_raises(ValueError):
+        assert not self.preprint.is_published
+        with pytest.raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         self.preprint.provider = PreprintProviderFactory()
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.reload()
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
         self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
-        assert_true(self.preprint.is_published)
+        assert self.preprint.is_published
 
     @assert_preprint_logs(PreprintLog.SUPPLEMENTAL_NODE_ADDED, 'preprint')
     def test_set_supplemental_node(self):
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
         project = ProjectFactory(creator=self.preprint.creator)
         self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
         self.preprint.reload()
@@ -1431,7 +1431,7 @@ class TestSetPreprintFile(OsfTestCase):
 
     def test_set_supplemental_node_deleted(self):
         project = ProjectFactory(creator=self.preprint.creator)
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             project.is_deleted= True
             project.save()
             self.preprint.set_supplemental_node(project, auth=self.auth, save=True)
@@ -1446,50 +1446,50 @@ class TestSetPreprintFile(OsfTestCase):
         # Testing for migrated preprints, that may have had is_public = False
         self.preprint.is_public = False
         self.preprint.save()
-        assert_false(self.preprint.is_public)
+        assert not self.preprint.is_public
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_false(self.preprint.is_public)
-        with assert_raises(ValueError):
+        assert not self.preprint.is_public
+        with pytest.raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         self.preprint.provider = PreprintProviderFactory()
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.reload()
-        assert_false(self.preprint.is_public)
+        assert not self.preprint.is_public
         self.preprint.set_published(True, auth=self.auth, save=True)
         self.project.reload()
-        assert_true(self.preprint.is_public)
+        assert self.preprint.is_public
 
     def test_add_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.preprint.primary_file, self.file)
-        assert_equal(type(self.preprint.primary_file), type(self.file))
+        assert self.preprint.primary_file == self.file
+        assert type(self.preprint.primary_file) == type(self.file)
 
     @assert_preprint_logs(PreprintLog.FILE_UPDATED, 'preprint')
     def test_change_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.preprint.primary_file, self.file)
+        assert self.preprint.primary_file == self.file
 
         self.preprint.set_primary_file(self.file_two, auth=self.auth, save=True)
-        assert_equal(self.preprint.primary_file._id, self.file_two._id)
+        assert self.preprint.primary_file._id == self.file_two._id
 
     def test_add_invalid_file(self):
-        with assert_raises(AttributeError):
+        with pytest.raises(AttributeError):
             self.preprint.set_primary_file('inatlanta', auth=self.auth, save=True)
 
     def test_removing_primary_file_creates_orphan(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_false(self.preprint.is_preprint_orphan)
+        assert not self.preprint.is_preprint_orphan
         self.preprint.primary_file = None
         self.preprint.save()
-        assert_true(self.preprint.is_preprint_orphan)
+        assert self.preprint.is_preprint_orphan
 
     def test_preprint_created_date(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.preprint.primary_file._id, self.file._id)
+        assert self.preprint.primary_file._id == self.file._id
 
         assert (self.preprint.created)
-        assert_not_equal(self.project.created, self.preprint.created)
+        assert self.project.created != self.preprint.created
 
     def test_cant_save_without_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
@@ -1497,7 +1497,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_published(True, auth=self.auth, save=False)
         self.preprint.primary_file = None
 
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             self.preprint.save()
 
     def test_cant_update_without_file(self):
@@ -1505,7 +1505,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.primary_file = None
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             self.preprint.save()
 
 
@@ -1530,57 +1530,57 @@ class TestPreprintPermissions(OsfTestCase):
 
     def test_noncontrib_cannot_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.noncontrib))
         self.preprint.reload()
-        assert_equal(initial_subjects, list(self.preprint.subjects.all()))
+        assert initial_subjects == list(self.preprint.subjects.all())
 
     def test_read_cannot_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.read_contrib))
 
         self.preprint.reload()
-        assert_equal(initial_subjects, list(self.preprint.subjects.all()))
+        assert initial_subjects == list(self.preprint.subjects.all())
 
     def test_write_can_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib))
         self.preprint.reload()
-        assert_not_equal(initial_subjects, list(self.preprint.subjects.all()))
+        assert initial_subjects != list(self.preprint.subjects.all())
 
     def test_admin_can_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.user))
 
         self.preprint.reload()
-        assert_not_equal(initial_subjects, list(self.preprint.subjects.all()))
+        assert initial_subjects != list(self.preprint.subjects.all())
 
     def test_noncontrib_cannot_set_file(self):
         initial_file = self.preprint.primary_file
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_primary_file(self.file, auth=Auth(self.noncontrib), save=True)
         self.preprint.reload()
-        assert_equal(initial_file._id, self.preprint.primary_file._id)
+        assert initial_file._id == self.preprint.primary_file._id
 
     def test_read_contrib_cannot_set_file(self):
         initial_file = self.preprint.primary_file
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_primary_file(self.file, auth=Auth(self.read_contrib), save=True)
         self.preprint.reload()
-        assert_equal(initial_file._id, self.preprint.primary_file._id)
+        assert initial_file._id == self.preprint.primary_file._id
 
     def test_write_contrib_can_set_file(self):
         initial_file = self.preprint.primary_file
         self.preprint.set_primary_file(self.file, auth=Auth(self.write_contrib), save=True)
         self.preprint.reload()
-        assert_equal(self.file._id, self.preprint.primary_file._id)
+        assert self.file._id == self.preprint.primary_file._id
 
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         self.preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
         self.preprint.reload()
-        assert_equal(self.file._id, self.preprint.primary_file._id)
+        assert self.file._id == self.preprint.primary_file._id
 
     def test_primary_file_must_target_preprint(self):
         file = OsfStorageFile.create(
@@ -1590,99 +1590,99 @@ class TestPreprintPermissions(OsfTestCase):
             materialized_path='/panda.txt')
         file.save()
 
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             self.preprint.set_primary_file(file, auth=Auth(self.user), save=True)
 
     def test_non_admin_cannot_publish(self):
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_published(True, auth=Auth(self.noncontrib), save=True)
 
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
     def test_read_cannot_publish(self):
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_published(True, auth=Auth(self.read_contrib), save=True)
 
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
     def test_write_cannot_publish(self):
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_published(True, auth=Auth(self.write_contrib), save=True)
 
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
     def test_admin_can_publish(self):
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
         self.preprint.set_published(True, auth=Auth(self.user), save=True)
 
-        assert_true(self.preprint.is_published)
+        assert self.preprint.is_published
 
     def test_admin_cannot_unpublish(self):
-        assert_false(self.preprint.is_published)
+        assert not self.preprint.is_published
 
         self.preprint.set_published(True, auth=Auth(self.user), save=True)
 
-        assert_true(self.preprint.is_published)
+        assert self.preprint.is_published
 
-        with assert_raises(ValueError) as e:
+        with pytest.raises(ValueError) as e:
             self.preprint.set_published(False, auth=Auth(self.user), save=True)
 
-        assert_in('Cannot unpublish', str(e.exception))
+        assert 'Cannot unpublish' in str(e.exception)
 
     def test_set_title_permissions(self):
         original_title = self.preprint.title
         new_title = 'My new preprint title'
 
         # noncontrib
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_title(new_title, auth=Auth(self.noncontrib), save=True)
-        assert_equal(self.preprint.title, original_title)
+        assert self.preprint.title == original_title
 
         # read
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_title(new_title, auth=Auth(self.read_contrib), save=True)
-        assert_equal(self.preprint.title, original_title)
+        assert self.preprint.title == original_title
 
         # write
         self.preprint.set_title(new_title, auth=Auth(self.write_contrib), save=True)
-        assert_equal(self.preprint.title, new_title)
+        assert self.preprint.title == new_title
 
         # admin
         self.preprint.title = original_title
         self.preprint.save()
         self.preprint.set_title(new_title, auth=Auth(self.user), save=True)
-        assert_equal(self.preprint.title, new_title)
+        assert self.preprint.title == new_title
 
     def test_set_abstract_permissions(self):
         original_abstract = self.preprint.description
         new_abstract = 'This is my preprint abstract'
 
         # noncontrib
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_description(new_abstract, auth=Auth(self.noncontrib), save=True)
-        assert_equal(self.preprint.description, original_abstract)
+        assert self.preprint.description == original_abstract
 
         # read
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_description(new_abstract, auth=Auth(self.read_contrib), save=True)
-        assert_equal(self.preprint.description, original_abstract)
+        assert self.preprint.description == original_abstract
 
         # write
         self.preprint.set_description(new_abstract, auth=Auth(self.write_contrib), save=True)
-        assert_equal(self.preprint.description, new_abstract)
+        assert self.preprint.description == new_abstract
 
         # admin
         self.preprint.description = original_abstract
         self.preprint.save()
         self.preprint.set_description(new_abstract, auth=Auth(self.user), save=True)
-        assert_equal(self.preprint.description, new_abstract)
+        assert self.preprint.description == new_abstract
 
     def test_set_privacy(self):
         # Not currently exposed, but adding is_public field for legacy preprints and spam
@@ -1690,24 +1690,24 @@ class TestPreprintPermissions(OsfTestCase):
         self.preprint.save()
 
         # noncontrib
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_privacy('public', auth=Auth(self.noncontrib), save=True)
-        assert_false(self.preprint.is_public)
+        assert not self.preprint.is_public
 
         # read
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_privacy('public', auth=Auth(self.read_contrib), save=True)
-        assert_false(self.preprint.is_public)
+        assert not self.preprint.is_public
 
         # write
         self.preprint.set_privacy('public', auth=Auth(self.write_contrib), save=True)
-        assert_true(self.preprint.is_public)
+        assert self.preprint.is_public
 
         # admin
         self.preprint.is_public = False
         self.preprint.save()
         self.preprint.set_privacy('public', auth=Auth(self.user), save=True)
-        assert_true(self.preprint.is_public)
+        assert self.preprint.is_public
 
     def test_set_supplemental_node_project_permissions(self):
         # contributors have proper permissions on preprint, but not supplementary_node
@@ -1723,12 +1723,12 @@ class TestPreprintPermissions(OsfTestCase):
         self.preprint.add_contributor(self.noncontrib, ADMIN, save=True)
 
         # noncontrib
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.noncontrib), save=True)
         assert self.preprint.node is None
 
         # read
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.read_contrib), save=True)
         assert self.preprint.node is None
 
@@ -1753,12 +1753,12 @@ class TestPreprintPermissions(OsfTestCase):
         project.add_contributor(self.noncontrib, ADMIN, save=True)
 
         # noncontrib
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.noncontrib), save=True)
         assert self.preprint.node is None
 
         # read
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             self.preprint.set_supplemental_node(project, auth=Auth(self.read_contrib), save=True)
         assert self.preprint.node is None
 
@@ -1788,20 +1788,20 @@ class TestPreprintProvider(OsfTestCase):
 
 
     def test_add_provider(self):
-        assert_not_equal(self.preprint.provider, self.provider)
+        assert self.preprint.provider != self.provider
 
         self.preprint.provider = self.provider
         self.preprint.save()
         self.preprint.reload()
 
-        assert_equal(self.preprint.provider, self.provider)
+        assert self.preprint.provider == self.provider
 
     def test_remove_provider(self):
         self.preprint.provider = None
         self.preprint.save()
         self.preprint.reload()
 
-        assert_equal(self.preprint.provider, None)
+        assert self.preprint.provider is None
 
     def test_top_level_subjects(self):
         subj_a = SubjectFactory(provider=self.provider, text='A')
@@ -2000,10 +2000,10 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             logo=settings.OSF_PREPRINTS_LOGO,
             document_type=self.preprint.provider.preprint_word,
         )
-        assert_equals(send_mail.call_count, 1)
+        assert send_mail.call_count == 1
 
         self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
-        assert_equals(send_mail.call_count, 2)
+        assert send_mail.call_count == 2
 
 
 class TestPreprintOsfStorage(OsfTestCase):
@@ -2027,15 +2027,9 @@ class TestPreprintOsfStorage(OsfTestCase):
             payload={'metadata': {'path': path, 'materialized': path, 'kind': 'file'}},
         )
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlog + 1)
-        assert_equal(
-            self.preprint.logs.latest().action,
-            '{}_{}'.format('osf_storage', action),
-        )
-        assert_equal(
-            self.preprint.logs.latest().params['path'],
-            path
-        )
+        assert self.preprint.logs.count() == nlog + 1
+        assert self.preprint.logs.latest().action == '{}_{}'.format('osf_storage', action)
+        assert self.preprint.logs.latest().params['path'] == path
 
     def build_url(self, **kwargs):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
@@ -2043,19 +2037,19 @@ class TestPreprintOsfStorage(OsfTestCase):
             nid=self.preprint._id,
             provider='osfstorage'), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=500),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         return self.preprint.api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, auth=Auth(user=self.user))
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
-        assert_equal(data['credentials'], self.preprint.serialize_waterbutler_credentials())
-        assert_equal(data['settings'], self.preprint.serialize_waterbutler_settings())
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
+        assert data['credentials'] == self.preprint.serialize_waterbutler_credentials()
+        assert data['settings'] == self.preprint.serialize_waterbutler_settings()
         expected_url = furl.furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
-        assert_equal(expected_url, observed_url)
+        assert expected_url == observed_url
 
 
 class TestCheckPreprintAuth(OsfTestCase):
@@ -2067,51 +2061,51 @@ class TestCheckPreprintAuth(OsfTestCase):
 
     def test_has_permission(self):
         res = views.check_access(self.preprint, Auth(user=self.user), 'upload', None)
-        assert_true(res)
+        assert res
 
     def test_not_has_permission_read_published(self):
         res = views.check_access(self.preprint, Auth(), 'download', None)
-        assert_true(res)
+        assert res
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
+        with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user=user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert exc_info.exception.code == 403
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
+        with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(), 'download', None)
-        assert_equal(exc_info.exception.code, 401)
+        assert exc_info.exception.code == 401
 
     def test_check_access_withdrawn_preprint_file(self):
         self.preprint.date_withdrawn = timezone.now()
         self.preprint.save()
         # Unauthenticated
-        with assert_raises(HTTPError) as exc_info:
+        with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(), 'download', None)
-        assert_equal(exc_info.exception.code, 401)
+        assert exc_info.exception.code == 401
 
         # Noncontributor
         user2 = AuthUserFactory()
-        with assert_raises(HTTPError) as exc_info:
+        with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert exc_info.exception.code == 403
 
         # Read contributor
         self.preprint.add_contributor(user2, READ, save=True)
-        with assert_raises(HTTPError) as exc_info:
+        with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert exc_info.exception.code == 403
 
         # Admin contributor
-        with assert_raises(HTTPError) as exc_info:
+        with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(self.user), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert exc_info.exception.code == 403
 
 
 
@@ -2163,7 +2157,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlogs + 1)
+        assert self.preprint.logs.count() == nlogs + 1
 
     def test_add_log_missing_args(self):
         path = 'pizza'
@@ -2176,9 +2170,9 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
             headers={'Content-Type': 'application/json'},
             expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlogs)
+        assert self.preprint.logs.count() == nlogs
 
     def test_add_log_no_user(self):
         path = 'pizza'
@@ -2191,9 +2185,9 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
             headers={'Content-Type': 'application/json'},
             expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlogs)
+        assert self.preprint.logs.count() == nlogs
 
     def test_add_log_bad_action(self):
         path = 'pizza'
@@ -2206,9 +2200,9 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
             headers={'Content-Type': 'application/json'},
             expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlogs)
+        assert self.preprint.logs.count() == nlogs
 
     def test_action_file_rename(self):
         url = self.preprint.api_url_for('create_waterbutler_log')
@@ -2243,10 +2237,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         )
         self.preprint.reload()
 
-        assert_equal(
-            self.preprint.logs.latest().action,
-            'osf_storage_addon_file_renamed',
-        )
+        assert self.preprint.logs.latest().action == 'osf_storage_addon_file_renamed'
 
     def test_action_downloads_contrib(self):
         url = self.preprint.api_url_for('create_waterbutler_log')
@@ -2265,10 +2256,10 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
                 headers={'Content-Type': 'application/json'},
                 expect_errors=False,
             )
-            assert_equal(res.status_code, 200)
+            assert res.status_code == 200
 
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlogs)
+        assert self.preprint.logs.count() == nlogs
 
     def test_add_file_osfstorage_log(self):
         path = 'pizza'
@@ -2277,7 +2268,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlogs + 1)
+        assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
     def test_add_folder_osfstorage_log(self):
@@ -2287,7 +2278,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
-        assert_equal(self.preprint.logs.count(), nlogs + 1)
+        assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
 

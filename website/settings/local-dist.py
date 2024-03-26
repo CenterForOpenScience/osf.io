@@ -74,6 +74,11 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
+# CEDAR API configs
+CEDAR_API_HOST = ''
+CEDAR_API_KEY = ''
+CEDAR_HOME_FOLDER_ID = ''
+
 class CeleryConfig(defaults.CeleryConfig):
     """
     Celery configuration
@@ -142,3 +147,4 @@ SHARE_ENABLED = False
 DATACITE_ENABLED = False
 
 OOPSPAM_CHECK_IP = False
+USE_COLOR = False

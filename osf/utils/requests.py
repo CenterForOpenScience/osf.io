@@ -74,7 +74,7 @@ def get_headers_from_request(req):
             k: v
             for k, v in headers.items()
         }
-        headers['Remote-Addr'] = req.remote_addr
+        headers['Remote-Addr'] = getattr(req, 'remote_addr', None)
     return headers
 
 

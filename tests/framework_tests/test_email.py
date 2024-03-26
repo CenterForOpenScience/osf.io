@@ -2,7 +2,6 @@ import unittest
 import smtplib
 
 from unittest import mock
-from nose.tools import *  # noqa: F403
 import sendgrid
 
 from framework.email.tasks import send_email, _send_with_sendgrid
@@ -26,8 +25,8 @@ class TestEmail(unittest.TestCase):
     @unittest.skipIf(not settings.USE_EMAIL,
                      'settings.USE_EMAIL is False')
     def test_sending_email(self):
-        assert_true(send_email('foo@bar.com', 'baz@quux.com', subject='no subject',
-                                 message='<h1>Greetings!</h1>', ttls=False, login=False))
+        assert send_email('foo@bar.com', 'baz@quux.com', subject='no subject',
+                                 message='<h1>Greetings!</h1>', ttls=False, login=False)
 
     def test_send_with_sendgrid_success(self):
         mock_client = mock.MagicMock()
@@ -44,19 +43,19 @@ class TestEmail(unittest.TestCase):
             client=mock_client,
             categories=(category1, category2)
         )
-        assert_true(ret)
+        assert ret
 
-        assert_equal(mock_client.send.call_count, 1)
+        assert mock_client.send.call_count == 1
         # First call's argument should be a Mail object with
         # the correct configuration
         first_call_arg = mock_client.send.call_args[0][0]
-        assert_is_instance(first_call_arg, sendgrid.Mail)
-        assert_equal(first_call_arg.from_email, from_addr)
-        assert_equal(first_call_arg.to[0], to_addr)
-        assert_equal(first_call_arg.subject, subject)
-        assert_in(message, first_call_arg.html)
+        assert isinstance(first_call_arg, sendgrid.Mail)
+        assert first_call_arg.from_email == from_addr
+        assert first_call_arg.to[0] == to_addr
+        assert first_call_arg.subject == subject
+        assert message in first_call_arg.html
         # Categories are set
-        assert_equal(first_call_arg.smtpapi.data['category'], (category1, category2))
+        assert first_call_arg.smtpapi.data['category'] == (category1, category2)
 
     def test_send_with_sendgrid_failure_returns_false(self):
         mock_client = mock.MagicMock()
@@ -71,7 +70,7 @@ class TestEmail(unittest.TestCase):
             message=message,
             client=mock_client
         )
-        assert_false(ret)
+        assert not ret
 
 
 if __name__ == '__main__':

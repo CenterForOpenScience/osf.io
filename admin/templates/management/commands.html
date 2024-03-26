@@ -116,6 +116,20 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>Ingest Cedar Metadata templates</u></h4>
+                <p>
+                    Use this management command to ingest CEDAR metadata templates from CEDAR Workbench.
+                    Note: This requires CEDAR_API_HOST and CEDAR_API_KEY to be set for the environment.
+                </p>
+                <form method="post"
+                      action="{% url 'management:ingest_cedar_metadata_templates'%}">
+                    {% csrf_token %}
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}

@@ -1,5 +1,5 @@
 import functools
-from rest_framework import status as http_status
+from rest_framework import status
 
 import markupsafe
 from django.core.paginator import Paginator
@@ -36,17 +36,17 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
         try:
             instance = Model.objects.filter(pk_or_query).select_for_update().get() if select_for_update else Model.objects.get(pk_or_query)
         except Model.DoesNotExist:
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
+            raise HTTPError(status.HTTP_404_NOT_FOUND, data=dict(
                 message_long=f'No {safe_name} record matching that query could be found'
             ))
         except Model.MultipleObjectsReturned:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+            raise HTTPError(status.HTTP_400_BAD_REQUEST, data=dict(
                 message_long=f'The query must match exactly one {safe_name} record'
             ))
     else:
         instance = Model.load(pk_or_query, select_for_update=select_for_update)
         if not instance:
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
+            raise HTTPError(status.HTTP_404_NOT_FOUND, data=dict(
                 message_long=f'No {safe_name} record with that primary key could be found'
             ))
     if getattr(instance, 'is_deleted', False) and getattr(instance, 'suspended', False):
@@ -55,7 +55,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
             message_long='This content has been removed'
         ))
     if not allow_deleted and getattr(instance, 'is_deleted', False):
-        raise HTTPError(http_status.HTTP_410_GONE)
+        raise HTTPError(status.HTTP_410_GONE)
     return instance
 
 

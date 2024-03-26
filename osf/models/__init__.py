@@ -18,6 +18,7 @@ from .base import (
     Guid,
 )
 from .brand import Brand
+from .cedar_metadata import CedarMetadataRecord, CedarMetadataTemplate
 from .chronos import ChronosJournal, ChronosSubmission
 from .citation import CitationStyle
 from .collection import Collection

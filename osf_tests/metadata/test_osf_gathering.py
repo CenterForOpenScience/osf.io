@@ -42,6 +42,13 @@ class TestOsfGathering(TestCase):
                 'baiduScholar': 'blarg',
             },
         )
+        # cedar metadata template
+        cls.cedar_template = factories.CedarMetadataTemplateFactory(
+            cedar_id='https://repo.metadatacenter.org/templates/this-is-a-cedar-id',
+            schema_name='Hype Boy',
+            active=True,
+            template_version=1,
+        )
         # project (with components):
         cls.project = factories.ProjectFactory(creator=cls.user__admin, is_public=True)
         cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
@@ -49,6 +56,11 @@ class TestOsfGathering(TestCase):
         cls.component = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
         cls.sibcomponent = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
         cls.subcomponent = factories.ProjectFactory(parent=cls.component, creator=cls.user__admin, is_public=True)
+        cls.project_cedar_record = factories.CedarMetadataRecordFactory(
+            template=cls.cedar_template,
+            is_published=True,
+            guid=cls.project.guids.first()
+        )
         # file:
         cls.file_sha256 = '876b99ba1225de6b7f55ef52b068d0da3aa2ec4271875954c3b87b6659ae3823'
         cls.file = create_test_file(
@@ -57,6 +69,11 @@ class TestOsfGathering(TestCase):
             size=123456,
             filename='blarg.txt',
             sha256=cls.file_sha256,
+        )
+        cls.file_cedar_record = factories.CedarMetadataRecordFactory(
+            template=cls.cedar_template,
+            is_published=True,
+            guid=cls.file.get_guid()
         )
         # registration:
         cls.registration = factories.RegistrationFactory(
@@ -73,6 +90,11 @@ class TestOsfGathering(TestCase):
         )
         cls.preprint.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
         cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
+        cls.registration_cedar_record = factories.CedarMetadataRecordFactory(
+            template=cls.cedar_template,
+            is_published=True,
+            guid=cls.registration.guids.first()
+        )
         # "focus" objects:
         cls.projectfocus = osf_gathering.OsfFocus(cls.project)
         cls.componentfocus = osf_gathering.OsfFocus(cls.component)
@@ -130,7 +152,7 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
         })
         self.projectfocus.guid_metadata_record.resource_type_general = 'Book'
-        _datacite_book_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Book')
+        _datacite_book_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#Book')
         assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.type, _datacite_book_ref),
             (_datacite_book_ref, rdflib.RDFS.label, Literal('Book', lang='en')),
@@ -138,16 +160,16 @@ class TestOsfGathering(TestCase):
         # focus: registration
         assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
         })
-        self.registrationfocus.guid_metadata_record.resource_type_general = 'Preprint'
-        _datacite_preprint_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Preprint')
+        self.registrationfocus.guid_metadata_record.resource_type_general = 'StudyRegistration'
+        _datacite_studyregistration_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#StudyRegistration')
         assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
-            (self.registrationfocus.iri, DCTERMS.type, _datacite_preprint_ref),
-            (_datacite_preprint_ref, rdflib.RDFS.label, Literal('Preprint', lang='en')),
+            (self.registrationfocus.iri, DCTERMS.type, _datacite_studyregistration_ref),
+            (_datacite_studyregistration_ref, rdflib.RDFS.label, Literal('StudyRegistration', lang='en')),
         })
         # focus: file
         assert_triples(osf_gathering.gather_flexible_types(self.filefocus), set())
         self.filefocus.guid_metadata_record.resource_type_general = 'Dataset'
-        _datacite_dataset_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Dataset')
+        _datacite_dataset_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#Dataset')
         assert_triples(osf_gathering.gather_flexible_types(self.filefocus), {
             (self.filefocus.iri, DCTERMS.type, _datacite_dataset_ref),
             (_datacite_dataset_ref, rdflib.RDFS.label, Literal('Dataset', lang='en')),
@@ -700,4 +722,19 @@ class TestOsfGathering(TestCase):
             (_withdrawal_bnode, DCTERMS.created, Literal(str(_withdrawal_request.created.date()))),
             (_withdrawal_bnode, DCTERMS.dateAccepted, Literal(str(_withdrawal_request.date_last_transitioned.date()))),
             (_withdrawal_bnode, DCTERMS.creator, osf_gathering.OsfFocus(_withdrawal_request.creator)),
+        })
+
+    def test_gather_cedar_templates(self):
+        cedar_template_iri = rdflib.URIRef(self.cedar_template.cedar_id)
+        assert_triples(osf_gathering.gather_cedar_templates(self.projectfocus), {
+            (self.projectfocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
+            (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
+        })
+        assert_triples(osf_gathering.gather_cedar_templates(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
+            (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
+        })
+        assert_triples(osf_gathering.gather_cedar_templates(self.filefocus), {
+            (self.filefocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
+            (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
         })

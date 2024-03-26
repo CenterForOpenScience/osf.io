@@ -22,7 +22,6 @@ from admin.nodes.views import (
 from admin_tests.utilities import setup_log_view, setup_view
 from api_tests.share._utils import mock_update_share
 from website import settings
-from nose import tools as nt
 from django.utils import timezone
 from django.test import RequestFactory
 from django.urls import reverse
@@ -51,7 +50,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get(reverse('nodes:flagged-spam'))
         request.user = user
         response = NodeFlaggedSpamList.as_view()(request)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_get_known_spam(self):
         user = AuthUserFactory()
@@ -60,7 +59,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get(reverse('nodes:known-spam'))
         request.user = user
         response = NodeKnownSpamList.as_view()(request)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_get_known_ham(self):
         user = AuthUserFactory()
@@ -69,7 +68,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get(reverse('nodes:known-ham'))
         request.user = user
         response = NodeKnownHamList.as_view()(request)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_name_data(self):
         node = ProjectFactory()
@@ -80,7 +79,7 @@ class TestNodeView(AdminTestCase):
         temp_object = view.get_object()
         view.object = temp_object
         res = view.get_context_data()['node']
-        nt.assert_equal(res, temp_object)
+        assert res == temp_object
 
     def test_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
@@ -89,7 +88,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get(reverse('nodes:node', kwargs={'guid': guid}))
         request.user = user
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             NodeView.as_view()(request, guid=guid)
 
     def test_correct_view_permissions(self):
@@ -108,7 +107,7 @@ class TestNodeView(AdminTestCase):
         request.user = user
 
         response = NodeView.as_view()(request, guid=guid)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200
 
 
 class TestNodeDeleteView(AdminTestCase):
@@ -126,21 +125,21 @@ class TestNodeDeleteView(AdminTestCase):
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.view.post(self.request)
         self.node.refresh_from_db()
-        nt.assert_true(self.node.is_deleted)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
-        nt.assert_equal(self.node.deleted, mock_now)
+        assert self.node.is_deleted
+        assert AdminLogEntry.objects.count() == count + 1
+        assert self.node.deleted == mock_now
 
     def test_restore_node(self):
         self.view.post(self.request)
         self.node.refresh_from_db()
-        nt.assert_true(self.node.is_deleted)
-        nt.assert_true(self.node.deleted is not None)
+        assert self.node.is_deleted
+        assert self.node.deleted is not None
         count = AdminLogEntry.objects.count()
         self.view.post(self.request)
         self.node.reload()
-        nt.assert_false(self.node.is_deleted)
-        nt.assert_true(self.node.deleted is None)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert not self.node.is_deleted
+        assert self.node.deleted is None
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
@@ -148,7 +147,7 @@ class TestNodeDeleteView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = user
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.plain_view.as_view()(request, guid=guid)
 
     def test_correct_view_permissions(self):
@@ -169,7 +168,7 @@ class TestNodeDeleteView(AdminTestCase):
         request.user = user
 
         response = self.plain_view.as_view()(request, guid=guid)
-        nt.assert_equal(response.status_code, 302)
+        assert response.status_code == 302
 
 
 class TestRemoveContributor(AdminTestCase):
@@ -193,41 +192,35 @@ class TestRemoveContributor(AdminTestCase):
 
     def test_integration_remove_contributor(self):
         patch_messages(self.request)
-        nt.assert_in(self.user_2, self.node.contributors)
+        assert self.user_2 in self.node.contributors
         view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user_2.id)
         count = AdminLogEntry.objects.count()
         view.post(self.request)
-        nt.assert_not_in(self.user_2, self.node.contributors)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert self.user_2 not in self.node.contributors
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_do_not_remove_last_admin(self):
         patch_messages(self.request)
-        nt.assert_equal(
-            len(list(self.node.get_admin_contributors(self.node.contributors))),
-            1
-        )
+        assert len(list(self.node.get_admin_contributors(self.node.contributors))) == 1
         view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user.id)
         count = AdminLogEntry.objects.count()
         view.post(self.request)
         self.node.reload()  # Reloads instance to show that nothing was removed
-        nt.assert_equal(len(list(self.node.contributors)), 2)
-        nt.assert_equal(
-            len(list(self.node.get_admin_contributors(self.node.contributors))),
-            1
-        )
-        nt.assert_equal(AdminLogEntry.objects.count(), count)
+        assert len(list(self.node.contributors)) == 2
+        assert len(list(self.node.get_admin_contributors(self.node.contributors))) == 1
+        assert AdminLogEntry.objects.count() == count
 
     def test_no_log(self):
         view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user_2.id)
         view.post(self.request)
-        nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)
+        assert self.node.logs.latest().action != NodeLog.CONTRIB_REMOVED
 
     def test_no_user_permissions_raises_error(self):
         guid = self.node._id
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view.as_view()(request, guid=guid, user_id=self.user)
 
     def test_correct_view_permissions(self):
@@ -245,7 +238,7 @@ class TestRemoveContributor(AdminTestCase):
         request.user = self.user
 
         response = self.view.as_view()(request, guid=self.node._id, user_id=self.user.id)
-        nt.assert_equal(response.status_code, 302)
+        assert response.status_code == 302
 
 
 @pytest.mark.enable_search
@@ -267,7 +260,7 @@ class TestNodeReindex(AdminTestCase):
         with mock_update_share() as _shmock:
             view.post(self.request)
             assert _shmock.called_once_with(self.node)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_reindex_registration_share(self):
         count = AdminLogEntry.objects.count()
@@ -276,7 +269,7 @@ class TestNodeReindex(AdminTestCase):
         with mock_update_share() as _shmock:
             view.post(self.request)
             assert _shmock.called_once_with(self.registration)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert AdminLogEntry.objects.count() == count + 1
 
     @mock.patch('website.search.search.update_node')
     def test_reindex_node_elastic(self, mock_update_node):
@@ -285,8 +278,8 @@ class TestNodeReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.post(self.request)
 
-        nt.assert_true(mock_update_node.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert mock_update_node.called
+        assert AdminLogEntry.objects.count() == count + 1
 
     @mock.patch('website.search.search.update_node')
     def test_reindex_registration_elastic(self, mock_update_node):
@@ -295,8 +288,8 @@ class TestNodeReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.post(self.request)
 
-        nt.assert_true(mock_update_node.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert mock_update_node.called
+        assert AdminLogEntry.objects.count() == count + 1
 
 class TestNodeConfirmHamView(AdminTestCase):
     def setUp(self):
@@ -314,18 +307,18 @@ class TestNodeConfirmHamView(AdminTestCase):
         view.post(self.request)
 
         self.node.refresh_from_db()
-        nt.assert_true(self.node.spam_status == 4)
+        assert self.node.spam_status == 4
 
     def test_confirm_registration_as_ham(self):
         view = NodeConfirmHamView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         resp = view.post(self.request)
 
-        nt.assert_true(resp.status_code == 302)
+        assert resp.status_code == 302
 
         self.registration.refresh_from_db()
-        nt.assert_false(self.registration.is_public)
-        nt.assert_true(self.registration.spam_status == 4)
+        assert not self.registration.is_public
+        assert self.registration.spam_status == 4
 
 
 class TestAdminNodeLogView(AdminTestCase):
@@ -348,8 +341,8 @@ class TestAdminNodeLogView(AdminTestCase):
         logs = view.get_queryset()
 
         log_entry = logs.last()
-        nt.assert_true(log_entry.action == 'edit_title')
-        nt.assert_true(log_entry.params['title_new'] == 'New Title')
+        assert log_entry.action == 'edit_title'
+        assert log_entry.params['title_new'] == 'New Title'
 
 
 class TestRestartStuckRegistrationsView(AdminTestCase):
@@ -365,7 +358,7 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
         view = RestartStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
 
-        nt.assert_true(self.registration, view.get_object())
+        assert self.registration == view.get_object()
 
     def test_restart_stuck_registration(self):
         # Prevents circular import that prevents admin app from starting up
@@ -373,7 +366,7 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
 
         view = RestartStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        nt.assert_equal(self.registration.archive_job.status, 'INITIATED')
+        assert self.registration.archive_job.status == 'INITIATED'
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
@@ -383,7 +376,7 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
 
         view.post(self.request)
 
-        nt.assert_equal(self.registration.archive_job.status, 'SUCCESS')
+        assert self.registration.archive_job.status == 'SUCCESS'
 
 
 class TestRemoveStuckRegistrationsView(AdminTestCase):
@@ -405,7 +398,7 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
         view = RemoveStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
 
-        nt.assert_true(self.registration, view.get_object())
+        assert self.registration == view.get_object()
 
     def test_remove_stuck_registration(self):
         # Prevents circular import that prevents admin app from starting up
@@ -422,8 +415,8 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
         view.post(self.request)
 
         self.registration.refresh_from_db()
-        nt.assert_true(self.registration.is_deleted)
-        nt.assert_true(self.registration.deleted is not None)
+        assert self.registration.is_deleted
+        assert self.registration.deleted is not None
 
     def test_remove_stuck_registration_with_an_addon(self):
         # Prevents circular import that prevents admin app from starting up
@@ -436,5 +429,5 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
         setattr(self.request, '_messages', messages)
         view.post(self.request)
         self.registration.refresh_from_db()
-        nt.assert_true(self.registration.is_deleted)
-        nt.assert_true(self.registration.deleted is not None)
+        assert self.registration.is_deleted
+        assert self.registration.deleted is not None

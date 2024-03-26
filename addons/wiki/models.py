@@ -11,12 +11,13 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
-from bleach import Cleaner
 from functools import partial
 from bleach.linkifier import LinkifyFilter
 from django.db import models
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
+
+from framework.utils import sanitize_html
 from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
@@ -47,7 +48,8 @@ SHAREJS_DB_NAME = 'sharejs'
 SHAREJS_DB_URL = f'mongodb://{settings.DB_HOST}:{settings.DB_PORT}/{SHAREJS_DB_NAME}'
 
 # TODO: Change to release date for wiki change
-WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098).replace(tzinfo=pytz.utc)
+WIKI_CHANGE_DATE = datetime.datetime.fromtimestamp(1423760098, pytz.utc)
+
 
 def validate_page_name(value):
     value = (value or '').strip()
@@ -60,6 +62,7 @@ def validate_page_name(value):
     if len(value) > 100:
         raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
+
 
 def build_html_output(content, node):
     return markdown.markdown(
@@ -74,6 +77,7 @@ def build_html_output(content, node):
             codehilite.CodeHiliteExtension(css_class='highlight')
         ]
     )
+
 
 def render_content(content, node):
     html_output = build_html_output(content, node)
@@ -126,13 +130,13 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         """The cleaned HTML of the page"""
         html_output = build_html_output(self.content, node=node)
         try:
-            cleaner = Cleaner(
+            return sanitize_html(
+                html_output,
                 tags=settings.WIKI_WHITELIST['tags'],
                 attributes=settings.WIKI_WHITELIST['attributes'],
                 styles=settings.WIKI_WHITELIST['styles'],
-                filters=[partial(LinkifyFilter, callbacks=[nofollow, ])]
+                filters=[partial(LinkifyFilter, callbacks=[nofollow])]
             )
-            return cleaner.clean(html_output)
         except TypeError:
             logger.warning('Returning unlinkified content.')
             return render_content(self.content, node=node)
@@ -160,7 +164,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             sharejs_version = doc_item['_v']
             sharejs_timestamp = doc_item['_m']['mtime']
             sharejs_timestamp /= 1000  # Convert to appropriate units
-            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
+            sharejs_date = datetime.datetime.fromtimestamp(sharejs_timestamp, pytz.utc)
 
             if sharejs_version > 1 and sharejs_date > self.created:
                 return doc_item['_data']

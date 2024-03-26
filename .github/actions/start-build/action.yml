@@ -15,18 +15,18 @@ runs:
     run: |
       # pinned pip to 21.0a and setuptools<58.0.0 as current dependencies do not build on newer versions of pip and setuptools
       pip install --upgrade pip==21.0.1 "setuptools<58.0.0" "wheel==0.38.4"
-      pip install invoke==0.13.0
+      pip install invoke==2.2.0
       #lowest flake8 version to support python 3.10
       pip install flake8==7.0.0 --force-reinstall --upgrade
       pip install wheel
-      invoke wheelhouse --dev --addons
+      python3 -m invoke wheelhouse --dev --addons
   - name: Other installs
     shell: bash
     run: |
       # bumped psycopg to match requirements.txt, as otherwise build would fail
-      pip install psycopg2==2.8.4 --no-binary psycopg2
-      invoke travis_addon_settings
-      invoke requirements --dev --addons
+      pip install psycopg2==2.9.9 --no-binary psycopg2
+      python3 -m invoke travis-addon-settings
+      python3 -m invoke requirements --dev --addons
       pip uninstall uritemplate.py --yes
       pip install uritemplate.py==0.3.0
       # use yarn add --exact to match versions in yarn.lock w/o installing all deps

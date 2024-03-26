@@ -1,6 +1,6 @@
 import logging
 import random
-from typing import Iterable
+from collections.abc import Iterable
 
 import bson
 from django.contrib.contenttypes.fields import (GenericForeignKey,

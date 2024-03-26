@@ -1,7 +1,8 @@
-from flask import (Flask, request, jsonify, render_template,  # noqa
-                   render_template_string, Blueprint, send_file, abort, make_response,
-                   redirect as flask_redirect, url_for, send_from_directory, current_app
-                   )
+from flask import (
+    Flask,
+    request,
+    redirect as flask_redirect,
+)
 import furl
 
 from website import settings
@@ -14,9 +15,10 @@ app = Flask(
 )
 
 # Pull debug mode from settings
-app.debug = settings.DEBUG_MODE
+app.config['DEBUG'] = settings.DEBUG_MODE
 app.config['SENTRY_TAGS'] = {'App': 'web'}
 app.config['SENTRY_RELEASE'] = settings.VERSION
+
 
 def rm_handler(app, handler_name, func, key=None):
     """Remove a handler from an application.
@@ -31,6 +33,7 @@ def rm_handler(app, handler_name, func, key=None):
         handler_funcs.get(key, []).remove(func)
     except ValueError:
         pass
+
 
 def rm_handlers(app, handlers, key=None):
     """Remove multiple handlers from an application.
@@ -70,6 +73,7 @@ def add_handlers(app, handlers, key=None):
     """
     for handler_name, func in handlers.items():
         add_handler(app, handler_name, func, key=key)
+
 
 def redirect(location, code=302):
     """Redirect the client to a desired location. Behaves the same

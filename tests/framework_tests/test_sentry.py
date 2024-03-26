@@ -6,7 +6,6 @@ from importlib import import_module
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory
-from nose.tools import assert_false
 
 import functools
 
@@ -69,4 +68,4 @@ class TestSentry(OsfTestCase):
     @mock.patch('framework.sentry.sentry.captureException')
     def test_log_not_enabled(self, mock_capture):
         sentry.log_exception()
-        assert_false(mock_capture.called)
+        assert not mock_capture.called

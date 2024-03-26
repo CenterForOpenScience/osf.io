@@ -4,7 +4,6 @@ import pytz
 import pytest
 from datetime import datetime, timedelta
 
-from nose import tools as nt
 from django.test import RequestFactory
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
@@ -117,8 +116,8 @@ class TestGDPRDeleteUser(AdminTestCase):
         count = AdminLogEntry.objects.count()
         self.view().post(self.request)
         self.user.reload()
-        nt.assert_true(self.user.deleted)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert self.user.deleted
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -155,8 +154,8 @@ class TestDisableUser(AdminTestCase):
         count = AdminLogEntry.objects.count()
         self.view().post(self.request)
         self.user.reload()
-        nt.assert_true(self.user.is_disabled)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert self.user.is_disabled
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_reactivate_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
@@ -164,13 +163,13 @@ class TestDisableUser(AdminTestCase):
         count = AdminLogEntry.objects.count()
         self.view().post(self.request)
         self.user.reload()
-        nt.assert_false(self.user.is_disabled)
-        nt.assert_false(self.user.requested_deactivation)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert not self.user.is_disabled
+        assert not self.user.requested_deactivation
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_no_user(self):
         view = setup_view(views.UserDisableView(), self.request, guid='meh')
-        with nt.assert_raises(OSFUser.DoesNotExist):
+        with pytest.raises(OSFUser.DoesNotExist):
             view.post(self.request)
 
     def test_no_user_permissions_raises_error(self):
@@ -207,12 +206,12 @@ class TestHamUserRestore(AdminTestCase):
     def test_enable_user(self):
         self.user.is_disabled = True
         self.user.save()
-        nt.assert_true(self.user.is_disabled)
+        assert self.user.is_disabled
         self.view().post(self.request)
         self.user.reload()
 
-        nt.assert_false(self.user.is_disabled)
-        nt.assert_true(self.user.spam_status == SpamStatus.HAM)
+        assert not self.user.is_disabled
+        assert self.user.spam_status == SpamStatus.HAM
 
 
 class TestDisableSpamUser(AdminTestCase):
@@ -229,14 +228,14 @@ class TestDisableSpamUser(AdminTestCase):
         self.view().post(self.request)
         self.user.reload()
         self.public_node.reload()
-        nt.assert_true(self.user.is_disabled)
-        nt.assert_true(self.user.spam_status == SpamStatus.SPAM)
-        nt.assert_false(self.public_node.is_public)
-        nt.assert_true(AdminLogEntry.objects.exists())
+        assert self.user.is_disabled
+        assert self.user.spam_status == SpamStatus.SPAM
+        assert not self.public_node.is_public
+        assert AdminLogEntry.objects.exists()
 
     def test_no_user(self):
         view = setup_view(self.view(), self.request, guid='meh')
-        with nt.assert_raises(OSFUser.DoesNotExist):
+        with pytest.raises(OSFUser.DoesNotExist):
             view.post(self.request)
 
     def test_no_user_permissions_raises_error(self):
@@ -315,8 +314,8 @@ class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
-        nt.assert_equal(qs.count(), 1)
-        nt.assert_equal(qs[0]._id, self.flagged_user._id)
+        assert qs.count() == 1
+        assert qs[0]._id == self.flagged_user._id
 
 
 class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
@@ -329,8 +328,8 @@ class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
-        nt.assert_equal(qs.count(), 1)
-        nt.assert_equal(qs[0]._id, self.spam_user._id)
+        assert qs.count() == 1
+        assert qs[0]._id == self.spam_user._id
 
 
 class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
@@ -343,8 +342,8 @@ class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
-        nt.assert_equal(qs.count(), 1)
-        nt.assert_equal(qs[0]._id, self.ham_user._id)
+        assert qs.count() == 1
+        assert qs[0]._id == self.ham_user._id
 
 
 class TestRemove2Factor(AdminTestCase):
@@ -359,14 +358,14 @@ class TestRemove2Factor(AdminTestCase):
 
     def test_integration_delete_two_factor(self):
         user_addon = self.user.get_or_add_addon('twofactor')
-        nt.assert_not_equal(user_addon, None)
+        assert user_addon is not None
         user_settings = self.user.get_addon('twofactor')
-        nt.assert_not_equal(user_settings, None)
+        assert user_settings is not None
         count = AdminLogEntry.objects.count()
         self.setup_view.post(self.request)
         post_addon = self.user.get_addon('twofactor')
-        nt.assert_equal(post_addon, None)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert post_addon is None
+        assert AdminLogEntry.objects.count() == count + 1
 
     def test_no_user_permissions_raises_error(self):
         guid = self.user._id
@@ -411,50 +410,50 @@ class TestUserSearchView(AdminTestCase):
             'guid': self.user_1.guids.first()._id
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], f'/users/{self.user_1.guids.first()._id}/')
+        assert response.status_code == 302
+        assert response.headers['location'] == f'/users/{self.user_1.guids.first()._id}/'
 
     def test_search_user_by_name(self):
         form_data = {
             'name': 'Hardy'
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], '/users/search/Hardy/')
+        assert response.status_code == 302
+        assert response.headers['location'] == '/users/search/Hardy/'
 
     def test_search_user_by_name_with_punctuation(self):
         form_data = {
             'name': 'Dr. Sportello-Fay, PI @, #, $, %, ^, &, *, (, ), ~'
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
+        assert response.status_code == 302
+        assert response.headers['location'] == '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/'
 
     def test_search_user_by_username(self):
         form_data = {
             'email': self.user_1.username
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], f'/users/{self.user_1.guids.first()._id}/')
+        assert response.status_code == 302
+        assert response.headers['location'] == f'/users/{self.user_1.guids.first()._id}/'
 
     def test_search_user_by_alternate_email(self):
         form_data = {
             'email': self.user_2_alternate_email
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], f'/users/{self.user_2.guids.first()._id}/')
+        assert response.status_code == 302
+        assert response.headers['location'] == f'/users/{self.user_2.guids.first()._id}/'
 
     def test_search_user_list(self):
         view = views.UserSearchList()
@@ -463,9 +462,9 @@ class TestUserSearchView(AdminTestCase):
 
         results = view.get_queryset()
 
-        nt.assert_equal(len(results), 3)
+        assert len(results) == 3
         for user in results:
-            nt.assert_in('Hardy', user.fullname)
+            assert 'Hardy' in user.fullname
 
     def test_search_user_list_case_insensitive(self):
         view = views.UserSearchList()
@@ -474,9 +473,9 @@ class TestUserSearchView(AdminTestCase):
 
         results = view.get_queryset()
 
-        nt.assert_equal(len(results), 3)
+        assert len(results) == 3
         for user in results:
-            nt.assert_in('Hardy', user.fullname)
+            assert 'Hardy' in user.fullname
 
 
 class TestGetLinkView(AdminTestCase):
@@ -492,7 +491,7 @@ class TestGetLinkView(AdminTestCase):
         link = view.get_link(user)
         link_path = str(furl.furl(link).path)
 
-        nt.assert_equal(link_path, ideal_link_path)
+        assert link_path == ideal_link_path
 
     def test_get_user_confirmation_link_with_expired_token(self):
         user = UnconfirmedUserFactory()
@@ -510,7 +509,7 @@ class TestGetLinkView(AdminTestCase):
         link_path = str(furl.furl(link).path)
         ideal_link_path = f'/confirm/{user._id}/{new_user_token}/'
 
-        nt.assert_equal(link_path, ideal_link_path)
+        assert link_path == ideal_link_path
 
     def test_get_password_reset_link(self):
         user = UnconfirmedUserFactory()
@@ -521,12 +520,12 @@ class TestGetLinkView(AdminTestCase):
         link = view.get_link(user)
 
         user_token = user.verification_key_v2.get('token')
-        nt.assert_is_not_none(user_token)
+        assert user_token is not None
 
         ideal_link_path = f'/resetpassword/{user._id}/{user_token}'
         link_path = str(furl.furl(link).path)
 
-        nt.assert_equal(link_path, ideal_link_path)
+        assert link_path == ideal_link_path
 
     def test_get_unclaimed_node_links(self):
         project = ProjectFactory()
@@ -540,12 +539,12 @@ class TestGetLinkView(AdminTestCase):
         links = view.get_claim_links(unregistered_contributor)
         unclaimed_records = unregistered_contributor.unclaimed_records
 
-        nt.assert_equal(len(links), 1)
-        nt.assert_equal(len(links), len(unclaimed_records.keys()))
+        assert len(links) == 1
+        assert len(links) == len(unclaimed_records.keys())
         link = links[0]
 
-        nt.assert_in(project._id, link)
-        nt.assert_in(unregistered_contributor.unclaimed_records[project._id]['token'], link)
+        assert project._id in link
+        assert unregistered_contributor.unclaimed_records[project._id]['token'] in link
 
 
 class TestUserReindex(AdminTestCase):
@@ -562,8 +561,8 @@ class TestUserReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.user._id)
         view.post(self.request)
 
-        nt.assert_true(mock_reindex_elastic.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert mock_reindex_elastic.called
+        assert AdminLogEntry.objects.count() == count + 1
 
 
 class TestUserMerge(AdminTestCase):
@@ -582,8 +581,8 @@ class TestUserMerge(AdminTestCase):
         invalid_form = MergeUserForm(data={'user_guid_to_be_merged': 'Not a valid Guid'})
         valid_form = MergeUserForm(data={'user_guid_to_be_merged': user_merged._id})
 
-        nt.assert_false(invalid_form.is_valid())
-        nt.assert_true(valid_form.is_valid())
+        assert not invalid_form.is_valid()
+        assert valid_form.is_valid()
 
         view.form_valid(valid_form)
-        nt.assert_true(mock_merge_user.called_with())
+        assert mock_merge_user.called_with()

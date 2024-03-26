@@ -37,7 +37,6 @@ from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from website.ember_osf_web.decorators import ember_flag_is_active
 from osf import features
-# from osf.models import PreprintProvider
 
 
 @block_bing_preview

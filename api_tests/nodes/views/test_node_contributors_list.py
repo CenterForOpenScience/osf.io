@@ -108,7 +108,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/contributors/'
 
     @pytest.fixture()
     def url_public(self, project_public):
@@ -119,7 +119,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert res.status_code == 200
 
         assert res.json['data'][0]['id'].split('-')[0] == project_public._id
-        assert res.json['data'][0]['id'] == '{}-{}'.format(project_public._id, user._id)
+        assert res.json['data'][0]['id'] == f'{project_public._id}-{user._id}'
 
     def test_permissions_work_with_many_users(
         self, app, user, project_private, url_private
@@ -1708,7 +1708,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/contributors/'
 
     @pytest.fixture()
     def payload_public_one(self, user_two, project_public, make_contrib_id):
@@ -2161,7 +2161,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/contributors/'
 
     @pytest.fixture()
     def payload_public_one(self, user_two, project_public, make_contrib_id):
@@ -2536,7 +2536,7 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/contributors/'
 
     @pytest.fixture()
     def payload_public_one(self, user_two, project_public, make_contrib_id):
@@ -2866,7 +2866,7 @@ class TestNodeContributorFiltering:
 
     @pytest.fixture()
     def url(self, project):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/contributors/'
 
     def test_filtering(self, app, user, url, project):
 

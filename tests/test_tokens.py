@@ -1,9 +1,9 @@
 import jwt
+import pytest
 from rest_framework import status as http_status
 
 from unittest import mock
 from django.db.models import Q
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from osf_tests import factories
@@ -33,28 +33,28 @@ class TestTokenHandler(OsfTestCase):
         self.encoded_token = jwt.encode(
             self.payload,
             self.secret,
-            algorithm=settings.JWT_ALGORITHM).decode()
+            algorithm=settings.JWT_ALGORITHM)
 
     def test_encode(self):
-        assert_equal(encode(self.payload), self.encoded_token)
+        assert encode(self.payload) == self.encoded_token
 
     def test_decode(self):
-        assert_equal(decode(self.encoded_token), self.payload)
+        assert decode(self.encoded_token) == self.payload
 
     def test_from_string(self):
         token = TokenHandler.from_string(self.encoded_token)
-        assert_equal(token.encoded_token, self.encoded_token)
-        assert_equal(token.payload, self.payload)
+        assert token.encoded_token == self.encoded_token
+        assert token.payload == self.payload
 
     def test_from_payload(self):
         token = TokenHandler.from_payload(self.payload)
-        assert_equal(token.encoded_token, self.encoded_token)
-        assert_equal(token.payload, self.payload)
+        assert token.encoded_token == self.encoded_token
+        assert token.payload == self.payload
 
     def test_token_process_for_invalid_action_raises_TokenHandlerNotFound(self):
         self.payload['action'] = 'not a handler'
         token = TokenHandler.from_payload(self.payload)
-        with assert_raises(TokenHandlerNotFound):
+        with pytest.raises(TokenHandlerNotFound):
             token.to_response()
 
     @mock.patch('osf.utils.tokens.handlers.sanction_handler')
@@ -62,14 +62,12 @@ class TestTokenHandler(OsfTestCase):
         self.payload['action'] = 'approve_registration_approval'
         token = TokenHandler.from_payload(self.payload)
         token.to_response()
-        assert_true(
-            mock_handler.called_with(
+        assert mock_handler.called_with(
                 'registration',
                 'approve',
                 self.payload,
                 self.encoded_token
             )
-        )
 
 class SanctionTokenHandlerBase(OsfTestCase):
 
@@ -105,8 +103,8 @@ class SanctionTokenHandlerBase(OsfTestCase):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http_status.HTTP_400_BAD_REQUEST)
-                assert_equal(e.data['message_long'], NO_SANCTION_MSG.format(self.Model.DISPLAY_NAME))
+                assert e.code == http_status.HTTP_400_BAD_REQUEST
+                assert e.data['message_long'] == NO_SANCTION_MSG.format(self.Model.DISPLAY_NAME)
 
     def test_sanction_handler_sanction_approved(self):
         if not self.kind:
@@ -119,8 +117,8 @@ class SanctionTokenHandlerBase(OsfTestCase):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http_status.HTTP_400_BAD_REQUEST if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_410_GONE)
-                assert_equal(e.data['message_long'], APPROVED_MSG.format(self.sanction.DISPLAY_NAME))
+                assert e.code == http_status.HTTP_400_BAD_REQUEST if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_410_GONE
+                assert e.data['message_long'] == APPROVED_MSG.format(self.sanction.DISPLAY_NAME)
 
     def test_sanction_handler_sanction_rejected(self):
         if not self.kind:
@@ -133,8 +131,9 @@ class SanctionTokenHandlerBase(OsfTestCase):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http_status.HTTP_410_GONE if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_400_BAD_REQUEST)
-                assert_equal(e.data['message_long'], REJECTED_MSG.format(self.sanction.DISPLAY_NAME))
+                assert e.code == http_status.HTTP_410_GONE if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_400_BAD_REQUEST
+                assert e.data['message_long'] == REJECTED_MSG.format(self.sanction.DISPLAY_NAME)
+
 
 class TestEmbargoTokenHandler(SanctionTokenHandlerBase):
 

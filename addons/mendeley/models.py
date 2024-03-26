@@ -68,7 +68,7 @@ class Mendeley(CitationsOauthProvider):
         return APISession(partial, credentials)
 
     def _verify_client_validity(self):
-        #Check if Mendeley can be accessed
+        # Check if Mendeley can be accessed
         try:
             self._client.folders.list()
         except MendeleyApiException as error:

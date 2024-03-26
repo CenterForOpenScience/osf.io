@@ -140,9 +140,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'kind': 'folder',
                 'name': '/ (Full Dropbox)',
                 'urls': {
-                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/dropbox/folders/',
-                        params={'id': '/'}
-                    )
+                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/dropbox/folders/', params={'id': '/'})
                 }
             }]
 
@@ -171,8 +169,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': item.path_display.split('/')[-1],
                 'path': item.path_display,
                 'urls': {
-                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/dropbox/folders/',
-                        params={'id': item.path_display}
+                    'folders': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/dropbox/folders/', params={'id': item.path_display}
                     )
                 }
             }
@@ -207,7 +205,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
+        url = self.owner.web_url_for(
+            'addon_view_or_download_file',
             path=metadata['path'].strip('/'),
             provider='dropbox'
         )

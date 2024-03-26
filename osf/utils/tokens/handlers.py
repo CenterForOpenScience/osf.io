@@ -1,5 +1,3 @@
-from rest_framework import status as http_status
-
 from flask import redirect, request
 import markupsafe
 
@@ -9,6 +7,7 @@ from framework import status
 from transitions import MachineError
 
 from osf.exceptions import UnsupportedSanctionHandlerKind, TokenError
+
 
 def registration_approval_handler(action, registration, registered_from):
     # TODO: Unnecessary and duplicated dictionary.
@@ -67,14 +66,14 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     err_code = None
     err_message = None
     if not sanction:
-        err_code = http_status.HTTP_400_BAD_REQUEST
+        err_code = status.HTTP_400_BAD_REQUEST
         err_message = 'There is no {} associated with this token.'.format(
             markupsafe.escape(Model.DISPLAY_NAME))
     elif sanction.is_approved:
         # Simply strip query params and redirect if already approved
         return redirect(request.base_url)
     elif sanction.is_rejected:
-        err_code = http_status.HTTP_410_GONE if kind in ['registration', 'embargo'] else http_status.HTTP_400_BAD_REQUEST
+        err_code = status.HTTP_410_GONE if kind in ['registration', 'embargo'] else status.HTTP_400_BAD_REQUEST
         err_message = 'This registration {} has been rejected.'.format(
             markupsafe.escape(sanction.DISPLAY_NAME))
     if err_code:
@@ -89,17 +88,17 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         try:
             do_action(user=auth.user, token=encoded_token)
         except TokenError as e:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+            raise HTTPError(status.HTTP_400_BAD_REQUEST, data={
                 'message_short': e.message_short,
                 'message_long': str(e)
             })
         except PermissionsError as e:
-            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, data={
+            raise HTTPError(status.HTTP_401_UNAUTHORIZED, data={
                 'message_short': 'Unauthorized access',
                 'message_long': str(e)
             })
         except MachineError as e:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+            raise HTTPError(status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Operation not allowed at this time',
                 'message_long': e.value
             })

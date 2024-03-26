@@ -10,7 +10,6 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
-from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ImproperlyConfigured
@@ -2223,7 +2222,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             project_signals.node_deleted.send(node)
             node._remove_from_associated_collections(auth)
 
-        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
+        Node.objects.bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
         if len(hierarchy.filter(is_public=True)):
             AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
