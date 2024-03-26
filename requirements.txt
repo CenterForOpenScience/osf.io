@@ -41,7 +41,7 @@ pymongo==4.6.2
 PyYAML==6.0.1
 tqdm==4.66.2
 # Python markdown extensions for comment emails
-git+https://github.com/Johnetordoff/mdx_del_ins.git@django-3
+markdown-del-ins==1.0.0
 
 certifi==2024.2.2
 sendgrid==6.11.0
@@ -100,8 +100,9 @@ rdflib==7.0.0
 colorlog==6.8.2
 # Metrics
 # git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6
-git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl
+#git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl
 elasticsearch_dsl==8.12.0
+git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@feature/pin-esdsl
 
 # Impact Metrics CSV Export
 djangorestframework-csv==3.0.2
