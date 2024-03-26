@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
-                            RequestError, TransportError, helpers)
+                           RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
 from osf.models import AbstractNode

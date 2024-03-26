@@ -8,8 +8,11 @@ from importlib import import_module
 from django.conf import settings
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils.deprecation import MiddlewareMixin
-from raven.contrib.django.raven_compat.models import sentry_exception_handler
+from sentry_sdk import init
+from sentry_sdk.integrations.celery import CeleryIntegration
 import corsheaders.middleware
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from framework.postcommit_tasks.handlers import (
     postcommit_after_request,
@@ -26,6 +29,11 @@ from api.base.authentication.drf import drf_get_session_from_cookie
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
+init(
+    dsn=settings.SENTRY_DSN,
+    integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+)
+
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
 
@@ -34,7 +42,6 @@ class CeleryTaskMiddleware(MiddlewareMixin):
 
     def process_exception(self, request, exception):
         """If an exception occurs, clear the celery task queue so process_response has nothing."""
-        sentry_exception_handler(request=request)
         celery_teardown_request(error=True)
         return None
 
@@ -53,7 +60,6 @@ class DjangoGlobalMiddleware(MiddlewareMixin):
         api_globals.request = request
 
     def process_exception(self, request, exception):
-        sentry_exception_handler(request=request)
         api_globals.request = None
         return None
 

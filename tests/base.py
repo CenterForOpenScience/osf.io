@@ -63,8 +63,6 @@ SILENT_LOGGERS = [
     'website.search_migration.migrate',
     'website.util.paths',
     'requests_oauthlib.oauth2_session',
-    'raven.base.Client',
-    'raven.contrib.django.client.DjangoClient',
     'transitions.core',
     'MARKDOWN',
 ]
