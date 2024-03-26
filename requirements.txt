@@ -99,10 +99,8 @@ rdflib==7.0.0
 
 colorlog==6.8.2
 # Metrics
-# git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6
-#git+https://github.com/felliott/django-elasticsearch-metrics@feature/pin-esdsl
-elasticsearch_dsl==8.12.0
 git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@feature/pin-esdsl
+elasticsearch_dsl==8.12.0
 
 # Impact Metrics CSV Export
 djangorestframework-csv==3.0.2
