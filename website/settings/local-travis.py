@@ -106,3 +106,4 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 SHARE_ENABLED = False
 DATACITE_ENABLED = False
 IA_ARCHIVE_ENABLED = False
+USE_COLOR = False
