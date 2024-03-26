@@ -327,6 +327,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
 
+        if 'original_publication_citation' in validated_data:
+            preprint.original_publication_citation = validated_data['original_publication_citation'] or None
+            save_preprint = True
+
         if 'has_coi' in validated_data:
             try:
                 preprint.update_has_coi(auth, validated_data['has_coi'])
