@@ -427,7 +427,7 @@ class TestSaveCredentialsView(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post_user(self.user, params, -1)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_403_FORBIDDEN)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_404_NOT_FOUND)
 
 @pytest.mark.feature_202210
 class TestDeleteCredentialsView(AdminTestCase):
