@@ -163,14 +163,18 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         # Log can't be added without auth
         if add_log and auth:
             node = self.owner
-            self.owner.add_log(
-                action='weko_node_deauthorized',
-                params={
-                    'project': node.parent_id,
-                    'node': node._id,
-                },
-                auth=auth,
-            )
+            try:
+                self.owner.add_log(
+                    action='weko_node_deauthorized',
+                    params={
+                        'project': node.parent_id,
+                        'node': node._id,
+                    },
+                    auth=auth,
+                )
+            except Exception as e:
+                logger.exception('Error when deauthorizing node {0} for user {1}'.format(node._id, self.owner._id))
+                raise e
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:

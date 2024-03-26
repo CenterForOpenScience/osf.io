@@ -8,6 +8,7 @@ from website.routes import notemplate, OsfWebRenderer
 
 from . import SHORT_NAME
 from . import views
+from . import dataset
 
 TEMPLATE_DIR = './addons/metadata/templates/'
 
@@ -75,6 +76,14 @@ api_routes = {
             '/project/<pid>/{}/packages/tasks/<taskid>/'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/packages/tasks/<taskid>/'.format(SHORT_NAME),
         ], 'get', views.metadata_node_task_progress, json_renderer),
+        Rule([
+            '/project/<pid>/{}/dataset/providers/<provider>/folders/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/dataset/providers/<provider>/folders/<path:filepath>'.format(SHORT_NAME),
+        ], 'put', dataset.metadata_import_dataset, json_renderer),
+        Rule([
+            '/project/<pid>/{}/dataset/tasks/<task_id>/'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/dataset/tasks/<task_id>/'.format(SHORT_NAME),
+        ], 'get', dataset.metadata_get_importing_dataset, json_renderer),
     ],
     'prefix': '/api/v1',
 }

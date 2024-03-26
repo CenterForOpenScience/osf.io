@@ -10,6 +10,8 @@ const logPrefix = '[metadata] ';
 const rdmGettext = require('js/rdmGettext');
 const _ = rdmGettext._;
 
+const ImportDatasetButton = require('./metadataImportDatasetButton.js');
+
 const QuestionPage = require('./metadata-fields.js').QuestionPage;
 const WaterButlerCache = require('./wbcache.js').WaterButlerCache;
 const registrations = require('./registration.js');
@@ -33,6 +35,7 @@ const osfBlock = {
 };
 
 const METADATA_CACHE_EXPIRATION_MSEC = 1000 * 60 * 5;
+var tempIdCounterForDataset = 1000;
 
 function MetadataButtons() {
   var self = this;
@@ -1767,10 +1770,19 @@ function MetadataButtons() {
                     if (tb.options.placement === 'fileview') {
                       return m('span', []);
                     }
-                    return m('span', [
-                               m.component(base, {treebeard : tb, mode : mode,
-                                           item : item }),
-                             ].concat(buttons));
+                    const viewButtons = [
+                      m.component(base, {treebeard : tb, mode : mode,
+                                  item : item }),
+                    ].concat(buttons);
+                    if (item.kind === 'folder') {
+                      const importDatasetButton = new ImportDatasetButton(tb, item, {
+                        assign: function() {
+                          return tempIdCounterForDataset ++;
+                        }
+                      });
+                      viewButtons.push(importDatasetButton.createButton());
+                    }
+                    return m('span', viewButtons);
                   }
                 };
               };

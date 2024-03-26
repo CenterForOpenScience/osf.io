@@ -1,3 +1,4 @@
 stream-unzip>=0.0.78
 rocrate>=0.6.0
 zipfly>=6.0.5
+beautifulsoup4>=4.6.0
