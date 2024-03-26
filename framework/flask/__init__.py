@@ -2,7 +2,7 @@ from flask import (
     Flask,
     request,
     redirect as flask_redirect,
-    )
+)
 import furl
 
 from website import settings

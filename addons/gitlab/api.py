@@ -2,13 +2,11 @@ from future.moves.urllib.parse import urlencode
 import requests
 
 import gitlab
-from requests.adapters import HTTPAdapter
 from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 
 from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
-
 
 
 class GitLabClient:

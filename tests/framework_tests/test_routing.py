@@ -28,7 +28,7 @@ class TestJSONRenderer(unittest.TestCase):
 
         self.wt = self.app.test_client()
 
-        logger.error("self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.")
+        logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
 
     def test_error_handling(self):
         rule = Rule(['/error/'], 'get', error_view, renderer=json_renderer)

@@ -4,7 +4,6 @@ from rest_framework import status
 import json
 import logging
 import os
-import pystache
 
 from flask import request, make_response
 from mako.lookup import TemplateLookup
@@ -197,9 +196,6 @@ def process_rules(app, rules, prefix=''):
 
 ### Renderer helpers ###
 
-def render_mustache_string(tpl_string, data):
-    return pystache.render(tpl_string, context=data)
-
 def render_jinja_string(tpl, data):
     pass
 
@@ -239,7 +235,6 @@ def render_mako_string(tpldir, tplname, data, trust=True):
 
 
 renderer_extension_map = {
-    '.stache': render_mustache_string,
     '.jinja': render_jinja_string,
     '.mako': render_mako_string,
 }
