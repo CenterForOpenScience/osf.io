@@ -109,7 +109,7 @@ class AppTestCase(unittest.TestCase):
         self.app = test_app.test_client()
         self.app.application.config.update({'TESTING': True, })
 
-        logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
+        # logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
 
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:

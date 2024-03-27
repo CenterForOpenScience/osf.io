@@ -72,6 +72,8 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-addons -n 1
+    - name: Upload report
+      uses: ./.github/actions/gen-report
 
   website:
     runs-on: ubuntu-20.04
@@ -115,6 +117,8 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-website -n 1
+    - name: Upload report
+      uses: ./.github/actions/gen-report
 
   api1_and_js:
     runs-on: ubuntu-20.04
@@ -161,6 +165,8 @@ jobs:
           python3 -m invoke assets --dev
       - name: Run test
         run: python3 -m invoke test-travis-api1-and-js -n 1
+      - name: Upload report
+        uses: ./.github/actions/gen-report
 
   api2:
     runs-on: ubuntu-20.04
@@ -204,6 +210,8 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-api2 -n 1
+    - name: Upload report
+      uses: ./.github/actions/gen-report
 
   api3_and_osf:
     runs-on: ubuntu-20.04
@@ -247,4 +255,5 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-api3-and-osf -n 1
-
+    - name: Upload report
+      uses: ./.github/actions/gen-report

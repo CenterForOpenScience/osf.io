@@ -12,23 +12,24 @@ from framework.sessions import get_session
 from website import settings
 
 logger = logging.getLogger(__name__)
+enabled = (not settings.DEBUG_MODE) and settings.SENTRY_DSN
 
-init(
-    dsn=settings.SENTRY_DSN,
-    integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
-)
+if enabled:
+    sentry = init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+    )
 
 LOG_LEVEL_MAP = {
-    logging.DEBUG: "DEBUG",
-    logging.INFO: "INFO",
-    logging.WARNING: "WARNING",
-    logging.ERROR: "ERROR",
-    logging.CRITICAL: "CRITICAL"
+    logging.DEBUG: 'DEBUG',
+    logging.INFO: 'INFO',
+    logging.WARNING: 'WARNING',
+    logging.ERROR: 'ERROR',
+    logging.CRITICAL: 'CRITICAL'
 }
 
 # Nothing in this module should send to Sentry if debug mode is on
 #   or if Sentry isn't configured.
-enabled = (not settings.DEBUG_MODE) and settings.SENTRY_DSN
 
 
 def get_session_data():
@@ -45,7 +46,7 @@ def log_exception(skip_session=False):
     extra = {
         'session': {} if skip_session else get_session_data(),
     }
-    set_context("extra", extra)
+    set_context('extra', extra)
     return capture_exception()
 
 
@@ -61,7 +62,7 @@ def log_message(message, skip_session=False, extra_data=None, level=logging.ERRO
     if extra_data is not None:
         extra.update(extra_data)
 
-    set_context("extra", extra)
+    set_context('extra', extra)
 
-    level_str = LOG_LEVEL_MAP.get(level, "error")
+    level_str = LOG_LEVEL_MAP.get(level, 'error')
     return capture_message(message, level=level_str)

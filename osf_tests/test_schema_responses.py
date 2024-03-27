@@ -438,7 +438,7 @@ class TestUpdateSchemaResponses():
         with pytest.raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses({'q7': 'sneaky'})
 
-        assert manager.exception.unsupported_keys == {'q7'}
+        assert manager.value.unsupported_keys == {'q7'}
 
     @pytest.mark.parametrize(
         'updated_responses',
@@ -463,7 +463,7 @@ class TestUpdateSchemaResponses():
                 {'q1': 1, 'q2': ['this is a list'], 'q3': 'B', 'q4': 'this is a string'}
             )
 
-        assert set(manager.exception.invalid_responses.keys()) == {'q1', 'q2', 'q4'}
+        assert set(manager.value.invalid_responses.keys()) == {'q1', 'q2', 'q4'}
 
     def test_update_fails_with_invalid_response_values(self, revised_response):
         with pytest.raises(SchemaResponseUpdateError) as manager:
@@ -471,7 +471,7 @@ class TestUpdateSchemaResponses():
                 {'q3': 'Q', 'q4': ['D', 'A']}
             )
 
-        assert set(manager.exception.invalid_responses.keys()) == {'q3', 'q4'}
+        assert set(manager.value.invalid_responses.keys()) == {'q3', 'q4'}
 
     @pytest.mark.parametrize(
         'invalid_response_state',

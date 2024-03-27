@@ -54,7 +54,7 @@ def make_row(field_values={}):
 def assert_parsed(actual_parsed, expected_parsed):
     parsed = {**actual_parsed['metadata'], **actual_parsed['registration_responses']}
     for key, value in expected_parsed.items():
-        assert key in parsed is True
+        assert key in parsed
         actual = parsed[key]
         expected = value
         if actual and expected and isinstance(actual, list) and isinstance(expected, list):
@@ -122,10 +122,10 @@ class TestBulkUploadParserValidationErrors:
     def test_csv_parsed(self, header_row, open_ended_schema, subjects_list, registration_provider, valid_row):
         test_csv = write_csv(header_row, {'Title': open_ended_schema._id}, valid_row)
         upload = BulkRegistrationUpload(test_csv, registration_provider._id)
-        assert upload.is_validated is False
+        assert not upload.is_validated
         upload.validate()
         parsed = upload.get_parsed()
-        assert upload.is_validated is True
+        assert upload.is_validated
         assert upload.errors == []
         assert 'registrations' in parsed
         assert 'csv_raw' in parsed['registrations'][0]

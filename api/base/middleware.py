@@ -5,12 +5,12 @@ import pstats
 import threading
 from importlib import import_module
 
+import corsheaders.middleware
 from django.conf import settings
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils.deprecation import MiddlewareMixin
 from sentry_sdk import init
 from sentry_sdk.integrations.celery import CeleryIntegration
-import corsheaders.middleware
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.flask import FlaskIntegration
 from website.settings import SENTRY_DSN
@@ -30,10 +30,13 @@ from api.base.authentication.drf import drf_get_session_from_cookie
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
-init(
-    dsn=SENTRY_DSN,
-    integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
-)
+
+enabled = (not settings.DEV_MODE) and settings.SENTRY_DSN
+if enabled:
+    init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+    )
 
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""

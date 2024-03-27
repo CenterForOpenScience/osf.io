@@ -278,7 +278,7 @@ class TestSerializers(OsfTestCase):
                     self.assertEqual(resp.status_code, 200)
                     self.assertEqual(resp.headers['Content-Type'], EXPECTED_MEDIATYPE[format_key])
                     self.assertEqual(
-                        resp.content_disposition,
+                        resp.headers['Content-Disposition'],
                         f'attachment; filename={gathered_file.filename}',
                     )
                     self._assert_expected_file(filename, resp.unicode_body)
