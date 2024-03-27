@@ -27,7 +27,7 @@
             const cleanTasksUrl = ${ urls['api']['base'] | sjson, n } + 'clean_celery_tasks/';
             const getAbortWikiImportResultUrl = ${ urls['api']['base'] | sjson, n } + 'get_abort_wiki_import_result/';
             const abortWikiImport = await requestAbortWikiImport(cleanTasksUrl, $abortErrorMsg);
-            const abortTaskResult = await intervalGetAbortWikiImportResult(getAbortWikiImportResultUrl, 1000, 60, 'abort wiki import')
+            const abortTaskResult = await intervalGetAbortWikiImportResult(getAbortWikiImportResultUrl, 1000, 60000, 'abort wiki import')
         });
     });
 
@@ -52,16 +52,16 @@
         });
     }
 
-    async function intervalGetAbortWikiImportResult(url, ms, timeout, operation) {
+    async function intervalGetAbortWikiImportResult(url, interval_ms, timeout_ms, operation) {
         var count = 0;
         var result = '';
-        var timeoutCtn = timeout * 1000 / ms
-        while (count < timeoutCtn) {
+        var timeoutCtn = timeout_ms / interval_ms
+        while (count < timeoutCtn + 1) {
             await new Promise(function(resolve){
                 setTimeout(async function(){
                     result = await getAbortWikiImportResult(url, operation)
                     resolve();
-                }, ms);
+                }, interval_ms);
             });
             if (result) {
                 if(result.aborted) {

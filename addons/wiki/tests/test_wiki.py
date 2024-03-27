@@ -581,7 +581,6 @@ class TestWikiDelete(OsfTestCase):
         assert_equal(child_wiki.page_name.lower(), 'kangaroos')
         assert_equal(child_wiki.deleted, None)
 
-
         url = self.project.api_url_for(
             'project_wiki_delete',
             wname='Koalas'

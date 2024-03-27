@@ -32,6 +32,6 @@ class InvalidVersionError(WikiError):
     """Raised if user tries to access a wiki page version that does not exist."""
     pass
 
-class ImportTaskAborted(WikiError):
+class ImportTaskAbortedError(WikiError):
     """Raised if wiki import task is aborted."""
     pass
