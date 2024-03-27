@@ -111,7 +111,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
-    original_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -327,8 +327,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
 
-        if 'original_publication_citation' in validated_data:
-            preprint.original_publication_citation = validated_data['original_publication_citation'] or None
+        if 'custom_publication_citation' in validated_data:
+            preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
             save_preprint = True
 
         if 'has_coi' in validated_data:
