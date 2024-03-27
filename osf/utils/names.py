@@ -2,7 +2,7 @@ from nameparser.parser import HumanName
 
 
 def impute_names(name):
-    human = HumanName(name, encoding="UTF-8")
+    human = HumanName(name, encoding='UTF-8')
     return {
         'given': human.first,
         'middle': human.middle,
@@ -12,7 +12,7 @@ def impute_names(name):
 
 
 def impute_names_model(name):
-    human = HumanName(name, encoding="UTF-8")
+    human = HumanName(name, encoding='UTF-8')
     return {
         'given_name': human.first,
         'middle_names': human.middle,

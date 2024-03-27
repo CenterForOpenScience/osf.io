@@ -19,7 +19,7 @@ if SENTRY_DSN:
         release=VERSION,
     )
     with configure_scope() as scope:
-        scope.set_tag("App", "celery")
+        scope.set_tag('App', 'celery')
 
 if CeleryConfig.broker_use_ssl:
     app.setup_security()

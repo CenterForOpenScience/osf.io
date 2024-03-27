@@ -17,7 +17,7 @@ init(
     release=settings.VERSION,
 )
 with configure_scope() as scope:
-    scope.set_tag("App", "celery")
+    scope.set_tag('App', 'celery')
 
 # statuses
 FAILED = 'failed'
@@ -30,7 +30,7 @@ def log_to_sentry(message, **kwargs):
     if not settings.SENTRY_DSN:
         return logger.warning('log_to_sentry called with no SENTRY_DSN')
     if kwargs:
-        set_context("extra", kwargs)
+        set_context('extra', kwargs)
     return capture_message(message)
 
 
