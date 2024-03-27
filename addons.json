@@ -183,6 +183,10 @@
         "s3compat",
         "owncloud"
     ],
+    "addons_has_max_keys": [
+        "s3",
+        "s3compat"
+    ],
     "addons_folder_field": {
         "s3": "folder_name",
         "s3compat": "folder_name",

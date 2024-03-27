@@ -1483,8 +1483,13 @@ $('#checkExportData').on('click', function () {
             "NG: " + data_res.ng + "/" + data_res.total + " files</p>";
         var text_current = '';
         data_res.list_file_ng.forEach(function (file) {
-            text_current += "<tr><td>" + file.path + "</td><td>" + file.size + " Bytes</td>" +
-                "<td>" + file.version_id + "</td><td>" + file.reason + "</td></tr>";
+            text_current += "<tr>" +
+                "<td>" + file.project_id + "</td>" +
+                "<td>" + file.path + "</td>" +
+                "<td>" + file.version_id + "</td>" +
+                "<td>" + file.size + " Bytes</td>" +
+                "<td>" + file.reason + "</td>" +
+                "</tr>";
         });
         $('.text-check-export-data').html(text_check_export);
         $('.table-ng').html(text_current);
@@ -1791,8 +1796,13 @@ $('#check_restore_button').on('click', function () {
             "NG: " + data_res.ng + "/" + data_res.total + " files</p>";
         var text_current = '';
         data_res.list_file_ng.forEach(function (file) {
-            text_current += "<tr><td>" + file.path + "</td><td>" + file.size + " Bytes</td>" +
-                "<td>" + file.version_id + "</td><td>" + file.reason + "</td></tr>";
+            text_current += "<tr>" +
+                "<td>" + file.project_id + "</td>" +
+                "<td>" + file.path + "</td>" +
+                "<td>" + file.version_id + "</td>" +
+                "<td>" + file.size + " Bytes</td>" +
+                "<td>" + file.reason + "</td>" +
+                "</tr>";
         });
         $('.text-check-restore-data').html(text_check_export);
         $('.table-ng-restore').html(text_current);

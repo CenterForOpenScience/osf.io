@@ -3,16 +3,20 @@ from datetime import datetime
 
 import pytest
 import requests
+from addons.osfstorage.tests.factories import FileVersionFactory
 from django.test import TestCase
 from mock import patch
 from nose import tools as nt
 from rest_framework import status
 
-from addons.osfstorage.tests.factories import FileVersionFactory
+from addons.osfstorage.models import Region
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 from osf.models import AbstractNode, ExportData
 from osf_tests.factories import (
     TagFactory,
+    RegionFactory,
     ProjectFactory,
+    AuthUserFactory,
     InstitutionFactory,
     OsfStorageFileFactory,
     ExportDataRestoreFactory,
@@ -24,12 +28,36 @@ from osf_tests.factories import (
 @pytest.mark.feature_202210
 @pytest.mark.django_db
 class TestExportDataRestore(TestCase):
+
     @classmethod
     def setUpTestData(cls):
-        cls.data_restore = ExportDataRestoreFactory()
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        inst_region = RegionFactory(
+            name=default_region.name,
+            waterbutler_credentials=default_region.waterbutler_credentials,
+            waterbutler_settings=default_region.waterbutler_settings
+        )
+        cls.institution = InstitutionFactory.create(_id=inst_region.guid)
+        cls.data_restore = ExportDataRestoreFactory(destination=inst_region)
         project = ProjectFactory()
-        cls.institution = InstitutionFactory.create(_id=cls.data_restore.destination.guid)
+        target = AbstractNode(id=project.id)
         cls.institution.nodes.set([project])
+        cls.file1 = file1 = OsfStorageFileFactory.create(
+            name='file1.txt',
+            created=datetime.now(),
+            target_object_id=project.id,
+            target=target
+        )
+        file_version = FileVersionFactory(region=inst_region, size=3,)
+        file_versions_through = BaseFileVersionsThroughFactory.create(
+            version_name=file1.name,
+            basefilenode=file1,
+            fileversion=file_version
+        )
+        file_versions = [file_version]
+        total_size = sum([f.size for f in file_versions])
+        files_numb = len(file_versions)
+
         cls.institution_json = {
             'id': cls.institution.id,
             'guid': cls.institution.guid,
@@ -44,34 +72,24 @@ class TestExportDataRestore(TestCase):
                 'name': cls.data_restore.destination.name,
                 'type': cls.data_restore.destination.provider_full_name
             },
-            'projects_numb': 1,
-            'files_numb': 1,
-            'size': -1,
+            'projects_numb': cls.institution.nodes.filter(type='osf.node').count(),
+            'files_numb': files_numb,
+            'size': total_size,
             'file_path': None
         }
-
-        projects = cls.institution.nodes.filter(type='osf.node')
-        projects__ids = projects.values_list('id', flat=True)
-        object_id = projects__ids[0]
-        target = AbstractNode(id=object_id)
-        node = OsfStorageFileFactory.create(target_object_id=object_id, target=target)
-        file_version = FileVersionFactory(region=cls.data_restore.destination)
-
-        file_versions_through = BaseFileVersionsThroughFactory.create(version_name='file.txt', basefilenode=node,
-                                                                      fileversion=file_version)
         cls.file_info_json = {
             'institution': cls.institution_json,
             'files': [{
-                'id': node.id,
-                'path': node.path,
-                'materialized_path': node.materialized_path,
-                'name': node.name,
-                'provider': node.provider,
-                'created_at': node.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at': node.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'id': file1.id,
+                'path': file1.path,
+                'materialized_path': file1.materialized_path,
+                'name': file1.name,
+                'provider': file1.provider,
+                'created_at': file1.created.strftime('%Y-%m-%d %H:%M:%S'),
+                'modified_at': file1.modified.strftime('%Y-%m-%d %H:%M:%S'),
                 'project': {
-                    'id': node.target._id,
-                    'name': node.target.title,
+                    'id': file1.target._id,
+                    'name': file1.target.title,
                 },
                 'tags': [],
                 'version': [{
@@ -79,7 +97,7 @@ class TestExportDataRestore(TestCase):
                     'created_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
                     'modified_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
                     'size': file_version.size,
-                    'version_name': file_versions_through.version_name if file_versions_through else node.name,
+                    'version_name': file_versions_through.version_name if file_versions_through else file1.name,
                     'contributor': file_version.creator.username,
                     'metadata': file_version.metadata,
                     'location': file_version.location,
@@ -89,7 +107,6 @@ class TestExportDataRestore(TestCase):
                 'timestamp': {},
             }]
         }
-        cls.file = node
 
     def test_init(self):
         nt.assert_is_not_none(self.data_restore)
@@ -103,12 +120,17 @@ class TestExportDataRestore(TestCase):
         test_str = f'"({self.data_restore.export}-{self.data_restore.destination})[{self.data_restore.status}]"'
         nt.assert_equal(str(self.data_restore), test_str)
 
-    def test_extract_file_information_json_from_destination_storage(self):
+    def test_extract_file_information_json_from_destination_storage__00_not_institution(self):
+        export_data_restore = ExportDataRestoreFactory.build()
+        result = export_data_restore.extract_file_information_json_from_destination_storage()
+        nt.assert_is_none(result)
+
+    def test_extract_file_information_json_from_destination_storage__01_normal(self):
         test_file_info_json = copy.deepcopy(self.file_info_json)
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_not_none(result)
+        nt.assert_is_instance(result, tuple)
         export_data_json, file_info_json = result
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
@@ -120,24 +142,19 @@ class TestExportDataRestore(TestCase):
         nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
         nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
 
-    def test_extract_file_information_json_from_destination_storage_institution_not_found(self):
-        export_data_restore_without_institution = ExportDataRestoreFactory.build()
-        result = export_data_restore_without_institution.extract_file_information_json_from_destination_storage()
-        nt.assert_is_none(result)
-
-    def test_extract_file_information_json_from_destination_storage_with_tags(self):
+    def test_extract_file_information_json_from_destination_storage__02_with_tags(self):
         # Add tags to file info JSON and test DB
         test_file_info_json = copy.deepcopy(self.file_info_json)
         test_file_info_json['files'][0]['tags'] = ['tag1', 'tag2']
         tag1 = TagFactory(name='tag1', system=False)
         tag2 = TagFactory(name='tag2', system=False)
-        self.file.tags.set([tag1, tag2])
+        self.file1.tags.set([tag1, tag2])
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_not_none(result)
-
+        nt.assert_is_instance(result, tuple)
         export_data_json, file_info_json = result
+
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
@@ -148,11 +165,11 @@ class TestExportDataRestore(TestCase):
         nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
         nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
 
-    def test_extract_file_information_json_from_destination_storage_with_timestamp(self):
+    def test_extract_file_information_json_from_destination_storage__03_with_timestamp(self):
         # Add timestamp to file info JSON and test DB
         test_file_info_json = copy.deepcopy(self.file_info_json)
         timestamp = RdmFileTimestamptokenVerifyResultFactory(
-            project_id=self.file.target._id, file_id=self.file._id)
+            project_id=self.file1.target._id, file_id=self.file1._id)
         test_file_info_json['files'][0]['timestamp'] = {
             'timestamp_id': timestamp.id,
             'inspection_result_status': timestamp.inspection_result_status,
@@ -169,8 +186,9 @@ class TestExportDataRestore(TestCase):
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_not_none(result)
+        nt.assert_is_instance(result, tuple)
         export_data_json, file_info_json = result
+
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
@@ -180,6 +198,65 @@ class TestExportDataRestore(TestCase):
         nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
         nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
         nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+
+    def test_extract_file_information_json_from_sourFce_storage__04_abnormal_file_data(self):
+        test_file_info_json = copy.deepcopy(self.file_info_json)
+        test_export_data_json = copy.deepcopy(self.export_data_json)
+        test_export_data_json['projects_numb'] -= 1
+        test_export_data_json['files_numb'] -= 1
+        test_export_data_json['size'] -= self.file1.versions.first().size
+        self.file1.deleted = datetime.now()
+        self.file1.deleted_on = None
+        self.file1.deleted_by_id = None
+        self.file1.save()
+
+        result = self.data_restore.extract_file_information_json_from_destination_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_files = file_info_json.get('files',)
+
+        nt.assert_equal(export_data_json, test_export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_files, [])
+
+        self.file1.deleted = None
+        self.file1.deleted_on = datetime.now()
+        self.file1.deleted_by_id = None
+        self.file1.save()
+
+        result = self.data_restore.extract_file_information_json_from_destination_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_files = file_info_json.get('files',)
+
+        nt.assert_equal(export_data_json, test_export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_files, [])
+
+        self.file1.deleted = None
+        self.file1.deleted_on = None
+        self.file1.deleted_by_id = AuthUserFactory()
+        self.file1.save()
+
+        result = self.data_restore.extract_file_information_json_from_destination_storage()
+
+        nt.assert_is_instance(result, tuple)
+        export_data_json, file_info_json = result
+
+        file_info_files = file_info_json.get('files',)
+
+        nt.assert_equal(export_data_json, test_export_data_json)
+        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
+        nt.assert_equal(file_info_files, [])
+
+        self.file1.deleted = None
+        self.file1.deleted_on = None
+        self.file1.deleted_by_id = None
+        self.file1.save()
 
     def test_process_start_timestamp(self):
         nt.assert_equal(self.data_restore.process_start_timestamp, self.data_restore.process_start.strftime('%s'))
