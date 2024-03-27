@@ -284,7 +284,7 @@ class TestPrivateLink(OsfTestCase):
 
         self.app = self.flaskapp.test_client()
 
-        logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
+        # logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
@@ -583,7 +583,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
             return 'success', 200
         self.app = self.flaskapp.test_client()
 
-        logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
+        # logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
 
     def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor_or_public_but_not_anonymized(

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from unittest import mock
-
+from pytest import raises
 from website.notifications.events.base import Event, register, event_registry
 from website.notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
@@ -33,21 +33,21 @@ class TestEventNotImplemented(OsfTestCase):
         self.node = factories.ProjectFactory(creator=self.user)
         self.event = self.NotImplementedEvent(self.user, self.node, 'not_implemented')
 
-    @raises(NotImplementedError)
     def test_text(self):
-        text = self.event.text_message
+        with raises(NotImplementedError):
+            text = self.event.text_message
 
-    @raises(NotImplementedError)
     def test_html(self):
-        html = self.event.html_message
+        with raises(NotImplementedError):
+            html = self.event.html_message
 
-    @raises(NotImplementedError)
     def test_url(self):
-        url = self.event.url
+        with raises(NotImplementedError):
+            url = self.event.url
 
-    @raises(NotImplementedError)
     def test_event(self):
-        event = self.event.event_type
+        with raises(NotImplementedError):
+            event = self.event.event_type
 
 
 class TestListOfFiles(OsfTestCase):

@@ -28,11 +28,12 @@ from api.base import settings as api_settings
 from api.base.authentication.drf import drf_get_session_from_cookie
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
-
-init(
-    dsn=settings.SENTRY_DSN,
-    integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
-)
+enabled = (not settings.DEV_MODE) and settings.SENTRY_DSN
+if enabled:
+    init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+    )
 
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""

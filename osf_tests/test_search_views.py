@@ -37,9 +37,9 @@ class TestSearchViews(OsfTestCase):
         search.delete_all()
 
     def test_search_views(self):
-        #Test search contributor
+        # Test search contributor
         url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib.fullname})
+        res = self.app.get(url, query_string=self.contrib.fullname)
         assert res.status_code == 200
         result = res.json['users']
         assert len(result) == 1
@@ -49,8 +49,8 @@ class TestSearchViews(OsfTestCase):
         assert brian['registered'] == self.contrib.is_registered
         assert brian['active'] == self.contrib.is_active
 
-        #Test search pagination
-        res = self.app.get(url, {'query': 'fr'})
+        # Test search pagination
+        res = self.app.get(url, query_string='fr')
         assert res.status_code == 200
         result = res.json['users']
         pages = res.json['pages']
@@ -59,24 +59,24 @@ class TestSearchViews(OsfTestCase):
         assert pages == 3
         assert page == 0
 
-        #Test default page 1
-        res = self.app.get(url, {'query': 'fr', 'page': 1})
+        # Test default page 1
+        res = self.app.get(url, query_string='fr', page=1)
         assert res.status_code == 200
         result = res.json['users']
         page = res.json['page']
         assert len(result) == 5
         assert page == 1
 
-        #Test default page 2
-        res = self.app.get(url, {'query': 'fr', 'page': 2})
+        # Test default page 2
+        res = self.app.get(url, query_string='fr', page=2)
         assert res.status_code == 200
         result = res.json['users']
         page = res.json['page']
         assert len(result) == 4
         assert page == 2
 
-        #Test smaller pages
-        res = self.app.get(url, {'query': 'fr', 'size': 5})
+        # Test smaller pages
+        res = self.app.get(url, query_string='fr', size=5)
         assert res.status_code == 200
         result = res.json['users']
         pages = res.json['pages']
@@ -85,8 +85,8 @@ class TestSearchViews(OsfTestCase):
         assert page == 0
         assert pages == 3
 
-        #Test smaller pages page 2
-        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
+        # Test smaller pages page 2
+        res = self.app.get(url, query_string='fr', page=2, size=5)
         assert res.status_code == 200
         result = res.json['users']
         pages = res.json['pages']
@@ -95,23 +95,23 @@ class TestSearchViews(OsfTestCase):
         assert page == 2
         assert pages == 3
 
-        #Test search projects
+        # Test search projects
         url = '/search/'
-        res = self.app.get(url, {'q': self.project.title})
+        res = self.app.get(url, q=self.project.title)
         assert res.status_code == 200
 
-        #Test search node
+        # Test search node
         res = self.app.post_json(
             api_url_for('search_node'),
-            {'query': self.project.title},
+            query_string=self.project.title,
             auth=factories.AuthUserFactory().auth
         )
         assert res.status_code == 200
 
-        #Test search node includePublic true
+        # Test search node includePublic true
         res = self.app.post_json(
             api_url_for('search_node'),
-            {'query': 'a', 'includePublic': True},
+            query_string='a', includePublic=True,
             auth=self.user_one.auth
         )
         node_ids = [node['id'] for node in res.json['nodes']]
@@ -120,10 +120,10 @@ class TestSearchViews(OsfTestCase):
         assert self.project_public_user_two._id in node_ids
         assert self.project_private_user_two._id not in node_ids
 
-        #Test search node includePublic false
+        # Test search node includePublic false
         res = self.app.post_json(
             api_url_for('search_node'),
-            {'query': 'a', 'includePublic': False},
+            query_string='a', includePublic=False,
             auth=self.user_one.auth
         )
         node_ids = [node['id'] for node in res.json['nodes']]
@@ -132,16 +132,16 @@ class TestSearchViews(OsfTestCase):
         assert self.project_public_user_two._id not in node_ids
         assert self.project_private_user_two._id not in node_ids
 
-        #Test search user
+        # Test search user
         url = '/api/v1/search/user/'
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, q='Umwali')
         assert res.status_code == 200
         assert not res.json['results']
 
         user_one = factories.AuthUserFactory(fullname='Joe Umwali')
         user_two = factories.AuthUserFactory(fullname='Joan Uwase')
 
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, q='Umwali')
 
         assert res.status_code == 200
         assert len(res.json['results']) == 1
@@ -154,7 +154,7 @@ class TestSearchViews(OsfTestCase):
         }
         user_one.save()
 
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, q='Umwali')
 
         assert res.status_code == 200
         assert len(res.json['results']) == 1
@@ -183,7 +183,7 @@ class TestSearchViews(OsfTestCase):
         }
         user_three.save()
 
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, q='Umwali')
 
         assert res.status_code == 200
         assert len(res.json['results']) == 2
@@ -192,7 +192,7 @@ class TestSearchViews(OsfTestCase):
         assert res.json['results'][0]['social']['ssrn'] != res.json['results'][1]['social']['ssrn']
         assert res.json['results'][0]['social']['github'] != res.json['results'][1]['social']['github']
 
-        res = self.app.get(url, {'q': 'Uwase'})
+        res = self.app.get(url, q='Uwase')
 
         assert res.status_code == 200
         assert len(res.json['results']) == 1
@@ -220,6 +220,7 @@ class TestODMTitleSearch(OsfTestCase):
     :arg ignoreNode: a list of nodes that should not be included in the search.
     :return: a list of dictionaries of projects
     """
+
     def setUp(self):
         super().setUp()
 

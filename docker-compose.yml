@@ -363,7 +363,7 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --all &&
+      - python3 -m invoke requirements --all &&
         (python3 -m compileall /usr/lib/python3.10 || true) &&
         rm -Rf /python3.10/* &&
         cp -Rf -p /usr/lib/python3.10 /
@@ -377,7 +377,7 @@ services:
 
   assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke assets -dw
+    command: python3 -m invoke assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
@@ -392,7 +392,7 @@ services:
 
   admin_assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke admin.assets -dw
+    command: python3 -m invoke admin.assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
@@ -439,7 +439,7 @@ services:
 
   worker:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke celery_worker
+    command: python3 -m invoke celery_worker
     restart: unless-stopped
     depends_on:
       - postgres
@@ -464,7 +464,7 @@ services:
 
   admin:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke adminserver -h 0.0.0.0
+    command: python3 -m invoke adminserver -h 0.0.0.0
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
@@ -488,7 +488,7 @@ services:
 
   api:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke apiserver -h 0.0.0.0
+    command: python3 -m invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -511,7 +511,7 @@ services:
 
   web:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke server -h 0.0.0.0
+    command: python3 -m invoke server -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 5000:5000
