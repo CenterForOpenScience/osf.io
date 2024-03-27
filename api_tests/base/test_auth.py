@@ -1,7 +1,6 @@
 """
 Tests related to authenticating API requests
 """
-
 from unittest import mock
 
 import pytest

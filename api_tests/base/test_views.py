@@ -69,7 +69,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_does_not_exist_formatting(self):
         if DEBUG_MODE:
-            self.skipTest()
+            self.skipTest('Skipped because debug mode')
         else:
             url = '/{}{}/'.format(API_BASE, 'notapage')
             res = self.app.get(url, expect_errors=True)
