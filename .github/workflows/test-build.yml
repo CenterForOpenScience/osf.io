@@ -256,4 +256,5 @@ jobs:
     - name: Run tests
       run: python3 -m invoke test-travis-api3-and-osf -n 1
     - name: Upload report
+      if: success() || failure()    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
