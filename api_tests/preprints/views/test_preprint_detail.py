@@ -305,18 +305,18 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.original_publication_date is None
 
-    def test_update_original_publication_citation_to_none(self, app, preprint, url):
+    def test_update_custom_publication_citation_to_none(self, app, preprint, url):
         write_contrib = AuthUserFactory()
         preprint.add_contributor(write_contrib, WRITE, save=True)
-        preprint.original_publication_citation = 'fake citation'
+        preprint.custom_publication_citation = 'fake citation'
         preprint.save()
         update_payload = build_preprint_update_payload(
-            preprint._id, attributes={'original_publication_citation': None}
+            preprint._id, attributes={'custom_publication_citation': None}
         )
         res = app.patch_json_api(url, update_payload, auth=write_contrib.auth)
         assert res.status_code == 200
         preprint.reload()
-        assert preprint.original_publication_citation is None
+        assert preprint.custom_publication_citation is None
 
     @responses.activate
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
@@ -549,15 +549,15 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.original_publication_date == date
 
-    def test_update_original_publication_citation(self, app, user, preprint, url):
+    def test_update_custom_publication_citation(self, app, user, preprint, url):
         citation = 'fake citation'
         update_payload = build_preprint_update_payload(
-            preprint._id, attributes={'original_publication_citation': citation}
+            preprint._id, attributes={'custom_publication_citation': citation}
         )
         res = app.patch_json_api(url, update_payload, auth=user.auth)
         assert res.status_code == 200
         preprint.reload()
-        assert preprint.original_publication_citation == citation
+        assert preprint.custom_publication_citation == citation
 
     @responses.activate
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
