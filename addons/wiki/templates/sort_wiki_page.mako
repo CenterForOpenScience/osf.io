@@ -33,7 +33,7 @@
     <!-- ko ifnot: $data.children().length -->
     <div style="display: inline;"><i></i></div>
     <!-- /ko -->
-    <div style="display: inline;"><a href="#" data-bind="text: $data.name"></a></div>
+    <div style="display: inline;"><a data-bind="text: $data.name, click: function(){ window.open($root.url + $data.name(), '_blank');}"></a></div>
     </div>
     <!-- /ko -->
     <!-- ko if: $data.children() -->
