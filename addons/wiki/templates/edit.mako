@@ -34,7 +34,7 @@
 </div>
 
     <div class="row wiki-wrapper">
-        <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1'}" style="width: 26%">
+        <div class="panel-toggle col-sm-${'4' if 'menu' in panels_used else '1'}">
 
             <!-- Menu with toggle normal -->
             <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden visible-xs'}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
@@ -100,7 +100,7 @@
         </div>
 
     <div class="wiki" id="wikiPageContext">
-    <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11'}" style="width: 74%">
+    <div class="panel-expand col-sm-${'8' if 'menu' in panels_used else '11'}">
       <div class="row">
 
           <div data-osf-panel="${_('View')}"
@@ -109,7 +109,7 @@
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
                 <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row wiki-view-icon-container">
-                        <div class="col-sm-8" style="width:100%">
+                        <div class="col-sm-12">
 
                             <div id="editWysiwyg" class="wiki-toolbar-icon text-info" data-bind="click: editMode">
                                 <i class="fa fa-edit text-info"></i><span>Edit</span>
@@ -134,7 +134,7 @@
                                     % endif
                                 </select>
                             </div>
-                                <div class="pull-right" style="margin-left: 20px;>
+                                <div class="pull-right ml-2">
                                   <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
                                       <div role="progressbar" data-bind="attr: progressBar">
                                           <span class="progress-bar-content p-h-sm">
@@ -195,10 +195,10 @@
                               <button id="revert-button"
                                       class="btn"
                                       data-bind="click: editModeOff"
-                                      >Finish</button>
+                                      >${_("Finish")}</button>
                               <input type="submit"
                                     class="btn btn-success"
-                                    value="Save"
+                                    value="${_('Save')}"
                                     data-bind="click: submitMText">
                           </div>
                         </div>
@@ -455,7 +455,6 @@ ${parent.javascript_bottom()}
             sort: ${urls['api']['sort'] | sjson, n },
             page: ${urls['web']['page'] | sjson, n },
             base: ${urls['web']['base'] | sjson, n },
-            sharejs: ${ sharejs_url | sjson, n },
             y_websocket: ${ y_websocket_url | sjson, n }
         },
         metadata: {
@@ -475,8 +474,6 @@ ${parent.javascript_bottom()}
     });
 
 </script>
-<script src="//${sharejs_url}/text.js"></script>
-<script src="//${sharejs_url}/share.js"></script>
 <link href="${node['mfr_url']}/static/css/mfr.css" media="all" rel="stylesheet" />
 <script src="${node['mfr_url']}/static/js/mfr.js"></script>
 <script src=${"/static/js/pages/wiki-edit-page.js"}></script>

@@ -122,7 +122,7 @@ api_routes = {
         Rule([
             '/project/<pid>/wiki/import/<dir_id>/validate/',
             '/project/<pid>/node/<nid>/wiki/import/<dir_id>/validate/',
-        ], 'get', views.project_wiki_validate_import, json_renderer),
+        ], 'get', views.project_wiki_validate_for_import, json_renderer),
 
         # Edit | POST
         Rule([

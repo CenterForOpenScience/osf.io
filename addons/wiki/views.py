@@ -17,7 +17,7 @@ from addons.wiki import settings
 from addons.wiki import utils as wiki_utils
 from addons.wiki.models import WikiPage, WikiVersion, WikiImportTask
 from addons.wiki import tasks
-from addons.wiki.exceptions import ImportTaskAborted
+from addons.wiki.exceptions import ImportTaskAbortedError
 from osf.management.commands.import_EGAP import get_creator_auth_header
 from osf.models.files import BaseFileNode
 from rest_framework import status as http_status
@@ -739,14 +739,14 @@ def serialize_component_wiki(node, auth):
     return None
 
 @must_be_valid_project
-def project_wiki_validate_import(dir_id, node, **kwargs):
-    wiki_utils.check_dir_id(dir_id, node)
+def project_wiki_validate_for_import(dir_id, node, **kwargs):
+    wiki_utils.check_file_object_in_node(dir_id, node)
     node_id = wiki_utils.get_node_guid(node)
-    task = tasks.run_project_wiki_validate_import.delay(dir_id, node_id)
+    task = tasks.run_project_wiki_validate_for_import.delay(dir_id, node_id)
     task_id = task.id
     return {'taskId': task_id}
 
-def project_wiki_validate_import_process(dir_id, node):
+def project_wiki_validate_for_import_process(dir_id, node):
     global can_start_import
     can_start_import = True
     import_dir = BaseFileNode.objects.values('id', 'name').get(_id=dir_id)
@@ -862,7 +862,7 @@ def _validate_import_duplicated_directry(info_list):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_import(dir_id, auth, node, **kwargs):
-    wiki_utils.check_dir_id(dir_id, node)
+    wiki_utils.check_file_object_in_node(dir_id, node)
     node_id = wiki_utils.get_node_guid(node)
     current_user_id = get_current_user_id()
     data = request.get_json()
@@ -920,7 +920,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
                 res_root, wiki_id = _wiki_import_create_or_update(info['path'], info['wiki_content'], auth, node, task)
                 ret.append(res_root)
                 wiki_id_list.append(wiki_id)
-            except ImportTaskAborted:
+            except ImportTaskAbortedError:
                 tasks.run_update_search_and_bulk_index.delay(pid, wiki_id_list)
                 set_wiki_import_task_proces_end(node)
                 logger.info('wiki import process is stopped')
@@ -935,7 +935,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
             res_child, child_wiki_id_list = _import_same_level_wiki(replaced_wiki_info, depth, auth, node, task)
             ret.extend(res_child)
             wiki_id_list.extend(child_wiki_id_list)
-        except ImportTaskAborted:
+        except ImportTaskAbortedError:
             tasks.run_update_search_and_bulk_index.delay(pid, wiki_id_list)
             set_wiki_import_task_proces_end(node)
             logger.info('wiki import process is stopped')
@@ -1158,7 +1158,7 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
 
 def _wiki_import_create_or_update(path, data, auth, node, task, p_wname=None, **kwargs):
     if task.is_aborted():
-        raise ImportTaskAborted
+        raise ImportTaskAbortedError
     parent_wiki_id = None
     updated_wiki_id = None
     # normalize NFC
@@ -1194,7 +1194,7 @@ def _wiki_import_create_or_update(path, data, auth, node, task, p_wname=None, **
 
 def _import_same_level_wiki(wiki_info, depth, auth, node, task):
     if task.is_aborted():
-        raise ImportTaskAborted
+        raise ImportTaskAbortedError
     ret = []
     wiki_id_list = []
     for info in wiki_info:
@@ -1205,7 +1205,7 @@ def _import_same_level_wiki(wiki_info, depth, auth, node, task):
                 res, wiki_id = _wiki_import_create_or_update(info['path'], info['wiki_content'], auth, node, task, info['parent_wiki_name'])
                 ret.append(res)
                 wiki_id_list.append(wiki_id)
-            except ImportTaskAborted:
+            except ImportTaskAbortedError:
                 logger.info('Wiki import task aborted when import child wiki page.')
                 return ret, wiki_id_list
             except Exception as err:
@@ -1222,11 +1222,16 @@ def project_get_task_result(task_id, node, **kwargs):
     try:
         result = res.get()
     except Exception as err:
-        err_msg = wiki_utils.extract_err_msg(err)
+        err_msg = _extract_err_msg(err)
         raise HTTPError(http_status.HTTP_500_INTERNAL_SERVER_ERROR, data=dict(
             message_long=err_msg
         ))
     return result
+
+def _extract_err_msg(err):
+    str_err = str(err)
+    message_long = str_err.split('\\t')[1]
+    return message_long
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
