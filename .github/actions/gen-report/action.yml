@@ -1,12 +1,12 @@
-name: 'Gen Report'
-description: 'Last composite action before tests are run'
+name: 'Generate Report'
+description: 'Generate test report from junit xml file'
 runs:
   using: "composite"
   steps:
-  - name: Gen report
+  - name: Generate Report
     uses: dorny/test-reporter@v1
     if: success() || failure()    # run this step even if previous step failed
     with:
-      name: "$GITHUB_JOB REPORT"   # Name of the check run which will be created
+      name: ${{github.job}} REPORT"   # Name of the check run which will be created
       path: report.xml      # Path to test results
       reporter: java-junit  # Format of test results

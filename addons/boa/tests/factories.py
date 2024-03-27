@@ -1,4 +1,5 @@
-from factory import DjangoModelFactory, Sequence, SubFactory
+from factory import Sequence, SubFactory
+from factory.django import DjangoModelFactory
 
 from addons.boa.models import UserSettings, NodeSettings
 from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory

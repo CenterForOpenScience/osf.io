@@ -39,13 +39,14 @@ class UserSettings(BaseUserSettings):
 
     def verify_code(self, code: int | str) -> bool:
         client = TOTP(self.totp_secret_b32)
-        accepted, drift = client.verify(
+        accepted = client.verify(
             otp=str(code),
             valid_window=self.totp_drift,
         )
         if accepted:
-            self.totp_drift = drift
+            self.totp_drift += 1
             return True
+        self.totp_drift = 0
         return False
 
     #############
