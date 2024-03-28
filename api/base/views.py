@@ -659,7 +659,7 @@ class WaterButlerMixin:
 
             file_obj.update(None, attrs, user=self.request.user, save=False)
 
-        base_class.objects.bulk_update(file_objs, ['name', 'materialized'])
+        base_class.objects.bulk_update(file_objs, ['name', 'materialized_path', 'last_touched'])
 
         for base_class in objs_to_create:
             base_class.objects.bulk_create(objs_to_create[base_class])
