@@ -153,18 +153,18 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, concurrency=None, max_tasks_per_child=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    cmd = f'celery worker -A framework.celery_tasks -Ofair -l {level}'
+    cmd = f'celery -A framework.celery_tasks worker -Ofair -l {level}'
     if hostname:
-        cmd = cmd + f' --hostname={hostname}'
+        cmd += f' --hostname={hostname}'
     # beat sets up a cron like scheduler, refer to website/settings
     if beat:
-        cmd = cmd + ' --beat'
+        cmd += ' --beat'
     if queues:
-        cmd = cmd + f' --queues={queues}'
+        cmd += f' --queues={queues}'
     if concurrency:
-        cmd = cmd + f' --concurrency={concurrency}'
+        cmd += f' --concurrency={concurrency}'
     if max_tasks_per_child:
-        cmd = cmd + f' --maxtasksperchild={max_tasks_per_child}'
+        cmd += f' --maxtasksperchild={max_tasks_per_child}'
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -173,9 +173,9 @@ def celery_beat(ctx, level='debug', schedule=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     # beat sets up a cron like scheduler, refer to website/settings
-    cmd = f'celery beat -A framework.celery_tasks -l {level} --pidfile='
+    cmd = f'celery -A framework.celery_tasks beat -l {level} --pidfile='
     if schedule:
-        cmd = cmd + f' --schedule={schedule}'
+        cmd += f' --schedule={schedule}'
     ctx.run(bin_prefix(cmd), pty=True)
 
 @task
