@@ -4,7 +4,7 @@ import functools
 import logging
 from importlib import import_module
 
-import furl
+from furl import furl
 import itsdangerous
 import jwe
 import jwt
@@ -99,8 +99,8 @@ class TestAddonAuth(OsfTestCase):
         assert data['auth'] == views.make_auth(self.user)
         assert data['credentials'] == self.node_addon.serialize_waterbutler_credentials()
         assert data['settings'] == self.node_addon.serialize_waterbutler_settings()
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
-        observed_url = furl.furl(data['callback_url'])
+        expected_url = furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
+        observed_url = furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert expected_url == observed_url
 
@@ -142,8 +142,8 @@ class TestAddonAuth(OsfTestCase):
         assert data['auth'] == views.make_auth(self.user)
         assert data['credentials'] == self.node_addon.serialize_waterbutler_credentials()
         assert data['settings'] == self.node_addon.serialize_waterbutler_settings()
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
-        observed_url = furl.furl(data['callback_url'])
+        expected_url = furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
+        observed_url = furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert expected_url == observed_url
 
@@ -1167,15 +1167,15 @@ class TestCheckOAuth(OsfTestCase):
 
 
 def assert_urls_equal(url1, url2):
-    furl1 = furl.furl(url1)
-    furl2 = furl.furl(url2)
+    furl1 = furl(url1)
+    furl2 = furl(url2)
     for attr in ['scheme', 'host', 'port']:
         setattr(furl1, attr, None)
         setattr(furl2, attr, None)
     # Note: furl params are ordered and cause trouble
     assert dict(furl1.args) == dict(furl2.args)
-    furl1.args = {}
-    furl2.args = {}
+    furl1.set(args={})
+    furl2.set(args={})
     assert furl1 == furl2
 
 
@@ -1336,7 +1336,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.get(f'/{guid._id}/?action=download', auth=self.user.auth)
 
         assert resp.status_code == 302
-        location = furl.furl(resp.location)
+        location = furl(resp.location)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version=''))
 
     def test_action_download_redirects_to_download_with_path(self):
@@ -1346,7 +1346,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.get(f'/{guid._id}/download?format=pdf', auth=self.user.auth)
 
         assert resp.status_code == 302
-        location = furl.furl(resp.location)
+        location = furl(resp.location)
         assert location.url == file_node.generate_waterbutler_url(format='pdf', action='download', direct=None, version='')
 
 
@@ -1357,7 +1357,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.get(f'/{guid._id}/download?format=pdf', auth=self.user.auth)
 
         assert resp.status_code == 302
-        location = furl.furl(resp.location)
+        location = furl(resp.location)
         assert location.url == file_node.generate_waterbutler_url( format='pdf', action='download', direct=None, version='')
 
     def test_action_download_redirects_to_download_with_version(self):
@@ -1367,7 +1367,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.get(f'/{guid._id}/?action=download&revision=1', auth=self.user.auth)
 
         assert resp.status_code == 302
-        location = furl.furl(resp.location)
+        location = furl(resp.location)
         # Note: version is added but us but all other url params are added as well
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
@@ -1494,7 +1494,7 @@ class TestAddonFileViews(OsfTestCase):
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head(f'/{guid._id}/?revision=1&foo=bar', auth=self.user.auth)
-        location = furl.furl(resp.location)
+        location = furl(resp.location)
         # Note: version is added but us but all other url params are added as well
         assert resp.status_code == 302
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version='', foo='bar'))

@@ -2,7 +2,7 @@ import collections
 import re
 from future.moves.urllib.parse import urlparse
 
-import furl
+from furl import furl
 import waffle
 from django.urls import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
@@ -1443,11 +1443,11 @@ class JSONAPISerializer(BaseAPISerializer):
         return invalid_embeds
 
     def to_esi_representation(self, data, envelope='data'):
-        href = None
         query_params_blacklist = ['page[size]']
         href = self.get_absolute_url(data)
         if href and href != '{}':
-            esi_url = furl.furl(href).add(args=dict(self.context['request'].query_params)).remove(
+            # NOTE: furl encoding to be verified later
+            esi_url = furl(href).add(args=dict(self.context['request'].query_params)).remove(
                 args=query_params_blacklist,
             ).remove(args=['envelope']).add(args={'envelope': envelope}).url
             return f'<esi:include src="{esi_url}"/>'

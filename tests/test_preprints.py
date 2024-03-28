@@ -1,7 +1,7 @@
 import jwe
 import jwt
 from unittest import mock
-import furl
+from furl import furl
 import pytest
 import time
 from future.moves.urllib.parse import urljoin
@@ -2046,8 +2046,8 @@ class TestPreprintOsfStorage(OsfTestCase):
         data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
         assert data['credentials'] == self.preprint.serialize_waterbutler_credentials()
         assert data['settings'] == self.preprint.serialize_waterbutler_settings()
-        expected_url = furl.furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
-        observed_url = furl.furl(data['callback_url'])
+        expected_url = furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
+        observed_url = furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert expected_url == observed_url
 

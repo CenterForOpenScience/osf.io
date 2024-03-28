@@ -4,7 +4,6 @@ import unittest
 
 from dropbox.exceptions import ApiError
 from tests.base import OsfTestCase
-from urllib3.exceptions import MaxRetryError
 
 from unittest import mock
 import pytest

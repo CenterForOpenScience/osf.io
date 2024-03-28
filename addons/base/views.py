@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from flask import make_response
 from flask import request
-import furl
+from furl import furl
 import jwe
 import jwt
 import waffle
@@ -232,7 +232,7 @@ def make_auth(user):
 def download_is_from_mfr(req, payload):
     metrics_data = payload['metrics']
     uri = metrics_data['uri']
-    is_render_uri = furl.furl(uri or '').query.params.get('mode') == 'render'
+    is_render_uri = furl(uri or '').query.params.get('mode') == 'render'
     return (
         # This header is sent for download requests that
         # originate from MFR, e.g. for the code pygments renderer
@@ -829,7 +829,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
-        return redirect(furl.furl(f'/{guid._id}/').set(args=extras).url)
+        # NOTE: furl encoding to be verified later
+        return redirect(furl(f'/{guid._id}/', args=extras).url)
     if isinstance(target, Preprint):
         # Redirecting preprint file guids to the preprint detail page
         return redirect(f'/{target._id}/')
@@ -900,8 +901,9 @@ def addon_view_file(auth, node, file_node, version):
     else:
         sharejs_uuid = None
 
-    internal_furl = furl.furl(settings.INTERNAL_DOMAIN)
-    download_url = furl.furl(request.url).set(
+    internal_furl = furl(settings.INTERNAL_DOMAIN)
+    download_url = furl(
+        request.url,
         netloc=internal_furl.netloc,
         args=dict(request.args, **{
             'direct': None,
@@ -912,7 +914,9 @@ def addon_view_file(auth, node, file_node, version):
     )
 
     mfr_url = get_mfr_url(node, file_node.provider)
-    render_url = furl.furl(mfr_url).set(
+    # NOTE: furl encoding to be verified later
+    render_url = furl(
+        mfr_url,
         path=['render'],
         args={'url': download_url.url}
     )
