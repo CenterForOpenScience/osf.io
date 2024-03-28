@@ -87,7 +87,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/Amazon S3',list(name_set)[0])
+        nt.assert_in('/Amazon S3', list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_repo(self):
         """
@@ -106,7 +106,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/Github name',list(name_set)[0])
+        nt.assert_in('/Github name', list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_folder_path(self):
         """
@@ -125,7 +125,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/googledrive name',list(name_set)[0])
+        nt.assert_in('/googledrive name', list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_folder(self):
         """
@@ -144,7 +144,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/dropbox name',list(name_set)[0])
+        nt.assert_in('/dropbox name', list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_index_title(self):
         """
@@ -163,7 +163,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/weko name',list(name_set)[0])
+        nt.assert_in('/weko name', list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_list_id(self):
         """
@@ -182,7 +182,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/mendeley name',list(name_set)[0])
+        nt.assert_in('/mendeley name', list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_folder_id(self):
         """
@@ -201,7 +201,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/owncloud name',list(name_set)[0])
+        nt.assert_in('/owncloud name', list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_dataverse(self):
         """
