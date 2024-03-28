@@ -411,6 +411,7 @@ class CeleryConfig:
     task_med_queue = 'med'
     task_high_queue = 'high'
     task_remote_computing_queue = 'remote'
+    task_account_status_changes_queue = 'account_status_changes'
 
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
@@ -488,6 +489,7 @@ class CeleryConfig:
                   routing_key=task_med_queue, consumer_arguments={'x-priority': 1}),
             Queue(task_high_queue, Exchange(task_high_queue),
                   routing_key=task_high_queue, consumer_arguments={'x-priority': 10}),
+            Queue(task_account_status_changes_queue, Exchange(task_account_status_changes_queue), routing_key=task_account_status_changes_queue)
         )
 
         task_default_exchange_type = 'direct'
@@ -764,10 +766,6 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
-
-# switch for disabling things that shouldn't happen during
-# the modm to django migration
-RUNNING_MIGRATION = False
 
 # External Identity Provider
 EXTERNAL_IDENTITY_PROFILE = {

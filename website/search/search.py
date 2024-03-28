@@ -14,7 +14,7 @@ else:
 
 def requires_search(func):
     def wrapped(*args, **kwargs):
-        if search_engine is not None and not settings.RUNNING_MIGRATION:
+        if search_engine is not None:
             return func(*args, **kwargs)
     return wrapped
 

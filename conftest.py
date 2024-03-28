@@ -90,8 +90,8 @@ _MOCKS = {
         'mark': 'enable_search',
         'replacement': mock.MagicMock()
     },
-    'website.search.elastic_search': {
-        'mark': 'enable_search',
+    'osf.external.messages.celery_publishers._publish_user_status_change': {
+        'mark': 'enable_account_status_messaging',
         'replacement': mock.MagicMock()
     }
 }

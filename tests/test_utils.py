@@ -13,6 +13,11 @@ import blinker
 
 from tests.base import OsfTestCase, DbTestCase
 from osf_tests.factories import RegistrationFactory, UserFactory, fake_email
+from framework.auth.signals import (
+    user_account_deactivated,
+    user_account_reactivated,
+    user_account_merged
+)
 
 from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
@@ -453,3 +458,64 @@ class TestUserFactoryConflict:
         user_one_create = UserFactory()
         user_two_create = UserFactory()
         assert user_one_create.username != user_two_create.username
+
+
+# Add this import at the top of your file
+from django.dispatch import receiver
+
+
+@pytest.mark.django_db
+class TestUserSignals:
+
+    @pytest.fixture
+    def user(self, db):
+        return UserFactory()
+
+    @pytest.fixture
+    def old_user(self, db):
+        return UserFactory()
+
+    @pytest.fixture
+    def deactivated_user(self, db):
+        user = UserFactory()
+        user.deactivate_account()
+        return user
+
+    @mock.patch('osf.external.messages.celery_publishers.publish_deactivated_user')
+    def test_user_account_deactivated_signal(self, mock_publish_deactivated_user, user):
+        # Connect a mock receiver to the signal for testing
+        @receiver(user_account_deactivated)
+        def mock_receiver(user, **kwargs):
+            return mock_publish_deactivated_user(user)
+
+        # Trigger the signal
+        user.deactivate_account()
+
+        # Verify that the mock receiver was called
+        mock_publish_deactivated_user.assert_called_once_with(user)
+
+    @mock.patch('osf.external.messages.celery_publishers.publish_merged_user')
+    def test_user_account_merged_signal(self, mock_publish_merged_user, user, old_user):
+        # Connect a mock receiver to the signal for testing
+        @receiver(user_account_merged)
+        def mock_receiver(user, **kwargs):
+            return mock_publish_merged_user(user)
+
+        # Trigger the signal
+        user.merge_user(old_user)
+
+        # Verify that the mock receiver was called
+        mock_publish_merged_user.assert_called_once_with(old_user)
+
+    @mock.patch('osf.external.messages.celery_publishers.publish_reactivate_user')
+    def test_user_account_deactivate_signal(self, mock_publish_reactivate_user, deactivated_user):
+        # Connect a mock receiver to the signal for testing
+        @receiver(user_account_reactivated)
+        def mock_receiver(user, **kwargs):
+            return mock_publish_reactivate_user(user)
+
+        # Trigger the signal
+        deactivated_user.reactivate_account()
+
+        # Verify that the mock receiver was called
+        mock_publish_reactivate_user.assert_called_once_with(deactivated_user)
