@@ -11,6 +11,14 @@
 # the old flipping code can be removed.
 # 5. When a flag name is no longer referenced anywhere in this repo or in the Ember app remove it from this list.
 flags:
+
+  - flag_name: ENABLE_GV
+    name: gravy_waffle
+    note: This is used to enable GravyValet, the system responible for addons, this will remove the files widget on the
+          project overview page. Will be used with EMBER_USER_SETTINGS_ADDONS and EMBER_NODE_SETTINGS_ADDONS to flip all
+          UI elements to the new addons system.
+    everyone: false
+
   - flag_name: EMBER_FILE_PROJECT_DETAIL
     name: ember_file_project_detail_page
     note: This is part of the upcoming files page redesign
@@ -105,11 +113,6 @@ flags:
   - flag_name: EMBER_USER_SETTINGS
     name: ember_user_settings_page
     note: This flag controls wheter the `User Settings Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_USER_SETTINGS_ADDONS
-    name: ember_user_settings_addons_page
-    note: This flag controls wheter the `User Addons Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_USER_SETTINGS_NOTIFICATIONS

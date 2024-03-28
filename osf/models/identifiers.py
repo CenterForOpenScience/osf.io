@@ -83,9 +83,10 @@ class IdentifierMixin(models.Model):
         if client:
             return client.create_identifier(self, category)
 
-    def request_identifier_update(self, category):
+    def request_identifier_update(self, category, create=False):
         '''Noop if no existing identifier value for the category.'''
-        if not self.get_identifier_value(category):
+
+        if not self.get_identifier_value(category) and not create:
             return
 
         client = self.get_doi_client()
