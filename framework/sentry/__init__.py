@@ -2,7 +2,10 @@
 
 import logging
 
-from raven.contrib.flask import Sentry
+from sentry_sdk import init, set_context, capture_exception, capture_message
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from framework.sessions import get_session
 
@@ -10,7 +13,18 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
-sentry = Sentry(dsn=settings.SENTRY_DSN)
+init(
+    dsn=settings.SENTRY_DSN,
+    integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+)
+
+LOG_LEVEL_MAP = {
+    logging.DEBUG: "DEBUG",
+    logging.INFO: "INFO",
+    logging.WARNING: "WARNING",
+    logging.ERROR: "ERROR",
+    logging.CRITICAL: "CRITICAL"
+}
 
 # Nothing in this module should send to Sentry if debug mode is on
 #   or if Sentry isn't configured.
@@ -31,7 +45,8 @@ def log_exception(skip_session=False):
     extra = {
         'session': {} if skip_session else get_session_data(),
     }
-    return sentry.captureException(extra=extra)
+    set_context("extra", extra)
+    return capture_exception()
 
 
 def log_message(message, skip_session=False, extra_data=None, level=logging.ERROR):
@@ -41,9 +56,12 @@ def log_message(message, skip_session=False, extra_data=None, level=logging.ERRO
         )
         return None
     extra = {
-        'session': {} if skip_session else get_session_data(),
+        'session': None if skip_session else get_session_data(),
     }
-    if extra_data is None:
-        extra_data = {}
-    extra.update(extra_data)
-    return sentry.captureMessage(message, extra=extra, level=level)
+    if extra_data is not None:
+        extra.update(extra_data)
+
+    set_context("extra", extra)
+
+    level_str = LOG_LEVEL_MAP.get(level, "error")
+    return capture_message(message, level=level_str)
