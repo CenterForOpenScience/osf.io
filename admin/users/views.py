@@ -471,7 +471,7 @@ class GetPasswordResetLink(GetUserLink):
         user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
         user.save()
 
-        return furl(DOMAIN) / f'resetpassword/{user._id}/{user.verification_key_v2["token"]}'
+        return furl(DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
 
     def get_link_type(self):
         return 'Password Reset'

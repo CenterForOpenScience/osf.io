@@ -133,7 +133,7 @@ class TestCASClient(OsfTestCase):
     @responses.activate
     def test_service_validate(self):
         user = UserFactory()
-        url = furl(self.base_url) / ('p3', 'serviceValidate',)
+        url = furl(self.base_url).add(path=['p3', 'serviceValidate'])
         service_url = 'http://test.osf.io'
         ticket = fake.md5()
         body = make_service_validation_response_body(user, ticket)
@@ -150,7 +150,7 @@ class TestCASClient(OsfTestCase):
 
     @responses.activate
     def test_service_validate_invalid_ticket_raises_error(self):
-        url = furl(self.base_url) / ('p3', 'serviceValidate',)
+        url = furl(self.base_url).add(path=['p3', 'serviceValidate'])
         service_url = 'http://test.osf.io'
         # Return error response
         responses.add(
@@ -166,7 +166,7 @@ class TestCASClient(OsfTestCase):
 
     @responses.activate
     def test_profile_invalid_access_token_raises_error(self):
-        url = furl(self.base_url) / ('oauth2', 'profile',)
+        url = furl(self.base_url).add(path=['oauth2', 'profile'])
         responses.add(
             responses.Response(
                 responses.GET,

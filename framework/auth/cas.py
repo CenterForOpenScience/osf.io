@@ -74,7 +74,7 @@ class CasClient:
         :return: dedicated CAS login url
         """
 
-        url = furl(self.BASE_URL) / 'login'
+        url = furl(self.BASE_URL).add(path='login')
         url.args['service'] = service_url
         if campaign:
             url.args['campaign'] = campaign
@@ -84,16 +84,16 @@ class CasClient:
         return url.url
 
     def get_logout_url(self, service_url):
-        url = furl(self.BASE_URL) / 'logout'
+        url = furl(self.BASE_URL).add(path='logout')
         url.args['service'] = service_url
         return url.url
 
     def get_profile_url(self):
-        url = furl(self.BASE_URL) / ('oauth2', 'profile',)
+        url = furl(self.BASE_URL).add(path=['oauth2', 'profile'])
         return url.url
 
     def get_auth_token_revocation_url(self):
-        url = furl(self.BASE_URL) / ('oauth2', 'revoke')
+        url = furl(self.BASE_URL).add(path=['oauth2', 'revoke'])
         return url.url
 
     def service_validate(self, ticket, service_url):
@@ -106,7 +106,7 @@ class CasClient:
         :raises: CasError if an unexpected response is returned
         """
 
-        url = furl(self.BASE_URL) / ['p3', 'serviceValidate']
+        url = furl(self.BASE_URL).add(path=['p3', 'serviceValidate'])
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 

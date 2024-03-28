@@ -1316,7 +1316,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
             data = data.get('data', None)
         if enable_esi:
             ret = [
-                self.child.urlto_esi_representation(item, envelope=None) for item in data
+                self.child.to_esi_representation(item, envelope=None) for item in data
             ]
         else:
             ret = [
