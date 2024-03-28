@@ -333,7 +333,7 @@ def user_account_password(auth, **kwargs):
 
 
 @must_be_logged_in
-@ember_flag_is_active(features.EMBER_USER_SETTINGS_ADDONS)
+@ember_flag_is_active(features.ENABLE_GV)
 def user_addons(auth, **kwargs):
 
     user = auth.user
