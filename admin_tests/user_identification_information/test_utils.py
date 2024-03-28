@@ -52,7 +52,7 @@ class TestUtils(AdminTestCase):
         nt.assert_is_instance(results, dict)
         nt.assert_equal(len(results), 0)
 
-    def test_get_list_extend_storage_with_branch_name_is_not_defined(self):
+    def test_get_list_extend_storage__with_branch_name_is_not_defined(self):
         ExternalAccount.objects.all().delete()
         ExternalAccountFactory()
 
@@ -60,7 +60,7 @@ class TestUtils(AdminTestCase):
         nt.assert_is_instance(results, dict)
         nt.assert_equal(len(results), 0)
 
-    def test_get_list_extend_storage_with_branch_name_is_folder_name(self):
+    def test_get_list_extend_storage__with_branch_name_is_folder_name(self):
         """
         this case check for s3, s3compat, s3compatb3, azureblobstorage, box, figshare, swift
         """
@@ -81,15 +81,15 @@ class TestUtils(AdminTestCase):
         self.S3Node_settings = S3NodeSettingsFactory(user_settings=self.user_settings)
         self.S3Node_settings.save()
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
         nt.assert_is_instance(results, dict)
 
-        for k, v in results.items():
-            list_name.append(v[0])
-        nt.assert_in('/Amazon S3', list_name)
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/Amazon S3',list(name_set)[0])
 
-    def test_get_list_extend_storage_with_branch_name_is_repo(self):
+    def test_get_list_extend_storage__with_branch_name_is_repo(self):
         """
         this case check for bitbucket, github, gitlab
         """
@@ -101,14 +101,14 @@ class TestUtils(AdminTestCase):
         self.user_settings.owner.save()
         self.GitHubNode_settings = GitHubNodeSettingsFactory(user_settings=self.user_settings)
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
 
-        for k, v in results.items():
-            list_name.append(v[0])
-        nt.assert_in('/Github name', list_name)
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/Github name',list(name_set)[0])
 
-    def test_get_list_extend_storage_with_branch_name_is_folder_path(self):
+    def test_get_list_extend_storage__with_branch_name_is_folder_path(self):
         """
         this case check for googledrive, onedrive, iqbrims
         """
@@ -120,15 +120,14 @@ class TestUtils(AdminTestCase):
         self.user_settings.owner.save()
         self.GoogleDriveNode_settings = GoogleDriveNodeSettingsFactory(user_settings=self.user_settings)
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
 
-        for k, v in results.items():
-            list_name.append(v[0])
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/googledrive name',list(name_set)[0])
 
-        nt.assert_in('/googledrive name', list_name[0])
-
-    def test_get_list_extend_storage_with_branch_name_is_folder(self):
+    def test_get_list_extend_storage__with_branch_name_is_folder(self):
         """
         this case check for dropbox
         """
@@ -140,15 +139,14 @@ class TestUtils(AdminTestCase):
         self.user_settings.owner.save()
         self.DropboxNode_settings = DropboxNodeSettingsFactory(user_settings=self.user_settings, external_account=self.external_account)
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
 
-        for k, v in results.items():
-            list_name.append(v[0])
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/dropbox name',list(name_set)[0])
 
-        nt.assert_in('/dropbox name', list_name[0])
-
-    def test_get_list_extend_storage_with_branch_name_is_index_title(self):
+    def test_get_list_extend_storage__with_branch_name_is_index_title(self):
         """
         this case check for weko
         """
@@ -160,15 +158,14 @@ class TestUtils(AdminTestCase):
         self.user_settings.owner.save()
         self.WEKONode_settings = WEKONodeSettingsFactory(user_settings=self.user_settings)
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
 
-        for k, v in results.items():
-            list_name.append(v[0])
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/weko name',list(name_set)[0])
 
-        nt.assert_in('/weko name', list_name[0])
-
-    def test_get_list_extend_storage_with_branch_name_is_list_id(self):
+    def test_get_list_extend_storage__with_branch_name_is_list_id(self):
         """
         this case check for mendeley, zotero
         """
@@ -180,15 +177,14 @@ class TestUtils(AdminTestCase):
         self.user_settings.owner.save()
         self.MendeleyNode_settings = MendeleyNodeSettingsFactory(user_settings=self.user_settings)
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
 
-        for k, v in results.items():
-            list_name.append(v[0])
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/mendeley name',list(name_set)[0])
 
-        nt.assert_in('/mendeley name', list_name[0])
-
-    def test_get_list_extend_storage_with_branch_name_is_folder_id(self):
+    def test_get_list_extend_storage__with_branch_name_is_folder_id(self):
         """
         this case check for owncloud, nextcloud
         """
@@ -200,15 +196,14 @@ class TestUtils(AdminTestCase):
         self.user_settings.owner.save()
         self.OwnCloudNode_settings = OwnCloudNodeSettingsFactory(user_settings=self.user_settings)
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
 
-        for k, v in results.items():
-            list_name.append(v[0])
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/owncloud name',list(name_set)[0])
 
-        nt.assert_in('/owncloud name', list_name[0])
-
-    def test_get_list_extend_storage_with_branch_name_is_dataverse(self):
+    def test_get_list_extend_storage__with_branch_name_is_dataverse(self):
         """
         this case check for dataverse
         """
@@ -220,10 +215,9 @@ class TestUtils(AdminTestCase):
         self.user_settings.owner.save()
         self.DataverseNode_settings = DataverseNodeSettingsFactory(user_settings=self.user_settings)
 
-        list_name = []
+        name_set = set()
         results = utils.get_list_extend_storage()
 
-        for k, v in results.items():
-            list_name.append(v[0])
-
-        nt.assert_in('/dataverse name', list_name[0])
+        for v_set in results.values():
+            name_set.update(v_set)
+        nt.assert_in('/dataverse name', list(name_set)[0])
