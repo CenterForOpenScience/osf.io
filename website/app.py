@@ -116,12 +116,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if attach_request_handlers:
         attach_handlers(app, settings)
 
-    if app.debug:
-        logger.info("Sentry disabled; Flask's debug mode enabled")
-    else:
-        from framework.sentry import sentry
-        sentry.init_app(app)
-        logger.info("Sentry enabled; Flask's debug mode disabled")
+    # sentry-sdk automatically detects flask in dependencies and inits flask integration
 
     apply_middlewares(app, settings)
 
