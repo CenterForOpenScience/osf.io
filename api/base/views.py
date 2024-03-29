@@ -1,6 +1,7 @@
 from collections import defaultdict
 from distutils.version import StrictVersion
 
+from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.db.models import F, Q
@@ -659,7 +660,7 @@ class WaterButlerMixin:
 
             file_obj.update(None, attrs, user=self.request.user, save=False)
 
-        base_class.objects.bulk_update(file_objs, ['name', 'materialized_path', 'last_touched'])
+        bulk_update(file_objs)
 
         for base_class in objs_to_create:
             base_class.objects.bulk_create(objs_to_create[base_class])
