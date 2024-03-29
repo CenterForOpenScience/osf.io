@@ -90,7 +90,8 @@ def get_globals():
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.get_affiliated_institutions()] if user else []
     try:
         location = Reader('GeoLite2-City.mmdb').city(request.remote_addr)
-    except AddressNotFoundError:
+        # TODO: replace with adequate error handling during keen removal
+    except (FileNotFoundError, AddressNotFoundError):
         location = None
 
     if request.host_url != settings.DOMAIN:

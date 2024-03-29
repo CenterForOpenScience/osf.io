@@ -174,6 +174,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         assert new_provider.name == new_data['name']
         assert new_provider.subjects_acceptable == formatted_rule
 
+    # TODO: bleach for some reason replaces <pre> with /n instead of sanitizing it
     def test_html_fields_are_stripped(self):
         new_data = {
             '_id': 'newname',
