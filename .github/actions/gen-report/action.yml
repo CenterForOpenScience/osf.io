@@ -10,6 +10,6 @@ runs:
       name: ${{github.job}} REPORT   # Name of the check run which will be created
       path: report.xml      # Path to test results
       reporter: java-junit  # Format of test results
-      max-annotations: 50
+      max-annotations: 49
       list-tests: failed
       list-suites: failed
