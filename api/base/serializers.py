@@ -1,6 +1,6 @@
 import collections
 import re
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from furl import furl
 import waffle

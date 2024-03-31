@@ -2,7 +2,7 @@ from furl import furl
 from django.utils import timezone
 from rest_framework import status as http_status
 import json
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from lxml import etree
 import requests

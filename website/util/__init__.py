@@ -1,6 +1,6 @@
 import logging
 import re
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.utils.http import urlencode
 from flask import request, url_for
