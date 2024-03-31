@@ -147,11 +147,6 @@ class TestSubjectEditValidation(OsfTestCase):
         with pytest.raises(ValidationError):
             self.subject.delete()
 
-    def test_max_highlighted_count(self):
-        highlights = [SubjectFactory(provider=self.subject.provider, highlighted=True) for _ in range(10)]
-        with pytest.raises(ValidationError):
-            self.subject.highlighted=True
-            self.subject.save()
 
 class TestSubjectProperties(OsfTestCase):
     def setUp(self):

@@ -11,7 +11,12 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base.settings.defaults import API_BASE
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.crossref.views import ParseCrossRefConfirmation
-from api.metrics.views import RawMetricsView, RegistriesModerationMetricsView, CountedAuthUsageView
+from api.metrics.views import (
+    RawMetricsView,
+    RegistriesModerationMetricsView,
+    CountedAuthUsageView,
+    MetricsOpenapiView,
+)
 from api.users.views import ClaimUser
 from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
@@ -54,6 +59,7 @@ class TestApiBaseViews(ApiTestCase):
             ParseCrossRefConfirmation,
             RawMetricsView,
             RegistriesModerationMetricsView,
+            MetricsOpenapiView,
         ]
 
     def test_root_returns_200(self):
