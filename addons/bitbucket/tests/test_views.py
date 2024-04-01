@@ -67,7 +67,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         mock_account.return_value = mock.Mock()
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'bitbucket_user': 'octocat',
             'bitbucket_repo': 'repo_name',
         }, auth=self.user.auth)

@@ -72,7 +72,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
             'oauth_disconnect',
             external_account_id=self.external_account._id
         )
-        res = self.app.delete(url, auth=other_user.auth, expect_errors=True)
+        res = self.app.delete(url, auth=other_user.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
 
@@ -111,7 +111,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node_settings = node.get_or_add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
         node.save()
         url = node.api_url_for(f'{self.ADDON_SHORT_NAME}_import_auth')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'external_account_id': ea._id
         }, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
@@ -130,9 +130,9 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
         url = node.api_url_for(f'{self.ADDON_SHORT_NAME}_import_auth')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'external_account_id': ea._id
-        }, auth=self.user.auth, expect_errors=True)
+        }, auth=self.user.auth, )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_import_auth_cant_write_node(self):
@@ -147,15 +147,15 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
         url = node.api_url_for(f'{self.ADDON_SHORT_NAME}_import_auth')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'external_account_id': ea._id
-        }, auth=user.auth, expect_errors=True)
+        }, auth=user.auth, )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_set_config(self):
         self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'selected': self.folder
         }, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
@@ -180,12 +180,12 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         user = AuthUserFactory()
         self.project.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
-        res = self.app.get(url, auth=user.auth, expect_errors=True)
+        res = self.app.get(url, auth=user.auth, )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_get_config_not_logged_in(self):
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
-        res = self.app.get(url, auth=None, expect_errors=True)
+        res = self.app.get(url, auth=None)
         assert res.status_code == http_status.HTTP_302_FOUND
 
     def test_account_list_single(self):
@@ -208,7 +208,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
     def test_account_list_not_authorized(self):
         url = api_url_for(f'{self.ADDON_SHORT_NAME}_account_list')
-        res = self.app.get(url, auth=None, expect_errors=True)
+        res = self.app.get(url, auth=None)
         assert res.status_code == http_status.HTTP_302_FOUND
 
     def test_folder_list(self):
@@ -296,7 +296,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         with mock.patch.object(self.client, '_folder_metadata') as mock_metadata:
             mock_metadata.return_value = self.folder
             url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-            res = self.app.put_json(url, {
+            res = self.app.put(url, json={
                 'external_list_id': self.folder.json['id'],
                 'external_list_name': self.folder.name,
             }, auth=self.user.auth)
@@ -451,6 +451,5 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         res = self.app.get(
             self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_citation_list', list_id='ROOT'),
             auth=non_authorizing_user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN

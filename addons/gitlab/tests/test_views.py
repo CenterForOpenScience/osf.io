@@ -69,7 +69,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'gitlab_user': 'octocat',
             'gitlab_repo': 'repo_name',
             'gitlab_repo_id': '123',
@@ -165,14 +165,14 @@ class TestGitLabViews(OsfTestCase):
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth, allow_redirects=True)
         assert len(res.json['prompts']) == 1
 
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
     def test_before_register(self, mock_has_auth):
         mock_has_auth.return_value = True
         url = self.project.api_url + 'beforeregister/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth,allow_redirects=True)
         assert 'GitLab' in res.json['prompts'][1]
 
     def test_get_refs_sha_no_branch(self):

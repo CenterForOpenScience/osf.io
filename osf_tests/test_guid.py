@@ -149,7 +149,6 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(
             self.node.web_url_for('node_setting', _guid=True),
             auth=self.node.creator.auth,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -158,7 +157,6 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(
             self.node.web_url_for('node_setting', _guid=True),
             auth=self.node.creator.auth,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -177,7 +175,6 @@ class TestResolveGuid(OsfTestCase):
         self.node.save()
         res = self.app.get(
             self.node.web_url_for('resolve_guid', guid=self.node._id),
-            expect_errors=True,
         )
         assert res.status_code == 200
 
@@ -191,7 +188,6 @@ class TestResolveGuid(OsfTestCase):
             self.node.save()
             res = self.app.get(
                 f'{self.node.web_url_for("resolve_guid", guid=self.node._id)}/{segment}/',
-                expect_errors=True,
             )
             assert res.status_code == 302
             assert '/login?service=' in res.location
@@ -437,12 +433,12 @@ class TestResolveGuid(OsfTestCase):
         guid = testfile.get_guid(create=True)
         testfile.save()
         testfile.delete()
-        res = self.app.get(f'/{guid}/download', expect_errors=True)
+        res = self.app.get(f'/{guid}/download')
         assert res.status_code == 404
 
         pp = PreprintFactory(is_published=False)
 
-        res = self.app.get(pp.url + 'download', expect_errors=True)
+        res = self.app.get(pp.url + 'download')
         assert res.status_code == 404
 
         pp.is_published = True
@@ -452,11 +448,11 @@ class TestResolveGuid(OsfTestCase):
 
         non_contrib = AuthUserFactory()
 
-        res = self.app.get(pp.url + 'download', auth=non_contrib.auth, expect_errors=True)
+        res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 403
 
         pp.deleted = timezone.now()
         pp.save()
 
-        res = self.app.get(pp.url + 'download', auth=non_contrib.auth, expect_errors=True)
+        res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 410
