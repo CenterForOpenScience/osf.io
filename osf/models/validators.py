@@ -109,11 +109,6 @@ def validate_email(value):
     if is_email_domain_blocked:
         raise BlockedEmailError('Invalid Email')
 
-
-def validate_subject_highlighted_count(provider, is_highlighted_addition):
-    if is_highlighted_addition and provider.subjects.filter(highlighted=True).count() >= 10:
-        raise DjangoValidationError(f'Too many highlighted subjects for PreprintProvider {provider._id}')
-
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject
     parent = Subject.objects.get(id=parent)

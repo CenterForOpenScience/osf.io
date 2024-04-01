@@ -1,14 +1,14 @@
 from importlib import import_module
 
 from rest_framework import status as http_status
-from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone
 from django.conf import settings as django_conf_settings
 import itsdangerous
 from flask import request, g
-import furl
+from furl import furl
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
@@ -171,8 +171,7 @@ def before_request():
     # Request Type 1: Service ticket validation during CAS login.
     ticket = request.args.get('ticket')
     if ticket:
-        service_url = furl.furl(request.url)
-        service_url.args.pop('ticket')
+        service_url = furl(request.url).remove(args=['ticket'])
         # Attempt to authenticate wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 

@@ -1,5 +1,5 @@
-import furl
-from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
+from furl import furl
+from urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from distutils.version import StrictVersion
 from hashids import Hashids
 
@@ -222,9 +222,10 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_u
     assert path.startswith('/'), 'Path must always start with /'
     if provider != 'osfstorage':
         base_url = None
-    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL))
+    # NOTE: furl encoding to be verified later
+    url = furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL))
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
-    url.path.segments.extend([urlquote(x) for x in segments])
+    url.add(path=[urlquote(x) for x in segments])
     url.args.update(kwargs)
     return url.url
 

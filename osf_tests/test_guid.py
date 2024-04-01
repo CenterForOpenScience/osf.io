@@ -1,6 +1,6 @@
 from unittest import mock
 import pytest
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 from django.utils import timezone
 from django.core.exceptions import MultipleObjectsReturned
 

@@ -1,7 +1,7 @@
 import os
 import itertools
 
-import furl
+from furl import furl
 import requests
 
 from framework.exceptions import HTTPError
@@ -43,7 +43,8 @@ class BaseClient:
         }
 
     def _build_url(self, base, *segments):
-        url = furl.furl(base)
+        # NOTE: furl encoding to be verified later
+        url = furl(base)
         segments = [segment for segment in [str(segment).strip('/') for segment in itertools.chain(url.path.segments, segments)] if segment]
-        url.path = os.path.join(*segments)
+        url.set(path=os.path.join(*segments))
         return url.url

@@ -6,7 +6,7 @@ from io import BytesIO
 
 import pytest
 from django.db import IntegrityError
-import furl
+from furl import furl
 
 from framework.auth import get_or_create_user
 from framework.auth.core import Auth
@@ -24,15 +24,15 @@ from osf_tests.factories import ConferenceFactory, ProjectFactory, UserFactory
 
 
 def assert_absolute(url):
-    parsed_domain = furl.furl(settings.DOMAIN)
-    parsed_url = furl.furl(url)
+    parsed_domain = furl(settings.DOMAIN)
+    parsed_url = furl(url)
     assert parsed_domain.host == parsed_url.host
 
 
 def assert_equal_urls(first, second):
-    parsed_first = furl.furl(first)
+    parsed_first = furl(first)
     parsed_first.port = None
-    parsed_second = furl.furl(second)
+    parsed_second = furl(second)
     parsed_second.port = None
     assert parsed_first == parsed_second
 

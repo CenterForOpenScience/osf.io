@@ -1,5 +1,6 @@
 import re
-from typing import Iterable, Final
+from typing import Final
+from collections.abc import Iterable
 
 import pytz
 import time

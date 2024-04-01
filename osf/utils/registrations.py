@@ -1,7 +1,7 @@
 import copy
 import re
 
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from osf.exceptions import SchemaBlockConversionError
 from website import settings

@@ -1,6 +1,6 @@
 from unittest import mock
 import pytest
-from future.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 import responses
 
 from framework.auth import Auth

@@ -1,3 +1,5 @@
+import pytest
+
 from unittest import mock
 from django.utils import timezone
 from pytest import raises

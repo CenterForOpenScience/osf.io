@@ -1,22 +1,28 @@
 import jwe
 import jwt
 from unittest import mock
-import furl
+from furl import furl
 import pytest
 import time
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import datetime
 from django.utils import timezone
 import pytz
 import itsdangerous
 from importlib import import_module
+import pytest_socket
 
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.conf import settings as django_conf_settings
 
 from website import settings, mails
-from website.preprints.tasks import on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
+from website.preprints.tasks import (
+    on_preprint_updated,
+    update_or_create_preprint_identifiers,
+    update_or_enqueue_on_preprint_updated,
+    should_update_preprint_identifiers
+)
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from framework.auth import signing
@@ -1923,6 +1929,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory()
+        self.private_preprint = PreprintFactory(is_published=False, creator=self.user)
         thesis_provider = PreprintProviderFactory(share_publish_type='Thesis')
         self.thesis = PreprintFactory(provider=thesis_provider)
 
@@ -1968,6 +1975,20 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         )
         assert 'title' in updated_task.kwargs['saved_fields']
         assert 'contributors' in  updated_task.kwargs['saved_fields']
+
+    def test_update_or_enqueue_on_preprint_doi_created(self):
+        assert not should_update_preprint_identifiers(self.private_preprint, {})
+        assert not self.private_preprint.identifiers.all()
+
+        with mock.patch.object(settings, 'CROSSREF_URL', 'https://test.crossref.org/servlet/deposit'):
+            with mock.patch.object(settings, 'CROSSREF_USERNAME', 'TestCrossrefUsername'):
+                with mock.patch.object(settings, 'CROSSREF_PASSWORD', 'TestCrossrefPassword'):
+                    # This exception proved it tried to contact Crossref, testing the mailgun route is elsewhere, so no
+                    # mocking when the DOI is confirmed.
+                    with pytest.raises(pytest_socket.SocketConnectBlockedError):
+                        self.private_preprint.set_published(True, self.auth, save=True)
+
+        assert should_update_preprint_identifiers(self.private_preprint, {})
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):
@@ -2046,8 +2067,8 @@ class TestPreprintOsfStorage(OsfTestCase):
         data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
         assert data['credentials'] == self.preprint.serialize_waterbutler_credentials()
         assert data['settings'] == self.preprint.serialize_waterbutler_settings()
-        expected_url = furl.furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
-        observed_url = furl.furl(data['callback_url'])
+        expected_url = furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
+        observed_url = furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert expected_url == observed_url
 

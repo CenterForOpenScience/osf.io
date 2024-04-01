@@ -115,7 +115,7 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
         try:
             if isinstance(data, str):
                 # Some models (CitationStyle) have an _id that is not a bson
-                # Looking up things by pk will never work with a basestring
+                # Looking up things by pk will never work with a str
                 return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(
                     _id=data).select_for_update().get()
             return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(

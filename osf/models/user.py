@@ -1,7 +1,7 @@
 import datetime as dt
 import logging
 import re
-from future.moves.urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
 
@@ -1377,9 +1377,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # If this email is confirmed on another account, abort
         try:
             if check_select_for_update():
-                user_to_merge = OSFUser.objects.filter(emails__address=email).select_for_update().get()
+                user_to_merge = OSFUser.objects.exclude(id=self.id).filter(emails__address=email).select_for_update().get()
             else:
-                user_to_merge = OSFUser.objects.get(emails__address=email)
+                user_to_merge = OSFUser.objects.exclude(id=self.id).get(emails__address=email)
         except OSFUser.DoesNotExist:
             user_to_merge = None
 

@@ -1,5 +1,5 @@
 import os
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 import uuid
 
 import ssl

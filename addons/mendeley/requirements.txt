@@ -1,3 +1,2 @@
 # up-to-date with mendeley's master + add folder support and future dep updates
 git+https://github.com/CenterForOpenScience/mendeley-python-sdk.git@feature/osf-dep-updates
-future==1.0.0

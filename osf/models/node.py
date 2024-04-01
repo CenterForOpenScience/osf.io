@@ -2,7 +2,7 @@ import functools
 import itertools
 import logging
 import re
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import warnings
 from rest_framework import status as http_status
 

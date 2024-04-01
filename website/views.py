@@ -1,4 +1,4 @@
-import furl
+from furl import furl
 import waffle
 import itertools
 from rest_framework import status as http_status
@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import requests
-from future.moves.urllib.parse import unquote
+from urllib.parse import unquote
 
 from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context
@@ -393,7 +393,7 @@ def redirect_to_cos_news(**kwargs):
 
 def redirect_to_registration_workflow(**kwargs):
     # Redirect to making new registration
-    return redirect(furl.furl(DOMAIN).add(path='registries/osf/new').url)
+    return redirect(furl(DOMAIN).add(path='registries/osf/new').url)
 
 
 # Return error for legacy SHARE v1 search route

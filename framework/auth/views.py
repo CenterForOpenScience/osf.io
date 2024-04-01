@@ -1,6 +1,6 @@
-import furl
+from furl import furl
 from rest_framework import status as http_status
-from future.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 import markupsafe
 from django.core.exceptions import ValidationError
@@ -1073,8 +1073,8 @@ def external_login_email_post():
             # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
             # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
             # not vice versa.
-            campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
-            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
+            campaign_url = furl(campaigns.campaign_url_for(campaign)).url
+            external_campaign_url = furl(campaigns.external_campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
                 if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):

@@ -1,5 +1,5 @@
 from enum import Enum
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import logging
 from collections.abc import Iterable
 

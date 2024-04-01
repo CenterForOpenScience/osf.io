@@ -12,8 +12,11 @@ django.setup()
 from framework.celery_tasks import app as celery_app
 
 from osf import models
-from website.app import init_app
 from website import settings
+
+# init_app must be called before sentry is imported
+from website.app import init_app
+init_app(routes=False)
 
 from framework import sentry
 
@@ -72,7 +75,6 @@ def main(dry_run=True):
 
 @celery_app.task(name='scripts.approve_registrations')
 def run_main(dry_run=True):
-    init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)

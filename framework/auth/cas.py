@@ -1,8 +1,8 @@
-import furl
+from furl import furl
 from django.utils import timezone
 from rest_framework import status as http_status
 import json
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from lxml import etree
 import requests
@@ -74,8 +74,7 @@ class CasClient:
         :return: dedicated CAS login url
         """
 
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.append('login')
+        url = furl(self.BASE_URL).add(path='login')
         url.args['service'] = service_url
         if campaign:
             url.args['campaign'] = campaign
@@ -85,19 +84,16 @@ class CasClient:
         return url.url
 
     def get_logout_url(self, service_url):
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.append('logout')
+        url = furl(self.BASE_URL).add(path='logout')
         url.args['service'] = service_url
         return url.url
 
     def get_profile_url(self):
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('oauth2', 'profile',))
+        url = furl(self.BASE_URL).add(path=['oauth2', 'profile'])
         return url.url
 
     def get_auth_token_revocation_url(self):
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('oauth2', 'revoke'))
+        url = furl(self.BASE_URL).add(path=['oauth2', 'revoke'])
         return url.url
 
     def service_validate(self, ticket, service_url):
@@ -110,8 +106,7 @@ class CasClient:
         :raises: CasError if an unexpected response is returned
         """
 
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('p3', 'serviceValidate',))
+        url = furl(self.BASE_URL).add(path=['p3', 'serviceValidate'])
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 
@@ -267,11 +262,11 @@ def make_response_from_ticket(ticket, service_url):
     :return: redirect response
     """
 
-    service_furl = furl.furl(service_url)
+    service_furl = furl(service_url)
     # `service_url` is guaranteed to be removed of `ticket` parameter, which has been pulled off in
     # `framework.sessions.before_request()`.
     if 'ticket' in service_furl.args:
-        service_furl.args.pop('ticket')
+        service_furl.remove(args=['ticket'])
     client = get_client()
     cas_resp = client.service_validate(ticket, service_furl.url)
     if cas_resp.authenticated:
