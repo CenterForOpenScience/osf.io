@@ -28,8 +28,8 @@ Markupsafe==2.1.5
 blinker==1.7.0
 furl==2.1.3
 elasticsearch2==2.5.1
-elasticsearch==6.8.2
-elasticsearch-dsl==6.4.0
+elasticsearch==6.8.2 # max version to support elasticsearch6
+elasticsearch-dsl==6.4.0 # max version to support elasticsearch6
 google-api-python-client==2.123.0
 google-auth==2.29.0
 Babel==2.14.0

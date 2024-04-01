@@ -80,7 +80,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
 
         url = api_url_for('dataverse_get_datasets', pid=self.project._primary_key)
         params = {'alias': 'ALIAS1'}
-        res = self.app.post_json(url, params, auth=self.user.auth)
+        res = self.app.post(url, json=params, auth=self.user.auth)
 
         assert len(res.json['datasets']) == 3
         first = res.json['datasets'][0]
@@ -92,7 +92,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         mock_connection.return_value = self.connection
 
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'dataverse': {'alias': 'ALIAS3'},
             'dataset': {'doi': 'doi:12.3456/DVN/00003'},
         }, auth=self.user.auth)
@@ -128,8 +128,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         }
 
         # Select a different dataset
-        res = self.app.post_json(url, params, auth=self.user.auth,
-                                 expect_errors=True)
+        res = self.app.post(url, json=params, auth=self.user.auth)
         self.node_settings.reload()
 
         # Old settings did not change
@@ -251,7 +250,7 @@ class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
         url = api_url_for('dataverse_publish_dataset',
                           pid=self.project._primary_key)
-        self.app.put_json(url, params={'publish_both': False}, auth=self.user.auth)
+        self.app.put(url, params={'publish_both': False}, auth=self.user.auth)
 
         # Only dataset was published
         assert not mock_publish_dv.called
@@ -265,7 +264,7 @@ class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
         url = api_url_for('dataverse_publish_dataset',
                           pid=self.project._primary_key)
-        self.app.put_json(url, params={'publish_both': True}, auth=self.user.auth)
+        self.app.put(url, params={'publish_both': True}, auth=self.user.auth)
 
         # Both Dataverse and dataset were published
         assert mock_publish_dv.called
@@ -297,6 +296,5 @@ class TestDataverseRestrictions(DataverseAddonTestCase, OsfTestCase):
             'dataverse': {'alias': 'ALIAS1'},
             'dataset': {'doi': 'doi:12.3456/DVN/00002'},
         }
-        res = self.app.post_json(url, params, auth=self.contrib.auth,
-                                 expect_errors=True)
+        res = self.app.post(url, json=params, auth=self.contrib.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN

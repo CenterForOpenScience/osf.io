@@ -137,7 +137,7 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
     def test_box_list_folders_returns_error_if_invalid_path(self, mock_metadata):
         mock_metadata.side_effect = BoxAPIException(status=404, message='File not found')
         url = self.project.api_url_for('box_folder_list', folder_id='lolwut')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_404_NOT_FOUND
 
     @mock.patch('addons.box.models.Client.folder')
@@ -145,7 +145,7 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
         mock_response = mock.Mock()
         url = self.project.api_url_for('box_folder_list', folder_id='fo')
         mock_metadata.side_effect = MaxRetryError(mock_response, url)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 
@@ -177,13 +177,13 @@ class TestRestrictions(BoxAddonTestCase, OsfTestCase):
         # tries to access a parent folder
         url = self.project.api_url_for('box_folder_list',
             path='foo bar')
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.contrib.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_restricted_config_contrib_no_addon(self):
         url = api_url_for('box_set_config', pid=self.project._primary_key)
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
+        res = self.app.put(url, json={'selected': {'path': 'foo'}},
+            auth=self.contrib.auth)
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
     def test_restricted_config_contrib_not_owner(self):
@@ -192,6 +192,6 @@ class TestRestrictions(BoxAddonTestCase, OsfTestCase):
         self.contrib.save()
 
         url = api_url_for('box_set_config', pid=self.project._primary_key)
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
+        res = self.app.put(url, json={'selected': {'path': 'foo'}},
+            auth=self.contrib.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN

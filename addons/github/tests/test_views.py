@@ -63,7 +63,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'github_user': 'octocat',
             'github_repo': 'repo_name',
         }, auth=self.user.auth)
@@ -241,9 +241,9 @@ class TestGithubViews(OsfTestCase):
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/github/hook/'
         timestamp = str(timezone.now())
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'test': True,
                 'commits': [{
                     'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
@@ -259,7 +259,8 @@ class TestGithubViews(OsfTestCase):
                 }]
             },
             content_type='application/json',
-        ).maybe_follow()
+            allow_redirects=True
+        )
         self.project.reload()
         assert self.project.logs.latest().action == 'github_file_added'
         urls = self.project.logs.latest().params['urls']
@@ -274,9 +275,9 @@ class TestGithubViews(OsfTestCase):
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/github/hook/'
         timestamp = str(timezone.now())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
                  'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                               'distinct': True,
                               'message': ' foo',
@@ -286,7 +287,7 @@ class TestGithubViews(OsfTestCase):
                               'committer': {'name': 'Testor', 'email': 'test@osf.io',
                                             'username': 'tester'},
                               'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json')
         self.project.reload()
         assert self.project.logs.latest().action == 'github_file_updated'
         urls = self.project.logs.latest().params['urls']
@@ -301,9 +302,9 @@ class TestGithubViews(OsfTestCase):
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/github/hook/'
         timestamp = str(timezone.now())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'foo',
@@ -312,7 +313,7 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed': ['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json')
         self.project.reload()
         assert self.project.logs.latest().action == 'github_file_removed'
         urls = self.project.logs.latest().params['urls']
@@ -321,9 +322,9 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/github/hook/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Added via the Open Science Framework',
@@ -332,16 +333,16 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': ['PRJWN3TV'], 'removed':[], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json')
         self.project.reload()
         assert self.project.logs.latest().action != 'github_file_added'
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/github/hook/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Updated via the Open Science Framework',
@@ -350,16 +351,16 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json')
         self.project.reload()
         assert self.project.logs.latest().action != 'github_file_updated'
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/github/hook/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Deleted via the Open Science Framework',
@@ -417,14 +418,14 @@ class TestGithubSettings(OsfTestCase):
         mock_repo.return_value = github_mock.repo.return_value
 
         url = self.project.api_url + 'github/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'github_user': 'queen',
                 'github_repo': 'night at the opera',
             },
             auth=self.auth
-        ).maybe_follow()
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -443,14 +444,14 @@ class TestGithubSettings(OsfTestCase):
         log_count = self.project.logs.count()
 
         url = self.project.api_url + 'github/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'github_user': 'Queen',
                 'github_repo': 'Sheer-Heart-Attack',
             },
             auth=self.auth
-        ).maybe_follow()
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -464,15 +465,14 @@ class TestGithubSettings(OsfTestCase):
         mock_repo.return_value = None
 
         url = self.project.api_url + 'github/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'github_user': 'queen',
                 'github_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+        )
 
         assert res.status_code == 400
 
@@ -503,15 +503,14 @@ class TestGithubSettings(OsfTestCase):
         )
 
         url = registration.api_url + 'github/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'github_user': 'queen',
                 'github_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+        )
 
         assert res.status_code == 400
 
@@ -520,7 +519,7 @@ class TestGithubSettings(OsfTestCase):
 
         url = self.project.api_url + 'github/user_auth/'
 
-        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.app.delete(url, auth=self.auth)
 
         self.project.reload()
         self.node_settings.reload()
