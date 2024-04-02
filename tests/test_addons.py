@@ -162,7 +162,7 @@ class TestAddonAuth(OsfTestCase):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, )
-        assert res.status_code == 403
+        assert res.status_code == 401
 
     def test_action_render_marks_version_as_seen(self):
         noncontrib = AuthUserFactory()
@@ -513,7 +513,6 @@ class TestAddonLogs(OsfTestCase):
                 url,
                 json=payload,
                 headers={'Content-Type': 'application/json'},
-                expect_errors=False,
             )
             assert res.status_code == 200
 
@@ -1034,12 +1033,12 @@ class TestCheckAuth(OsfTestCase):
         user2 = AuthUserFactory()
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.node, Auth(user=user2), 'download', None)
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     def test_not_has_permission_not_logged_in(self):
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.node, Auth(), 'download', None)
-        assert exc_info.exception.code == 401
+        assert exc_info.value.code == 401
 
     def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
@@ -1094,7 +1093,7 @@ class TestCheckOAuth(OsfTestCase):
         assert not component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     def test_has_permission_private_no_scope_forbidden(self):
         component_admin = AuthUserFactory()
@@ -1105,7 +1104,7 @@ class TestCheckOAuth(OsfTestCase):
         assert not component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     def test_has_permission_public_irrelevant_scope_allowed(self):
         component_admin = AuthUserFactory()
@@ -1126,7 +1125,7 @@ class TestCheckOAuth(OsfTestCase):
         assert not component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     def test_has_permission_decommissioned_scope_no_error(self):
         component_admin = AuthUserFactory()
@@ -1159,7 +1158,7 @@ class TestCheckOAuth(OsfTestCase):
         assert component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'upload', cas_resp)
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
 
 def assert_urls_equal(url1, url2):

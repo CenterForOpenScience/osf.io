@@ -1456,7 +1456,8 @@ class TestFileViews(StorageTestCase):
             assert res.status_code == 302
             assert res.headers['Location'] == f'{settings.DOMAIN}{file.get_guid()._id}/'
             assert not mock_ember.called
-            res.follow()
+            res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
+            assert res.status_code == 200
             assert mock_ember.called
             args, kwargs = mock_ember.call_args
 
@@ -1592,7 +1593,7 @@ class TestPreprintFileViews(StorageTestCase):
 
         # Test folder 400's
         url = base_url.format(folder._id)
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 400
 
     @responses.activate
