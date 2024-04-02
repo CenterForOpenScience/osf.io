@@ -101,7 +101,7 @@ class TestWikiViews(OsfTestCase):
             'project_wiki_view',
             wname='funpage',
         ) + '?edit'
-        res = self.app.get(url).maybe_follow()
+        res = self.app.get(url, allow_redirects=True)
         assert res.status_code == 200
 
         # Check publicly editable
@@ -579,9 +579,9 @@ class TestWikiRename(OsfTestCase):
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_rename_wiki_page_valid(self, mock_sharejs, new_name='away'):
-        self.app.put_json(
+        self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth
         )
         self.project.reload()
@@ -596,11 +596,10 @@ class TestWikiRename(OsfTestCase):
         assert new_wiki.identifier == self.version.identifier
 
     def test_rename_wiki_page_invalid(self, new_name='invalid/name'):
-        res = self.app.put_json(
+        res = self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=True,
         )
         assert http_status.HTTP_400_BAD_REQUEST == res.status_code
         assert res.json['message_short'] == 'Invalid name'
@@ -612,18 +611,17 @@ class TestWikiRename(OsfTestCase):
     def test_rename_wiki_page_duplicate(self):
         WikiPage.objects.create_for_node(self.project, 'away', 'Hello world', self.consolidate_auth)
         new_name = 'away'
-        res = self.app.put_json(
+        res = self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=True,
         )
         assert res.status_code == 409
 
     def test_rename_wiki_name_not_found(self):
         url = self.project.api_url_for('project_wiki_rename', wname='not_found_page_name')
-        res = self.app.put_json(url, {'value': 'new name'},
-            auth=self.auth, expect_errors=True)
+        res = self.app.put(url, json={'value': 'new name'},
+            auth=self.auth)
         assert res.status_code == 404
 
     def test_cannot_rename_wiki_page_to_home(self):
@@ -632,12 +630,12 @@ class TestWikiRename(OsfTestCase):
         project = ProjectFactory(creator=user)
         WikiPage.objects.create_for_node(project, 'Hello', 'hello world', Auth(user=user))
         url = project.api_url_for('project_wiki_rename', wname='Hello')
-        res = self.app.put_json(url, {'value': 'home'}, auth=user.auth, expect_errors=True)
+        res = self.app.put(url, json={'value': 'home'}, auth=user.auth)
         assert res.status_code == 409
 
     def test_rename_wiki_name_with_value_missing(self):
         # value is missing
-        res = self.app.put_json(self.url, {}, auth=self.auth, expect_errors=True)
+        res = self.app.put(self.url, json={}, auth=self.auth)
         assert res.status_code == 400
 
     def test_rename_wiki_page_duplicate_different_casing(self):
@@ -645,11 +643,10 @@ class TestWikiRename(OsfTestCase):
         old_name = 'away'
         new_name = 'AwAy'
         WikiPage.objects.create_for_node(self.project, old_name, 'Hello world', self.consolidate_auth)
-        res = self.app.put_json(
+        res = self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=True
         )
         assert res.status_code == 409
 
@@ -659,17 +656,16 @@ class TestWikiRename(OsfTestCase):
         new_name = 'AWAY'
         WikiPage.objects.create_for_node(self.project, old_name, 'Hello world', self.consolidate_auth)
         url = self.project.api_url_for('project_wiki_rename', wname=old_name)
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=False
         )
         assert res.status_code == 200
 
     def test_cannot_rename_home_page(self):
         url = self.project.api_url_for('project_wiki_rename', wname='home')
-        res = self.app.put_json(url, {'value': 'homelol'}, auth=self.auth, expect_errors=True)
+        res = self.app.put(url, json={'value': 'homelol'}, auth=self.auth)
         assert res.status_code == 400
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
@@ -681,7 +677,7 @@ class TestWikiRename(OsfTestCase):
 
         # Renames the wiki to the deleted page
         url = self.project.api_url_for('project_wiki_rename', wname='page3')
-        res = self.app.put_json(url, {'value': self.page_name}, auth=self.auth)
+        res = self.app.put(url, json={'value': self.page_name}, auth=self.auth)
         assert res.status_code == 200
 
     def test_rename_wiki_page_with_valid_html(self):
@@ -903,9 +899,9 @@ class TestWikiUuid(OsfTestCase):
 
         # Rename wiki
         rename_url = self.project.api_url_for('project_wiki_rename', wname=self.wname)
-        res = self.app.put_json(
+        res = self.app.put(
             rename_url,
-            {'value': new_wname, 'pk': wiki_page._id},
+            json={'value': new_wname, 'pk': wiki_page._id},
             auth=self.user.auth,
         )
         assert res.status_code == 200
