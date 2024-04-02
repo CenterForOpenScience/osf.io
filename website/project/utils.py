@@ -15,6 +15,7 @@ def serialize_node(*args, **kwargs):
     from website.project.views.node import _view_project
     return _view_project(*args, **kwargs)  # Not recommended practice
 
+
 def recent_public_registrations(n=10):
     Registration = apps.get_model('osf.Registration')
 
