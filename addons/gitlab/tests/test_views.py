@@ -165,14 +165,14 @@ class TestGitLabViews(OsfTestCase):
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth, allow_redirects=True)
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         assert len(res.json['prompts']) == 1
 
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
     def test_before_register(self, mock_has_auth):
         mock_has_auth.return_value = True
         url = self.project.api_url + 'beforeregister/'
-        res = self.app.get(url, auth=self.user.auth,allow_redirects=True)
+        res = self.app.get(url, auth=self.user.auth,follow_redirects=True)
         assert 'GitLab' in res.json['prompts'][1]
 
     def test_get_refs_sha_no_branch(self):
@@ -296,7 +296,7 @@ class TestGitLabViews(OsfTestCase):
                 }]
             },
             content_type='application/json',
-            allow_redirects=True
+            follow_redirects=True
         )
         self.project.reload()
         assert self.project.logs.latest().action == 'gitlab_file_added'
@@ -324,7 +324,7 @@ class TestGitLabViews(OsfTestCase):
                               'committer': {'name': 'Testor', 'email': 'test@osf.io',
                                             'username': 'tester'},
                               'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json', allow_redirects=True)
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action == 'gitlab_file_updated'
         urls = self.project.logs.latest().params['urls']
@@ -350,7 +350,7 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed': ['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json', allow_redirects=True)
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action == 'gitlab_file_removed'
         urls = self.project.logs.latest().params['urls']
@@ -370,7 +370,7 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': ['PRJWN3TV'], 'removed':[], 'modified':[]}]},
-            content_type='application/json', allow_redirects=True)
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action != 'gitlab_file_added'
 
@@ -388,7 +388,7 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json', allow_redirects=True)
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action != 'gitlab_file_updated'
 
@@ -406,7 +406,7 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json', allow_redirects=True)
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action != 'gitlab_file_removed'
 
@@ -465,7 +465,7 @@ class TestGitLabSettings(OsfTestCase):
                 'gitlab_repo_id': 'abc',
             },
             auth=self.auth
-        , allow_redirects=True)
+        , follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
@@ -492,7 +492,7 @@ class TestGitLabSettings(OsfTestCase):
                 'gitlab_repo_id': self.node_settings.repo_id,
             },
             auth=self.auth
-        , allow_redirects=True)
+        , follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
@@ -514,7 +514,7 @@ class TestGitLabSettings(OsfTestCase):
             },
             auth=self.auth,
             expect_errors=True
-        , allow_redirects=True)
+        , follow_redirects=True)
 
         assert res.status_code == 400
 
@@ -553,7 +553,7 @@ class TestGitLabSettings(OsfTestCase):
             },
             auth=self.auth,
             expect_errors=True
-        , allow_redirects=True)
+        , follow_redirects=True)
 
         assert res.status_code == 400
 
@@ -562,7 +562,7 @@ class TestGitLabSettings(OsfTestCase):
 
         url = self.project.api_url + 'gitlab/user_auth/'
 
-        self.app.delete(url, auth=self.auth, allow_redirects=True)
+        self.app.delete(url, auth=self.auth, follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()

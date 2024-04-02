@@ -159,7 +159,7 @@ class TestGithubViews(OsfTestCase):
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth, allow_redirects=True)
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         assert len(res.json['prompts']) == 1
 
     def test_get_refs_sha_no_branch(self):
@@ -259,7 +259,7 @@ class TestGithubViews(OsfTestCase):
                 }]
             },
             content_type='application/json',
-            allow_redirects=True
+            follow_redirects=True
         )
         self.project.reload()
         assert self.project.logs.latest().action == 'github_file_added'
@@ -369,7 +369,7 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json', allow_redirects=True)
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action != 'github_file_removed'
 
@@ -519,7 +519,7 @@ class TestGithubSettings(OsfTestCase):
 
         url = self.project.api_url + 'github/user_auth/'
 
-        self.app.delete(url, auth=self.auth, allow_redirects=True)
+        self.app.delete(url, auth=self.auth, follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
