@@ -14,7 +14,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
     mediatype = 'application/ld+json'
 
     # Descriptions must innclude the 50 minimum characters for Google Dataset Discovery to accept the item as valid
-    default_description_text = 'No description was included in this Dataset collected from the OSF'
+    DEFAULT_DESCRIPTION = 'No description was included in this Dataset collected from the OSF'
 
     def filename_for_itemid(self, itemid: str):
         return f'{itemid}-metadata-schemadotorg.json'
@@ -27,13 +27,17 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
         )
 
     def metadata_as_dict(self) -> dict:
+        description = next(self.basket[DCTERMS.description], None)
+        if not description or len(description) < 50:
+            description = self.DEFAULT_DESCRIPTION
+
         metadata = {
             '@context': 'https://schema.org',
             '@type': 'Dataset',
             'dateCreated': next(self.basket[DCTERMS.created]),
             'dateModified': next(self.basket[DCTERMS.modified]),
             'name': next(self.basket[DCTERMS.title | OSF.fileName]),
-            'description': next(self.basket[DCTERMS.description], self.default_description_text),
+            'description': description,
             'url': next(url for url in self.basket[DCTERMS.identifier] if url.startswith(OSFIO)),
             'keywords': [keyword for keyword in self.basket[OSF.keyword]],
             'publisher': {
