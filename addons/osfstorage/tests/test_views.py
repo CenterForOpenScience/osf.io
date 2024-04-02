@@ -56,7 +56,7 @@ class HookTestCase(StorageTestCase):
         guid = view_kwargs.pop('guid', None) or target._id
         return method(
             api_url_for(view_name, guid=guid, **view_kwargs),
-            signing.sign_data(signing.default_signer, payload),
+            json=signing.sign_data(signing.default_signer, payload),
             **kwargs
         )
 
@@ -297,7 +297,7 @@ class TestUploadFileHook(HookTestCase):
             {'fid': parent._id},
             payload=payload or {},
             target=target or self.project,
-            method='post_json',
+            method='post',
             **kwargs
         )
 
@@ -486,7 +486,7 @@ class TestUploadFileHook(HookTestCase):
                 'vault': 'Vault 101',
                 'archive': '101 tluaV',
             }, 'version': res.json['version']},
-            method='put_json',
+            method='put',
         )
 
         res = self.send_upload_hook(parent, payload=self.make_payload(
@@ -703,7 +703,7 @@ class TestUpdateMetadataHook(HookTestCase):
             {},
             payload=payload or self.payload,
             target=target or self.node,
-            method='put_json',
+            method='put',
             **kwargs
         )
 
@@ -742,7 +742,6 @@ class TestUpdateMetadataHook(HookTestCase):
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
             },
-            expect_errors=True,
         )
         assert res.status_code == 404
         self.version.reload()
@@ -777,7 +776,7 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
             {},
             payload=payload or self.payload,
             target=target or self.preprint,
-            method='put_json',
+            method='put',
             **kwargs
         )
 
@@ -887,7 +886,7 @@ class TestCreateFolder(HookTestCase):
                 'kind': 'folder'
             },
             target=self.project,
-            method='post_json',
+            method='post',
             **kwargs
         )
 
@@ -906,8 +905,7 @@ class TestCreateFolder(HookTestCase):
             {'fid': self.root_node._id, 'guid': self.project._id},
             payload={},
             target=self.project,
-            method='post_json',
-            expect_errors=True
+            method='post',
         )
         assert resp.status_code == 400
 
@@ -1083,7 +1081,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',)
+            method='post',)
         assert res.status_code == 200
 
     def test_move_checkedout_file(self):
@@ -1106,8 +1104,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 405
 
@@ -1132,8 +1129,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 405
 
@@ -1159,8 +1155,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 405
 
@@ -1187,8 +1182,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=project,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 200
 
@@ -1212,8 +1206,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         file.reload()
 
@@ -1250,8 +1243,7 @@ class TestMoveHookPreprint(TestMoveHook):
                 }
             },
             target=project,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 403
 
@@ -1275,8 +1267,7 @@ class TestMoveHookPreprint(TestMoveHook):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         file.reload()
 
@@ -1311,7 +1302,7 @@ class TestMoveHookProjectsOnly(TestMoveHook):
                     }
                 },
                 target=self.node,
-                method='post_json',)
+                method='post',)
 
         # Cache should stay untouched because net storage usage hasn't changed
         key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
@@ -1328,7 +1319,7 @@ class TestFileTags(StorageTestCase):
         assert 'Kanye_West' not in file.tags.values_list('name', flat=True)
 
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+        self.app.post(url, json={'tag': 'Kanye_West'}, auth=self.user.auth)
         file.reload()
         assert 'Kanye_West' in file.tags.values_list('name', flat=True)
 
@@ -1337,7 +1328,7 @@ class TestFileTags(StorageTestCase):
         assert 'コンサート' not in file.tags.values_list('name', flat=True)
 
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
+        self.app.post(url, json={'tag': 'コンサート'}, auth=self.user.auth)
         file.reload()
         assert 'コンサート' in file.tags.values_list('name', flat=True)
 
@@ -1349,7 +1340,7 @@ class TestFileTags(StorageTestCase):
         file.save()
         assert 'Graduation' in file.tags.values_list('name', flat=True)
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
+        self.app.delete(url, json={'tag': 'Graduation'}, auth=self.user.auth)
         file.reload()
         assert 'Graduation' not in file.tags.values_list('name', flat=True)
 
@@ -1361,7 +1352,7 @@ class TestFileTags(StorageTestCase):
         file.save()
         assert 'Run_the_Jewels' in file.tags.values_list('name', flat=True)
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post(url, json={'tag': 'Run_the_Jewels'}, auth=self.user.auth)
         assert res.status_code == 400
         assert res.json['status'] == 'failure'
 
@@ -1369,14 +1360,14 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
         assert 'Chance' not in file.tags.values_list('name', flat=True)
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.delete(url, json={'tag': 'Chance'}, auth=self.user.auth)
         assert res.status_code == 400
         assert res.json['status'] == 'failure'
 
     def test_file_add_tag_creates_log(self):
         file = self.node_settings.get_root().append_file('Yeezy Season 3.mp4')
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        res = self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+        res = self.app.post(url, json={'tag': 'Kanye_West'}, auth=self.user.auth)
 
         assert res.status_code == 200
         self.node.reload()
@@ -1390,7 +1381,7 @@ class TestFileTags(StorageTestCase):
         file.tags.add(tag)
         file.save()
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        res = self.app.post_json(url, {'tag': 'The Life of Pablo'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post(url, json={'tag': 'The Life of Pablo'}, auth=self.user.auth)
 
         assert res.status_code == 400
         mock_log.assert_not_called()
@@ -1402,7 +1393,7 @@ class TestFileTags(StorageTestCase):
         file.tags.add(tag)
         file.save()
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        res = self.app.delete_json(url, {'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
+        res = self.app.delete(url, json={'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
 
         assert res.status_code == 200
         self.node.reload()
@@ -1412,7 +1403,7 @@ class TestFileTags(StorageTestCase):
     def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('For-once-in-my-life.mp3')
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        res = self.app.delete_json(url, {'tag': 'wonder'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.delete(url, json={'tag': 'wonder'}, auth=self.user.auth)
 
         assert res.status_code == 400
         mock_log.assert_not_called()

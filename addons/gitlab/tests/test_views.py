@@ -278,9 +278,9 @@ class TestGitLabViews(OsfTestCase):
         gitlab_mock.repo = mock_repo
         url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'test': True,
                 'commits': [{
                     'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
@@ -296,7 +296,8 @@ class TestGitLabViews(OsfTestCase):
                 }]
             },
             content_type='application/json',
-        ).maybe_follow()
+            allow_redirects=True
+        )
         self.project.reload()
         assert self.project.logs.latest().action == 'gitlab_file_added'
         urls = self.project.logs.latest().params['urls']
@@ -311,9 +312,9 @@ class TestGitLabViews(OsfTestCase):
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
                  'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                               'distinct': True,
                               'message': ' foo',
@@ -323,7 +324,7 @@ class TestGitLabViews(OsfTestCase):
                               'committer': {'name': 'Testor', 'email': 'test@osf.io',
                                             'username': 'tester'},
                               'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', allow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action == 'gitlab_file_updated'
         urls = self.project.logs.latest().params['urls']
@@ -338,9 +339,9 @@ class TestGitLabViews(OsfTestCase):
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'foo',
@@ -349,7 +350,7 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed': ['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', allow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action == 'gitlab_file_removed'
         urls = self.project.logs.latest().params['urls']
@@ -358,9 +359,9 @@ class TestGitLabViews(OsfTestCase):
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Added via the Open Science Framework',
@@ -369,16 +370,16 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': ['PRJWN3TV'], 'removed':[], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', allow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action != 'gitlab_file_added'
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Updated via the Open Science Framework',
@@ -387,16 +388,16 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', allow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action != 'gitlab_file_updated'
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
         url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Deleted via the Open Science Framework',
@@ -405,7 +406,7 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', allow_redirects=True)
         self.project.reload()
         assert self.project.logs.latest().action != 'gitlab_file_removed'
 
@@ -456,15 +457,15 @@ class TestGitLabSettings(OsfTestCase):
         mock_repo.return_value = gitlab_mock.repo.return_value
 
         url = self.project.api_url + 'gitlab/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': 'queen',
                 'gitlab_repo': 'night at the opera',
                 'gitlab_repo_id': 'abc',
             },
             auth=self.auth
-        ).maybe_follow()
+        , allow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
@@ -483,15 +484,15 @@ class TestGitLabSettings(OsfTestCase):
         log_count = self.project.logs.count()
 
         url = self.project.api_url + 'gitlab/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': self.node_settings.user,
                 'gitlab_repo': self.node_settings.repo,
                 'gitlab_repo_id': self.node_settings.repo_id,
             },
             auth=self.auth
-        ).maybe_follow()
+        , allow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
@@ -505,15 +506,15 @@ class TestGitLabSettings(OsfTestCase):
         mock_repo.return_value = None
 
         url = self.project.api_url + 'gitlab/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': 'queen',
                 'gitlab_repo': 'night at the opera',
             },
             auth=self.auth,
             expect_errors=True
-        ).maybe_follow()
+        , allow_redirects=True)
 
         assert res.status_code == 400
 
@@ -544,15 +545,15 @@ class TestGitLabSettings(OsfTestCase):
         )
 
         url = registration.api_url + 'gitlab/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': 'queen',
                 'gitlab_repo': 'night at the opera',
             },
             auth=self.auth,
             expect_errors=True
-        ).maybe_follow()
+        , allow_redirects=True)
 
         assert res.status_code == 400
 
@@ -561,7 +562,7 @@ class TestGitLabSettings(OsfTestCase):
 
         url = self.project.api_url + 'gitlab/user_auth/'
 
-        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.app.delete(url, auth=self.auth, allow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()

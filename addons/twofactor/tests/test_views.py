@@ -17,9 +17,9 @@ class TestViews(OsfTestCase):
     def test_confirm_code(self):
         # Send a valid code to the API endpoint for the user settings.
         url = api_url_for('twofactor_settings_put')
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            {'code': _valid_code(self.user_settings.totp_secret)},
+            json={'code': _valid_code(self.user_settings.totp_secret)},
             auth=self.user.auth
         )
 
@@ -31,11 +31,10 @@ class TestViews(OsfTestCase):
 
     def test_confirm_code_failure(self):
         url = api_url_for('twofactor_settings_put')
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            {'code': '0000000'},
+            json={'code': '0000000'},
             auth=self.user.auth,
-            expect_errors=True
         )
         assert res.status_code == 403
         json = res.json

@@ -168,12 +168,12 @@ class TestBitbucketViews(OsfTestCase):
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth, allow_redirects=True)
         assert len(res.json['prompts']) == 1
 
     def test_before_register(self):
         url = self.project.api_url + 'beforeregister/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth, allow_redirects=True)
         assert 'Bitbucket' in res.json['prompts'][1]
 
     @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
@@ -220,14 +220,14 @@ class TestBitbucketSettings(OsfTestCase):
         mock_repo.return_value = bitbucket_mock.repo.return_value
 
         url = self.project.api_url + 'bitbucket/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
-            auth=self.auth
-        ).maybe_follow()
+            auth=self.auth, allow_redirects=True
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -246,14 +246,15 @@ class TestBitbucketSettings(OsfTestCase):
         log_count = self.project.logs.count()
 
         url = self.project.api_url + 'bitbucket/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'Queen',
                 'bitbucket_repo': 'Sheer-Heart-Attack',
             },
-            auth=self.auth
-        ).maybe_follow()
+            auth=self.auth,
+            allow_redirects=True
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -267,15 +268,15 @@ class TestBitbucketSettings(OsfTestCase):
         mock_repo.return_value = None
 
         url = self.project.api_url + 'bitbucket/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            allow_redirects=True
+        )
 
         assert res.status_code == 400
 
@@ -291,15 +292,15 @@ class TestBitbucketSettings(OsfTestCase):
         )
 
         url = registration.api_url + 'bitbucket/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            allow_redirects=True
+        )
 
         assert res.status_code == 400
 
@@ -307,7 +308,7 @@ class TestBitbucketSettings(OsfTestCase):
 
         url = self.project.api_url + 'bitbucket/user_auth/'
 
-        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.app.delete(url, auth=self.auth, allow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
