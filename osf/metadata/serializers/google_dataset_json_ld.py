@@ -13,6 +13,9 @@ from website import settings
 class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
     mediatype = 'application/ld+json'
 
+    # Descriptions must innclude the 50 minimum characters for Google Dataset Discovery to accept the item as valid
+    default_description_text = 'No description was included in this Dataset collected from the OSF'
+
     def filename_for_itemid(self, itemid: str):
         return f'{itemid}-metadata-schemadotorg.json'
 
@@ -30,7 +33,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
             'dateCreated': next(self.basket[DCTERMS.created]),
             'dateModified': next(self.basket[DCTERMS.modified]),
             'name': next(self.basket[DCTERMS.title | OSF.fileName]),
-            'description': next(self.basket[DCTERMS.description], None),
+            'description': next(self.basket[DCTERMS.description], self.default_description_text),
             'url': next(url for url in self.basket[DCTERMS.identifier] if url.startswith(OSFIO)),
             'keywords': [keyword for keyword in self.basket[OSF.keyword]],
             'publisher': {
