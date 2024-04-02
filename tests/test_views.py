@@ -172,7 +172,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put(url, json={'pk': link._id, 'value': ''}, auth=self.user.auth)
         assert res.status_code == 400
-        assert 'Title cannot be blank' in res.body.decode()
+        assert 'Title cannot be blank' in res.text
 
     def test_edit_private_link_invalid(self):
         node = ProjectFactory(creator=self.user)
@@ -182,7 +182,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put(url, json={'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth)
         assert res.status_code == 400
-        assert 'Invalid link name.' in res.body.decode()
+        assert 'Invalid link name.' in res.text
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_can_be_anonymous_for_public_project(self, mock_property):
@@ -198,22 +198,22 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert has_anonymous_link(self.project, auth)
 
     def test_has_private_link_key(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        res = self.app.get(self.project_url, query_string={'view_only': self.link.key})
         assert res.status_code == 200
 
     def test_not_logged_in_no_key(self):
-        res = self.app.get(self.project_url, {'view_only': None})
+        res = self.app.get(self.project_url, query_string={'view_only': None})
         assert_is_redirect(res)
-        res = self.app.get(self.project_url, {'view_only': None}, follow_redirects=True)
+        res = self.app.get(self.project_url, query_string={'view_only': None}, follow_redirects=True)
         assert res.status_code == 308
         assert res.request.path == '/login'
 
     def test_logged_in_no_private_key(self):
-        res = self.ap(self.project_url, json={'view_only': None}, auth=self.user.auth)
+        res = self.app.get(self.project_url, query_string={'view_only': None}, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_logged_in_has_key(self):
-        res = self.ap(self.project_url, json={'view_only': self.link.key}, auth=self.user.auth)
+        res = self.app.get(self.project_url, query_string={'view_only': self.link.key}, auth=self.user.auth)
         assert res.status_code == 200
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
@@ -378,14 +378,14 @@ class TestProjectViews(OsfTestCase):
         url = node.api_url_for('edit_node')
         res = self.app.post(url, json={'name': 'title', 'value': ''}, auth=self.user1.auth)
         assert res.status_code == 400
-        assert 'Title cannot be blank' in res.body.decode()
+        assert 'Title cannot be blank' in res.text
 
     def test_edit_title_invalid(self):
         node = ProjectFactory(creator=self.user1)
         url = node.api_url_for('edit_node')
         res = self.app.post(url, json={'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth)
         assert res.status_code == 400
-        assert 'Invalid title.' in res.body.decode()
+        assert 'Invalid title.' in res.text
 
     def test_view_project_doesnt_select_for_update(self):
         node = ProjectFactory(creator=self.user1)
@@ -437,8 +437,8 @@ class TestProjectViews(OsfTestCase):
         self.child_project.save()
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
-        assert 'Private Project' not in res.body.decode()
-        assert 'parent project'in res.body.decode()
+        assert 'Private Project' not in res.text
+        assert 'parent project'in res.text
 
     def test_edit_description(self):
         url = f'/api/v1/project/{self.project._id}/edit/'
@@ -876,7 +876,7 @@ class TestProjectViews(OsfTestCase):
         )
 
         url = node.api_url
-        res = self.app.delete( url, json={}, auth=non_admin.auth, follow_redirects=True)
+        res = self.app.delete(url, json={}, auth=non_admin.auth, follow_redirects=True)
 
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert not node.is_deleted
@@ -968,8 +968,8 @@ class TestProjectViews(OsfTestCase):
         url = registration.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
 
-        assert 'Mako Runtime Error' not in res.body.decode()
-        assert registration.title in res.body.decode()
+        assert 'Mako Runtime Error' not in res.text
+        assert registration.title in res.text
         assert res.status_code == 200
 
         for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
@@ -977,11 +977,11 @@ class TestProjectViews(OsfTestCase):
             assert res.status_code == 302, route
             res = self.app.get(f'{url}{route}/', auth=self.auth, follow_redirects=True)
             assert res.status_code == 200, route
-            assert 'This project is a withdrawn registration of' in res.body.decode(), route
+            assert 'This project is a withdrawn registration of' in res.text, route
 
         res = self.app.get(f'/{reg_file.guids.first()._id}/')
         assert res.status_code == 200
-        assert 'This project is a withdrawn registration of' in res.body.decode()
+        assert 'This project is a withdrawn registration of' in res.text
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -1603,9 +1603,9 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, post_data, auth=(self.user.username, old_password))
+        res = self.app.post(url, json=post_data, auth=(self.user.username, old_password))
         assert res.status_code == 302
-        res = self.app.post(url, post_data, auth=(self.user.username, old_password), follow_redirects=True)
+        res = self.app.post(url, json=post_data, auth=(self.user.username, old_password), follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert self.user.check_password(new_password)
@@ -1613,7 +1613,7 @@ class TestUserAccount(OsfTestCase):
     @mock.patch('website.profile.views.push_status_message')
     def test_user_account_password_reset_query_params(self, mock_push_status_message):
         url = web_url_for('user_account') + '?password_reset=True'
-        res = self.app.get(url, auth=(self.user.auth))
+        res = self.app.get(url, auth=self.user.auth)
         assert mock_push_status_message.called
         assert 'Password updated successfully' in mock_push_status_message.mock_calls[0][1][0]
 
@@ -1626,9 +1626,9 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert res.status_code == 302
-        res = self.app.post(url, post_data, auth=self.user.auth, follow_redirects=True)
+        res = self.app.post(url, json=post_data, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert not self.user.check_password(new_password)
@@ -1646,13 +1646,13 @@ class TestUserAccount(OsfTestCase):
             'new_password': 'this is a new password',
             'confirm_password': 'this is a new password',
         }
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
         assert self.user.old_password_invalid_attempts == 1
         assert res.status_code == 200
         # Make a second request
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert len( mock_push_status_message.mock_calls) == 2
         assert 'Old password is invalid' == mock_push_status_message.mock_calls[1][1][0]
         self.user.reload()
@@ -1660,7 +1660,7 @@ class TestUserAccount(OsfTestCase):
         assert self.user.old_password_invalid_attempts == 2
 
         # Make a third request
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert len( mock_push_status_message.mock_calls) == 3
         assert 'Old password is invalid' == mock_push_status_message.mock_calls[2][1][0]
         self.user.reload()
@@ -1668,7 +1668,7 @@ class TestUserAccount(OsfTestCase):
         assert self.user.old_password_invalid_attempts == 3
 
         # Make a fourth request
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert mock_push_status_message.called
         error_strings = mock_push_status_message.mock_calls[3][2]
         assert 'Too many failed attempts' in error_strings['message']
@@ -1687,13 +1687,13 @@ class TestUserAccount(OsfTestCase):
             'new_password': 'short',
             'confirm_password': 'short',
         }
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         self.user.reload()
         assert self.user.change_password_last_attempt is None
         assert self.user.old_password_invalid_attempts == 0
         assert res.status_code == 200
         # Make a second request
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert len(mock_push_status_message.mock_calls) == 2
         assert 'Password should be at least eight characters' == mock_push_status_message.mock_calls[1][1][0]
         self.user.reload()
@@ -1701,7 +1701,7 @@ class TestUserAccount(OsfTestCase):
         assert self.user.old_password_invalid_attempts == 0
 
         # Make a third request
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert len(mock_push_status_message.mock_calls) == 3
         assert 'Password should be at least eight characters' == mock_push_status_message.mock_calls[2][1][0]
         self.user.reload()
@@ -1709,7 +1709,7 @@ class TestUserAccount(OsfTestCase):
         assert self.user.old_password_invalid_attempts == 0
 
         # Make a fourth request
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert mock_push_status_message.called
         assert len(mock_push_status_message.mock_calls) == 4
         assert 'Password should be at least eight characters' == mock_push_status_message.mock_calls[3][1][0]
@@ -1732,7 +1732,7 @@ class TestUserAccount(OsfTestCase):
             'new_password': 'thisisanewpassword',
             'confirm_password': 'thisisanewpassword',
         }
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, json=post_data, auth=self.user.auth)
         assert len( mock_push_status_message.mock_calls) == 1
         assert 'Old password is invalid' == mock_push_status_message.mock_calls[0][1][0]
         self.user.reload()
@@ -1741,7 +1741,7 @@ class TestUserAccount(OsfTestCase):
         assert res.status_code == 200
 
         # Make a second request that successfully changes password
-        res = self.app.post(url, correct_post_data, auth=self.user.auth)
+        res = self.app.post(url, json=correct_post_data, auth=self.user.auth)
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
         assert self.user.old_password_invalid_attempts == 0
@@ -2512,7 +2512,7 @@ class TestClaimViews(OsfTestCase):
         self.project.save()
 
         url = invited_user.get_claim_url(self.project._primary_key)
-        res = self.app.post(url, {
+        res = self.app.post(url, json={
             'password': 'bohemianrhap',
             'password2': 'bohemianrhap'
         })
@@ -2702,7 +2702,7 @@ class TestClaimViews(OsfTestCase):
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_with_valid_data(self, mock_update_search_nodes):
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.post(url, {
+        res = self.app.post(url, json={
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
@@ -2752,7 +2752,7 @@ class TestClaimViews(OsfTestCase):
         self.project.save()
         # Goes to claim url
         claim_url = new_user.get_claim_url(self.project._id)
-        self.app.post(claim_url, {
+        self.app.post(claim_url, json={
             'username': unreg.username,
             'password': 'killerqueen', 'password2': 'killerqueen'
         })
@@ -2814,7 +2814,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_with_project_id_adds_corresponding_claimed_tag_to_user(self):
         assert OsfClaimedTags.Osf.value not in self.user.system_tags
         url = self.user.get_claim_url(self.project_with_source_tag._primary_key)
-        res = self.app.post(url, {
+        res = self.app.post(url, json={
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
@@ -2827,7 +2827,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_with_preprint_id_adds_corresponding_claimed_tag_to_user(self):
         assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') not in self.user.system_tags
         url = self.user.get_claim_url(self.preprint_with_source_tag._primary_key)
-        res = self.app.post(url, {
+        res = self.app.post(url, json={
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
@@ -2963,7 +2963,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/'
         double_node = NodeFactory()
 
-        self.app.post(
+        res = self.app.post(
             url,
             json={'nodeIds': [double_node._id]},
             auth=self.user.auth,
@@ -3496,7 +3496,7 @@ class TestAuthViews(OsfTestCase):
         assert self.user.email_verifications[token]['confirmed'] == True
         assert res.status_code == 302
         login_url = 'login?service'
-        assert login_url in res.body.decode()
+        assert login_url in res.text
 
     def test_get_email_to_add_no_email(self):
         email_verifications = self.user.unconfirmed_email_info
@@ -3995,7 +3995,7 @@ class TestExternalAuthViews(OsfTestCase):
             external_identity=external_identity,
         )
         self.user.save()
-        self.auth = Auth(self.user)
+        self.auth = (self.user.username, self.user.password)
 
     def test_external_login_email_get_with_invalid_session(self):
         url = web_url_for('external_login_email_get')

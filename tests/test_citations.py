@@ -180,5 +180,5 @@ class CitationsViewsTestCase(OsfTestCase):
         user = AuthUserFactory()
         node.add_contributor(user)
         node.save()
-        response = self.app.get('/api/v1' + '/project/' + node._id + '/citation/', auto_follow=True, auth=user.auth)
+        response = self.app.get('/api/v1' + '/project/' + node._id + '/citation/', auth=user.auth, follow_redirects=True)
         assert response.json

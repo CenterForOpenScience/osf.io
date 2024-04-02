@@ -295,8 +295,7 @@ class TestPrivateLink(OsfTestCase):
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_has_private_link_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get(f'/project/{self.project._primary_key}',
-            {'view_only': self.link.key})
+        res = self.app.get(f'/project/{self.project._primary_key}', query_string={'view_only': self.link.key})
         res = res.follow()
         assert res.status_code == 200
         assert res.body.decode() == 'success'
@@ -304,8 +303,7 @@ class TestPrivateLink(OsfTestCase):
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_does_not_have_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get(f'/project/{self.project._primary_key}',
-            {'key': None})
+        res = self.app.get(f'/project/{self.project._primary_key}',query_string={'key': None})
         assert_is_redirect(res)
 
 
@@ -424,7 +422,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.public_project.creator,
             )
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
@@ -437,7 +435,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.private_project.creator,
             )
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
 
 @must_be_contributor_or_public
@@ -533,7 +531,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=contrib,
             )
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
@@ -547,7 +545,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=contrib,
             )
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
 
 @must_be_contributor_or_public_but_not_anonymized
@@ -659,7 +657,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.public_project.creator,
             )
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
@@ -672,22 +670,20 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.private_project.creator,
             )
-        assert exc_info.exception.code == 403
+        assert exc_info.value.code == 403
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_decorator_does_allow_anonymous_link_public_project(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get(f'/project/{self.public_project._primary_key}',
-            {'view_only': self.anonymized_link_to_public_project.key})
-        res = res.follow()
+            query_string={'view_only': self.anonymized_link_to_public_project.key}, follow_redirects=True)
         assert res.status_code == 200
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_decorator_does_not_allow_anonymous_link_private_project(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get(f'/project/{self.private_project._primary_key}',
-                           {'view_only': self.anonymized_link_to_private_project.key})
-        res = res.follow(expect_errors=True)
+                           query_string={'view_only': self.anonymized_link_to_private_project.key}, follow_redirects=True)
         assert res.status_code == 500
 
 @must_be_logged_in
@@ -736,7 +732,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with pytest.raises(HTTPError) as ctx:
             thriller(node=project)
-        assert ctx.exception.code == http_status.HTTP_403_FORBIDDEN
+        assert ctx.value.code == http_status.HTTP_403_FORBIDDEN
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
@@ -746,7 +742,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with pytest.raises(HTTPError) as ctx:
             thriller(node=project)
-        assert ctx.exception.code == http_status.HTTP_401_UNAUTHORIZED
+        assert ctx.value.code == http_status.HTTP_401_UNAUTHORIZED
 
 
 def needs_addon_view(**kwargs):
