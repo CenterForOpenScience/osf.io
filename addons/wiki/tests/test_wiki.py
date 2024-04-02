@@ -62,7 +62,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 404
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
@@ -72,7 +72,7 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 200
         delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
         self.app.delete(delete_url, auth=self.user.auth)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 404
 
     def test_wiki_url_with_path_get_returns_200(self):
@@ -101,7 +101,7 @@ class TestWikiViews(OsfTestCase):
             'project_wiki_view',
             wname='funpage',
         ) + '?edit'
-        res = self.app.get(url, allow_redirects=True)
+        res = self.app.get(url, follow_redirects=True)
         assert res.status_code == 200
 
         # Check publicly editable
@@ -111,7 +111,7 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 200
 
         # Check publicly editable but not logged in
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 401
 
     def test_wiki_url_for_pointer_returns_200(self):
@@ -239,10 +239,10 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
         url = self.project.web_url_for('project_wiki_view', wname='home', view=3)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
         url = self.project.web_url_for('project_wiki_view', wname='home', view=0)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
 
     def test_project_wiki_compare_returns_200(self):
@@ -255,10 +255,10 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=3)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=0)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
 
     def test_wiki_page_creation_strips_whitespace(self):
@@ -287,7 +287,7 @@ class TestWikiViews(OsfTestCase):
     def test_wiki_validate_name_collision_doesnt_clear(self):
         WikiPage.objects.create_for_node(self.project, 'oldpage', 'some text', self.consolidate_auth)
         url = self.project.api_url_for('project_wiki_validate_name', wname='oldpage', auth=self.consolidate_auth)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 409
         url = self.project.api_url_for('wiki_page_content', wname='oldpage', auth=self.consolidate_auth)
         res = self.app.get(url, auth=self.user.auth)
@@ -295,7 +295,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_validate_name_cannot_create_home(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='home')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 409
 
     def test_project_wiki_validate_name_mixed_casing(self):
@@ -317,7 +317,7 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 200
         wiki = WikiPage.objects.get_for_node(self.project, 'CaPsLoCk')
         wiki.update(self.user, 'hello')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 409
 
     def test_project_dashboard_shows_no_wiki_content_text(self):
@@ -369,7 +369,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_id_url_get_returns_404(self):
         url = self.project.web_url_for('project_wiki_id_page', wid='12345', _guid=True)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 404
 
     def test_home_is_capitalized_in_web_view(self):

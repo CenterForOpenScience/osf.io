@@ -168,12 +168,12 @@ class TestBitbucketViews(OsfTestCase):
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth, allow_redirects=True)
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         assert len(res.json['prompts']) == 1
 
     def test_before_register(self):
         url = self.project.api_url + 'beforeregister/'
-        res = self.app.get(url, auth=self.user.auth, allow_redirects=True)
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         assert 'Bitbucket' in res.json['prompts'][1]
 
     @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
@@ -226,7 +226,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
-            auth=self.auth, allow_redirects=True
+            auth=self.auth, follow_redirects=True
         )
 
         self.project.reload()
@@ -253,7 +253,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_repo': 'Sheer-Heart-Attack',
             },
             auth=self.auth,
-            allow_redirects=True
+            follow_redirects=True
         )
 
         self.project.reload()
@@ -275,7 +275,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_repo': 'night at the opera',
             },
             auth=self.auth,
-            allow_redirects=True
+            follow_redirects=True
         )
 
         assert res.status_code == 400
@@ -299,7 +299,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_repo': 'night at the opera',
             },
             auth=self.auth,
-            allow_redirects=True
+            follow_redirects=True
         )
 
         assert res.status_code == 400
@@ -308,7 +308,7 @@ class TestBitbucketSettings(OsfTestCase):
 
         url = self.project.api_url + 'bitbucket/user_auth/'
 
-        self.app.delete(url, auth=self.auth, allow_redirects=True)
+        self.app.delete(url, auth=self.auth, follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()

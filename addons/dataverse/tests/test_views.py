@@ -250,7 +250,7 @@ class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
         url = api_url_for('dataverse_publish_dataset',
                           pid=self.project._primary_key)
-        self.app.put(url, params={'publish_both': False}, auth=self.user.auth)
+        self.app.put(url, json={'publish_both': False}, auth=self.user.auth)
 
         # Only dataset was published
         assert not mock_publish_dv.called
@@ -264,7 +264,7 @@ class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
         url = api_url_for('dataverse_publish_dataset',
                           pid=self.project._primary_key)
-        self.app.put(url, params={'publish_both': True}, auth=self.user.auth)
+        self.app.put(url, json={'publish_both': True}, auth=self.user.auth)
 
         # Both Dataverse and dataset were published
         assert mock_publish_dv.called

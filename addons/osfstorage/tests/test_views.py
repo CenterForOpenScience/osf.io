@@ -206,7 +206,6 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': 'somebogusid'}, {},
             self.node,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -215,7 +214,6 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': '/not/fo/u/nd/'}, {},
             self.node,
-            expect_errors=True,
         )
         assert res.status_code == 302
         assert '/login?service=' in res.location
@@ -226,7 +224,6 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': '/not/fo/u/nd/'}, {},
             self.node,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -419,7 +416,7 @@ class TestUploadFileHook(HookTestCase):
         file = root.find_child_by_name(name)
         file.checkout = user
         file.save()
-        res = self.send_upload_hook(root, payload=self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(root, payload=self.make_payload(name=name))
 
         assert res.status_code == 403
 
@@ -451,7 +448,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_weird_name(self):
         name = 'another/dir/carpe.png'
         parent = self.node_settings.get_root().append_folder('cheesey')
-        res = self.send_upload_hook(parent, payload=self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert res.status_code == 400
         assert len(parent.children) == 0
@@ -459,13 +456,13 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_to_file(self):
         name = 'carpe.png'
         parent = self.node_settings.get_root().append_file('cheesey')
-        res = self.send_upload_hook(parent, payload=self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert parent.is_file
         assert res.status_code == 400
 
     def test_upload_no_data(self):
-        res = self.send_upload_hook(self.node_settings.get_root(), expect_errors=True)
+        res = self.send_upload_hook(self.node_settings.get_root())
 
         assert res.status_code == 400
 
@@ -625,7 +622,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         file = root.find_child_by_name(name)
         file.checkout = user
         file.save()
-        res = self.send_upload_hook(root, self.preprint, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(root, self.preprint, self.make_payload(name=name))
 
         assert res.status_code == 403
 
@@ -657,7 +654,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
     def test_upload_weird_name(self):
         name = 'another/dir/carpe.png'
         parent = self.preprint.root_folder.append_folder('cheesey')
-        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert res.status_code == 400
         assert len(parent.children) == 0
@@ -665,13 +662,13 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
     def test_upload_to_file(self):
         name = 'carpe.png'
         parent = self.preprint.root_folder.append_file('cheesey')
-        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert parent.is_file
         assert res.status_code == 400
 
     def test_upload_no_data(self):
-        res = self.send_upload_hook(self.preprint.root_folder, self.preprint, expect_errors=True)
+        res = self.send_upload_hook(self.preprint.root_folder, self.preprint)
 
         assert res.status_code == 400
 
@@ -815,7 +812,6 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
             },
-            expect_errors=True,
         )
         assert res.status_code == 404
         self.version.reload()
@@ -862,7 +858,7 @@ class TestGetRevisions(StorageTestCase):
         assert res.json['revisions'][-1]['index'] == 1
 
     def test_get_revisions_path_not_found(self):
-        res = self.get_revisions(fid='missing', expect_errors=True)
+        res = self.get_revisions(fid='missing')
         assert res.status_code == 404
 
 
@@ -976,12 +972,12 @@ class TestDeleteHookNode(DeleteHook):
         file = self.root_node.append_file('Newfile')
         file.delete()
 
-        resp = self.delete(file, expect_errors=True)
+        resp = self.delete(file)
 
         assert resp.status_code == 404
 
     def test_cannot_delete_root(self):
-        resp = self.delete(self.root_node, expect_errors=True)
+        resp = self.delete(self.root_node)
 
         assert resp.status_code == 400
 
@@ -991,7 +987,7 @@ class TestDeleteHookNode(DeleteHook):
         file_checked.checkout = user
         file_checked.save()
 
-        res = self.delete(file_checked, expect_errors=True)
+        res = self.delete(file_checked)
         assert res.status_code == 403
 
     def test_attempt_delete_folder_with_rented_file(self):
@@ -1001,7 +997,7 @@ class TestDeleteHookNode(DeleteHook):
         file_checked.checkout = user
         file_checked.save()
 
-        res = self.delete(folder, expect_errors=True)
+        res = self.delete(folder)
         assert res.status_code == 403
 
     def test_attempt_delete_double_nested_folder_rented_file(self):
@@ -1012,7 +1008,7 @@ class TestDeleteHookNode(DeleteHook):
         file_checked.checkout = user
         file_checked.save()
 
-        res = self.delete(folder, expect_errors=True)
+        res = self.delete(folder)
         assert res.status_code == 403
 
 
@@ -1026,7 +1022,7 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
         self.root_node = self.preprint.root_folder
 
     def test_attempt_delete_while_preprint(self):
-        res = self.delete(self.preprint.primary_file, expect_errors=True)
+        res = self.delete(self.preprint.primary_file)
         assert res.status_code == 403
 
     def test_attempt_delete_folder_with_preprint(self):
@@ -1034,7 +1030,7 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
         file = folder.append_file('Fish')
         self.preprint.primary_file = file
         self.preprint.save()
-        res = self.delete(folder, expect_errors=True)
+        res = self.delete(folder)
         assert res.status_code == 403
 
     def test_delete_folder_while_preprint(self):
@@ -1485,12 +1481,12 @@ class TestFileViews(StorageTestCase):
 
         # Test nonexistant file 404's
         url = base_url.format('FakeGuid')
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 404
 
         # Test folder 400's
         url = base_url.format(folder._id)
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 400
 
     def test_addon_view_file(self):
@@ -1568,7 +1564,7 @@ class TestPreprintFileViews(StorageTestCase):
         guid = file.get_guid(create=True)
         url = self.preprint.web_url_for('resolve_guid', guid=guid._id)
         # File view for preprint file redirects to the preprint
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 302
         assert self.preprint._id in res.location
 
@@ -1591,7 +1587,7 @@ class TestPreprintFileViews(StorageTestCase):
 
         # Test nonexistant file 404's
         url = base_url.format('FakeGuid')
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 404
 
         # Test folder 400's

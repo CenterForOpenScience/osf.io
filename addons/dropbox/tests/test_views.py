@@ -199,5 +199,5 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
 
         url = self.project.api_url_for('dropbox_set_config')
         res = self.app.put(url, json={'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
+            auth=self.contrib.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
