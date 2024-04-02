@@ -107,7 +107,7 @@ class TestWikiViews(OsfTestCase):
         # Check publicly editable
         wiki = self.project.get_addon('wiki')
         wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
-        res = self.app.get(url, auth=AuthUserFactory().auth, expect_errors=False)
+        res = self.app.get(url, auth=AuthUserFactory().auth)
         assert res.status_code == 200
 
         # Check publicly editable but not logged in
@@ -155,7 +155,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.project.reload()
         # page was updated with new content
@@ -168,7 +168,7 @@ class TestWikiViews(OsfTestCase):
         old_wiki_page_count = WikiVersion.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
-        res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
+        res = self.app.post(url, {'content': ''}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
         new_wiki_page_count = WikiVersion.objects.all().count()

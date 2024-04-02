@@ -513,8 +513,8 @@ class TestGitLabSettings(OsfTestCase):
                 'gitlab_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        , follow_redirects=True)
+            follow_redirects=True
+        )
 
         assert res.status_code == 400
 
@@ -552,8 +552,8 @@ class TestGitLabSettings(OsfTestCase):
                 'gitlab_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        , follow_redirects=True)
+            follow_redirects=True
+        )
 
         assert res.status_code == 400
 

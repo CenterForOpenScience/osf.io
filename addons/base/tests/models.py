@@ -663,4 +663,4 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
             mock_get_client.return_value = mock_client
             with pytest.raises(HTTPError) as exc_info:
                 self.provider.client
-            assert exc_info.exception.code == 403
+            assert exc_info.value.code == 403
