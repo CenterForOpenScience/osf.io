@@ -95,7 +95,7 @@ class TestConferenceUtils(OsfTestCase):
         username = 'kanye@mailinator.com'
         with pytest.raises(BlockedEmailError) as e:
             get_or_create_user(fullname, username, is_spam=True)
-        assert str(e.exception) == 'Invalid Email'
+        assert str(e.value) == 'Invalid Email'
 
 
 class ContextTestCase(OsfTestCase):

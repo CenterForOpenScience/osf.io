@@ -1,5 +1,5 @@
 import pytest
-from django.core.exceptions import ValidationError
+from django.core.values import ValidationError
 from osf.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase
@@ -92,37 +92,37 @@ class TestSubjectTreeValidation(OsfTestCase):
         with pytest.raises(ValidationValueError) as e:
             validate_subject_hierarchy(self.no_root)
 
-        assert 'Unable to find root' in e.exception.message
+        assert 'Unable to find root' in e.value.message
 
     def test_invalidation_no_parent(self):
         with pytest.raises(ValidationValueError) as e:
             validate_subject_hierarchy(self.no_parent)
 
-        assert 'Invalid subject hierarchy' in e.exception.message
+        assert 'Invalid subject hierarchy' in e.value.message
 
     def test_invalidation_invalid_child_leaf(self):
         with pytest.raises(ValidationValueError) as e:
             validate_subject_hierarchy(self.invalid_child_leaf)
 
-        assert 'Invalid subject hierarchy' in e.exception.message
+        assert 'Invalid subject hierarchy' in e.value.message
 
     def test_invalidation_invalid_parent_leaf(self):
         with pytest.raises(ValidationValueError) as e:
             validate_subject_hierarchy(self.invalid_parent_leaf)
 
-        assert 'Invalid subject hierarchy' in e.exception.message
+        assert 'Invalid subject hierarchy' in e.value.message
 
     def test_invalidation_invalid_root_leaf(self):
         with pytest.raises(ValidationValueError) as e:
             validate_subject_hierarchy(self.invalid_root_leaf)
 
-        assert 'Invalid subject hierarchy' in e.exception.message
+        assert 'Invalid subject hierarchy' in e.value.message
 
     def test_invalidation_invalid_ids(self):
         with pytest.raises(ValidationValueError) as e:
             validate_subject_hierarchy(self.invalid_ids)
 
-        assert 'could not be found' in e.exception.message
+        assert 'could not be found' in e.value.message
 
 class TestSubjectEditValidation(OsfTestCase):
     def setUp(self):

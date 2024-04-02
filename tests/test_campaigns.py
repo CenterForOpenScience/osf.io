@@ -186,7 +186,7 @@ class TestCampaignsAuthViews(OsfTestCase):
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_register'])
             assert resp.status_code == http_status.HTTP_200_OK
-            assert value['title_register'] in resp
+            assert value['title_register'] in resp.text
 
     def test_campaign_login_logged_in(self):
         for key, value in self.campaigns.items():
