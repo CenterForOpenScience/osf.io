@@ -40,10 +40,15 @@
                 "subitem_funding_stream_identifier": "{{funding_stream_code_value}}",
                 "subitem_funding_stream_identifier_type": "JGN_fundingStream"
             },
-            "subitem_funding_streams": {
+            "subitem_funding_streams[FUNDING_STREAM_JA]": {
                 "@createIf": "{{ program_name_ja_value }}",
                 "subitem_funding_stream": "{{program_name_ja_value}}",
                 "subitem_funding_stream_language": "ja"
+            },
+            "subitem_funding_streams[FUNDING_STREAM_EN]": {
+                "@createIf": "{{ program_name_en_value }}",
+                "subitem_funding_stream": "{{program_name_en_value}}",
+                "subitem_funding_stream_language": "en"
             },
             "subitem_award_number": {
                 "@createIf": "{{ japan_grant_number_value }}",

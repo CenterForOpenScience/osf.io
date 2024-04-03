@@ -1932,10 +1932,10 @@ function _connectCheckTemplate(item){
 function _addonConfigureTemplate(item){
     var tb = this;
     return m('span.text-warning', [
-        m('span', item.data.name),
+        m('span', sprintf(gettext('%1$s is not configured'), item.data.addonFullname)),
         m('a.btn.btn-xs.btn-default.m-l-xs', {
             href: 'addons/'
-        }, [m('i.fa.fa-cog'), ' Configure'])
+        }, [m('i.fa.fa-cog'), gettext(' Restore Add-ons')])
     ]);
 }
 

@@ -2561,8 +2561,8 @@ msgid "Add"
 msgstr "追加"
 
 #: admin/templates/rdm_addons/addons/weko_institution_settings.html:22
-msgid "Disconnect Application"
-msgstr "アプリケーションの切断"
+msgid "Delete Application"
+msgstr "アプリケーションの削除"
 
 #: admin/templates/rdm_addons/addons/weko_institution_settings.html:27
 msgid "OAuth Application "

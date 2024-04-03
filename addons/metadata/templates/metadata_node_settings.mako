@@ -14,26 +14,42 @@
         </div>
         <div data-bind="if: applicableAddonSettings().length > 0" class="row">
             <div class="col-md-12">
-                ${_("Imported add-on settings can be restored:")}
-                <span data-bind="foreach: applicableAddonSettings">
-                    <!-- ko if: $index() > 0 -->,<!-- /ko -->
-                    <span data-bind="text: full_name" style="font-weight: bold;"></span>
-                </span>
+                <!-- ko if: applicableAddonSettings().length === 1 -->
+                    ${_("Please set the credential for the %(addonName)s add-on to access the storage\
+                    attatched to the import source.")  % dict(
+                        addonName='<span data-bind="text: applicableAddonSettings()[0].full_name" style="font-weight: bold;"></span>'
+                    ) | n}
+                <!-- /ko -->
+                <!-- ko if: applicableAddonSettings().length > 1 -->
+                    ${_("To access the storages attatched to the import source, please set the credentials for each add-on: ")}
+                    <span data-bind="foreach: applicableAddonSettings">
+                        <!-- ko if: $index() > 0 -->,<!-- /ko -->
+                        <span data-bind="text: full_name" style="font-weight: bold;"></span>
+                    </span>
+                <!-- /ko -->
             </div>
-            <div class="col-md-12">
+            <div class="col-md-12" style="margin-bottom: 1em;">
                 <button href="#metadataApplyDialog" data-toggle="modal"
                         class="btn btn-primary">
-                    ${_("Apply")}
+                    ${_("Restore Add-ons")}
                 </button>
             </div>
         </div>
         <div data-bind="if: nonApplicableAddonSettings().length > 0" class="row text-warning">
             <div class="col-md-12">
-                ${_("Please set the credentials for each add-on to apply the imported add-on settings:")}
-                <span data-bind="foreach: nonApplicableAddonSettings">
-                    <!-- ko if: $index() > 0 -->,<!-- /ko -->
-                    <span data-bind="text: full_name" style="font-weight: bold;"></span>
-                </span>
+                <!-- ko if: nonApplicableAddonSettings().length === 1 -->
+                    ${_("Please set the credential for the %(addonName)s add-on to access the storage\
+                    attatched to the import source.")  % dict(
+                        addonName='<span data-bind="text: nonApplicableAddonSettings()[0].full_name" style="font-weight: bold;"></span>'
+                    ) | n}
+                <!-- /ko -->
+                <!-- ko if: nonApplicableAddonSettings().length > 1 -->
+                    ${_("To access the storages attatched to the import source, please set the credentials for each add-on: ")}
+                    <span data-bind="foreach: nonApplicableAddonSettings">
+                        <!-- ko if: $index() > 0 -->,<!-- /ko -->
+                        <span data-bind="text: full_name" style="font-weight: bold;"></span>
+                    </span>
+                <!-- /ko -->
             </div>
         </div>
         <!-- end row -->
@@ -49,7 +65,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>${_("Apply imported add-on settings")}</h3>
+                <h3>${_("Restore imported add-on settings")}</h3>
             </div>
 
             <form>
@@ -60,7 +76,8 @@
                         <div class="col-sm-12">
 
                             <p>
-                                ${_("Restore imported add-on settings? This operation performs settings for folders, etc., using the imported settings.")}
+                                ${_("Apply the add-on settings from the import source.\
+                                This will make the storage attatched to the original project available.")}
                             </p>
 
                         </div>

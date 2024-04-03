@@ -12,14 +12,14 @@
             </div>
         </div>
         <div class="col-xs-12">
-            ${_("URL to import:")}
+            ${_("Source URL:")}
             <div style="font-weight: bold;">
                 ${url}
             </div>
         </div>
         <div class="col-xs-12" style="padding-top: 2em;">
-            ${_("Title of an imported project")}
-            <input id='title' placeholder='${_("Enter the title of an imported project")}' type="text" class="form-control" value="${default_title}">
+            ${_("Project Title")}
+            <input id='title' placeholder='${_("Enter the title of the imported project")}' type="text" class="form-control" value="${default_title}">
         </div>
         <div class="col-xs-12" style="padding-top: 1em;">
             <div class="pull-right">

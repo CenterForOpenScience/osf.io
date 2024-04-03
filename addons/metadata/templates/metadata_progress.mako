@@ -24,7 +24,7 @@
             <div class="col-xs-12" style="padding-top: 2em; color: #555;">
                 <div id="progress-error" class="text-danger" style="display: none;">
                     <div style="font-weight: bold;">
-                        ${_("An error occurred during the import process:")}
+                        ${_("An error occurred during the import process: ")}
                     </div>
                     <div class="error-content"></div>
                 </div>

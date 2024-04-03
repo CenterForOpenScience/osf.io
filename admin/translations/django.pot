@@ -2531,7 +2531,7 @@ msgid "Add"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_institution_settings.html:22
-msgid "Disconnect Application"
+msgid "Delete Application"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_institution_settings.html:27

@@ -28,6 +28,10 @@ class WEKOAddonAppConfig(BaseAddonAppConfig):
     node_settings_template = os.path.join(TEMPLATE_PATH, 'weko_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'weko_user_settings.mako')
 
+    # WEKO addon is not allowed by default
+    # - It can be activated by the institution administrator.
+    is_allowed_default = False
+
     @property
     def get_hgrid_data(self):
         return weko_root_folder

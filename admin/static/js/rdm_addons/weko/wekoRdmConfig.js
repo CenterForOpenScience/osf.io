@@ -102,9 +102,9 @@ const ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
     askDisconnect: function(account) {
         var self = this;
         bootbox.confirm({
-            title: _('Disconnect WEKO Application?'),
+            title: _('Delete WEKO Application?'),
             message: '<p class="overflow">' +
-                sprintf(_('Are you sure you want to disconnect the WEKO application on <strong>%1$s</strong>? This will revoke access to WEKO for all projects associated with this account.'),osfHelpers.htmlEscape(account.name)) +
+                sprintf(_('Are you sure you want to delete the WEKO application <strong>%1$s</strong>? WEKO add-on connections already set up for the projects will be preserved.'),osfHelpers.htmlEscape(account.name)) +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {

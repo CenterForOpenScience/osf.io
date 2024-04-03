@@ -66,12 +66,12 @@ function ViewModel(nodeId, url) {
     });
     self.nonApplicableAddonSettings = ko.computed(function() {
         return self.importedAddonSettings().filter(function(setting) {
-            return !setting.applicable;
+            return setting.full_name && !setting.applicable;
         });
     });
     self.incompletedAddonSettings = ko.computed(function() {
         return self.importedAddonSettings().filter(function(setting) {
-            return !setting.applied;
+            return setting.full_name && !setting.applied;
         });
     });
 
@@ -152,14 +152,14 @@ ViewModel.prototype.applyAddonSettings = function() {
         }
     )
         .then(function() {
-            self.changeMessage(_('Add-on settings applied.'), 'text-success');
+            self.changeMessage(_('Add-on settings configured.'), 'text-success');
             setTimeout(function() {
                 window.location.reload();
             }, 1000)
         })
         .catch(function(xhr, textStatus, error) {
-            self.changeMessage(_('Failed to apply add-on settings.'), 'text-danger')
-            Raven.captureMessage('Failed to apply add-on settings.', {
+            self.changeMessage(_('Failed to configure add-on settings.'), 'text-danger')
+            Raven.captureMessage('Failed to configure add-on settings.', {
                 extra: {
                     url: self.url,
                     textStatus: textStatus,

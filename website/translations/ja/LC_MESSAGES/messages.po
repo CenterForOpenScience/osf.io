@@ -576,7 +576,7 @@ msgid "Service Base URL"
 msgstr "サービスベースURL"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:102
-#: addons/metadata/templates/metadata_node_settings.mako:75
+#: addons/metadata/templates/metadata_node_settings.mako:92
 msgid "OK"
 msgstr "OK"
 
@@ -584,30 +584,35 @@ msgstr "OK"
 msgid "No configuration items."
 msgstr "設定項目はありません。"
 
-#: addons/metadata/templates/metadata_node_settings.mako:17
-msgid "Imported add-on settings can be restored:"
-msgstr "アドオンをインポートされた設定に復元可能です:"
-
-#: addons/metadata/templates/metadata_node_settings.mako:26
-#: website/templates/project/timestamp.mako:60
-msgid "Apply"
-msgstr "適用"
-
-#: addons/metadata/templates/metadata_node_settings.mako:32
+#: addons/metadata/templates/metadata_node_settings.mako:18
+#: addons/metadata/templates/metadata_node_settings.mako:41
+#, python-format
 msgid ""
-"Please set the credentials for each add-on to apply the imported add-on "
-"settings:"
-msgstr "アドオンにインポートされた設定を適用するには、アドオンに認証情報を設定してください:"
+"Please set the credential for the %(addonName)s add-on to access the "
+"storage                    attatched to the import source."
+msgstr "インポート元に接続されていたストレージを有効化するには、%(addonName)sアドオンに認証情報を設定してください。"
 
-#: addons/metadata/templates/metadata_node_settings.mako:52
-msgid "Apply imported add-on settings"
-msgstr "アドオンへのインポートされた設定の適用"
-
-#: addons/metadata/templates/metadata_node_settings.mako:63
+#: addons/metadata/templates/metadata_node_settings.mako:24
+#: addons/metadata/templates/metadata_node_settings.mako:47
 msgid ""
-"Restore imported add-on settings? This operation performs settings for "
-"folders, etc., using the imported settings."
-msgstr "インポートされたアドオン設定へと復元しますか？この操作は、インポートされた設定を用いて，アドオンのフォルダ設定に対する変更を実施します。"
+"To access the storages attatched to the import source, please set the "
+"credentials for each add-on: "
+msgstr "インポート元に接続されていたストレージを有効化するには、各アドオンに認証情報を設定してください: "
+
+#: addons/metadata/templates/metadata_node_settings.mako:34
+msgid "Restore Add-ons"
+msgstr "設定"
+
+#: addons/metadata/templates/metadata_node_settings.mako:68
+msgid "Restore imported add-on settings"
+msgstr "インポートされたアドオン設定の復元"
+
+#: addons/metadata/templates/metadata_node_settings.mako:79
+msgid ""
+"Apply the add-on settings from the import source."
+"                                This will make the storage attatched to "
+"the original project available."
+msgstr "アドオンの設定をインポート元の設定内容に合わせます。これにより、インポート元のプロジェクトに接続されていたストレージが有効になります。"
 
 #: addons/metadata/templates/metadata_progress.mako:2
 #: addons/metadata/templates/metadata_project_importer.mako:2
@@ -636,19 +641,19 @@ msgid "Finished."
 msgstr "完了"
 
 #: addons/metadata/templates/metadata_progress.mako:27
-msgid "An error occurred during the import process:"
-msgstr "インポート処理中にエラーが発生しました:"
+msgid "An error occurred during the import process: "
+msgstr "インポート処理中にエラーが発生しました: "
 
 #: addons/metadata/templates/metadata_project_importer.mako:15
-msgid "URL to import:"
-msgstr "インポートするURL:"
+msgid "Source URL:"
+msgstr "インポート元のURL:"
 
 #: addons/metadata/templates/metadata_project_importer.mako:21
-msgid "Title of an imported project"
-msgstr "インポート後のプロジェクト名"
+msgid "Project Title"
+msgstr "プロジェクト名"
 
 #: addons/metadata/templates/metadata_project_importer.mako:22
-msgid "Enter the title of an imported project"
+msgid "Enter the title of the imported project"
 msgstr "インポート後のプロジェクト名を入力してください"
 
 #: addons/metadata/templates/metadata_project_importer.mako:27
@@ -919,25 +924,13 @@ msgstr "WEKOアカウントに接続"
 
 #: addons/weko/templates/weko_credentials_modal.mako:18
 msgid "WEKO Repository"
-msgstr "WEKOレポジトリ"
+msgstr "WEKOリポジトリ"
 
-#: addons/weko/templates/weko_credentials_modal.mako:22
+#: addons/weko/templates/weko_credentials_modal.mako:23
 msgid "Select a WEKO repository"
-msgstr "WEKOレポジトリを選択"
+msgstr "WEKOリポジトリを選択"
 
-#: addons/weko/templates/weko_credentials_modal.mako:33
-msgid "WEKO SWORD URL"
-msgstr "WEKO SWORD URL"
-
-#: addons/weko/templates/weko_credentials_modal.mako:37
-msgid "WEKO Username"
-msgstr "WEKOユーザ名"
-
-#: addons/weko/templates/weko_credentials_modal.mako:41
-msgid "WEKO Password"
-msgstr "WEKOパスワード"
-
-#: addons/weko/templates/weko_credentials_modal.mako:60
+#: addons/weko/templates/weko_credentials_modal.mako:45
 msgid "Connect"
 msgstr "接続"
 
@@ -3897,6 +3890,10 @@ msgstr "終了日"
 #: website/templates/project/timestamp.mako:53
 msgid "User"
 msgstr "ユーザー"
+
+#: website/templates/project/timestamp.mako:60
+msgid "Apply"
+msgstr "適用"
 
 #: website/templates/project/timestamp.mako:69
 msgid "Verify"
