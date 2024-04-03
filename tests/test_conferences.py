@@ -644,7 +644,7 @@ class TestConferenceIntegration(ContextTestCase):
         )
         res = self.app.post(
             api_url_for('meeting_hook'),
-            {
+            data={
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
                 'token': 'secret',
@@ -660,7 +660,6 @@ class TestConferenceIntegration(ContextTestCase):
                 'subject': title,
                 'stripped-text': body,
             },
-            expect_errors=True,
         )
         assert res.status_code == 406
         call_args, call_kwargs = mock_send_mail.call_args
@@ -685,7 +684,7 @@ class TestConferenceIntegration(ContextTestCase):
         )
         self.app.post(
             api_url_for('meeting_hook'),
-            {
+            data={
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
                 'token': 'secret',
@@ -700,10 +699,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,
+                'attachment-1': (BytesIO(content.encode()), 'attachment-1')
             },
-            upload_files=[
-                ('attachment-1', 'attachment-1', content.encode()),
-            ],
         )
         assert mock_upload.called
         users = OSFUser.objects.filter(username=username)
