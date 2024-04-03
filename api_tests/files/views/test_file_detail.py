@@ -674,7 +674,7 @@ class TestFileVersionView:
         render_link = res.json['data']['links']['render']
         download_link = res.json['data']['links']['download']
         assert mfr_url in render_link
-        assert quote(download_link) in render_link
+        assert quote_plus(download_link) in render_link
         assert quote('revision=1') in render_link
 
         guid = file.get_guid(create=True)._id

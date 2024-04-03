@@ -329,7 +329,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.node._id, 'path': path})
         nlogs = self.node.logs.count()
-        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload)
         self.node.reload()
         assert self.node.logs.count() == nlogs + 1
         # # Mocking form_message and perform so that the payload need not be exact.
@@ -344,7 +344,6 @@ class TestAddonLogs(OsfTestCase):
         res = self.app.put(
             url,
             json=payload,
-            headers={'Content-Type': 'application/json'},
         )
         assert res.status_code == 400
         self.node.reload()
@@ -358,7 +357,6 @@ class TestAddonLogs(OsfTestCase):
         res = self.app.put(
             url,
             json=payload,
-            headers={'Content-Type': 'application/json'},
         )
         assert res.status_code == 400
         self.node.reload()
@@ -1322,7 +1320,7 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert resp.status_code == 302
-        assert resp.location == f'http://localhost/{guid._id}/'
+        assert resp.location == f'{guid._id}/'
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()

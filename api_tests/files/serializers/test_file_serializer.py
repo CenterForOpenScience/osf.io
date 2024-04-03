@@ -1,5 +1,4 @@
 from datetime import datetime
-from urllib.parse import quote_plus, unquote_plus
 
 import pytest
 from pytz import utc
@@ -99,7 +98,7 @@ class TestFileSerializer:
         assert download_base.format(path) in data['links']['download']
 
         # check render file link with path
-        assert quote_plus(download_base.format(path)) in data['links']['render']
+        assert download_base.format(path) in data['links']['render']
         assert mfr_url in data['links']['render']
 
         # check download file link with guid
@@ -109,7 +108,7 @@ class TestFileSerializer:
         assert download_base.format(guid) in data['links']['download']
 
         # check render file link with guid
-        assert quote_plus(download_base.format(guid)) in data['links']['render']
+        assert download_base.format(guid) in data['links']['render']
         assert mfr_url in data['links']['render']
 
         # check html link in file serializer
@@ -135,7 +134,7 @@ class TestFileSerializer:
 
         # Check render file link with path
         download_link = data['links']['download']
-        assert unquote_plus(data['links']['render']) == build_expected_render_link(mfr_url, download_link, with_version=False)
+        assert data['links']['render'] == build_expected_render_link(mfr_url, download_link, with_version=False)
 
         # Check render file link with guid
         primary_file.get_guid(create=True)._id
@@ -145,7 +144,7 @@ class TestFileSerializer:
         assert data['links']['render'] == build_expected_render_link(mfr_url, download_link, with_version=False)
 
         # Check html link
-        assert data['links']['html'] == quote_plus(f'{settings.DOMAIN}{preprint._id}/files/osfstorage/{primary_file._id}')
+        assert data['links']['html'] == f'{settings.DOMAIN}{preprint._id}/files/osfstorage/{primary_file._id}'
 
     def test_get_file_download_and_render_links(self, file_one, node):
         mfr_link = get_mfr_url(file_one.target, 'osfstorage')

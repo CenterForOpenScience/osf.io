@@ -222,7 +222,7 @@ class TestRegistrationThroughCampaigns(OsfTestCase):
             kwargs = {
                 'uid': user._id,
             }
-            with self.app.app.test_request_context(), mock_auth(user):
+            with self.app.application.test_request_context(), mock_auth(user):
                 res = auth_views.confirm_email_get(token, **kwargs)
                 assert res.status_code == http_status.HTTP_302_FOUND
                 assert res.location == campaigns.campaign_url_for(key)

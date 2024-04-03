@@ -40,7 +40,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
     def test_invalid_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=(self.user1.username, 'invalid password'))
         assert res.status_code == 401
-        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode()
+        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.text
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_credential_authenticates_and_has_permissions(self):
@@ -60,7 +60,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth)
         assert res.status_code == 401
-        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode()
+        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.text
 
     def test_valid_credential_twofactor_invalid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -71,7 +71,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': 'invalid otp'})
         assert res.status_code == 401
-        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode()
+        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.text
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_credential_twofactor_valid_otp(self):
@@ -99,4 +99,4 @@ class TestAuthBasicAuthentication(OsfTestCase):
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
         res = self.app.get(self.reachable_url)
         assert res.status_code == 302
-        assert 'http://localhost/' == res.location
+        assert '/' == res.location

@@ -166,7 +166,6 @@ class TestResolveGuid(OsfTestCase):
         """
         res = self.app.get(
             self.node.web_url_for('resolve_guid', guid=self.node._id),
-            expect_errors=True,
         )
         assert res.status_code == 302
         assert '/login?service=' in res.location
@@ -196,7 +195,6 @@ class TestResolveGuid(OsfTestCase):
             self.node.save()
             res = self.app.get(
                 f'{self.node.web_url_for("resolve_guid", guid=self.node._id)}/{segment}/',
-                expect_errors=True,
             )
             assert res.status_code == 200
 
@@ -211,7 +209,6 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(
             self.node.web_url_for('resolve_guid', guid=self.node._id),
             auth=non_contrib.auth,
-            expect_errors=True,
         )
         assert '<title>OSF | Forbidden</title>' in res.body.decode()
         assert res.status_code == 403
@@ -221,7 +218,6 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(
             self.node.web_url_for('resolve_guid', guid=self.node._id),
             auth=non_contrib.auth,
-            expect_errors=True,
         )
         assert res.status_code == 403
         assert '<title>OSF | Request Access</title>' in res.body.decode()
