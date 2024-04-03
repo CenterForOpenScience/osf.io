@@ -79,13 +79,13 @@ services:
     stdin_open: true
 
   postgres:
-    image: postgres:9.6
+    image: postgres:15
     command:
       - /bin/bash
       - -c
       - echo "$$POSTGRES_INITDB" > /docker-entrypoint-initdb.d/commands.sh &&
         chmod +x /docker-entrypoint-initdb.d/commands.sh &&
-        /docker-entrypoint.sh postgres
+        docker-entrypoint.sh postgres
     ports:
       - 5432:5432
     environment:
