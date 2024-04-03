@@ -252,7 +252,7 @@ class TestMessage(ContextTestCase):
 
     def test_verify_signature_invalid(self):
         with self.make_context(data={'signature': 'fake'}):
-            self.app.app.preprocess_request()
+            self.app.application.preprocess_request()
             msg = message.ConferenceMessage()
             with pytest.raises(message.ConferenceError):
                 msg.verify_signature()
@@ -360,7 +360,7 @@ class TestMessage(ContextTestCase):
 
     def test_route_invalid_pattern(self):
         with self.make_context(data={'recipient': 'spam@osf.io'}):
-            self.app.app.preprocess_request()
+            self.app.application.preprocess_request()
             msg = message.ConferenceMessage()
             with pytest.raises(message.ConferenceError):
                 msg.route
@@ -368,7 +368,7 @@ class TestMessage(ContextTestCase):
     def test_route_invalid_test(self):
         recipient = '{}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
         with self.make_context(data={'recipient': recipient}):
-            self.app.app.preprocess_request()
+            self.app.application.preprocess_request()
             msg = message.ConferenceMessage()
             with pytest.raises(message.ConferenceError):
                 msg.route
@@ -380,7 +380,7 @@ class TestMessage(ContextTestCase):
         conf.save()
         recipient = '{}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
-            self.app.app.preprocess_request()
+            self.app.application.preprocess_request()
             msg = message.ConferenceMessage()
             assert msg.conference_name == 'chocolate'
             assert msg.conference_category == 'data'
@@ -389,7 +389,7 @@ class TestMessage(ContextTestCase):
     def test_route_valid_b(self):
         recipient = '{}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
-            self.app.app.preprocess_request()
+            self.app.application.preprocess_request()
             msg = message.ConferenceMessage()
             assert msg.conference_name == 'conf'
             assert msg.conference_category == 'poster'
@@ -397,7 +397,7 @@ class TestMessage(ContextTestCase):
     def test_alternate_route_invalid(self):
         recipient = '{}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
-            self.app.app.preprocess_request()
+            self.app.application.preprocess_request()
             msg = message.ConferenceMessage()
             with pytest.raises(message.ConferenceError):
                 msg.route
@@ -429,8 +429,8 @@ class TestConferenceEmailViews(OsfTestCase):
         url = '/presentations/'
         res = self.app.get(url)
         assert res.status_code == 302
-        res = res.follow()
-        assert res.request.path == '/meetings/'
+        res = self.app.get(url, follow_redirects=True)
+        assert res.location == '/meetings/'
 
     def test_conference_submissions(self):
         AbstractNode.objects.all().delete()
@@ -448,7 +448,7 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_submissions')
         res = self.app.get(url)
-        assert res.json['success'] == True
+        assert res.json['success']
 
     def test_conference_plain_returns_200(self):
         conference = ConferenceFactory()
@@ -596,7 +596,7 @@ class TestConferenceIntegration(ContextTestCase):
         )
         self.app.post(
             api_url_for('meeting_hook'),
-            {
+            data={
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
                 'token': 'secret',
@@ -611,10 +611,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,
+                'attachment-1': (BytesIO(content.encode(), 'attachment-1'))
             },
-            upload_files=[
-                ('attachment-1', 'attachment-1', content.encode()),
-            ],
         )
         assert mock_upload.called
         users = OSFUser.objects.filter(username=username)
@@ -733,7 +731,7 @@ class TestConferenceIntegration(ContextTestCase):
         )
         self.app.post(
             api_url_for('meeting_hook'),
-            {
+            data={
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
                 'token': 'secret',
@@ -748,10 +746,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,
+                'attachment-1':(BytesIO(content.encode(), 'attachment-1'))
             },
-            upload_files=[
-                ('attachment-1', 'attachment-1', content.encode()),
-            ],
         )
 
         assert AbstractNode.objects.filter(title=title, creator=user).count() == 2

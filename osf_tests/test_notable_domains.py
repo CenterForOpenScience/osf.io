@@ -4,6 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from types import SimpleNamespace
 from urllib.parse import urlparse
 
+from flask import g
+
 from addons.wiki.tests.factories import WikiVersionFactory
 from osf.external.spam import tasks as spam_tasks
 from osf.models import (
@@ -197,7 +199,7 @@ class TestNotableDomain:
                           f' iamNOTspam.org i-am-a-ham.io  https://stillNotspam.io'
         creator = getattr(obj, 'creator', None) or getattr(obj.node, 'creator')
         with mock.patch.object(spam_tasks.requests, 'head'):
-            request_context.g.current_session = {'auth_user_id': creator._id}
+            g.current_session = {'auth_user_id': creator._id}
             obj.save()
 
         assert NotableDomain.objects.filter(
@@ -260,7 +262,7 @@ class TestNotableDomain:
         project.save()
         wiki_version.content = '[EXTREME VIDEO] <b><a href="https://cos.io/JAkeEloit">WATCH VIDEO</a></b>'
 
-        request_context.g.current_session = {'auth_user_id': project.creator._id}
+        g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             wiki_version.save()
 
@@ -276,7 +278,7 @@ class TestNotableDomain:
         wiki_version.save()
 
         assert DomainReference.objects.count() == 0
-        request_context.g.current_session = {'auth_user_id': project.creator._id}
+        g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             project.set_privacy(permissions='public')
 

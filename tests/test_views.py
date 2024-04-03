@@ -6,7 +6,6 @@ from pytest import approx
 
 import datetime as dt
 from rest_framework import status as http_status
-import json
 import time
 from unittest import mock
 from http.cookies import SimpleCookie
@@ -623,8 +622,7 @@ class TestProjectViews(OsfTestCase):
         # User 1 removes user2
         payload = {'contributorID': self.user2._id,
                    'nodeIDs': [self.project._id]}
-        self.app.post(url, json.dumps(payload),
-                      content_type='application/json',
+        self.app.post(url, json=payload,
                       auth=self.auth, follow_redirects=True)
         self.project.reload()
         assert self.user2._id not in self.project.contributors
@@ -636,8 +634,7 @@ class TestProjectViews(OsfTestCase):
         # User 1 removes user2
         payload = {'contributorID': self.user2._id,
                    'nodeIDs': [self.project._id, self.project2._id]}
-        res = self.app.post(url, json.dumps(payload),
-                            content_type='application/json',
+        res = self.app.post(url, json=payload,
                             auth=self.auth, follow_redirects=True)
         self.project.reload()
         self.project2.reload()
