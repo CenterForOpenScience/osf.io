@@ -128,7 +128,7 @@ class ContextTestCase(OsfTestCase):
             for key, value in data.items()
             if value is not None
         }
-        return self.app.app.test_request_context(method=method, data=data, **kwargs)
+        return self.app.application.test_request_context(method=method, data=data, **kwargs)
 
 
 class TestProvisionNode(ContextTestCase):
