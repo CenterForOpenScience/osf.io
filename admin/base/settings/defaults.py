@@ -81,7 +81,6 @@ INSTALLED_APPS = (
 
     # 3rd party
     'django_celery_results',
-    'raven.contrib.django.raven_compat',
     'webpack_loader',
     'guardian',
     'waffle',
@@ -125,13 +124,6 @@ if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
 
 # Custom user model (extends AbstractBaseUser)
 AUTH_USER_MODEL = 'osf.OSFUser'
-
-# TODO: Are there more granular ways to configure reporting specifically related to the API?
-RAVEN_CONFIG = {
-    'tags': {'App': 'admin'},
-    'dsn': osf_settings.SENTRY_DSN,
-    'release': osf_settings.VERSION,
-}
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
