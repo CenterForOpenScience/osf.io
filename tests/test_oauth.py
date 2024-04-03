@@ -475,7 +475,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         user = UserFactory()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -506,7 +506,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -535,7 +535,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='error=mock_error&code=mock_code&state=mock_state'
         ):
@@ -579,7 +579,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         _prepare_mock_oauth2_handshake_response()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ) as ctx:

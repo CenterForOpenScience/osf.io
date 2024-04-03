@@ -1,4 +1,4 @@
-from urllib.parse import quote
+from urllib.parse import quote, quote_plus
 
 import itsdangerous
 from unittest import mock
@@ -685,7 +685,7 @@ class TestFileVersionView:
         render_link = res.json['data']['links']['render']
         download_link = res.json['data']['links']['download']
         assert mfr_url in render_link
-        assert quote(download_link) in render_link
+        assert quote_plus(download_link) in render_link
         assert guid in render_link
         assert quote('revision=1') in render_link
 
