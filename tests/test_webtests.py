@@ -116,7 +116,7 @@ class TestAUser(OsfTestCase):
         assert 'Projects' in res.text  # Projects heading
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
-        res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
+        res = self.app.get('/settings/addons/', auth=self.auth, follow_redirects=True)
         assert 'OSF Storage' not in res.text
 
     def test_sees_osffiles_in_project_addon_settings(self):
@@ -125,12 +125,12 @@ class TestAUser(OsfTestCase):
             self.user,
             permissions=permissions.ADMIN,
             save=True)
-        res = self.app.get(f'/{project._primary_key}/addons/', auth=self.auth, auto_follow=True)
+        res = self.app.get(f'/{project._primary_key}/addons/', auth=self.auth, follow_redirects=True)
         assert 'OSF Storage' in res.text
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
-        res = self.app.get('/myprojects/', auth=self.auth, auto_follow=True)
+        res = self.app.get('/myprojects/', auth=self.auth, follow_redirects=True)
         title = res.html.title.string
         assert 'OSF | My Projects' == title
 
@@ -399,14 +399,14 @@ class TestMergingAccounts(OsfTestCase):
         project.save()
         # At the project page, both are listed as contributors
         res = self.app.get(project.url, follow_redirects=True)
-        assert_in_html(self.user.fullname, res)
-        assert_in_html(self.dupe.fullname, res)
+        assert_in_html(self.user.fullname, res.text)
+        assert_in_html(self.dupe.fullname, res.text)
         # The accounts are merged
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
         res = self.app.get(project.url, follow_redirects=True)
-        assert_in_html(self.user.fullname, res)
+        assert_in_html(self.user.fullname, res.text)
         assert self.dupe.is_merged
         assert self.dupe.fullname not in res
 
@@ -445,7 +445,7 @@ class TestShortUrls(OsfTestCase):
             url,
             auth=self.auth,
             follow_redirects=True
-        ).normal_body
+        ).text
 
     # In the following tests, we need to patch `framework.csrf.handlers.get_current_user_id`
     # because in `framework.csrf.handlers.after_request`, the call to `get_current_user_id`
@@ -543,12 +543,11 @@ class TestClaiming(OsfTestCase):
             auth=Auth(self.referrer)
         )
         project2.save()
-        self.app.authenticate(*self.referrer.auth)
         # Each project displays a different name in the contributor list
-        res = self.app.get(self.project.url)
+        res = self.app.get(self.project.url, auth=self.referrer.auth)
         assert_in_html(name1, res.text)
 
-        res2 = self.app.get(project2.url)
+        res2 = self.app.get(project2.url, auth=self.referrer.auth)
         assert_in_html(name2, res2.text)
 
     @unittest.skip('as long as E-mails cannot be changed')
@@ -667,7 +666,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
         url = self.user.get_claim_url(self.project._primary_key)
         # Follow to password re-enter page
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+        res = self.app.get(url, auth=reg_user.auth, follow_redirects=True)
 
         # verify that the "Claim Account" form is returned
         assert 'Claim Contributor' in res.text
@@ -699,7 +698,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
         url = unreg_user.get_claim_url(preprint._id)
         # Follow to password re-enter page
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+        res = self.app.get(url, auth=reg_user.auth, follow_redirects=True)
 
         # verify that the "Claim Account" form is returned
         assert 'Claim Contributor' in res.text

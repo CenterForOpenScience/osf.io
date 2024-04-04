@@ -33,14 +33,14 @@ class TestJSONRenderer(unittest.TestCase):
     def test_error_handling(self):
         rule = Rule(['/error/'], 'get', error_view, renderer=json_renderer)
         process_rules(self.app, [rule])
-        res = self.wt.get('/error/', expect_errors=True)
+        res = self.wt.get('/error/')
         assert res.status_code == 400
         assert isinstance(res.json, dict)
 
     def test_error_handling_with_message(self):
         rule = Rule(['/error/'], 'get', error_with_msg, renderer=json_renderer)
         process_rules(self.app, [rule])
-        res = self.wt.get('/error/', expect_errors=True)
+        res = self.wt.get('/error/')
         assert res.status_code == 400
         data = res.json
         assert data['message_short'] == 'Invalid'
