@@ -60,7 +60,7 @@ class TestDisabledUser(OsfTestCase):
         self.user.save()
 
     def test_profile_disabled_returns_401(self):
-        res = self.app.get(self.user.url, expect_errors=True)
+        res = self.app.get(self.user.url)
         assert res.status_code == 410
 
 
@@ -68,8 +68,7 @@ class TestAnUnregisteredUser(OsfTestCase):
 
     def test_cant_see_profile_if_not_logged_in(self):
         url = web_url_for('profile_view')
-        res = self.app.get(url)
-        res = res.follow()
+        res = self.app.get(url, follow_redirects=True)
         assert res.status_code == 308
         assert '/login/' in res.headers['Location']
 
@@ -89,7 +88,7 @@ class TestAUser(OsfTestCase):
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
-        res = self.app.get('/login/').follow()
+        res = self.app.get('/login/', follow_redirects=True)
         assert res.status_code == 302
         location = res.headers.get('Location')
         assert 'login?service=' in location
@@ -236,7 +235,7 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/{}/wiki/{}/'.format(
             project._primary_key,
             'not a real page yet',
-        ), auth=self.auth, expect_errors=True)
+        ), auth=self.auth)
         assert 'Add important information, links, or images here to describe your project.' in res
 
     def test_sees_own_profile(self):
@@ -341,7 +340,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert 'Anonymous Contributors' in res.body.decode()
+        assert 'Anonymous Contributors' in res.text
         assert self.user.fullname not in res
 
     def test_anonymous_link_hides_citations(self):
@@ -361,7 +360,7 @@ class TestPrivateLinkView(OsfTestCase):
                            auth=self.user.auth)
         assert ('is being viewed through a private, view-only link. '
                 'Anyone with the link can view this project. '
-                'Keep the link safe.') not in res.body.decode()
+                'Keep the link safe.') not in res.text
 
     def test_no_warning_for_read_only_user_with_invalid_link(self):
         self.project.add_contributor(
@@ -373,7 +372,7 @@ class TestPrivateLinkView(OsfTestCase):
                            auth=self.user.auth)
         assert ('is being viewed through a private, view-only link. '
                 'Anyone with the link can view this project. '
-                'Keep the link safe.') not in res.body.decode()
+                'Keep the link safe.') not in res.text
 
 @pytest.mark.enable_bookmark_creation
 class TestMergingAccounts(OsfTestCase):
@@ -522,7 +521,7 @@ class TestClaiming(OsfTestCase):
         existing = AuthUserFactory()
         claim_url = new_user.get_claim_url(self.project._primary_key)
         # a user is already logged in
-        res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
+        res = self.app.get(claim_url, auth=existing.auth)
         assert res.status_code == 302
 
     def test_unregistered_users_names_are_project_specific(self):
@@ -607,7 +606,7 @@ class TestConfirmingEmail(OsfTestCase):
         user2 = AuthUserFactory()
         url = api_url_for('update_user')
         header = {'id': user1.username, 'emails': [{'address': user1.username}]}
-        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        res = self.app.put(url, json=header, auth=user2.auth)
         assert res.status_code == 403
 
     def test_cannnot_make_primary_email_for_another_user(self):
@@ -621,7 +620,7 @@ class TestConfirmingEmail(OsfTestCase):
                   'emails': [{'address': user1.username, 'primary': False, 'confirmed': True},
                             {'address': email, 'primary': True, 'confirmed': True}
                   ]}
-        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        res = self.app.put(url, json=header, auth=user2.auth)
         assert res.status_code == 403
 
     def test_cannnot_add_email_for_another_user(self):
@@ -633,13 +632,13 @@ class TestConfirmingEmail(OsfTestCase):
                   'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
                             {'address': email, 'primary': False, 'confirmed': False}
                   ]}
-        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        res = self.app.put(url, json=header, auth=user2.auth)
         assert res.status_code == 403
 
     def test_error_page_if_confirm_link_is_used(self):
         self.user.confirm_email(self.confirmation_token)
         self.user.save()
-        res = self.app.get(self.confirmation_url, expect_errors=True)
+        res = self.app.get(self.confirmation_url)
 
         assert exceptions.InvalidTokenError.message_short in res
         assert res.status_code == status.HTTP_400_BAD_REQUEST
@@ -668,7 +667,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
         # verify that the "Claim Account" form is returned
-        assert 'Claim Contributor' in res.body.decode()
+        assert 'Claim Contributor' in res.text
 
         form = res.forms['claimContributorForm']
         form['password'] = 'queenfan86'
@@ -700,7 +699,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
         # verify that the "Claim Account" form is returned
-        assert 'Claim Contributor' in res.body.decode()
+        assert 'Claim Contributor' in res.text
 
         form = res.forms['claimContributorForm']
         form['password'] = 'queenfan86'
@@ -731,7 +730,7 @@ class TestResendConfirmation(OsfTestCase):
     def test_resend_confirmation_get(self):
         res = self.app.get(self.get_url)
         assert res.status_code == 200
-        assert 'Resend Confirmation' in res.body.decode()
+        assert 'Resend Confirmation' in res.text
         assert 'resendForm' in res.forms
 
     # test that unconfirmed user can receive resend confirmation email
@@ -787,7 +786,6 @@ class TestResendConfirmation(OsfTestCase):
         form = res.forms['resendForm']
         form['email'] = self.unconfirmed_user.email
         res = form.submit()
-        res = form.submit()
 
         # check request and response
         assert res.status_code == 200
@@ -820,7 +818,7 @@ class TestForgotPassword(OsfTestCase):
     def test_get_forgot_password(self):
         res = self.app.get(self.get_url)
         assert res.status_code == 200
-        assert 'Forgot Password' in res.body.decode()
+        assert 'Forgot Password' in res.text
         assert 'forgotPasswordForm' in res.forms
 
     # test that existing user can receive reset password email
@@ -1118,23 +1116,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
     def test_public_project_abandoned_preprint(self):
         self.preprint.machine_state = 'initial'
@@ -1144,23 +1142,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_deleted_preprint(self):
         self.preprint.deleted = timezone.now()
@@ -1170,23 +1168,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_private_preprint(self):
         self.preprint.is_public = False
@@ -1196,23 +1194,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_unpublished_preprint(self):
         self.preprint.is_published = False
@@ -1222,23 +1220,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert 'Has supplemental materials for' in res.body.decode()
+        assert 'Has supplemental materials for' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert 'Has supplemental materials for' not in res.body.decode()
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_pending_preprint_post_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1250,33 +1248,33 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' in res.body.decode()
-        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' in res.body.decode()
-        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' in res.body.decode()
-        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert f'on {self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' not in res.body.decode()
-        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' not in res.body.decode()
+        assert f'on {self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert f'on {self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' not in res.body.decode()
-        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' not in res.body.decode()
+        assert f'on {self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' not in res.text
 
     def test_implicit_admins_can_see_project_status(self):
         project = ProjectFactory(creator=self.admin)
@@ -1292,9 +1290,9 @@ class TestPreprintBannerView(OsfTestCase):
         url = component.web_url_for('view_project')
 
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert f'{preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' in res.body.decode()
-        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.body.decode()
+        assert f'{preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
     def test_public_project_pending_preprint_pre_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1306,33 +1304,33 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' in res.body.decode()
-        assert 'This preprint is not publicly available or searchable until approved by a moderator.' in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' in res.body.decode()
-        assert 'This preprint is not publicly available or searchable until approved by a moderator.' in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' in res.body.decode()
-        assert 'This preprint is not publicly available or searchable until approved by a moderator.'in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.'in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' not in res.body.decode()
-        assert 'This preprint is not publicly available or searchable until approved by a moderator.' not in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert f'{self.preprint.provider.name}' in res.body.decode()
-        assert 'Pending\n' not in res.body.decode()
-        assert 'This preprint is not publicly available or searchable until approved by a moderator.' not in res.body.decode()
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' not in res.text
 
 if __name__ == '__main__':
     unittest.main()

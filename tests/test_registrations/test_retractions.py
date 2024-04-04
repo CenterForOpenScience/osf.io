@@ -623,7 +623,6 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=unauthorized_user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
 
@@ -636,7 +635,6 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -644,7 +642,6 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.corrupt_token),
             auth=self.user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -652,7 +649,6 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.token_without_sanction),
             auth=self.user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -673,7 +669,6 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=unauthorized_user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
 
@@ -686,7 +681,6 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=self.user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -694,7 +688,6 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.corrupt_token),
             auth=self.user.auth,
-            expect_errors=True
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -741,26 +734,23 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
         self.subproject_component_registration = self.subproject_registration._nodes.order_by('created').first()
 
     def test_POST_retraction_to_component_returns_HTTPError_BAD_REQUEST(self):
-        res = self.app.post_json(
+        res = self.app.post(
             self.component_registration.api_url_for('node_registration_retraction_post'),
             auth=self.auth,
-            expect_errors=True,
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
     def test_POST_retraction_to_subproject_returns_HTTPError_BAD_REQUEST(self):
-        res = self.app.post_json(
+        res = self.app.post(
             self.subproject_registration.api_url_for('node_registration_retraction_post'),
             auth=self.auth,
-            expect_errors=True,
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
     def test_POST_retraction_to_subproject_component_returns_HTTPError_BAD_REQUEST(self):
-        res = self.app.post_json(
+        res = self.app.post(
             self.subproject_component_registration.api_url_for('node_registration_retraction_post'),
             auth=self.auth,
-            expect_errors=True,
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -788,7 +778,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.retraction_get_url,
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -796,11 +785,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.is_public = False
         self.registration.save()
 
-        res = self.app.post_json(
+        res = self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         self.registration.reload()
@@ -817,9 +805,9 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             existing_user=unreg
         )
         self.registration.save()
-        self.app.post_json(
+        self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
         )
         # Only the creator gets an email; the unreg user does not get emailed
@@ -834,11 +822,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_embargo
 
-        res = self.app.post_json(
+        res = self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
@@ -857,31 +844,30 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.embargo.approve(user=self.user, token=approval_token)
         assert self.registration.embargo_end_date
 
-        res = self.app.post_json(
+        res = self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
         assert self.registration.is_pending_retraction
 
     def test_POST_retraction_by_non_admin_retract_HTTPError_UNAUTHORIZED(self):
-        res = self.app.post_json(self.retraction_post_url, expect_errors=True)
+        res = self.app.post(self.retraction_post_url)
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
         self.registration.reload()
         assert self.registration.retraction is None
 
         # group admin POST fails
-        res = self.app.post_json(self.retraction_post_url, auth=self.group_mem.auth, expect_errors=True)
+        res = self.app.post(self.retraction_post_url, auth=self.group_mem.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     @mock.patch('website.mails.send_mail')
     def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
-        res = self.app.post_json(
+        res = self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
         )
         assert res.status_code == http_status.HTTP_200_OK
@@ -893,9 +879,9 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_valid_POST_retraction_adds_to_parent_projects_log(self, mock_send):
         initial_project_logs = self.registration.registered_from.logs.count()
-        self.app.post_json(
+        self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
         )
         self.registration.registered_from.reload()
@@ -904,24 +890,23 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_valid_POST_retraction_when_pending_retraction_raises_400(self, mock_send):
-        self.app.post_json(
+        self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
         )
-        res = self.app.post_json(
+        res = self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
-            expect_errors=True
         )
         assert res.status_code == 400
 
     @mock.patch('website.mails.send_mail')
     def test_valid_POST_calls_send_mail_with_username(self, mock_send):
-        self.app.post_json(
+        self.app.post(
             self.retraction_post_url,
-            {'justification': ''},
+            json={'justification': ''},
             auth=self.user.auth,
         )
         assert mock_send.called
@@ -934,13 +919,13 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
 
         approval_url = self.registration.web_url_for('token_action', token=approval_token)
-        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        res = self.app.get(approval_url, auth=non_contributor.auth)
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
         # group admin on node fails disapproval GET
-        res = self.app.get(approval_url, auth=self.group_mem.auth, expect_errors=True)
+        res = self.app.get(approval_url, auth=self.group_mem.auth)
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
 
     def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
@@ -949,11 +934,11 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
 
         disapproval_url = self.registration.web_url_for('token_action', token=rejection_token)
-        res = self.app.get(disapproval_url, auth=non_contributor.auth, expect_errors=True)
+        res = self.app.get(disapproval_url, auth=non_contributor.auth)
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
         # group admin on node fails disapproval GET
-        res = self.app.get(disapproval_url, auth=self.group_mem.auth, expect_errors=True)
+        res = self.app.get(disapproval_url, auth=self.group_mem.auth)
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
