@@ -82,8 +82,8 @@ class TestAUser(OsfTestCase):
         self.auth = self.user.auth
 
     def test_can_see_profile_url(self):
-        res = self.app.get(self.user.url).maybe_follow()
-        assert self.user.url in res
+        res = self.app.get(self.user.url, follow_redirects=True)
+        assert self.user.url in res.text
 
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
@@ -113,11 +113,11 @@ class TestAUser(OsfTestCase):
         project.add_contributor(self.user)
         project.save()
         res = self.app.get('/myprojects/', auth=self.user.auth)
-        assert 'Projects' in res  # Projects heading
+        assert 'Projects' in res.text  # Projects heading
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
-        assert 'OSF Storage' not in res
+        assert 'OSF Storage' not in res.text
 
     def test_sees_osffiles_in_project_addon_settings(self):
         project = ProjectFactory(creator=self.user)
@@ -126,7 +126,7 @@ class TestAUser(OsfTestCase):
             permissions=permissions.ADMIN,
             save=True)
         res = self.app.get(f'/{project._primary_key}/addons/', auth=self.auth, auto_follow=True)
-        assert 'OSF Storage' in res
+        assert 'OSF Storage' in res.text
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
@@ -142,8 +142,8 @@ class TestAUser(OsfTestCase):
             permissions=permissions.ADMIN,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert 'Make Public' in res
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Public' in res.text
 
     def test_cant_see_make_public_button_if_not_admin(self):
         # User is a contributor on a project
@@ -153,8 +153,8 @@ class TestAUser(OsfTestCase):
             permissions=permissions.WRITE,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert 'Make Public' not in res
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Public' not in res.text
 
     def test_can_see_make_private_button_if_admin(self):
         # User is a contributor on a project
@@ -164,8 +164,8 @@ class TestAUser(OsfTestCase):
             permissions=permissions.ADMIN,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert 'Make Private' in res
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Private' in res.text
 
     def test_cant_see_make_private_button_if_not_admin(self):
         # User is a contributor on a project
@@ -175,24 +175,24 @@ class TestAUser(OsfTestCase):
             permissions=permissions.WRITE,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert 'Make Private' not in res
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Private' not in res.text
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
         # User goes to the project's page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
         # Can see log event
-        assert 'created' in res
+        assert 'created' in res.text
 
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
         res = self.app.get(f'/{project._primary_key}/wiki/home/', auth=self.auth)
         # Sees a message indicating no content
-        assert 'Add important information, links, or images here to describe your project.' in res
+        assert 'Add important information, links, or images here to describe your project.' in res.text
         # Sees that edit panel is open by default when home wiki has no content
-        assert 'panelsUsed: ["view", "menu", "edit"]' in res
+        assert 'panelsUsed: ["view", "menu", "edit"]' in res.text
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
@@ -210,9 +210,9 @@ class TestAUser(OsfTestCase):
             project._primary_key,
             wiki_page_name,
         ), auth=self.auth)
-        assert 'Add important information, links, or images here to describe your project.' not in res
-        assert wiki_content in res
-        assert 'panelsUsed: ["view", "menu"]' in res
+        assert 'Add important information, links, or images here to describe your project.' not in res.text
+        assert wiki_content in res.text
+        assert 'panelsUsed: ["view", "menu"]' in res.text
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
@@ -226,9 +226,9 @@ class TestAUser(OsfTestCase):
         # user2 creates a public project and adds no wiki content
         project = ProjectFactory(creator=user2, is_public=True)
         # self navigates to project
-        res = self.app.get(project.url).maybe_follow()
+        res = self.app.get(project.url, follow_redirects=True)
         # Should not see wiki widget (since non-contributor and no content)
-        assert 'Add important information, links, or images here to describe your project.' not in res
+        assert 'Add important information, links, or images here to describe your project.' not in res.text
 
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
@@ -236,7 +236,7 @@ class TestAUser(OsfTestCase):
             project._primary_key,
             'not a real page yet',
         ), auth=self.auth)
-        assert 'Add important information, links, or images here to describe your project.' in res
+        assert 'Add important information, links, or images here to describe your project.' in res.text
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
@@ -274,7 +274,7 @@ class TestComponents(OsfTestCase):
         self.project_url = self.project.web_url_for('view_project')
 
     def test_sees_parent(self):
-        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(self.component.url, auth=self.user.auth, follow_redirects=True)
         parent_title = res.html.find_all('h2', class_='node-parent-title')
         assert len(parent_title) == 1
         assert self.project.title in parent_title[0].text  # Bs4 will handle unescaping HTML here
@@ -282,9 +282,10 @@ class TestComponents(OsfTestCase):
     def test_delete_project(self):
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=self.user.auth
-        ).maybe_follow()
-        assert f'Delete {self.component.project_or_component}' in res
+            auth=self.user.auth,
+            follow_redirects=True
+        )
+        assert f'Delete {self.component.project_or_component}' in res.text
 
     def test_cant_delete_project_if_not_admin(self):
         non_admin = AuthUserFactory()
@@ -296,16 +297,18 @@ class TestComponents(OsfTestCase):
         )
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=non_admin.auth
-        ).maybe_follow()
-        assert f'Delete {self.component.project_or_component}' not in res
+            auth=non_admin.auth,
+            follow_redirects=True
+        )
+        assert f'Delete {self.component.project_or_component}' not in res.text
 
     def test_can_configure_comments_if_admin(self):
         res = self.app.get(
             self.component.url + 'settings/',
             auth=self.user.auth,
-        ).maybe_follow()
-        assert 'Commenting' in res
+            follow_redirects=True
+        )
+        assert 'Commenting' in res.text
 
     def test_cant_configure_comments_if_not_admin(self):
         non_admin = AuthUserFactory()
@@ -317,13 +320,14 @@ class TestComponents(OsfTestCase):
         )
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=non_admin.auth
-        ).maybe_follow()
-        assert 'Commenting' not in res
+            auth=non_admin.auth,
+            follow_redirects=True
+        )
+        assert 'Commenting' not in res.text
 
     def test_components_should_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
-        assert 'Components' in res
+        assert 'Components' in res.text
 
 
 @pytest.mark.enable_bookmark_creation
@@ -339,13 +343,13 @@ class TestPrivateLinkView(OsfTestCase):
         self.project_url = self.project.web_url_for('view_project')
 
     def test_anonymous_link_hide_contributor(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        res = self.app.get(self.project_url, query_string={'view_only': self.link.key})
         assert 'Anonymous Contributors' in res.text
-        assert self.user.fullname not in res
+        assert self.user.fullname not in res.text
 
     def test_anonymous_link_hides_citations(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert 'Citation:' not in res
+        res = self.app.get(self.project_url, query_string={'view_only': self.link.key})
+        assert 'Citation:' not in res.text
 
     def test_no_warning_for_read_only_user_with_valid_link(self):
         link2 = PrivateLinkFactory(anonymous=False)
@@ -356,7 +360,7 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=permissions.READ,
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': link2.key},
+        res = self.app.get(self.project_url, query_string={'view_only': link2.key},
                            auth=self.user.auth)
         assert ('is being viewed through a private, view-only link. '
                 'Anyone with the link can view this project. '
@@ -368,7 +372,7 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=permissions.READ,
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
+        res = self.app.get(self.project_url, query_string={'view_only': 'not_valid'},
                            auth=self.user.auth)
         assert ('is being viewed through a private, view-only link. '
                 'Anyone with the link can view this project. '
@@ -394,14 +398,14 @@ class TestMergingAccounts(OsfTestCase):
         project.add_contributor(self.user, log=False)
         project.save()
         # At the project page, both are listed as contributors
-        res = self.app.get(project.url).maybe_follow()
+        res = self.app.get(project.url, follow_redirects=True)
         assert_in_html(self.user.fullname, res)
         assert_in_html(self.dupe.fullname, res)
         # The accounts are merged
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
-        res = self.app.get(project.url).maybe_follow()
+        res = self.app.get(project.url, follow_redirects=True)
         assert_in_html(self.user.fullname, res)
         assert self.dupe.is_merged
         assert self.dupe.fullname not in res
@@ -412,7 +416,7 @@ class TestMergingAccounts(OsfTestCase):
         self.user.save()
         # At the dupe user's profile there is an alert message at the top
         # indicating that the user is merged
-        res = self.app.get(f'/profile/{self.dupe._primary_key}/').maybe_follow()
+        res = self.app.get(f'/profile/{self.dupe._primary_key}/', follow_redirects=True)
         assert 'This account has been merged' in res
 
 
@@ -439,9 +443,8 @@ class TestShortUrls(OsfTestCase):
     def _url_to_body(self, url):
         return self.app.get(
             url,
-            auth=self.auth
-        ).maybe_follow(
             auth=self.auth,
+            follow_redirects=True
         ).normal_body
 
     # In the following tests, we need to patch `framework.csrf.handlers.get_current_user_id`
@@ -487,8 +490,8 @@ class TestClaiming(OsfTestCase):
 
         res = self.app.get(self.project.url, auth=self.referrer.auth)
         # Correct name is shown
-        assert_in_html(name2, res)
-        assert name1 not in res
+        assert_in_html(name2, res.text)
+        assert name1 not in res.text
 
     def test_user_can_set_password_on_claim_page(self):
         name, email = fake.name(), fake_email()
@@ -501,7 +504,7 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         self.project.reload()
-        assert 'Set Password' in res
+        assert 'Set Password' in res.text
         form = res.forms['setPasswordForm']
         #form['username'] = new_user.username #Removed as long as E-mail can't be updated.
         form['password'] = 'killerqueen'
@@ -543,10 +546,10 @@ class TestClaiming(OsfTestCase):
         self.app.authenticate(*self.referrer.auth)
         # Each project displays a different name in the contributor list
         res = self.app.get(self.project.url)
-        assert_in_html(name1, res)
+        assert_in_html(name1, res.text)
 
         res2 = self.app.get(project2.url)
-        assert_in_html(name2, res2)
+        assert_in_html(name2, res2.text)
 
     @unittest.skip('as long as E-mails cannot be changed')
     def test_cannot_set_email_to_a_user_that_already_exists(self):
@@ -568,8 +571,8 @@ class TestClaiming(OsfTestCase):
         form['username'] = reg_user.username
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
-        res = form.submit().maybe_follow(expect_errors=True)
-        assert language.ALREADY_REGISTERED.format(email=reg_user.username) in res
+        res = form.submit(follow_redirects=True)
+        assert language.ALREADY_REGISTERED.format(email=reg_user.username) in res.text
 
     def test_correct_display_name_is_shown_at_claim_page(self):
         original_name = fake.name()
@@ -585,7 +588,7 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         # Correct name (different_name) should be on page
-        assert_in_html(different_name, res)
+        assert_in_html(different_name, res.text)
 
 
 class TestConfirmingEmail(OsfTestCase):
@@ -640,7 +643,7 @@ class TestConfirmingEmail(OsfTestCase):
         self.user.save()
         res = self.app.get(self.confirmation_url)
 
-        assert exceptions.InvalidTokenError.message_short in res
+        assert exceptions.InvalidTokenError.message_short in res.text
         assert res.status_code == status.HTTP_400_BAD_REQUEST
 
 
@@ -943,7 +946,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_can_receive_reset_password_email(self, mock_send_mail):
         # submit email to institutional forgot-password page
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was sent
         assert mock_send_mail.called
@@ -952,8 +955,8 @@ class TestForgotPasswordInstitution(OsfTestCase):
         # check request URL is /forgotpassword
         assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is set
         self.user.reload()
@@ -963,7 +966,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_receive_reset_password_email(self, mock_send_mail):
         # load forgot password page and submit email
-        res = self.app.post(self.post_url, {'forgot_password-email': 'fake' + self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
 
         # check mail was not sent
         assert not mock_send_mail.called
@@ -972,8 +975,8 @@ class TestForgotPasswordInstitution(OsfTestCase):
         # check request URL is /forgotpassword-institution
         assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
@@ -985,7 +988,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.user.deactivate_account()
         self.user.save()
 
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was not sent
         assert not mock_send_mail.called
@@ -994,8 +997,8 @@ class TestForgotPasswordInstitution(OsfTestCase):
         # check request URL is /forgotpassword-institution
         assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
@@ -1005,14 +1008,14 @@ class TestForgotPasswordInstitution(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
         # submit institutional forgot-password request in rapid succession
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check http 200 response
         assert res.status_code == 200
         # check push notification
-        assert_in_html('Please wait', res)
-        assert_not_in_html('If there is an OSF account', res)
+        assert_in_html('Please wait', res.text)
+        assert_not_in_html('If there is an OSF account', res.text)
 
 
 @unittest.skip('Public projects/components are dynamically loaded now.')

@@ -264,7 +264,7 @@ def get_auth(auth, **kwargs):
             access_token = cas.parse_auth_header(authorization)
             cas_resp = client.profile(access_token)
         except cas.CasError as err:
-            sentry.log_exception()
+            sentry.log_exception(err)
             # NOTE: We assume that the request is an AJAX request
             return json_renderer(err)
         if cas_resp.authenticated and not getattr(auth, 'user'):

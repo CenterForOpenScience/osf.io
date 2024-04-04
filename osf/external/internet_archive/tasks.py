@@ -34,7 +34,7 @@ def update_ia_metadata(node, data=None):
             allowed_metadata = Registration.SYNCED_WITH_IA.intersection(node.get_dirty_fields().keys())
             data = {key: str(getattr(node, key)) for key in allowed_metadata}
         data = {
-            Registration.IA_MAPPED_NAMES.get(key, key): data.pop(key) for key in data
+            Registration.IA_MAPPED_NAMES.get(key, key): data[key] for key in data
         }
 
         if node.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name:
