@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Subquery
 
 from framework import status
+from framework.forms import push_errors_to_status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -226,8 +227,7 @@ def project_new_node(auth, node, **kwargs):
             'status': 'success',
         }, 201, None, redirect_url
     else:
-        # TODO: This function doesn't seem to exist anymore?
-        status.push_errors_to_status(form.errors)
+        push_errors_to_status(form.errors)
     raise HTTPError(http_status.HTTP_400_BAD_REQUEST, redirect_url=node.url)
 
 

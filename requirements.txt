@@ -40,6 +40,7 @@ django-waffle==4.1.0
 pymongo==4.6.2
 PyYAML==6.0.1
 tqdm==4.66.2
+email-validator==2.1.1
 # Python markdown extensions for comment emails
 markdown-del-ins==1.0.0
 

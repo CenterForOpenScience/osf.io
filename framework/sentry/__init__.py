@@ -2,7 +2,7 @@
 
 import logging
 
-from sentry_sdk import init, set_context, capture_exception, capture_message
+from sentry_sdk import init, set_context, capture_exception, capture_message, push_scope
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -21,11 +21,11 @@ if enabled:
     )
 
 LOG_LEVEL_MAP = {
-    logging.DEBUG: 'DEBUG',
-    logging.INFO: 'INFO',
-    logging.WARNING: 'WARNING',
-    logging.ERROR: 'ERROR',
-    logging.CRITICAL: 'CRITICAL'
+    logging.DEBUG: 'debug',
+    logging.INFO: 'info',
+    logging.WARNING: 'warning',
+    logging.ERROR: 'error',
+    logging.CRITICAL: 'critical'
 }
 
 # Nothing in this module should send to Sentry if debug mode is on
@@ -39,15 +39,17 @@ def get_session_data():
         return {}
 
 
-def log_exception(skip_session=False):
+def log_exception(exception: Exception, skip_session=False):
     if not enabled:
         logger.warning('Sentry called to log exception, but is not active')
         return None
     extra = {
         'session': {} if skip_session else get_session_data(),
     }
-    set_context('extra', extra)
-    return capture_exception()
+    with push_scope() as scope:
+        scope.set_extra(**extra)
+        set_context('extra', extra)
+        return capture_exception(exception)
 
 
 def log_message(message, skip_session=False, extra_data=None, level=logging.ERROR):
@@ -61,8 +63,8 @@ def log_message(message, skip_session=False, extra_data=None, level=logging.ERRO
     }
     if extra_data is not None:
         extra.update(extra_data)
+    with push_scope() as scope:
+        scope.set_extra(**extra)
 
-    set_context('extra', extra)
-
-    level_str = LOG_LEVEL_MAP.get(level, 'error')
-    return capture_message(message, level=level_str)
+        level_str = LOG_LEVEL_MAP.get(level, 'error')
+        return capture_message(message, level=level_str)

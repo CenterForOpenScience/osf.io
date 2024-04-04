@@ -611,7 +611,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,
-                'attachment-1': (BytesIO(content.encode(), 'attachment-1'))
+                'attachment-1': (BytesIO(content.encode()), 'attachment-1')
             },
         )
         assert mock_upload.called
@@ -746,7 +746,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,
-                'attachment-1':(BytesIO(content.encode(), 'attachment-1'))
+                'attachment-1':(BytesIO(content.encode()), 'attachment-1')
             },
         )
 

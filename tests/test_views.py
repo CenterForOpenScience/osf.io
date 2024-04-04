@@ -3357,7 +3357,7 @@ class TestAuthViews(OsfTestCase):
                     'g-recaptcha-response': captcha,
                 }
             )
-            validate_recaptcha.assert_called_with(captcha, remote_ip=None)
+            validate_recaptcha.assert_called_with(captcha, remote_ip='127.0.0.1')
             assert resp.status_code == http_status.HTTP_200_OK
             user = OSFUser.objects.get(username=email)
             assert user.fullname == name
@@ -3377,9 +3377,8 @@ class TestAuthViews(OsfTestCase):
                     'password': password,
                     # 'g-recaptcha-response': 'supposed to be None',
                 },
-
             )
-            validate_recaptcha.assert_called_with(None, remote_ip=None)
+            validate_recaptcha.assert_called_with(None, remote_ip='127.0.0.1')
             assert resp.status_code == http_status.HTTP_400_BAD_REQUEST
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
