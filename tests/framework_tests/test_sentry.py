@@ -8,7 +8,7 @@ from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory
 
 import functools
-
+from flask import g
 from framework import sentry
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
@@ -54,7 +54,7 @@ class TestSentry(OsfTestCase):
         s = SessionStore()
         s['auth_user_id'] = user._id
         s.create()
-        self.context.g.current_session = s
+        g.current_session = s
         sentry.log_exception()
         mock_capture.assert_called_with(
             extra={

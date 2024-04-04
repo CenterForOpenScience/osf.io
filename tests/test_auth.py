@@ -82,8 +82,7 @@ class TestAuthUtils(OsfTestCase):
         user.reload()
         token = user.get_confirmation_token(user.username)
 
-        res = self.app.get(f'/confirm/{user._id}/{token}', allow_redirects=False)
-        res = res.follow()
+        res = self.app.get(f'/confirm/{user._id}/{token}', follow_redirects=True)
 
         assert res.status_code == 302
         assert 'login?service=' in res.location
@@ -99,7 +98,7 @@ class TestAuthUtils(OsfTestCase):
 
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-        res = self.app.get(f'/confirm/{user._id}/{token}')
+        res = self.app.get(f'/confirm/{user._id}/{token}', follow_redirects=True)
 
         res = res.follow()
 
@@ -227,7 +226,7 @@ class TestAuthUtils(OsfTestCase):
             'password': 'brutusisajerk'
         }
 
-        self.app.post_json(url, sign_up_data)
+        self.app.post(url, json=sign_up_data)
         assert len(mock_mail.call_args_list) == 1
         args, kwargs = mock_mail.call_args
         assert args == (
@@ -235,7 +234,7 @@ class TestAuthUtils(OsfTestCase):
             mails.INITIAL_CONFIRM_EMAIL,
         )
 
-        self.app.post_json(url, sign_up_data)
+        self.app.post(url, json=sign_up_data)
         assert len(mock_mail.call_args_list) == 2
         args, kwargs = mock_mail.call_args
         assert args == (

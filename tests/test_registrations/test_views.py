@@ -7,15 +7,13 @@ import pytz
 from django.utils import timezone
 
 import pytest
+from pytest import raises
 
 from api.base.settings.defaults import API_BASE
 from api.providers.workflows import Workflows
 
-from waffle.testutils import override_switch
-
 from framework.exceptions import HTTPError
 
-from osf import features
 from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
@@ -24,7 +22,6 @@ from website.util import api_url_for
 from website.project.views import drafts as draft_views
 
 from osf_tests.factories import (
-    Auth,
     AuthUserFactory,
     DraftRegistrationFactory,
     EmbargoFactory,
@@ -36,7 +33,6 @@ from tests.json_api_test_app import JSONAPITestApp
 from tests.test_registrations.base import RegistrationsTestBase
 
 from tests.base import get_default_metaschema
-from osf.models import Registration
 
 SCHEMA_VERSION = 2
 
@@ -125,17 +121,17 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.reload()
 
         url = self.draft_api_url('get_draft_registration')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_410_GONE
 
     def test_get_draft_registration_invalid(self):
         url = self.node.api_url_for('get_draft_registration', draft_id='13123123')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_404_NOT_FOUND
 
     def test_get_draft_registration_not_admin(self):
         url = self.draft_api_url('get_draft_registration')
-        res = self.app.get(url, auth=self.non_admin.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.non_admin.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_get_draft_registrations_only_gets_drafts_for_that_node(self):
@@ -190,7 +186,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             'schema_version': self.meta_schema.schema_version
         }
         url = target.web_url_for('new_draft_registration')
-        res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post(url, json=payload, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_update_draft_registration_cant_update_registered(self):
@@ -206,13 +202,13 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.register(self.auth, save=True)
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
-        res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.put(url, json=payload, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_edit_draft_registration_page_already_registered(self):
         self.draft.register(self.auth, save=True)
         url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_update_draft_registration(self):
@@ -230,7 +226,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
-        res = self.app.put_json(url, payload, auth=self.user.auth)
+        res = self.app.put(url, json=payload, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
 
         open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
@@ -318,7 +314,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
-        res = self.app.put_json(url, payload, auth=self.user.auth)
+        res = self.app.put(url, json=payload, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
 
         open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
@@ -344,11 +340,11 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
-        res = self.app.put_json(url, payload, auth=self.non_admin.auth, expect_errors=True)
+        res = self.app.put(url, json=payload, auth=self.non_admin.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
         # group admin cannot update draft registration
-        res = self.app.put_json(url, payload, auth=self.group_mem.auth, expect_errors=True)
+        res = self.app.put(url, json=payload, auth=self.group_mem.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_delete_draft_registration(self):
@@ -363,12 +359,12 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert 1 == DraftRegistration.objects.filter(deleted__isnull=True).count()
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
-        res = self.app.delete(url, auth=self.non_admin.auth, expect_errors=True)
+        res = self.app.delete(url, auth=self.non_admin.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert 1 == DraftRegistration.objects.filter(deleted__isnull=True).count()
 
         # group admin cannot delete draft registration
-        res = self.app.delete(url, auth=self.group_mem.auth, expect_errors=True)
+        res = self.app.delete(url, auth=self.group_mem.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     @mock.patch('website.archiver.tasks.archive')
@@ -376,7 +372,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.register(auth=self.auth, save=True)
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
-        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.delete(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     @mock.patch('website.archiver.tasks.archive')
@@ -397,7 +393,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert 1 == DraftRegistration.objects.filter(deleted__isnull=True).count()
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
-        res = self.app.delete(url, auth=non_admin.auth, expect_errors=True)
+        res = self.app.delete(url, auth=non_admin.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert 1 == DraftRegistration.objects.filter(deleted__isnull=True).count()
 
@@ -416,43 +412,32 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         registration = RegistrationFactory(project=self.node)
         today = dt.datetime.today().replace(tzinfo=pytz.utc)
         too_soon = today + dt.timedelta(days=5)
-        try:
+        with raises(HTTPError) as e:
             draft_views.validate_embargo_end_date(too_soon.isoformat(), registration)
-        except HTTPError as e:
-            assert e.code == http_status.HTTP_400_BAD_REQUEST
-        else:
-            self.fail()
+        assert e.value.code == http_status.HTTP_400_BAD_REQUEST
 
     def test_validate_embargo_end_date_too_late(self):
         registration = RegistrationFactory(project=self.node)
         today = dt.datetime.today().replace(tzinfo=pytz.utc)
         too_late = today + dt.timedelta(days=(4 * 365) + 1)
-        try:
+        with raises(HTTPError) as e:
             draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
-        except HTTPError as e:
-            assert e.code == http_status.HTTP_400_BAD_REQUEST
-        else:
-            self.fail()
+        assert e.value.code == http_status.HTTP_400_BAD_REQUEST
 
     def test_validate_embargo_end_date_ok(self):
         registration = RegistrationFactory(project=self.node)
         today = dt.datetime.today().replace(tzinfo=pytz.utc)
         too_late = today + dt.timedelta(days=12)
-        try:
-            draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
-        except Exception:
-            self.fail()
+        draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
+
 
     def test_check_draft_state_registered(self):
         reg = RegistrationFactory()
         self.draft.registered_node = reg
         self.draft.save()
-        try:
+        with raises(HTTPError) as e:
             draft_views.check_draft_state(self.draft)
-        except HTTPError as e:
-            assert e.code == http_status.HTTP_403_FORBIDDEN
-        else:
-            self.fail()
+        assert e.value.code == http_status.HTTP_403_FORBIDDEN
 
     def test_check_draft_state_registered_but_deleted(self):
         reg = RegistrationFactory()
@@ -461,14 +446,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.save()
         try:
             draft_views.check_draft_state(self.draft)
-        except Exception:
-            self.fail()
+        except Exception as e:
+            self.fail(str(e))
 
     def test_check_draft_state_ok(self):
         try:
             draft_views.check_draft_state(self.draft)
-        except Exception:
-            self.fail()
+        except Exception as e:
+            self.fail(str(e))
 
 
 @pytest.mark.django_db

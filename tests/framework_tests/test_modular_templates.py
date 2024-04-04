@@ -117,7 +117,7 @@ class WebRendererTestCase(OsfTestCase):
         Note that this behavior is inconsistent with that of raising an
         ``HTTPError`` in a view function, which serves the same purpose.
         """
-        self.app.app.preprocess_request()
+        self.app.application.preprocess_request()
 
         resp = self.r(
             ({},  # data
@@ -139,7 +139,7 @@ class WebRendererTestCase(OsfTestCase):
         which the 0th element must be the rendered template, including the dict
         as part of the context.
         """
-        self.app.app.preprocess_request()
+        self.app.application.preprocess_request()
 
         input_dict = {'foo': 'bar'}
 
@@ -163,7 +163,7 @@ class WebRendererTestCase(OsfTestCase):
         which yields the appropriate error message text.
         """
 
-        self.app.app.preprocess_request()
+        self.app.application.preprocess_request()
 
         err = HTTPError(http_status.HTTP_404_NOT_FOUND)
 

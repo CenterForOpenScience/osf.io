@@ -4,6 +4,7 @@
 from hashlib import md5
 from pytest import approx
 
+from lxml import html
 import datetime as dt
 from rest_framework import status as http_status
 import time
@@ -2863,7 +2864,7 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
-        has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        has_controls = html.fromstring(res.text).xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert has_controls
 
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
@@ -2876,9 +2877,9 @@ class TestPointerViews(OsfTestCase):
 
         res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
-
-        has_controls = res.lxml.xpath(
-            '//div[@node_id]//i[contains(@class, "remove-pointer")]')
+        has_controls = html.fromstring(res.text).xpath(
+            '//div[@node_id]//i[contains(@class, "remove-pointer")]'
+        )
         assert len(has_controls) == 3
 
     def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
@@ -2894,8 +2895,8 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth, follow_redirects=True)
         assert res.status_code == 200
 
-        pointer_nodes = res.lxml.xpath('//div[@node_id]')
-        has_controls = res.lxml.xpath('//div[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        pointer_nodes = html.fromstring(res.text).xpath('//div[@node_id]')
+        has_controls = html.fromstring(res.text).xpath('//div[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert len(pointer_nodes) == 1
         assert not has_controls
 
@@ -2915,8 +2916,8 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth, follow_redirects=True)
         assert res.status_code == 200
 
-        pointer_nodes = res.lxml.xpath('//div[@node_id]')
-        has_controls = res.lxml.xpath(
+        pointer_nodes = html.fromstring(res.text).xpath('//div[@node_id]')
+        has_controls = html.fromstring(res.text).xpath(
             '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert len(pointer_nodes) == 1
         assert len(has_controls) == 0
@@ -3533,7 +3534,7 @@ class TestAuthViews(OsfTestCase):
         put_email_url = api_url_for('unconfirmed_email_add')
         res = self.app.put(put_email_url, json=email_verifications[0], auth=self.user.auth)
         self.user.reload()
-        assert res.json_body['status'] == 'success'
+        assert res.json['status'] == 'success'
         assert self.user.emails.last().address == 'test@mail.com'
 
     def test_remove_email(self):
@@ -3548,7 +3549,7 @@ class TestAuthViews(OsfTestCase):
         remove_email_url = api_url_for('unconfirmed_email_remove')
         remove_res = self.app.delete(remove_email_url, json=email_verifications[0], auth=self.user.auth)
         self.user.reload()
-        assert remove_res.json_body['status'] == 'success'
+        assert remove_res.json['status'] == 'success'
         assert self.user.unconfirmed_email_info == []
 
     def test_add_expired_email(self):
@@ -3612,7 +3613,7 @@ class TestAuthViews(OsfTestCase):
         put_email_url = api_url_for('unconfirmed_email_add')
         res = self.app.put(put_email_url, json=email_verifications[0], auth=self.user.auth)
         self.user.reload()
-        assert res.json_body['status'] == 'success'
+        assert res.json['status'] == 'success'
         assert self.user.emails.last().address == 'copy@cat.com'
 
     def test_resend_confirmation_without_user_id(self):
@@ -4252,7 +4253,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         }
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
-                            data,
+                            data=data,
                             content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
@@ -4285,7 +4286,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         }
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
-                            data,
+                            data=data,
                             content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
@@ -4314,7 +4315,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         }
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
-                            data,
+                            data=data,
                             content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
@@ -4467,7 +4468,7 @@ class TestProjectCreation(OsfTestCase):
         project = ProjectFactory(creator=user)
         url = web_url_for('project_new_node', pid=project._id)
         post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
-        request = self.app.post(url, post_data, auth=user.auth, follow_redirects=True)
+        request = self.app.post(url, json=post_data, auth=user.auth, follow_redirects=True)
         project.reload()
         child = project.nodes[0]
         # HTML has been stripped
@@ -4526,7 +4527,7 @@ class TestProjectCreation(OsfTestCase):
     def test_create_component_add_contributors_admin(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
-        res = self.app.post(url, post_data, auth=self.user1.auth)
+        res = self.app.post(url, json=post_data, auth=self.user1.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4545,7 +4546,7 @@ class TestProjectCreation(OsfTestCase):
         self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
-        res = self.app.post(url, post_data, auth=non_admin.auth)
+        res = self.app.post(url, json=post_data, auth=non_admin.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4576,7 +4577,7 @@ class TestProjectCreation(OsfTestCase):
         self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
-        res = self.app.post(url, post_data, auth=write_user.auth)
+        res = self.app.post(url, json=post_data, auth=write_user.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4602,13 +4603,13 @@ class TestProjectCreation(OsfTestCase):
         self.project.add_contributor(non_admin, permissions=permissions.READ)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
-        res = self.app.post(url, post_data, auth=non_admin.auth)
+        res = self.app.post(url, json=post_data, auth=non_admin.auth)
         assert res.status_code == 403
 
     def test_create_component_add_no_contributors(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         post_data = {'title': 'New Component With Contributors Title', 'category': ''}
-        res = self.app.post(url, post_data, auth=self.user1.auth)
+        res = self.app.post(url, json=post_data, auth=self.user1.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4700,7 +4701,7 @@ class TestStaticFileViews(OsfTestCase):
     def test_robots_dot_txt(self):
         res = self.app.get('/robots.txt')
         assert res.status_code == 200
-        assert 'User-agent' in res
+        assert 'User-agent' in res.text
         assert 'html' in res.headers['Content-Type']
 
     def test_favicon(self):
@@ -4733,7 +4734,7 @@ class TestUserConfirmSignal(OsfTestCase):
             payload = {'username': unclaimed_user.username,
                        'password': 'password',
                        'password2': 'password'}
-            res = self.app.post(url, payload)
+            res = self.app.post(url, json=payload)
             assert res.status_code == 302
 
         assert mock_signals.signals_sent() == {auth.signals.user_confirmed}
