@@ -16,7 +16,10 @@ from framework.flask import add_handlers, app
 # Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
 from framework.postcommit_tasks import handlers as postcommit_handlers
-from framework.sentry import sentry
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk import init
 from framework.transactions import handlers as transaction_handlers
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
@@ -120,7 +123,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")
     else:
-        sentry.init_app(app)
+        init(
+            dsn=settings.SENTRY_DSN,
+            integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+        )
         logger.info("Sentry enabled; Flask's debug mode disabled")
 
     apply_middlewares(app, settings)
