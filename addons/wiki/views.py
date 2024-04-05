@@ -782,7 +782,7 @@ def _validate_import_folder(node, folder, parent_path):
     p_numbering = None
     # check duplication of parent_wiki_name
     if parent_path != parent_wiki_fullpath:
-        p_numbering = wiki_utils.get_wiki_numbering(node, parent_wiki_name)
+        p_numbering = wiki_utils.get_numbered_name_for_existing_wiki(node, parent_wiki_name)
     if isinstance(p_numbering, int):
         parent_wiki_name = parent_wiki_name + '(' + str(p_numbering) + ')'
         path = parent_path[:index + 1] + parent_wiki_name + '/' + folder.name
@@ -837,12 +837,12 @@ def _validate_import_wiki_exists_duplicated(node, info):
         if fullpath == info['path']:
             # if the wiki exists, update info list
             info['status'] = 'valid_exists'
-            info['numbering'] = wiki_utils.get_wiki_numbering(node, w_name)
+            info['numbering'] = wiki_utils.get_numbered_name_for_existing_wiki(node, w_name)
             can_start_import = False
         else:
             # if the wiki duplicated, update info list
             info['status'] = 'valid_duplicated'
-            info['numbering'] = wiki_utils.get_wiki_numbering(node, w_name)
+            info['numbering'] = wiki_utils.get_numbered_name_for_existing_wiki(node, w_name)
             info['wiki_name'] = info['wiki_name'] + '(' + str(info['numbering']) + ')'
             info['path'] = info['path'] + '(' + str(info['numbering']) + ')'
             can_start_import = False
@@ -928,7 +928,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
             except Exception as err:
                 logger.error(err)
     logger.info('imported top hierarchy wiki pages')
-    max_depth = wiki_utils.get_max_depth(replaced_wiki_info)
+    max_depth = _get_max_depth(replaced_wiki_info)
     # Import child wiki pages
     for depth in range(1, max_depth + 1):
         try:
@@ -944,7 +944,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
             logger.error(err)
     logger.info('imported child hierarchy wiki pages')
     # Create import error page list
-    import_errors = wiki_utils.create_import_error_list(data, ret)
+    import_errors = _create_import_error_list(data, ret)
     logger.info('created import error page list')
     # Run task to update elasticsearch index
     tasks.run_update_search_and_bulk_index.delay(pid, wiki_id_list)
@@ -954,7 +954,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
     logger.info('complete wiki import')
     return {'ret': ret, 'import_errors': import_errors}
 
-def _replace_wiki_link_notation(node, link_matches, wiki_content, info, all_children_name, all_children_obj, dir_id):
+def _replace_wiki_link_notation(node, link_matches, wiki_content, info, all_children_infos, dir_id):
     wiki_name = info['original_name']
     match_path = ''
     for match in link_matches:
@@ -967,12 +967,12 @@ def _replace_wiki_link_notation(node, link_matches, wiki_content, info, all_chil
         if has_sharp:
             if has_dot:
                 # relace file name
-                wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'link', dir_id, match_path, tooltip_match, all_children_name, all_children_obj)
+                wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'link', dir_id, match_path, tooltip_match, all_children_infos)
                 continue
             continue
 
         # check whether wiki or not
-        is_wiki = _check_wiki_name_exist(node, match_path, all_children_name)
+        is_wiki = _check_wiki_name_exist(node, match_path, all_children_infos)
         if is_wiki:
             if tooltip_match:
                 wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + tooltip_match['path'] + '/ "' + tooltip_match['tooltip'] + '")')
@@ -980,10 +980,10 @@ def _replace_wiki_link_notation(node, link_matches, wiki_content, info, all_chil
                 wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + match['path'] + '/)')
         else:
             # If not wiki, check whether attachment file or not
-            wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'link', dir_id, match_path, tooltip_match, all_children_name, all_children_obj)
+            wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'link', dir_id, match_path, tooltip_match, all_children_infos)
     return wiki_content
 
-def _check_wiki_name_exist(node, checked_name, all_children_name):
+def _check_wiki_name_exist(node, checked_name, all_children_infos):
     replaced_wiki_name = _replace_common_rule(checked_name)
     # normalize NFC
     replaced_wiki_name = unicodedata.normalize('NFC', replaced_wiki_name)
@@ -992,11 +992,11 @@ def _check_wiki_name_exist(node, checked_name, all_children_name):
         return True
     else:
         # check import directory(copyed)
-        return replaced_wiki_name in all_children_name
+        return any(info['name'] == replaced_wiki_name for info in all_children_infos)
 
-def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, match_path, tooltip_match, all_children_name, all_children_obj):
+def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, match_path, tooltip_match, all_children_infos):
     # check whether attachment file or not
-    file_id = _check_attachment_file_name_exist(wiki_name, match_path, dir_id, all_children_name, all_children_obj)
+    file_id = _check_attachment_file_name_exist(wiki_name, match_path, dir_id, all_children_infos)
     if file_id:
         # replace process of file name
         node_guid = wiki_utils.get_node_guid(node)
@@ -1040,27 +1040,27 @@ def _exclude_tooltip(match_path):
     else:
         return match_path, None
 
-def _check_attachment_file_name_exist(wiki_name, file_name, dir_id, all_children_name, all_children_obj):
+def _check_attachment_file_name_exist(wiki_name, file_name, dir_id, all_children_infos):
     # check file name contains slash
     has_hat = '^' in file_name
     if has_hat:
         another_wiki_name = file_name.split('^')[0]
         file_name = file_name.split('^')[1]
         # check as wikiName/fileName
-        file_id = _process_attachment_file_name_exist(has_hat, another_wiki_name, file_name, dir_id, all_children_name, all_children_obj)
+        file_id = _process_attachment_file_name_exist(has_hat, another_wiki_name, file_name, dir_id, all_children_infos)
     else:
         # check as fileName
-        file_id = _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, all_children_name, all_children_obj)
+        file_id = _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, all_children_infos)
 
     return file_id
 
-def _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, all_children_name, all_children_obj):
+def _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, all_children_infos):
     # check as fileName
     replaced_wiki_name = _replace_common_rule(wiki_name) if has_hat else wiki_name
     replaced_file_name = _replace_common_rule(file_name)
     try:
-        idx = all_children_name.index(replaced_wiki_name)
-        parent_directory = all_children_obj[idx]
+        idx = next((idx for idx, item in enumerate(all_children_infos) if item['name'] == replaced_wiki_name), None)
+        parent_directory = all_children_infos[idx]['obj']
         # normalize NFC
         replaced_file_name = unicodedata.normalize('NFC', replaced_file_name)
         child_file = parent_directory._children.get(name=replaced_file_name, type='osf.osfstoragefile', deleted__isnull=True)
@@ -1070,14 +1070,14 @@ def _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, a
 
     return None
 
-def _replace_wiki_image(node, image_matches, wiki_content, wiki_info, dir_id, all_children_name, all_children_obj):
+def _replace_wiki_image(node, image_matches, wiki_content, wiki_info, dir_id, all_children_infos):
     wiki_name = wiki_info['original_name']
     for match in image_matches:
         match_path, tooltip_match = _exclude_tooltip(match['path'])
         has_slash = '/' in match_path
         if has_slash:
             continue
-        wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'image', dir_id, match_path, tooltip_match, all_children_name, all_children_obj)
+        wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'image', dir_id, match_path, tooltip_match, all_children_infos)
     return wiki_content
 
 # for Search wikiName or fileName
@@ -1141,7 +1141,7 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
     replaced_wiki_info = []
     rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
     rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
-    all_children_name, all_children_obj = wiki_utils.get_all_wiki_name_import_directory(dir_id)
+    all_children_infos = wiki_utils.get_all_wiki_name_import_directory(dir_id)
     for info in wiki_info:
         if task.is_aborted():
             return None
@@ -1151,8 +1151,8 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
         wiki_content = info['wiki_content']
         link_matches = list(re.finditer(rep_link, wiki_content))
         image_matches = list(re.finditer(rep_image, wiki_content))
-        info['wiki_content'] = _replace_wiki_image(node, image_matches, wiki_content, info, dir_id, all_children_name, all_children_obj)
-        info['wiki_content'] = _replace_wiki_link_notation(node, link_matches, info['wiki_content'], info, all_children_name, all_children_obj, dir_id)
+        info['wiki_content'] = _replace_wiki_image(node, image_matches, wiki_content, info, dir_id, all_children_infos)
+        info['wiki_content'] = _replace_wiki_link_notation(node, link_matches, info['wiki_content'], info, all_children_infos, dir_id)
         replaced_wiki_info.append(info)
     return replaced_wiki_info
 
@@ -1211,6 +1211,21 @@ def _import_same_level_wiki(wiki_info, depth, auth, node, task):
             except Exception as err:
                 logger.error(err)
     return ret, wiki_id_list
+
+def _get_max_depth(wiki_infos):
+    max_depth = max(info['path'].count('/') for info in wiki_infos)
+    return max_depth - 1
+
+def _create_import_error_list(wiki_infos, imported_list):
+    import_errors = []
+    info_path = []
+    imported_path = []
+    for info in wiki_infos:
+        info_path.append(info['path'])
+    for imported in imported_list:
+        imported_path.append(imported['path'])
+    import_errors = list(set(info_path) ^ set(imported_path))
+    return import_errors
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

@@ -84,7 +84,7 @@
                         <p class="m-t-sm fg-load-message"> ${_("Loading wiki pages...")}  </p>
                     </div>
                 </div>
-                <div class="hidden text-danger" id="wikiErrorMessage" style="padding: 15px"></div>
+                <div class="hidden text-danger p-md" id="wikiErrorMessage"></div>
             </div>
 
             <!-- Menu with toggle collapsed -->
@@ -112,40 +112,41 @@
                         <div class="col-sm-12">
 
                             <div id="editWysiwyg" class="wiki-toolbar-icon text-info" data-bind="click: editMode">
-                                <i class="fa fa-edit text-info"></i><span>Edit</span>
+                                <i class="fa fa-edit text-info"></i><span>${_("Edit")}</span>
                             </div>
-                            <div class="pull-right" style="margin-right:20px;">
-                                <!-- Version Picker -->
-                                <span>${_("Wiki Version:")}</span>
-                                <div style="display: inline-block">
-                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if user['can_edit_wiki_body']:
-                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>${_("Preview")}</option>
-                                    % endif
-                                    % if len(versions) > 0:
-                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("(Current)")} ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
-                                    % else:
-                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("Current")}</option>
-                                    % endif
-                                    % if len(versions) > 1:
-                                        % for version in versions[1:]:
-                                            <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>(${version['version']}) ${version['user_fullname']}: ${version['date']}</option>
-                                        % endfor
-                                    % endif
-                                </select>
-                            </div>
-                                <div class="pull-right ml-2">
-                                  <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
-                                      <div role="progressbar" data-bind="attr: progressBar">
-                                          <span class="progress-bar-content p-h-sm">
-                                              <span data-bind="text: statusDisplay"></span>
-                                              <span class="sharejs-info-btn">
-                                                  <i class="fa fa-question-circle fa-large"></i>
-                                              </span>
-                                          </span>
-                                      </div>
-                                  </div>
+                            <div class="pull-right m-l-md">
+                              <div class="progress no-margin pointer" data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
+                                <div role="progressbar" data-bind="attr: progressBar">
+                                  <span class="progress-bar-content p-h-sm">
+                                    <span data-bind="text: statusDisplay"></span>
+                                    <span class="sharejs-info-btn">
+                                      <i class="fa fa-question-circle fa-large"></i>
+                                    </span>
+                                 </span>
                                 </div>
+                              </div>
+                            </div>
+                            <div class="pull-right">
+                              <!-- Version Picker -->
+                              <span>${_("Wiki Version:")}</span>
+                              <div style="display: inline-block">
+                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
+                                  % if user['can_edit_wiki_body']:
+                                      <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>${_("Preview")}</option>
+                                  % endif
+                                  % if len(versions) > 0:
+                                      <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("(Current)")} ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
+                                  % else:
+                                      <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("Current")}</option>
+                                  % endif
+                                  % if len(versions) > 1:
+                                      % for version in versions[1:]:
+                                          <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>(${version['version']}) ${version['user_fullname']}: ${version['date']}</option>
+                                      % endfor
+                                  % endif
+                                </select>
+                              </div>
+                            </div>
 
                         </div>
                     </div>
@@ -168,15 +169,15 @@
                     <div style="display: inline-block; position:absolute">
                     <button id="tableBtn" class="menuItem" data-bind="click: table"><span class="material-symbols-outlined">table</span><span id="arrowDropDown" class="material-symbols-outlined" style="margin-left: -7px; display: none;">arrow_drop_down</span></button>
                       <div id="tableMenu" class="table-dropdown-menu" style="display: none; border: 1px solid #aaa; padding: 2px; font-size: 90%; background: white; z-index: 15; white-space: nowrap; position: absolute">
-                        <div class="table-dropdown-item" data-bind="click: addColumnBef"><div style="">Insert column before</div></div>
-                        <div class="table-dropdown-item" data-bind="click: addColumnAft"><div style="">Insert column after</div></div>
-                        <div class="table-dropdown-item" data-bind="click: addRowBef"><div style="">Insert row before</div></div>
-                        <div class="table-dropdown-item" data-bind="click: addRowAft"><div style="">Insert row after</div></div>
-                        <div class="table-dropdown-item" data-bind="click: deleteSelectedCell"><div style="">delete cell</div></div>
-                        <div class="table-dropdown-item" data-bind="click: deleteTable"><div style="">delete table</div></div>
+                        <div class="table-dropdown-item" data-bind="click: addColumnBef"><div>${_("Insert column before")}</div></div>
+                        <div class="table-dropdown-item" data-bind="click: addColumnAft"><div>${_("Insert column after")}</div></div>
+                        <div class="table-dropdown-item" data-bind="click: addRowBef"><div>${_("Insert row before")}</div></div>
+                        <div class="table-dropdown-item" data-bind="click: addRowAft"><div>${_("Insert row after")}</div></div>
+                        <div class="table-dropdown-item" data-bind="click: deleteSelectedCell"><div>${_("delete cell")}</div></div>
+                        <div class="table-dropdown-item" data-bind="click: deleteTable"><div>${_("delete table")}</div></div>
                       </div>
                     </div>
-                    <button class="menuItem" style="margin-left: 40px;" data-toggle="modal" data-target="#wiki-help-modal" style="margin-left: -7px"><span class="material-symbols-outlined">help</span></button>
+                    <button class="menuItem" style="margin-left: 40px;" data-toggle="modal" data-target="#wiki-help-modal"><span class="material-symbols-outlined">help</span></button>
                   </div>
                   <div id="mEditor" style="overflow: auto;height: 400px; ${'' if version_settings['view'] == 'preview' else 'display: none'}"></div>
 
@@ -379,22 +380,28 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Add hyperlink</h4>
+        <h4 class="modal-title">${_("Add Hyperlink")}</h4>
       </div>
       <div class="modal-body">
-        <div><p style="display: inline-block; margin-right: 10px;">href:</p><input id="linkHref" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
-        <div><p style="display: inline-block; margin-right: 12px;">title:</p><input id="linkTitle" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the Title"></div>
+        <div class="m-b-sm">
+          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Link URL:")}</p>
+          <input id="imageSrc" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter link URL')}">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Link Title:")}</p>
+          <input id="imageTitle" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter link Title')}">
+        </div>
       </div>
       <div class="modal-footer">
         <div class="pull-right">
           <button
             class="btn"
             data-dismiss="modal"
-          >Cancel</button>
+          >${_("Cancel")}</button>
           <button
             id="addLink"
             class="btn btn-success"
-          >Add</button>
+          >${_("Add")}</button>
         </div>
       </div>
     </div>
@@ -406,23 +413,32 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Add image</h4>
+        <h4 class="modal-title">${_("Add Image")}</h4>
       </div>
       <div class="modal-body">
-        <div><p style="display: inline-block; margin-right: 16px;">src:</p><input id="imageSrc" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
-        <div><p style="display: inline-block; margin-right: 10px;">title:</p><input id="imageTitle" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
-        <div><p style="display: inline-block; margin-right: 19px;">alt:</p><input id="imageAlt" class="form-control" type="text" style="display: inline-block; width: 75%;" placeholder="Enter the URL"></div>
+        <div class="m-b-sm">
+          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Image URL:")}</p>
+          <input id="imageSrc" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter image URL')}">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Image Title:")}</p>
+          <input id="imageTitle" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter image Title')}">
+        </div>
+        <div class="m-b-sm">
+          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Alternative Text:")}</p>
+          <input id="imageAlt" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter Alternative Text')}">
+        </div>
       </div>
       <div class="modal-footer">
         <div class="pull-right">
           <button
             class="btn"
             data-dismiss="modal"
-          >Cancel</button>
+          >${_("Cancel")}</button>
           <button
             id="addImage"
             class="btn btn-success"
-          >Add</button>
+          >${_("Add")}</button>
         </div>
       </div>
     </div>
