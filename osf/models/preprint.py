@@ -911,7 +911,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             search.search.bulk_update_nodes(serialize, preprints, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     def update_search(self):
         update_share(self)
@@ -920,7 +920,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             search.search.update_preprint(self, bulk=False, async_update=True)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     def serialize_waterbutler_settings(self, provider_name=None):
         """

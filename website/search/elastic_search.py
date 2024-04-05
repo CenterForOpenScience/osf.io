@@ -88,7 +88,7 @@ def client():
             logging.getLogger('urllib3').setLevel(logging.WARN)
             logging.getLogger('requests').setLevel(logging.WARN)
             CLIENT.cluster.health(wait_for_status='yellow')
-        except ConnectionError:
+        except ConnectionError as e:
             message = (
                 'The SEARCH_ENGINE setting is set to "elastic", but there '
                 'was a problem starting the elasticsearch interface. Is '
@@ -96,7 +96,7 @@ def client():
             )
             if settings.SENTRY_DSN:
                 try:
-                    sentry.log_exception()
+                    sentry.log_exception(e)
                     sentry.log_message(message)
                 except AssertionError:  # App has not yet been initialized
                     logger.exception(message)

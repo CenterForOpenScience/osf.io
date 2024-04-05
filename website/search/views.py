@@ -42,9 +42,9 @@ def handle_search_errors(func):
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
                                  + language.SUPPORT_LINK),
             })
-        except exceptions.SearchException:
+        except exceptions.SearchException as e:
             # Interim fix for issue where ES fails with 500 in some settings- ensure exception is still logged until it can be better debugged. See OSF-4538
-            sentry.log_exception()
+            sentry.log_exception(e)
             sentry.log_message('Elasticsearch returned an unexpected error response')
             # TODO: Add a test; may need to mock out the error response due to inability to reproduce error code locally
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={

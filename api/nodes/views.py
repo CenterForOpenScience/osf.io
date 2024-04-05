@@ -730,7 +730,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         try:
             serializer.save(draft=draft)
         except ValidationError as e:
-            log_exception()
+            log_exception(e)
             raise e
 
 

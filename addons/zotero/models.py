@@ -263,8 +263,8 @@ class NodeSettings(BaseCitationsNodeSettings):
             raise HTTPError(404)
         except zotero_errors.UserNotAuthorised:
             raise HTTPError(403)
-        except zotero_errors.HTTPError:
-            sentry.log_exception()
+        except zotero_errors.HTTPError as e:
+            sentry.log_exception(e)
             sentry.log_message('Unexpected Zotero Error when fetching group libraries.')
             raise HTTPError(500)
 
@@ -296,8 +296,8 @@ class NodeSettings(BaseCitationsNodeSettings):
             raise HTTPError(404)
         except zotero_errors.UserNotAuthorised:
             raise HTTPError(403)
-        except zotero_errors.HTTPError:
-            sentry.log_exception()
+        except zotero_errors.HTTPError as e:
+            sentry.log_exception(e)
             sentry.log_message('Unexpected Zotero Error when fetching folders.')
             raise HTTPError(500)
 
