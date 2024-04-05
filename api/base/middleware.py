@@ -13,6 +13,7 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 import corsheaders.middleware
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.flask import FlaskIntegration
+from website.settings import SENTRY_DSN
 
 from framework.postcommit_tasks.handlers import (
     postcommit_after_request,
@@ -30,7 +31,7 @@ from api.base.authentication.drf import drf_get_session_from_cookie
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 init(
-    dsn=settings.SENTRY_DSN,
+    dsn=SENTRY_DSN,
     integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
 )
 
