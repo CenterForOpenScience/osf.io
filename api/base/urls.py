@@ -1,5 +1,6 @@
 from django.urls import include, re_path
 from django.views.generic.base import RedirectView
+from debug_toolbar import urls
 
 
 from api.base import views
@@ -96,10 +97,9 @@ if 'silk' in settings.INSTALLED_APPS:
     ]
 
 if settings.DEBUG:
-    import debug_toolbar
 
     urlpatterns += [
-        re_path(r'^__debug__/', include(debug_toolbar.urls)),
+        re_path(r'^__debug__/', include(urls)),
     ]
 
 

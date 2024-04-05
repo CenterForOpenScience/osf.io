@@ -104,3 +104,5 @@ git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@feature
 # Impact Metrics CSV Export
 djangorestframework-csv==3.0.2
 gevent==24.2.1
+
+django-debug-toolbar==4.3.0
