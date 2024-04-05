@@ -4,7 +4,7 @@ from website import settings
 
 handler = StreamHandler()
 
-if settings.DEBUG_MODE and settings.USE_COLOR:
+if settings.DEBUG_MODE and settings.USE_CELERY:
     log_colors = colorlog.default_log_colors.copy()
     log_colors['DEBUG'] = 'cyan'
 
