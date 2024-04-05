@@ -268,7 +268,7 @@ class NodeFileCollector:
                             f'Unexpected error when fetching file contents for {addon.config.full_name}.'
                         )
                     )
-                    sentry.log_exception()
+                    sentry.log_exception(e)
                     return_value.append({
                         KIND: FOLDER,
                         'unavailable': True,

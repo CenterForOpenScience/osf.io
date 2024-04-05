@@ -309,7 +309,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
-        assert 'CaPsLoCk' in res
+        assert 'CaPsLoCk' in res.text
 
     def test_project_wiki_validate_name_conflict_different_casing(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CAPSLOCK')

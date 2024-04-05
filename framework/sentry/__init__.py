@@ -2,13 +2,12 @@
 
 import logging
 
-from sentry_sdk import init, set_context, capture_exception, capture_message, push_scope
+from sentry_sdk import init, capture_exception, capture_message, push_scope
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from framework.sessions import get_session
-
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -47,8 +46,8 @@ def log_exception(exception: Exception, skip_session=False):
         'session': {} if skip_session else get_session_data(),
     }
     with push_scope() as scope:
-        scope.set_extra(**extra)
-        set_context('extra', extra)
+        for key, value in extra.items():
+            scope.set_extra(key, value)
         return capture_exception(exception)
 
 
@@ -64,7 +63,7 @@ def log_message(message, skip_session=False, extra_data=None, level=logging.ERRO
     if extra_data is not None:
         extra.update(extra_data)
     with push_scope() as scope:
-        scope.set_extra(**extra)
-
+        for key, value in extra.items():
+            scope.set_extra(key, value)
         level_str = LOG_LEVEL_MAP.get(level, 'error')
         return capture_message(message, level=level_str)

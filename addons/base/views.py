@@ -345,8 +345,8 @@ def get_auth(auth, **kwargs):
                                         version=fileversion.identifier if fileversion else None,
                                         path=path,
                                     )
-                                except es_exceptions.ConnectionError:
-                                    log_exception()
+                                except es_exceptions.ConnectionError as e:
+                                    log_exception(e)
         if fileversion and provider_settings:
             region = fileversion.region
             credentials = region.waterbutler_credentials

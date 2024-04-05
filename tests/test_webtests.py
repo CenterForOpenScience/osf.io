@@ -408,7 +408,7 @@ class TestMergingAccounts(OsfTestCase):
         res = self.app.get(project.url, follow_redirects=True)
         assert_in_html(self.user.fullname, res.text)
         assert self.dupe.is_merged
-        assert self.dupe.fullname not in res
+        assert self.dupe.fullname not in res.text
 
     def test_merged_user_has_alert_message_on_profile(self):
         # Master merges dupe
@@ -417,7 +417,7 @@ class TestMergingAccounts(OsfTestCase):
         # At the dupe user's profile there is an alert message at the top
         # indicating that the user is merged
         res = self.app.get(f'/profile/{self.dupe._primary_key}/', follow_redirects=True)
-        assert 'This account has been merged' in res
+        assert 'This account has been merged' in res.text
 
 
 @pytest.mark.enable_bookmark_creation
@@ -505,6 +505,7 @@ class TestClaiming(OsfTestCase):
         res = self.app.get(claim_url)
         self.project.reload()
         assert 'Set Password' in res.text
+        from bs4 import BeautifulSoup
         form = res.forms['setPasswordForm']
         #form['username'] = new_user.username #Removed as long as E-mail can't be updated.
         form['password'] = 'killerqueen'
@@ -1054,7 +1055,7 @@ class TestAUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         res = self.app.get(url, auth=self.me.auth)
         # I see '3 more' as a link
-        assert '3 more' in res
+        assert '3 more' in res.text
 
         res = res.click('3 more')
         assert res.request.path == self.project.url

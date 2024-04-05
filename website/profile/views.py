@@ -540,8 +540,8 @@ def sync_data_from_mailchimp(**kwargs):
 
         try:
             user = OSFUser.objects.get(username=username)
-        except OSFUser.DoesNotExist:
-            sentry.log_exception()
+        except OSFUser.DoesNotExist as e:
+            sentry.log_exception(e)
             sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))

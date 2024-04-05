@@ -294,15 +294,18 @@ class TestPrivateLink(OsfTestCase):
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_has_private_link_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get(f'/project/{self.project._primary_key}', query_string={'view_only': self.link.key})
-        res = res.follow()
+        res = self.app.get(
+            f'/project/{self.project._primary_key}',
+            query_string={'view_only': self.link.key},
+            follow_redirects=True
+        )
         assert res.status_code == 200
-        assert res.body.decode() == 'success'
+        assert res.text == 'success'
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_does_not_have_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
-        res = self.app.get(f'/project/{self.project._primary_key}',query_string={'key': None})
+        res = self.app.get(f'/project/{self.project._primary_key}', query_string={'key': None})
         assert_is_redirect(res)
 
 
