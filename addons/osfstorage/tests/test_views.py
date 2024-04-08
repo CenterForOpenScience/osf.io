@@ -58,7 +58,7 @@ class HookTestCase(StorageTestCase):
         if method == 'get':
             kwargs['query_string'] = signed_data
         else:
-            kwargs['json']= signed_data
+            kwargs['json'] = signed_data
         return method(
             api_url_for(view_name, guid=guid, **view_kwargs),
             **kwargs

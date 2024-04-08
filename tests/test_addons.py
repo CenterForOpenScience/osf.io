@@ -1321,7 +1321,7 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert resp.status_code == 302
-        assert resp.location == f'{guid._id}/'
+        assert resp.location == f'/{guid._id}/'
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
@@ -1664,7 +1664,7 @@ class TestAddonFileViews(OsfTestCase):
             'modified': '2016-08-22T13:54:32.100900'
         }
         file_node.update(revision=None, user=None, data=data)
-        mock_set_context.return_value.__enter.__.return_value.set_extra.assert_called_once_with('session', {})
+        mock_set_context.return_value.__enter__.return_value.set_extra.assert_called_once_with('session', {})
         mock_capture.assert_called_with(
             'update() receives metatdata older than the newest entry in file history.',
             level='error',
