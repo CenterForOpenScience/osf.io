@@ -235,11 +235,11 @@ class TestODMTitleSearch(OsfTestCase):
         self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
-        res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
+        res = self.app.get(self.url, query_string={'term': self.project.title}, auth=self.user.auth)
         assert res.status_code == 200
         assert len(res.json) == 1
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.public_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'no'
@@ -247,7 +247,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 1
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.project.title,
                                'includePublic': 'no',
                                'includeContributed': 'yes'
@@ -255,7 +255,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 1
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.project.title,
                                'includePublic': 'no',
                                'includeContributed': 'yes',
@@ -264,7 +264,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 1
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -273,7 +273,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 1
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.public_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -282,7 +282,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 1
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.registration_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -291,7 +291,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 2
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.registration_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -300,16 +300,16 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 1
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.folder.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
+                           }, auth=self.user.auth)
         assert res.status_code == 200
         assert len(res.json) == 0
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.folder.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -318,7 +318,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 0
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.dashboard.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -327,11 +327,11 @@ class TestODMTitleSearch(OsfTestCase):
         assert res.status_code == 200
         assert len(res.json) == 0
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.dashboard.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
+                           }, auth=self.user.auth)
         assert res.status_code == 200
         assert len(res.json) == 0

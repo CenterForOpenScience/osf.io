@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 """Views tests for the OSF."""
 
-from hashlib import md5
-from pytest import approx
-
-from lxml import html
 import datetime as dt
-from rest_framework import status as http_status
 import time
-from unittest import mock
-from http.cookies import SimpleCookie
-
 import unittest
 from urllib.parse import quote
+from hashlib import md5
+from http.cookies import SimpleCookie
+from unittest import mock
 
-from flask import request
 import pytest
-from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
+from flask import request
+from lxml import html
+from pytest import approx
+from rest_framework import status as http_status
+from werkzeug.test import ClientRedirectError
 
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage import settings as osfstorage_settings
 from addons.wiki.models import WikiPage
-
+from api_tests.utils import create_test_file
 from framework import auth
 from framework.auth import Auth, authenticate, cas, core
 from framework.auth.campaigns import (
@@ -34,7 +33,6 @@ from framework.auth.campaigns import (
     is_proxy_login,
     campaign_url_for
 )
-
 from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.auth.views import login_and_register_handler
@@ -42,28 +40,7 @@ from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
-
-from waffle.testutils import override_flag
-
-from website import mailchimp_utils, mails, settings, language
-from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import update_osf_help_mails_subscription
-from website.project.decorators import check_can_access
-from website.project.model import has_anonymous_link
-from website.project.signals import contributor_added
-from website.project.views.contributor import (
-    deserialize_contributors,
-    notify_added_contributor,
-    send_claim_email,
-    send_claim_registered_email,
-)
-from website.settings import EXTERNAL_EMBER_APPS, MAILCHIMP_GENERAL_LIST
-from website.project.views.node import _should_show_wiki_widget, abbrev_authors
-from website.util import api_url_for, web_url_for
-from website.util import rubeus
-from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
-from osf import features
-from osf.utils import permissions
+from osf.external.spam import tasks as spam_tasks
 from osf.models import (
     Comment,
     AbstractNode,
@@ -72,25 +49,9 @@ from osf.models import (
     Tag,
     SpamStatus,
     NodeRelation,
-    QuickFilesNode,
     NotableDomain
 )
-from osf.external.spam import tasks as spam_tasks
-
-from tests.base import (
-    assert_is_redirect,
-    capture_signals,
-    fake,
-    get_default_metaschema,
-    OsfTestCase,
-    assert_datetime_equal,
-    test_app
-)
-from tests.utils import run_celery_tasks
-from tests.test_cas_authentication import generate_external_user_with_resp
-from api_tests.utils import create_test_file
-
-
+from osf.utils import permissions
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -114,6 +75,34 @@ from osf_tests.factories import (
     RegionFactory,
     DraftRegistrationFactory,
 )
+from tests.base import (
+    assert_is_redirect,
+    capture_signals,
+    fake,
+    get_default_metaschema,
+    OsfTestCase,
+    assert_datetime_equal,
+    test_app
+)
+from tests.test_cas_authentication import generate_external_user_with_resp
+from tests.utils import run_celery_tasks
+from website import mailchimp_utils, mails, settings, language
+from website.profile.utils import add_contributor_json, serialize_unregistered
+from website.profile.views import update_osf_help_mails_subscription
+from website.project.decorators import check_can_access
+from website.project.model import has_anonymous_link
+from website.project.signals import contributor_added
+from website.project.views.contributor import (
+    deserialize_contributors,
+    notify_added_contributor,
+    send_claim_email,
+    send_claim_registered_email,
+)
+from website.project.views.node import _should_show_wiki_widget, abbrev_authors
+from website.settings import MAILCHIMP_GENERAL_LIST
+from website.util import api_url_for, web_url_for
+from website.util import rubeus
+from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
 
 pytestmark = pytest.mark.django_db
 
