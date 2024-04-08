@@ -90,7 +90,7 @@ django-extensions==3.2.3
 psycopg2==2.9.9 --no-binary psycopg2
 
 # Reviews requirements
-transitions==0.9.0
+transitions==0.8.11
 
 # identifiers
 datacite==1.1.3

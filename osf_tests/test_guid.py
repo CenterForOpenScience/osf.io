@@ -210,7 +210,7 @@ class TestResolveGuid(OsfTestCase):
             self.node.web_url_for('resolve_guid', guid=self.node._id),
             auth=non_contrib.auth,
         )
-        assert '<title>OSF | Forbidden</title>' in res.body.decode()
+        assert '<title>OSF | Forbidden</title>' in res.text
         assert res.status_code == 403
 
         self.node.access_requests_enabled = True
@@ -220,7 +220,7 @@ class TestResolveGuid(OsfTestCase):
             auth=non_contrib.auth,
         )
         assert res.status_code == 403
-        assert '<title>OSF | Request Access</title>' in res.body.decode()
+        assert '<title>OSF | Request Access</title>' in res.text
 
     def test_resolve_guid_download_file(self):
         pp = PreprintFactory(finish=True)

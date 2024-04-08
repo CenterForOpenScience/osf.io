@@ -1649,7 +1649,7 @@ class TestAddonFileViews(OsfTestCase):
         assert file_node.history[1] == file_data
 
     @with_sentry
-    @mock.patch('framework.sentry.set_context')
+    @mock.patch('framework.sentry.push_scope')
     @mock.patch('framework.sentry.capture_message')
     def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture: Mock, mock_set_context: Mock):
         file_node = self.get_test_file()
@@ -1664,7 +1664,7 @@ class TestAddonFileViews(OsfTestCase):
             'modified': '2016-08-22T13:54:32.100900'
         }
         file_node.update(revision=None, user=None, data=data)
-        mock_set_context.assert_called_once_with('extra', {'session': {}})
+        mock_set_context.return_value.__enter.__.return_value.set_extra.assert_called_once_with('session', {})
         mock_capture.assert_called_with(
             'update() receives metatdata older than the newest entry in file history.',
             level='error',
