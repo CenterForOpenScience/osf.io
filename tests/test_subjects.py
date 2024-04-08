@@ -1,5 +1,5 @@
 import pytest
-from django.core.values import ValidationError
+from django.core.exceptions import ValidationError
 from osf.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase

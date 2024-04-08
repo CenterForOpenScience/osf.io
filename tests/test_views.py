@@ -1923,7 +1923,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True)
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         self.project.reload()
         assert len(self.project.contributors) == n_contributors_pre + len(payload['users'])
 
@@ -2040,8 +2040,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True)
-        assert send_mail.called
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         assert send_mail.called_with(email=email)
 
     @mock.patch('website.mails.send_mail')
@@ -2184,7 +2183,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True)
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         self.project.reload()
         assert self.project.logs.count() == n_logs_pre + 1
 
@@ -2209,7 +2208,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': [self.project._primary_key, child._primary_key]
         }
         url = f'/api/v1/project/{self.project._id}/contributors/'
-        self.app.post(url, json=payload, follow_redirects=True)
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         child.reload()
         assert child.contributors.count() == n_contributors_pre + len(payload['users'])
 
@@ -2499,7 +2498,7 @@ class TestClaimViews(OsfTestCase):
         self.project.save()
 
         url = invited_user.get_claim_url(self.project._primary_key)
-        res = self.app.post(url, json={
+        res = self.app.post(url, data={
             'password': 'bohemianrhap',
             'password2': 'bohemianrhap'
         })
@@ -2689,7 +2688,7 @@ class TestClaimViews(OsfTestCase):
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_with_valid_data(self, mock_update_search_nodes):
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.post(url, json={
+        res = self.app.post(url, data={
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
@@ -2716,7 +2715,7 @@ class TestClaimViews(OsfTestCase):
         self.user.save()
         assert len(self.user.unclaimed_records.keys()) > 1  # sanity check
         url = self.user.get_claim_url(self.project._primary_key)
-        self.app.post(url, json={
+        res = self.app.post(url, data={
             'username': self.given_email,
             'password': 'bohemianrhap',
             'password2': 'bohemianrhap'
@@ -2801,7 +2800,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_with_project_id_adds_corresponding_claimed_tag_to_user(self):
         assert OsfClaimedTags.Osf.value not in self.user.system_tags
         url = self.user.get_claim_url(self.project_with_source_tag._primary_key)
-        res = self.app.post(url, json={
+        res = self.app.post(url, data={
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
@@ -2814,7 +2813,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_with_preprint_id_adds_corresponding_claimed_tag_to_user(self):
         assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') not in self.user.system_tags
         url = self.user.get_claim_url(self.preprint_with_source_tag._primary_key)
-        res = self.app.post(url, json={
+        res = self.app.post(url, data={
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
@@ -4005,7 +4004,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
         assert 'new=true' in res.location
@@ -4456,7 +4455,7 @@ class TestProjectCreation(OsfTestCase):
         project = ProjectFactory(creator=user)
         url = web_url_for('project_new_node', pid=project._id)
         post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
-        request = self.app.post(url, json=post_data, auth=user.auth, follow_redirects=True)
+        self.app.post(url, data=post_data, auth=user.auth, follow_redirects=True)
         project.reload()
         child = project.nodes[0]
         # HTML has been stripped
@@ -4515,7 +4514,7 @@ class TestProjectCreation(OsfTestCase):
     def test_create_component_add_contributors_admin(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
-        res = self.app.post(url, json=post_data, auth=self.user1.auth)
+        res = self.app.post(url, data=post_data, auth=self.user1.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4534,7 +4533,7 @@ class TestProjectCreation(OsfTestCase):
         self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
-        res = self.app.post(url, json=post_data, auth=non_admin.auth)
+        res = self.app.post(url, data=post_data, auth=non_admin.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4565,7 +4564,7 @@ class TestProjectCreation(OsfTestCase):
         self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
-        res = self.app.post(url, json=post_data, auth=write_user.auth)
+        res = self.app.post(url, data=post_data, auth=write_user.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4597,7 +4596,7 @@ class TestProjectCreation(OsfTestCase):
     def test_create_component_add_no_contributors(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         post_data = {'title': 'New Component With Contributors Title', 'category': ''}
-        res = self.app.post(url, json=post_data, auth=self.user1.auth)
+        res = self.app.post(url, data=post_data, auth=self.user1.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert child.title == 'New Component With Contributors Title'
@@ -4876,10 +4875,10 @@ class TestResetPassword(OsfTestCase):
     def test_can_reset_password_if_form_success(self, mock_service_validate):
         # load reset password page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['resetPasswordForm']
+        form = res.get_form('resetPasswordForm')
         form['password'] = 'newpassword'
         form['password2'] = 'newpassword'
-        res = form.submit()
+        res = form.submit(self.app)
 
         # check request URL is /resetpassword with username and new verification_key_v2 token
         request_url_path = res.request.path

@@ -525,7 +525,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             with pytest.raises(HTTPError) as error_raised:
                 self.provider.auth_callback(user=user)
 
-            assert error_raised.exception.code == 503
+            assert error_raised.value.code == 503
 
     @responses.activate
     def test_user_denies_access(self):

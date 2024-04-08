@@ -430,7 +430,7 @@ class TestConferenceEmailViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 302
         res = self.app.get(url, follow_redirects=True)
-        assert res.location == '/meetings/'
+        assert res.request.path == '/meetings/'
 
     def test_conference_submissions(self):
         AbstractNode.objects.all().delete()
