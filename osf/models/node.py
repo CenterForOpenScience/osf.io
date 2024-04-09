@@ -716,7 +716,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     def update_search(self):
         update_share(self)
@@ -727,7 +727,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     def delete_search_entry(self):
         from website import search
@@ -735,7 +735,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     @classmethod
     def find_by_institutions(cls, inst, query=None):

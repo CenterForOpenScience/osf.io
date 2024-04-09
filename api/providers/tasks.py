@@ -254,7 +254,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
                     f'an unexpected exception: [row="{row.id}", error="{repr(e)}"]'
             logger.error(error)
             sentry.log_message(error)
-            sentry.log_exception()
+            sentry.log_exception(e)
             draft_error_list.append(f'Title: N/A, External ID: N/A, Row Hash: {row.row_hash}, Error: Unexpected')
             if not dry_run:
                 if row.draft_registration:

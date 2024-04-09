@@ -25,7 +25,7 @@ def purge_trash(n):
         try:
             total_bytes += tf._purge(client=client)
         except Exception as e:
-            log_exception()
+            log_exception(e)
             logger.error(f'Encountered Error handling {tf.id}')
     return total_bytes
 
