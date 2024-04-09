@@ -283,7 +283,6 @@ class TestDataCiteViews(OsfTestCase):
                 category='doi',
                 value='fakedoi',
             ),
-            expect_errors=True,
         )
         assert res.status_code == 404
 
