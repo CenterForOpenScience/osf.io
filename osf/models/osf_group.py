@@ -523,7 +523,7 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
             search.search.update_group(self, bulk=False, async_update=True, deleted_id=deleted_id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     @classmethod
     def bulk_update_search(cls, groups, index=None):
@@ -533,7 +533,7 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
             search.search.bulk_update_nodes(serialize, groups, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
 
 @receiver(post_save, sender=OSFGroup)

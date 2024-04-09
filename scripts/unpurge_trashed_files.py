@@ -25,7 +25,7 @@ def unpurge_trash(ids):
         try:
             tf.restore(client=client)
         except Exception as e:
-            log_exception()
+            log_exception(e)
             logger.error(f'Encountered Error handling {tf.id}')
 
 def main():
