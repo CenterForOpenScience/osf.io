@@ -2,8 +2,6 @@ import pytest
 from unittest import mock
 from datetime import datetime
 
-from elastic_transport import ApiResponseMeta
-
 from website.app import setup_django
 
 setup_django()
@@ -104,12 +102,7 @@ class TestPreprintMetrics:
 
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
     def test_custom_metric_malformed_query(self, mock_execute, app, user, base_url):
-        mock_execute.side_effect = lambda: RequestError(
-            message='Malformed elasticsearch query.',
-            meta=ApiResponseMeta(),
-            body={'error': 'Malformed elasticsearch query.'}
-
-        )
+        mock_execute.side_effect = RequestError()
         post_url = f'{base_url}downloads/'
         post_data = {
             'data': {

@@ -155,7 +155,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth, follow_redirects=True)
+        res = self.app.post(url, data={'content': 'new content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.project.reload()
         # page was updated with new content
@@ -168,7 +168,7 @@ class TestWikiViews(OsfTestCase):
         old_wiki_page_count = WikiVersion.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
-        res = self.app.post(url, {'content': ''}, auth=self.user.auth, follow_redirects=True)
+        res = self.app.post(url, data={'content': ''}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
         new_wiki_page_count = WikiVersion.objects.all().count()
@@ -188,7 +188,7 @@ class TestWikiViews(OsfTestCase):
         old_wiki_page_count = WikiVersion.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
-        res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': page_content}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
         new_wiki_page_count = WikiVersion.objects.all().count()
@@ -207,24 +207,24 @@ class TestWikiViews(OsfTestCase):
         # wname doesn't exist in the db, so it will be created
         new_wname = 'øˆ∆´ƒøßå√ß'
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
-        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': 'new content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.project.reload()
         wiki = WikiPage.objects.get_for_node(self.project, new_wname)
         assert wiki.page_name == new_wname
 
         # updating content should return correct url as well.
-        res = self.app.post(url, {'content': 'updated content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': 'updated content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
     def test_project_wiki_edit_post_with_special_characters(self):
         new_wname = 'title: ' + SPECIAL_CHARACTERS_ALLOWED
         new_wiki_content = 'content: ' + SPECIAL_CHARACTERS_ALL
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
-        res = self.app.post(url, {'content': new_wiki_content}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': new_wiki_content}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.project.reload()
-        wiki =  WikiVersion.objects.get_for_node(self.project, new_wname)
+        wiki = WikiVersion.objects.get_for_node(self.project, new_wname)
         assert wiki.wiki_page.page_name == new_wname
         assert wiki.content == new_wiki_content
         assert res.status_code == 200
@@ -266,7 +266,7 @@ class TestWikiViews(OsfTestCase):
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
         # wname has a trailing space
         url = self.project.web_url_for('project_wiki_view', wname='cupcake ')
-        res = self.app.post(url, {'content': 'blah'}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': 'blah'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
         self.project.reload()
@@ -326,7 +326,7 @@ class TestWikiViews(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         url = project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
-        assert 'Add important information, links, or images here to describe your project.' in res
+        assert 'Add important information, links, or images here to describe your project.' in res.text
 
     @pytest.mark.skip('Content rendering handled by front-end')
     def test_project_dashboard_wiki_wname_get_shows_non_ascii_characters(self):
@@ -363,7 +363,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 302
         assert page_url in res.location
-        res = res.follow()
+        res = self.app.resolve_redirect(res)
         assert res.status_code == 200
         assert page_url in res.request.url
 
@@ -374,7 +374,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_home_is_capitalized_in_web_view(self):
         url = self.project.web_url_for('project_wiki_home', wid='home', _guid=True)
-        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         page_name_elem = res.html.find('span', {'id': 'pageName'})
         assert 'Home' in page_name_elem.text
 
