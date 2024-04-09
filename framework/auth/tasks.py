@@ -136,11 +136,11 @@ def orcid_public_api_make_request(path, orcid_id):
     }
     try:
         response = requests.get(request_url, headers=headers, timeout=ORCID_PUBLIC_API_REQUEST_TIMEOUT)
-    except Exception:
+    except Exception as e:
         error_message = f'ORCiD public API request has encountered an exception: url=[{request_url}]'
         logger.error(error_message)
         sentry.log_message(error_message)
-        sentry.log_exception()
+        sentry.log_exception(e)
         return None
     if response.status_code != 200:
         error_message = f'ORCiD public API request has failed: url=[{request_url}], ' \
@@ -150,10 +150,10 @@ def orcid_public_api_make_request(path, orcid_id):
         return None
     try:
         xml_data = etree.XML(response.content)
-    except Exception:
+    except Exception as e:
         error_message = 'Fail to read and parse ORCiD record response as XML'
         logger.error(error_message)
         sentry.log_message(error_message)
-        sentry.log_exception()
+        sentry.log_exception(e)
         return None
     return xml_data

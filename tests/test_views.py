@@ -1633,13 +1633,13 @@ class TestUserAccount(OsfTestCase):
             'new_password': 'this is a new password',
             'confirm_password': 'this is a new password',
         }
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
         assert self.user.old_password_invalid_attempts == 1
         assert res.status_code == 200
         # Make a second request
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth)
         assert len( mock_push_status_message.mock_calls) == 2
         assert 'Old password is invalid' == mock_push_status_message.mock_calls[1][1][0]
         self.user.reload()
@@ -1647,15 +1647,15 @@ class TestUserAccount(OsfTestCase):
         assert self.user.old_password_invalid_attempts == 2
 
         # Make a third request
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
-        assert len( mock_push_status_message.mock_calls) == 3
+        res = self.app.post(url, data=post_data, auth=self.user.auth)
+        assert len(mock_push_status_message.mock_calls) == 3
         assert 'Old password is invalid' == mock_push_status_message.mock_calls[2][1][0]
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
         assert self.user.old_password_invalid_attempts == 3
 
         # Make a fourth request
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth)
         assert mock_push_status_message.called
         error_strings = mock_push_status_message.mock_calls[3][2]
         assert 'Too many failed attempts' in error_strings['message']
@@ -1674,13 +1674,13 @@ class TestUserAccount(OsfTestCase):
             'new_password': 'short',
             'confirm_password': 'short',
         }
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         self.user.reload()
         assert self.user.change_password_last_attempt is None
         assert self.user.old_password_invalid_attempts == 0
         assert res.status_code == 200
         # Make a second request
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         assert len(mock_push_status_message.mock_calls) == 2
         assert 'Password should be at least eight characters' == mock_push_status_message.mock_calls[1][1][0]
         self.user.reload()
@@ -1688,7 +1688,7 @@ class TestUserAccount(OsfTestCase):
         assert self.user.old_password_invalid_attempts == 0
 
         # Make a third request
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         assert len(mock_push_status_message.mock_calls) == 3
         assert 'Password should be at least eight characters' == mock_push_status_message.mock_calls[2][1][0]
         self.user.reload()
@@ -1696,7 +1696,7 @@ class TestUserAccount(OsfTestCase):
         assert self.user.old_password_invalid_attempts == 0
 
         # Make a fourth request
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         assert mock_push_status_message.called
         assert len(mock_push_status_message.mock_calls) == 4
         assert 'Password should be at least eight characters' == mock_push_status_message.mock_calls[3][1][0]
@@ -2738,9 +2738,10 @@ class TestClaimViews(OsfTestCase):
         self.project.save()
         # Goes to claim url
         claim_url = new_user.get_claim_url(self.project._id)
-        self.app.post(claim_url, json={
+        self.app.post(claim_url, data={
             'username': unreg.username,
-            'password': 'killerqueen', 'password2': 'killerqueen'
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
         })
         unreg.reload()
         # Full name was set correctly
