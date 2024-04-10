@@ -751,8 +751,8 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert private_uuid
-        assert private_uuid not in res.body.decode()
-        assert get_sharejs_uuid(self.project, self.wname) in res.body.decode()
+        assert private_uuid not in res.text
+        assert get_sharejs_uuid(self.project, self.wname) in res.text
 
         # Revisit page; uuid has not changed
         res = self.app.get(url, auth=self.user.auth)
@@ -771,13 +771,13 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert private_uuid
-        assert private_uuid not in res.body.decode()
-        assert get_sharejs_uuid(self.project, self.wname) in res.body.decode()
+        assert private_uuid not in res.text
+        assert get_sharejs_uuid(self.project, self.wname) in res.text
 
         # Users without write permission should not be able to access
         res = self.app.get(url)
         assert res.status_code == 200
-        assert get_sharejs_uuid(self.project, self.wname) not in res.body.decode()
+        assert get_sharejs_uuid(self.project, self.wname) not in res.text
 
     def test_uuid_not_generated_without_write_permission(self):
         WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))
@@ -832,10 +832,10 @@ class TestWikiUuid(OsfTestCase):
         fork_uuid = get_sharejs_uuid(fork, self.wname)
 
         assert project_uuid != fork_uuid
-        assert project_uuid in project_res
-        assert fork_uuid in fork_res
-        assert project_uuid not in fork_res
-        assert fork_uuid not in project_res
+        assert project_uuid in project_res.text
+        assert fork_uuid in fork_res.text
+        assert project_uuid not in fork_res.text
+        assert fork_uuid not in project_res.text
 
     @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
@@ -877,7 +877,7 @@ class TestWikiUuid(OsfTestCase):
         assert res.status_code == 200
         self.project.reload()
         assert original_private_uuid == self.project.wiki_private_uuids.get(self.wkey)
-        assert original_sharejs_uuid in res.body.decode()
+        assert original_sharejs_uuid in res.text
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
@@ -914,7 +914,7 @@ class TestWikiUuid(OsfTestCase):
         assert res.status_code == 200
         self.project.reload()
         assert original_private_uuid != self.project.wiki_private_uuids.get(self.wkey)
-        assert original_sharejs_uuid not in res.body.decode()
+        assert original_sharejs_uuid not in res.text
 
 
 @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')

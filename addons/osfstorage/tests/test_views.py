@@ -52,13 +52,10 @@ def create_record_with_version(path, node_settings, **kwargs):
 class HookTestCase(StorageTestCase):
 
     def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
-        method = getattr(self.app, method)
         guid = view_kwargs.pop('guid', None) or target._id
         signed_data = signing.sign_data(signing.default_signer, payload)
-        if method == 'get':
-            kwargs['query_string'] = signed_data
-        else:
-            kwargs['json'] = signed_data
+        kwargs['query_string' if method == 'get' else 'json'] = signed_data
+        method = getattr(self.app, method)
         return method(
             api_url_for(view_name, guid=guid, **view_kwargs),
             **kwargs
@@ -1551,7 +1548,7 @@ class TestFileViews(StorageTestCase):
         download_url = base_url.format(file.get_guid()._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str(f'Bearer {token.token_id}')
+            'Authorization': f'Bearer {token.token_id}'
         }
         redirect = self.app.get(download_url, headers=headers)
 
