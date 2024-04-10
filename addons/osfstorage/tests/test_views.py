@@ -54,7 +54,10 @@ class HookTestCase(StorageTestCase):
     def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
         guid = view_kwargs.pop('guid', None) or target._id
         signed_data = signing.sign_data(signing.default_signer, payload)
-        kwargs['query_string' if method == 'get' else 'json'] = signed_data
+        if method == 'get':
+            view_kwargs |= signed_data
+        else:
+            kwargs['json'] = signed_data
         method = getattr(self.app, method)
         return method(
             api_url_for(view_name, guid=guid, **view_kwargs),

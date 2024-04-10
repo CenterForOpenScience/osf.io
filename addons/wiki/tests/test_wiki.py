@@ -807,10 +807,10 @@ class TestWikiUuid(OsfTestCase):
         uuid2 = get_sharejs_uuid(self.project, wname2)
 
         assert uuid1 != uuid2
-        assert uuid1 in res1
-        assert uuid2 in res2
-        assert uuid1 not in res2
-        assert uuid2 not in res1
+        assert uuid1 in res1.text
+        assert uuid2 in res2.text
+        assert uuid1 not in res2.text
+        assert uuid2 not in res1.text
 
     def test_uuids_differ_between_forks(self):
         url = self.project.web_url_for('project_wiki_view', wname=self.wname)
