@@ -59,8 +59,8 @@ enabled_providers_forinstitutions_list = [
 ]
 
 enabled_providers_list = [
-    's3', 'box', 'googledrive', 'osfstorage',
-    'nextcloud', 'swift', 'owncloud', 's3compat',
+    's3', 'osfstorage',
+    'swift', 's3compat',
 ]
 enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
