@@ -68,7 +68,7 @@ class TestAnUnregisteredUser(OsfTestCase):
 
     def test_cant_see_profile_if_not_logged_in(self):
         url = web_url_for('profile_view')
-        res = self.app.get(url, follow_redirects=True)
+        res = self.app.resolve_redirect(self.app.get(url))
         assert res.status_code == 308
         assert '/login/' in res.headers['Location']
 
@@ -88,7 +88,7 @@ class TestAUser(OsfTestCase):
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
-        res = self.app.get('/login/', follow_redirects=True)
+        res = self.app.resolve_redirect(self.app.get('/login/'))
         assert res.status_code == 302
         location = res.headers.get('Location')
         assert 'login?service=' in location
@@ -509,7 +509,7 @@ class TestClaiming(OsfTestCase):
         #form['username'] = new_user.username #Removed as long as E-mail can't be updated.
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
-        res = form.submit(self.app, follow_redirects=True)
+        self.app.resolve_redirect(form.submit(self.app))
         new_user.reload()
         assert new_user.check_password('killerqueen')
 

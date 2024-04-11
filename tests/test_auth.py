@@ -82,8 +82,8 @@ class TestAuthUtils(OsfTestCase):
         user.reload()
         token = user.get_confirmation_token(user.username)
 
-        res = self.app.get(f'/confirm/{user._id}/{token}', follow_redirects=True)
-
+        res = self.app.get(f'/confirm/{user._id}/{token}')
+        self.app.resolve_redirect(res)
         assert res.status_code == 302
         assert 'login?service=' in res.location
 
@@ -98,9 +98,9 @@ class TestAuthUtils(OsfTestCase):
 
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-        res = self.app.get(f'/confirm/{user._id}/{token}', follow_redirects=True)
+        res = self.app.get(f'/confirm/{user._id}/{token}')
 
-        res = res.follow()
+        self.app.resolve_redirect(res)
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path

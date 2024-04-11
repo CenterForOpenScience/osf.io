@@ -2624,7 +2624,7 @@ class TestClaimViews(OsfTestCase):
         # logged out user gets redirected to cas login
         res = self.app.get(url)
         assert res.status_code == 302
-        res = self.app.get(url, follow_redirects=True)
+        res = self.app.resolve_redirect(self.app.get(url))
         service_url = f'http://localhost{url}'
         expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
         assert res.request.url == expected
@@ -2664,11 +2664,7 @@ class TestClaimViews(OsfTestCase):
         # Must clear the Flask g context manual and set the OSF cookie to context
         self.context.g.current_session = None
         self.app.set_cookie(settings.COOKIE_NAME, osf_cookie)
-        res = self.app.get(url_with_service_ticket, follow_redirects=True)
-        assert res.status_code == 302
-        assert self.project.is_contributor(orcid_user)
-        assert self.project.url in res.headers.get('Location')
-
+        res = self.app.resolve_redirect(res)
         assert res.status_code == 302
         assert self.project.is_contributor(orcid_user)
         assert self.project.url in res.headers.get('Location')
@@ -4654,7 +4650,7 @@ class TestProjectCreation(OsfTestCase):
         url = api_url_for('project_new_from_template', nid=project._id)
         res = self.app.post(url, auth=None)
         assert res.status_code == 302
-        res2 = self.app.post(url, auth=None, follow_redirects=True)
+        res2 = self.app.resolve_redirect(res)
         assert res2.status_code == 308
         assert res2.request.path == '/login'
 
