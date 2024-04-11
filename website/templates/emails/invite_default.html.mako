@@ -39,7 +39,16 @@
     GakuNin RDMの詳細については https://rdm.nii.ac.jp/ を、国立情報学研究所については https://nii.ac.jp/ をご覧ください。<br>
     <br>
     メールでのお問い合わせは ${osf_contact_email} までお願いいたします。<br>
-
+    <br>
+    Orthrosアカウントでプロジェクトに参加する場合、お使いのアカウントについて以下の遵守をお願いします。<br>
+    <br>
+    ・登録メールアドレスは機関ドメインを使用する（フリーメール非推奨）<br>
+    ・プロフィールの所属欄を入力する<br>
+    <br>
+    Orthrosアカウントを持っていても、所属機関がGakuNin RDM未申請な場合、あるいは所属機関によってOrthrosによるGakuNin RDMの利用が認められていない場合はご利用いただけません。<br>
+    導入についてはご所属の情報センター部門・研究推進部門・図書館等へご相談ください。<br>
+    https://support.rdm.nii.ac.jp/about/ <br>
+    利用資格のないユーザと判断できる場合は、GakuNin RDMの利用を制限する可能性がございます。<br>
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
@@ -79,6 +88,15 @@ To set a password for your account, visit:<br>
     Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
-
+    <br>
+    If you are participating in a project with an Orthros account, please adhere to the following for your account<br>
+    <br>
+    ・Register an institutional domain email address  (free mail is not recommended)<br>
+    ・Fill in the affiliation field of your profile.<br>
+    <br>
+    Even if you have an Orthros account, you will not be able to use GakuNin RDM if your institution has not applied for GakuNin RDM or if you are not authorized to use GakuNin RDM by Orthros.<br>
+    Please consult with your Information Center, Research Promotion Division, Library, etc. regarding the introduction of GakuNin RDM.<br>
+    https://support.rdm.nii.ac.jp/en/about/ <br>
+    If you are determined to be an unqualified user, your use of GakuNin RDM may be restricted.<br>
 </tr>
 </%def>

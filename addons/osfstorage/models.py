@@ -511,6 +511,11 @@ class Region(models.Model):
         return self._id
 
     @property
+    def institution(self):
+        from osf.models import Institution
+        return Institution.load(self._id)
+
+    @property
     def provider_name(self):
         waterbutler_settings = self.waterbutler_settings
         provider_name = None
@@ -551,6 +556,22 @@ class Region(models.Model):
         from osf.models import ExportData
         locations = self.exportdata_set.filter(status__in=ExportData.EXPORT_DATA_AVAILABLE)
         return list(locations.values_list('location_id', flat=True).distinct('location_id'))
+
+    @property
+    def has_same_settings_as_default_region(self):
+        # Check if settings are the same as default region
+        # Get default region's settings
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        default_region_name = default_region.name
+        default_region_credentials = default_region.waterbutler_credentials
+        default_region_settings = default_region.waterbutler_settings
+
+        # Get current region's settings
+        region_name = self.name
+        waterbutler_credentials = self.waterbutler_credentials
+        waterbutler_settings = self.waterbutler_settings
+
+        return region_name == default_region_name and waterbutler_credentials == default_region_credentials and waterbutler_settings == default_region_settings
 
 
 class UserSettings(BaseUserSettings):

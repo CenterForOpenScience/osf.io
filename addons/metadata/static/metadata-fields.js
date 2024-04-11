@@ -529,6 +529,7 @@ function createFileCapacityFieldElement(createHandler, options) {
       })
       .catch(function (err) {
         console.error(err);
+        $osf.growl('Error', _('Could not list files') + ': ' + err.toString());
         Raven.captureMessage(_('Could not list files'), {
           extra: {
             error: err.toString()

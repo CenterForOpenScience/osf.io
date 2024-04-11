@@ -172,14 +172,17 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     def get_allowed_storage_location(self):
         return self.get_default_storage_location().union(self.get_institutional_storage_location())
 
-    def get_allowed_storage_location_order_by_instutional_storage_and_default_storage(self):
+    def get_allowed_storage_location_order_by(self):
         return list(self.get_institutional_storage_location()) + list(self.get_default_storage_location())
 
     def have_institutional_storage_location_id(self, storage_id):
         return self.get_institutional_storage_location().filter(pk=storage_id).exists()
 
     def have_allowed_storage_location_id(self, storage_id):
-        return self.get_allowed_storage_location().filter(pk=storage_id).exists()
+        _default_storage_location = self.get_default_storage_location().filter(pk=storage_id)
+        _institutional_storage_location = self.get_institutional_storage_location().filter(pk=storage_id)
+        _allowed_storage_location = _default_storage_location.union(_institutional_storage_location)
+        return _allowed_storage_location.exists()
 
     def get_institutional_storage(self):
         """The all institutional storages which this institution can be used.

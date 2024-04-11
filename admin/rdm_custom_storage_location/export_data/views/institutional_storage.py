@@ -9,6 +9,7 @@ from admin.base import settings
 from osf.models import Institution
 from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
+from django.http import Http404
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +50,11 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
 
     def get(self, request, *args, **kwargs):
         institution_id = self.kwargs.get('institution_id')
-        self.institution = Institution.objects.get(pk=institution_id)
-        self.institution_guid = self.institution.guid
+        try:
+            self.institution = Institution.objects.get(pk=institution_id)
+            self.institution_guid = self.institution.guid
+        except Institution.DoesNotExist:
+            raise Http404('Institution data with id {} not found'.format(institution_id))
 
         if not self.is_super_admin and not self.is_affiliated_institution(institution_id):
             self.handle_no_permission()
@@ -71,13 +75,14 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
 
         kwargs.setdefault('institution', self.institution)
         kwargs.setdefault('storages', query_set)
-        locations = self.institution.get_allowed_storage_location_order_by_instutional_storage_and_default_storage()
+        locations = self.institution.get_allowed_storage_location_order_by()
         kwargs.setdefault('locations', locations)
         location_id = locations[0].id if locations else None
         kwargs.setdefault('location_id', location_id)
         kwargs.setdefault('page', page)
 
         return super(ExportDataInstitutionalStorageListView, self).get_context_data(**kwargs)
+
 
 class ExportDataListInstitutionListView(ExportStorageLocationViewBaseView, ListView):
     template_name = 'rdm_custom_storage_location/export_data_list_institutions.html'

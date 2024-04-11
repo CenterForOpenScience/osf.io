@@ -15,10 +15,11 @@
 {% endblock title %}
 
 {% block content %}
+    <h2><small style="color: red;">本画面内の機能はベータ版であり、不用な操作はお控え頂きたく存じます。操作される方は <a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> への連絡をお願い致します。</small></h2>
     <h2>{% trans "Export data storage location" %}{% if user.is_institutional_admin %}<small>({{ institution.name }})</small>{% endif %}</h2>
 
     <div id="content-main">
-        <form role="form" id="institutional_storage_form">
+        <form role="form" id="institutional_storage_export_form">
             {% csrf_token %}
             <div id="addonSettings">
                 <div class="row form-inline storage-name">
@@ -121,6 +122,8 @@
     <script>
         window.locationRegister = false;
         window.contextVars = $.extend(true, {}, window.contextVars, {
+            'export_control': false,
+            'restore_control': false,
             'institution_id': {{ institution.id }},
         });
         window.page = {

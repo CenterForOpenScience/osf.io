@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import connection
 
 from admin.institutions.views import QuotaUserList
@@ -9,15 +10,31 @@ from django.shortcuts import redirect
 from admin.rdm.utils import RdmPermissionMixin
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.http import Http404
+from admin.base.utils import render_bad_request_response
 
 
-class InstitutionStorageList(RdmPermissionMixin, ListView):
+class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
     template_name = 'institutional_storage_quota_control/' \
                     'list_institution_storage.html'
     ordering = 'name'
     raise_exception = True
     model = Institution
+
+    def test_func(self):
+        """determine whether the user has institution permissions"""
+        # login check
+        if not self.is_authenticated:
+            return False
+        # allowed if superuser
+        if self.is_super_admin:
+            return True
+        elif self.is_admin:
+            # allowed if admin
+            # ignore check self.is_affiliated_institution(institution_id)
+            return True
+        return False
 
     def get(self, request, *args, **kwargs):
         count = 0
@@ -92,15 +109,27 @@ class InstitutionStorageList(RdmPermissionMixin, ListView):
         return super(InstitutionStorageList, self).get_context_data(**kwargs)
 
 
-class UserListByInstitutionStorageID(RdmPermissionMixin, QuotaUserList):
+class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, QuotaUserList):
     template_name = 'institutional_storage_quota_control/list_institute.html'
     raise_exception = True
     paginate_by = 25
+    institution_id = None
+
+    def test_func(self):
+        """check user permissions"""
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        self.institution_id = int(self.kwargs.get('institution_id'))
+        if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
+            raise Http404(f'Institution with id "{self.institution_id}" not found. Please double check.')
+        return self.has_auth(self.institution_id)
 
     def get_userlist(self):
         user_list = []
         for user in OSFUser.objects.filter(
-                affiliated_institutions=self.kwargs['institution_id']):
+                affiliated_institutions=self.institution_id):
             user_list.append(self.get_user_quota_info(
                 user, UserQuota.CUSTOM_STORAGE)
             )
@@ -120,15 +149,29 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, QuotaUserList):
         return institution.first()
 
 
-class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, View):
+class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, View):
     raise_exception = True
+    institution_id = None
+
+    def test_func(self):
+        """check user permissions"""
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        self.institution_id = int(self.kwargs.get('institution_id'))
+        if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
+            raise Http404(f'Institution with id "{self.institution_id}" not found. Please double check.')
+        return self.has_auth(self.institution_id)
 
     def post(self, request, *args, **kwargs):
-        institution_id = self.kwargs['institution_id']
         min_value, max_value = connection.ops.integer_field_range('IntegerField')
-        max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
+        try:
+            max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
+        except ValueError:
+            return render_bad_request_response(request=request, error_msgs='maxQuota must be a integer')
         for user in OSFUser.objects.filter(
-                affiliated_institutions=institution_id):
+                affiliated_institutions=self.institution_id):
             UserQuota.objects.update_or_create(
                 user=user,
                 storage_type=UserQuota.CUSTOM_STORAGE,
@@ -136,5 +179,5 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, View):
             )
         return redirect(
             'institutional_storage_quota_control:institution_user_list',
-            institution_id=institution_id
+            institution_id=self.institution_id
         )

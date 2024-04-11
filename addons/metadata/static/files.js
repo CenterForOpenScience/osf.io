@@ -52,7 +52,8 @@ function ERad() {
       self.candidates = ((data.data || {}).attributes || {}).records;
       callback();
     }).fail(function(xhr, status, error) {
-      Raven.captureMessage('Error while retrieving addon info', {
+      $osf.growl('Error', 'Error while retrieving erad candidates: ' + xhr.status);
+      Raven.captureMessage('Error while retrieving erad candidates', {
           extra: {
               url: url,
               status: status,
@@ -77,6 +78,7 @@ function FileMetadataSuggestion(baseUrl) {
         format: format
       }
     }).catch(function(xhr, status, error) {
+      $osf.growl('Error', 'Error while retrieving file metadata suggestions: ' + xhr.status);
       Raven.captureMessage('Error while retrieving file metadata suggestions', {
         extra: {
           url: url,
@@ -198,7 +200,7 @@ function MetadataButtons() {
       callback((data.data || {}).attributes);
     }).fail(function(xhr, status, error) {
       self.loadingMetadatas[nodeId] = false;
-      if (error === 'BAD REQUEST') {
+      if (xhr.status === 400) {
         if (!self.contexts) {
           self.contexts = {};
         }
@@ -214,6 +216,7 @@ function MetadataButtons() {
           addonAttached: false
         };
       } else {
+        $osf.growl('Error', 'Error while retrieving addon info for "' + nodeId + '": ' + xhr.status);
         Raven.captureMessage('Error while retrieving addon info', {
           extra: {
               url: url,
@@ -613,6 +616,7 @@ function MetadataButtons() {
     console.log(logPrefix, 'copy to clipboard');
     copyStatus.text('');
     if (!navigator.clipboard) {
+      $osf.growl('Error', _('Could not copy text'));
       Raven.captureMessage(_('Could not copy text'), {
         extra: {
           error: 'navigator.clipboard API is not supported.',
@@ -627,6 +631,7 @@ function MetadataButtons() {
     navigator.clipboard.writeText(text).then(function() {
       copyStatus.text(_('Copied!'));
     }, function(err) {
+      $osf.growl('Error', _('Could not copy text'));
       Raven.captureMessage(_('Could not copy text'), {
         extra: {
           error: err.toString(),
@@ -651,6 +656,7 @@ function MetadataButtons() {
     navigator.clipboard.readText().then(function(text) {
       self.setMetadataFromJson(text);
     }, function(err) {
+      $osf.growl('Error', _('Could not paste text'));
       Raven.captureMessage(_('Could not paste text'), {
         extra: {
           error: err.toString(),
@@ -666,6 +672,7 @@ function MetadataButtons() {
         fieldSet.field.setValue(fieldSet.input, jsonObject[fieldSet.question.qid] || '');
       });
     } catch(err) {
+      $osf.growl('Error', _('Could not paste text'));
       Raven.captureMessage(_('Could not paste text'), {
         extra: {
           error: err.toString(),
@@ -792,6 +799,7 @@ function MetadataButtons() {
                 .text(_('Delete metadata'))));
           })
           .catch(function(err) {
+            $osf.growl('Error', _('Could not list hashes') + ': ' + err.toString());
             Raven.captureMessage(_('Could not list hashes'), {
               extra: {
                 error: err.toString()
@@ -800,6 +808,7 @@ function MetadataButtons() {
           });
       })
       .catch(function(err) {
+        $osf.growl('Error', _('Could not list files') + ': ' + err.toString());
         Raven.captureMessage(_('Could not list files'), {
           extra: {
             error: err.toString()
@@ -832,6 +841,8 @@ function MetadataButtons() {
           window.location.reload();
         }).fail(function(xhr, status, error) {
           reject(error)
+          $osf.growl('Error',
+            'Error while retrieving addon info for ' + self.currentMetadata.path + ': ' + xhr.status);
           Raven.captureMessage('Error while retrieving addon info', {
             extra: {
               url: url,
@@ -842,6 +853,8 @@ function MetadataButtons() {
         });
       }).fail(function(xhr, status, error) {
         reject(error);
+        $osf.growl('Error',
+          'Error while retrieving addon info for ' + self.currentMetadata.path + ': ' + xhr.status);
         Raven.captureMessage('Error while retrieving addon info', {
           extra: {
             url: url,
@@ -876,6 +889,8 @@ function MetadataButtons() {
         });
       }).fail(function(xhr, status, error) {
         reject(error);
+        $osf.growl('Error',
+          'Error while retrieving addon info for ' + filepath + ': ' + xhr.status);
         Raven.captureMessage('Error while retrieving addon info', {
           extra: {
             url: url,
@@ -1164,6 +1179,7 @@ function MetadataButtons() {
         self.draftRegistrations.load();
       })
       .catch(function(url, xhr, status, error) {
+        $osf.growl('Error', 'Error while retrieving addon info for ' + filepath + ': ' + xhr.status);
         Raven.captureMessage('Error while retrieving addon info', {
             extra: {
                 url: url,
@@ -1340,6 +1356,7 @@ function MetadataButtons() {
             })
           };
         }).fail(function(xhr, status, error) {
+          $osf.growl('Error', 'Error while saving addon info for ' + filepath + ': ' + xhr.status);
           Raven.captureMessage('Error while saving addon info', {
               extra: {
                   url: url,
@@ -1725,6 +1742,7 @@ function MetadataButtons() {
             });
           }).fail(function(xhr, status, error) {
             reject(error);
+            $osf.growl('Error', 'Error while retrieving addon info for ' + metadata.path + ': ' + xhr.status);
             Raven.captureMessage('Error while retrieving addon info', {
               extra: {
                 url: url,
@@ -1822,6 +1840,7 @@ function MetadataButtons() {
                 resolve();
               }
             }).fail(function(xhr, status, error) {
+              $osf.growl('Error', 'Error while retrieving addon info for ' + metadata.path + ': ' + xhr.status);
               Raven.captureMessage('Error while retrieving addon info', {
                 extra: {
                   url: url,

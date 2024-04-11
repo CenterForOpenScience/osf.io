@@ -34,6 +34,16 @@ class RdmPermissionMixin(object):
             return True
         return False
 
+    @property
+    def is_affiliated_institution_exist(self):
+        """determine whether the user has affiliated institutions"""
+        return self.request.user.affiliated_institutions.exists()
+
+    @property
+    def is_institutional_admin(self):
+        """determine whether the user is staff has affiliated institutions"""
+        return self.is_admin and self.is_affiliated_institution_exist
+
     def is_affiliated_institution(self, institution_id):
         """determine whether the user has affiliated institutions"""
         user = self.request.user
@@ -69,3 +79,12 @@ def get_dummy_institution():
     dummy_institution.id = MAGIC_INSTITUTION_ID
     dummy_institution.name = ''
     return dummy_institution
+
+def get_institution_id_by_region(region):
+    from addons.osfstorage.models import Region
+    institution_id = None
+    if isinstance(region, Region):
+        institution = region.institution
+        if institution:
+            institution_id = institution.id
+    return institution_id

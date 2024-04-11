@@ -1,21 +1,20 @@
+import copy
 import json
+import uuid
 
 import mock
 import pytest
 import requests
-from django.core.exceptions import SuspiciousOperation
-from django.test import RequestFactory
+from datetime import datetime, timezone, timedelta
 from jsonschema import ValidationError, SchemaError
 from mock import patch, MagicMock
 from nose import tools as nt
-from requests import ConnectionError
+from requests import ConnectionError, ReadTimeout, Timeout
 from rest_framework import status
 
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from admin.rdm_custom_storage_location.export_data import utils
-from admin.rdm_custom_storage_location.export_data.views import management
 from admin.rdm_custom_storage_location.export_data.views.restore import ProcessError
-from admin_tests.utilities import setup_view
 from framework.celery_tasks import app as celery_app
 from osf.models import ExportData
 from osf_tests.factories import (
@@ -33,432 +32,568 @@ EXPORT_DATA_UTIL_PATH = 'admin.rdm_custom_storage_location.export_data.utils'
 EXPORT_DATA_TASK_PATH = 'admin.rdm_custom_storage_location.tasks'
 TEST_PROJECT_ID = 'test1'
 TEST_PROVIDER = 'osfstorage'
-FAKE_DATA = {
-    'institution': {
-        'id': 66,
-        'guid': 'wustl',
-        'name': 'Washington University in St. Louis [Test]'
+institution_json = {
+    'id': 99,
+    'guid': 'inst99',
+    'name': 'Testing University [Test]'
+}
+project_json = {
+    'id': 'pj2t8',
+    'name': 'project inst 001'
+}
+folder_1_json = {
+    'path': '/6524c5572617af0d7c4d2ae3/',
+    'materialized_path': '/chat/static/',
+    'project': project_json
+}
+folder_2_json = {
+    'path': '/6524c5562617af0d7c4d2adb/',
+    'materialized_path': '/chat/templates/',
+    'project': project_json
+}
+folders_json = [
+    folder_1_json,
+    folder_2_json
+]
+file_1_json = {
+    'id': 36563,
+    'path': '/6583fc9c7c76a00f81713f5d',
+    'materialized_path': '/helloworld1.py',
+    'name': 'helloworld1.py',
+    'provider': 'osfstorage',
+    'created_at': '2023-12-21 08:51:40',
+    'modified_at': '2023-12-21 08:51:40',
+    'project': project_json,
+    'tags': [],
+    'version': [
+        {
+            'identifier': '1',
+            'created_at': '2023-12-21 08:51:40',
+            'modified_at': '2023-12-21 08:51:40',
+            'size': 1249,
+            'version_name': 'helloworld1.py',
+            'contributor': 'admin01_inst56@example.com.vn',
+            'metadata': {
+                'md5': 'd53e2699d9a615c4978fab6efada0f15',
+                'etag': '35129ca0aee8d12e686f3bead7725379775b6a974eb10f60232a3b22ddcd30a1',
+                'kind': 'file',
+                'name': 'd71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
+                'path': '/d71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
+                'sha1': '06e59ccf4dc713bd48e4bea4686e052b6bc68e9d',
+                'size': '1249',
+                'extra': {
+                    'md5': 'd53e2699d9a615c4978fab6efada0f15',
+                    'encryption': ''
+                },
+                'sha256': 'd71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
+                'sha512': '860595ecf55a0e47e768073149bb12504c297fa41ebc35b8a1733b3c11ba57e7b41f53f76e860fb8b7910102f9880fe6d433b8abb83b99ad99a7f304e3669fbf',
+                'sizeInt': 1249,
+                'modified': 'Thu, 21 Dec 2023 08:51:40 GMT',
+                'provider': 's3compat',
+                'contentType': 'binary/octet-stream',
+                'created_utc': None,
+                'materialized': '/d71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
+                'modified_utc': '2023-12-21T08:51:40+00:00'
+            },
+            'location': {
+                'nid': 'pj2t8',
+                'host': '9a488c3f14b7',
+                'bucket': 'grdm-ierae',
+                'folder': '',
+                'object': 'd71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
+                'address': None,
+                'service': 's3compat',
+                'version': '0.0.1',
+                'provider': 's3compat',
+                'encrypt_uploads': False
+            }
+        }
+    ],
+    'size': 1249,
+    'location': {
+        'nid': 'pj2t8',
+        'host': '9a488c3f14b7',
+        'bucket': 'grdm-ierae',
+        'folder': '',
+        'object': 'd71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
+        'address': None,
+        'service': 's3compat',
+        'version': '0.0.1',
+        'provider': 's3compat',
+        'encrypt_uploads': False
     },
+    'timestamp': {
+        'timestamp_id': 9814,
+        'inspection_result_status': 1,
+        'provider': 'osfstorage',
+        'upload_file_modified_user': None,
+        'project_id': 'pj2t8',
+        'path': '/helloworld1.py',
+        'key_file_name': 's4put_5da6fc68d3006db01238471e019d997b_pub.pem',
+        'upload_file_created_user': 84,
+        'upload_file_size': 1249,
+        'verify_file_size': 1249,
+        'verify_user': 84
+    },
+    'checkout_id': None
+}
+file_2_json = {
+    'id': 36566,
+    'path': '/658907b47c76a00f81714047',
+    'materialized_path': '/blog/blog.py',
+    'name': 'blog.py',
+    'provider': 'osfstorage',
+    'created_at': '2023-12-25 04:40:20',
+    'modified_at': '2023-12-25 04:40:20',
+    'project': project_json,
+    'tags': [],
+    'version': [
+        {
+            'identifier': '1',
+            'created_at': '2023-12-25 04:40:20',
+            'modified_at': '2023-12-25 04:40:20',
+            'size': 10818,
+            'version_name': 'blog.py',
+            'contributor': 'admin01_inst56@example.com.vn',
+            'metadata': {
+                'md5': '3c99887c8cb4f33081570eac9703e500',
+                'etag': '171acf637d5c7a92053fb73f297bf6918b39cf7ff89af0266bc9af67e31c173d',
+                'kind': 'file',
+                'name': '764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
+                'path': '/764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
+                'sha1': 'cac6bfc9badda593d9cc829d989273b6916f7f75',
+                'size': '10818',
+                'extra': {
+                    'md5': '3c99887c8cb4f33081570eac9703e500',
+                    'encryption': ''
+                },
+                'sha256': '764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
+                'sha512': '22f680b31f5a00845f9447b3ec6b591bd3f255632f6e58243bf978c3d7d358bb7cbec7dd5d5c02470b3b890c3e5d07b5e302d457ac86011e83f2acac550ec507',
+                'sizeInt': 10818,
+                'modified': 'Mon, 25 Dec 2023 04:40:20 GMT',
+                'provider': 's3compat',
+                'contentType': 'binary/octet-stream',
+                'created_utc': None,
+                'materialized': '/764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
+                'modified_utc': '2023-12-25T04:40:20+00:00'
+            },
+            'location': {
+                'nid': 'pj2t8',
+                'host': '9a488c3f14b7',
+                'bucket': 'grdm-ierae',
+                'folder': '',
+                'object': '764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
+                'address': None,
+                'service': 's3compat',
+                'version': '0.0.1',
+                'provider': 's3compat',
+                'encrypt_uploads': False
+            }
+        }
+    ],
+    'size': 10818,
+    'location': {
+        'nid': 'pj2t8',
+        'host': '9a488c3f14b7',
+        'bucket': 'grdm-ierae',
+        'folder': '',
+        'object': '764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
+        'address': None,
+        'service': 's3compat',
+        'version': '0.0.1',
+        'provider': 's3compat',
+        'encrypt_uploads': False
+    },
+    'timestamp': {
+        'timestamp_id': 9815,
+        'inspection_result_status': 1,
+        'provider': 'osfstorage',
+        'upload_file_modified_user': None,
+        'project_id': 'pj2t8',
+        'path': '/blog/blog.py',
+        'key_file_name': 's4put_5da6fc68d3006db01238471e019d997b_pub.pem',
+        'upload_file_created_user': 84,
+        'upload_file_size': 10818,
+        'verify_file_size': 10818,
+        'verify_user': 84
+    },
+    'checkout_id': None
+}
+file_3_json = {
+    'id': 36569,
+    'path': '/658907b97c76a00f81714065',
+    'materialized_path': '/blog/docker-compose.yml',
+    'name': 'docker-compose.yml',
+    'provider': 'osfstorage',
+    'created_at': '2023-12-25 04:40:25',
+    'modified_at': '2023-12-25 04:40:25',
+    'project': project_json,
+    'tags': [],
+    'version': [
+        {
+            'identifier': '1',
+            'created_at': '2023-12-25 04:40:25',
+            'modified_at': '2023-12-25 04:40:25',
+            'size': 257,
+            'version_name': 'docker-compose.yml',
+            'contributor': 'admin01_inst56@example.com.vn',
+            'metadata': {
+                'md5': 'b898161e932e5edfe8512fb37484cc59',
+                'etag': 'a373c77e8667f5b17f43662c3d2363d99d31e0d731617eddf68feadff9c45df5',
+                'kind': 'file',
+                'name': '962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
+                'path': '/962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
+                'sha1': '804711104e75bb0572444dd1550534e606dd4700',
+                'size': '257',
+                'extra': {
+                    'md5': 'b898161e932e5edfe8512fb37484cc59',
+                    'encryption': ''
+                },
+                'sha256': '962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
+                'sha512': '89aa6cab81568eac435a6cfbfe4b452b8617f2d641b1fa05d640aa8cb819477b02150175d5b919708c2b5996f0c62a4d487fc71ec709d96872b75046155d7751',
+                'sizeInt': 257,
+                'modified': 'Mon, 25 Dec 2023 04:40:24 GMT',
+                'provider': 's3compat',
+                'contentType': 'binary/octet-stream',
+                'created_utc': None,
+                'materialized': '/962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
+                'modified_utc': '2023-12-25T04:40:24+00:00'
+            },
+            'location': {
+                'nid': 'pj2t8',
+                'host': '9a488c3f14b7',
+                'bucket': 'grdm-ierae',
+                'folder': '',
+                'object': '962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
+                'address': None,
+                'service': 's3compat',
+                'version': '0.0.1',
+                'provider': 's3compat',
+                'encrypt_uploads': False
+            }
+        }
+    ],
+    'size': 257,
+    'location': {
+        'nid': 'pj2t8',
+        'host': '9a488c3f14b7',
+        'bucket': 'grdm-ierae',
+        'folder': '',
+        'object': '962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
+        'address': None,
+        'service': 's3compat',
+        'version': '0.0.1',
+        'provider': 's3compat',
+        'encrypt_uploads': False
+    },
+    'timestamp': {
+        'timestamp_id': 9816,
+        'inspection_result_status': 1,
+        'provider': 'osfstorage',
+        'upload_file_modified_user': None,
+        'project_id': 'pj2t8',
+        'path': '/blog/docker-compose.yml',
+        'key_file_name': 's4put_5da6fc68d3006db01238471e019d997b_pub.pem',
+        'upload_file_created_user': 84,
+        'upload_file_size': 257,
+        'verify_file_size': 257,
+        'verify_user': 84
+    },
+    'checkout_id': None
+}
+file_4_json = {
+    'id': 36570,
+    'path': '/658907bc7c76a00f81714073',
+    'materialized_path': '/blog/Dockerfile',
+    'name': 'Dockerfile',
+    'provider': 'osfstorage',
+    'created_at': '2023-12-25 04:40:28',
+    'modified_at': '2023-12-25 04:40:28',
+    'project': project_json,
+    'tags': [],
+    'version': [
+        {
+            'identifier': '1',
+            'created_at': '2023-12-25 04:40:28',
+            'modified_at': '2023-12-25 04:40:28',
+            'size': 223,
+            'version_name': 'Dockerfile',
+            'contributor': 'admin01_inst56@example.com.vn',
+            'metadata': {
+                'md5': '32215d4817ec892d9fa6d0aa09032a54',
+                'etag': 'f2d4608d7d8d20ecb1b63aa21a54b26e4962b978b276004c30680a472ec57cd4',
+                'kind': 'file',
+                'name': 'cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
+                'path': '/cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
+                'sha1': 'f7f251d7530254d168d6ec73525e31c649421666',
+                'size': '223',
+                'extra': {
+                    'md5': '32215d4817ec892d9fa6d0aa09032a54',
+                    'encryption': ''
+                },
+                'sha256': 'cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
+                'sha512': '415eeaa4d2a51b690f962ab0667484a6cd773d3a4de85bff649597367ce9930a222199d2f13576d970efc907656477f823925ff13cd42049fafe455b1d2d24c8',
+                'sizeInt': 223,
+                'modified': 'Mon, 25 Dec 2023 04:40:28 GMT',
+                'provider': 's3compat',
+                'contentType': 'binary/octet-stream',
+                'created_utc': None,
+                'materialized': '/cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
+                'modified_utc': '2023-12-25T04:40:28+00:00'
+            },
+            'location': {
+                'nid': 'pj2t8',
+                'host': '9a488c3f14b7',
+                'bucket': 'grdm-ierae',
+                'folder': '',
+                'object': 'cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
+                'address': None,
+                'service': 's3compat',
+                'version': '0.0.1',
+                'provider': 's3compat',
+                'encrypt_uploads': False
+            }
+        }
+    ],
+    'size': 223,
+    'location': {
+        'nid': 'pj2t8',
+        'host': '9a488c3f14b7',
+        'bucket': 'grdm-ierae',
+        'folder': '',
+        'object': 'cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
+        'address': None,
+        'service': 's3compat',
+        'version': '0.0.1',
+        'provider': 's3compat',
+        'encrypt_uploads': False
+    },
+    'timestamp': {
+        'timestamp_id': 9817,
+        'inspection_result_status': 1,
+        'provider': 'osfstorage',
+        'upload_file_modified_user': None,
+        'project_id': 'pj2t8',
+        'path': '/blog/Dockerfile',
+        'key_file_name': 's4put_5da6fc68d3006db01238471e019d997b_pub.pem',
+        'upload_file_created_user': 84,
+        'upload_file_size': 223,
+        'verify_file_size': 223,
+        'verify_user': 84
+    },
+    'checkout_id': None
+}
+# old file
+file_5_json = {
+    'id': 36583,
+    'path': '/658907e07c76a00f81714129',
+    'materialized_path': '/blog/static/blog.css',
+    'name': 'blog.css',
+    'provider': 'osfstorage',
+    'created_at': '2022-11-25 04:41:04',
+    'modified_at': '2022-11-25 04:41:04',
+    'project': project_json,
+    'tags': [],
+    'version': [
+        {
+            'identifier': '1',
+            'created_at': '2022-11-25 04:41:04',
+            'modified_at': '2022-11-25 04:41:04',
+            'size': 2283,
+            'version_name': 'blog.css',
+            'contributor': 'admin01_inst56@example.com.vn',
+            'metadata': {
+                'md5': 'bdbfbec057078db6331cc2a3fbf57418',
+                'etag': '43c102afefd43175c21a5b4d8cdf35a8536a45989f50cc9bca91777b3e3fbbef',
+                'kind': 'file',
+                'name': '350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
+                'path': '/350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
+                'sha1': 'd4d21a67706d03d782090cbae6fe069a4c8761a4',
+                'size': '2283',
+                'extra': {
+                    'md5': 'bdbfbec057078db6331cc2a3fbf57418',
+                    'encryption': ''
+                },
+                'sha256': '350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
+                'sizeInt': 2283,
+                'modified': 'Mon, 25 Nov 2022 04:41:04 GMT',
+                'provider': 's3compat',
+                'contentType': 'binary/octet-stream',
+                'created_utc': None,
+                'materialized': '/350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
+                'modified_utc': '2022-11-25T04:41:04+00:00'
+            },
+            'location': {
+                'nid': 'pj2t8',
+                'host': '9a488c3f14b7',
+                'bucket': 'grdm-ierae',
+                'folder': '',
+                'object': '350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
+                'address': None,
+                'service': 's3compat',
+                'version': '0.0.1',
+                'provider': 's3compat',
+                'encrypt_uploads': False
+            }
+        }
+    ],
+    'size': 2283,
+    'location': {
+        'nid': 'pj2t8',
+        'host': '9a488c3f14b7',
+        'bucket': 'grdm-ierae',
+        'folder': '',
+        'object': '350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
+        'address': None,
+        'service': 's3compat',
+        'version': '0.0.1',
+        'provider': 's3compat',
+        'encrypt_uploads': False
+    },
+    'timestamp': {
+        'timestamp_id': 9830,
+        'inspection_result_status': 1,
+        'provider': 'osfstorage',
+        'upload_file_modified_user': None,
+        'project_id': 'pj2t8',
+        'path': '/blog/static/blog.css',
+        'key_file_name': 's4put_5da6fc68d3006db01238471e019d997b_pub.pem',
+        'upload_file_created_user': 84,
+        'upload_file_size': 2283,
+        'verify_file_size': 2283,
+        'verify_user': 84
+    },
+    'checkout_id': None
+}
+FAKE_DATA = {
+    'institution': institution_json,
+    'folder': folders_json,
     'files': [
-        {
-            'id': 10,
-            'path': '/631879ebb71d8f1ae01f4c20',
-            'materialized_path': '/nii/ember-img/root.png',
-            'name': 'root.png',
-            'provider': 'osfstorage',
-            'created_at': '2022-09-07 11:00:59',
-            'modified_at': '2022-09-07 11:00:59',
-            'project': {
-                'id': '33cca',
-                'name': 'Project B0001'
-            },
-            'tags': ['image', 'png'],
-            'version': [
-                {
-                    'identifier': '1',
-                    'created_at': '2022-09-07 11:00:59',
-                    'size': 1220,
-                    'version_name': 'root.png',
-                    'contributor': 'user10@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '2f1e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 1220,
-                        'extra': {},
-                        'sha256': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '6f2617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 1220,
-                        'modified': 'Fri, 12 Aug 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b33',
-                        'modified_utc': '2022-08-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
-                },
-            ],
-            'size': 1220,
-            'location': {
-                'host': 'de222e410dd7',
-                'folder': '/code/website/osfstoragecache',
-                'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                'address': '',
-                'service': 'filesystem',
-                'version': '0.0.1',
-                'provider': 'filesystem'
-            },
-            'timestamp': {}
-        },
-        {
-            'id': 100,
-            'path': '/631879ebb71d8f1a2931920',
-            'materialized_path': '/nii/ember-animated/data.txt',
-            'name': 'data.txt',
-            'provider': 'osfstorage',
-            'created_at': '2022-09-07 11:00:59',
-            'modified_at': '2022-09-07 11:00:59',
-            'project': {
-                'id': 'bc56a',
-                'name': 'Project B0002'
-            },
-            'tags': ['txt', 'file'],
-            'version': [
-                {
-                    'identifier': '1',
-                    'created_at': '2022-09-07 11:00:59',
-                    'size': 100,
-                    'version_name': 'data.txt',
-                    'contributor': 'user001@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '2f1e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 100,
-                        'extra': {},
-                        'sha256': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '6f2617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 100,
-                        'modified': 'Fri, 12 Aug 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'modified_utc': '2022-08-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
-                },
-            ],
-            'size': 100,
-            'location': {
-                'host': 'de222e410dd7',
-                'folder': '/code/website/osfstoragecache',
-                'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                'address': '',
-                'service': 'filesystem',
-                'version': '0.0.1',
-                'provider': 'filesystem'
-            },
-            'timestamp': {}
-        },
-        {
-            'id': 1733,
-            'path': '/631879ebb71d8f1ae01f4c10',
-            'materialized_path': '/nii/ember-animated/-private/sprite.d.ts',
-            'name': 'sprite.d.ts',
-            'provider': 'osfstorage',
-            'created_at': '2022-09-07 11:00:59',
-            'modified_at': '2022-09-07 11:00:59',
-            'project': {
-                'id': 'wh6za',
-                'name': 'Project C0001'
-            },
-            'tags': [],
-            'version': [
-                {
-                    'identifier': '1',
-                    'created_at': '2022-09-07 11:00:59',
-                    'size': 150,
-                    'version_name': 'sprite.d.ts',
-                    'contributor': 'user001@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '2f1e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 150,
-                        'extra': {},
-                        'sha256': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '6f2617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 150,
-                        'modified': 'Fri, 12 Aug 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'modified_utc': '2022-08-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
-                },
-            ],
-            'size': 150,
-            'location': {
-                'host': 'de222e410dd7',
-                'folder': '/code/website/osfstoragecache',
-                'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                'address': '',
-                'service': 'filesystem',
-                'version': '0.0.1',
-                'provider': 'filesystem'
-            },
-            'timestamp': {}
-        },
+        file_1_json,
+        file_2_json,
+        file_3_json,
+    ],
+}
+FAKE_DATA_NEW = {
+    'institution': institution_json,
+    'folder': folders_json,
+    'files': [
+        file_1_json,
+        file_2_json,
+        file_4_json,
     ]
 }
 
-FAKE_DATA_NEW = {
-    'institution': {
-        'id': 66,
-        'guid': 'wustl',
-        'name': 'Washington University in St. Louis [Test]'
-    },
-    'files': [
-        {
-            'id': 10,
-            'path': '/631879ebb71d8f1ae01f4c20',
-            'materialized_path': '/nii/ember-img/root.png',
-            'name': 'root.png',
-            'provider': 'osfstorage',
-            'created_at': '2022-09-07 11:00:59',
-            'modified_at': '2022-09-07 11:00:59',
-            'project': {
-                'id': '33cca',
-                'name': 'Project B0001'
-            },
-            'tags': ['image', 'png'],
-            'version': [
-                {
-                    'identifier': '1',
-                    'created_at': '2022-09-07 11:00:59',
-                    'size': 1220,
-                    'version_name': 'root.png',
-                    'contributor': 'user10@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '2f1e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 1220,
-                        'extra': {},
-                        'sha256': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '6f2617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 1220,
-                        'modified': 'Fri, 12 Aug 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b33',
-                        'modified_utc': '2022-08-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
+
+def gen_file(file_id, version_n=1, **kwargs):
+    datetime_format = '%Y-%m-%d %H:%M:%S'
+    project_guid = kwargs.get('project_guid', 'prj01')
+    project_name = kwargs.get('project_name', f'project {project_guid}')
+    user_id = kwargs.get('user_id', 1)
+    user_email = kwargs.get('user_email', 'user_ut@example.com.vn')
+    file_name = kwargs.get('name', f'file_{file_id}.txt')
+    file_tags = kwargs.get('tags', ['test', 'generated'])
+    file_timestamp_id = kwargs.get('timestamp_id', file_id)
+    wb_container_id = kwargs.get('wb_container_id', '9a488c3f14b7')
+    location_provider = kwargs.get('location_provider', 's3compat')
+    location_bucket = kwargs.get('location_bucket', 'grdm-ierae')
+
+    file_path = f'/{uuid.uuid4().hex[:24]}'
+    materialized_path = f'/{file_name}'
+
+    project_uuid = uuid.uuid4().hex
+    prj_json = {
+        'id': project_guid,
+        'name': project_name
+    }
+
+    version_list = []
+    now = datetime.now(tz=timezone.utc)
+    for i in range(version_n, 0, -1):
+        created_at = now - timedelta(minutes=1)
+        ver_size = 1200 + i
+        ver_sha256 = uuid.uuid4().hex + uuid.uuid4().hex
+        ver_md5 = uuid.uuid4().hex
+        ver_sha1 = (uuid.uuid4().hex + uuid.uuid4().hex)[:40]
+        ver_etag = uuid.uuid4().hex + uuid.uuid4().hex
+        ver_sha512 = uuid.uuid4().hex + uuid.uuid4().hex + uuid.uuid4().hex + uuid.uuid4().hex
+        ver_path = f'/{ver_sha256}'
+        ver_json = {
+            'identifier': str(i),
+            'created_at': created_at.strftime(datetime_format),
+            'modified_at': created_at.strftime(datetime_format),
+            'size': ver_size,
+            'version_name': file_name,
+            'contributor': user_email,
+            'metadata': {
+                'md5': ver_md5,
+                'etag': ver_etag,
+                'kind': 'file',
+                'name': ver_sha256,
+                'path': ver_path,
+                'sha1': ver_sha1,
+                'size': str(ver_size),
+                'extra': {
+                    'md5': ver_md5,
+                    'encryption': ''
                 },
-            ],
-            'size': 1220,
+                'sha256': ver_sha256,
+                'sha512': ver_sha512,
+                'sizeInt': ver_size,
+                'modified': created_at.strftime('%a, %d %b %Y %H:%M:%S %Z'),
+                'provider': location_provider,
+                'contentType': 'binary/octet-stream',
+                'created_utc': None,
+                'materialized': ver_path,
+                'modified_utc': created_at.isoformat(timespec='seconds')
+            },
             'location': {
-                'host': 'de222e410dd7',
-                'folder': '/code/website/osfstoragecache',
-                'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                'address': '',
-                'service': 'filesystem',
+                'nid': project_guid,
+                'host': wb_container_id,
+                'bucket': location_bucket,
+                'folder': '',
+                'object': ver_sha256,
+                'address': None,
+                'service': location_provider,
                 'version': '0.0.1',
-                'provider': 'filesystem'
-            },
-            'timestamp': {}
-        },
-        {
-            'id': 100,
-            'path': '/631879ebb71d8f1a2931920',
-            'materialized_path': '/nii/ember-animated/data.txt',
-            'name': 'data.txt',
-            'provider': 'osfstorage',
-            'created_at': '2022-09-07 11:00:59',
-            'modified_at': '2022-09-07 11:00:59',
-            'project': {
-                'id': 'bc56a',
-                'name': 'Project B0002'
-            },
-            'tags': ['txt', 'file'],
-            'version': [
-                {
-                    'identifier': '2',
-                    'created_at': '2022-09-07 11:00:59',
-                    'size': 100,
-                    'version_name': 'data.txt',
-                    'contributor': 'user001@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '2f1e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 100,
-                        'extra': {},
-                        'sha256': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '6f2617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 100,
-                        'modified': 'Fri, 12 Aug 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'modified_utc': '2022-08-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
-                },
-            ],
-            'size': 100,
-            'location': {
-                'host': 'de222e410dd7',
-                'folder': '/code/website/osfstoragecache',
-                'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                'address': '',
-                'service': 'filesystem',
-                'version': '0.0.1',
-                'provider': 'filesystem'
-            },
-            'timestamp': {}
-        },
-        {
-            'id': 1733,
-            'path': '/631879ebb71d8f1ae01f4c10',
-            'materialized_path': '/nii/ember-animated/-private/sprite.d.ts',
-            'name': 'sprite.d.ts',
-            'provider': 'osfstorage',
-            'created_at': '2022-09-07 11:00:59',
-            'modified_at': '2022-09-07 11:00:59',
-            'project': {
-                'id': 'wh6za',
-                'name': 'Project C0001'
-            },
-            'tags': [],
-            'version': [
-                {
-                    'identifier': '1',
-                    'created_at': '2022-09-07 11:00:59',
-                    'size': 150,
-                    'version_name': 'sprite.ds.ts',
-                    'contributor': 'user002@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '2f1e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 150,
-                        'extra': {},
-                        'sha256': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '6f2617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 150,
-                        'modified': 'Fri, 10 Oct 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'modified_utc': '2022-08-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
-                },
-                {
-                    'identifier': '2',
-                    'created_at': '2022-010-07 11:00:00',
-                    'size': 2250,
-                    'version_name': 'sprite.d.ts',
-                    'contributor': 'user001@example.com.vn',
-                    'metadata': {
-                        'md5': 'ad85d0c3911f56d671cc41c952fa96b2',
-                        'etag': 'cdb490b21480b381d118b303468d1fb225ad6d1f16e5f096262a8ea0835d4399',
-                        'kind': 'file',
-                        'name': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'path': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha1': '3f4e64c37f30d1c35e3c0e7b68650b1e8e1c05dc',
-                        'size': 2250,
-                        'extra': {},
-                        'sha256': 'f6dbb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'sha512': '77662617c63ee21b7acf1b87db92faba2677e62638a0831708d2e9ad01fe46d17f231232',
-                        'sizeInt': 2250,
-                        'modified': 'Fri, 20 Oct 2022 11:21:52 +0000',
-                        'provider': 'filesystem',
-                        'contentType': '',
-                        'created_utc': '',
-                        'materialized': '/f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'modified_utc': '2022-10-12T11:21:52.989761+00:00'
-                    },
-                    'location': {
-                        'host': 'de222e410dd7',
-                        'folder': '/code/website/osfstoragecache',
-                        'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                        'address': '',
-                        'service': 'filesystem',
-                        'version': '0.0.1',
-                        'provider': 'filesystem'
-                    }
-                },
-            ],
-            'size': 2250,
-            'location': {
-                'host': 'de222e410dd7',
-                'folder': '/code/website/osfstoragecache',
-                'object': 'f4ddb7e6109eac566cd6d7cb29faa40f4e3b92b202e21863a309b7eb87543b67',
-                'address': '',
-                'service': 'filesystem',
-                'version': '0.0.1',
-                'provider': 'filesystem'
-            },
-            'timestamp': {}
-        },
-    ]
-}
+                'provider': location_provider,
+                'encrypt_uploads': False
+            }
+        }
+        version_list.append(ver_json)
+
+    latest_version = version_list[0]
+    first_version = version_list[-1]
+    timestamp_json = {
+        'timestamp_id': file_timestamp_id,
+        'inspection_result_status': 1,
+        'provider': 'osfstorage',
+        'upload_file_modified_user': None,
+        'project_id': project_guid,
+        'path': materialized_path,
+        'key_file_name': f'{project_guid}_{project_uuid}_pub.pem',
+        'upload_file_created_user': user_id,
+        'upload_file_size': latest_version['size'],
+        'verify_file_size': latest_version['size'],
+        'verify_user': user_id,
+    }
+    file_json = {
+        'id': file_id,
+        'path': file_path,
+        'materialized_path': materialized_path,
+        'name': latest_version['version_name'],
+        'provider': 'osfstorage',
+        'created_at': first_version['created_at'],
+        'modified_at': latest_version['modified_at'],
+        'project': prj_json,
+        'tags': file_tags,
+        'version': version_list,
+        'size': latest_version['size'],
+        'location': latest_version['location'],
+        'timestamp': timestamp_json,
+        'checkout_id': None,
+    }
+    return file_json
 
 
 class FakeRes:
@@ -1168,65 +1303,181 @@ class TestUtils(AdminTestCase):
         mock_wd_info_for_institutions_patcher.stop()
         mock_test_owncloud_connection_patcher.stop()
 
+    def test_validate_exported_data(self):
+        # not found schema
+        with nt.assert_raises(FileNotFoundError):
+            result = utils.validate_exported_data({}, 'fake-schema.json')
+            nt.assert_is_none(result)
+
+        # jsonschema.ValidationError: 'institution' is a required property
+        result = utils.validate_exported_data({}, 'file-info-schema.json')
+        nt.assert_false(result)
+
+        # normal
+        result = utils.validate_exported_data(FAKE_DATA, 'file-info-schema.json')
+        nt.assert_true(result)
+
+        # test file_5_json don't have sha512 in metadata
+        FAKE_DATA['files'].append(file_5_json)
+        result = utils.validate_exported_data(FAKE_DATA, 'file-info-schema.json')
+        nt.assert_true(result)
+
+    def test_validate_file_json(self):
+        # not found schema
+        with nt.assert_raises(FileNotFoundError):
+            result = utils.validate_file_json({}, 'fake-schema.json')
+            nt.assert_is_none(result)
+
+        # jsonschema.ValidationError: 'institution' is a required property
+        result = utils.validate_file_json({}, 'file-info-schema.json')
+        nt.assert_false(result)
+
+        # normal
+        result = utils.validate_file_json(FAKE_DATA, 'file-info-schema.json')
+        nt.assert_true(result)
+
+        # test file_5_json don't have sha512 in metadata
+        FAKE_DATA['files'].append(file_5_json)
+        result = utils.validate_file_json(FAKE_DATA, 'file-info-schema.json')
+        nt.assert_true(result)
+
+    def test_count_file_ng_ok(self):
+        # for check Export Data and check Restore Data
+        # file_id=1~files_len
+        files_len = 3
+        files_old = [gen_file(i, version_n=5) for i in range(1, files_len + 1, 1)]
+        # file_id=1~files_len+2
+        files_new = files_old + [
+            gen_file(files_len + 1, version_n=10),
+            gen_file(files_len + 2, version_n=10),
+        ]
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_new)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        # check properties
+        nt.assert_in('ok', res)
+        nt.assert_in('ng', res)
+        nt.assert_in('total', res)
+        nt.assert_in('list_file_ng', res)
+        # check quantity
+        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        # taken all without limit on the NG file list
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        # check properties in each NG file item
+        file_info = res['list_file_ng'][0]
+        nt.assert_in('project_id', file_info)
+        nt.assert_in('path', file_info)
+        nt.assert_in('version_id', file_info)
+        nt.assert_in('size', file_info)
+        nt.assert_in('reason', file_info)
+
+        # case of no change
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_old)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        # check quantity
+        nt.assert_equal(res['ng'], 0)
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        nt.assert_equal(res['ok'], res['total'])
+
+    def test_count_file_ng_ok__exclude_location(self):
+        # file_id=1~files_len
+        files_len = 3
+        files_old = [gen_file(i, version_n=5) for i in range(1, files_len + 1, 1)]
+        # simulate the case where the location is changed
+        files_new = []
+        for file_info in copy.deepcopy(files_old):
+            version_list = file_info['version']
+            latest_version = version_list[0]
+            latest_ver_location = latest_version['location']
+            # e.g. re-deploy WB server
+            latest_ver_location['host'] = uuid.uuid4().hex[:12],
+            # e.g. change only the bucket
+            latest_ver_location['bucket'] = 'grdm-ierae-new',
+            file_info['location'] = latest_version['location']
+            files_new.append(file_info)
+
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_new)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        # check properties
+        nt.assert_in('ok', res)
+        nt.assert_in('ng', res)
+        nt.assert_in('total', res)
+        nt.assert_in('list_file_ng', res)
+        # check quantity
+        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        # taken all without limit on the NG file list
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        # check properties in each NG file item
+        file_info = res['list_file_ng'][0]
+        nt.assert_in('project_id', file_info)
+        nt.assert_in('path', file_info)
+        nt.assert_in('version_id', file_info)
+        nt.assert_in('size', file_info)
+        nt.assert_in('reason', file_info)
+        # check content in 'reason': '"location" not match'
+        nt.assert_in('location', file_info['reason'])
+        nt.assert_in('" not match', file_info['reason'])
+
+        # case of excluding 'location'
+        exclude_keys = ['location']
+        res = utils.count_files_ng_ok(data_new, data_old, exclude_keys=exclude_keys)
+        nt.assert_equal(res['ng'], 0)
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        nt.assert_equal(res['ok'], res['total'])
+
+    def test_count_file_ng_ok__same_files_in_other_projects(self):
+        # project_id=prj01 file_id=1~files_len
+        # project_id=prj02 file_id=1~files_len
+        files_len = 3
+        files_old = [
+            gen_file(i, version_n=3, project_guid='prj01',)
+            for i in range(1, files_len + 1, 1)] + [
+            gen_file(i, version_n=3, project_guid='prj02',)
+            for i in range(1, files_len + 1, 1)]
+        # file_id=1~files_len+1
+        files_new = files_old + [
+            gen_file(files_len + 1, version_n=10, project_guid='prj02')
+        ]
+
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_new)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        print(f'res={res}')
+
+        # check properties
+        nt.assert_in('ok', res)
+        nt.assert_in('ng', res)
+        nt.assert_in('total', res)
+        nt.assert_in('list_file_ng', res)
+
+        # check quantity
+        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        # taken all without limit on the NG file list
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+
+        # check properties in each NG file item
+        file_info = res['list_file_ng'][0]
+        nt.assert_in('project_id', file_info)
+        nt.assert_in('path', file_info)
+        nt.assert_in('version_id', file_info)
+        nt.assert_in('size', file_info)
+        nt.assert_in('reason', file_info)
+
+        # check content in 'reason': '"...project..." not match'
+        nt.assert_not_in('project', file_info['reason'])
+        nt.assert_not_in('" not match', file_info['reason'])
+
 
 @pytest.mark.feature_202210
-class TestExportDataInformationView(AdminTestCase):
+class TestUtilsForExportData(AdminTestCase):
     def setUp(self):
-        super(TestExportDataInformationView, self).setUp()
-        self.user = AuthUserFactory()
-        self.user.is_superuser = True
-        self.view = management.ExportDataInformationView()
-        self.export_data = ExportDataFactory()
-        self.institution = InstitutionFactory(_id=self.export_data.source.guid)
-
-    def test_get_success(self):
-        mock_render = mock.MagicMock()
-        mock_render.return_value = None
-        mock_validate = mock.MagicMock()
-        mock_validate.return_value = True
-        mock_request = mock.MagicMock()
-        fake_res = FakeRes(200)
-        mock_request.get.return_value = fake_res
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
-        view = management.ExportDataInformationView()
-        view = setup_view(view, request,
-                          institution_id=self.institution.id, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.validate_exported_data', mock_validate):
-            with mock.patch('osf.models.export_data.requests', mock_request):
-                with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.render', mock_render):
-                    res = view.get(request)
-                    nt.assert_equal(res, None)
-
-    @mock.patch('osf.models.export_data.requests')
-    def test_get_file_info_not_valid(self, mock_request):
-        fake_res = FakeRes(200)
-        mock_request.get.return_value = fake_res
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
-        view = management.ExportDataInformationView()
-        view = setup_view(view, request,
-                          institution_id=self.institution.id, data_id=self.export_data.id)
-        with self.assertRaises(SuspiciousOperation):
-            view.get(request)
-
-
-@pytest.mark.feature_202210
-class TestCheckExportData(AdminTestCase):
-    def setUp(self):
-        super(TestCheckExportData, self).setUp()
+        super(TestUtilsForExportData, self).setUp()
         self.user = AuthUserFactory()
         self.user.is_superuser = True
         self.institution = InstitutionFactory()
         self.export_data = ExportDataFactory()
-
-    def test_count_file_ng_ok(self):
-        data_old = utils.process_data_information(FAKE_DATA['files'])
-        data_new = utils.process_data_information(FAKE_DATA_NEW['files'])
-        rs = utils.count_files_ng_ok(data_new, data_old)
-        nt.assert_greater(rs['ng'], 0)
 
     def test_validate_exported_data(self):
         mock_from_json = MagicMock()
@@ -1379,11 +1630,72 @@ class TestCheckExportData(AdminTestCase):
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
         nt.assert_not_equal(res, None)
 
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_check_for_file_existent_on_export_location(self, mock_get_file_data):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        response_body = {
+            'data': [
+                {
+                    'id': '1',
+                    'attributes': {
+                        'name': '10a14359db515c709492b51cff52feaad4783c166ba9ad34fb03e74be1924c4d',
+                        'size': 8,
+                    }
+                }
+            ]
+        }
+        test_response._content = json.dumps(response_body).encode('utf-8')
+        mock_get_file_data.return_value = test_response
+
+        file_json = {
+            'files': [
+                {
+                    'materialized_path': '/test_path/file1.txt',
+                    'version': [
+                        {
+                            'version_name': 'file1.txt',
+                            'size': 10,
+                            'identifier': 1,
+                            'metadata': {
+                                'md5': '9193f63d5939cfbb102e677ca717465d',
+                                'sha256': '10a14359db515c709492b51cff52feaad4783c166ba9ad34fb03e74be1924c4d'
+                            }
+                        }
+                    ]
+                },
+                {
+                    'materialized_path': '/test_path/file2.txt',
+                    'version': [
+                        {
+                            'version_name': 'file2.txt',
+                            'size': 20,
+                            'identifier': 1,
+                            'metadata': {
+                                'md5': '273604bfeef7126abe1f9bff1e45126c',
+                                'sha256': '19ad8d7393d45c3a124d2e9bb5111412973a16fb3d24a0aa378bcd410c33fd3f'
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+        result = utils.check_for_file_existent_on_export_location(file_json, TEST_PROJECT_ID, TEST_PROVIDER, '/test/', None, None, None)
+        expected_result = [
+            {
+                'path': '/test_path/file2.txt',
+                'size': 20,
+                'version_id': 1,
+                'reason': 'File does not exist on the Export Storage Location',
+            }
+        ]
+        nt.assert_equal(result, expected_result)
+
 
 @pytest.mark.feature_202210
-class TestCheckRestoreData(AdminTestCase):
+class TestUtilsForCheckRestoreData(AdminTestCase):
     def setUp(self):
-        super(TestCheckRestoreData, self).setUp()
+        super(TestUtilsForCheckRestoreData, self).setUp()
         self.user = AuthUserFactory()
         self.user.is_superuser = True
         self.institution = InstitutionFactory()
@@ -1518,6 +1830,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         })
         self.export_data = ExportDataFactory()
         self.export_data_restore = ExportDataRestoreFactory(status=ExportData.STATUS_RUNNING)
+        self.export_data_restore.destination.waterbutler_settings['storage']['provider'] = 'dropboxbusiness'
+        self.export_data_restore.destination.save()
         self.destination_id = self.export_data_restore.destination.id
 
     # check_for_any_running_restore_process
@@ -1639,6 +1953,112 @@ class TestUtilsForRestoreData(AdminTestCase):
             nt.assert_equal(response.content, b'{}')
             nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
+    # get_files_in_path
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__response_empty(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': []
+            }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [])
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__response_error(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            test_response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            test_response._content = b'Mock test response error when move file'
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [])
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__addon_no_max_keys(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': [{
+                    'attributes': {
+                        'path': '/folder/',
+                        'materialized': '/folder/'
+                    }
+                }]
+            }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [{
+            'attributes': {
+                'path': '/folder/',
+                'materialized': '/folder/'
+            }
+        }])
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__next_token(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': [{
+                    'attributes': {
+                        'path': '/folder/',
+                        'materialized': '/folder/'
+                    }
+                }],
+                'next_token': '/folder 1/'
+            }
+            if 'next_token' in kwargs and kwargs['next_token'] == '/folder 1/':
+                response_body = {
+                    'data': [{
+                        'attributes': {
+                            'path': '/folder 1/',
+                            'materialized': '/folder 1/'
+                        }
+                    }],
+                    'next_token': None
+                }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, 's3compat', '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [{
+            'attributes': {
+                'path': '/folder/',
+                'materialized': '/folder/'
+            }
+        }, {
+            'attributes': {
+                'path': '/folder 1/',
+                'materialized': '/folder 1/'
+            }
+        }])
+
     # create_folder
     def test_create_folder(self):
         test_response = requests.Response()
@@ -1748,7 +2168,7 @@ class TestUtilsForRestoreData(AdminTestCase):
 
     # create_folder_path
     def test_create_folder_path_invalid_folder_path(self):
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder', None)
         nt.assert_equal(response, None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -1769,7 +2189,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.return_value = test_response
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
@@ -1791,7 +2211,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.return_value = test_not_found_response
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
@@ -1829,7 +2249,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.side_effect = get_data_by_file_or_folder
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
@@ -1867,7 +2287,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.side_effect = get_data_by_file_or_folder
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_not_called()
         nt.assert_equal(response, None)
@@ -1882,8 +2302,29 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.return_value = test_response
         mock_create_folder.return_value = (None, status.HTTP_400_BAD_REQUEST)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
+        mock_create_folder.assert_called()
+        nt.assert_equal(response, None)
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_create_folder_path__ignore_for_bulk_mount_method(self, mock_get_file_data, mock_create_folder):
+        self.export_data_restore.destination.waterbutler_settings['storage']['provider'] = TEST_PROVIDER
+        self.export_data_restore.destination.save()
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
+        mock_get_file_data.assert_not_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
 
@@ -2135,89 +2576,56 @@ class TestUtilsForRestoreData(AdminTestCase):
 
     def test_copy_file_to_other_storage_exception(self):
         mock_post = MagicMock()
-        mock_post.side_effect = ConnectionError('test_copy_file_to_other_storage_exception')
+        mock_post.side_effect = Exception('test_copy_file_to_other_storage_exception')
 
         with patch('requests.post', mock_post):
-            response_body = utils.copy_file_to_other_storage(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/test.txt', '/', 'test.txt',
-                                                                          None)
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
+            nt.assert_is_none(response_body)
+
+    def test_copy_file_to_other_storage_exception_timeout(self):
+        mock_post = MagicMock()
+        mock_post.side_effect = ConnectionError('test_copy_file_to_other_storage_exception')
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
+            nt.assert_is_none(response_body)
+
+        mock_post = MagicMock()
+        mock_post.side_effect = Timeout('test_copy_file_to_other_storage_exception')
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
+            nt.assert_is_none(response_body)
+
+        mock_post = MagicMock()
+        mock_post.side_effect = ReadTimeout('test_copy_file_to_other_storage_exception')
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(
+                self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+                '/test.txt', '/', 'test.txt',
+                None)
             nt.assert_is_none(response_body)
 
     # copy_file_from_location_to_destination
     def test_copy_file_from_location_to_destination_invalid_file_path(self):
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', '/', None)
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/',
+            '/', None)
         nt.assert_equal(response, None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_create_folders_and_file(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        create_folder_response_body = {
-            'data': {
-                'attributes': {
-                    'path': '/folder/',
-                    'materialized': '/folder/'
-                }
-            }
-        }
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
-        mock_get_file_data.return_value = test_response
-        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
-        mock_copy_file.return_value = {}
-
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt',
-                                                                '/folder/file.txt', None)
-        mock_get_file_data.assert_called()
-        mock_create_folder.assert_called()
-        mock_copy_file.assert_called()
-        nt.assert_equal(response, {})
-
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_failed_to_get_folder_info(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        create_folder_response_body = {
-            'data': {
-                'attributes': {
-                    'path': '/folder/',
-                    'materialized': '/folder/'
-                }
-            }
-        }
-        test_not_found_response = requests.Response()
-        test_not_found_response.status_code = status.HTTP_404_NOT_FOUND
-
-        mock_get_file_data.return_value = test_not_found_response
-        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
-        mock_copy_file.return_value = {}
-
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
-                                                                None)
-        mock_get_file_data.assert_called()
-        mock_create_folder.assert_called()
-        mock_copy_file.assert_called()
-        nt.assert_equal(response, {})
-
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_no_match_folder_info(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        def get_data_by_file_or_folder(*args, **kwargs):
-            test_response = requests.Response()
-            response_body = {
-                'data': [{
-                    'attributes': {
-                        'path': '/folder2/',
-                        'materialized': '/folder2/'
-                    }
-                }]
-            }
-            test_response.status_code = status.HTTP_200_OK
-            test_response._content = json.dumps(response_body).encode('utf-8')
-            return test_response
-
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_create_folders_and_file(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
         create_folder_response_body = {
             'data': {
                 'attributes': {
@@ -2227,34 +2635,85 @@ class TestUtilsForRestoreData(AdminTestCase):
             }
         }
 
-        mock_get_file_data.side_effect = get_data_by_file_or_folder
+        mock_get_files_in_path.return_value = []
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
         mock_copy_file.return_value = {}
 
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt', None)
-        mock_get_file_data.assert_called()
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt', None)
+        mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
         mock_copy_file.assert_called()
         nt.assert_equal(response, {})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_success(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        def get_data_by_file_or_folder(*args, **kwargs):
-            test_response = requests.Response()
-            response_body = {
-                'data': [{
-                    'attributes': {
-                        'path': '/folder/',
-                        'materialized': '/folder/'
-                    }
-                }]
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_failed_to_get_folder_info(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
             }
-            test_response.status_code = status.HTTP_200_OK
-            test_response._content = json.dumps(response_body).encode('utf-8')
-            return test_response
+        }
 
+        mock_get_files_in_path.return_value = []
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_no_match_folder_info(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+
+        mock_get_files_in_path.return_value = [{
+            'attributes': {
+                'path': '/folder2/',
+                'materialized': '/folder2/'
+            }
+        }]
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_success(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
         create_folder_response_body = {
             'data': {
                 'attributes': {
@@ -2273,32 +2732,40 @@ class TestUtilsForRestoreData(AdminTestCase):
             }
         }
 
-        mock_get_file_data.side_effect = get_data_by_file_or_folder
+        mock_get_files_in_path.return_value = [{
+            'attributes': {
+                'path': '/folder/',
+                'materialized': '/folder/'
+            }
+        }]
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
         mock_copy_file.return_value = copy_file_response_body
 
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
-                                                                None)
-        mock_get_file_data.assert_called()
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
         mock_create_folder.assert_not_called()
         mock_copy_file.assert_called()
         nt.assert_equal(response, copy_file_response_body)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_failed_to_create_folder(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
-        mock_get_file_data.return_value = test_response
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_failed_to_create_folder(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
+        mock_get_files_in_path.return_value = []
         mock_create_folder.return_value = (None, status.HTTP_400_BAD_REQUEST)
         mock_copy_file.return_value = {}
 
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
-                                                                None)
-        mock_get_file_data.assert_called()
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
         mock_copy_file.assert_not_called()
         nt.assert_equal(response, None)

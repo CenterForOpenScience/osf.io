@@ -730,6 +730,10 @@ msgid ""
 "on the project.</p>"
 msgstr "<p>以前のストレージは、プロジェクトのすべてのメンバーが利用できなくなります。</p>"
 
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:90
+msgid "Are you sure you want to add this Export Data Storage Location?"
+msgstr "このストレージをエクスポートデータ保存場所として追加してもよろしいですか？"
+
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:89
 #: website/static/js/folderPickerNodeConfig.js:100
 #: website/static/js/folderPickerNodeConfig.js:102

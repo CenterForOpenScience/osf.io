@@ -13,6 +13,7 @@
 {% endblock title %}
 
 {% block content %}
+    <h2><small style="color: red;">本画面内の機能はベータ版であり、不用な操作はお控え頂きたく存じます。操作される方は <a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> への連絡をお願い致します。</small></h2>
     <h2>{% trans "List of Institutional Storages" %}<br/><small>(for {{ institution.name }})</small></h2>
 
     {% include "util/pagination.html" with items=page status=status %}
@@ -128,7 +129,10 @@
     {% render_bundle 'rdm-institutional-storage-page' %}
     <script>
         window.contextVars = $.extend(true, {}, window.contextVars, {
+            'export_control': true,
+            'restore_control': false,
             'institution_id': {{ institution.id }},
+            'source_id': {{ storages.0.id }},
             'export_data_list_url':
                 {% if user.is_superuser %}
                     "{% url 'custom_storage_location:export_data:export_data_list_institution' institution.id %}"
