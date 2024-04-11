@@ -193,7 +193,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_not_logged_in_no_key(self):
         res = self.app.get(self.project_url, query_string={'view_only': None})
         assert_is_redirect(res)
-        res = self.app.get(self.project_url, query_string={'view_only': None}, follow_redirects=True)
+        res = self.app.resolve_redirect(res)
         assert res.status_code == 308
         assert res.request.path == '/login'
 
@@ -2946,6 +2946,11 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/'
         double_node = NodeFactory()
 
+        self.app.post(
+            url,
+            json={'nodeIds': [double_node._id]},
+            auth=self.user.auth,
+        )
         res = self.app.post(
             url,
             json={'nodeIds': [double_node._id]},
@@ -4718,7 +4723,7 @@ class TestUserConfirmSignal(OsfTestCase):
             payload = {'username': unclaimed_user.username,
                        'password': 'password',
                        'password2': 'password'}
-            res = self.app.post(url, json=payload)
+            res = self.app.post(url, data=payload)
             assert res.status_code == 302
 
         assert mock_signals.signals_sent() == {auth.signals.user_confirmed}
