@@ -10,14 +10,12 @@ from framework.auth import signing
 from tests.base import OsfTestCase
 from osf.models import (
     FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota, ProjectStorageType, BaseFileNode
-
 )
 from osf_tests.factories import (
     AuthUserFactory, ProjectFactory, UserFactory, InstitutionFactory, RegionFactory
 )
 from osf.utils.requests import check_select_for_update
 from website.util import web_url_for, quota
-from api.base import settings as api_settings
 
 
 @pytest.mark.enable_implicit_clean
@@ -378,6 +376,7 @@ class TestSaveUsedQuota(OsfTestCase):
             target_object_id=self.node.id,
             target_content_type_id=2
         )
+        self.base_file_node.save()
         self.base_folder_node = BaseFileNode(
             type='osf.s3compatinstitutionsfolder',
             provider='s3compatinstitutions',
@@ -1357,7 +1356,8 @@ class TestSaveUsedQuota(OsfTestCase):
         mock_user_quota = mock.MagicMock()
         mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = self.base_file_node
         if check_select_for_update():
-            mock_file_info.objects.filter.return_value.select_for_update.return_value.get.return_value = FileInfo(file=self.base_file_node, file_size=1000)
+            mock_file_info.objects.filter.return_value.select_for_update.return_value.get.return_value = FileInfo(
+                file=self.base_file_node, file_size=1000)
             mock_user_quota.objects.filter.return_value.select_for_update.return_value.first.return_value = UserQuota(
                 user=self.project_creator,
                 storage_type=UserQuota.CUSTOM_STORAGE,
@@ -1412,7 +1412,8 @@ class TestSaveUsedQuota(OsfTestCase):
         )
         mock_base_file_node.objects.filter.return_value.all.return_value = [self.base_file_node, folder_element]
         if check_select_for_update():
-            mock_file_info.objects.filter.return_value.select_for_update.return_value.get.return_value = FileInfo(file=self.base_file_node, file_size=1500)
+            mock_file_info.objects.filter.return_value.select_for_update.return_value.get.return_value = FileInfo(
+                file=self.base_file_node, file_size=1500)
             mock_user_quota.objects.filter.return_value.select_for_update.return_value.first.return_value = UserQuota(
                 user=self.project_creator,
                 storage_type=UserQuota.CUSTOM_STORAGE,
