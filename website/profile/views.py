@@ -16,7 +16,11 @@ from framework.auth.decorators import must_be_logged_in
 from framework.auth.decorators import must_be_confirmed
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
-from framework.auth.signals import user_merged
+from framework.auth.signals import (
+    user_account_merged,
+    user_account_deactivated,
+    user_account_reactivated,
+)
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -36,6 +40,11 @@ from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
+from osf.external.messages.celery_publishers import (
+    publish_reactivate_user,
+    publish_deactivated_user,
+    publish_merged_user
+)
 
 from api.waffle.utils import storage_i18n_flag_active
 
@@ -506,8 +515,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': all_mailing_lists}, 200
 
 
-@user_merged.connect
-def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
+def update_mailchimp_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -521,10 +529,38 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
             pass
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
+            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
         except (MailChimpError, OSFError):
             # User has already unsubscribed, so nothing to do
             pass
+
+
+@user_account_merged.connect
+def send_account_merged_message(user):
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been merged."""
+    publish_merged_user(user)
+
+
+@user_account_merged.connect
+def unsubscribe_old_merged_account_from_mailchimp(user):
+    """ This is a merged account (an old account that was merged into an active one) so it needs to be unsubscribed
+    from mailchimp."""
+    for key, value in user.mailchimp_mailing_lists.items():
+        subscription = value or user.merged_by.mailchimp_mailing_lists.get(key)
+        update_mailchimp_subscription(user.merged_by, list_name=key, subscription=subscription)
+        update_mailchimp_subscription(user, list_name=key, subscription=False)
+
+
+@user_account_deactivated.connect
+def send_account_deactivation_message(user):
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been deactivated."""
+    publish_deactivated_user(user)
+
+
+@user_account_reactivated.connect
+def send_account_reactivation_message(user):
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been reactivated."""
+    publish_reactivate_user(user)
 
 
 def mailchimp_get_endpoint(**kwargs):
