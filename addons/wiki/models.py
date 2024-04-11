@@ -255,7 +255,7 @@ class WikiPageNodeManager(models.Manager):
             is_wiki_import=is_wiki_import
         )
         # Creates a WikiVersion object
-        wiki_page.update(auth.user, content, is_wiki_import=False)
+        wiki_page.update(auth.user, content, is_wiki_import=is_wiki_import)
         return wiki_page
 
     def get_for_node(self, node, name=None, id=None, parent=None):
@@ -322,7 +322,7 @@ class WikiPage(GuidMixin, BaseModel):
         :param content: Latest content for wiki
         """
         version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
-        version.save(is_wiki_import=False)
+        version.save(is_wiki_import=is_wiki_import)
 
         self.node.add_log(
             action=NodeLog.WIKI_UPDATED,
