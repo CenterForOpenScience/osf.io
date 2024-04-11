@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 import mendeley
 from github3.repos import Repository
-
+from github3.session import GitHubSession
 
 from addons.bitbucket.tests.factories import BitbucketAccountFactory, BitbucketNodeSettingsFactory
 from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
@@ -705,12 +705,110 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @mock.patch('addons.github.models.GitHubClient')
     def test_folder_list_GET_expected_behavior(self, mock_client):
-        mock_repo = Repository.from_json(dumps({
-            'name': 'test',
-            'id': '12345',
-            'owner':
-                {'login': 'test name'}
-        }))
+        mock_repo = Repository.from_json(
+            dumps(
+                {
+                    'name': 'test',
+                    'id': '12345',
+                    'archive_url': 'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}',
+                    'assignees_url': 'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}',
+                    'blobs_url': 'https://api.github.com/repos/{user}/mock-repo/git/blobs{{/sha}}',
+                    'branches_url': 'https://api.github.com/repos/{user}/mock-repo/branches{{/bra.format('
+                                    'user=user)nch}}',
+                    'clone_url': 'https://github.com/{user}/mock-repo.git',
+                    'collaborators_url': 'https://api.github.com/repos/{user}/mock-repo/collaborators{{/collaborator}}',
+                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+                    'commits_url': 'https://api.github.com/repos/{user}/mock-repo/commits{{/sha}}',
+                    'compare_url': 'https://api.github.com/repos/{user}/mock-repo/compare/{{base}}...{{head}}',
+                    'contents_url': 'https://api.github.com/repos/{user}/mock-repo/contents/{{+path}}',
+                    'contributors_url': 'https://api.github.com/repos/{user}/mock-repo/contributors',
+                    'created_at': '2013-06-30T18:29:18Z',
+                    'default_branch': 'dev',
+                    'description': 'Simple, Pythonic, text processing--Sentiment analysis, part-of-speech tagging, '
+                                   'noun phrase extraction, translation, and more.',
+                    'downloads_url': 'https://api.github.com/repos/{user}/mock-repo/downloads',
+                    'events_url': 'https://api.github.com/repos/{user}/mock-repo/events',
+                    'fork': False,
+                    'forks': 89,
+                    'forks_count': 89,
+                    'forks_url': 'https://api.github.com/repos/{user}/mock-repo/forks',
+                    'full_name': '{user}/mock-repo',
+                    'git_commits_url': 'https://api.github.com/repos/{user}/mock-repo/git/commits{{/sha}}',
+                    'git_refs_url': 'https://api.github.com/repos/{user}/mock-repo/git/refs{{/sha}}',
+                    'git_tags_url': 'https://api.github.com/repos/{user}/mock-repo/git/tags{{/sha}}',
+                    'git_url': 'git://github.com/{user}/mock-repo.git',
+                    'has_downloads': True,
+                    'has_issues': True,
+                    'has_wiki': True,
+                    'homepage': 'https://mock-repo.readthedocs.org/',
+                    'hooks_url': 'https://api.github.com/repos/{user}/mock-repo/hooks',
+                    'html_url': 'https://github.com/{user}/mock-repo',
+                    'issue_comment_url': 'https://api.github.com/repos/{user}/mock-repo/issues/comments/{{number}}',
+                    'issue_events_url': 'https://api.github.com/repos/{user}/mock-repo/issues/events{{/number}}',
+                    'issues_url': 'https://api.github.com/repos/{user}/mock-repo/issues{{/number}}',
+                    'keys_url': 'https://api.github.com/repos/{user}/mock-repo/keys{{/key_id}}',
+                    'labels_url': 'https://api.github.com/repos/{user}/mock-repo/labels{{/name}}',
+                    'language': 'Python',
+                    'languages_url': 'https://api.github.com/repos/{user}/mock-repo/languages',
+                    'master_branch': 'dev',
+                    'merges_url': 'https://api.github.com/repos/{user}/mock-repo/merges',
+                    'milestones_url': 'https://api.github.com/repos/{user}/mock-repo/milestones{{/number}}',
+                    'mirror_url': None,
+                    'network_count': 89,
+                    'notifications_url': 'https://api.github.com/repos/{user}/mock-repo/notifications{{?since,all,'
+                                         'participating}}',
+                    'open_issues': 2,
+                    'open_issues_count': 2,
+                    'owner': {
+                        'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
+                                      '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+                        'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
+                        'followers_url': 'https://api.github.com/users/{user}/followers',
+                        'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
+                        'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+                        'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+                        'html_url': 'https://github.com/{user}',
+                        'id': 2379650,
+                        'login': '{user}',
+                        'organizations_url': 'https://api.github.com/users/{user}/orgs',
+                        'received_events_url': 'https://api.github.com/users/{user}/received_events',
+                        'repos_url': 'https://api.github.com/users/{user}/repos',
+                        'site_admin': False,
+                        'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+                        'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+                        'type': 'User',
+                        'url': 'https://api.github.com/users/{user}'
+                    },
+                    'private': '{private}',
+                    'pulls_url': 'https://api.github.com/repos/{user}/mock-repo/pulls{{/number}}',
+                    'pushed_at': '2013-12-30T16:05:54Z',
+                    'releases_url': 'https://api.github.com/repos/{user}/mock-repo/releases{{/id}}',
+                    'size': 8717,
+                    'ssh_url': 'git@github.com:{user}/mock-repo.git',
+                    'stargazers_count': 1469,
+                    'stargazers_url': 'https://api.github.com/repos/{user}/mock-repo/stargazers',
+                    'statuses_url': 'https://api.github.com/repos/{user}/mock-repo/statuses/{{sha}}',
+                    'subscribers_count': 86,
+                    'subscribers_url': 'https://api.github.com/repos/{user}/mock-repo/subscribers',
+                    'subscription_url': 'https://api.github.com/repos/{user}/mock-repo/subscription',
+                    'svn_url': 'https://github.com/{user}/mock-repo',
+                    'tags_url': 'https://api.github.com/repos/{user}/mock-repo/tags',
+                    'teams_url': 'https://api.github.com/repos/{user}/mock-repo/teams',
+                    'trees_url': 'https://api.github.com/repos/{user}/mock-repo/git/trees{{/sha}}',
+                    'updated_at': '2014-01-12T21:23:50Z',
+                    'url': 'https://api.github.com/repos/{user}/mock-repo',
+                    'watchers': 1469,
+                    'watchers_count': 1469,
+                    # NOTE: permissions are only available if authorized on the repo
+                    'permissions': {'push': True},
+                    'deployments_url': 'https://api.github.com/repos',
+                    'archived': {},
+                    'has_pages': False,
+                    'has_projects': False,
+                }
+            ),
+            GitHubSession()
+        )
 
         mock_connection = mock.MagicMock()
         mock_client.return_value = mock_connection
