@@ -63,7 +63,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'github_user': 'octocat',
             'github_repo': 'repo_name',
         }, auth=self.user.auth)
