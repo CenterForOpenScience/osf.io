@@ -45,6 +45,48 @@ def create_mock_github(user='octo-cat', private=False):
     :param bool private: Whether repo is private.
     :return: An autospecced GitHub Mock object
     """
+    repo_author = {
+        'name': f'{user}',
+        'email': 'njqpw@osf.io',
+        'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
+                      '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+        'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
+        'followers_url': 'https://api.github.com/users/{user}/followers',
+        'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
+        'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+        'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+        'html_url': 'https://github.com/{user}',
+        'id': 2379650,
+        'login': '{user}',
+        'organizations_url': 'https://api.github.com/users/{user}/orgs',
+        'received_events_url': 'https://api.github.com/users/{user}/received_events',
+        'repos_url': 'https://api.github.com/users/{user}/repos',
+        'site_admin': False,
+        'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+        'subscriptions_url': 'https://api.github.com/users/{'
+                             'user}/subscriptions',
+        'type': 'User',
+        'url': 'https://api.github.com/users/{user}'
+    }
+
+    repo_commit = {
+        "ETag": "",
+        "Last-Modified": "",
+        "url": "",
+        'author': repo_author,
+        'committer': {'name': '{user}', 'email': '{user}@osf.io',
+                      'username': 'tester'},
+        'message': 'Fixed error',
+        'tree': {'url': 'https://docs.github.com/en/rest/git/trees',
+                 'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
+    }
+
+    repo_parents = [
+        '12345',
+        'https://api.example.com/entities/67890',
+        'another-entity-id'
+    ]
+
     repo_data = {
         'name': 'test',
         'id': '12345',
@@ -97,27 +139,7 @@ def create_mock_github(user='octo-cat', private=False):
                              'participating}}',
         'open_issues': 2,
         'open_issues_count': 2,
-        'owner': {
-            'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                          '%2Fidenticons.github'
-                          '.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-            'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-            'followers_url': 'https://api.github.com/users/{user}/followers',
-            'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-            'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-            'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-            'html_url': 'https://github.com/{user}',
-            'id': 2379650,
-            'login': '{user}',
-            'organizations_url': 'https://api.github.com/users/{user}/orgs',
-            'received_events_url': 'https://api.github.com/users/{user}/received_events',
-            'repos_url': 'https://api.github.com/users/{user}/repos',
-            'site_admin': False,
-            'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-            'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
-            'type': 'User',
-            'url': 'https://api.github.com/users/{user}'
-        },
+        'owner': repo_author,
         'private': '{private}',
         'pulls_url': 'https://api.github.com/repos/{user}/mock-repo/pulls{{/number}}',
         'pushed_at': '2013-12-30T16:05:54Z',
@@ -153,92 +175,12 @@ def create_mock_github(user='octo-cat', private=False):
             'commit': {
                 'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
                 'url': f'https://api.github.com/repos/{user}/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
-                'author': {'name': f'{user}', 'email': 'njqpw@osf.io',
-                           'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                                         '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-                           'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                           'followers_url': 'https://api.github.com/users/{user}/followers',
-                           'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                           'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                           'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                           'html_url': 'https://github.com/{user}',
-                           'id': 2379650,
-                           'login': '{user}',
-                           'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                           'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                           'repos_url': 'https://api.github.com/users/{user}/repos',
-                           'site_admin': False,
-                           'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                           'subscriptions_url': 'https://api.github.com/users/{'
-                                                'user}/subscriptions',
-                           'type': 'User',
-                           'url': 'https://api.github.com/users/{user}'
-                           },
+                'author': repo_author,
                 'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
-                'commit': {
-                    "ETag": "",
-                    "Last-Modified": "",
-                    "url": "",
-                    'author': {'name': f'{user}', 'email': 'njqpw@osf.io',
-                               'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A'
-                                             '%2F'
-                                             '%2Fidenticons.github'
-                                             '.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-                               'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                               'followers_url': 'https://api.github.com/users/{user}/followers',
-                               'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                               'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                               'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                               'html_url': 'https://github.com/{user}',
-                               'id': 2379650,
-                               'login': '{user}',
-                               'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                               'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                               'repos_url': 'https://api.github.com/users/{user}/repos',
-                               'site_admin': False,
-                               'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                               'subscriptions_url': 'https://api.github.com/users/{'
-                                                    'user}/subscriptions',
-                               'type': 'User',
-                               'url': 'https://api.github.com/users/{user}'
-                               },
-                    'committer': {'name': '{user}', 'email': '{user}@osf.io',
-                                  'username': 'tester'},
-                    'message': 'Fixed error',
-                    'tree': {'url': 'https://docs.github.com/en/rest/git/trees',
-                             'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
-                },
-                'committer': {
-                    'name': '{user}',
-                    'email': '{user}@osf.io',
-                    'username': 'tester',
-                    'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                                  '%2Fidenticons.github',
-                    'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                    'followers_url': 'https://api.github.com/users/{user}/followers',
-                    'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                    'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                    'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                    'html_url': 'https://github.com/{user}',
-                    'id': 2379650,
-                    'login': '{user}',
-                    'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                    'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                    'repos_url': 'https://api.github.com/users/{user}/repos',
-                    'site_admin': False,
-                    'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                    'subscriptions_url': 'https://api.github.com/users/{'
-                                         'user}/subscriptions',
-                    'type': 'User',
-                    'url': 'https://api.github.com/users/{user}'
-                },
+                'commit': repo_commit,
+                'committer': repo_author,
                 'html_url': 'https://github.com/{user}',
-                'parents': [
-                    '12345',
-                    'https://api.example.com/entities/67890',
-                    'another-entity-id'
-                ],
-
+                'parents': repo_parents,
             },
             '_links': [{
                 'rel': 'self',
@@ -247,96 +189,21 @@ def create_mock_github(user='octo-cat', private=False):
             'protected': True,
             'protection': 'public',
             'protection_url': 'https://api.example.com/docs/protection',
-            'name': 'dev'}, ),
+            'name': 'dev'},
+        ),
             GitHubSession()),
-        Branch.from_json(dumps({'commit': {'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
-                                           'url': f'https://api.github.com/repos/{user}/mock-repo/commits'
-                                                  f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
-                                           'author': {'name': f'{user}', 'email': 'njqpw@osf.io',
-                           'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                                         '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-                           'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                           'followers_url': 'https://api.github.com/users/{user}/followers',
-                           'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                           'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                           'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                           'html_url': 'https://github.com/{user}',
-                           'id': 2379650,
-                           'login': '{user}',
-                           'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                           'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                           'repos_url': 'https://api.github.com/users/{user}/repos',
-                           'site_admin': False,
-                           'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                           'subscriptions_url': 'https://api.github.com/users/{'
-                                                'user}/subscriptions',
-                           'type': 'User',
-                           'url': 'https://api.github.com/users/{user}'
-                           },
+
+        Branch.from_json(dumps({
+            'commit': {
+                'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                'url': f'https://api.github.com/repos/{user}/mock-repo/commits'
+                       f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                'author': repo_author,
                 'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
-                'commit': {
-                    "ETag": "",
-                    "Last-Modified": "",
-                    "url": "",
-                    'author': {'name': f'{user}', 'email': 'njqpw@osf.io',
-                               'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A'
-                                             '%2F'
-                                             '%2Fidenticons.github'
-                                             '.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-                               'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                               'followers_url': 'https://api.github.com/users/{user}/followers',
-                               'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                               'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                               'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                               'html_url': 'https://github.com/{user}',
-                               'id': 2379650,
-                               'login': '{user}',
-                               'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                               'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                               'repos_url': 'https://api.github.com/users/{user}/repos',
-                               'site_admin': False,
-                               'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                               'subscriptions_url': 'https://api.github.com/users/{'
-                                                    'user}/subscriptions',
-                               'type': 'User',
-                               'url': 'https://api.github.com/users/{user}'
-                               },
-                    'committer': {'name': '{user}', 'email': '{user}@osf.io',
-                                  'username': 'tester'},
-                    'message': 'Fixed error',
-                    'tree': {'url': 'https://docs.github.com/en/rest/git/trees',
-                             'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
-                },
-                'committer': {
-                    'name': '{user}',
-                    'email': '{user}@osf.io',
-                    'username': 'tester',
-                    'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                                  '%2Fidenticons.github',
-                    'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                    'followers_url': 'https://api.github.com/users/{user}/followers',
-                    'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                    'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                    'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                    'html_url': 'https://github.com/{user}',
-                    'id': 2379650,
-                    'login': '{user}',
-                    'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                    'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                    'repos_url': 'https://api.github.com/users/{user}/repos',
-                    'site_admin': False,
-                    'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                    'subscriptions_url': 'https://api.github.com/users/{'
-                                         'user}/subscriptions',
-                    'type': 'User',
-                    'url': 'https://api.github.com/users/{user}'
-                },
+                'commit': repo_commit,
+                'committer': repo_author,
                 'html_url': 'https://github.com/{user}',
-                'parents': [
-                    '12345',
-                    'https://api.example.com/entities/67890',
-                    'another-entity-id'
-                ],
+                'parents': repo_parents,
 
             },
             '_links': [{
@@ -346,95 +213,20 @@ def create_mock_github(user='octo-cat', private=False):
             'protected': True,
             'protection': 'public',
             'protection_url': 'https://api.example.com/docs/protection',
-            'name': 'master'}), GitHubSession()),
-        Branch.from_json(dumps({'commit': {'sha': 'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
-                                           'url': f'https://api.github.com/repos/{user}/mock-repo/commits'
-                                                  f'/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
-                                           'author': {'name': f'{user}', 'email': 'njqpw@osf.io',
-                           'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                                         '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-                           'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                           'followers_url': 'https://api.github.com/users/{user}/followers',
-                           'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                           'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                           'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                           'html_url': 'https://github.com/{user}',
-                           'id': 2379650,
-                           'login': '{user}',
-                           'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                           'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                           'repos_url': 'https://api.github.com/users/{user}/repos',
-                           'site_admin': False,
-                           'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                           'subscriptions_url': 'https://api.github.com/users/{'
-                                                'user}/subscriptions',
-                           'type': 'User',
-                           'url': 'https://api.github.com/users/{user}'
-                           },
+            'name': 'master'}),
+            GitHubSession()),
+
+        Branch.from_json(dumps({
+            'commit': {
+                'sha': 'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
+                'url': f'https://api.github.com/repos/{user}/mock-repo/commits'
+                       f'/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
+                'author': repo_author,
                 'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
-                'commit': {
-                    "ETag": "",
-                    "Last-Modified": "",
-                    "url": "",
-                    'author': {'name': f'{user}', 'email': 'njqpw@osf.io',
-                               'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A'
-                                             '%2F'
-                                             '%2Fidenticons.github'
-                                             '.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-                               'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                               'followers_url': 'https://api.github.com/users/{user}/followers',
-                               'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                               'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                               'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                               'html_url': 'https://github.com/{user}',
-                               'id': 2379650,
-                               'login': '{user}',
-                               'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                               'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                               'repos_url': 'https://api.github.com/users/{user}/repos',
-                               'site_admin': False,
-                               'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                               'subscriptions_url': 'https://api.github.com/users/{'
-                                                    'user}/subscriptions',
-                               'type': 'User',
-                               'url': 'https://api.github.com/users/{user}'
-                               },
-                    'committer': {'name': '{user}', 'email': '{user}@osf.io',
-                                  'username': 'tester'},
-                    'message': 'Fixed error',
-                    'tree': {'url': 'https://docs.github.com/en/rest/git/trees',
-                             'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
-                },
-                'committer': {
-                    'name': '{user}',
-                    'email': '{user}@osf.io',
-                    'username': 'tester',
-                    'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                                  '%2Fidenticons.github',
-                    'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                    'followers_url': 'https://api.github.com/users/{user}/followers',
-                    'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                    'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                    'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                    'html_url': 'https://github.com/{user}',
-                    'id': 2379650,
-                    'login': '{user}',
-                    'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                    'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                    'repos_url': 'https://api.github.com/users/{user}/repos',
-                    'site_admin': False,
-                    'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                    'subscriptions_url': 'https://api.github.com/users/{'
-                                         'user}/subscriptions',
-                    'type': 'User',
-                    'url': 'https://api.github.com/users/{user}'
-                },
+                'commit': repo_commit,
+                'committer': repo_author,
                 'html_url': 'https://github.com/{user}',
-                'parents': [
-                    '12345',
-                    'https://api.example.com/entities/67890',
-                    'another-entity-id'
-                ],
+                'parents': repo_parents,
 
             },
             '_links': [{
@@ -444,7 +236,8 @@ def create_mock_github(user='octo-cat', private=False):
             'protected': True,
             'protection': 'public',
             'protection_url': 'https://api.example.com/docs/protection',
-            'name': 'no-bundle'}), GitHubSession())
+            'name': 'no-bundle'}),
+            GitHubSession())
     ]
 
     return github_mock
