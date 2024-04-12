@@ -64,7 +64,10 @@ def unescape_entities(value, safe=None):
         return {key: unescape_entities(value, safe=safe_characters) for (key, value) in value.items()}
 
     if is_iterable_but_not_string(value):
-        return [unescape_entities(each, safe=safe_characters) for each in value]
+        return [
+            unescape_entities(each, safe=safe_characters)
+            for each in value
+        ]
     if isinstance(value, str):
         for escape_sequence, character in safe_characters.items():
             value = value.replace(escape_sequence, character)

@@ -107,7 +107,7 @@ class AppTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.app = test_app.test_client()
-        self.app.config.update({'TESTING': True, })
+        self.app.application.config.update({'TESTING': True, })
 
         logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
 

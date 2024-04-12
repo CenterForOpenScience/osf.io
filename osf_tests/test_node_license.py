@@ -98,7 +98,7 @@ class TestNodeLicenses:
     def test_ensure_licenses_no_licenses(self):
         before_count = NodeLicense.objects.all().count()
         NodeLicense.objects.all().delete()
-        assert NodeLicense.objects.all().count() is False
+        assert not NodeLicense.objects.all().count()
 
         ensure_licenses()
         assert before_count == NodeLicense.objects.all().count()
