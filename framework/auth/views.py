@@ -655,14 +655,6 @@ def external_login_confirm_email_get(auth, uid, token):
     service_url = request.url
 
     if external_status == 'CREATE':
-        mails.send_mail(
-            to_addr=user.username,
-            mail=mails.WELCOME,
-            user=user,
-            domain=settings.DOMAIN,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            storage_flag_is_active=storage_i18n_flag_active(),
-        )
         service_url += '&{}'.format(urlencode({'new': 'true'}))
     elif external_status == 'LINK':
         mails.send_mail(
