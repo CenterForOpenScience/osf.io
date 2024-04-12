@@ -315,34 +315,62 @@ def authenticate_user_if_needed(auth, waterbutler_data, resource):
         raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'User authentication failed.')
 
 
-def trigger_file_signals(auth, fileversion, action):
-    if not fileversion:
-        return
-
-    if action == 'render':
-        file_signals.file_viewed.send(auth=auth, fileversion=fileversion)
-    elif action == 'download':
-        file_signals.file_downloaded.send(auth=auth, fileversion=fileversion)
-
-
 @collect_auth
 def get_auth(auth, **kwargs):
+    """
+    Authenticate a request and construct a JWT payload for Waterbutler callbacks.
+    When a user interacts with a file OSF sends a request to WB which itself sends a
+    request to an external service or Osfstorage, in order to confirm that event has
+    taken place Waterbutler will send this callback to OSF to comfirm the file action was
+    successful and can be logged.
+
+    This function decrypts and decodes the JWT payload from the request, authenticates
+    the resource based on the node ID provided in the JWT payload, and ensures the user
+    has the required permissions to perform the specified action on the node. If the user
+    is not authenticated, it attempts to authenticate them using the provided data. This
+    function also constructs a response payload that includes a signed and encrypted JWT,
+    which Waterbutler can use to verify the request.
+
+    Parameters:
+        auth (Auth): The authentication context, typically collected by the `@collect_auth` decorator.
+        **kwargs: Keyword arguments that might include additional context needed for complex permissions checks.
+
+    Returns:
+        dict: A dictionary containing the encrypted JWT in 'payload', ready to be used by Waterbutler.
+
+    Raises:
+        HTTPError: If authentication fails, the node does not exist, the action is not allowed, or
+                   any required data for authentication is missing from the request.
+    """
+
+    # Decrypt and decode the JWT payload from the request
     waterbutler_data = decrypt_and_decode_jwt_payload()
+
+    # Authenticate the resource based on the node_id and handle potential draft nodes
     resource = get_authenticated_resource(waterbutler_data['nid'])
 
-    # fallback Authenticate the user if not already authenticated
+    # Authenticate the user using cookie or Oauth if possible
     authenticate_user_if_needed(auth, waterbutler_data, resource)
 
+    # Verify the user has permission to perform the requested action on the node
     action = waterbutler_data['action']
     if not check_node_permission(resource, auth, action):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
+    # Get the file version from Waterbutler data, which is used for file-specific actions
     fileversion = get_file_version_from_wb(waterbutler_data)
 
+    # Fetch Waterbutler credentials and settings for the resource
     credentials, waterbutler_settings = get_waterbutler_info(resource, waterbutler_data, fileversion)
 
-    trigger_file_signals(auth, fileversion, waterbutler_data['action'])
+    if fileversion:
+        # Trigger any file-specific signals based on the action taken (e.g., file viewed, downloaded)
+        if action == 'render':
+            file_signals.file_viewed.send(auth=auth, fileversion=fileversion)
+        elif action == 'download':
+            file_signals.file_downloaded.send(auth=auth, fileversion=fileversion)
 
+    # Construct the response payload including the JWT
     return construct_payload(
         auth,
         resource,
@@ -389,7 +417,7 @@ def get_waterbutler_info(resource, waterbutler_data, fileversion):
     return credentials, waterbutler_settings
 
 
-def construct_payload(auth, node, credentials, waterbutler_settings):
+def construct_payload(auth, resource, credentials, waterbutler_settings):
     if isinstance(credentials.get('token'), bytes):
         credentials['token'] = credentials.get('token').decode()
 
@@ -397,9 +425,9 @@ def construct_payload(auth, node, credentials, waterbutler_settings):
     auth_dict = make_auth(auth.user)
 
     # Define the callback URL conditionally
-    callback_url_key = 'create_waterbutler_log' if not getattr(node, 'is_registration',
+    callback_url_key = 'create_waterbutler_log' if not getattr(resource, 'is_registration',
                                                                False) else 'registration_callbacks'
-    callback_url = node.api_url_for(callback_url_key, _absolute=True, _internal=True)
+    callback_url = resource.api_url_for(callback_url_key, _absolute=True, _internal=True)
 
     # Construct the data dictionary for JWT encoding
     jwt_data = {
@@ -630,11 +658,11 @@ def osfstoragefile_update_view_analytics(self, auth, fileversion):
 
 @file_signals.file_viewed.connect
 def osfstoragefile_viewed_update_metrics(self, auth, fileversion):
-    node = BaseFileNode.objects.get(versions__id=fileversion.id).target
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(node, Preprint):
+    resource = BaseFileNode.objects.get(versions__id=fileversion.id).target
+    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintView.record_for_preprint(
-                preprint=node,
+                preprint=resource,
                 user=auth.user,
                 version=fileversion.identifier,
                 path=fileversion.path,
@@ -646,19 +674,19 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion):
 @file_signals.file_downloaded.connect
 def osfstoragefile_downloaded_update_analytics(self, auth, fileversion):
     file = BaseFileNode.objects.get(versions__id=fileversion.id)
-    node = file.target
-    if not node.is_contributor_or_group_member(auth.user):
+    resource = file.target
+    if not resource.is_contributor_or_group_member(auth.user):
         version_index = int(fileversion.identifier) - 1
-        enqueue_update_analytics(node, file, version_index, 'download')
+        enqueue_update_analytics(resource, file, version_index, 'download')
 
 
 @file_signals.file_downloaded.connect
 def osfstoragefile_downloaded_update_metrics(self, auth, fileversion):
-    node = BaseFileNode.objects.get(versions__id=fileversion.id).target
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(node, Preprint):
+    resource = BaseFileNode.objects.get(versions__id=fileversion.id).target
+    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintDownload.record_for_preprint(
-                preprint=node,
+                preprint=resource,
                 user=auth.user,
                 version=fileversion.identifier,
                 path=fileversion.path,
