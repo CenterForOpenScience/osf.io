@@ -8,14 +8,14 @@ from urllib.parse import quote
 from hashlib import md5
 from http.cookies import SimpleCookie
 from unittest import mock
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, unquote_plus
 
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from flask import request
+from flask import request, g
 from lxml import html
 from pytest import approx
 from rest_framework import status as http_status
@@ -2616,6 +2616,7 @@ class TestClaimViews(OsfTestCase):
 
     @mock.patch('framework.auth.cas.make_response_from_ticket')
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
+        # TODO: check in qa url encoding
         token = self.user.get_unclaimed_record(self.project._primary_key)['token']
         url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
             uid=self.user._id,
@@ -2623,12 +2624,12 @@ class TestClaimViews(OsfTestCase):
             token=token
         )
         # logged out user gets redirected to cas login
-        res = self.app.get(url)
-        assert res.status_code == 302
+        res1 = self.app.get(url)
+        assert res1.status_code == 302
         res = self.app.resolve_redirect(self.app.get(url))
         service_url = f'http://localhost{url}'
-        expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
-        assert res.request.url == expected
+        expected = cas.get_logout_url(service_url=unquote_plus(cas.get_login_url(service_url=service_url)))
+        assert res1.location == expected
 
         # user logged in with orcid automatically becomes a contributor
         orcid_user, validated_credentials, cas_resp = generate_external_user_with_resp(url)
@@ -2647,7 +2648,7 @@ class TestClaimViews(OsfTestCase):
         # And the redirect URL must equal to the originial service URL
         assert res.status_code == 302
         redirect_url = res.headers['Location']
-        assert redirect_url == service_url
+        assert unquote_plus(redirect_url) == url
         # The response of this request is expected have the `Set-Cookie` header with OSF cookie.
         # And the cookie must belong to the ORCiD user.
         raw_set_cookie = res.headers['Set-Cookie']
@@ -2663,7 +2664,7 @@ class TestClaimViews(OsfTestCase):
         assert user._id != self.user._id
 
         # Must clear the Flask g context manual and set the OSF cookie to context
-        self.context.g.current_session = None
+        g.current_session = None
         self.app.set_cookie(settings.COOKIE_NAME, osf_cookie)
         res = self.app.resolve_redirect(res)
         assert res.status_code == 302

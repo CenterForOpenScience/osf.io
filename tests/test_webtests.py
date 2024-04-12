@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Functional tests using WebTest."""
+from urllib.parse import quote_plus
+
 from rest_framework import status
 import logging
 import unittest
@@ -924,12 +926,13 @@ class TestForgotPasswordInstitution(OsfTestCase):
 
     # log users out before they land on institutional forgot password page
     def test_forgot_password_logs_out_user(self):
+        # TODO: check in qa url encoding
         # visit forgot password link while another user is logged in
         res = self.app.get(self.get_url, auth=self.auth_user.auth)
         # check redirection to CAS logout
         assert res.status_code == 302
         location = res.headers.get('Location')
-        assert 'campaign=unsupportedinstitution' in location
+        assert quote_plus('campaign=unsupportedinstitution') in location
         assert 'logout?service=' in location
 
     # test that institutional forgot password page redirects to CAS unsupported
