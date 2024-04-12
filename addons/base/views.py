@@ -264,21 +264,24 @@ def decrypt_and_decode_jwt_payload():
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
 
-def get_authenticated_node(node_id):
-    node = AbstractNode.load(node_id) or Preprint.load(node_id)
-    if not node:
+def get_authenticated_resource(resource_id):
+    resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
+    if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Node not found.')
 
-    node = handle_draft_node(node)
+    resource = handle_draft_node(resource)
 
-    if node.is_deleted:
+    if resource.deleted:
         raise HTTPError(http_status.HTTP_410_GONE, message='Node has been deleted.')
 
-    return node
+    return resource
 
 
 def get_file_version_from_wb(waterbutler_data):
-    file_id = waterbutler_data.get('path').strip('/')
+    path = waterbutler_data.get('path')
+    if not path:
+        return
+    file_id = path.strip('/')
     try:
         filenode = OsfStorageFileNode.objects.get(_id=file_id)
     except OsfStorageFileNode.DoesNotExist:
@@ -294,57 +297,88 @@ def get_file_version_from_wb(waterbutler_data):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
+def authenticate_user_if_needed(auth, waterbutler_data, node):
+    if auth.user:
+        return  # User is already authenticated
+
+    if 'cookie' in waterbutler_data:
+        auth.user = OSFUser.from_cookie(waterbutler_data.get('cookie'))
+        if not auth.user:
+            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, "Invalid user cookie.")
+
+    authorization = request.headers.get('Authorization')
+    if authorization and authorization.startswith('Bearer '):
+        auth.user = authenticate_via_oauth_bearer_token(node, waterbutler_data['action'])
+
+    if not auth.user:
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, "User authentication failed.")
+
+
+def trigger_file_signals(auth, fileversion, action):
+    if not fileversion:
+        return
+
+    if action == 'render':
+        file_signals.file_viewed.send(auth=auth, fileversion=fileversion)
+    elif action == 'download':
+        file_signals.file_downloaded.send(auth=auth, fileversion=fileversion)
+
+
 @collect_auth
 def get_auth(auth, **kwargs):
     waterbutler_data = decrypt_and_decode_jwt_payload()
-    node = get_authenticated_node(waterbutler_data['nid'])
-    action = waterbutler_data['action']
+    resource = get_authenticated_resource(waterbutler_data['nid'])
 
-    # Fallback to cookie-based/token authentication if the user is not authenticated yet
-    if not auth.user:
-        if 'cookie' in waterbutler_data:
-            user = OSFUser.from_cookie(waterbutler_data.get('cookie'))
-            if user:
-                auth.user = user
-            else:
-                raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
-
-        authorization = request.headers.get('Authorization')
-        if authorization and authorization.startswith('Bearer '):
-            auth.user = authenticate_via_oauth_bearer_token(node, action)
+    # fallback Authenticate the user if not already authenticated
+    authenticate_user_if_needed(auth, waterbutler_data, resource)
 
     action = waterbutler_data['action']
-    if not check_node_permission(node, auth, action):
+    if not check_node_permission(resource, auth, action):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
-    if not isinstance(node, Preprint):
-        provider = node.get_addon(waterbutler_data['provider'])
-    else:
-        provider = None
+    fileversion = get_file_version_from_wb(waterbutler_data)
 
-    if not provider and not isinstance(node, Preprint):
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    elif waterbutler_data['provider'] == 'osfstorage':
-        fileversion = get_file_version_from_wb(waterbutler_data)
+    credentials, waterbutler_settings = get_waterbutler_info(resource, waterbutler_data, fileversion)
+
+    trigger_file_signals(auth, fileversion, waterbutler_data['action'])
+
+    return construct_payload(
+        auth,
+        resource,
+        credentials,
+        waterbutler_settings
+    )
+
+
+def fetch_from_gv(resource, endpoint):
+    import requests
+    """General function to fetch data from GV's API."""
+    url = f"https://gv.com/{resource._id}/{endpoint}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Will raise an HTTPError for bad responses
+        return response.json()
+    except requests.RequestException as e:
+        # Log the error or send it to a monitoring system
+        print(f"Error fetching data from GV: {e}")
+
+
+def get_waterbutler_info(resource, waterbutler_data, fileversion):
+    if waterbutler_data['provider'] == 'osfstorage':
+        provider = resource.get_addon(waterbutler_data['provider'])
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
             node_id=provider.owner._id,
             root_id=provider.root_node._id,
         )
-        if action == 'render':
-            file_signals.file_viewed.send(auth=auth, fileversion=fileversion)
-        if action == 'download':
-            file_signals.file_downloaded.send(auth=auth, fileversion=fileversion)
+    elif waffle.flag_is_active(request, features.ENABLE_GV):
+        credentials = fetch_from_gv(resource, "credentials")
+        waterbutler_settings = fetch_from_gv(resource, "settings")
     else:
-        credentials = node.serialize_waterbutler_credentials(waterbutler_data['provider'])
-        waterbutler_settings = node.serialize_waterbutler_settings(waterbutler_data['provider'])
+        credentials = resource.serialize_waterbutler_credentials(waterbutler_data['provider'])
+        waterbutler_settings = resource.serialize_waterbutler_settings(waterbutler_data['provider'])
 
-    return construct_payload(
-        auth,
-        node,
-        credentials,
-        waterbutler_settings=waterbutler_settings
-    )
+    return credentials, waterbutler_settings
 
 
 def construct_payload(auth, node, credentials, waterbutler_settings):
