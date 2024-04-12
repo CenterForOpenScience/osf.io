@@ -366,21 +366,25 @@ def fetch_from_gv(resource, endpoint):
 
 
 def get_waterbutler_info(resource, waterbutler_data, fileversion):
-    provider = resource.get_addon(waterbutler_data['provider'])
-    if not provider:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    if provider.short_name == 'osfstorage':
-        provider = resource.get_addon(waterbutler_data['provider'])
+    provider_name = waterbutler_data.get('provider')
+
+    provider = None
+    if not isinstance(resource, Preprint):
+        provider = resource.get_addon(provider_name)
+        if not provider:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+    if isinstance(resource, Preprint) or provider_name != 'osfstorage':
+        credentials = resource.serialize_waterbutler_credentials(waterbutler_data['provider'])
+        waterbutler_settings = resource.serialize_waterbutler_settings(waterbutler_data['provider'])
+    elif waffle.flag_is_active(request, features.ENABLE_GV):
+        credentials, waterbutler_settings = fetch_from_gv(resource)
+    else:
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
             node_id=provider.owner._id,
             root_id=provider.root_node._id,
         )
-    elif waffle.flag_is_active(request, features.ENABLE_GV):
-        credentials, waterbutler_settings = fetch_from_gv(resource)
-    else:
-        credentials = resource.serialize_waterbutler_credentials(waterbutler_data['provider'])
-        waterbutler_settings = resource.serialize_waterbutler_settings(waterbutler_data['provider'])
 
     return credentials, waterbutler_settings
 
