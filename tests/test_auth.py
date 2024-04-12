@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import unittest
+from urllib.parse import quote_plus
+
 import pytest
 import logging
 
@@ -129,6 +131,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_successful_external_login_cas_redirect(self, mock_service_validate, mock_get_user_from_cas_resp):
+        # TODO: check in qa url encoding
         service_url = 'http://localhost:5000/dashboard/'
         user, validated_credentials, cas_resp = generate_external_user_with_resp(service_url)
         mock_service_validate.return_value = cas_resp
@@ -136,12 +139,11 @@ class TestAuthUtils(OsfTestCase):
         ticket = fake.md5()
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert resp.status_code == 302, 'redirect to CAS login'
-        assert '/login?service=' in resp.location
+        assert quote_plus('/login?service=') in resp.location
 
         # the valid username will be double quoted as it is furl quoted in both get_login_url and get_logout_url in order
-        username_quoted = quote(quote(user.username, safe='@'), safe='@')
-        assert f'username={username_quoted}' in resp.location
-        assert f'verification_key={user.verification_key}' in resp.location
+        assert quote_plus(f'username={user.username}') in resp.location
+        assert quote_plus(f'verification_key={user.verification_key}') in resp.location
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
