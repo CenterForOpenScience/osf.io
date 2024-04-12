@@ -7,6 +7,7 @@ import unittest
 from hashlib import md5
 from http.cookies import SimpleCookie
 from unittest import mock
+from urllib.parse import quote_plus
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -3472,6 +3473,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_click_confirmation_email(self, send_mail):
+        # TODO: check in qa url encoding
         email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
@@ -3482,7 +3484,7 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert self.user.email_verifications[token]['confirmed'] == True
         assert res.status_code == 302
-        login_url = 'login?service'
+        login_url = quote_plus('login?service')
         assert login_url in res.text
 
     def test_get_email_to_add_no_email(self):
@@ -3990,12 +3992,13 @@ class TestExternalAuthViews(OsfTestCase):
         assert resp.status_code == 401
 
     def test_external_login_confirm_email_get_with_another_user_logged_in(self):
+        # TODO: check in qa url encoding
         another_user = AuthUserFactory()
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=another_user.auth)
         assert res.status_code == 302, 'redirects to cas logout'
         assert '/logout?service=' in res.location
-        assert url in res.location
+        assert quote_plus(url) in res.location
 
     def test_external_login_confirm_email_get_without_destination(self):
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid')
@@ -4004,12 +4007,13 @@ class TestExternalAuthViews(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
+        # TODO: check in qa url encoding
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
-        assert 'new=true' in res.location
+        assert quote_plus('new=true') in res.location
 
         assert mock_welcome.call_count == 1
 
@@ -4875,6 +4879,7 @@ class TestResetPassword(OsfTestCase):
     @pytest.mark.enable_enqueue_task
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_can_reset_password_if_form_success(self, mock_service_validate):
+        # TODO: check in qa url encoding
         # load reset password page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resetPasswordForm')
@@ -4897,7 +4902,7 @@ class TestResetPassword(OsfTestCase):
         assert res.status_code == 302
         location = res.headers.get('Location')
         assert 'login?service=' in location
-        assert 'username={}'.format(quote(self.user.username, safe='@')) in location
+        assert 'username={}'.format(quote_plus(self.user.username)) in location
         assert f'verification_key={self.user.verification_key}' in location
 
         # check if password was updated

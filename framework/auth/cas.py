@@ -1,3 +1,5 @@
+from urllib.parse import unquote_plus
+
 import furl
 from django.utils import timezone
 from rest_framework import status as http_status
@@ -307,11 +309,11 @@ def make_response_from_ticket(ticket, service_url):
                     f'CAS response - redirect existing external IdP login to verification key login: user=[{user._id}]',
                     LogLevel.INFO
                 )
-                return redirect(get_logout_url(get_login_url(
+                return redirect(get_logout_url(unquote_plus(get_login_url(
                     service_url,
                     username=user.username,
                     verification_key=user.verification_key
-                )))
+                ))))
 
             # if user is authenticated by CAS
             print_cas_log(f'CAS response - finalizing authentication: user=[{user._id}]', LogLevel.INFO)

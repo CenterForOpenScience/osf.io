@@ -319,6 +319,7 @@ class TestCASExternalLogin(OsfTestCase):
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_with_user(self, mock_service_validate, mock_get_user_from_cas_resp):
+        # TODO: check in qa url encoding
         mock_response = make_external_response()
         mock_service_validate.return_value = mock_response
         validated_creds = cas.validate_external_credential(mock_response.user)
@@ -336,7 +337,7 @@ class TestCASExternalLogin(OsfTestCase):
         assert mock_get_user_from_cas_resp.call_count == 1
         assert resp.status_code == 302
         assert '/logout?service=' in resp.headers['Location']
-        assert '/login?service=' in resp.headers['Location']
+        assert '%2Flogin%3Fservice%3D' in resp.headers['Location']
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
