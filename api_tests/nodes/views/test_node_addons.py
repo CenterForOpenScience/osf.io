@@ -827,7 +827,7 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @property
     def _mock_folder_result(self):
-        return {'path': 'test name/test',
+        return {'path': '{user}/test',
                 'kind': 'repo',
                 'name': 'test',
                 'provider': 'github',
