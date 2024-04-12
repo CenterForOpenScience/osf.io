@@ -3,21 +3,19 @@
 # Requirements that are used in the development environment only
 
 # Testing
-pytest==6.2.5
-pytest-socket==0.3.5
-pytest-xdist==1.34.0
-pytest-django==3.10.0
-python-coveralls==2.9.3
-pytest-testmon==1.0.3
-pytest-celery # this dependency's purpose is to activate celery's pytest plugin
-pytest-asyncio==0.10.0  # The last version that supports Python 3.6 and pytest 5.0
+pytest==7.4.4
+pytest-socket==0.7.0
+pytest-xdist==3.5.0
+pytest-django==4.8.0
+python-coveralls==2.9.3 # do we need it?
+pytest-testmon==2.1.0
+pytest-asyncio==0.23.5  # The last version that supports Python 3.6 and pytest 5.0
 asynctest==0.13.0
-factory-boy==2.10.0
-webtest-plus==0.3.3
-mock==2.0.0
-Faker==4.0.1
-schema==0.7.5
-responses==0.10.6
+factory-boy==3.3.0
+webtest-plus==1.0.0
+Faker==23.2.1
+schema==0.7.4
+responses==0.25.0
 
 # Syntax checking
 flake8==7.0.0

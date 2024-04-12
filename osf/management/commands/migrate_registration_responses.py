@@ -117,8 +117,8 @@ def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'
         logger.info('DRY RUN; discarding changes.')
     else:
         logger.info('Saving changes...')
-        model.objects.bulk_update(successes_to_save, update_fields=['registration_responses', 'registration_responses_migrated'])
-        model.objects.bulk_update(errors_to_save, update_fields=['registration_responses_migrated'])
+        model.objects.bulk_update(successes_to_save, fields=['registration_responses', 'registration_responses_migrated'])
+        model.objects.bulk_update(errors_to_save, fields=['registration_responses_migrated'])
 
     return total_count
 
