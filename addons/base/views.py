@@ -1,3 +1,7 @@
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
 import datetime
 from rest_framework import status as http_status
 import os
@@ -65,6 +69,23 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
+
+
+def fetch_with_retries(url, max_retries=3, backoff_factor=1, status_forcelist=(500, 502, 503, 504)):
+    session = requests.Session()
+    retries = Retry(total=max_retries,
+                    read=max_retries,
+                    connect=max_retries,
+                    backoff_factor=backoff_factor,
+                    status_forcelist=status_forcelist,
+                    method_whitelist=['HEAD', 'GET', 'OPTIONS'])
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    response = session.get(url)
+    response.raise_for_status()
+    return response.json()
+
 
 ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
@@ -174,13 +195,8 @@ def get_permission_for_action(action):
     return permission
 
 
-def handle_draft_node(node):
-    """Convert a DraftNode to its corresponding node if applicable."""
-    return node.registered_draft.first() if isinstance(node, DraftNode) else node
-
-
-def check_node_permission(node, auth, action):
-    """Check if the user has the required permission on the node."""
+def check_resource_permissions(node, auth, action):
+    """Check if the user has the required permission on the resource."""
     permission = get_permission_for_action(action)
 
     if permission == permissions.READ and isinstance(node, Registration):
@@ -233,7 +249,7 @@ def authenticate_via_oauth_bearer_token(resource, action):
 
     permission = get_permission_for_action(action)
     if permission == permissions.READ:
-        if resource.can_view_files(auth=None):
+        if resource.can_view_files():
             return OSFUser.load(cas_resp.user)
         required_scope = resource.file_read_scope
     else:
@@ -268,12 +284,13 @@ def decrypt_and_decode_jwt_payload():
 def get_authenticated_resource(resource_id):
     resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
     if not resource:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Node not found.')
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
-    resource = handle_draft_node(resource)
+    """Convert a DraftNode to its corresponding node if applicable."""
+    resource = resource.registered_draft.first() if isinstance(resource, DraftNode) else resource
 
     if resource.deleted:
-        raise HTTPError(http_status.HTTP_410_GONE, message='Node has been deleted.')
+        raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been deleted.')
 
     return resource
 
@@ -354,14 +371,27 @@ def get_auth(auth, **kwargs):
 
     # Verify the user has permission to perform the requested action on the node
     action = waterbutler_data['action']
-    if not check_node_permission(resource, auth, action):
+    if not check_resource_permissions(resource, auth, action):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+
+    # Validate provider, exclude Preprints that don't have `get_addon`.
+    if not isinstance(resource, Preprint):
+        provider = resource.get_addon(waterbutler_data['provider'])
+        if not provider:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    else:
+        provider = None
 
     # Get the file version from Waterbutler data, which is used for file-specific actions
     fileversion = get_file_version_from_wb(waterbutler_data)
 
     # Fetch Waterbutler credentials and settings for the resource
-    credentials, waterbutler_settings = get_waterbutler_info(resource, waterbutler_data, fileversion)
+    credentials, waterbutler_settings = get_waterbutler_data(
+        resource,
+        waterbutler_data,
+        fileversion,
+        provider
+    )
 
     if fileversion:
         # Trigger any file-specific signals based on the action taken (e.g., file viewed, downloaded)
@@ -379,61 +409,56 @@ def get_auth(auth, **kwargs):
     )
 
 
-def fetch_from_gv(resource, endpoint):
-    import requests
-    """General function to fetch data from GV's API."""
-    url = f'https://gv.com/{resource._id}/'
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Will raise an HTTPError for bad responses
-        data = response.json()
-        return data['credentials'], data['settings']
-    except requests.RequestException as e:
-        # Log the error or send it to a monitoring system
-        print(f'Error fetching data from GV: {e}')
+def build_gv_url(csa_id):
+    return f'{settings.DOMAIN}/v1/configured_storage_addon/{csa_id}'
 
 
-def get_waterbutler_info(resource, waterbutler_data, fileversion):
+def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
     provider_name = waterbutler_data.get('provider')
-
-    provider = None
-    if not isinstance(resource, Preprint):
-        provider = resource.get_addon(provider_name)
-        if not provider:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-    if isinstance(resource, Preprint) or provider_name != 'osfstorage':
-        credentials = resource.serialize_waterbutler_credentials(waterbutler_data['provider'])
-        waterbutler_settings = resource.serialize_waterbutler_settings(waterbutler_data['provider'])
-    elif waffle.flag_is_active(request, features.ENABLE_GV):
-        credentials, waterbutler_settings = fetch_from_gv(resource)
-    else:
+    if isinstance(resource, Preprint):
+        credentials = resource.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = resource.serialize_waterbutler_settings(provider_name)
+    elif provider_name == 'osfstorage':
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
             node_id=provider.owner._id,
             root_id=provider.root_node._id,
         )
+    elif waffle.flag_is_active(request, features.ENABLE_GV):
+        url = build_gv_url(waterbutler_data['csa_id'])
+        data = fetch_with_retries(url)
+        credentials, waterbutler_settings = data['data']
+    else:
+        credentials = resource.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = resource.serialize_waterbutler_settings(provider_name)
 
     return credentials, waterbutler_settings
 
 
 def construct_payload(auth, resource, credentials, waterbutler_settings):
-    if isinstance(credentials.get('token'), bytes):
-        credentials['token'] = credentials.get('token').decode()
 
-    # Construct the auth dictionary
-    auth_dict = make_auth(auth.user)
-
-    # Define the callback URL conditionally
-    callback_url_key = 'create_waterbutler_log' if not getattr(resource, 'is_registration',
-                                                               False) else 'registration_callbacks'
-    callback_url = resource.api_url_for(callback_url_key, _absolute=True, _internal=True)
+    if isinstance(resource, Registration):
+        callback_url = resource.api_url_for(
+            'registration_callbacks',
+            _absolute=True,
+            _internal=True
+        )
+    else:
+        callback_url = resource.api_url_for(
+            'create_waterbutler_log',
+            _absolute=True,
+            _internal=True
+        )
 
     # Construct the data dictionary for JWT encoding
     jwt_data = {
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
-            'auth': auth_dict,
+            'auth': {
+                'id': auth.user._id,
+                'email': f'{auth.user._id}@osf.io',
+                'name': auth.user.fullname,
+            },
             'credentials': credentials,
             'settings': waterbutler_settings,
             'callback_url': callback_url
@@ -441,15 +466,18 @@ def construct_payload(auth, resource, credentials, waterbutler_settings):
     }
 
     # JWT encode the data
-    encoded_jwt = jwt.encode(jwt_data, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(
+        jwt_data,
+        settings.WATERBUTLER_JWT_SECRET,
+        algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+    )
 
     # Encrypt the encoded JWT with JWE
-    encrypted_jwt = jwe.encrypt(encoded_jwt, WATERBUTLER_JWE_KEY)
+    decoded_encrypted_jwt = jwe.encrypt(
+        encoded_jwt,
+        WATERBUTLER_JWE_KEY
+    ).decode()
 
-    # Decode the encrypted JWT to ensure it's in string format, not bytes
-    decoded_encrypted_jwt = encrypted_jwt.decode()
-
-    # Return the constructed payload
     return {'payload': decoded_encrypted_jwt}
 
 

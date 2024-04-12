@@ -2088,40 +2088,40 @@ class TestCheckPreprintAuth(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_node_permission(self.preprint, Auth(user=self.user), 'upload')
+        res = views.check_resource_permissions(self.preprint, Auth(user=self.user), 'upload')
         assert_true(res)
 
     def test_not_has_permission_read_published(self):
-        res = views.check_node_permission(self.preprint, Auth(), 'download')
+        res = views.check_resource_permissions(self.preprint, Auth(), 'download')
         assert_true(res)
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
         self.preprint.save()
-        assert_false(views.check_node_permission(self.preprint, Auth(user=user2), 'download'))
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user=user2), 'download'))
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
-        assert_false(views.check_node_permission(self.preprint, Auth(), 'download'))
+        assert_false(views.check_resource_permissions(self.preprint, Auth(), 'download'))
 
     def test_check_access_withdrawn_preprint_file(self):
         self.preprint.date_withdrawn = timezone.now()
         self.preprint.save()
         # Unauthenticated
-        assert_false(views.check_node_permission(self.preprint, Auth(), 'download'))
+        assert_false(views.check_resource_permissions(self.preprint, Auth(), 'download'))
 
         # Noncontributor
         user2 = AuthUserFactory()
-        assert_false(views.check_node_permission(self.preprint, Auth(user2), 'download'))
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user2), 'download'))
 
         # Read contributor
         self.preprint.add_contributor(user2, READ, save=True)
-        assert_false(views.check_node_permission(self.preprint, Auth(user2), 'download'))
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user2), 'download'))
 
         # Admin contributor
-        assert_false(views.check_node_permission(self.preprint, Auth(self.user), 'download'))
+        assert_false(views.check_resource_permissions(self.preprint, Auth(self.user), 'download'))
 
 
 
