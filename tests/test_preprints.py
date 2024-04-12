@@ -2099,41 +2099,29 @@ class TestCheckPreprintAuth(OsfTestCase):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_node_permission(self.preprint, Auth(user=user2), 'download')
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_node_permission(self.preprint, Auth(user=user2), 'download'))
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_node_permission(self.preprint, Auth(), 'download')
-        assert_equal(exc_info.exception.code, 401)
+        assert_false(views.check_node_permission(self.preprint, Auth(), 'download'))
 
     def test_check_access_withdrawn_preprint_file(self):
         self.preprint.date_withdrawn = timezone.now()
         self.preprint.save()
         # Unauthenticated
-        with assert_raises(HTTPError) as exc_info:
-            views.check_node_permission(self.preprint, Auth(), 'download')
-        assert_equal(exc_info.exception.code, 401)
+        assert_false(views.check_node_permission(self.preprint, Auth(), 'download'))
 
         # Noncontributor
         user2 = AuthUserFactory()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_node_permission(self.preprint, Auth(user2), 'download')
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_node_permission(self.preprint, Auth(user2), 'download'))
 
         # Read contributor
         self.preprint.add_contributor(user2, READ, save=True)
-        with assert_raises(HTTPError) as exc_info:
-            views.check_node_permission(self.preprint, Auth(user2), 'download')
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_node_permission(self.preprint, Auth(user2), 'download'))
 
         # Admin contributor
-        with assert_raises(HTTPError) as exc_info:
-            views.check_node_permission(self.preprint, Auth(self.user), 'download')
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_node_permission(self.preprint, Auth(self.user), 'download'))
 
 
 

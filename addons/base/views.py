@@ -188,7 +188,8 @@ def check_node_permission(node, auth, action):
     elif permission == permissions.READ:
         return node.can_view_files(auth)
     elif permission == permissions.WRITE:
-        return node.can_edit(auth)
+        if node.can_edit(auth):
+            return True
 
     # Users attempting to register projects with components might not have
     # `write` permissions for all components. This will result in a 403 for
@@ -219,7 +220,7 @@ def make_auth(user):
     return {}
 
 
-def authenticate_via_oauth_bearer_token(node, action):
+def authenticate_via_oauth_bearer_token(resource, action):
     authorization = request.headers.get('Authorization')
     client = cas.get_client()
 
@@ -232,18 +233,18 @@ def authenticate_via_oauth_bearer_token(node, action):
 
     permission = get_permission_for_action(action)
     if permission == permissions.READ:
-        required_scope = node.file_read_scope
+        if resource.can_view_files(auth=None):
+            return OSFUser.load(cas_resp.user)
+        required_scope = resource.file_read_scope
     else:
-        required_scope = node.file_write_scope
+        required_scope = resource.file_write_scope
 
-    access_token_scope = cas_resp.attributes.get('accessTokenScope')
-    if not access_token_scope:
+    token = cas_resp.attributes.get('accessTokenScope')
+    if not token or not cas_resp.authenticated:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
-    if required_scope not in oauth_scopes.normalize_scopes(access_token_scope):
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-    if not cas_resp.authenticated:
+    normalize_scopes = oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope'])
+    if required_scope not in normalize_scopes:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     return OSFUser.load(cas_resp.user)
@@ -297,21 +298,21 @@ def get_file_version_from_wb(waterbutler_data):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
-def authenticate_user_if_needed(auth, waterbutler_data, node):
+def authenticate_user_if_needed(auth, waterbutler_data, resource):
     if auth.user:
         return  # User is already authenticated
 
     if 'cookie' in waterbutler_data:
         auth.user = OSFUser.from_cookie(waterbutler_data.get('cookie'))
         if not auth.user:
-            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, "Invalid user cookie.")
+            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'Invalid user cookie.')
 
     authorization = request.headers.get('Authorization')
     if authorization and authorization.startswith('Bearer '):
-        auth.user = authenticate_via_oauth_bearer_token(node, waterbutler_data['action'])
+        auth.user = authenticate_via_oauth_bearer_token(resource, waterbutler_data['action'])
 
     if not auth.user:
-        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, "User authentication failed.")
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'User authentication failed.')
 
 
 def trigger_file_signals(auth, fileversion, action):
@@ -353,18 +354,22 @@ def get_auth(auth, **kwargs):
 def fetch_from_gv(resource, endpoint):
     import requests
     """General function to fetch data from GV's API."""
-    url = f"https://gv.com/{resource._id}/{endpoint}"
+    url = f'https://gv.com/{resource._id}/'
     try:
         response = requests.get(url)
         response.raise_for_status()  # Will raise an HTTPError for bad responses
-        return response.json()
+        data = response.json()
+        return data['credentials'], data['settings']
     except requests.RequestException as e:
         # Log the error or send it to a monitoring system
-        print(f"Error fetching data from GV: {e}")
+        print(f'Error fetching data from GV: {e}')
 
 
 def get_waterbutler_info(resource, waterbutler_data, fileversion):
-    if waterbutler_data['provider'] == 'osfstorage':
+    provider = resource.get_addon(waterbutler_data['provider'])
+    if not provider:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    if provider.short_name == 'osfstorage':
         provider = resource.get_addon(waterbutler_data['provider'])
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
@@ -372,8 +377,7 @@ def get_waterbutler_info(resource, waterbutler_data, fileversion):
             root_id=provider.root_node._id,
         )
     elif waffle.flag_is_active(request, features.ENABLE_GV):
-        credentials = fetch_from_gv(resource, "credentials")
-        waterbutler_settings = fetch_from_gv(resource, "settings")
+        credentials, waterbutler_settings = fetch_from_gv(resource)
     else:
         credentials = resource.serialize_waterbutler_credentials(waterbutler_data['provider'])
         waterbutler_settings = resource.serialize_waterbutler_settings(waterbutler_data['provider'])
