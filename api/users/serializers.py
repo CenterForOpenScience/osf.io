@@ -1,11 +1,11 @@
-import jsonschema
 from django.utils import timezone
-
-from rest_framework import serializers as ser
+from jsonschema import validate, Draft7Validator, ValidationError as JsonSchemaValidationError
 from rest_framework import exceptions
+from rest_framework import serializers as ser
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base.exceptions import InvalidModelValueError, Conflict
+from api.base.schemas.utils import validate_user_json, from_json
 from api.base.serializers import (
     BaseAPISerializer,
     JSONAPISerializer,
@@ -19,21 +19,17 @@ from api.base.serializers import (
     JSONAPIListField,
     ShowIfCurrentUser,
 )
-
-from api.base.utils import default_node_list_queryset
-from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, is_deprecated, hashids
-from osf.models import Email
-from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
-from osf.models import OSFUser, Preprint
-from osf.utils.requests import string_type_request_headers
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
-from osf.models.provider import AbstractProviderGroupObjectPermission
-from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
-from api.nodes.serializers import NodeSerializer, RegionRelationshipField
-from api.base.schemas.utils import validate_user_json, from_json
-from framework.auth.views import send_confirm_email
+from api.base.utils import default_node_list_queryset
 from api.base.versioning import get_kebab_snake_case_field
+from api.nodes.serializers import NodeSerializer, RegionRelationshipField
+from framework.auth.views import send_confirm_email
+from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
+from osf.models import Email, Node, OSFUser, Preprint, Registration
+from osf.models.provider import AbstractProviderGroupObjectPermission
+from osf.utils.requests import string_type_request_headers
+from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 
 
 class SocialField(ser.DictField):
@@ -224,8 +220,8 @@ class UserSerializer(JSONAPISerializer):
     def validate_social(self, value):
         schema = from_json('social-schema.json')
         try:
-            jsonschema.validate(value, schema)
-        except jsonschema.ValidationError as e:
+            validate(value, schema, cls=Draft7Validator)
+        except JsonSchemaValidationError as e:
             raise InvalidModelValueError(e)
 
         return value

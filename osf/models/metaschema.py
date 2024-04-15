@@ -1,7 +1,6 @@
 from django.db import models
 import waffle
-import jsonschema
-
+from jsonschema import validate, ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator
 from website.util import api_v2_url
 
 from .base import BaseModel, ObjectIDMixin
@@ -149,8 +148,8 @@ class RegistrationSchema(AbstractSchema):
                                                    required_fields=required_fields,
                                                    is_reviewer=reviewer)
         try:
-            jsonschema.validate(metadata, schema)
-        except jsonschema.ValidationError as e:
+            validate(metadata, schema, cls=Draft7Validator)
+        except JsonSchemaValidationError as e:
             for page in self.schema['pages']:
                 for question in page['questions']:
                     if e.relative_schema_path[0] == 'required':
@@ -176,7 +175,7 @@ class RegistrationSchema(AbstractSchema):
                             'For your registration your response to the field with qid: \'{}\' is invalid.'.format(question['qid']),
                         )
             raise ValidationError(e)
-        except jsonschema.SchemaError as e:
+        except SchemaError as e:
             raise ValidationValueError(e)
         return
 

@@ -1,7 +1,7 @@
 import re
 import waffle
-import jsonschema
 
+from jsonschema import ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator, validate, validators
 from django.conf import settings
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -15,6 +15,7 @@ from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
 
 from website.language import SWITCH_VALIDATOR_ERROR
+
 
 def validate_history_item(items):
     for value in items or []:
@@ -80,6 +81,7 @@ def validate_title(value, allow_blank=False):
 
 validate_url = URLValidator()
 
+
 def validate_profile_websites(profile_websites):
     for value in profile_websites or []:
         try:
@@ -88,12 +90,14 @@ def validate_profile_websites(profile_websites):
             # Reraise with a better message
             raise ValidationError('Invalid personal URL.')
 
+
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
     from osf.models import OSFUser
     for soc_key in value.keys():
         if soc_key not in OSFUser.SOCIAL_FIELDS:
             raise ValidationError(f'{soc_key} is not a valid key for social.')
+
 
 def validate_email(value):
     from osf.models import NotableDomain
@@ -114,11 +118,13 @@ def validate_subject_highlighted_count(provider, is_highlighted_addition):
     if is_highlighted_addition and provider.subjects.filter(highlighted=True).count() >= 10:
         raise DjangoValidationError(f'Too many highlighted subjects for PreprintProvider {provider._id}')
 
+
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject
     parent = Subject.objects.get(id=parent)
     if parent and len(parent.hierarchy) >= 3:
         raise DjangoValidationError('Invalid hierarchy')
+
 
 def validate_subjects(subject_list):
     """
@@ -131,6 +137,7 @@ def validate_subjects(subject_list):
     if subjects.count() != len(subject_list):
         raise ValidationValueError('Subject not found.')
     return subjects
+
 
 def expand_subject_hierarchy(subject_list):
     """
@@ -149,6 +156,7 @@ def expand_subject_hierarchy(subject_list):
                 expanded_subjects.append(subj.parent)
             subj = subj.parent
     return expanded_subjects
+
 
 def validate_subject_hierarchy(subject_hierarchy):
     from osf.models import Subject
@@ -202,6 +210,8 @@ class CommentMaxLength:
 
 
 sanitize_pattern = re.compile(r'<\/?[^>]+>')
+
+
 def validate_no_html(value):
     if value != sanitize_pattern.sub('', value):
         raise ValidationError('Unsanitary string')
@@ -243,11 +253,13 @@ class RegistrationResponsesValidator:
                 'type': 'object',
                 'minProperties': 1,  # at least one identifying URL
                 'additionalProperties': False,
-                'required': ['html'],  # html/view URL is required by archiver and for converting to legacy "nested" format
+                'required': ['html'],
+                # html/view URL is required by archiver and for converting to legacy "nested" format
                 'properties': {
                     'html': {
                         'type': 'string',
-                        'regex': FILE_VIEW_URL_REGEX,  # loosen this constraint to `format: iri` when we can drop the legacy format
+                        'regex': FILE_VIEW_URL_REGEX,
+                        # loosen this constraint to `format: iri` when we can drop the legacy format
                     },
                     'download': {
                         'type': 'string',
@@ -283,8 +295,8 @@ class RegistrationResponsesValidator:
         :raises ValidationError (if invalid)
         """
         try:
-            jsonschema.validate(registration_responses, self.json_schema)
-        except jsonschema.ValidationError as e:
+            validate(registration_responses, self.json_schema, cls=Draft7Validator)
+        except JsonSchemaValidationError as e:
             properties = self.json_schema.get('properties', {})
             relative_path = getattr(e, 'relative_path', None)
             question_id = relative_path[0] if relative_path else ''
@@ -305,7 +317,7 @@ class RegistrationResponsesValidator:
                         f'For your registration, your response to the \'{question_title}\' field is invalid. {e.message}',
                     )
             raise ValidationError(e.message)
-        except jsonschema.SchemaError as e:
+        except SchemaError as e:
             raise ValidationError(e.message)
         return True
 
@@ -349,8 +361,7 @@ class RegistrationResponsesValidator:
         options = [
             block.display_text
             for block in self.schema_blocks
-            if block.block_type == 'select-input-option'
-            and block.schema_block_group_key == question.schema_block_group_key
+            if block.block_type == 'select-input-option' and block.schema_block_group_key == question.schema_block_group_key
         ]
 
         # required is True if we want to both enforce required_fields
@@ -370,8 +381,7 @@ class RegistrationResponsesValidator:
             (
                 block.display_text
                 for block in self.schema_blocks
-                if block.block_type == 'question-label'
-                and block.schema_block_group_key == question.schema_block_group_key
+                if block.block_type == 'question-label' and block.schema_block_group_key == question.schema_block_group_key
             ),
             question.registration_response_key,  # default
         )
@@ -443,7 +453,7 @@ class JsonschemaValidator:
     def __init__(self, required_jsonschema):
         if settings.DEBUG:
             # if the jsonschema's bad, fail fast
-            validator_cls = jsonschema.validators.validator_for(required_jsonschema)
+            validator_cls = validators.validator_for(required_jsonschema)
             validator_cls.check_schema(required_jsonschema)
         self._required_jsonschema = required_jsonschema
 
@@ -453,8 +463,8 @@ class JsonschemaValidator:
         :raises ValidationError (if invalid)
         """
         try:
-            jsonschema.validate(value, self._required_jsonschema)
-        except jsonschema.ValidationError as e:
+            validate(value, self._required_jsonschema)
+        except JsonSchemaValidationError as e:
             # TODO: more helpful message?
             raise DjangoValidationError(e.message)
         return True

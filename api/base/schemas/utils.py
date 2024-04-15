@@ -17,7 +17,7 @@ def from_json(fname):
 
 def validate_user_json(value, json_schema):
     try:
-        print(validate(value, from_json(json_schema), cls=Draft7Validator))
+        validate(value, from_json(json_schema), cls=Draft7Validator)
     except ValidationError as e:
         if len(e.path) > 1:
             raise InvalidModelValueError(f"For '{e.path[-1]}' the field value {e.message}")
