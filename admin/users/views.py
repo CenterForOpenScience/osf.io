@@ -856,7 +856,7 @@ class UserInstitutionQuotaView(RdmPermissionMixin, UserPassesTestMixin, BaseUser
             # If the requested user's affiliated institution is using NII Storage, do nothing and refresh the page
             return redirect('users:user_details', guid=user_guid)
         min_value, max_value = connection.ops.integer_field_range('PositiveIntegerField')
-        if min_value < max_quota <= max_value:
+        if min_value <= max_quota <= max_value:
             # Update or create used quota for the user
             self.update_quota(max_quota, UserQuota.CUSTOM_STORAGE)
         return redirect('users:user_details', guid=user_guid)

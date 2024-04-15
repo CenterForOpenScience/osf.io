@@ -830,10 +830,10 @@ msgstr ""
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:129
 #: admin/templates/institutions/user_list_by_institute.html:181
-msgid "Value must be an integer number greater than or equal 1"
+msgid "Value must be an integer number greater than or equal 0"
 msgstr ""
 
-msgid "Please enter Each user Quota for Institutional Storage (GB) within 1~2147483647."
+msgid "Please enter Each user Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr ""
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:134
@@ -1086,7 +1086,7 @@ msgid "Each user Quota for NII Storage (GB)"
 msgstr ""
 
 #: admin/templates/institutions/user_list_by_institute.html:181
-msgid "Please enter Each user Quota for NII Storage (GB) within 1~2147483647."
+msgid "Please enter Each user Quota for NII Storage (GB) within 0~2147483647."
 msgstr ""
 
 #: admin/templates/institutions/user_list_by_institute.html:193
@@ -3679,5 +3679,5 @@ msgid "Cannot be restored because export data does not exist"
 msgstr ""
 
 #: admin/templates/users/user_details.html:62
-msgid "Please enter Quota for Institutional Storage (GB) within 1~2147483647."
+msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr ""

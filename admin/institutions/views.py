@@ -511,7 +511,7 @@ class UpdateQuotaUserListByInstitutionID(RdmPermissionMixin, UserPassesTestMixin
             # If institution is not using NII Storage, redirect to HTTP 404 page
             raise Http404
         min_value, max_value = connection.ops.integer_field_range('PositiveIntegerField')
-        if min_value < max_quota <= max_value:
+        if min_value <= max_quota <= max_value:
             # Update or create used quota for each user in the institution
             for user in OSFUser.objects.filter(
                     affiliated_institutions=institution_id):

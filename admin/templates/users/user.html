@@ -300,7 +300,7 @@
                         <form method="post" action="{% url 'users:quota' user.id %}" class="row">
                             {% csrf_token %}
                             <div class="col-xs-2 storageLimitContainer">
-                                <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="0" required value="{{ user.quota }}" oninvalid="this.setCustomValidity('Value must be an integer number greater than or equal 1.')" oninput="setCustomValidity('')" />
+                                <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="0" required value="{{ user.quota }}" oninvalid="this.setCustomValidity('{% trans 'Value must be an integer number greater than or equal 0' %}')" oninput="setCustomValidity('')" />
                             </div>
                             <input type="submit" id="applyMaxQuota" class="btn btn-success" value="{% trans 'Apply' %}" />
                         </form>

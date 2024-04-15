@@ -845,11 +845,11 @@ msgstr "クォータ一律設定 (GB)"
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:129
 #: admin/templates/institutions/user_list_by_institute.html:181
-msgid "Value must be an integer number greater than or equal 1"
-msgstr "値は1以上の整数である必要があります"
+msgid "Value must be an integer number greater than or equal 0"
+msgstr "値は0以上の整数である必要があります"
 
-msgid "Please enter Each user Quota for Institutional Storage (GB) within 1~2147483647."
-msgstr "クォータ一律設定 (GB)は1~2147483647の以内でご入力ください。"
+msgid "Please enter Each user Quota for Institutional Storage (GB) within 0~2147483647."
+msgstr "クォータ一律設定 (GB)は0~2147483647の以内でご入力ください。"
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:134
 #: admin/templates/institutions/user_list_by_institute.html:186
@@ -1104,8 +1104,8 @@ msgid "Each user Quota for NII Storage (GB)"
 msgstr "クォータ一律設定 (GB)"
 
 #: admin/templates/institutions/user_list_by_institute.html:181
-msgid "Please enter Each user Quota for NII Storage (GB) within 1~2147483647."
-msgstr "クォータ一律設定 (GB)は1~2147483647の以内でご入力ください。"
+msgid "Please enter Each user Quota for NII Storage (GB) within 0~2147483647."
+msgstr "クォータ一律設定 (GB)は0~2147483647の以内でご入力ください。"
 
 #: admin/templates/institutions/user_list_by_institute.html:193
 msgid "Export All Users Statistics (TSV)"
@@ -3768,5 +3768,5 @@ msgid "Cannot be restored because export data does not exist"
 msgstr "エクスポートデータが存在しないため、復元できません。"
 
 #: admin/templates/users/user_details.html:62
-msgid "Please enter Quota for Institutional Storage (GB) within 1~2147483647."
-msgstr "機関ストレージの割当て(GB)は1~2147483647の以内でご入力ください。"
+msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
+msgstr "機関ストレージの割当て(GB)は0~2147483647の以内でご入力ください。"

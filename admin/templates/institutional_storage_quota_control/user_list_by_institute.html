@@ -219,7 +219,7 @@
         let $max_quota = $('#storageLimit');
         let max_quota = $max_quota.val();
         if (!(/^[0-9]+$/.test(max_quota))) {
-            $max_quota.get(0).setCustomValidity('{% trans 'Please enter Each user Quota for Institutional Storage (GB) within 1~2147483647.' %}');
+            $max_quota.get(0).setCustomValidity('{% trans 'Please enter Each user Quota for Institutional Storage (GB) within 0~2147483647.' %}');
         } else {
             $max_quota.get(0).setCustomValidity('');
         }

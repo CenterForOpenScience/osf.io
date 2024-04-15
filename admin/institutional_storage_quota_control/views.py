@@ -161,8 +161,8 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
             # If institution is not found, redirect to HTTP 404 page
             raise Http404
         min_value, max_value = connection.ops.integer_field_range('PositiveIntegerField')
-        if min_value < max_quota <= max_value:
-            # If max quota value is between 1 and 2147483647, update or create used quota for each user in the institution
+        if min_value <= max_quota <= max_value:
+            # If max quota value is between 0 and 2147483647, update or create used quota for each user in the institution
             for user in OSFUser.objects.filter(
                     affiliated_institutions=self.institution_id):
                 UserQuota.objects.update_or_create(

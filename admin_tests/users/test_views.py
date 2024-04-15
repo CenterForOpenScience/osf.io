@@ -943,7 +943,7 @@ class TestSetUserQuota(AdminTestCase):
             user=self.user, storage_type=UserQuota.NII_STORAGE
         ).first()
         nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 1)
+        nt.assert_equal(user_quota.max_quota, 0)
 
 
 class TestGetUserInstitutionQuota(AdminTestCase):
