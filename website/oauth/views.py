@@ -1,14 +1,23 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import status as http_status
+import waffle
+import requests
+from urllib.parse import (
+    urlencode,
+    urlparse,
+    urlunparse,
+)
 
-from flask import redirect
+from flask import redirect, request
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from osf.models import ExternalAccount
+from osf import features
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
+from website.settings import GRAVYVALET_URL
 
 @must_be_logged_in
 def oauth_disconnect(external_account_id, auth):
@@ -41,17 +50,27 @@ def oauth_connect(service_name, auth):
 
 @must_be_logged_in
 def oauth_callback(service_name, auth):
-    user = auth.user
-    provider = get_service(service_name)
+    if waffle.flag_is_active(request, features.ENABLE_GV):
+        code = request.args.get('code')
+        state = request.args.get('state')
+        query_params = {
+            'code': code,
+            'state': state,
+        }
+        gv_url = urlunparse(urlparse(GRAVYVALET_URL)._replace(path='callback', query=urlencode(query_params)))
+        requests.get(gv_url)
+    else:
+        user = auth.user
+        provider = get_service(service_name)
 
-    # Retrieve permanent credentials from provider
-    if not provider.auth_callback(user=user):
-        return {}
+        # Retrieve permanent credentials from provider
+        if not provider.auth_callback(user=user):
+            return {}
 
-    if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
-        user.external_accounts.add(provider.account)
-        user.save()
+        if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
+            user.external_accounts.add(provider.account)
+            user.save()
 
-    oauth_complete.send(provider, account=provider.account, user=user)
+        oauth_complete.send(provider, account=provider.account, user=user)
 
     return {}

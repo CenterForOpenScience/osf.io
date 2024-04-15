@@ -3,13 +3,21 @@ import mock
 from nose.tools import *  # noqa
 import responses
 from rest_framework import status as http_status
+from waffle.testutils import override_flag
+from urllib.parse import (
+    urlencode,
+    urlparse,
+    urlunparse,
+)
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from osf.utils import permissions
+from osf.features import ENABLE_GV
 from website.util import api_url_for, web_url_for
+from website.settings import GRAVYVALET_URL
 
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
@@ -53,6 +61,23 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         name, args, kwargs = mock_callback.mock_calls[0]
         assert_equal(kwargs['user']._id, self.user._id)
+
+    @mock.patch('website.oauth.views.requests.get')
+    def test_oauth_finish_enable_gv(self, mock_requests_get):
+        url = web_url_for(
+            'oauth_callback',
+            service_name=self.ADDON_SHORT_NAME
+        )
+        query_params = {
+            'code': 'somecode',
+            'state': 'somestatetoken',
+        }
+        with override_flag(ENABLE_GV, active=True):
+            request_url = urlunparse(urlparse(url)._replace(query=urlencode(query_params)))
+            res = self.app.get(request_url, auth=self.user.auth)
+        mock_requests_get.assert_called_with(
+            urlunparse(urlparse(GRAVYVALET_URL)._replace(path='callback', query=urlencode(query_params)))
+        )
 
     def test_delete_external_account(self):
         url = api_url_for(
