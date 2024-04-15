@@ -4,7 +4,6 @@
 import datetime as dt
 import time
 import unittest
-from urllib.parse import quote
 from hashlib import md5
 from http.cookies import SimpleCookie
 from unittest import mock
@@ -4032,7 +4031,7 @@ class TestExternalAuthViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
-        assert 'new=true' not in res.location
+        assert 'new=true' not in parse.unquote(res.location)
 
         assert mock_link_confirm.call_count == 1
 
