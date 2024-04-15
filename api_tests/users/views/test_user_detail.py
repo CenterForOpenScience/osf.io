@@ -1306,7 +1306,7 @@ class UserProfileMixin:
         request_payload['data']['attributes'][request_key][0]['institution'] = ''
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'institution' the field value '' is too short"
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value '' should be non-empty"
 
     def test_user_put_profile_validation_start_year_dependency(self, app, user_one, user_one_url, request_payload, request_key):
         # Tests to make sure ongoing is bool
