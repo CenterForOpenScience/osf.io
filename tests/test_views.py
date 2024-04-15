@@ -10,6 +10,7 @@ import json
 import time
 from unittest import mock
 from http.cookies import SimpleCookie
+from urllib import parse
 
 import unittest
 from urllib.parse import quote
@@ -4046,7 +4047,7 @@ class TestExternalAuthViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
-        assert 'new=true' in res.location
+        assert 'new=true' in parse.unquote(res.location)
 
         assert mock_welcome.call_count == 1
 
@@ -4064,7 +4065,7 @@ class TestExternalAuthViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
-        assert 'new=true' not in res.location
+        assert 'new=true' not in parse.unquote(res.location)
 
         assert mock_link_confirm.call_count == 1
 
