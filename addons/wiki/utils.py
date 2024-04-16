@@ -270,13 +270,6 @@ def serialize_wiki_widget(node):
     wiki_widget_data.update(wiki.config.to_json())
     return wiki_widget_data
 
-def get_node_guid(node):
-    qs_guid = node._prefetched_objects_cache['guids'].only()
-    guid_serializer = serializers.serialize('json', qs_guid, ensure_ascii=False)
-    guid_json = json.loads(guid_serializer)
-    guid = guid_json[0]['fields']['_id']
-    return guid
-
 def _get_all_child_file_ids(dir_id):
     parent_dir = BaseFileNode.objects.get(_id=dir_id)
     children_folder = parent_dir._children.filter(type='osf.osfstoragefolder', deleted__isnull=True)
@@ -291,7 +284,7 @@ def _get_all_child_file_ids(dir_id):
 def get_node_file_mapping(node, dir_id):
     file_ids = list(_get_all_child_file_ids(dir_id))
     node_file_infos = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', deleted__isnull=True).values_list('_id', 'name', 'parent_id__name')
-    mapping = [{'wiki_file': f"{info[2]}^{info[1]}", 'file_id': info[0]} for info in node_file_infos if info[0] in file_ids]
+    mapping = [{'wiki_file': f'{info[2]}^{info[1]}', 'file_id': info[0]} for info in node_file_infos if info[0] in file_ids]
     return mapping
 
 def get_import_wiki_name_list(wiki_info):
@@ -309,20 +302,19 @@ def get_wiki_fullpath(node, w_name):
 def _get_wiki_parent(wiki, path):
     WikiPage = apps.get_model('addons_wiki.WikiPage')
     try:
-        parent_wiki_page = WikiPage.objects.get(id=wiki.parent)
-        parent_wiki_page_name = parent_wiki_page.page_name
+        parent_wiki_page_name = wiki.parent.page_name
         if parent_wiki_page_name == 'home':
             parent_wiki_page_name = 'HOME'
         path = parent_wiki_page_name + '/' + path
-        return _get_wiki_parent(parent_wiki_page, path)
+        return _get_wiki_parent(wiki.parent, path)
     except Exception:
         return path
 
 def get_numbered_name_for_existing_wiki(node, base_name):
     WikiPage = apps.get_model('addons_wiki.WikiPage')
-    existing_wikis = WikiPage.objects.filter(page_name__startswith=base_name, deleted__isnull=True, node=node)
+    existing_wikis = WikiPage.objects.filter(page_name__istartswith=base_name, deleted__isnull=True, node=node)
 
-    target_wikis = [wiki for wiki in existing_wikis if wiki.page_name == base_name or wiki.page_name[len(base_name) + 1: -1].isdigit()]
+    target_wikis = [wiki for wiki in existing_wikis if wiki.page_name.lower() == base_name.lower() or wiki.page_name[len(base_name) + 1: -1].isdigit()]
 
     if not target_wikis and base_name.lower() == 'home':
         existing_wikis = WikiPage.objects.filter(page_name='home', deleted__isnull=True, node=node)
@@ -332,7 +324,7 @@ def get_numbered_name_for_existing_wiki(node, base_name):
     if not target_wikis:
         return ''
 
-    max_index = max((0 if wiki.page_name == base_name else int(wiki.page_name[len(base_name) + 1: -1]) for wiki in target_wikis), default='')
+    max_index = max((0 if wiki.page_name.lower() == base_name.lower() else int(wiki.page_name[len(base_name) + 1: -1]) for wiki in target_wikis), default='')
 
     return max_index + 1 if max_index != '' else max_index
 

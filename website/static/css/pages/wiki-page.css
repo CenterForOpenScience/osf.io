@@ -374,6 +374,38 @@ select.form-control {
     height: 1em;
 }
 
+.mFrame {
+    overflow: auto;
+    height: 400px;
+}
+
+.wikiEditorModalLabel {
+    argin-bottom: 0;
+    width: 120px;
+    display: inline-block;
+    text-align: left;
+}
+
+.wikiEditorModalInput {
+    width: calc(100% - 136px);
+    display: inline-block;
+}
+
+#mMenuBar {
+    border-bottom: 1px solid;
+    border-bottom-color: #d1d5db;
+}
+
+#tableMenu {
+    border: 1px solid #aaa;
+    padding: 2px;
+    font-size: 90%;
+    background: white;
+    z-index: 15;
+    white-space: nowrap;
+    position: absolute;
+}  
+
 .milkdown .editor table {
     width: 80%;
 }

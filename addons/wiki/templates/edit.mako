@@ -58,7 +58,7 @@
                                       <i class="fa fa-trash-o text-danger"></i><span>${_("Abort")}</span>
                                     </div>
                                 % else:
-                                    <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#importWiki">
+                                    <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#wikiImport">
                                       <i class="fa fa-upload text-success"></i><span>${_("Import")}</span>
                                     </div>
                                 % endif
@@ -179,11 +179,11 @@
                     </div>
                     <button class="menuItem" style="margin-left: 40px;" data-toggle="modal" data-target="#wiki-help-modal"><span class="material-symbols-outlined">help</span></button>
                   </div>
-                  <div id="mEditor" style="overflow: auto;height: 400px; ${'' if version_settings['view'] == 'preview' else 'display: none'}"></div>
+                  <div id="mEditor" class="mFrame" style="${'' if version_settings['view'] == 'preview' else 'display: none'}"></div>
 
                   <div id="wikiViewRender">
                       % if wiki_markdown:
-                          <div id="mView" style="overflow: auto;height: 400px;"></div>
+                          <div id="mView" class="mFrame"></div>
                       % else:
                           <p class="text-muted"><em>${_("Add important information, links, or images here to describe your project.")}</em></p>
                       % endif
@@ -384,12 +384,12 @@
       </div>
       <div class="modal-body">
         <div class="m-b-sm">
-          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Link URL:")}</p>
-          <input id="imageSrc" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter link URL')}">
+          <p class="wikiEditorModalLabel">${_("Link URL:")}</p>
+          <input id="imageSrc" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter link URL')}">
         </div>
-        <div style="margin-bottom: 10px;">
-          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Link Title:")}</p>
-          <input id="imageTitle" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter link Title')}">
+        <div class="m-b-sm">
+          <p class="wikiEditorModalLabel">${_("Link Title:")}</p>
+          <input id="imageTitle" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter link Title')}">
         </div>
       </div>
       <div class="modal-footer">
@@ -417,16 +417,16 @@
       </div>
       <div class="modal-body">
         <div class="m-b-sm">
-          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Image URL:")}</p>
-          <input id="imageSrc" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter image URL')}">
-        </div>
-        <div style="margin-bottom: 10px;">
-          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Image Title:")}</p>
-          <input id="imageTitle" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter image Title')}">
+          <p class="wikiEditorModalLabel">${_("Image URL:")}</p>
+          <input id="imageSrc" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter image URL')}">
         </div>
         <div class="m-b-sm">
-          <p style="margin-bottom: 0; width: 120px; display: inline-block; text-align: left;">${_("Alternative Text:")}</p>
-          <input id="imageAlt" class="form-control" type="text" style="width: calc(100% - 136px); display: inline-block;" placeholder="${_('Enter Alternative Text')}">
+          <p class="wikiEditorModalLabel">${_("Image Title:")}</p>
+          <input id="imageTitle" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter image Title')}">
+        </div>
+        <div class="m-b-sm">
+          <p class="wikiEditorModalLabel">${_("Alternative Text:")}</p>
+          <input id="imageAlt" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter Alternative Text')}">
         </div>
       </div>
       <div class="modal-footer">

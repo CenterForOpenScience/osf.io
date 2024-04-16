@@ -20,6 +20,9 @@
 
 <script type="text/javascript">
     $(document).ready(function() {
+        const ABORT_WIKI_IMPORT_INTERVAL = 1000;
+        const ABORT_N = 60
+        const ABORT_WIKI_IMPORT_TIMEOUT = ABORT_WIKI_IMPORT_INTERVAL * ABORT_N;
         var $submitForm = $('#abort-wiki-import');
         var $abortErrorMsg = $('.abortErrorMsg');
         $('#abort-wiki-import').on('click', async function () {
@@ -27,7 +30,7 @@
             const cleanTasksUrl = ${ urls['api']['base'] | sjson, n } + 'clean_celery_tasks/';
             const getAbortWikiImportResultUrl = ${ urls['api']['base'] | sjson, n } + 'get_abort_wiki_import_result/';
             const abortWikiImport = await requestAbortWikiImport(cleanTasksUrl, $abortErrorMsg);
-            const abortTaskResult = await intervalGetAbortWikiImportResult(getAbortWikiImportResultUrl, 1000, 60000, 'abort wiki import')
+            const abortTaskResult = await intervalGetAbortWikiImportResult(getAbortWikiImportResultUrl, ABORT_WIKI_IMPORT_INTERVAL, ABORT_WIKI_IMPORT_TIMEOUT)
         });
     });
 
@@ -52,14 +55,14 @@
         });
     }
 
-    async function intervalGetAbortWikiImportResult(url, interval_ms, timeout_ms, operation) {
+    async function intervalGetAbortWikiImportResult(url, interval_ms, timeout_ms) {
         var count = 0;
         var result = '';
-        var timeoutCtn = timeout_ms / interval_ms
-        while (count < timeoutCtn + 1) {
+        var timeoutCtn = Math.ceil(timeout_ms / interval_ms)
+        while (count < timeoutCtn) {
             await new Promise(function(resolve){
                 setTimeout(async function(){
-                    result = await getAbortWikiImportResult(url, operation)
+                    result = await getAbortWikiImportResult(url)
                     resolve();
                 }, interval_ms);
             });
@@ -74,13 +77,13 @@
             count++;
         }
         if (count === timeoutCtn){
-            console.log('timeout the operation');
+            alert('The import process may have encountered an unexpected error and been interrupted. To check the latest status, please reload the page. If the issue persists, please contact support.');
             return;
         }
         return result;
     }
 
-    async function getAbortWikiImportResult(getAbortWikiImportUrl, operation) {
+    async function getAbortWikiImportResult(getAbortWikiImportUrl) {
         console.log('get celery task result start')
         return $.ajax({
             type: 'GET',

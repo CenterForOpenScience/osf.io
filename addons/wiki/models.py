@@ -274,6 +274,20 @@ class WikiPageNodeManager(models.Manager):
 
         return WikiPage.load(id)
 
+    def get_for_node(self, node, name=None, id=None):
+        if name:
+            try:
+                name = (name or '').strip()
+                return WikiPage.objects.get(page_name__iexact=name, deleted__isnull=True, node=node)
+            except WikiPage.DoesNotExist:
+                return None
+        return WikiPage.load(id)
+
+    def get_for_child_nodes(self, node, parent=None):
+        if parent:
+            return WikiPage.objects.filter(parent__exact=parent, deleted__isnull=True, node=node)
+        return None
+
     def get_wiki_pages_latest(self, node):
         wiki_page_ids = node.wikis.filter(deleted__isnull=True).values_list('id', flat=True)
         return WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids, wiki_page__parent__isnull=True)
@@ -298,7 +312,7 @@ class WikiPage(GuidMixin, BaseModel):
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE, related_name='wikis')
-    parent = models.IntegerField(blank=True, null=True)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
     sort_order = models.IntegerField(blank=True, null=True)
     deleted = NonNaiveDateTimeField(blank=True, null=True, db_index=True)
 
