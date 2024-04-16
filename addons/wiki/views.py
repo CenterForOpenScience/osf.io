@@ -213,7 +213,7 @@ def project_wiki_delete(auth, wname, **kwargs):
     if not wiki_page:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-    child_wiki_pages = WikiPage.objects.get_for_node(node=node, parent=wiki_page.id)
+    child_wiki_pages = WikiPage.objects.get_for_child_nodes(node=node, parent=wiki_page.id)
     wiki_page.delete(auth)
 
     if child_wiki_pages:
@@ -225,7 +225,7 @@ def project_wiki_delete(auth, wname, **kwargs):
 
 def _child_wiki_delete(auth, node, wiki_page):
     wiki_page.delete(auth)
-    child_wiki_pages = WikiPage.objects.get_for_node(node=node, parent=wiki_page.id)
+    child_wiki_pages = WikiPage.objects.get_for_child_nodes(node=node, parent=wiki_page.id)
     for page in child_wiki_pages:
         _child_wiki_delete(auth, node, page)
 
@@ -241,7 +241,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_page = WikiPage.objects.get_for_node(node, wiki_name)
     wiki_version = WikiVersion.objects.get_for_node(node, wiki_name)
     wiki_settings = node.get_addon('wiki')
-    parent_wiki_page = WikiPage.objects.get(id=wiki_page.parent) if wiki_page and wiki_page.parent else None
+    parent_wiki_page = WikiPage.objects.get(id=wiki_page.parent_id) if wiki_page and wiki_page.parent else None
     can_edit = (
         auth.logged_in and not
         node.is_registration and (
@@ -551,7 +551,7 @@ def project_wiki_validate_name(wname, auth, node, p_wname=None, **kwargs):
             message_long='A wiki page with that name already exists.'
         ))
 
-    parent_wiki_id = None
+    parent_wiki = None
     if p_wname:
         p_wname = unicodedata.normalize('NFC', p_wname)
         parent_wiki_name = p_wname.strip()
@@ -565,9 +565,9 @@ def project_wiki_validate_name(wname, auth, node, p_wname=None, **kwargs):
                     message_short='Parent Wiki page nothing.',
                     message_long='The parent wiki page does not exist.'
                 ))
-        parent_wiki_id = parent_wiki.id
+        parent_wiki = parent_wiki
 
-    WikiPage.objects.create_for_node(node, wiki_name, '', auth, parent_wiki_id)
+    WikiPage.objects.create_for_node(node, wiki_name, '', auth, parent_wiki)
     return {'message': wiki_name}
 
 @must_be_valid_project
@@ -741,7 +741,7 @@ def serialize_component_wiki(node, auth):
 @must_be_valid_project
 def project_wiki_validate_for_import(dir_id, node, **kwargs):
     wiki_utils.check_file_object_in_node(dir_id, node)
-    node_id = wiki_utils.get_node_guid(node)
+    node_id = node.guids.first()._id
     task = tasks.run_project_wiki_validate_for_import.delay(dir_id, node_id)
     task_id = task.id
     return {'taskId': task_id}
@@ -781,7 +781,7 @@ def _validate_import_folder(node, folder, parent_path):
     parent_wiki_fullpath = wiki_utils.get_wiki_fullpath(node, parent_wiki_name)
     p_numbering = None
     # check duplication of parent_wiki_name
-    if parent_path != parent_wiki_fullpath:
+    if parent_path.lower() != parent_wiki_fullpath.lower():
         p_numbering = wiki_utils.get_numbered_name_for_existing_wiki(node, parent_wiki_name)
     if isinstance(p_numbering, int):
         parent_wiki_name = parent_wiki_name + '(' + str(p_numbering) + ')'
@@ -834,7 +834,7 @@ def _validate_import_wiki_exists_duplicated(node, info):
     fullpath = wiki_utils.get_wiki_fullpath(node, w_name)
     wiki = WikiPage.objects.get_for_node(node, w_name)
     if wiki:
-        if fullpath == info['path']:
+        if fullpath.lower() == info['path'].lower():
             # if the wiki exists, update info list
             info['status'] = 'valid_exists'
             info['numbering'] = wiki_utils.get_numbered_name_for_existing_wiki(node, w_name)
@@ -863,7 +863,7 @@ def _validate_import_duplicated_directry(info_list):
 @must_have_addon('wiki', 'node')
 def project_wiki_import(dir_id, auth, node, **kwargs):
     wiki_utils.check_file_object_in_node(dir_id, node)
-    node_id = wiki_utils.get_node_guid(node)
+    node_id = node.guids.first()._id
     current_user_id = get_current_user_id()
     data = request.get_json()
     data_json = json.dumps(data)
@@ -880,7 +880,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
     res_child = []
     import_errors = []
     user = auth.user
-    pid = wiki_utils.get_node_guid(node)
+    pid = node.guids.first()._id
     osf_cookie = user.get_or_create_cookie().decode()
     creator, creator_auth = get_creator_auth_header(user)
     task = AbortableAsyncResult(task_id, app=celery_app)
@@ -999,7 +999,7 @@ def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, m
     file_id = _check_attachment_file_name_exist(wiki_name, match_path, dir_id, node_file_mapping)
     if file_id:
         # replace process of file name
-        node_guid = wiki_utils.get_node_guid(node)
+        node_guid = node.guids.first()._id
         if notation == 'image':
             url = website_settings.WATERBUTLER_URL + '/v1/resources/' + node_guid + '/providers/osfstorage/' + file_id + '?mode=render'
             #wurl = waterbutler_api_url_for(node_guid, 'osfstorage', path='/{}?mode=render'.format(file_id), _internal=True)
@@ -1091,7 +1091,7 @@ def _replace_common_rule(name):
 def _get_or_create_wiki_folder(osf_cookie, node, parent_id, user, creator_auth, folder_name, parent_path='osfstorage/'):
     folder_id = ''
     folder_path = ''
-    p_guid = wiki_utils.get_node_guid(node)
+    p_guid = node.guids.first()._id
     try:
         folder = BaseFileNode.objects.get(target_object_id=node.id, parent_id=parent_id, type='osf.osfstoragefolder', name=folder_name, deleted__isnull=True)
     except ObjectDoesNotExist:
@@ -1115,7 +1115,7 @@ def _create_wiki_folder(osf_cookie, p_guid, folder_name, parent_path):
     return folder_id, folder_path
 
 def _get_md_content_from_wb(data, node, creator_auth, task):
-    node_id = wiki_utils.get_node_guid(node)
+    node_id = node.guids.first()._id
     for i, info in enumerate(data):
         if task.is_aborted():
             return None
@@ -1139,7 +1139,7 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
     replaced_wiki_info = []
     rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
     rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
-    node_file_mapping = wiki_utils.get_node_file_mapping(node, dir_id)
+    node_file_mapping = node.guids.first()._id
     import_wiki_name_list = wiki_utils.get_import_wiki_name_list(wiki_info)
     for info in wiki_info:
         if task.is_aborted():
@@ -1158,7 +1158,7 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
 def _wiki_import_create_or_update(path, data, auth, node, task, p_wname=None, **kwargs):
     if task.is_aborted():
         raise ImportTaskAbortedError
-    parent_wiki_id = None
+    parent_wiki = None
     updated_wiki_id = None
     # normalize NFC
     data = unicodedata.normalize('NFC', data)
@@ -1171,7 +1171,6 @@ def _wiki_import_create_or_update(path, data, auth, node, task, p_wname=None, **
         if not parent_wiki:
             # Import Error
             return {}
-        parent_wiki_id = parent_wiki.id
     wiki_version = WikiVersion.objects.get_for_node(node, wiki_name)
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
@@ -1186,7 +1185,7 @@ def _wiki_import_create_or_update(path, data, auth, node, task, p_wname=None, **
             ret = {'status': 'unmodified', 'path': path}
     else:
         # Create a wiki
-        wiki_page = WikiPage.objects.create_for_node(node, wiki_name, data, auth, parent_wiki_id, True)
+        wiki_page = WikiPage.objects.create_for_node(node, wiki_name, data, auth, parent_wiki, True)
         updated_wiki_id = wiki_page.id
         ret = {'status': 'success', 'path': path}
     return ret, updated_wiki_id
@@ -1212,6 +1211,14 @@ def _import_same_level_wiki(wiki_info, depth, auth, node, task):
     return ret, wiki_id_list
 
 def _get_max_depth(wiki_infos):
+    """
+    Calculate the maximum depth of paths in the given list of wiki information.
+    Args:
+        wiki_infos (list): A list of dictionaries containing information about wiki pages.
+                           Each dictionary should have a 'path' key representing the page path.
+    Returns:
+        int: The maximum depth of paths in the list.
+    """
     max_depth = max(info['path'].count('/') for info in wiki_infos)
     return max_depth - 1
 
@@ -1244,7 +1251,9 @@ def project_get_task_result(task_id, node, **kwargs):
 
 def _extract_err_msg(err):
     str_err = str(err)
-    message_long = str_err.split('\\t')[1]
+    message_long = None
+    if '\t' in str_err:
+        message_long = str_err.split('\t')[1]
     return message_long
 
 @must_be_valid_project
@@ -1321,8 +1330,8 @@ def _bulk_update_wiki_sort(node, sort_id_list, sort_num_list, parent_wiki_id_lis
         parent_wiki_id = parent_wiki_id_list[idx]
         setattr(page, 'sort_order', sort_order_number)
         if parent_wiki_id is not None:
-            parent_id = WikiPage.objects.get(guids___id=parent_wiki_id).id
-            setattr(page, 'parent', parent_id)
+            parent = WikiPage.objects.get(guids___id=parent_wiki_id)
+            setattr(page, 'parent', parent)
         else:
             setattr(page, 'parent', None)
     bulk_update(wiki_pages)

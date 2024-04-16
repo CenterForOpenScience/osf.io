@@ -17,7 +17,8 @@
                         </div>
                         <div class="wiki-radio-item">
                             <label>
-                                <input type="radio" name="addHierarchy" value="${wiki_name}">
+                                <input type="radio" name="addHierarchy" value="false">
+                                <input id="parent-wiki-name-when-add-child" type="hidden" value="${wiki_name}">
                                 ${_("Add to child hierarchy")}
                             </label>
                         </div>
@@ -82,7 +83,8 @@
                         validateUrl = ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/';
                     }
                 } else {
-                    validateUrl = ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/parent/' + encodeURIComponent(addHierarchy) + '/validate/';
+                    var parent_wiki_name = $newWikiForm.find('#parent-wiki-name-when-add-child').val();
+                    validateUrl = ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/parent/' + encodeURIComponent(parent_wiki_name) + '/validate/';
                 }
                 var request = $.ajax({
                     type: 'GET',
@@ -91,7 +93,7 @@
                     dataType: 'json'
                 });
                 request.done(function (response) {
-                    window.location.href = ${ urls['web']['base'] | sjson, n } + encodeURIComponent(wikiName);
+                    window.location.href = ${ urls['web']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/?view=preview&menu';
                 });
                 request.fail(function (response, textStatus, error) {
                     if (response.status === 409) {
