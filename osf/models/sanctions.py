@@ -630,8 +630,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def mark_as_completed(self):
         # Plucked from embargo_registrations script
-        self.state = Sanction.COMPLETED
-        # self.to_COMPLETED()
+        # self.state = Sanction.COMPLETED
+        self.to_COMPLETED()
 
 class Retraction(EmailApprovableSanction):
     """
