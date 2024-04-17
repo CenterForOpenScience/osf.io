@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import json
 import logging
 import uuid
 
@@ -12,7 +11,6 @@ import requests
 from bs4 import BeautifulSoup
 from django.apps import apps
 
-from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
@@ -300,7 +298,6 @@ def get_wiki_fullpath(node, w_name):
     return fullpath
 
 def _get_wiki_parent(wiki, path):
-    WikiPage = apps.get_model('addons_wiki.WikiPage')
     try:
         parent_wiki_page_name = wiki.parent.page_name
         if parent_wiki_page_name == 'home':
