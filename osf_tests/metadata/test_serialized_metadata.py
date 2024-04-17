@@ -278,10 +278,10 @@ class TestSerializers(OsfTestCase):
                     self.assertEqual(resp.status_code, 200)
                     self.assertEqual(resp.headers['Content-Type'], EXPECTED_MEDIATYPE[format_key])
                     self.assertEqual(
-                        resp.content_disposition,
+                        resp.headers['Content-Disposition'],
                         f'attachment; filename={gathered_file.filename}',
                     )
-                    self._assert_expected_file(filename, resp.unicode_body)
+                    self._assert_expected_file(filename, resp.text)
 
     def _assert_expected_file(self, filename, actual_metadata):
         _open_mode = ('rb' if isinstance(actual_metadata, bytes) else 'r')

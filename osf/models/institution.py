@@ -221,9 +221,9 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
                     forgot_password_link=f'{website_settings.DOMAIN}{forgot_password}',
                     osf_support_email=website_settings.OSF_SUPPORT_EMAIL
                 )
-            except Exception:
+            except Exception as e:
                 logger.error(f'Failed to send institution deactivation email to user [{user._id}] at [{self._id}]')
-                sentry.log_exception()
+                sentry.log_exception(e)
                 continue
             else:
                 success += 1

@@ -62,7 +62,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 404
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
@@ -72,7 +72,7 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 200
         delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
         self.app.delete(delete_url, auth=self.user.auth)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 404
 
     def test_wiki_url_with_path_get_returns_200(self):
@@ -101,17 +101,17 @@ class TestWikiViews(OsfTestCase):
             'project_wiki_view',
             wname='funpage',
         ) + '?edit'
-        res = self.app.get(url).maybe_follow()
+        res = self.app.get(url, follow_redirects=True)
         assert res.status_code == 200
 
         # Check publicly editable
         wiki = self.project.get_addon('wiki')
         wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
-        res = self.app.get(url, auth=AuthUserFactory().auth, expect_errors=False)
+        res = self.app.get(url, auth=AuthUserFactory().auth)
         assert res.status_code == 200
 
         # Check publicly editable but not logged in
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 401
 
     def test_wiki_url_for_pointer_returns_200(self):
@@ -155,7 +155,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': 'new content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.project.reload()
         # page was updated with new content
@@ -168,7 +168,7 @@ class TestWikiViews(OsfTestCase):
         old_wiki_page_count = WikiVersion.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
-        res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': ''}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
         new_wiki_page_count = WikiVersion.objects.all().count()
@@ -188,7 +188,7 @@ class TestWikiViews(OsfTestCase):
         old_wiki_page_count = WikiVersion.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
-        res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': page_content}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
         new_wiki_page_count = WikiVersion.objects.all().count()
@@ -207,24 +207,24 @@ class TestWikiViews(OsfTestCase):
         # wname doesn't exist in the db, so it will be created
         new_wname = 'øˆ∆´ƒøßå√ß'
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
-        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': 'new content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.project.reload()
         wiki = WikiPage.objects.get_for_node(self.project, new_wname)
         assert wiki.page_name == new_wname
 
         # updating content should return correct url as well.
-        res = self.app.post(url, {'content': 'updated content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': 'updated content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
     def test_project_wiki_edit_post_with_special_characters(self):
         new_wname = 'title: ' + SPECIAL_CHARACTERS_ALLOWED
         new_wiki_content = 'content: ' + SPECIAL_CHARACTERS_ALL
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
-        res = self.app.post(url, {'content': new_wiki_content}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': new_wiki_content}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.project.reload()
-        wiki =  WikiVersion.objects.get_for_node(self.project, new_wname)
+        wiki = WikiVersion.objects.get_for_node(self.project, new_wname)
         assert wiki.wiki_page.page_name == new_wname
         assert wiki.content == new_wiki_content
         assert res.status_code == 200
@@ -239,10 +239,10 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
         url = self.project.web_url_for('project_wiki_view', wname='home', view=3)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
         url = self.project.web_url_for('project_wiki_view', wname='home', view=0)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
 
     def test_project_wiki_compare_returns_200(self):
@@ -255,10 +255,10 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=3)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=0)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
 
     def test_wiki_page_creation_strips_whitespace(self):
@@ -266,7 +266,7 @@ class TestWikiViews(OsfTestCase):
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
         # wname has a trailing space
         url = self.project.web_url_for('project_wiki_view', wname='cupcake ')
-        res = self.app.post(url, {'content': 'blah'}, auth=self.user.auth).follow()
+        res = self.app.post(url, data={'content': 'blah'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
         self.project.reload()
@@ -287,7 +287,7 @@ class TestWikiViews(OsfTestCase):
     def test_wiki_validate_name_collision_doesnt_clear(self):
         WikiPage.objects.create_for_node(self.project, 'oldpage', 'some text', self.consolidate_auth)
         url = self.project.api_url_for('project_wiki_validate_name', wname='oldpage', auth=self.consolidate_auth)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 409
         url = self.project.api_url_for('wiki_page_content', wname='oldpage', auth=self.consolidate_auth)
         res = self.app.get(url, auth=self.user.auth)
@@ -295,7 +295,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_validate_name_cannot_create_home(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='home')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 409
 
     def test_project_wiki_validate_name_mixed_casing(self):
@@ -309,7 +309,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
-        assert 'CaPsLoCk' in res
+        assert 'CaPsLoCk' in res.text
 
     def test_project_wiki_validate_name_conflict_different_casing(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CAPSLOCK')
@@ -317,7 +317,7 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 200
         wiki = WikiPage.objects.get_for_node(self.project, 'CaPsLoCk')
         wiki.update(self.user, 'hello')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 409
 
     def test_project_dashboard_shows_no_wiki_content_text(self):
@@ -326,7 +326,7 @@ class TestWikiViews(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         url = project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
-        assert 'Add important information, links, or images here to describe your project.' in res
+        assert 'Add important information, links, or images here to describe your project.' in res.text
 
     @pytest.mark.skip('Content rendering handled by front-end')
     def test_project_dashboard_wiki_wname_get_shows_non_ascii_characters(self):
@@ -363,18 +363,18 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 302
         assert page_url in res.location
-        res = res.follow()
+        res = self.app.resolve_redirect(res)
         assert res.status_code == 200
         assert page_url in res.request.url
 
     def test_wiki_id_url_get_returns_404(self):
         url = self.project.web_url_for('project_wiki_id_page', wid='12345', _guid=True)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert res.status_code == 404
 
     def test_home_is_capitalized_in_web_view(self):
         url = self.project.web_url_for('project_wiki_home', wid='home', _guid=True)
-        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         page_name_elem = res.html.find('span', {'id': 'pageName'})
         assert 'Home' in page_name_elem.text
 
@@ -579,9 +579,9 @@ class TestWikiRename(OsfTestCase):
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_rename_wiki_page_valid(self, mock_sharejs, new_name='away'):
-        self.app.put_json(
+        self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth
         )
         self.project.reload()
@@ -596,11 +596,10 @@ class TestWikiRename(OsfTestCase):
         assert new_wiki.identifier == self.version.identifier
 
     def test_rename_wiki_page_invalid(self, new_name='invalid/name'):
-        res = self.app.put_json(
+        res = self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=True,
         )
         assert http_status.HTTP_400_BAD_REQUEST == res.status_code
         assert res.json['message_short'] == 'Invalid name'
@@ -612,18 +611,17 @@ class TestWikiRename(OsfTestCase):
     def test_rename_wiki_page_duplicate(self):
         WikiPage.objects.create_for_node(self.project, 'away', 'Hello world', self.consolidate_auth)
         new_name = 'away'
-        res = self.app.put_json(
+        res = self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=True,
         )
         assert res.status_code == 409
 
     def test_rename_wiki_name_not_found(self):
         url = self.project.api_url_for('project_wiki_rename', wname='not_found_page_name')
-        res = self.app.put_json(url, {'value': 'new name'},
-            auth=self.auth, expect_errors=True)
+        res = self.app.put(url, json={'value': 'new name'},
+            auth=self.auth)
         assert res.status_code == 404
 
     def test_cannot_rename_wiki_page_to_home(self):
@@ -632,12 +630,12 @@ class TestWikiRename(OsfTestCase):
         project = ProjectFactory(creator=user)
         WikiPage.objects.create_for_node(project, 'Hello', 'hello world', Auth(user=user))
         url = project.api_url_for('project_wiki_rename', wname='Hello')
-        res = self.app.put_json(url, {'value': 'home'}, auth=user.auth, expect_errors=True)
+        res = self.app.put(url, json={'value': 'home'}, auth=user.auth)
         assert res.status_code == 409
 
     def test_rename_wiki_name_with_value_missing(self):
         # value is missing
-        res = self.app.put_json(self.url, {}, auth=self.auth, expect_errors=True)
+        res = self.app.put(self.url, json={}, auth=self.auth)
         assert res.status_code == 400
 
     def test_rename_wiki_page_duplicate_different_casing(self):
@@ -645,11 +643,10 @@ class TestWikiRename(OsfTestCase):
         old_name = 'away'
         new_name = 'AwAy'
         WikiPage.objects.create_for_node(self.project, old_name, 'Hello world', self.consolidate_auth)
-        res = self.app.put_json(
+        res = self.app.put(
             self.url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=True
         )
         assert res.status_code == 409
 
@@ -659,17 +656,16 @@ class TestWikiRename(OsfTestCase):
         new_name = 'AWAY'
         WikiPage.objects.create_for_node(self.project, old_name, 'Hello world', self.consolidate_auth)
         url = self.project.api_url_for('project_wiki_rename', wname=old_name)
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            {'value': new_name},
+            json={'value': new_name},
             auth=self.auth,
-            expect_errors=False
         )
         assert res.status_code == 200
 
     def test_cannot_rename_home_page(self):
         url = self.project.api_url_for('project_wiki_rename', wname='home')
-        res = self.app.put_json(url, {'value': 'homelol'}, auth=self.auth, expect_errors=True)
+        res = self.app.put(url, json={'value': 'homelol'}, auth=self.auth)
         assert res.status_code == 400
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
@@ -681,7 +677,7 @@ class TestWikiRename(OsfTestCase):
 
         # Renames the wiki to the deleted page
         url = self.project.api_url_for('project_wiki_rename', wname='page3')
-        res = self.app.put_json(url, {'value': self.page_name}, auth=self.auth)
+        res = self.app.put(url, json={'value': self.page_name}, auth=self.auth)
         assert res.status_code == 200
 
     def test_rename_wiki_page_with_valid_html(self):
@@ -755,8 +751,8 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert private_uuid
-        assert private_uuid not in res.body.decode()
-        assert get_sharejs_uuid(self.project, self.wname) in res.body.decode()
+        assert private_uuid not in res.text
+        assert get_sharejs_uuid(self.project, self.wname) in res.text
 
         # Revisit page; uuid has not changed
         res = self.app.get(url, auth=self.user.auth)
@@ -775,13 +771,13 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert private_uuid
-        assert private_uuid not in res.body.decode()
-        assert get_sharejs_uuid(self.project, self.wname) in res.body.decode()
+        assert private_uuid not in res.text
+        assert get_sharejs_uuid(self.project, self.wname) in res.text
 
         # Users without write permission should not be able to access
         res = self.app.get(url)
         assert res.status_code == 200
-        assert get_sharejs_uuid(self.project, self.wname) not in res.body.decode()
+        assert get_sharejs_uuid(self.project, self.wname) not in res.text
 
     def test_uuid_not_generated_without_write_permission(self):
         WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))
@@ -811,10 +807,10 @@ class TestWikiUuid(OsfTestCase):
         uuid2 = get_sharejs_uuid(self.project, wname2)
 
         assert uuid1 != uuid2
-        assert uuid1 in res1
-        assert uuid2 in res2
-        assert uuid1 not in res2
-        assert uuid2 not in res1
+        assert uuid1 in res1.text
+        assert uuid2 in res2.text
+        assert uuid1 not in res2.text
+        assert uuid2 not in res1.text
 
     def test_uuids_differ_between_forks(self):
         url = self.project.web_url_for('project_wiki_view', wname=self.wname)
@@ -836,10 +832,10 @@ class TestWikiUuid(OsfTestCase):
         fork_uuid = get_sharejs_uuid(fork, self.wname)
 
         assert project_uuid != fork_uuid
-        assert project_uuid in project_res
-        assert fork_uuid in fork_res
-        assert project_uuid not in fork_res
-        assert fork_uuid not in project_res
+        assert project_uuid in project_res.text
+        assert fork_uuid in fork_res.text
+        assert project_uuid not in fork_res.text
+        assert fork_uuid not in project_res.text
 
     @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
@@ -881,7 +877,7 @@ class TestWikiUuid(OsfTestCase):
         assert res.status_code == 200
         self.project.reload()
         assert original_private_uuid == self.project.wiki_private_uuids.get(self.wkey)
-        assert original_sharejs_uuid in res.body.decode()
+        assert original_sharejs_uuid in res.text
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
@@ -903,9 +899,9 @@ class TestWikiUuid(OsfTestCase):
 
         # Rename wiki
         rename_url = self.project.api_url_for('project_wiki_rename', wname=self.wname)
-        res = self.app.put_json(
+        res = self.app.put(
             rename_url,
-            {'value': new_wname, 'pk': wiki_page._id},
+            json={'value': new_wname, 'pk': wiki_page._id},
             auth=self.user.auth,
         )
         assert res.status_code == 200
@@ -918,7 +914,7 @@ class TestWikiUuid(OsfTestCase):
         assert res.status_code == 200
         self.project.reload()
         assert original_private_uuid != self.project.wiki_private_uuids.get(self.wkey)
-        assert original_sharejs_uuid not in res.body.decode()
+        assert original_sharejs_uuid not in res.text
 
 
 @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')

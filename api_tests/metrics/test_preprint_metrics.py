@@ -3,6 +3,7 @@ from unittest import mock
 from datetime import datetime
 
 from website.app import setup_django
+
 setup_django()
 
 from django.utils import timezone
@@ -13,7 +14,6 @@ from osf import features
 from api.base.settings import API_PRIVATE_BASE as API_BASE
 from osf.metrics import PreprintDownload, PreprintView
 from osf_tests.factories import AuthUserFactory, PreprintFactory, NodeFactory
-
 
 pytestmark = pytest.mark.django_db
 
@@ -102,7 +102,7 @@ class TestPreprintMetrics:
 
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
     def test_custom_metric_malformed_query(self, mock_execute, app, user, base_url):
-        mock_execute.side_effect = RequestError
+        mock_execute.side_effect = RequestError()
         post_url = f'{base_url}downloads/'
         post_data = {
             'data': {
@@ -192,7 +192,8 @@ class TestPreprintMetrics:
 
     @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on travis.')
     @mock.patch('api.metrics.utils.timezone.now')
-    def test_preprint_with_metrics_succeeds(self, mock_timezone, app, user, base_url, preprint, other_user, preprint_no_results, metric_dates):
+    def test_preprint_with_metrics_succeeds(self, mock_timezone, app, user, base_url, preprint, other_user,
+                                            preprint_no_results, metric_dates):
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         self.add_views_and_downloads(preprint, other_user, metric_dates)
         metric_name = 'downloads'

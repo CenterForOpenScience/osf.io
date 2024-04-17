@@ -294,7 +294,7 @@ class NodeSettings(BaseCitationsNodeSettings):
                     serialized_folders.insert(0, serialized_root_folder)
                 return serialized_folders
             except MendeleyApiException as error:
-                sentry.log_exception()
+                sentry.log_exception(error)
                 sentry.log_message('Unexpected Mendeley Error when fetching folders.')
                 raise HTTPError(error.status)
         else:

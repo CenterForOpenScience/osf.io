@@ -122,8 +122,13 @@ def _test_speedups_disable(request, settings, _test_speedups):
         patcher.start()
 
 
+@pytest.fixture(scope='session')
+def setup_connections():
+    connections.create_connection(hosts=['http://localhost:9201'])
+
+
 @pytest.fixture(scope='function')
-def es6_client():
+def es6_client(setup_connections):
     return connections.get_connection()
 
 

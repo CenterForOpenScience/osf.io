@@ -8,11 +8,12 @@ from pyotp import TOTP
 
 
 TOKEN_LENGTH: Final[int] = 30
+DRIFT_PERIOD: Final[int] = 30
 
 
 class UserSettings(BaseUserSettings):
     totp_secret = models.TextField(null=True, blank=True)  # hexadecimal
-    totp_drift = models.IntegerField()
+    totp_drift = models.IntegerField(default=1)
     is_confirmed = models.BooleanField(default=False)
 
     @property
@@ -39,13 +40,14 @@ class UserSettings(BaseUserSettings):
 
     def verify_code(self, code: int | str) -> bool:
         client = TOTP(self.totp_secret_b32)
-        accepted, drift = client.verify(
+        accepted = client.verify(
             otp=str(code),
-            valid_window=self.totp_drift,
+            valid_window=self.totp_drift * DRIFT_PERIOD,
         )
         if accepted:
-            self.totp_drift = drift
+            self.totp_drift += 1
             return True
+        self.totp_drift = 0
         return False
 
     #############

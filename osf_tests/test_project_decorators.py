@@ -42,26 +42,26 @@ class TestValidProject(OsfTestCase):
     def test_project_not_found(self):
         with pytest.raises(HTTPError) as exc_info:
             valid_project_helper(pid='fakepid')
-        assert exc_info.exception.code == 404
+        assert exc_info.value.code == 404
 
     def test_project_deleted(self):
         self.project.is_deleted = True
         self.project.save()
         with pytest.raises(HTTPError) as exc_info:
             valid_project_helper(pid=self.project._id)
-        assert exc_info.exception.code == 410
+        assert exc_info.value.code == 410
 
     def test_node_not_found(self):
         with pytest.raises(HTTPError) as exc_info:
             valid_project_helper(pid=self.project._id, nid='fakenid')
-        assert exc_info.exception.code == 404
+        assert exc_info.value.code == 404
 
     def test_node_deleted(self):
         self.node.is_deleted = True
         self.node.save()
         with pytest.raises(HTTPError) as exc_info:
             valid_project_helper(pid=self.project._id, nid=self.node._id)
-        assert exc_info.exception.code == 410
+        assert exc_info.value.code == 410
 
     def test_valid_project_as_factory_allow_retractions_is_retracted(self):
         registration = RegistrationFactory(project=self.project)
@@ -76,4 +76,4 @@ class TestValidProject(OsfTestCase):
         collection.collect_object(self.project, self.auth.user)
         with pytest.raises(HTTPError) as exc_info:
             valid_project_helper(pid=collection._id, nid=collection._id)
-        assert exc_info.exception.code == 404
+        assert exc_info.value.code == 404

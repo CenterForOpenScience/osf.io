@@ -49,7 +49,7 @@ class TestCallbacks(unittest.TestCase):
 
 class TestUserSettingsModel(unittest.TestCase):
     TOTP_SECRET = 'b8f85986068f8079aa9d'
-    TOTP_SECRET_B32 = 'XD4FTBQGR6AHTKU5'
+    TOTP_SECRET_B32 = 'MI4GMOBVHE4DMMBWHBTDQMBXHFQWCOLE'
 
     def setUp(self):
         super().setUp()

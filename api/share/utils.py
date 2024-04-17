@@ -82,17 +82,17 @@ def task__update_share(self, guid: str, is_backfill=False):
         resp.raise_for_status()
     except Exception as e:
         if self.request.retries == self.max_retries:
-            log_exception()
+            log_exception(e)
         elif resp.status_code >= 500:
             try:
                 self.retry(
                     exc=e,
                     countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
                 )
-            except Retry:  # Retry is only raise after > 5 retries
-                log_exception()
+            except Retry as e:  # Retry is only raise after > 5 retries
+                log_exception(e)
         else:
-            log_exception()
+            log_exception(e)
 
     return resp
 
@@ -561,16 +561,16 @@ def async_update_resource_share(self, guid, old_subjects=None):
         resp.raise_for_status()
     except Exception as e:
         if self.request.retries == self.max_retries:
-            log_exception()
+            log_exception(e)
         elif resp.status_code >= 500:
             try:
                 self.retry(
                     exc=e,
                     countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
                 )
-            except Retry:  # Retry is only raise after > 5 retries
-                log_exception()
+            except Retry as e:  # Retry is only raise after > 5 retries
+                log_exception(e)
         else:
-            log_exception()
+            log_exception(e)
 
     return resp

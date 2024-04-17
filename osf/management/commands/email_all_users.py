@@ -48,9 +48,9 @@ def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSE
                 mail=template,
                 fullname=user.fullname,
             )
-        except Exception:
+        except Exception as e:
             logger.error(f'Exception encountered sending email to {user.id}')
-            sentry.log_exception()
+            sentry.log_exception(e)
             continue
         else:
             total_sent += 1

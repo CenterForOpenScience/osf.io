@@ -17,7 +17,7 @@ class MiddlewareTestCase(ApiTestCase):
 
     def setUp(self):
         super().setUp()
-        self.middleware = self.MIDDLEWARE()
+        self.middleware = self.MIDDLEWARE(lambda _: HttpResponse())
         self.mock_response = mock.Mock()
         self.request_factory = APIRequestFactory()
 
@@ -36,7 +36,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         settings.load_origins_whitelist()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
-        self.middleware.process_request(request)
+        self.middleware(request)
         self.middleware.process_response(request, response)
         assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
@@ -51,7 +51,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         settings.load_origins_whitelist()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
-        self.middleware.process_request(request)
+        self.middleware(request)
         self.middleware.process_response(request, response)
         assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
@@ -62,7 +62,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
         with mock.patch.object(request, 'COOKIES', True):
-            self.middleware.process_request(request)
+            self.middleware(request)
             self.middleware.process_response(request, response)
         assert 'Access-Control-Allow-Origin' not in response
 
@@ -76,7 +76,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq'
         )
         response = HttpResponse()
-        self.middleware.process_request(request)
+        self.middleware(request)
         self.middleware.process_response(request, response)
         assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
@@ -92,7 +92,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         )
         response = HttpResponse()
         with mock.patch.object(request, 'COOKIES', True):
-            self.middleware.process_request(request)
+            self.middleware(request)
             self.middleware.process_response(request, response)
         assert 'Access-Control-Allow-Origin' not in response
 
@@ -108,6 +108,6 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization'
         )
         response = HttpResponse()
-        self.middleware.process_request(request)
+        self.middleware(request)
         self.middleware.process_response(request, response)
         assert response['Access-Control-Allow-Origin'] == domain.geturl()

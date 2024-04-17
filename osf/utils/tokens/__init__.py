@@ -33,7 +33,7 @@ class TokenHandler:
     def from_string(cls, encoded_token):
         try:
             payload = decode(encoded_token)
-        except jwt.InvalidSignatureError as e:
+        except jwt.InvalidTokenError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
                 data={

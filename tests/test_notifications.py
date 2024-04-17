@@ -412,7 +412,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'email_transactional'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, payload, auth=self.node.creator.auth)
+        self.app.post(url, json=payload, auth=self.node.creator.auth)
 
         # check that subscription was created
         event_id = self.node._id + '_' + 'comments'
@@ -430,7 +430,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'email_digest'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, new_payload, auth=self.node.creator.auth)
+        self.app.post(url, json=new_payload, auth=self.node.creator.auth)
         s.reload()
         assert not self.node.creator in getattr(s, payload['notification_type']).all()
         assert self.node.creator in getattr(s, new_payload['notification_type']).all()
@@ -442,7 +442,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'email_transactional'
         }
         url = api_url_for('configure_subscription')
-        res = self.app.post_json(url, payload, auth=self.registration.creator.auth, expect_errors=True)
+        res = self.app.post(url, json=payload, auth=self.registration.creator.auth)
         assert res.status_code == 400
 
     def test_adopt_parent_subscription_default(self):
@@ -452,7 +452,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'adopt_parent'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, payload, auth=self.node.creator.auth)
+        self.app.post(url, json=payload, auth=self.node.creator.auth)
         event_id = self.node._id + '_' + 'comments'
         # confirm subscription was created because parent had default subscription
         s = NotificationSubscription.objects.filter(_id=event_id).count()
@@ -465,7 +465,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'email_transactional'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, payload, auth=self.node.creator.auth)
+        self.app.post(url, json=payload, auth=self.node.creator.auth)
 
         # check that subscription was created
         event_id = self.node._id + '_' + 'comments'
@@ -478,7 +478,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'adopt_parent'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, new_payload, auth=self.node.creator.auth)
+        self.app.post(url, json=new_payload, auth=self.node.creator.auth)
         s.reload()
 
         # assert that user is removed from the subscription entirely
@@ -494,7 +494,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'email_digest'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, payload, auth=project.creator.auth)
+        self.app.post(url, json=payload, auth=project.creator.auth)
 
         self.user.reload()
 

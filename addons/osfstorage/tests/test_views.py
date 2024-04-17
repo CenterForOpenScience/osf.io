@@ -52,11 +52,15 @@ def create_record_with_version(path, node_settings, **kwargs):
 class HookTestCase(StorageTestCase):
 
     def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
-        method = getattr(self.app, method)
         guid = view_kwargs.pop('guid', None) or target._id
+        signed_data = signing.sign_data(signing.default_signer, payload)
+        if method == 'get':
+            view_kwargs |= signed_data
+        else:
+            kwargs['json'] = signed_data
+        method = getattr(self.app, method)
         return method(
             api_url_for(view_name, guid=guid, **view_kwargs),
-            signing.sign_data(signing.default_signer, payload),
             **kwargs
         )
 
@@ -206,7 +210,6 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': 'somebogusid'}, {},
             self.node,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -215,7 +218,6 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': '/not/fo/u/nd/'}, {},
             self.node,
-            expect_errors=True,
         )
         assert res.status_code == 302
         assert '/login?service=' in res.location
@@ -226,7 +228,6 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': '/not/fo/u/nd/'}, {},
             self.node,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -297,7 +298,7 @@ class TestUploadFileHook(HookTestCase):
             {'fid': parent._id},
             payload=payload or {},
             target=target or self.project,
-            method='post_json',
+            method='post',
             **kwargs
         )
 
@@ -419,7 +420,7 @@ class TestUploadFileHook(HookTestCase):
         file = root.find_child_by_name(name)
         file.checkout = user
         file.save()
-        res = self.send_upload_hook(root, payload=self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(root, payload=self.make_payload(name=name))
 
         assert res.status_code == 403
 
@@ -451,7 +452,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_weird_name(self):
         name = 'another/dir/carpe.png'
         parent = self.node_settings.get_root().append_folder('cheesey')
-        res = self.send_upload_hook(parent, payload=self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert res.status_code == 400
         assert len(parent.children) == 0
@@ -459,13 +460,13 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_to_file(self):
         name = 'carpe.png'
         parent = self.node_settings.get_root().append_file('cheesey')
-        res = self.send_upload_hook(parent, payload=self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert parent.is_file
         assert res.status_code == 400
 
     def test_upload_no_data(self):
-        res = self.send_upload_hook(self.node_settings.get_root(), expect_errors=True)
+        res = self.send_upload_hook(self.node_settings.get_root())
 
         assert res.status_code == 400
 
@@ -486,7 +487,7 @@ class TestUploadFileHook(HookTestCase):
                 'vault': 'Vault 101',
                 'archive': '101 tluaV',
             }, 'version': res.json['version']},
-            method='put_json',
+            method='put',
         )
 
         res = self.send_upload_hook(parent, payload=self.make_payload(
@@ -625,7 +626,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         file = root.find_child_by_name(name)
         file.checkout = user
         file.save()
-        res = self.send_upload_hook(root, self.preprint, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(root, self.preprint, self.make_payload(name=name))
 
         assert res.status_code == 403
 
@@ -657,7 +658,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
     def test_upload_weird_name(self):
         name = 'another/dir/carpe.png'
         parent = self.preprint.root_folder.append_folder('cheesey')
-        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert res.status_code == 400
         assert len(parent.children) == 0
@@ -665,13 +666,13 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
     def test_upload_to_file(self):
         name = 'carpe.png'
         parent = self.preprint.root_folder.append_file('cheesey')
-        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name), expect_errors=True)
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert parent.is_file
         assert res.status_code == 400
 
     def test_upload_no_data(self):
-        res = self.send_upload_hook(self.preprint.root_folder, self.preprint, expect_errors=True)
+        res = self.send_upload_hook(self.preprint.root_folder, self.preprint)
 
         assert res.status_code == 400
 
@@ -703,7 +704,7 @@ class TestUpdateMetadataHook(HookTestCase):
             {},
             payload=payload or self.payload,
             target=target or self.node,
-            method='put_json',
+            method='put',
             **kwargs
         )
 
@@ -742,7 +743,6 @@ class TestUpdateMetadataHook(HookTestCase):
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
             },
-            expect_errors=True,
         )
         assert res.status_code == 404
         self.version.reload()
@@ -777,7 +777,7 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
             {},
             payload=payload or self.payload,
             target=target or self.preprint,
-            method='put_json',
+            method='put',
             **kwargs
         )
 
@@ -816,7 +816,6 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
             },
-            expect_errors=True,
         )
         assert res.status_code == 404
         self.version.reload()
@@ -863,7 +862,7 @@ class TestGetRevisions(StorageTestCase):
         assert res.json['revisions'][-1]['index'] == 1
 
     def test_get_revisions_path_not_found(self):
-        res = self.get_revisions(fid='missing', expect_errors=True)
+        res = self.get_revisions(fid='missing')
         assert res.status_code == 404
 
 
@@ -887,7 +886,7 @@ class TestCreateFolder(HookTestCase):
                 'kind': 'folder'
             },
             target=self.project,
-            method='post_json',
+            method='post',
             **kwargs
         )
 
@@ -906,8 +905,7 @@ class TestCreateFolder(HookTestCase):
             {'fid': self.root_node._id, 'guid': self.project._id},
             payload={},
             target=self.project,
-            method='post_json',
-            expect_errors=True
+            method='post',
         )
         assert resp.status_code == 400
 
@@ -978,12 +976,12 @@ class TestDeleteHookNode(DeleteHook):
         file = self.root_node.append_file('Newfile')
         file.delete()
 
-        resp = self.delete(file, expect_errors=True)
+        resp = self.delete(file)
 
         assert resp.status_code == 404
 
     def test_cannot_delete_root(self):
-        resp = self.delete(self.root_node, expect_errors=True)
+        resp = self.delete(self.root_node)
 
         assert resp.status_code == 400
 
@@ -993,7 +991,7 @@ class TestDeleteHookNode(DeleteHook):
         file_checked.checkout = user
         file_checked.save()
 
-        res = self.delete(file_checked, expect_errors=True)
+        res = self.delete(file_checked)
         assert res.status_code == 403
 
     def test_attempt_delete_folder_with_rented_file(self):
@@ -1003,7 +1001,7 @@ class TestDeleteHookNode(DeleteHook):
         file_checked.checkout = user
         file_checked.save()
 
-        res = self.delete(folder, expect_errors=True)
+        res = self.delete(folder)
         assert res.status_code == 403
 
     def test_attempt_delete_double_nested_folder_rented_file(self):
@@ -1014,7 +1012,7 @@ class TestDeleteHookNode(DeleteHook):
         file_checked.checkout = user
         file_checked.save()
 
-        res = self.delete(folder, expect_errors=True)
+        res = self.delete(folder)
         assert res.status_code == 403
 
 
@@ -1028,7 +1026,7 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
         self.root_node = self.preprint.root_folder
 
     def test_attempt_delete_while_preprint(self):
-        res = self.delete(self.preprint.primary_file, expect_errors=True)
+        res = self.delete(self.preprint.primary_file)
         assert res.status_code == 403
 
     def test_attempt_delete_folder_with_preprint(self):
@@ -1036,7 +1034,7 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
         file = folder.append_file('Fish')
         self.preprint.primary_file = file
         self.preprint.save()
-        res = self.delete(folder, expect_errors=True)
+        res = self.delete(folder)
         assert res.status_code == 403
 
     def test_delete_folder_while_preprint(self):
@@ -1083,7 +1081,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',)
+            method='post',)
         assert res.status_code == 200
 
     def test_move_checkedout_file(self):
@@ -1106,8 +1104,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 405
 
@@ -1132,8 +1129,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 405
 
@@ -1159,8 +1155,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 405
 
@@ -1187,8 +1182,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=project,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 200
 
@@ -1212,8 +1206,7 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         file.reload()
 
@@ -1250,8 +1243,7 @@ class TestMoveHookPreprint(TestMoveHook):
                 }
             },
             target=project,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         assert res.status_code == 403
 
@@ -1275,8 +1267,7 @@ class TestMoveHookPreprint(TestMoveHook):
                 }
             },
             target=self.node,
-            method='post_json',
-            expect_errors=True,
+            method='post',
         )
         file.reload()
 
@@ -1311,7 +1302,7 @@ class TestMoveHookProjectsOnly(TestMoveHook):
                     }
                 },
                 target=self.node,
-                method='post_json',)
+                method='post',)
 
         # Cache should stay untouched because net storage usage hasn't changed
         key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
@@ -1328,7 +1319,7 @@ class TestFileTags(StorageTestCase):
         assert 'Kanye_West' not in file.tags.values_list('name', flat=True)
 
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+        self.app.post(url, json={'tag': 'Kanye_West'}, auth=self.user.auth)
         file.reload()
         assert 'Kanye_West' in file.tags.values_list('name', flat=True)
 
@@ -1337,7 +1328,7 @@ class TestFileTags(StorageTestCase):
         assert 'コンサート' not in file.tags.values_list('name', flat=True)
 
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
+        self.app.post(url, json={'tag': 'コンサート'}, auth=self.user.auth)
         file.reload()
         assert 'コンサート' in file.tags.values_list('name', flat=True)
 
@@ -1349,7 +1340,7 @@ class TestFileTags(StorageTestCase):
         file.save()
         assert 'Graduation' in file.tags.values_list('name', flat=True)
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
+        self.app.delete(url, json={'tag': 'Graduation'}, auth=self.user.auth)
         file.reload()
         assert 'Graduation' not in file.tags.values_list('name', flat=True)
 
@@ -1361,7 +1352,7 @@ class TestFileTags(StorageTestCase):
         file.save()
         assert 'Run_the_Jewels' in file.tags.values_list('name', flat=True)
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post(url, json={'tag': 'Run_the_Jewels'}, auth=self.user.auth)
         assert res.status_code == 400
         assert res.json['status'] == 'failure'
 
@@ -1369,14 +1360,14 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
         assert 'Chance' not in file.tags.values_list('name', flat=True)
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.delete(url, json={'tag': 'Chance'}, auth=self.user.auth)
         assert res.status_code == 400
         assert res.json['status'] == 'failure'
 
     def test_file_add_tag_creates_log(self):
         file = self.node_settings.get_root().append_file('Yeezy Season 3.mp4')
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        res = self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+        res = self.app.post(url, json={'tag': 'Kanye_West'}, auth=self.user.auth)
 
         assert res.status_code == 200
         self.node.reload()
@@ -1390,7 +1381,7 @@ class TestFileTags(StorageTestCase):
         file.tags.add(tag)
         file.save()
         url = api_url_for('osfstorage_add_tag', guid=self.node._id, fid=file._id)
-        res = self.app.post_json(url, {'tag': 'The Life of Pablo'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post(url, json={'tag': 'The Life of Pablo'}, auth=self.user.auth)
 
         assert res.status_code == 400
         mock_log.assert_not_called()
@@ -1402,7 +1393,7 @@ class TestFileTags(StorageTestCase):
         file.tags.add(tag)
         file.save()
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        res = self.app.delete_json(url, {'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
+        res = self.app.delete(url, json={'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
 
         assert res.status_code == 200
         self.node.reload()
@@ -1412,7 +1403,7 @@ class TestFileTags(StorageTestCase):
     def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('For-once-in-my-life.mp3')
         url = api_url_for('osfstorage_remove_tag', guid=self.node._id, fid=file._id)
-        res = self.app.delete_json(url, {'tag': 'wonder'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.delete(url, json={'tag': 'wonder'}, auth=self.user.auth)
 
         assert res.status_code == 400
         mock_log.assert_not_called()
@@ -1469,7 +1460,8 @@ class TestFileViews(StorageTestCase):
             assert res.status_code == 302
             assert res.headers['Location'] == f'{settings.DOMAIN}{file.get_guid()._id}/'
             assert not mock_ember.called
-            res.follow()
+            res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
+            assert res.status_code == 200
             assert mock_ember.called
             args, kwargs = mock_ember.call_args
 
@@ -1494,12 +1486,12 @@ class TestFileViews(StorageTestCase):
 
         # Test nonexistant file 404's
         url = base_url.format('FakeGuid')
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 404
 
         # Test folder 400's
         url = base_url.format(folder._id)
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 400
 
     def test_addon_view_file(self):
@@ -1559,7 +1551,7 @@ class TestFileViews(StorageTestCase):
         download_url = base_url.format(file.get_guid()._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str(f'Bearer {token.token_id}')
+            'Authorization': f'Bearer {token.token_id}'
         }
         redirect = self.app.get(download_url, headers=headers)
 
@@ -1577,7 +1569,7 @@ class TestPreprintFileViews(StorageTestCase):
         guid = file.get_guid(create=True)
         url = self.preprint.web_url_for('resolve_guid', guid=guid._id)
         # File view for preprint file redirects to the preprint
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 302
         assert self.preprint._id in res.location
 
@@ -1600,12 +1592,12 @@ class TestPreprintFileViews(StorageTestCase):
 
         # Test nonexistant file 404's
         url = base_url.format('FakeGuid')
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 404
 
         # Test folder 400's
         url = base_url.format(folder._id)
-        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 400
 
     @responses.activate

@@ -1,7 +1,6 @@
 """
 Tests related to authenticating API requests
 """
-
 from unittest import mock
 
 import pytest
@@ -56,7 +55,6 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.unreachable_url,
             auth=(self.user1.username, 'invalid password'),
-            expect_errors=True
         )
         assert res.status_code == 401
         assert res.json.get('errors')[0]['detail'] == 'Invalid username/password.'
@@ -70,7 +68,6 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.unreachable_url,
             auth=self.user1.auth,
-            expect_errors=True
         )
         assert res.status_code == 403, res.json
 
@@ -84,7 +81,6 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.reachable_url,
             auth=self.user1.auth,
-            expect_errors=True
         )
         assert res.status_code == 401
         assert res.headers['X-OSF-OTP'] == 'required; app'
@@ -101,7 +97,6 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             self.reachable_url,
             auth=self.user1.auth,
             headers={'X-OSF-OTP': 'invalid otp'},
-            expect_errors=True
         )
         assert res.status_code == 401
         assert 'X-OSF-OTP' not in res.headers
@@ -115,7 +110,8 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         user1_addon.save()
 
         res = self.app.get(
-            self.reachable_url, auth=self.user1.auth,
+            self.reachable_url,
+            auth=self.user1.auth,
             headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)}
         )
         assert res.status_code == 200
@@ -165,7 +161,8 @@ class TestOAuthValidation(ApiTestCase):
 
         res = self.app.get(
             self.reachable_url,
-            auth='invalid_token', auth_type='jwt',
+            auth='invalid_token',
+            auth_type='jwt',
             expect_errors=True
         )
         assert res.status_code == 401, res.json

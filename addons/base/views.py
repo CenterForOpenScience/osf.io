@@ -264,7 +264,7 @@ def get_auth(auth, **kwargs):
             access_token = cas.parse_auth_header(authorization)
             cas_resp = client.profile(access_token)
         except cas.CasError as err:
-            sentry.log_exception()
+            sentry.log_exception(err)
             # NOTE: We assume that the request is an AJAX request
             return json_renderer(err)
         if cas_resp.authenticated and not getattr(auth, 'user'):
@@ -345,8 +345,8 @@ def get_auth(auth, **kwargs):
                                         version=fileversion.identifier if fileversion else None,
                                         path=path,
                                     )
-                                except es_exceptions.ConnectionError:
-                                    log_exception()
+                                except es_exceptions.ConnectionError as e:
+                                    log_exception(e)
         if fileversion and provider_settings:
             region = fileversion.region
             credentials = region.waterbutler_credentials
@@ -374,7 +374,7 @@ def get_auth(auth, **kwargs):
                 _internal=True
             )
         }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), WATERBUTLER_JWE_KEY).decode()}
 
 
 LOG_ACTION_MAP = {

@@ -33,10 +33,11 @@ jobs:
   addons:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
-
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -72,10 +73,15 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-addons -n 1
+    - name: Upload report
+      if: success() || failure()    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
 
   website:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
@@ -115,10 +121,15 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-website -n 1
+    - name: Upload report
+      if: success() || failure()    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
 
   api1_and_js:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
@@ -161,10 +172,15 @@ jobs:
           python3 -m invoke assets --dev
       - name: Run test
         run: python3 -m invoke test-travis-api1-and-js -n 1
+      - name: Upload report
+        if: success() || failure()    # run this step even if previous step failed
+        uses: ./.github/actions/gen-report
 
   api2:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
@@ -204,9 +220,14 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-api2 -n 1
+    - name: Upload report
+      if: success() || failure()    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
 
   api3_and_osf:
     runs-on: ubuntu-20.04
+    permissions:
+      checks: write
     needs: build-cache
     services:
       postgres:
@@ -247,4 +268,6 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: python3 -m invoke test-travis-api3-and-osf -n 1
-
+    - name: Upload report
+      if: success() || failure()    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report

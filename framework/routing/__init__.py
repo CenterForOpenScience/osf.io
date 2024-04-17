@@ -116,7 +116,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except Exception as error:
             logger.exception(error)
             if settings.SENTRY_DSN and not app.debug:
-                sentry.log_exception()
+                sentry.log_exception(error)
             if debug_mode:
                 raise
             data = HTTPError(

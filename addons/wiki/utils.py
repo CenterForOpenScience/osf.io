@@ -2,7 +2,6 @@ import os
 from urllib.parse import quote
 import uuid
 
-import ssl
 from pymongo import MongoClient
 import requests
 from django.apps import apps

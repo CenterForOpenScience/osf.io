@@ -38,38 +38,37 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
 
     def test_s3_settings_input_empty_keys(self):
         url = self.project.api_url_for('s3_add_user_account')
-        rv = self.app.post_json(url, {
+        rv = self.app.post(url, json={
             'access_key': '',
             'secret_key': ''
-        }, auth=self.user.auth, expect_errors=True)
-        assert rv.status_int == http_status.HTTP_400_BAD_REQUEST
-        assert 'All the fields above are required.' in rv.body.decode()
+        }, auth=self.user.auth, )
+        assert rv.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert 'All the fields above are required.' in rv.text
 
     def test_s3_settings_input_empty_access_key(self):
         url = self.project.api_url_for('s3_add_user_account')
-        rv = self.app.post_json(url, {
+        rv = self.app.post(url, json={
             'access_key': '',
             'secret_key': 'Non-empty-secret-key'
-        }, auth=self.user.auth, expect_errors=True)
-        assert rv.status_int == http_status.HTTP_400_BAD_REQUEST
-        assert 'All the fields above are required.' in rv.body.decode()
+        }, auth=self.user.auth, )
+        assert rv.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert 'All the fields above are required.' in rv.text
 
     def test_s3_settings_input_empty_secret_key(self):
         url = self.project.api_url_for('s3_add_user_account')
-        rv = self.app.post_json(url, {
+        rv = self.app.post(url, json={
             'access_key': 'Non-empty-access-key',
             'secret_key': ''
-        }, auth=self.user.auth, expect_errors=True)
-        assert rv.status_int == http_status.HTTP_400_BAD_REQUEST
-        assert 'All the fields above are required.' in rv.body.decode()
+        }, auth=self.user.auth, )
+        assert rv.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert 'All the fields above are required.' in rv.text
 
     def test_s3_set_bucket_no_settings(self):
         user = AuthUserFactory()
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('s3_set_config')
-        res = self.app.put_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'s3_bucket': 'hammertofall'}, auth=user.auth,
         )
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
@@ -79,9 +78,8 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
         user.add_addon('s3')
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('s3_set_config')
-        res = self.app.put_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'s3_bucket': 'hammertofall'}, auth=user.auth,
         )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
@@ -91,9 +89,8 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
         )
 
         url = registration.api_url_for('s3_set_config')
-        res = self.app.put_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=self.user.auth,
-            expect_errors=True,
+        res = self.app.put(
+            url, json={'s3_bucket': 'hammertofall'}, auth=self.user.auth,
         )
 
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
@@ -101,13 +98,13 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
     @mock.patch('addons.s3.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list(self, mock_can_list):
         url = api_url_for('s3_add_user_account')
-        rv = self.app.post_json(url, {
+        rv = self.app.post(url, json={
             'access_key': 'aldkjf',
             'secret_key': 'las'
-        }, auth=self.user.auth, expect_errors=True)
+        }, auth=self.user.auth)
 
-        assert 'Unable to list buckets.' in rv.body.decode()
-        assert rv.status_int == http_status.HTTP_400_BAD_REQUEST
+        assert 'Unable to list buckets.' in rv.text
+        assert rv.status_code == http_status.HTTP_400_BAD_REQUEST
 
     def test_s3_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('s3_deauthorize_node')
@@ -117,7 +114,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
 
     def test_s3_remove_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('s3_deauthorize_node')
-        ret = self.app.delete(url, auth=None, expect_errors=True)
+        ret = self.app.delete(url, auth=None, )
 
         assert ret.status_code == 401
 
@@ -136,7 +133,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
     def test_s3_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('s3_get_config')
         unauthorized = AuthUserFactory()
-        ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
+        ret = self.app.get(url, auth=unauthorized.auth, )
 
         assert ret.status_code == 403
 
@@ -154,7 +151,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
         mock_location.return_value = ''
         self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'selected': self.folder
         }, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
@@ -252,16 +249,16 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
             'doesntevenmatter'
         ]
         url = self.project.api_url_for('create_bucket')
-        ret = self.app.post_json(
+        ret = self.app.post(
             url,
-            {
+            json={
                 'bucket_name': 'doesntevenmatter',
                 'bucket_location': '',
             },
             auth=self.user.auth
         )
 
-        assert ret.status_int == http_status.HTTP_200_OK
+        assert ret.status_code == http_status.HTTP_200_OK
         assert ret.json == {}
 
     @mock.patch('addons.s3.views.utils.create_bucket')
@@ -271,20 +268,19 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
         mock_make.side_effect = error
 
         url = f'/api/v1/project/{self.project._id}/s3/newbucket/'
-        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+        ret = self.app.post(url, json={'bucket_name': 'doesntevenmatter'}, auth=self.user.auth)
 
-        assert ret.body.decode() == '{"message": "This should work", "title": "Problem connecting to S3"}'
+        assert ret.text == '{"message": "This should work", "title": "Problem connecting to S3"}'
 
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_bad_location_fails(self, mock_make):
         url = f'/api/v1/project/{self.project._id}/s3/newbucket/'
-        ret = self.app.post_json(
+        ret = self.app.post(
             url,
-            {
+            json={
                 'bucket_name': 'doesntevenmatter',
                 'bucket_location': 'not a real bucket location',
             },
             auth=self.user.auth,
-            expect_errors=True)
-
-        assert ret.body.decode() == '{"message": "That bucket location is not valid.", "title": "Invalid bucket location"}'
+        )
+        assert ret.text == '{"message": "That bucket location is not valid.", "title": "Invalid bucket location"}'

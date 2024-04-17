@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 
 import pytest
+from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from rest_framework import status as http_status
 import json
 import logging
@@ -197,7 +198,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
             )
         )
 
-        with self.app.app.test_request_context('/oauth/connect/mock1a/'):
+        with self.app.application.test_request_context('/oauth/connect/mock1a/'):
 
             # make sure the user is logged in
             authenticate(user=self.user, response=None)
@@ -237,7 +238,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         user = UserFactory()
 
         # Fake a request context for the callback
-        ctx = self.app.app.test_request_context(
+        ctx = self.app.application.test_request_context(
             path='/oauth/callback/mock1a/',
             query_string='oauth_token=temp_key&oauth_verifier=mock_verifier',
         )
@@ -303,7 +304,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         malicious_user = UserFactory()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock1a/',
                 query_string='oauth_token=temp_key&oauth_verifier=mock_verifier'
         ):
@@ -335,7 +336,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         # without resetting the `ADDONS_OAUTH_NO_REDIRECT` list.
         assert self.provider.short_name not in ADDONS_OAUTH_NO_REDIRECT
 
-        with self.app.app.test_request_context('/oauth/connect/mock2/'):
+        with self.app.application.test_request_context('/oauth/connect/mock2/'):
 
             # Make sure the user is logged in
             authenticate(user=self.user, response=None)
@@ -377,7 +378,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         # Temporarily add the mock provider to the `ADDONS_OAUTH_NO_REDIRECT` list
         ADDONS_OAUTH_NO_REDIRECT.append(self.provider.short_name)
 
-        with self.app.app.test_request_context('/oauth/connect/mock2/'):
+        with self.app.application.test_request_context('/oauth/connect/mock2/'):
 
             # Make sure the user is logged in
             authenticate(user=self.user, response=None)
@@ -423,7 +424,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
 
-        with self.app.app.test_request_context(path='/oauth/callback/mock2/',
+        with self.app.application.test_request_context(path='/oauth/callback/mock2/',
                                                query_string='code=mock_code&state=mock_state'):
             authenticate(user=self.user, response=None)
             session = get_session()
@@ -452,7 +453,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
 
-        with self.app.app.test_request_context(path='/oauth/callback/mock2/',
+        with self.app.application.test_request_context(path='/oauth/callback/mock2/',
                                                query_string='code=mock_code&state=mock_state'):
             authenticate(user=self.user, response=None)
             session = get_session()
@@ -475,7 +476,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         user = UserFactory()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -506,7 +507,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -522,10 +523,10 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             # do the key exchange
 
-            with pytest.raises(HTTPError) as error_raised:
+            with pytest.raises(CustomOAuth2Error) as error_raised:
                 self.provider.auth_callback(user=user)
 
-            assert error_raised.exception.code == 503
+            assert error_raised.value.status_code == 503
 
     @responses.activate
     def test_user_denies_access(self):
@@ -535,7 +536,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='error=mock_error&code=mock_code&state=mock_state'
         ):
@@ -579,7 +580,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         _prepare_mock_oauth2_handshake_response()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ) as ctx:

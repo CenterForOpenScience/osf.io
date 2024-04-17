@@ -180,7 +180,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
 
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         with mock.patch.object(type(self.Serializer()), 'credentials_are_valid', return_value=True):
-            res = self.app.get(url, auth=user_read_only.auth, expect_errors=True)
+            res = self.app.get(url, auth=user_read_only.auth)
             assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_get_config_read_contrib_without_valid_credentials(self):
@@ -190,7 +190,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
 
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         with mock.patch.object(type(self.Serializer()), 'credentials_are_valid', return_value=False):
-            res = self.app.get(url, auth=user_read_only.auth, expect_errors=True)
+            res = self.app.get(url, auth=user_read_only.auth)
             assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
 
@@ -247,7 +247,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
             addon_root_url = waterbutler_api_url_for(self.project._id, 'osfstorage', _internal=True, base_url=base_url)
             upload_url_root = f'{addon_root_url}?kind=file'
             url = self.project.api_url_for('boa_submit_job')
-            res = self.app.post_json(url, self.payload_addon_root, auth=self.user.auth)
+            res = self.app.post(url, json=self.payload_addon_root, auth=self.user.auth)
             assert res.status_code == http_status.HTTP_200_OK
             mock_submit_s.assert_called_with(
                 BOA_HOST,
@@ -267,7 +267,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
         with mock.patch('addons.boa.tasks.submit_to_boa.s', return_value=BoaErrorCode.NO_ERROR) as mock_submit_s:
             self.node_settings.set_auth(self.external_account, self.user)
             url = self.project.api_url_for('boa_submit_job')
-            res = self.app.post_json(url, self.payload_sub_folder, auth=self.user.auth)
+            res = self.app.post(url, json=self.payload_sub_folder, auth=self.user.auth)
             assert res.status_code == http_status.HTTP_200_OK
             mock_submit_s.assert_called_with(
                 BOA_HOST,
@@ -289,7 +289,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
             user_admin = AuthUserFactory()
             self.project.add_contributor(user_admin, permissions=permissions.ADMIN, auth=self.auth, save=True)
             url = self.project.api_url_for('boa_submit_job')
-            res = self.app.post_json(url, self.payload_sub_folder, auth=user_admin.auth)
+            res = self.app.post(url, json=self.payload_sub_folder, auth=user_admin.auth)
             assert res.status_code == http_status.HTTP_200_OK
             mock_submit_s.assert_called_with(
                 BOA_HOST,
@@ -311,7 +311,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
             user_write = AuthUserFactory()
             self.project.add_contributor(user_write, permissions=permissions.WRITE, auth=self.auth, save=True)
             url = self.project.api_url_for('boa_submit_job')
-            res = self.app.post_json(url, self.payload_sub_folder, auth=user_write.auth)
+            res = self.app.post(url, json=self.payload_sub_folder, auth=user_write.auth)
             assert res.status_code == http_status.HTTP_200_OK
             mock_submit_s.assert_called_with(
                 BOA_HOST,
@@ -333,6 +333,6 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
             user_read_only = AuthUserFactory()
             self.project.add_contributor(user_read_only, permissions=permissions.READ, auth=self.auth, save=True)
             url = self.project.api_url_for('boa_submit_job')
-            res = self.app.post_json(url, self.payload_sub_folder, auth=user_read_only.auth, expect_errors=True)
+            res = self.app.post(url, json=self.payload_sub_folder, auth=user_read_only.auth)
             assert res.status_code == http_status.HTTP_403_FORBIDDEN
             mock_submit_s.assert_not_called()

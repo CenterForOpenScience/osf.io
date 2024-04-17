@@ -1,9 +1,8 @@
 import json
-import jsonschema
 import codecs
 import time
 import collections
-
+from jsonschema import validate, ValidationError, Draft7Validator
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated
@@ -42,8 +41,8 @@ class JSONSchemaParser(JSONParser):
         json_schema = parser_context['json_schema']
 
         try:
-            jsonschema.validate(json_payload, json_schema)
-        except jsonschema.exceptions.ValidationError as exc:
+            validate(json_payload, json_schema, cls=Draft7Validator)
+        except ValidationError as exc:
             raise ParseError(exc)
 
         return json_payload

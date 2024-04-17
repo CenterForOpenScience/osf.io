@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 import pytz
 import responses
-
+from flask import g
 from django.utils import timezone
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
@@ -3802,7 +3802,7 @@ class TestOnNodeUpdate:
         # Manually set the current_session with a fake session with auth_user_id=user._id
         # Otherwise, `task.kwargs['user_id']` would be None because there is not a session
         # in the current request context
-        request_context.g.current_session = {'auth_user_id': user._id}
+        g.current_session = {'auth_user_id': user._id}
         node.save()
         task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
@@ -3817,7 +3817,7 @@ class TestOnNodeUpdate:
         node.title = 'Something New'
         node.save()
 
-        request_context.g.current_session = {'auth_user_id': user._id}
+        g.current_session = {'auth_user_id': user._id}
         # make sure on_node_updated is in the queue
         assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
