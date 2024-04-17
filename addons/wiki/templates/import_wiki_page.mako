@@ -203,7 +203,7 @@
         }
         /**
          * Modifies the import list based on the specified operation.
-         * 
+         *
          * @param {string} operation - Specifies the operation to perform. Can be 'skipAll', 'overwriteAll', 'createNewAll', or an empty string.
          * @param {Array} validateWikiImportResultCopy - Copy of the import list. The modified list will be returned.
          * @param {Array} perOperationList - List of operations for each item.
@@ -407,7 +407,7 @@
                         if (response.responseJSON.message_long) {
                             $wikiImportErrorMsg.text(response.responseJSON.message_long);
                         } else {
-                            alert('import error'); 
+                            alert('import error');
                         }
                     } else {
                         alert('import error');

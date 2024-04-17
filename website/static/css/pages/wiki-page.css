@@ -404,7 +404,7 @@ select.form-control {
     z-index: 15;
     white-space: nowrap;
     position: absolute;
-}  
+}
 
 .milkdown .editor table {
     width: 80%;
@@ -412,7 +412,7 @@ select.form-control {
 
 .sort-item {
     padding: 5px;
-  }
+}
 
 .ko_container li {
     list-style: none;

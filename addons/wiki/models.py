@@ -258,22 +258,6 @@ class WikiPageNodeManager(models.Manager):
         wiki_page.update(auth.user, content, is_wiki_import=is_wiki_import)
         return wiki_page
 
-    def get_for_node(self, node, name=None, id=None, parent=None):
-        if name:
-            try:
-                name = (name or '').strip()
-                return WikiPage.objects.get(page_name__iexact=name, deleted__isnull=True, node=node)
-            except WikiPage.DoesNotExist:
-                return None
-
-        if parent:
-            try:
-                return WikiPage.objects.filter(parent__exact=parent, deleted__isnull=True, node=node)
-            except WikiPage.DoesNotExist:
-                return None
-
-        return WikiPage.load(id)
-
     def get_for_node(self, node, name=None, id=None):
         if name:
             try:
