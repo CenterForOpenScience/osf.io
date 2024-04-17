@@ -195,17 +195,8 @@ def get_permission_for_action(action):
     return permission
 
 
-def check_resource_permissions(node, auth, action):
+def check_resource_permissions(resource, auth, action):
     """Check if the user has the required permission on the resource."""
-    permission = get_permission_for_action(action)
-
-    if permission == permissions.READ and isinstance(node, Registration):
-        return node.registered_from.can_view(auth)
-    elif permission == permissions.READ:
-        return node.can_view_files(auth)
-    elif permission == permissions.WRITE:
-        if node.can_edit(auth):
-            return True
 
     # Users attempting to register projects with components might not have
     # `write` permissions for all components. This will result in a 403 for
@@ -218,13 +209,47 @@ def check_resource_permissions(node, auth, action):
     # `node.is_registration` == True. However, we have no way of telling if
     # `copyfrom` actions are originating from a node being registered.
     # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
-    if isinstance(node, AbstractNode):
-        if action == 'copyfrom' or (action == 'upload' and node.is_registration):
-            parent = node.parent_node
-            while parent:
-                if parent.can_edit(auth):
-                    return True
-                parent = parent.parent_node
+
+    required_permission = get_permission_for_action(action)
+    if isinstance(resource, Registration):
+        return _check_registration_permissions(resource, auth, required_permission, action)
+    elif isinstance(resource, Node):
+        return _check_node_permissions(resource, auth, required_permission, action)
+    elif isinstance(resource, Preprint):
+        return _check_preprint_permissions(resource, auth, required_permission)
+    else:
+        raise NotImplemented()
+
+
+def _check_registration_permissions(registration, auth, permission, action):
+    if permission == permissions.READ:
+        return registration.registered_from.can_view(auth)
+    if action in ('copy_from', 'upload'):
+        return _check_hierarchical_write_permissions(resource=registration, auth=auth)
+    return registration.can_edit(auth)
+
+
+def _check_node_permissions(node, auth, permission, action):
+    if permission == permissions.READ:
+        return node.can_view(auth)
+    if action == 'upload':
+        return _check_hierarchical_write_permissions(resource=node, auth=auth,)
+    return node.can_edit(auth)
+
+
+def _check_preprint_permissions(preprint, auth, permission):
+    if permission == permissions.READ:
+        return preprint.can_view_files(auth)
+    return preprint.can_edit(auth)
+
+
+def _check_hierarchical_write_permissions(resource, auth):
+    permissions_resource = resource
+    while permissions_resource:
+        if permissions_resource.can_edit(auth):
+            return True
+        permissions_resource = permissions_resource.parent
+
 
 def make_auth(user):
     if user is not None:
