@@ -479,39 +479,39 @@ def travis_setup(ctx):
         ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
 
 @task
-def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """
     Run half of the tests to help travis go faster.
     """
     #travis_setup(ctx)
     syntax(ctx)
-    test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
-def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """
     Run other half of the tests to help travis go faster.
     """
     #travis_setup(ctx)
-    test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #travis_setup(ctx)
-    test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #travis_setup(ctx)
-    test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #travis_setup(ctx)
-    test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
 def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
