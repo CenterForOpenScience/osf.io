@@ -23,6 +23,7 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 #WATERBUTLER_URL = 'http://localhost:7777'
 #WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
+#GRAVYVALET_URL = 'https://localhost:8004'
 
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
