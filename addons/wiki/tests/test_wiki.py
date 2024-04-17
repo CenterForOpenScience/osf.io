@@ -330,7 +330,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         parent = WikiPage.objects.get_for_node(self.project, 'parent')
         child = WikiPage.objects.get_for_node(self.project, 'child')
-        assert_equal(parent.id, child.parent)
+        assert_equal(parent, child.parent)
 
     def test_project_wiki_validate_name_no_parent(self):
         parent = WikiPage.objects.get_for_node(self.project, 'parent')
@@ -348,7 +348,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         parent = WikiPage.objects.get_for_node(project, 'home')
         child = WikiPage.objects.get_for_node(project, 'child')
-        assert_equal(parent.id, child.parent)
+        assert_equal(parent, child.parent)
 
     def test_project_wiki_validate_name_parent_home(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='home')
@@ -356,7 +356,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         parent = WikiPage.objects.get_for_node(self.project, 'home')
         child = WikiPage.objects.get_for_node(self.project, 'child')
-        assert_equal(parent.id, child.parent)
+        assert_equal(parent, child.parent)
 
     def test_project_dashboard_shows_no_wiki_content_text(self):
         # Regression test for:
@@ -506,7 +506,7 @@ class TestWikiDelete(OsfTestCase):
         self.elephant_wiki = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
         self.lion_wiki = WikiPage.objects.create_for_node(self.project, 'Lions', 'Hello Lions', self.consolidate_auth)
         self.koala_wiki = WikiPage.objects.create_for_node(self.project, 'Koalas', 'Hello Koalas', self.consolidate_auth)
-        self.kangaroo_wiki = WikiPage.objects.create_for_node(self.project, 'kangaroos', 'Hello kangaroos', self.consolidate_auth, self.koala_wiki.id)
+        self.kangaroo_wiki = WikiPage.objects.create_for_node(self.project, 'kangaroos', 'Hello kangaroos', self.consolidate_auth, self.koala_wiki)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_project_wiki_delete(self, mock_shrejs):
@@ -1450,9 +1450,9 @@ class TestWikiMenu(OsfTestCase):
     def test_project_wiki_grid_data_has_child(self):
         WikiPage.objects.create_for_node(self.project, 'home', 'project content', self.consolidate_auth)
         project_parent_wiki = WikiPage.objects.create_for_node(self.project, 'parent', 'project content', self.consolidate_auth)
-        WikiPage.objects.create_for_node(self.project, 'child', 'project content', self.consolidate_auth, project_parent_wiki.id)
+        WikiPage.objects.create_for_node(self.project, 'child', 'project content', self.consolidate_auth, project_parent_wiki)
         component_parent_wiki = WikiPage.objects.create_for_node(self.component, 'home', 'component content', self.consolidate_auth)
-        WikiPage.objects.create_for_node(self.component, 'parent', 'component content', self.consolidate_auth, component_parent_wiki.id)
+        WikiPage.objects.create_for_node(self.component, 'parent', 'component content', self.consolidate_auth, component_parent_wiki)
         data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
         expected = [
             {
