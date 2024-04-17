@@ -1,7 +1,3 @@
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
 import datetime
 from rest_framework import status as http_status
 import os
@@ -69,23 +65,7 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
-
-
-def fetch_with_retries(url, max_retries=3, backoff_factor=1, status_forcelist=(500, 502, 503, 504)):
-    session = requests.Session()
-    retries = Retry(total=max_retries,
-                    read=max_retries,
-                    connect=max_retries,
-                    backoff_factor=backoff_factor,
-                    status_forcelist=status_forcelist,
-                    method_whitelist=['HEAD', 'GET', 'OPTIONS'])
-    adapter = HTTPAdapter(max_retries=retries)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-    response = session.get(url)
-    response.raise_for_status()
-    return response.json()
-
+from osf.utils.requests import requests_retry_session
 
 ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
@@ -218,7 +198,7 @@ def check_resource_permissions(resource, auth, action):
     elif isinstance(resource, Preprint):
         return _check_preprint_permissions(resource, auth, required_permission)
     else:
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 def _check_registration_permissions(registration, auth, permission, action):
@@ -311,7 +291,7 @@ def get_authenticated_resource(resource_id):
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
-    """Convert a DraftNode to its corresponding node if applicable."""
+    # Convert a DraftNode to its corresponding node if applicable.
     resource = resource.registered_draft.first() if isinstance(resource, DraftNode) else resource
 
     if resource.deleted:
@@ -330,7 +310,7 @@ def get_file_version_from_wb(waterbutler_data):
     except OsfStorageFileNode.DoesNotExist:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    version = int(waterbutler_data['version']) if waterbutler_data.get('version') else filenode.versions.count()
+    version = int(waterbutler_data.get('version', filenode.versions.count()))
     try:
         return FileVersion.objects.filter(
             basefilenode___id=file_id,
@@ -433,16 +413,11 @@ def get_auth(auth, **kwargs):
         waterbutler_settings
     )
 
-
-def build_gv_url(csa_id):
-    return f'{settings.DOMAIN}/v1/configured_storage_addon/{csa_id}'
-
-
 def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
     provider_name = waterbutler_data.get('provider')
     if isinstance(resource, Preprint):
-        credentials = resource.serialize_waterbutler_credentials(provider_name)
-        waterbutler_settings = resource.serialize_waterbutler_settings(provider_name)
+        credentials = resource.serialize_waterbutler_credentials()
+        waterbutler_settings = resource.serialize_waterbutler_settings()
     elif provider_name == 'osfstorage':
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
@@ -450,8 +425,9 @@ def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
             root_id=provider.root_node._id,
         )
     elif waffle.flag_is_active(request, features.ENABLE_GV):
-        url = build_gv_url(waterbutler_data['csa_id'])
-        data = fetch_with_retries(url)
+        data = requests_retry_session(
+            f'{settings.DOMAIN}/v1/configured_storage_addon/{waterbutler_data["provider"]}/waterbutler-config'
+        )
         credentials, waterbutler_settings = data['data']
     else:
         credentials = resource.serialize_waterbutler_credentials(provider_name)
