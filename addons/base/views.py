@@ -212,8 +212,6 @@ def _check_registration_permissions(registration, auth, permission, action):
 def _check_node_permissions(node, auth, permission, action):
     if permission == permissions.READ:
         return node.can_view(auth)
-    if action == 'upload':
-        return _check_hierarchical_write_permissions(resource=node, auth=auth,)
     return node.can_edit(auth)
 
 
@@ -300,24 +298,30 @@ def get_authenticated_resource(resource_id):
     return resource
 
 
-def get_file_version_from_wb(waterbutler_data):
+def get_file_version_from_wb(waterbutler_data: dict) -> FileVersion:
     path = waterbutler_data.get('path')
     if not path:
         return
-    file_id = path.strip('/')
-    try:
-        filenode = OsfStorageFileNode.objects.get(_id=file_id)
-    except OsfStorageFileNode.DoesNotExist:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    version = int(waterbutler_data.get('version', filenode.versions.count()))
-    try:
-        return FileVersion.objects.filter(
-            basefilenode___id=file_id,
-            identifier=version
-        ).select_related('region').get()
-    except FileVersion.DoesNotExist:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    file_id = path.strip('/')
+    version = waterbutler_data.get('version')
+    if version:
+        try:
+            return FileVersion.objects.filter(
+                basefilenode___id=file_id,
+                identifier=int(version)
+            ).select_related('region').get()
+        except FileVersion.DoesNotExist:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    else:
+        try:
+            return BaseFileNode.objects.get(
+                _id=file_id,
+            ).versions.order_by(
+                '-created'
+            ).first()
+        except BaseFileNode.DoesNotExist:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 def authenticate_user_if_needed(auth, waterbutler_data, resource):
@@ -413,12 +417,13 @@ def get_auth(auth, **kwargs):
         waterbutler_settings
     )
 
+
 def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
     provider_name = waterbutler_data.get('provider')
     if isinstance(resource, Preprint):
         credentials = resource.serialize_waterbutler_credentials()
         waterbutler_settings = resource.serialize_waterbutler_settings()
-    elif provider_name == 'osfstorage':
+    elif fileversion:
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
             node_id=provider.owner._id,
@@ -426,12 +431,12 @@ def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
         )
     elif waffle.flag_is_active(request, features.ENABLE_GV):
         data = requests_retry_session(
-            f'{settings.DOMAIN}/v1/configured_storage_addon/{waterbutler_data["provider"]}/waterbutler-config'
+            f'{settings.DOMAIN}/v1/configured_storage_addon/{provider_name}/waterbutler-config'
         )
         credentials, waterbutler_settings = data['data']
     else:
-        credentials = resource.serialize_waterbutler_credentials()
-        waterbutler_settings = resource.serialize_waterbutler_settings()
+        credentials = resource.serialize_waterbutler_credentials(provider.short_name)
+        waterbutler_settings = resource.serialize_waterbutler_settings(provider.short_name)
 
     return credentials, waterbutler_settings
 
