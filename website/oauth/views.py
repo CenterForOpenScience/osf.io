@@ -52,19 +52,20 @@ def oauth_connect(service_name, auth):
 def oauth_callback(service_name, auth):
     if waffle.flag_is_active(request, features.ENABLE_GV):
         _forward_to_addon_service()
-    else:
-        user = auth.user
-        provider = get_service(service_name)
+        return {}
 
-        # Retrieve permanent credentials from provider
-        if not provider.auth_callback(user=user):
-            return {}
+    user = auth.user
+    provider = get_service(service_name)
 
-        if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
-            user.external_accounts.add(provider.account)
-            user.save()
+    # Retrieve permanent credentials from provider
+    if not provider.auth_callback(user=user):
+        return {}
 
-        oauth_complete.send(provider, account=provider.account, user=user)
+    if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
+        user.external_accounts.add(provider.account)
+        user.save()
+
+    oauth_complete.send(provider, account=provider.account, user=user)
 
     return {}
 
