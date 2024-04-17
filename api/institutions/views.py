@@ -1,4 +1,4 @@
-from django.db.models import F
+from django.db.models import Count, Q, F
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
@@ -159,13 +159,30 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
     serializer_class = UserSerializer
     view_category = 'institutions'
-    view_name = 'institution-users'
+    view_name = 'institution-users-list'
 
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        institution = self.get_institution()
-        return institution.get_institution_users()
+        return self.get_institution().get_institution_users().annotate(
+            email_address=F('username'),
+            department=F('institutionaffiliation__sso_department'),
+            # Count of public projects (assuming a related_name 'projects' from OSFUser to Project)
+            number_of_public_projects=Count('nodes', filter=Q(nodes__is_public=True) & Q(nodes__type='osf.node')),
+            number_of_private_projects=Count('nodes', filter=Q(nodes__is_public=False) & Q(nodes__type='osf.node')),
+            # Example for registrations, assuming a similar setup
+            number_of_public_registrations=Count('nodes', filter=Q(nodes__is_public=True) & Q(nodes__type='osf.registration')),
+            number_of_private_registrations=Count('nodes', filter=Q(nodes__is_public=False) & Q(nodes__type='osf.registration')),
+            # Assuming 'preprints' is a related name from OSFUser to a Preprint model
+            number_of_preprints=Count('preprints', distinct=True),
+            last_log=...,
+            account_created_date=...,
+            has_orcid=...,
+            # Assuming there's a File model related to users for counting files
+
+            # count the files on nodes where users have WRITE perms
+            # number_of_files=Count('files', distinct=True)
+        )
 
     # overrides RetrieveAPIView
     def get_queryset(self):
@@ -521,3 +538,184 @@ class InstitutionUserMetricsList(InstitutionImpactList):
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
         return self._make_elasticsearch_results_filterable(search, id=institution._id, department=DEFAULT_ES_NULL_VALUE)
+
+
+class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    model_class = OSFUser
+
+    serializer_class = UserSerializer
+    view_category = 'institutions'
+    view_name = 'institution-users-list-dashboard'
+
+    ordering = ('-id',)
+
+
+    def get_default_queryset(self):
+        return self.get_institution().get_institution_users().annotate(
+            email_address=F('username'),
+            department=F('institutionaffiliation__sso_department'),
+            # Count of public projects (assuming a related_name 'projects' from OSFUser to Project)
+            number_of_public_projects=Count('nodes', filter=Q(nodes__is_public=True) & Q(nodes__type='osf.node')),
+            number_of_private_projects=Count('nodes', filter=Q(nodes__is_public=False) & Q(nodes__type='osf.node')),
+            # Example for registrations, assuming a similar setup
+            number_of_public_registrations=Count('nodes', filter=Q(nodes__is_public=True) & Q(nodes__type='osf.registration')),
+            number_of_private_registrations=Count('nodes', filter=Q(nodes__is_public=False) & Q(nodes__type='osf.registration')),
+            # Assuming 'preprints' is a related name from OSFUser to a Preprint model
+            number_of_preprints=Count('preprints', distinct=True),
+            # Assuming there's a File model related to users for counting files
+
+            # count the files on nodes where users have WRITE perms
+            # number_of_files=Count('files', distinct=True)
+        )
+
+    # overrides RetrieveAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def list(self, request, *args, **kwargs):
+        format = request.query_params.get('format', None)
+        if format == 'csv':
+            return self.create_csv_response()
+        return super().list(request, *args, **kwargs)
+
+    def create_csv_response(self):
+        queryset = self.get_default_queryset()
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="institution_users.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Email', 'Department', 'Public Projects', 'Private Projects', 'Public Registrations',
+                         'Private Registrations', 'Preprints'])
+
+        for user in queryset:
+            writer.writerow([
+                user.id,
+                user.email_address,
+                user.department,
+                user.number_of_public_projects,
+                user.number_of_private_projects,
+                user.number_of_public_registrations,
+                user.number_of_private_registrations,
+                user.number_of_preprints,
+            ])
+        return response
+
+class InstitutionDashboardFilesList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+        GUID
+        Filename
+        File path
+        Date created
+        Date modified
+        Mime type
+        size
+        File title
+        Resource type
+        """
+        pass
+
+
+class InstitutionDashboardProjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+            GUID
+            Associate user guid and role (e.g. admin, read-write)
+            User department is also useful here**
+            Object type*
+            Resource type*
+            Title
+            Created date
+            Modified date
+            Storage location
+            OSF Data size (will need to make some decisions about the units as some will be MB and others will have TB – also need to figure out how to handle adding up what is in children vs. what is the total for all below root)
+            Is public (true/false)
+            DOI
+            Add-ons used
+            Views
+            Current reporting periods are not helpful – not sure what to do here
+        """
+        pass
+
+
+class InstitutionDashboardRegistrationsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+            GUID
+            Associate user guid and role (e.g. admin, read-write)
+            User department is also useful here**
+            Object type*
+            Resource type*
+            Title
+            Created date
+            Modified date
+            Storage location
+            OSF Data size (will need to make some decisions about the units as some will be MB and others will have TB – also need to figure out how to handle adding up what is in children vs. what is the total for all below root)
+            Is public (true/false)
+            DOI
+            Add-ons used
+            Views
+            Current reporting periods are not helpful – not sure what to do here
+        """
+        pass
+
+
+class InstitutionDashboardPreprintsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+            GUID
+            Associate user guid and role (e.g. admin, read-write)
+            User department is also useful here**
+            Object type*
+            Resource type*
+            Title
+            Created date
+            Modified date
+            Storage location
+            OSF Data size (will need to make some decisions about the units as some will be MB and others will have TB – also need to figure out how to handle adding up what is in children vs. what is the total for all below root)
+            Is public (true/false)
+            DOI
+            Add-ons used
+            Views
+            Current reporting periods are not helpful – not sure what to do here
+        """
+        pass
+
+

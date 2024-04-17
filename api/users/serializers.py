@@ -59,6 +59,14 @@ class SocialField(ser.DictField):
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
+        'email_address',  # For Institutional Dashboard only
+        'department',  # For Institutional Dashboard only
+        'number_of_public_projects',  # For Institutional Dashboard only
+        'number_of_private_projects',  # For Institutional Dashboard only
+        'number_of_public_registrations',  # For Institutional Dashboard only
+        'number_of_private_registrations',  # For Institutional Dashboard only
+        'number_of_preprints',  # For Institutional Dashboard only
+        'number_of_files',  # For Institutional Dashboard only
         'full_name',
         'given_name',
         'middle_names',
@@ -90,6 +98,15 @@ class UserSerializer(JSONAPISerializer):
     allow_indexing = ShowIfCurrentUser(ser.BooleanField(required=False, allow_null=True))
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
+
+    email_address = ser.CharField(required=False, allow_blank=True, help_text='For Institutional Dashboard only')
+    department = ser.CharField(required=False, allow_blank=True, help_text='For Institutional Dashboard only')
+    number_of_public_projects = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_private_projects = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_public_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_private_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_preprints = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
 
     links = HideIfDisabled(LinksField(
         {
