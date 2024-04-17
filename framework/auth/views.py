@@ -732,16 +732,6 @@ def confirm_email_get(token, auth=None, **kwargs):
         user.update_date_last_login()
         user.save()
 
-        # send out our welcome message
-        mails.send_mail(
-            to_addr=user.username,
-            mail=mails.WELCOME,
-            user=user,
-            domain=settings.DOMAIN,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            storage_flag_is_active=storage_i18n_flag_active(),
-        )
-
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.
     user.verification_key = generate_verification_key()
     user.save()
