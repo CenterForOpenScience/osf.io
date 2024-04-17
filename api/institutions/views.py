@@ -521,3 +521,144 @@ class InstitutionUserMetricsList(InstitutionImpactList):
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
         return self._make_elasticsearch_results_filterable(search, id=institution._id, department=DEFAULT_ES_NULL_VALUE)
+
+
+class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-user-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+        Name
+        GUID
+        Email or id provided by authentication service**
+        Department provided by authentication service**
+        Projects - public*
+        Projects - private*
+        Registrations - public
+        Registrations - private
+        Preprints
+        Number of files in associated OSF objects
+        Last login
+        Last tracked action
+        Account creation date
+        Has associated ORCid
+        """
+
+        return
+
+
+class InstitutionDashboardFilesList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+        GUID
+        Filename
+        File path
+        Date created
+        Date modified
+        Mime type
+        size
+        File title
+        Resource type
+        """
+        pass
+
+
+class InstitutionDashboardProjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+            GUID
+            Associate user guid and role (e.g. admin, read-write)
+            User department is also useful here**
+            Object type*
+            Resource type*
+            Title
+            Created date
+            Modified date
+            Storage location
+            OSF Data size (will need to make some decisions about the units as some will be MB and others will have TB – also need to figure out how to handle adding up what is in children vs. what is the total for all below root)
+            Is public (true/false)
+            DOI
+            Add-ons used
+            Views
+            Current reporting periods are not helpful – not sure what to do here
+        """
+        pass
+
+
+class InstitutionDashboardRegistrationsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+            GUID
+            Associate user guid and role (e.g. admin, read-write)
+            User department is also useful here**
+            Object type*
+            Resource type*
+            Title
+            Created date
+            Modified date
+            Storage location
+            OSF Data size (will need to make some decisions about the units as some will be MB and others will have TB – also need to figure out how to handle adding up what is in children vs. what is the total for all below root)
+            Is public (true/false)
+            DOI
+            Add-ons used
+            Views
+            Current reporting periods are not helpful – not sure what to do here
+        """
+        pass
+
+
+class InstitutionDashboardPreprintsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, InstitutionMixin):
+    view_name = 'institution-files-dashboard'
+
+    serializer_class = None
+    renderer_classes = None #  tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+
+    # ordering = ('user_name', )
+
+    def get_default_queryset(self):
+        """
+            GUID
+            Associate user guid and role (e.g. admin, read-write)
+            User department is also useful here**
+            Object type*
+            Resource type*
+            Title
+            Created date
+            Modified date
+            Storage location
+            OSF Data size (will need to make some decisions about the units as some will be MB and others will have TB – also need to figure out how to handle adding up what is in children vs. what is the total for all below root)
+            Is public (true/false)
+            DOI
+            Add-ons used
+            Views
+            Current reporting periods are not helpful – not sure what to do here
+        """
+        pass
+
+
