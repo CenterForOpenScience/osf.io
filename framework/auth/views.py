@@ -29,7 +29,6 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
