@@ -6,7 +6,7 @@ from rest_framework import status as http_status
 from waffle.testutils import override_flag
 from urllib.parse import (
     urlencode,
-    urlparse,
+    parse_qsl,
     urlunparse,
 )
 
@@ -75,9 +75,11 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         with override_flag(ENABLE_GV, active=True):
             request_url = urlunparse(urlparse(url)._replace(query=urlencode(query_params)))
             res = self.app.get(request_url, auth=self.user.auth)
-        mock_requests_get.assert_called_with(
-            urlunparse(urlparse(GRAVYVALET_URL)._replace(path='callback', query=urlencode(query_params)))
-        )
+        gv_callback_url = mock_requests_get.call_args[0][0]
+        parsed_callback_url = urlparse(gv_callback_url)
+        assert parsed_callback_url.netloc == urlparse(GRAVYVALET_URL).netloc
+        assert parsed_callback_url.path == '/v1/oauth/callback'
+        assert dict(parse_qsl(parsed_callback_url.query)) == query_params
 
     def test_delete_external_account(self):
         url = api_url_for(
