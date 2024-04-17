@@ -283,7 +283,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=True, all=Tru
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False, junit=False):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -295,6 +295,8 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = []
+    if junit:
+        args.extend(['--junit-xml', 'report.xml'])
     if coverage:
         args.extend([
             '--cov-report', 'term-missing',
@@ -397,52 +399,52 @@ ADMIN_TESTS = [
 
 
 @task
-def test_osf(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the OSF test suite."""
     print(f'Testing modules "{OSF_TESTS}"')
-    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
-def test_website(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the old test suite."""
     print(f'Testing modules "{WEBSITE_TESTS}"')
-    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
-def test_api1(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_api1(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
     print(f'Testing modules "{API_TESTS1 + ADMIN_TESTS}"')
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_api2(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
     print(f'Testing modules "{API_TESTS2}"')
-    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_api3(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_api3(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
     print(f'Testing modules "{API_TESTS3 + OSF_TESTS}"')
     # NOTE: There may be some concurrency issues with ES
-    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_admin(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_admin(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
-    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_addons(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run all the tests in the addons directory.
     """
     print(f'Testing modules "{ADDON_TESTS}"')
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task

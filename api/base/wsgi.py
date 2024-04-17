@@ -18,6 +18,7 @@ if not settings.DEBUG_MODE:
 
 import os  # noqa
 from django.core.wsgi import get_wsgi_application  # noqa
+from django.conf import settings as django_settings
 from website.app import init_app  # noqa
 
 if os.environ.get('API_REMOTE_DEBUG', None):
@@ -54,5 +55,6 @@ Request.__getattribute__ = object.__getattribute__
 
 init_app(set_backends=True, routes=False, attach_request_handlers=False)
 api_settings.load_origins_whitelist()
+django_settings.CORS_ORIGIN_WHITELIST = list(set(django_settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
 
 application = get_wsgi_application()

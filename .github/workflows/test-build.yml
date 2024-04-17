@@ -72,7 +72,7 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-addons -n 1
+      run: python3 -m invoke test-travis-addons -n 1 --junit
     - name: Upload report
       if: success() || failure()    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -120,7 +120,7 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-website -n 1
+      run: python3 -m invoke test-travis-website -n 1 --junit
     - name: Upload report
       if: success() || failure()    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -171,7 +171,7 @@ jobs:
         run: |
           python3 -m invoke assets --dev
       - name: Run test
-        run: python3 -m invoke test-travis-api1-and-js -n 1
+        run: python3 -m invoke test-travis-api1-and-js -n 1 --junit
       - name: Upload report
         if: success() || failure()    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
@@ -219,7 +219,7 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-api2 -n 1
+      run: python3 -m invoke test-travis-api2 -n 1 --junit
     - name: Upload report
       if: success() || failure()    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -267,7 +267,7 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-api3-and-osf -n 1
+      run: python3 -m invoke test-travis-api3-and-osf -n 1 --junit
     - name: Upload report
       if: success() || failure()    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
