@@ -16,7 +16,7 @@ from addons.iqbrims.tests.factories import (
     IQBRIMSNodeSettingsFactory,
     IQBRIMSUserSettingsFactory
 )
-from osf.models import RdmAddonOption
+from osf.models import AbstractNode, RdmAddonOption
 from osf_tests.factories import ProjectFactory, InstitutionFactory
 
 pytestmark = pytest.mark.django_db
@@ -174,6 +174,7 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
     def setUp(self):
         super(TestIQBRIMSNodeReceiver, self).setUp()
         self.node = ProjectFactory()
+        self.user_node = ProjectFactory()
         self.user = self.node.creator
         self.external_account = IQBRIMSAccountFactory()
 
@@ -227,3 +228,43 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
         self.node.save(force_update=True)
 
         assert_equal(mock_rename_folder.call_count, 0)
+
+    @mock.patch.object(AbstractNode, 'find_by_institutions')
+    def test_update_addon_state_for_iqbrims_option(self, mock_find_by_institutions):
+        # IQB-RIMS calls add/delete_addon method when the RdmAddonOption is updated
+        mock_find_by_institutions.return_value = [self.user_node]
+
+        option = RdmAddonOption(
+            provider=self.short_name,
+            institution=self.institution,
+            management_node=self.node,
+            is_allowed=True,
+        )
+        with mock.patch.object(self.user_node, 'add_addon') as mock_add_addon:
+            option.save()
+            assert_equal(mock_add_addon.call_count, 1)
+
+        with mock.patch.object(self.user_node, 'delete_addon') as mock_delete_addon:
+            option.is_allowed = False
+            option.save()
+            assert_equal(mock_delete_addon.call_count, 1)
+
+    @mock.patch.object(AbstractNode, 'find_by_institutions')
+    def test_update_addon_state_for_other_option(self, mock_find_by_institutions):
+        # IQB-RIMS ignores changes of RdmAddonOption of other add-ons
+        mock_find_by_institutions.return_value = [self.user_node]
+
+        option = RdmAddonOption(
+            provider='some_other_addon',
+            institution=self.institution,
+            management_node=self.node,
+            is_allowed=True,
+        )
+        with mock.patch.object(self.user_node, 'add_addon') as mock_add_addon:
+            option.save()
+            assert_equal(mock_add_addon.call_count, 0)
+
+        with mock.patch.object(self.user_node, 'delete_addon') as mock_delete_addon:
+            option.is_allowed = False
+            option.save()
+            assert_equal(mock_delete_addon.call_count, 0)
