@@ -332,14 +332,14 @@ class TestWikiViews(OsfTestCase):
         child = WikiPage.objects.get_for_node(self.project, 'child')
         assert_equal(parent, child.parent)
 
-    def test_project_wiki_validate_name_no_parent(self):
+    def test_project_wiki_validate_name_invalid_parent(self):
         parent = WikiPage.objects.get_for_node(self.project, 'parent')
         assert_is_none(parent)
         url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_project_wiki_validate_name_no_parent_home(self):
+    def test_project_wiki_validate_name_invalid_parent_default_home(self):
         project = ProjectFactory(creator=self.user)
         parent = WikiPage.objects.get_for_node(project, 'home')
         assert_is_none(parent)
@@ -350,7 +350,7 @@ class TestWikiViews(OsfTestCase):
         child = WikiPage.objects.get_for_node(project, 'child')
         assert_equal(parent, child.parent)
 
-    def test_project_wiki_validate_name_parent_home(self):
+    def test_project_wiki_validate_name_parent_default_home(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='home')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -458,6 +458,31 @@ class TestWikiViews(OsfTestCase):
         res = serialize_wiki_widget(self.project)
         assert_true(res['rendered_before_update'])
 
+    def test_read_only_users_cannot_view_edit_pane(self):
+        url = self.project.web_url_for('project_wiki_view', wname='home')
+        # No write permissions
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in('id="editWysiwyg"', res.text)
+        assert_not_in('id="collaborativeStatus"', res.text)
+        # Write permissions
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('id="editWysiwyg"', res.text)
+        assert_in('id="collaborativeStatus"', res.text)
+        # Publicly editable
+        wiki = self.project.get_addon('wiki')
+        wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
+        res = self.app.get(url, auth=AuthUserFactory().auth)
+        assert_equal(res.status_code, 200)
+        assert_in('id="editWysiwyg"', res.text)
+        assert_in('id="collaborativeStatus"', res.text)
+        # Publicly editable but not logged in
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in('id="editWysiwyg"', res.text)
+        assert_not_in('id="collaborativeStatus"', res.text)
+
     def test_wiki_widget_not_show_in_registration_for_contributor(self):
         registration = RegistrationFactory(project=self.project)
         res = self.app.get(
@@ -507,6 +532,9 @@ class TestWikiDelete(OsfTestCase):
         self.lion_wiki = WikiPage.objects.create_for_node(self.project, 'Lions', 'Hello Lions', self.consolidate_auth)
         self.koala_wiki = WikiPage.objects.create_for_node(self.project, 'Koalas', 'Hello Koalas', self.consolidate_auth)
         self.kangaroo_wiki = WikiPage.objects.create_for_node(self.project, 'kangaroos', 'Hello kangaroos', self.consolidate_auth, self.koala_wiki)
+        self.giraffe_wiki = WikiPage.objects.create_for_node(self.project, 'Giraffes', 'Hello Giraffes', self.consolidate_auth)
+        self.panda_wiki = WikiPage.objects.create_for_node(self.project, 'Pandas', 'Hello Pandas', self.consolidate_auth, self.giraffe_wiki)
+        self.zebra_wiki = WikiPage.objects.create_for_node(self.project, 'Zebras', 'Hello Zebras', self.consolidate_auth, self.panda_wiki)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_project_wiki_delete(self, mock_shrejs):
@@ -572,14 +600,9 @@ class TestWikiDelete(OsfTestCase):
         assert_equal(wiki_page.current_version_number, 2)
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
-    def test_project_wiki_delete_hierarchy(self, mock_shrejs):
+    def test_project_wiki_delete_recursive_one_level(self, mock_shrejs):
         parent_wiki = self.koala_wiki
-        assert_equal(parent_wiki.page_name.lower(), 'koalas')
-        assert_equal(parent_wiki.deleted, None)
-
         child_wiki = self.kangaroo_wiki
-        assert_equal(child_wiki.page_name.lower(), 'kangaroos')
-        assert_equal(child_wiki.deleted, None)
 
         url = self.project.api_url_for(
             'project_wiki_delete',
@@ -596,6 +619,30 @@ class TestWikiDelete(OsfTestCase):
         assert_equal(parent_wiki.deleted, mock_now)
         child_wiki.reload()
         assert_equal(child_wiki.deleted, mock_now)
+
+    @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
+    def test_project_wiki_delete_recursive_two_level(self, mock_shrejs):
+        parent_wiki = self.giraffe_wiki
+        child_wiki = self.panda_wiki
+        grandchild_wiki = self.zebra_wiki
+
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wname='Giraffes'
+        )
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.app.delete(
+                url,
+                auth=self.auth
+            )
+        self.project.reload()
+        parent_wiki.reload()
+        assert_equal(parent_wiki.deleted, mock_now)
+        child_wiki.reload()
+        assert_equal(child_wiki.deleted, mock_now)
+        grandchild_wiki.reload()
+        assert_equal(grandchild_wiki.deleted, mock_now)
 
 @pytest.mark.enable_implicit_clean
 class TestWikiRename(OsfTestCase):
