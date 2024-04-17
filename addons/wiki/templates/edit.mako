@@ -110,11 +110,11 @@
                 <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row wiki-view-icon-container">
                         <div class="col-sm-12">
-
+                          % if user['can_edit']:
                             <div id="editWysiwyg" class="wiki-toolbar-icon text-info" data-bind="click: editMode">
                                 <i class="fa fa-edit text-info"></i><span>${_("Edit")}</span>
                             </div>
-                            <div class="pull-right m-l-md">
+                            <div id="collaborativeStatus" class="pull-right m-l-md">
                               <div class="progress no-margin pointer" data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
                                 <div role="progressbar" data-bind="attr: progressBar">
                                   <span class="progress-bar-content p-h-sm">
@@ -126,6 +126,7 @@
                                 </div>
                               </div>
                             </div>
+                          % endif
                             <div class="pull-right">
                               <!-- Version Picker -->
                               <span>${_("Wiki Version:")}</span>
