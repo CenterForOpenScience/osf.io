@@ -228,7 +228,7 @@ def _check_hierarchical_write_permissions(resource, auth):
     while permissions_resource:
         if permissions_resource.can_edit(auth):
             return True
-        permissions_resource = permissions_resource.parent
+        permissions_resource = permissions_resource.parent_node
 
 
 def make_auth(user):
@@ -430,8 +430,8 @@ def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
         )
         credentials, waterbutler_settings = data['data']
     else:
-        credentials = resource.serialize_waterbutler_credentials(provider_name)
-        waterbutler_settings = resource.serialize_waterbutler_settings(provider_name)
+        credentials = resource.serialize_waterbutler_credentials()
+        waterbutler_settings = resource.serialize_waterbutler_settings()
 
     return credentials, waterbutler_settings
 
