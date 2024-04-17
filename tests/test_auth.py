@@ -89,7 +89,7 @@ class TestAuthUtils(OsfTestCase):
 
         user.reload()
 
-        mock_mail.assert_not_called_with()
+        mock_mail.assert_not_called()
 
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
