@@ -85,8 +85,7 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             on_template_render = partial(store_rendered_templates, data)
             template_rendered.connect(on_template_render)
 
-            response = super().do_request(req, status,
-                                                             expect_errors)
+            response = super().do_request(req, status, expect_errors)
 
             # Add any rendered template detail to the response.
             # If there was only one template rendered (the most likely case),

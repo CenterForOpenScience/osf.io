@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Views tests for the OSF."""
+from urllib import parse
 
+from website.search import elastic_search
 import datetime as dt
 import time
 import unittest
@@ -1590,9 +1592,9 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, json=post_data, auth=(self.user.username, old_password))
+        res = self.app.post(url, data=post_data, auth=(self.user.username, old_password))
         assert res.status_code == 302
-        res = self.app.post(url, json=post_data, auth=(self.user.username, old_password), follow_redirects=True)
+        res = self.app.post(url, data=post_data, auth=(self.user.username, new_password), follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert self.user.check_password(new_password)
@@ -1613,9 +1615,9 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth)
         assert res.status_code == 302
-        res = self.app.post(url, json=post_data, auth=self.user.auth, follow_redirects=True)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert not self.user.check_password(new_password)
