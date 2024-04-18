@@ -25,6 +25,7 @@ from rest_framework import status as http_status
 from celery.result import AsyncResult
 from celery.contrib.abortable import AbortableAsyncResult
 from flask import request
+from flask_babel import lazy_gettext as _
 from django.db.models.expressions import F
 from django_bulk_update.helper import bulk_update
 from django.core.exceptions import ObjectDoesNotExist
@@ -96,7 +97,7 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=di
 
 WIKI_IMPORT_TASK_ALREADY_EXISTS = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
     message_short='Running Task exists',
-    message_long='\t' + 'Only 1 wiki import task can be executed on 1 node' + '\t'
+    message_long='\t' + _('Only 1 wiki import task can be executed on 1 node') + '\t'
 ))
 
 WIKI_IMAGE_FOLDER = 'Wiki images'
@@ -1107,7 +1108,7 @@ def _create_wiki_folder(osf_cookie, p_guid, folder_name, parent_path):
     except Exception:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_short='Error when create wiki folder',
-            message_long='\t' + 'An error occures when create wiki folder : ' + folder_name + '\t'
+            message_long='\t' + _('An error occures when create wiki folder : ') + folder_name + '\t'
         ))
     folder_path = folder_response.json()['data']['id']
     _id = (folder_response.json()['data']['attributes']['path']).strip('/')
@@ -1252,8 +1253,8 @@ def project_get_task_result(task_id, node, **kwargs):
 def _extract_err_msg(err):
     str_err = str(err)
     message_long = None
-    if '\t' in str_err:
-        message_long = str_err.split('\t')[1]
+    if '\\t' in str_err:
+        message_long = str_err.split('\\t')[1]
     return message_long
 
 @must_be_valid_project

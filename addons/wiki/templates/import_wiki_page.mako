@@ -41,9 +41,9 @@
                     </p>
                      <p class="text-danger wikiImportErrorMsg"> </p>
                     <div class="partOperationAll" style="display: none">
-                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="skipAll" value="skipAll" checked /><label for="skipAll">Skip All</label></div>
-                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="overwriteAll" value="overwriteAll"/><label for="overwriteAll">Overwrite All</label></div>
-                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="createNewAll" value="createNewAll"/><label for="createNewAll">Create New All</label></div><br>
+                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="skipAll" value="skipAll" checked /><label for="skipAll">${_("Skip All")}</label></div>
+                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="overwriteAll" value="overwriteAll"/><label for="overwriteAll">${_("Overwrite All")}</label></div>
+                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="createNewAll" value="createNewAll"/><label for="createNewAll">${_("Create New All")}</label></div><br>
                     </div>
                     <div id="validateInfo" class="partOperationAll">
                         <ul></ul>
@@ -100,7 +100,7 @@
         var $alertInfoForm = $('#alertInfo form');
         var $wikiImportResult = $('#wikiImportResult')
         var $wikiImportErrorMsg = $('.wikiImportErrorMsg');
-        var selectOperation = '<div class="form-group" name="WikiImportOperationPer" style="display: inline-block; margin-left: 10px;"><select class="form-control" name="WikiImportOperationPerSelect"><option value="skip">Skip</option><option value="overwrite">Overwrite</option><option value="createNew">Create New</option></select></div>'
+        var selectOperation = '<div class="form-group" name="WikiImportOperationPer" style="display: inline-block; margin-left: 10px;"><select class="form-control" name="WikiImportOperationPerSelect"><option value="skip">${_("Skip")}</option><option value="overwrite">${_("Overwrite")}</option><option value="createNew">${_("Create New")}</option></select></div>'
         var validateWikiImportResultData = [];
         var wikiImportErrors = [];
         const VALIDATE_WIKI_IMPORT_INTERVAL = 1000;
@@ -168,7 +168,7 @@
             var validateWikiImportResultCopy = validateWikiImportResultData.slice();
             var validateWikiImportResultFix = modifyImportList(operationAll, validateWikiImportResultCopy, perOperationList);
             if (validateWikiImportResultFix.length === 0) {
-                alert('No page to import.');
+                alert('${_("No page to import")}');
             } else {
                 var dirId = $wikiImportDir.val();
                 $perFile.attr('disabled', 'disabled');
@@ -374,7 +374,7 @@
                 });
                 if (result) {
                     if(result.aborted) {
-                        alert('Wiki import aborted.')
+                        alert('${_("Wiki import aborted.")}');
                         dispBtnWhenAbort();
                         $('#wikiImport').modal('hide');
                         $('#alertInfo').modal('hide');
@@ -385,9 +385,9 @@
             }
             if (count === timeoutCtn){
                 if (operation === WIKI_IMPORT_OPERATION) {
-                    alert('The request has timed out, but the process is still ongoing. Processing may take longer if there are many pages. Please reload the page to check the import result. If the process takes too long, we recommend contacting support or trying again later.')
+                    alert('${_("The request has timed out, but the process is still ongoing. Processing may take longer if there are many pages. Please reload the page to check the import result. If the process takes too long, we recommend contacting support or trying again later.")}')
                 } else if (operation === VALIDATE_WIKI_IMPORT_OPERATION) {
-                    alert('The response has timed out. High server load may cause delays in processing. Please try again. If the issue persists, please contact support.')
+                    alert('${_("The response has timed out. High server load may cause delays in processing. Please try again. If the issue persists, please contact support.")}')
                 }
                 return;
             }
@@ -407,10 +407,11 @@
                         if (response.responseJSON.message_long) {
                             $wikiImportErrorMsg.text(response.responseJSON.message_long);
                         } else {
-                            alert('import error');
+                            alert('${_("import error")}');
                         }
                     } else {
-                        alert('import error');
+                        console.log('no response json');
+                        alert('${_("import error")}');
                     }
                     return;
                 }
