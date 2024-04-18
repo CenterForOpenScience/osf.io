@@ -2,7 +2,6 @@
 """Views tests for the OSF."""
 from urllib import parse
 
-from website.search import elastic_search
 import datetime as dt
 import time
 import unittest
