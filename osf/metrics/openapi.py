@@ -6,9 +6,9 @@ following https://spec.openapis.org/oas/v3.1.0
 '''
 import dataclasses
 import enum
-from http import HTTPStatus
-from typing import Any, Dict, Optional
 from collections.abc import Iterable
+from http import HTTPStatus
+from typing import Any
 
 from website import settings as website_settings
 
