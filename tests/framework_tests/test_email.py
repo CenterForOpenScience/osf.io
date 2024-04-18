@@ -2,7 +2,10 @@ import unittest
 import smtplib
 
 from unittest import mock
+from unittest.mock import MagicMock
+
 import sendgrid
+from sendgrid import SendGridAPIClient
 
 from framework.email.tasks import send_email, _send_with_sendgrid
 from website import settings
@@ -26,10 +29,17 @@ class TestEmail(unittest.TestCase):
                      'settings.USE_EMAIL is False')
     def test_sending_email(self):
         assert send_email('foo@bar.com', 'baz@quux.com', subject='no subject',
-                                 message='<h1>Greetings!</h1>', ttls=False, login=False)
+                          message='<h1>Greetings!</h1>', ttls=False, login=False)
 
-    def test_send_with_sendgrid_success(self):
-        mock_client = mock.MagicMock()
+    def setUp(self):
+        settings.SENDGRID_WHITELIST_MODE = False
+
+    def tearDown(self):
+        settings.SENDGRID_WHITELIST_MODE = True
+
+    @mock.patch(f'{_send_with_sendgrid.__module__}.Mail', autospec=True)
+    def test_send_with_sendgrid_success(self, mock_mail: MagicMock):
+        mock_client = mock.MagicMock(autospec=SendGridAPIClient)
         mock_client.send.return_value = 200, 'success'
         from_addr, to_addr = fake_email(), fake_email()
         category1, category2 = fake.word(), fake.word()
@@ -44,20 +54,19 @@ class TestEmail(unittest.TestCase):
             categories=(category1, category2)
         )
         assert ret
+        mock_mail.assert_called_once_with(
+            from_email=from_addr,
+            to_emails=to_addr,
+            subject=subject,
+            html_content=message,
+        )
+        assert mock_mail.return_value.category == (category1, category2)
+        mock_client.send.assert_called_once_with(mock_mail.return_value)
 
-        assert mock_client.send.call_count == 1
-        # First call's argument should be a Mail object with
-        # the correct configuration
-        first_call_arg = mock_client.send.call_args[0][0]
-        assert isinstance(first_call_arg, sendgrid.Mail)
-        assert first_call_arg.from_email == from_addr
-        assert first_call_arg.to[0] == to_addr
-        assert first_call_arg.subject == subject
-        assert message in first_call_arg.html
-        # Categories are set
-        assert first_call_arg.smtpapi.data['category'] == (category1, category2)
 
-    def test_send_with_sendgrid_failure_returns_false(self):
+    @mock.patch(f'{_send_with_sendgrid.__module__}.sentry.log_message', autospec=True)
+    @mock.patch(f'{_send_with_sendgrid.__module__}.Mail', autospec=True)
+    def test_send_with_sendgrid_failure_returns_false(self, mock_mail, sentry_mock):
         mock_client = mock.MagicMock()
         mock_client.send.return_value = 400, 'failed'
         from_addr, to_addr = fake_email(), fake_email()
@@ -71,6 +80,14 @@ class TestEmail(unittest.TestCase):
             client=mock_client
         )
         assert not ret
+        sentry_mock.assert_called_once()
+        mock_mail.assert_called_once_with(
+            from_email=from_addr,
+            to_emails=to_addr,
+            subject=subject,
+            html_content=message,
+        )
+        mock_client.send.assert_called_once_with(mock_mail.return_value)
 
 
 if __name__ == '__main__':
