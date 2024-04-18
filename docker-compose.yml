@@ -439,7 +439,7 @@ services:
 
   worker:
     image: quay.io/centerforopenscience/osf:develop
-    command: python3 -m invoke celery_worker
+    command: python3 -m invoke celery-worker
     restart: unless-stopped
     depends_on:
       - postgres
