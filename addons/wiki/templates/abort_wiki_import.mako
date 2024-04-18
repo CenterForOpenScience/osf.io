@@ -50,7 +50,7 @@
             dataType: 'json',
         }).fail(function (response) {
             if (response.status !== 0) {
-                $abortErrorMsg.text('Error occurred when abort wiki import.');
+                $abortErrorMsg.text('${_("Error occurred when abort wiki import.")}');
             }
         });
     }
@@ -77,7 +77,7 @@
             count++;
         }
         if (count === timeoutCtn){
-            alert('The import process may have encountered an unexpected error and been interrupted. To check the latest status, please reload the page. If the issue persists, please contact support.');
+            alert('${_("The import process may have encountered an unexpected error and been interrupted. To check the latest status, please reload the page. If the issue persists, please contact support.")}');
             return;
         }
         return result;
@@ -92,7 +92,7 @@
             dataType: 'json',
         }).fail(function (response) {
             if (response.status !== 0) {
-                alert('abort error');
+                alert('${_("abort error")}');
                 return;
             }
         });
