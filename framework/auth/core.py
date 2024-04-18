@@ -173,7 +173,7 @@ class Auth:
                 'private_key={self.private_key})>').format(self=self)
 
     def to_header(self):
-        return f"Basic {self.user.username}"
+        return f'Basic {self.user.username}'
 
     @property
     def logged_in(self):

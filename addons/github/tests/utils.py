@@ -70,9 +70,9 @@ def create_mock_github(user='octo-cat', private=False):
     }
 
     repo_commit = {
-        "ETag": "",
-        "Last-Modified": "",
-        "url": "",
+        'ETag': '',
+        'Last-Modified': '',
+        'url': '',
         'author': repo_author,
         'committer': {'name': '{user}', 'email': '{user}@osf.io',
                       'username': 'tester'},
