@@ -342,7 +342,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
             del self.target.osfstorage_region
 
         version.region = self.target.osfstorage_region
-        version._find_matching_archive(save=False)
 
         version.save()
         # Adds version to the list of file versions - using custom through table
