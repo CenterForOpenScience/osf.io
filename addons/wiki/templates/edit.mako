@@ -110,7 +110,7 @@
                 <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row wiki-view-icon-container">
                         <div class="col-sm-12">
-                          % if user['can_edit']:
+                          % if user['can_edit_wiki_body']:
                             <div id="editWysiwyg" class="wiki-toolbar-icon text-info" data-bind="click: editMode">
                                 <i class="fa fa-edit text-info"></i><span>${_("Edit")}</span>
                             </div>
