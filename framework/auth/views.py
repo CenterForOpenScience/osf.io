@@ -1,4 +1,4 @@
-from furl import furl
+from furl import furl, urljoin
 from rest_framework import status as http_status
 from urllib.parse import urlencode
 
@@ -266,7 +266,7 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                 user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
-                reset_link = furl.urljoin(
+                reset_link = urljoin(
                     settings.DOMAIN,
                     web_url_for(
                         reset_route,

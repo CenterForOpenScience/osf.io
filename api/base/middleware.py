@@ -4,7 +4,6 @@ import cProfile
 import pstats
 from importlib import import_module
 
-import corsheaders.middleware
 from django.conf import settings
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils.deprecation import MiddlewareMixin
@@ -12,7 +11,6 @@ from sentry_sdk import init
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.flask import FlaskIntegration
-from website.settings import SENTRY_DSN
 
 from framework.postcommit_tasks.handlers import (
     postcommit_after_request,

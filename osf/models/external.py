@@ -87,7 +87,7 @@ class ExternalAccount(ObjectIDMixin, BaseModel):
         ]
 
 
-class ExternalProviderMeta(abc.ABCMeta):
+class ExternalProviderMeta(type):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
 
     def __init__(cls, name, bases, dct):
@@ -96,7 +96,7 @@ class ExternalProviderMeta(abc.ABCMeta):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(ExternalProviderMeta):
+class ExternalProvider(metaclass=ExternalProviderMeta):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
