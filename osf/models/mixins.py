@@ -1,6 +1,8 @@
 import pytz
 import markupsafe
 import logging
+import waffle
+import requests
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
@@ -512,25 +514,37 @@ class AddonModelMixin(models.Model):
         return self.add_addon(name, *args, **kwargs)
 
     def get_addon(self, name, is_deleted=False):
-        import waffle
-        from flask import request
+        try:
+            settings_model = self._settings_model(name)
+        except LookupError:
+            return None
+        if not settings_model:
+            return None
+        request, user_id = get_request_and_user_id()
 
-        if name == 'box':
-            return type('mock_addon', (), {})
+        if name == 'box' and waffle.flag_is_active(request, features.ENABLE_GV):
+            data = requests.get(
+                f'{settings.DOMAIN}v1/resource-references/{self.uri}/authorized_storage_accounts/?include=external-storage-service'
+            )
+            if getattr(settings_model, 'format_data_for_gravyvalet'):
+                kwargs = settings_model.format_data_for_gravyvalet(data)
+            else:
+                raise NotImplementedError()
+
+            settings_obj = settings_model.objects.create_or_update(
+                owner=self,
+                default=kwargs
+            )
+            if not settings_obj.is_deleted or is_deleted:
+                return settings_obj
         else:
-            try:
-                settings_model = self._settings_model(name)
-            except LookupError:
-                return None
-            if not settings_model:
-                return None
             try:
                 settings_obj = settings_model.objects.get(owner=self)
                 if not settings_obj.is_deleted or is_deleted:
                     return settings_obj
             except ObjectDoesNotExist:
                 pass
-        return None
+            return None
 
     def add_addon(self, addon_name, auth=None, override=False, _force=False):
         """Add an add-on to the node.

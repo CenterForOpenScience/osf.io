@@ -97,6 +97,8 @@ class UserSettings(BaseOAuthUserSettings):
         except requests.HTTPError:
             pass
 
+    def format_data_for_gravyvalet(self, gv_data):
+        pass
 
 class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = Provider
@@ -267,3 +269,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def on_delete(self):
         self.deauthorize(add_log=False)
         self.save()
+
+    def format_data_for_gravyvalet(self, gv_data):
+        pass
