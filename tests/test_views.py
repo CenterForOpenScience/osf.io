@@ -3978,14 +3978,15 @@ class TestExternalAuthViews(OsfTestCase):
                 self.provider_id: 'CREATE'
             }
         }
+        password = str(fake.password())
         self.user = OSFUser.create_unconfirmed(
             username=email,
-            password=str(fake.password()),
+            password=password,
             fullname=name,
             external_identity=external_identity,
         )
         self.user.save()
-        self.auth = (self.user.username, self.user.password)
+        self.auth = (self.user.username, password)
 
     def test_external_login_email_get_with_invalid_session(self):
         url = web_url_for('external_login_email_get')
