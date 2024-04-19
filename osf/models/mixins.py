@@ -1,6 +1,8 @@
 import pytz
 import markupsafe
 import logging
+import waffle
+import requests
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
@@ -50,7 +52,7 @@ from osf.utils.workflows import (
 )
 
 from osf.utils.requests import get_request_and_user_id
-from osf.features import features
+from osf import features
 from website.project import signals as project_signals
 from website import settings, mails, language
 from website.project.licenses import set_license
@@ -512,24 +514,45 @@ class AddonModelMixin(models.Model):
         return self.add_addon(name, *args, **kwargs)
 
     def get_addon(self, name, is_deleted=False):
-        import waffle
-        from flask import request
+        """
+        In order to gradulally phase out the old addon system, we are using GV to sync the old addon models with GV
+        before their old pages can we deleted. When the waffle flag is enabled and GV is turned on, the OSF will make
+        requests to GV if it needs addon status data.
+        """
+        request, user_id = get_request_and_user_id()
+        try:
+            settings_model = self._settings_model(name)
+        except LookupError:
+            return None
+        if not settings_model and not waffle.flag_is_active(request, features.ENABLE_GV):
+            return None
 
-        if name == 'box':
-            return type('mock_addon', (), {})
+        if waffle.flag_is_active(request, features.ENABLE_GV):
+            resp = requests.get(
+                f'{settings.DOMAIN}v1/resource-references/{self.uri}/authorized_storage_accounts/'
+                f'?include=external-storage-service'  # These query parameters are for test purposes 
+                f'&oauth_scopes='
+                f'&owner='
+                f'&is_deleted='
+                f'&folder_id='
+                f'&folder_name='
+                f'&folder_path='
+                f'&user_settings='
+            )
+            if resp.status_code == 404:
+                # addon not enabled
+                return None
+            else:
+                data = resp.json()
+                return settings_model.sync_with_gravyvalet(data, self, is_deleted)
         else:
-            try:
-                settings_model = self._settings_model(name)
-            except LookupError:
-                return None
-            if not settings_model:
-                return None
             try:
                 settings_obj = settings_model.objects.get(owner=self)
                 if not settings_obj.is_deleted or is_deleted:
                     return settings_obj
             except ObjectDoesNotExist:
                 pass
+
         return None
 
     def add_addon(self, addon_name, auth=None, override=False, _force=False):
