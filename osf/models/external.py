@@ -10,6 +10,7 @@ from django.utils import timezone
 from flask import request
 from oauthlib.oauth2 import AccessDeniedError, InvalidGrantError, TokenExpiredError, MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
+from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
@@ -87,16 +88,15 @@ class ExternalAccount(ObjectIDMixin, BaseModel):
         ]
 
 
-class ExternalProviderMeta(type):
+class ExternalProviderMeta(abc.ABC):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
 
-    def __init__(cls, name, bases, dct):
-        super().__init__(name, bases, dct)
+    def __init__(cls):
         if not isinstance(cls.short_name, abc.abstractproperty):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(metaclass=ExternalProviderMeta):
+class ExternalProvider(ExternalProviderMeta):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
@@ -286,7 +286,7 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
                     client_secret=self.client_secret,
                     code=request.args.get('code'),
                 )
-            except (MissingTokenError, RequestsHTTPError):
+            except (MissingTokenError, RequestsHTTPError, CustomOAuth2Error):
                 raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
