@@ -391,6 +391,9 @@ def update_folder_name(sender, instance, created, **kwargs):
         management_node=node
     ).exists():
         return
+    if iqbrims.folder_id is None:
+        logger.info('No folder_id for IQB-RIMS: node={}'.format(node._id))
+        return
     try:
         access_token = iqbrims.fetch_access_token()
         client = IQBRIMSClient(access_token)

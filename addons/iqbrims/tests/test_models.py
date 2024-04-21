@@ -196,6 +196,21 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
             owner=self.node
         )
 
+        self.no_folders_node = ProjectFactory()
+        self.no_folders_node.creator = self.user
+        self.no_folders_node.save()
+        self.user_settings.grant_oauth_access(
+            node=self.no_folders_node,
+            external_account=self.external_account,
+            metadata={'folder': None}
+        )
+        self.no_folders_node_settings = IQBRIMSNodeSettingsFactory(
+            external_account=self.external_account,
+            user_settings=self.user_settings,
+            folder_id=None,
+            owner=self.no_folders_node
+        )
+
         self.institution = InstitutionFactory()
 
     @mock.patch.object(NodeSettings, 'fetch_access_token')
@@ -214,6 +229,19 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
 
         assert_equal(mock_rename_folder.call_count, 1)
         assert_equal(mock_rename_folder.call_args[0], (self.folder_id, new_folder_title))
+
+    @mock.patch.object(NodeSettings, 'fetch_access_token')
+    @mock.patch.object(IQBRIMSClient, 'rename_folder')
+    @mock.patch.object(IQBRIMSClient, 'get_folder_info')
+    def test_update_folder_name_for_no_folders(self, mock_get_folder_info, mock_rename_folder, mock_fetch_access_token):
+        mock_get_folder_info.return_value = {'title': 'dummy_folder_title'}
+        mock_fetch_access_token.return_value = 'dummy_token'
+        mock_rename_folder.return_value = None
+
+        self.no_folders_node.save(force_update=True)
+
+        assert_equal(mock_get_folder_info.call_count, 0)
+        assert_equal(mock_rename_folder.call_count, 0)
 
     @mock.patch.object(IQBRIMSClient, 'rename_folder')
     def test_update_management_node_folder(self, mock_rename_folder):
