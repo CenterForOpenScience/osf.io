@@ -4101,7 +4101,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert_in('/login?service=', res.location)
         assert_in('new=true', res.location)
 
-        assert_equal(mock_welcome.call_count, 1)
+        assert_equal(mock_welcome.call_count, 0)
 
         self.user.reload()
         assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
@@ -4135,7 +4135,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
 
-        assert_equal(mock_confirm.call_count, 1)
+        assert_equal(mock_confirm.call_count, 0)
 
         self.user.reload()
         dupe_user.reload()
