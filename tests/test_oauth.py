@@ -523,10 +523,10 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             # do the key exchange
 
-            with pytest.raises(CustomOAuth2Error) as error_raised:
+            with pytest.raises(HTTPError) as error_raised:
                 self.provider.auth_callback(user=user)
 
-            assert error_raised.value.status_code == 503
+            assert error_raised.value.code == 503
 
     @responses.activate
     def test_user_denies_access(self):

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Views tests for the OSF."""
+from urllib import parse
 
 import datetime as dt
 import time
@@ -1590,9 +1591,9 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, json=post_data, auth=(self.user.username, old_password))
+        res = self.app.post(url, data=post_data, auth=(self.user.username, old_password))
         assert res.status_code == 302
-        res = self.app.post(url, json=post_data, auth=(self.user.username, old_password), follow_redirects=True)
+        res = self.app.post(url, data=post_data, auth=(self.user.username, new_password), follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert self.user.check_password(new_password)
@@ -1613,9 +1614,9 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth)
         assert res.status_code == 302
-        res = self.app.post(url, json=post_data, auth=self.user.auth, follow_redirects=True)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert not self.user.check_password(new_password)
@@ -3977,14 +3978,15 @@ class TestExternalAuthViews(OsfTestCase):
                 self.provider_id: 'CREATE'
             }
         }
+        password = str(fake.password())
         self.user = OSFUser.create_unconfirmed(
             username=email,
-            password=str(fake.password()),
+            password=password,
             fullname=name,
             external_identity=external_identity,
         )
         self.user.save()
-        self.auth = (self.user.username, self.user.password)
+        self.auth = (self.user.username, password)
 
     def test_external_login_email_get_with_invalid_session(self):
         url = web_url_for('external_login_email_get')
