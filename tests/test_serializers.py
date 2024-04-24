@@ -13,7 +13,7 @@ from osf_tests.factories import (
     OSFGroupFactory,
     CollectionFactory,
 )
-from osf.models import NodeRelation
+from osf.models import NodeRelation, UserQuota
 from osf.utils import permissions
 from tests.base import OsfTestCase, get_default_metaschema
 
@@ -81,6 +81,24 @@ class TestUserSerializers(OsfTestCase):
         public_projects = [p for p in projects if p.is_public]
         assert_equal(d['number_projects'], len(projects))
         assert_equal(d['number_public_projects'], len(public_projects))
+
+    def test_serialize_user_max_quota_zero(self):
+        user = UserFactory()
+        NodeFactory(creator=user)
+        ProjectFactory(creator=user, is_public=True)
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=0,
+            used=75
+        )
+        d = utils.serialize_user(user, full=True)
+        assert_equal(d['id'], user._primary_key)
+        assert_equal(d['url'], user.url)
+        assert_equal(d.get('username'), None)
+        assert_equal(d['fullname'], user.fullname)
+        assert_is_not_none(d.get('quota'))
+        assert_equal(d.get('quota', None)['rate'], '100.0')
 
 
 @pytest.mark.enable_bookmark_creation

@@ -1052,6 +1052,18 @@ class TestQuotaUserList(AdminTestCase):
         nt.assert_is_not_none(response['eppn'])
         nt.assert_equal(response['eppn'], default_value_eppn)
 
+    def test_get_user_quota_info_max_quota_zero(self):
+        UserQuota.objects.create(user=self.user,
+                                 storage_type=UserQuota.CUSTOM_STORAGE,
+                                 max_quota=0)
+        response = self.view.get_user_quota_info(
+            self.user,
+            storage_type=UserQuota.CUSTOM_STORAGE
+        )
+
+        nt.assert_is_not_none(response['ratio'])
+        nt.assert_equal(response['ratio'], 100)
+
     def test_get_context_data_has_not_storage_name(self):
         self.view.get_institution = self.get_institution
         UserQuota.objects.create(user=self.user,
@@ -1286,6 +1298,24 @@ class TestExportFileTSV(AdminTestCase):
                           institution_id=0)
         with nt.assert_raises(Http404):
             view.get(request)
+
+    def test_get_zero_max_quota(self):
+        UserQuota.objects.create(user=self.user,
+                                 storage_type=UserQuota.NII_STORAGE,
+                                 max_quota=0)
+        request = RequestFactory().get(
+            'institutions:tsvexport',
+            kwargs={'institution_id': self.institution.id})
+        request.user = self.user
+        view = setup_view(self.view, request,
+                          institution_id=self.institution.id)
+        res = view.get(request)
+
+        result = res.content.decode('utf-8')
+
+        nt.assert_equal(res.status_code, 200)
+        nt.assert_equal(res['content-type'], 'text/tsv')
+        nt.assert_in('100', result)
 
 
 class TestRecalculateQuota(AdminTestCase):

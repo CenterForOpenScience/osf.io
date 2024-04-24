@@ -3767,6 +3767,10 @@ msgstr "このエクスポート プロセスをアボートできません。"
 msgid "Cannot be restored because export data does not exist"
 msgstr "エクスポートデータが存在しないため、復元できません。"
 
+#: admin/templates/users/user.html:310
+msgid "Please enter Quota for NII Storage (GB) within 0~2147483647."
+msgstr "NIIストレージの割当て(GB)は0~2147483647の以内でご入力ください。"
+
 #: admin/templates/users/user_details.html:62
 msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr "機関ストレージの割当て(GB)は0~2147483647の以内でご入力ください。"

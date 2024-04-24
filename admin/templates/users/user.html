@@ -295,12 +295,25 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>{% trans "Quota for NII Storage (GB)" %}</td>
+                    <td>
+                        {% if user.use_nii_storage %}
+                            {% trans "Quota for NII Storage (GB)" %}
+                        {% else %}
+                            {% trans "Quota for Institutional Storage (GB)" %}
+                        {% endif %}
+                    </td>
                     <td>
                         <form method="post" action="{% url 'users:quota' user.id %}" class="row">
                             {% csrf_token %}
                             <div class="col-xs-2 storageLimitContainer">
-                                <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="0" required value="{{ user.quota }}" oninvalid="this.setCustomValidity('{% trans 'Value must be an integer number greater than or equal 0' %}')" oninput="setCustomValidity('')" />
+                                <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="0" max="2147483647" required value="{{ user.quota }}"
+                                       oninvalid="{% if user.use_nii_storage %}
+                                                this.setCustomValidity('{% trans 'Please enter Quota for NII Storage (GB) within 0~2147483647.' %}')
+                                            {% else %}
+                                                this.setCustomValidity('{% trans 'Please enter Quota for Institutional Storage (GB) within 0~2147483647.' %}')
+                                            {% endif %}"
+                                       oninput="validateMaxQuotaInput()" onKeyDown="preventDotInput(event)"
+                                />
                             </div>
                             <input type="submit" id="applyMaxQuota" class="btn btn-success" value="{% trans 'Apply' %}" />
                         </form>
@@ -311,4 +324,24 @@
         </div>
     </div>
 </div>
+<script>
+    function validateMaxQuotaInput() {
+        let $max_quota = $('#storageLimit');
+        let max_quota = $max_quota.val();
+        if (!(/^[0-9]+$/.test(max_quota))) {
+            {% if user.use_nii_storage %}
+                $max_quota.get(0).setCustomValidity('{% trans 'Please enter Quota for NII Storage (GB) within 0~2147483647.' %}');
+            {% else %}
+                $max_quota.get(0).setCustomValidity('{% trans 'Please enter Quota for Institutional Storage (GB) within 0~2147483647.' %}');
+            {% endif %}
+        } else {
+            $max_quota.get(0).setCustomValidity('');
+        }
+    }
+    function preventDotInput(e) {
+        if (e.key !== undefined && e.key === '.') {
+            e.preventDefault();
+        }
+    }
+</script>
 {% endblock content %}
