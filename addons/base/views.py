@@ -204,7 +204,7 @@ def check_resource_permissions(resource, auth, action):
 def _check_registration_permissions(registration, auth, permission, action):
     if permission == permissions.READ:
         return registration.registered_from.can_view(auth)
-    if action in ('copy_from', 'upload'):
+    if action in ('copyfrom', 'upload'):
         return _check_hierarchical_write_permissions(resource=registration, auth=auth)
     return registration.can_edit(auth)
 
@@ -212,7 +212,10 @@ def _check_registration_permissions(registration, auth, permission, action):
 def _check_node_permissions(node, auth, permission, action):
     if permission == permissions.READ:
         return node.can_view(auth)
-    return node.can_edit(auth)
+    if node.can_edit(auth):
+        return True
+    if action == 'copyfrom':
+        return _check_hierarchical_write_permissions(resource=node, auth=auth)
 
 
 def _check_preprint_permissions(preprint, auth, permission):
@@ -227,6 +230,7 @@ def _check_hierarchical_write_permissions(resource, auth):
         if permissions_resource.can_edit(auth):
             return True
         permissions_resource = permissions_resource.parent_node
+    return False
 
 
 def make_auth(user):
@@ -300,9 +304,10 @@ def get_authenticated_resource(resource_id):
 
 def get_file_version_from_wb(waterbutler_data: dict) -> FileVersion:
     path = waterbutler_data.get('path')
-    if not path:
+    if waterbutler_data['provider'] != 'osfstorage' or not path:
         return
 
+    path = waterbutler_data.get('path')
     file_id = path.strip('/')
     version = waterbutler_data.get('version')
     if version:
@@ -315,7 +320,7 @@ def get_file_version_from_wb(waterbutler_data: dict) -> FileVersion:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     else:
         try:
-            return BaseFileNode.objects.get(
+            return BaseFileNode.active.get(
                 _id=file_id,
             ).versions.order_by(
                 '-created'
