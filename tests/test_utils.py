@@ -6,6 +6,8 @@ import pytest
 import time
 import unittest
 from django.utils import timezone
+from django.dispatch import receiver
+
 
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -13,18 +15,28 @@ import blinker
 
 from tests.base import OsfTestCase, DbTestCase
 from osf_tests.factories import RegistrationFactory, UserFactory, fake_email
+from framework.auth.signals import (
+    user_account_deactivated,
+    user_account_reactivated,
+    user_account_merged
+)
 
 from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename, throttle_period_expired
 from api.base.utils import waterbutler_api_url_for
 from osf.utils.functional import rapply
+from waffle.testutils import override_flag
 from website.routes import process_rules, OsfWebRenderer
 from website import settings
 from website.util import paths
 from website.util import web_url_for, api_url_for, is_json_request, conjunct, api_v2_url
 from website.project import utils as project_utils
 from website.profile import utils as profile_utils
+
+from osf import features
+
+from kombu import Exchange
 
 try:
     import magic  # noqa
@@ -453,3 +465,118 @@ class TestUserFactoryConflict:
         user_one_create = UserFactory()
         user_two_create = UserFactory()
         assert user_one_create.username != user_two_create.username
+
+
+@pytest.mark.django_db
+class TestUserSignals:
+
+    @pytest.fixture
+    def user(self, db):
+        return UserFactory()
+
+    @pytest.fixture
+    def old_user(self, db):
+        return UserFactory()
+
+    @pytest.fixture
+    def deactivated_user(self, db):
+        user = UserFactory()
+        user.deactivate_account()
+        return user
+
+    @pytest.fixture
+    def account_status_changes_exchange(self):
+        return Exchange('account_status_changes')
+
+    @mock.patch('osf.external.messages.celery_publishers.publish_deactivated_user')
+    def test_user_account_deactivated_signal(self, mock_publish_deactivated_user, user):
+        # Connect a mock receiver to the signal for testing
+        @receiver(user_account_deactivated)
+        def mock_receiver(user, **kwargs):
+            return mock_publish_deactivated_user(user)
+
+        # Trigger the signal
+        user.deactivate_account()
+
+        # Verify that the mock receiver was called
+        mock_publish_deactivated_user.assert_called_once_with(user)
+
+    @mock.patch('osf.external.messages.celery_publishers.publish_merged_user')
+    def test_user_account_merged_signal(self, mock_publish_merged_user, user, old_user):
+        # Connect a mock receiver to the signal for testing
+        @receiver(user_account_merged)
+        def mock_receiver(user, **kwargs):
+            return mock_publish_merged_user(user)
+
+        # Trigger the signal
+        user.merge_user(old_user)
+
+        # Verify that the mock receiver was called
+        mock_publish_merged_user.assert_called_once_with(old_user)
+
+    @mock.patch('osf.external.messages.celery_publishers.publish_reactivate_user')
+    def test_user_account_deactivate_signal(self, mock_publish_reactivate_user, deactivated_user):
+        # Connect a mock receiver to the signal for testing
+        @receiver(user_account_reactivated)
+        def mock_receiver(user, **kwargs):
+            return mock_publish_reactivate_user(user)
+
+        # Trigger the signal
+        deactivated_user.reactivate_account()
+
+        # Verify that the mock receiver was called
+        mock_publish_reactivate_user.assert_called_once_with(deactivated_user)
+
+    @pytest.mark.enable_account_status_messaging
+    @mock.patch('osf.external.messages.celery_publishers.celery_app.producer_pool.acquire')
+    def test_publish_body_on_deactivation(self, mock_publish_user_status_change, user, account_status_changes_exchange):
+        with mock.patch.object(settings, 'USE_CELERY', True):
+            with override_flag(features.ENABLE_GV, active=True):
+                user.deactivate_account()
+
+        mock_publish_user_status_change().__enter__().publish.assert_called_once_with(
+            body={'action': 'deactivate', 'user_uri': f'http://localhost:5000/{user._id}'},
+            exchange=account_status_changes_exchange,
+            serializer='json',
+        )
+
+    @pytest.mark.enable_account_status_messaging
+    @mock.patch('osf.external.messages.celery_publishers.celery_app.producer_pool.acquire')
+    def test_publish_body_on_reactivation(
+            self,
+            mock_publish_user_status_change,
+            deactivated_user,
+            account_status_changes_exchange
+    ):
+        with mock.patch.object(settings, 'USE_CELERY', True):
+            with override_flag(features.ENABLE_GV, active=True):
+                deactivated_user.reactivate_account()
+
+        mock_publish_user_status_change().__enter__().publish.assert_called_once_with(
+            body={'action': 'reactivate', 'user_uri': f'http://localhost:5000/{deactivated_user._id}'},
+            exchange=account_status_changes_exchange,
+            serializer='json',
+        )
+
+    @pytest.mark.enable_account_status_messaging
+    @mock.patch('osf.external.messages.celery_publishers.celery_app.producer_pool.acquire')
+    def test_publish_body_on_merger(
+            self,
+            mock_publish_user_status_change,
+            user,
+            old_user,
+            account_status_changes_exchange
+    ):
+        with mock.patch.object(settings, 'USE_CELERY', True):
+            with override_flag(features.ENABLE_GV, active=True):
+                user.merge_user(old_user)
+
+        mock_publish_user_status_change().__enter__().publish.assert_called_once_with(
+            body={
+                'action': 'merge',
+                'into_user_uri': f'http://localhost:5000/{user._id}',
+                'from_user_uri': f'http://localhost:5000/{old_user._id}'
+            },
+            exchange=account_status_changes_exchange,
+            serializer='json',
+        )

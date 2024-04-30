@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+24.01.0 (2024-04-30)
+====================
+- Initial Addons Service work, Waffled
+- Improve default `description` for Google Dataset Discovery
+- Improve Embargo visibility for moderators
+- Bug fix: PreprintProvider highlighted subjects
+- Bug fix: PreprintProvider `advisory_board` styling
+
 24.01.0 (2024-02-26)
 ====================
 - Support CEDAR Embeddable Editor

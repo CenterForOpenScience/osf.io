@@ -445,8 +445,8 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_embargo_end_date(self, obj):
-        if obj.embargo_end_date:
-            return obj.embargo_end_date
+        if obj.root.embargo:
+            return obj.root.embargo.end_date if obj.root.embargo.end_date else None
         return None
 
     def get_registration_supplement(self, obj):
