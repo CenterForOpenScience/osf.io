@@ -2,7 +2,6 @@ import pytz
 import markupsafe
 import logging
 import waffle
-import requests
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser

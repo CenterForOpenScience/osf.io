@@ -1,3 +1,4 @@
+from website import settings
 # OAuth app keys
 BOX_KEY = None
 BOX_SECRET = None
@@ -12,3 +13,5 @@ BOX_OAUTH_REVOKE_ENDPOINT = 'https://api.box.com/oauth2/revoke'
 
 # Max file size permitted by frontend in megabytes
 MAX_UPLOAD_SIZE = 250
+
+GV_DOMAIN = settings.DOMAIN  # configuratable for local env
