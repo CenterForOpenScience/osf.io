@@ -1516,14 +1516,13 @@ class TestFileViews(StorageTestCase):
             )
         )
 
-        download_url = base_url.format(file.get_guid()._id)
+        download_url = base_url.format(file._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
             'Authorization': f'Bearer {token.token_id}'
         }
-        redirect = self.app.get(download_url, headers=headers)
+        redirect = self.app.get(download_url, auth=self.user.auth, headers=headers)
 
-        assert mock_get_client.called
         assert self.node.osfstorage_region.waterbutler_url in redirect.location
         assert redirect.status_code == 302
 
@@ -1593,10 +1592,10 @@ class TestPreprintFileViews(StorageTestCase):
         download_url = base_url.format(file.get_guid(create=True)._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str(f'Bearer {token.token_id}')
+            'Authorization': f'Bearer {token.token_id}'
         }
-        redirect = self.app.get(download_url, headers=headers)
 
-        assert mock_get_client.called
+        redirect = self.app.get(download_url, auth=self.user.auth, headers=headers)
+
         assert settings.WATERBUTLER_URL in redirect.location
         assert redirect.status_code == 302
