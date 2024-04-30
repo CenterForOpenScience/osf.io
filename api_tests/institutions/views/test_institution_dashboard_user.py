@@ -1,6 +1,6 @@
+import csv
 import pytest
 
-from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -94,7 +94,7 @@ class TestInstitutionUsersList:
         assert res.status_code == 200
         assert len(res.json['data']) == 3
 
-    @pytest.mark.parametrize("attribute,value,expected_count", [
+    @pytest.mark.parametrize('attribute,value,expected_count', [
         ('[full_name]', 'Alice Example', 1),
         ('[full_name]', 'Example', 3),  # Multiple users should be returned here
         ('[email_address]', 'bob@example.com', 1),
@@ -124,7 +124,7 @@ class TestInstitutionUsersList:
         assert res.status_code == 200
         assert len(res.json['data']) == expected_count
 
-    @pytest.mark.parametrize("attribute", [
+    @pytest.mark.parametrize('attribute', [
         'full_name',
         'email_address',
     ])
@@ -140,96 +140,38 @@ class TestInstitutionUsersList:
         assert res.status_code == 200
         # Extracting sorted attribute values from response
         sorted_values = [user['attributes'][attribute] for user in res.json['data']]
-        assert sorted_values == sorted(sorted_values), "Values are not sorted correctly"
+        assert sorted_values == sorted(sorted_values), 'Values are not sorted correctly'
 
 
 @pytest.mark.django_db
-class TestInstitutionProjectList:
+class TestInstitutionUsersListCSVRenderer:
+    # Existing setup and tests...
 
-    def test_return(self, app):
+    def test_csv_output(self, app, institution, users):
+        """
+        Test to ensure the CSV renderer returns data in the expected CSV format with correct headers.
+        """
+        url = reverse(
+            'institutions:institution-users-list-dashboard',
+            kwargs={
+                'version': 'v2',
+                'institution_id': institution._id
+            }
+        ) + '?format=csv'
+        response = app.get(url)
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'text/csv'
 
-        things_to_filter_and_sort = [
-            '_id',
-            'title',
-            'type',
-            'date_modified',
-            'date_created',
-            'storage_location',
-            'storage_usage',
-            'is_public',
-            'doi',
-            'addon_used',
-        ]
+        # Read the content of the response as CSV
+        content = response.content.decode('utf-8')
+        csv_reader = csv.reader(io.StringIO(content))
+        headers = next(csv_reader)  # First line contains headers
 
-        res = app.get(f'/{API_BASE}institutions/{institution._id}/users/')
+        # Define expected headers based on the serializer used
+        expected_headers = ['ID', 'Email', 'Department', 'Public Projects', 'Private Projects', 'Public Registrations',
+                            'Private Registrations', 'Preprints']
+        assert headers == expected_headers, "CSV headers do not match expected headers"
 
-        assert res.status_code == 200
-
-
-@pytest.mark.django_db
-class TestInstitutionRegistrationList:
-
-    def test_return(self, app):
-
-        things_to_filter_and_sort = [
-            '_id',
-            'title',
-            'type',
-            'date_modified',
-            'date_created',
-            'storage_location',
-            'storage_usage',
-            'is_public',
-            'doi',
-            'addon_used',
-        ]
-
-        res = app.get(f'/{API_BASE}institutions/{institution._id}/users/')
-
-        assert res.status_code == 200
-
-
-@pytest.mark.django_db
-class TestInstitutionPreprintList:
-
-    def test_return(self, app):
-
-        things_to_filter_and_sort = [
-            '_id',
-            'title',
-            'type',
-            'date_modified',
-            'date_created',
-            'storage_location',
-            'storage_usage',
-            'is_public',
-            'doi',
-            'addon_used',
-        ]
-
-        res = app.get(f'/{API_BASE}institutions/{institution._id}/users/')
-
-        assert res.status_code == 200
-
-
-@pytest.mark.django_db
-class TestInstitutionFilesList:
-
-    def test_return(self, app):
-
-        things_to_filter_and_sort = [
-            '_id',
-            'file_name',
-            'file_path',
-            'date_modified',
-            'date_created',
-            'mime_type',
-            'size',
-            'resource_type',
-            'doi',
-            'addon_used',
-        ]
-
-        res = app.get(f'/{API_BASE}institutions/{institution._id}/users/')
-
-        assert res.status_code == 200
+        # Optionally, check a few lines of actual data if necessary
+        for row in csv_reader:
+            assert len(row) == len(expected_headers), "Number of data fields in CSV does not match headers"
