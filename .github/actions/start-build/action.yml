@@ -3,6 +3,29 @@ description: 'Last composite action before tests are run'
 runs:
   using: "composite"
   steps:
+  - id: cache-objects
+    uses: actions/cache@v2
+    with:
+      path: ~/.cache
+      key: reqs_${{ hashFiles('**/requirements.txt') }}
+      restore-keys: reqs_
+  - uses: ./.github/actions/build-es
+    with:
+      ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
+  - uses: ./.github/actions/build-es6
+    with:
+      ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+  - name: Set up Python 3.10
+    uses: actions/setup-python@v2
+    with:
+      cache: "pip"
+      cache-dependency-path: "**/requirements.txt"
+      python-version: '3.10'
+  - name: Install lxml
+    shell: bash
+    run: |
+      sudo apt update
+      sudo apt-get install libxml2-dev libxslt-dev python-dev
   - name: Copy Settings
     shell: bash
     run: |

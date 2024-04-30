@@ -302,6 +302,8 @@ class TestSessions(AppTestCase):
         self.cookie_invalid = fake.md5()
 
     def tearDown(self):
+        # closing request context manager which was entered in setUp method of TestCase
+        self.context.__exit__(None, None, None)
         super().tearDown()
 
     @mock.patch('framework.sessions.get_session')
