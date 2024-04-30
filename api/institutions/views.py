@@ -558,7 +558,6 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     ordering = ('-id',)
 
-
     def get_default_queryset(self):
         return self.get_institution().get_institution_users().annotate(
             email_address=F('username'),
