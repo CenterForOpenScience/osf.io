@@ -4030,9 +4030,10 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.save()
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
+        assert '/login?service=' in res.location
         assert 'new=true' not in parse.unquote(res.location)
 
         assert mock_link_confirm.call_count == 1
