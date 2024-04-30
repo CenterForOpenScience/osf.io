@@ -98,26 +98,32 @@ class UserSettings(BaseOAuthUserSettings):
             pass
 
     @staticmethod
-    def sync_with_gravyvalet(data_from_gv, owner, is_deleted):
-        try:
-            settings_obj = UserSettings.objects.get(owner=owner)
-        except ObjectDoesNotExist:
-            return None  # or handle the case where the settings object does not exist
+    def sync_with_gravyvalet(owner, is_deleted):
+        resp = requests.get(
+            f'{settings.DOMAIN}v1/resource-references/{owner.uri}/authorized_storage_accounts/'
+        )
+        if resp.status_code == 404:
+            # addon not enabled
+            return None
+        else:
+            data = resp.json()
+
+        settings_obj = UserSettings.objects.get_or_create(owner=owner)
 
         if is_deleted or data_from_gv.get('deleted'):
             return None
 
-        settings_obj.oauth_scopes = data_from_gv.get('oauth_scopes', settings_obj.oauth_scopes)
-        settings_obj.folder_id = data_from_gv.get('folder_id', settings_obj.folder_id)
-        settings_obj.folder_name = data_from_gv.get('folder_name', settings_obj.folder_name)
-        settings_obj.folder_path = data_from_gv.get('folder_path', settings_obj.folder_path)
-        settings_obj.is_deleted = data_from_gv.get('is_deleted', settings_obj.is_deleted)
+        settings_obj.oauth_scopes = data.get('oauth_scopes', settings_obj.oauth_scopes)
+        settings_obj.folder_id = data.get('folder_id', settings_obj.folder_id)
+        settings_obj.folder_name = data.get('folder_name', settings_obj.folder_name)
+        settings_obj.folder_path = data.get('folder_path', settings_obj.folder_path)
+        settings_obj.is_deleted = data.get('is_deleted', settings_obj.is_deleted)
 
-        if 'user_settings' in data_from_gv:
-            for key, value in data_from_gv['user_settings'].items():
+        if 'user_settings' in data:
+            for key, value in data['user_settings'].items():
                 setattr(settings_obj, key, value)
 
-        settings_obj.save()
+        settings_obj.save = lambda : NotImplementedError('Can\'t update legacy model')  # freeze model
 
         return settings_obj
 

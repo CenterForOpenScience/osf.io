@@ -515,9 +515,18 @@ class AddonModelMixin(models.Model):
 
     def get_addon(self, name, is_deleted=False):
         """
-        In order to gradulally phase out the old addon system, we are using GV to sync the old addon models with GV
+        In order to gradually phase out the old addon system, we are using GV to sync the old addon models with GV
         before their old pages can we deleted. When the waffle flag is enabled and GV is turned on, the OSF will make
         requests to GV if it needs addon status data.
+
+        The following must be synced:
+            - oauth_scopes
+            - owner
+            - is_deleted
+            - folder_id
+            - folder_name
+            - folder_path
+            - user_settings
         """
         request, user_id = get_request_and_user_id()
         try:
@@ -528,23 +537,7 @@ class AddonModelMixin(models.Model):
             return None
 
         if waffle.flag_is_active(request, features.ENABLE_GV):
-            resp = requests.get(
-                f'{settings.DOMAIN}v1/resource-references/{self.uri}/authorized_storage_accounts/'
-                f'?include=external-storage-service'  # These query parameters are for test purposes 
-                f'&oauth_scopes='
-                f'&owner='
-                f'&is_deleted='
-                f'&folder_id='
-                f'&folder_name='
-                f'&folder_path='
-                f'&user_settings='
-            )
-            if resp.status_code == 404:
-                # addon not enabled
-                return None
-            else:
-                data = resp.json()
-                return settings_model.sync_with_gravyvalet(data, self, is_deleted)
+            return settings_model.sync_with_gravyvalet(self, is_deleted)
         else:
             try:
                 settings_obj = settings_model.objects.get(owner=self)
@@ -552,8 +545,6 @@ class AddonModelMixin(models.Model):
                     return settings_obj
             except ObjectDoesNotExist:
                 pass
-
-        return None
 
     def add_addon(self, addon_name, auth=None, override=False, _force=False):
         """Add an add-on to the node.
