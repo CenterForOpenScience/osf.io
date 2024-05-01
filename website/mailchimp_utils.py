@@ -72,7 +72,7 @@ def subscribe_mailchimp(list_name, user_id):
         user.save()
 
 
-def unsubscribe_mailchimp(list_name, user_id, username=None, send_goodbye=True):
+def unsubscribe_mailchimp(list_name, user_id, username=None):
     """Unsubscribe a user from a mailchimp mailing list given its name.
 
     :param str list_name: mailchimp mailing list name
@@ -111,10 +111,10 @@ def unsubscribe_mailchimp(list_name, user_id, username=None, send_goodbye=True):
 @queued_task
 @app.task
 @transaction.atomic
-def unsubscribe_mailchimp_async(list_name, user_id, username=None, send_goodbye=True):
+def unsubscribe_mailchimp_async(list_name, user_id, username=None):
     """ Same args as unsubscribe_mailchimp, used to have the task be run asynchronously
     """
-    unsubscribe_mailchimp(list_name=list_name, user_id=user_id, username=username, send_goodbye=send_goodbye)
+    unsubscribe_mailchimp(list_name=list_name, user_id=user_id, username=username)
 
 @user_confirmed.connect
 def subscribe_on_confirm(user):

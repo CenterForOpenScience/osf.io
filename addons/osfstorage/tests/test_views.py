@@ -470,38 +470,6 @@ class TestUploadFileHook(HookTestCase):
 
         assert res.status_code == 400
 
-    def test_archive(self):
-        name = 'ლ(ಠ益ಠლ).unicode'
-        parent = self.node_settings.get_root().append_folder('cheesey')
-        res = self.send_upload_hook(parent, payload=self.make_payload(name=name, hashes={'sha256': 'foo'}))
-
-        assert res.status_code == 201
-        assert res.json['status'] == 'success'
-        assert res.json['archive'] is True
-
-        res = self.send_hook(
-            'osfstorage_update_metadata',
-            {},
-            target=self.project,
-            payload={'metadata': {
-                'vault': 'Vault 101',
-                'archive': '101 tluaV',
-            }, 'version': res.json['version']},
-            method='put',
-        )
-
-        res = self.send_upload_hook(parent, payload=self.make_payload(
-            name=name,
-            hashes={'sha256': 'foo'},
-            metadata={
-                'name': 'lakdjf',
-                'provider': 'testing',
-            }))
-
-        assert res.status_code == 200
-        assert res.json['status'] == 'success'
-        assert res.json['archive'] is False
-
     # def test_upload_update_deleted(self):
     #     pass
 

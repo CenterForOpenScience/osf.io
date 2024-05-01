@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup, Tag
 from werkzeug import Request
 from werkzeug.datastructures import Headers
 from werkzeug.test import TestResponse, Client
-from typing import Iterable, Any
+from typing import Any
+from collections.abc import Iterable
 
 
 @dataclass(kw_only=True, slots=True)

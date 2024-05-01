@@ -870,36 +870,6 @@ class FileVersion(ObjectIDMixin, BaseModel):
         if save:
             self.save()
 
-    def _find_matching_archive(self, save=True):
-        """Find another version with the same sha256 as this file.
-        If found copy its vault name and glacier id, no need to create additional backups.
-        returns True if found otherwise false
-        """
-
-        if 'sha256' not in self.metadata:
-            return False  # Dont bother searching for nothing
-
-        if 'vault' in self.metadata and 'archive' in self.metadata:
-            # Shouldn't ever happen, but we already have an archive
-            return True  # We've found ourself
-
-        other = self.__class__.objects.filter(
-            metadata__sha256=self.metadata['sha256']
-        ).exclude(
-            _id=self._id, metadata__archive__is_null=True, metadata__vault__is_null=True
-        )
-        if not other.exists():
-            return False
-        try:
-            other = other.first()
-            self.metadata['vault'] = other.metadata['vault']
-            self.metadata['archive'] = other.metadata['archive']
-        except KeyError:
-            return False
-        if save:
-            self.save()
-        return True
-
     def serialize_waterbutler_settings(self, node_id, root_id):
         return dict(self.region.waterbutler_settings, **{
             'nid': node_id,

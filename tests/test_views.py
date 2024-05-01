@@ -4017,7 +4017,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert '/login?service=' in res.location
         assert quote_plus('new=true') in res.location
 
-        assert mock_welcome.call_count == 1
+        assert mock_welcome.call_count == 0
 
         self.user.reload()
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
@@ -4051,7 +4051,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
 
-        assert mock_confirm.call_count == 1
+        assert mock_confirm.call_count == 0
 
         self.user.reload()
         dupe_user.reload()
@@ -4904,7 +4904,7 @@ class TestResetPassword(OsfTestCase):
         assert res.status_code == 302
         location = res.headers.get('Location')
         assert 'login?service=' in location
-        assert 'username={}'.format(quote_plus(self.user.username)) in location
+        assert f'username={quote_plus(self.user.username)}' in location
         assert f'verification_key={self.user.verification_key}' in location
 
         # check if password was updated

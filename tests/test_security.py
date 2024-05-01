@@ -1,4 +1,3 @@
-
 from framework.encryption import encrypt, decrypt
 from website import security
 
