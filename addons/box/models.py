@@ -19,6 +19,7 @@ from addons.base import exceptions
 from addons.box import settings
 from addons.box.serializer import BoxSerializer
 from website.util import api_v2_url
+from website.settings import DOMAIN
 
 logger = logging.getLogger(__name__)
 
@@ -99,33 +100,24 @@ class UserSettings(BaseOAuthUserSettings):
 
     @staticmethod
     def sync_with_gravyvalet(owner, is_deleted):
-
         resp = requests.get(
-            f'{settings.GV_DOMAIN}v1/user-references/?filter[user_uri]={owner.uri}'
+            f'{DOMAIN}v1/user-references/?filter[user_uri]={owner.absolute_url}'
         )
-        settings_obj = None
-        try:
-            settings_obj = UserSettings.objects.get(owner=owner)
-        except UserSettings.DoesNotExist:
-            if resp.status_code == 404:
-                # addon not enabled
-                return None
+        settings_obj, created = UserSettings.objects.get_or_create(owner=owner)
+        if resp.status_code == 404 and created:
+            # addon not enabled
+            return None
 
         data = resp.json()
 
         # addon disabled on GV, but not here
-        if settings_obj and resp.status_code == 404 or (is_deleted and data.get('deleted')):
+        if resp.status_code == 404 or resp.status_code == 410:
             settings_obj.delete()
             return settings_obj
-
-        settings_obj, created = UserSettings.objects.get_or_create(owner=owner)
+        # addon disabled on GV, but not here
 
         settings_obj.oauth_scopes = data.get('oauth_scopes', settings_obj.oauth_scopes)
         settings_obj.is_deleted = data.get('is_deleted', settings_obj.is_deleted)
-
-        if 'user_settings' in data:
-            for key, value in data['user_settings'].items():
-                setattr(settings_obj, key, value)
 
         settings_obj.save = lambda: NotImplementedError('Can\'t update legacy model')  # freeze model
 
@@ -305,27 +297,24 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @staticmethod
     def sync_with_gravyvalet(owner, is_deleted):
         resp = requests.get(
-            f'{settings.GV_DOMAIN}v1/resource-references/?filter[resource_uri]={owner.uri}'
+            f'{DOMAIN}v1/resource-references/?filter[resource_uri]={owner.absolute_url}'
         )
-        if resp.status_code == 404:
-            # addon not enabled
-            return None
-        else:
-            data = resp.json()
-
         settings_obj, created = NodeSettings.objects.get_or_create(owner=owner)
 
-        if is_deleted or data.get('deleted'):
+        if resp.status_code == 404 and created:
+            # addon not enabled
             return None
 
-        settings_obj.folder_id = data.get('folder_id', settings_obj.folder_id)
-        settings_obj.folder_name = data.get('folder_name', settings_obj.folder_name)
-        settings_obj.folder_path = data.get('folder_path', settings_obj.folder_path)
-        settings_obj.is_deleted = data.get('is_deleted', settings_obj.is_deleted)
+        if resp.status_code == 404 or resp.status_code == 410:
+            settings_obj.delete()
+            return settings_obj
 
-        if 'user_settings' in data:
-            for key, value in data['user_settings'].items():
-                setattr(settings_obj, key, value)
+        data = resp.json()
+
+        configured_storage_addon = data[0]['relationships']['configured_storage_addons']['links']['self']
+        folder_id = requests.get(configured_storage_addon).json()['attributes']['root_folder']
+
+        settings_obj.set_folder(folder_id)
 
         settings_obj.save = lambda: NotImplemented('Can\'t update legacy model')  # freeze model
 

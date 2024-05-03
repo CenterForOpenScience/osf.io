@@ -527,23 +527,25 @@ class AddonModelMixin(models.Model):
             - folder_path
             - user_settings
         """
-        request, user_id = get_request_and_user_id()
         try:
             settings_model = self._settings_model(name)
         except LookupError:
             return None
-        if not settings_model and not waffle.flag_is_active(request, features.ENABLE_GV):
-            return None
 
-        if waffle.flag_is_active(request, features.ENABLE_GV):
-            return settings_model.sync_with_gravyvalet(self, is_deleted)
-        else:
-            try:
-                settings_obj = settings_model.objects.get(owner=self)
-                if not settings_obj.is_deleted or is_deleted:
-                    return settings_obj
-            except ObjectDoesNotExist:
-                pass
+        if not settings_model:
+            return settings_model
+
+        if hasattr(settings_model, 'sync_with_gravyvalet'):
+            request, user_id = get_request_and_user_id()
+            if waffle.flag_is_active(request, features.ENABLE_GV):
+                return settings_model.sync_with_gravyvalet(self, is_deleted)
+
+        try:
+            settings_obj = settings_model.objects.get(owner=self)
+            if not settings_obj.is_deleted or is_deleted:
+                return settings_obj
+        except ObjectDoesNotExist:
+            pass
 
     def add_addon(self, addon_name, auth=None, override=False, _force=False):
         """Add an add-on to the node.
