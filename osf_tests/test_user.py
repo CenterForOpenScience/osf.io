@@ -1353,6 +1353,7 @@ class TestRecentlyAdded:
 
 @pytest.mark.enable_implicit_clean
 class TestTagging:
+
     def test_add_system_tag(self, user):
         tag_name = fake.word()
         user.add_system_tag(tag_name)
