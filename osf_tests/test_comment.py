@@ -867,7 +867,8 @@ class FileCommentMoveRenameTestMixin:
     )
     def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
-            return True
+            assert True
+            return
 
         project.add_addon(destination_provider, auth=Auth(user))
         project.save()
@@ -901,7 +902,8 @@ class FileCommentMoveRenameTestMixin:
     )
     def test_comments_move_when_folder_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
-            return True
+            assert True
+            return
 
         project.add_addon(destination_provider, auth=Auth(user))
         project.save()
