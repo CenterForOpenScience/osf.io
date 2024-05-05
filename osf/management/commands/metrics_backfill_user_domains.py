@@ -94,7 +94,7 @@ def _upload_data_and_purge(tally, dry_run):
 
 
 def _timestamp_to_dt(timestamp):
-    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.UTC)
+    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
 
 def _timestamp_to_date(timestamp):
     dt_obj = _timestamp_to_dt(timestamp)
