@@ -76,6 +76,7 @@ USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_user_settings.m
 
 class GitLabAddonConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.gitlab'
     label = 'addons_gitlab'
     full_name = 'GitLab'
