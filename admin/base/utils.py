@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError, PermissionDenied
 from django.urls import reverse
 from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 from osf.models.admin_log_entry import (
