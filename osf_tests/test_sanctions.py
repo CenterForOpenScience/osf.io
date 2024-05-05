@@ -39,7 +39,7 @@ class TestNodeEmbargoTerminations:
     def node(self, user):
         return factories.ProjectFactory(creator=user)
 
-    @pytest.yield_fixture()
+    @pytest.fixture()
     def registration(self, node):
         with mock_archive(node, embargo=True, autoapprove=True) as registration:
             yield registration

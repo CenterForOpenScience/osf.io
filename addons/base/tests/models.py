@@ -141,7 +141,7 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
 class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
-    @pytest.yield_fixture(autouse=True)
+    @pytest.fixture(autouse=True)
     def _request_context(self, app):
         context = app.test_request_context(headers={
             'Remote-Addr': '146.9.219.56',
