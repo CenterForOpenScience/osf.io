@@ -142,7 +142,6 @@ class TestParentNode:
         node = NodeFactory(parent=project)
         assert node.parent_node == project
 
-    @pytest.mark.django_assert_num_queries
     def test_parent_node_is_cached_for_top_level_nodes(self, django_assert_num_queries):
         root = ProjectFactory()
         # Expect 0 queries because parent_node was already
