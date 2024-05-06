@@ -21,10 +21,110 @@ from addons.base import exceptions
 from addons.github.exceptions import NotFoundError
 
 from .utils import create_mock_github
+
 pytestmark = pytest.mark.django_db
 
-class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
+TEST_REPO_DATA = {
+    'name': 'test',
+    'id': '12345',
+    'archive_url': 'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}',
+    'assignees_url': 'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}',
+    'blobs_url': 'https://api.github.com/repos/{user}/mock-repo/git/blobs{{/sha}}',
+    'branches_url': 'https://api.github.com/repos/{user}/mock-repo/branches{{/bra.format('
+                    'user=user)nch}}',
+    'clone_url': 'https://github.com/{user}/mock-repo.git',
+    'collaborators_url': 'https://api.github.com/repos/{user}/mock-repo/collaborators{{/collaborator}}',
+    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+    'commits_url': 'https://api.github.com/repos/{user}/mock-repo/commits{{/sha}}',
+    'compare_url': 'https://api.github.com/repos/{user}/mock-repo/compare/{{base}}...{{head}}',
+    'contents_url': 'https://api.github.com/repos/{user}/mock-repo/contents/{{+path}}',
+    'contributors_url': 'https://api.github.com/repos/{user}/mock-repo/contributors',
+    'created_at': '2013-06-30T18:29:18Z',
+    'default_branch': 'dev',
+    'description': 'Simple, Pythonic, text processing--Sentiment analysis, part-of-speech tagging, '
+                   'noun phrase extraction, translation, and more.',
+    'downloads_url': 'https://api.github.com/repos/{user}/mock-repo/downloads',
+    'events_url': 'https://api.github.com/repos/{user}/mock-repo/events',
+    'fork': False,
+    'forks': 89,
+    'forks_count': 89,
+    'forks_url': 'https://api.github.com/repos/{user}/mock-repo/forks',
+    'full_name': '{user}/mock-repo',
+    'git_commits_url': 'https://api.github.com/repos/{user}/mock-repo/git/commits{{/sha}}',
+    'git_refs_url': 'https://api.github.com/repos/{user}/mock-repo/git/refs{{/sha}}',
+    'git_tags_url': 'https://api.github.com/repos/{user}/mock-repo/git/tags{{/sha}}',
+    'git_url': 'git://github.com/{user}/mock-repo.git',
+    'has_downloads': True,
+    'has_issues': True,
+    'has_wiki': True,
+    'homepage': 'https://mock-repo.readthedocs.org/',
+    'hooks_url': 'https://api.github.com/repos/{user}/mock-repo/hooks',
+    'html_url': 'https://github.com/{user}/mock-repo',
+    'issue_comment_url': 'https://api.github.com/repos/{user}/mock-repo/issues/comments/{{number}}',
+    'issue_events_url': 'https://api.github.com/repos/{user}/mock-repo/issues/events{{/number}}',
+    'issues_url': 'https://api.github.com/repos/{user}/mock-repo/issues{{/number}}',
+    'keys_url': 'https://api.github.com/repos/{user}/mock-repo/keys{{/key_id}}',
+    'labels_url': 'https://api.github.com/repos/{user}/mock-repo/labels{{/name}}',
+    'language': 'Python',
+    'languages_url': 'https://api.github.com/repos/{user}/mock-repo/languages',
+    'master_branch': 'dev',
+    'merges_url': 'https://api.github.com/repos/{user}/mock-repo/merges',
+    'milestones_url': 'https://api.github.com/repos/{user}/mock-repo/milestones{{/number}}',
+    'mirror_url': None,
+    'network_count': 89,
+    'notifications_url': 'https://api.github.com/repos/{user}/mock-repo/notifications{{?since,all,'
+                         'participating}}',
+    'open_issues': 2,
+    'open_issues_count': 2,
+    'owner': {
+        'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
+                      '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+        'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
+        'followers_url': 'https://api.github.com/users/{user}/followers',
+        'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
+        'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+        'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+        'html_url': 'https://github.com/{user}',
+        'id': 2379650,
+        'login': 'test name',
+        'organizations_url': 'https://api.github.com/users/{user}/orgs',
+        'received_events_url': 'https://api.github.com/users/{user}/received_events',
+        'repos_url': 'https://api.github.com/users/{user}/repos',
+        'site_admin': False,
+        'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+        'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+        'type': 'User',
+        'url': 'https://api.github.com/users/{user}'
+    },
+    'private': False,
+    'pulls_url': 'https://api.github.com/repos/{user}/mock-repo/pulls{{/number}}',
+    'pushed_at': '2013-12-30T16:05:54Z',
+    'releases_url': 'https://api.github.com/repos/{user}/mock-repo/releases{{/id}}',
+    'size': 8717,
+    'ssh_url': 'git@github.com:{user}/mock-repo.git',
+    'stargazers_count': 1469,
+    'stargazers_url': 'https://api.github.com/repos/{user}/mock-repo/stargazers',
+    'statuses_url': 'https://api.github.com/repos/{user}/mock-repo/statuses/{{sha}}',
+    'subscribers_count': 86,
+    'subscribers_url': 'https://api.github.com/repos/{user}/mock-repo/subscribers',
+    'subscription_url': 'https://api.github.com/repos/{user}/mock-repo/subscription',
+    'svn_url': 'https://github.com/{user}/mock-repo',
+    'tags_url': 'https://api.github.com/repos/{user}/mock-repo/tags',
+    'teams_url': 'https://api.github.com/repos/{user}/mock-repo/teams',
+    'trees_url': 'https://api.github.com/repos/{user}/mock-repo/git/trees{{/sha}}',
+    'updated_at': '2014-01-12T21:23:50Z',
+    'url': 'https://api.github.com/repos/{user}/mock-repo',
+    'watchers': 1469,
+    'watchers_count': 1469,
+    'permissions': {'push': True},
+    'deployments_url': 'https://api.github.com/repos',
+    'archived': {},
+    'has_pages': False,
+    'has_projects': False,
+}
 
+
+class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     short_name = 'github'
     full_name = 'GitHub'
     ExternalAccountFactory = factories.GitHubAccountFactory
@@ -91,17 +191,13 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert result['github_user'] == 'abc'
         assert not result['is_owner']
         assert result['valid_credentials']
-        assert result.get('repo_names', None) == None
-
+        assert result.get('repo_names') is None
 
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders(self, mock_check_authorization, mock_repos):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
+        session = GitHubSession()
+        mock_repos.return_value = [Repository.from_json(dumps(TEST_REPO_DATA), session=session)
                                    ]
         result = self.node_settings.get_folders()
 
@@ -111,15 +207,11 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert result[0]['path'] == 'test name/test'
         assert result[0]['kind'] == 'repo'
 
-
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders_not_have_auth(self, mock_repos, mock_check_authorization):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
+        session = GitHubSession()
+        mock_repos.return_value = [Repository.from_json(dumps(TEST_REPO_DATA), session=session)
                                    ]
         self.node_settings.user_settings = None
         with pytest.raises(exceptions.InvalidAuthError):
@@ -127,7 +219,6 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
 
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
-
     short_name = 'github'
     full_name = 'GitHub'
     ExternalAccountFactory = factories.GitHubAccountFactory
@@ -139,7 +230,6 @@ class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
 class TestCallbacks(OsfTestCase):
 
     def setUp(self):
-
         super().setUp()
 
         self.project = ProjectFactory()
@@ -181,105 +271,7 @@ class TestCallbacks(OsfTestCase):
         session = GitHubSession()
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({
-                    'name': 'test',
-                    'id': '12345',
-                    'archive_url': 'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}',
-                    'assignees_url': 'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}',
-                    'blobs_url': 'https://api.github.com/repos/{user}/mock-repo/git/blobs{{/sha}}',
-                    'branches_url': 'https://api.github.com/repos/{user}/mock-repo/branches{{/bra.format('
-                                    'user=user)nch}}',
-                    'clone_url': 'https://github.com/{user}/mock-repo.git',
-                    'collaborators_url': 'https://api.github.com/repos/{user}/mock-repo/collaborators{{/collaborator}}',
-                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
-                    'commits_url': 'https://api.github.com/repos/{user}/mock-repo/commits{{/sha}}',
-                    'compare_url': 'https://api.github.com/repos/{user}/mock-repo/compare/{{base}}...{{head}}',
-                    'contents_url': 'https://api.github.com/repos/{user}/mock-repo/contents/{{+path}}',
-                    'contributors_url': 'https://api.github.com/repos/{user}/mock-repo/contributors',
-                    'created_at': '2013-06-30T18:29:18Z',
-                    'default_branch': 'dev',
-                    'description': 'Simple, Pythonic, text processing--Sentiment analysis, part-of-speech tagging, '
-                                   'noun phrase extraction, translation, and more.',
-                    'downloads_url': 'https://api.github.com/repos/{user}/mock-repo/downloads',
-                    'events_url': 'https://api.github.com/repos/{user}/mock-repo/events',
-                    'fork': False,
-                    'forks': 89,
-                    'forks_count': 89,
-                    'forks_url': 'https://api.github.com/repos/{user}/mock-repo/forks',
-                    'full_name': '{user}/mock-repo',
-                    'git_commits_url': 'https://api.github.com/repos/{user}/mock-repo/git/commits{{/sha}}',
-                    'git_refs_url': 'https://api.github.com/repos/{user}/mock-repo/git/refs{{/sha}}',
-                    'git_tags_url': 'https://api.github.com/repos/{user}/mock-repo/git/tags{{/sha}}',
-                    'git_url': 'git://github.com/{user}/mock-repo.git',
-                    'has_downloads': True,
-                    'has_issues': True,
-                    'has_wiki': True,
-                    'homepage': 'https://mock-repo.readthedocs.org/',
-                    'hooks_url': 'https://api.github.com/repos/{user}/mock-repo/hooks',
-                    'html_url': 'https://github.com/{user}/mock-repo',
-                    'issue_comment_url': 'https://api.github.com/repos/{user}/mock-repo/issues/comments/{{number}}',
-                    'issue_events_url': 'https://api.github.com/repos/{user}/mock-repo/issues/events{{/number}}',
-                    'issues_url': 'https://api.github.com/repos/{user}/mock-repo/issues{{/number}}',
-                    'keys_url': 'https://api.github.com/repos/{user}/mock-repo/keys{{/key_id}}',
-                    'labels_url': 'https://api.github.com/repos/{user}/mock-repo/labels{{/name}}',
-                    'language': 'Python',
-                    'languages_url': 'https://api.github.com/repos/{user}/mock-repo/languages',
-                    'master_branch': 'dev',
-                    'merges_url': 'https://api.github.com/repos/{user}/mock-repo/merges',
-                    'milestones_url': 'https://api.github.com/repos/{user}/mock-repo/milestones{{/number}}',
-                    'mirror_url': None,
-                    'network_count': 89,
-                    'notifications_url': 'https://api.github.com/repos/{user}/mock-repo/notifications{{?since,all,'
-                                         'participating}}',
-                    'open_issues': 2,
-                    'open_issues_count': 2,
-                    'owner': {
-                        'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
-                                      '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-                        'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
-                        'followers_url': 'https://api.github.com/users/{user}/followers',
-                        'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
-                        'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
-                        'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
-                        'html_url': 'https://github.com/{user}',
-                        'id': 2379650,
-                        'login': '{user}',
-                        'organizations_url': 'https://api.github.com/users/{user}/orgs',
-                        'received_events_url': 'https://api.github.com/users/{user}/received_events',
-                        'repos_url': 'https://api.github.com/users/{user}/repos',
-                        'site_admin': False,
-                        'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-                        'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
-                        'type': 'User',
-                        'url': 'https://api.github.com/users/{user}'
-                    },
-                    'private': False,
-                    'pulls_url': 'https://api.github.com/repos/{user}/mock-repo/pulls{{/number}}',
-                    'pushed_at': '2013-12-30T16:05:54Z',
-                    'releases_url': 'https://api.github.com/repos/{user}/mock-repo/releases{{/id}}',
-                    'size': 8717,
-                    'ssh_url': 'git@github.com:{user}/mock-repo.git',
-                    'stargazers_count': 1469,
-                    'stargazers_url': 'https://api.github.com/repos/{user}/mock-repo/stargazers',
-                    'statuses_url': 'https://api.github.com/repos/{user}/mock-repo/statuses/{{sha}}',
-                    'subscribers_count': 86,
-                    'subscribers_url': 'https://api.github.com/repos/{user}/mock-repo/subscribers',
-                    'subscription_url': 'https://api.github.com/repos/{user}/mock-repo/subscription',
-                    'svn_url': 'https://github.com/{user}/mock-repo',
-                    'tags_url': 'https://api.github.com/repos/{user}/mock-repo/tags',
-                    'teams_url': 'https://api.github.com/repos/{user}/mock-repo/teams',
-                    'trees_url': 'https://api.github.com/repos/{user}/mock-repo/git/trees{{/sha}}',
-                    'updated_at': '2014-01-12T21:23:50Z',
-                    'url': 'https://api.github.com/repos/{user}/mock-repo',
-                    'watchers': 1469,
-                    'watchers_count': 1469,
-                    # NOTE: permissions are only available if authorized on the repo
-                    'permissions': {'push': True},
-                    'deployments_url': 'https://api.github.com/repos',
-                    'archived': {},
-                    'has_pages': False,
-                    'has_projects': False,
-                }), session=session)
+        mock_repo.return_value = Repository.from_json(dumps(TEST_REPO_DATA), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -289,9 +281,12 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
+        session = GitHubSession()
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        mock_data = TEST_REPO_DATA.copy()
+        mock_data['private'] = True
+        mock_repo.return_value = Repository.from_json(dumps(mock_data), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -301,7 +296,8 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
+        session = GitHubSession()
+        mock_repo.return_value = Repository.from_json(dumps(TEST_REPO_DATA), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -311,7 +307,10 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        session = GitHubSession()
+        mock_data = TEST_REPO_DATA.copy()
+        mock_data['private'] = True
+        mock_repo.return_value = Repository.from_json(dumps(mock_data), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
