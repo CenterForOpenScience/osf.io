@@ -1,3 +1,4 @@
+from github3.session import GitHubSession
 from rest_framework import status as http_status
 
 from unittest import mock
@@ -518,24 +519,94 @@ class TestGitLabSettings(OsfTestCase):
 
         assert res.status_code == 400
 
+    user = 'octo-cat'
+    repo_author = {
+        'name': f'{user}',
+        'email': 'njqpw@osf.io',
+        'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
+                      '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+        'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
+        'followers_url': 'https://api.github.com/users/{user}/followers',
+        'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
+        'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+        'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+        'html_url': 'https://github.com/{user}',
+        'id': 2379650,
+        'login': '{user}',
+        'organizations_url': 'https://api.github.com/users/{user}/orgs',
+        'received_events_url': 'https://api.github.com/users/{user}/received_events',
+        'repos_url': 'https://api.github.com/users/{user}/repos',
+        'site_admin': False,
+        'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+        'subscriptions_url': 'https://api.github.com/users/{'
+                             'user}/subscriptions',
+        'type': 'User',
+        'url': 'https://api.github.com/users/{user}'
+    }
+
+    repo_commit = {
+        'ETag': '',
+        'Last-Modified': '',
+        'url': '',
+        'author': repo_author,
+        'committer': {'name': '{user}', 'email': '{user}@osf.io',
+                      'username': 'tester'},
+        'message': 'Fixed error',
+        'tree': {'url': 'https://docs.github.com/en/rest/git/trees',
+                 'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
+    }
+    repo_parents = [
+        '12345',
+        'https://api.example.com/entities/67890',
+        'another-entity-id'
+    ]
+
     @mock.patch('addons.gitlab.api.GitLabClient.branches')
     def test_link_repo_registration(self, mock_branches):
-
+        session = GitHubSession()
         mock_branches.return_value = [
             Branch.from_json(dumps({
                 'name': 'master',
                 'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            })),
+                    'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'url': f'https://api.github.com/repos/{self.user}/mock-repo/commits'
+                           f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'author': self.repo_author,
+                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+                    'commit': self.repo_commit,
+                    'committer': self.repo_author,
+                    'html_url': 'https://github.com/{user}',
+                    'parents': self.repo_parents,
+
+                }, '_links': [{
+                    'rel': 'self',
+                    'href': 'https://api.example.com/entities/12345'
+                }],
+                'protected': True,
+                'protection': 'public',
+                'protection_url': 'https://api.example.com/docs/protection',
+                'name': 'no-bundle'}), session=session),
             Branch.from_json(dumps({
                 'name': 'develop',
                 'commit': {
-                    'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
-                    'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
-                }
-            }))
+                    'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'url': f'https://api.github.com/repos/{self.user}/mock-repo/commits'
+                           f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'author': self.repo_author,
+                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+                    'commit': self.repo_commit,
+                    'committer': self.repo_author,
+                    'html_url': 'https://github.com/{user}',
+                    'parents': self.repo_parents,
+
+                }, '_links': [{
+                    'rel': 'self',
+                    'href': 'https://api.example.com/entities/12345'
+                }],
+                'protected': True,
+                'protection': 'public',
+                'protection_url': 'https://api.example.com/docs/protection',
+                'name': 'no-bundle'}), session=session)
         ]
 
         registration = self.project.register_node(
