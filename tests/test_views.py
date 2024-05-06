@@ -1721,7 +1721,7 @@ class TestUserAccount(OsfTestCase):
             'confirm_password': 'thisisanewpassword',
         }
         res = self.app.post(url, json=post_data, auth=self.user.auth)
-        assert len( mock_push_status_message.mock_calls) == 1
+        assert len(mock_push_status_message.mock_calls) == 1
         assert 'Old password is invalid' == mock_push_status_message.mock_calls[0][1][0]
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
