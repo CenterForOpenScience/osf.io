@@ -7,6 +7,7 @@ dropbox_root_folder = generic_root_folder('dropbox')
 
 class DropboxAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.dropbox'
     label = 'addons_dropbox'
     full_name = 'Dropbox'

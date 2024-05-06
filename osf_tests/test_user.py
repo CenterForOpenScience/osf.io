@@ -1456,7 +1456,7 @@ class TestCitationProperties:
 @pytest.mark.enable_implicit_clean
 class TestMergingUsers:
 
-    @pytest.yield_fixture()
+    @pytest.fixture()
     def email_subscriptions_enabled(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
         yield

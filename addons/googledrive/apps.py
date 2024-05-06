@@ -5,6 +5,7 @@ googledrive_root_folder = generic_root_folder('googledrive')
 
 class GoogleDriveAddonConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.googledrive'
     label = 'addons_googledrive'
     full_name = 'Google Drive'

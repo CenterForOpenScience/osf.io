@@ -26,6 +26,7 @@ def figshare_root_folder(node_settings, auth, **kwargs):
 
 class FigshareAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.figshare'
     label = 'addons_figshare'
     full_name = 'figshare'

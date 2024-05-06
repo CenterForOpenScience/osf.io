@@ -2,7 +2,7 @@ import itsdangerous
 from importlib import import_module
 
 from django.middleware.csrf import get_token
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 import waffle
 from rest_framework import authentication
