@@ -81,9 +81,9 @@ DEBUG_MODE = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
-DOMAIN = PROTOCOL + 'localhost:5000/'
+DOMAIN = PROTOCOL + '192.168.168.167:5000/'
 INTERNAL_DOMAIN = DOMAIN
-API_DOMAIN = PROTOCOL + 'localhost:8000/'
+API_DOMAIN = PROTOCOL + '192.168.168.167:8000/'
 
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
@@ -2142,3 +2142,7 @@ PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
 DEFAULT_DRAFT_NODE_TITLE = 'Untitled'
+
+GV_RESOURCE_DOMAIN = f'{DOMAIN}/v1/resource-references/?filter[resource_uri]={{owner_uri}}'
+GV_USER_DOMAIN = f'{DOMAIN}/v1/user-references/?filter[user_uri]={{owner_uri}}'
+GV_CREATE_CONFIGURED_STORAGE_ADDON = f'{DOMAIN}/v1/configured-storage-addon/'

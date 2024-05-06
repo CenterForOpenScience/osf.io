@@ -19,7 +19,7 @@ from addons.base import exceptions
 from addons.box import settings
 from addons.box.serializer import BoxSerializer
 from website.util import api_v2_url
-from website.settings import DOMAIN
+from website.settings import GV_RESOURCE_DOMAIN, GV_USER_DOMAIN
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +100,7 @@ class UserSettings(BaseOAuthUserSettings):
 
     @staticmethod
     def sync_with_gravyvalet(owner, is_deleted):
-        resp = requests.get(
-            f'{DOMAIN}v1/user-references/?filter[user_uri]={owner.absolute_url}'
-        )
+        resp = requests.get(GV_USER_DOMAIN.format(owner_uri=owner.absolute_url))
         settings_obj, created = UserSettings.objects.get_or_create(owner=owner)
         if resp.status_code == 404 and created:
             # addon not enabled
@@ -296,13 +294,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @staticmethod
     def sync_with_gravyvalet(owner, is_deleted):
-        resp = requests.get(
-            f'{DOMAIN}v1/resource-references/?filter[resource_uri]={owner.absolute_url}'
-        )
+        resp = requests.get(GV_RESOURCE_DOMAIN.format(owner_uri=owner.absolute_url))
         settings_obj, created = NodeSettings.objects.get_or_create(owner=owner)
 
         if resp.status_code == 404 and created:
-            # addon not enabled
             return None
 
         if resp.status_code == 404 or resp.status_code == 410:
@@ -312,7 +307,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         data = resp.json()
 
         configured_storage_addon = data[0]['relationships']['configured_storage_addons']['links']['self']
-        folder_id = requests.get(configured_storage_addon).json()['attributes']['root_folder']
+        folder_id = requests.get(configured_storage_addon).json()['data']['attributes']['root_folder']
 
         settings_obj.set_folder(folder_id)
 

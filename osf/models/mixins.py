@@ -2,6 +2,7 @@ import pytz
 import markupsafe
 import logging
 import waffle
+import requests
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
@@ -547,6 +548,47 @@ class AddonModelMixin(models.Model):
         except ObjectDoesNotExist:
             pass
 
+    def add_addon_via_gravy_valet(self, addon_name, auth):
+        resp = requests.get(settings.GV_RESOURCE_DOMAIN.format(owner_uri=self.absolute_url))
+        resp.raise_for_status()
+        data = resp.json()
+
+        configured_storage_addon = data[0]['relationships']['configured_storage_addons']['links']['self']
+        base_account_id = requests.get(configured_storage_addon).json()['relationships']['base_account']['id']
+
+        resp = requests.post(
+            settings.GV_CREATE_CONFIGURED_STORAGE_ADDON,
+            payload={
+                "data": {
+                    "type": "configured-storage-addons",
+                    "attributes": {
+                        "connected_capabilities": ["ACCESS"],
+                    },
+                    "relationships": {
+                        "base_account": {
+                            "data": {
+                                "type": "authorized-storage-accounts",
+                                "id": base_account_id,
+                            },
+                        },
+                        "authorized_resource": {
+                            "data": {
+                                "type": "resource-references",
+                                "resource_uri": self.absolute_url,
+                            }
+                        },
+                    },
+                }
+            }
+        )
+        resp.raise_for_status()
+        config = apps.get_app_config(f'addons_{addon_name}')
+        model = self._settings_model(addon_name, config=config)
+        ret = model(owner=self)
+        ret.on_add()
+        ret.save()
+        return ret
+
     def add_addon(self, addon_name, auth=None, override=False, _force=False):
         """Add an add-on to the node.
 
@@ -559,6 +601,7 @@ class AddonModelMixin(models.Model):
         :return bool: Add-on was added
 
         """
+
         if not override and addon_name in settings.SYSTEM_ADDED_ADDONS[self.settings_type]:
             return False
 
@@ -571,11 +614,15 @@ class AddonModelMixin(models.Model):
             if not _force:
                 return False
 
-        config = apps.get_app_config('addons_{}'.format(addon_name))
-        model = self._settings_model(addon_name, config=config)
-        ret = model(owner=self)
-        ret.on_add()
-        ret.save(clean=False)  # TODO This doesn't feel right
+        request, user_id = get_request_and_user_id()
+        if waffle.flag_is_active(request, features.ENABLE_GV) and addon_name not in ('wiki', 'forward', 'twofactor'):
+            return self.add_addon_via_gravy_valet(addon_name, auth)
+        else:
+            config = apps.get_app_config(f'addons_{addon_name}')
+            model = self._settings_model(addon_name, config=config)
+            ret = model(owner=self)
+            ret.on_add()
+            ret.save()
         return ret
 
     def config_addons(self, config, auth=None, save=True):
