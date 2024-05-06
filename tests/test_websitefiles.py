@@ -15,14 +15,15 @@ from osf import models
 
 class TestFileNode(BaseFileNode):
     _provider = 'test'
+    __test__ = False
 
 
 class TestFile(TestFileNode, File):
-    pass
+    __test__ = False
 
 
 class TestFolder(TestFileNode, Folder):
-    pass
+    __test__ = False
 
 
 class FilesTestCase(OsfTestCase):
