@@ -56,9 +56,9 @@ class AddonTestCase(object):
         """
         if 'user' not in self.OWNERS:
             return
-        self.user.add_addon(self.ADDON_SHORT_NAME)
+        self.user.add_addon(self.ADDON_SHORT_NAME, auth=None)
         assert self.user.has_addon(self.ADDON_SHORT_NAME), '{0} is not enabled'.format(self.ADDON_SHORT_NAME)
-        self.user_settings = self.user.get_addon(self.ADDON_SHORT_NAME)
+        self.user_settings = self.user.get_addon(self.ADDON_SHORT_NAME, auth=None)
         self.set_user_settings(self.user_settings)
         self.user_settings.save()
 
@@ -69,7 +69,7 @@ class AddonTestCase(object):
         if 'node' not in self.OWNERS:
             return
         self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
-        self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
+        self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME, auth=None)
         # User has imported their addon settings to this node
         if self.NODE_USER_FIELD:
             setattr(self.node_settings, self.NODE_USER_FIELD, self.user_settings)

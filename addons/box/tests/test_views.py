@@ -22,8 +22,6 @@ from addons.box.tests.utils import (
     patch_client,
     mock_responses
 )
-from waffle.testutils import override_flag
-from osf import features
 
 mock_client = MockBox()
 pytestmark = pytest.mark.django_db
@@ -47,10 +45,6 @@ class TestAuthViews(BoxAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseM
     )
     def test_delete_external_account(self):
         super(TestAuthViews, self).test_delete_external_account()
-
-    def test_delete_external_account_sunset(self):
-        with override_flag(features.ENABLE_GV, active=True):
-            super(TestAuthViews, self).test_delete_external_account()
 
 
 class TestConfigViews(BoxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -78,12 +72,6 @@ class TestConfigViews(BoxAddonTestCase, views_testing.OAuthAddonConfigViewsTestC
     @mock.patch.object(BoxSerializer, 'credentials_are_valid', return_value=True)
     def test_import_auth(self, *args):
         super(TestConfigViews, self).test_import_auth()
-
-    @mock.patch.object(BoxSerializer, 'credentials_are_valid', return_value=True)
-    def test_import_auth_sunset(self, *args):
-        with override_flag(features.ENABLE_GV, active=True):
-            super(TestConfigViews, self).test_import_auth()
-
 
 class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
 

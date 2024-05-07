@@ -502,18 +502,18 @@ class AddonModelMixin(models.Model):
         ]
 
     def has_addon(self, addon_name, is_deleted=False):
-        return bool(self.get_addon(addon_name, is_deleted=is_deleted))
+        return bool(self.get_addon(addon_name, auth=None, is_deleted=is_deleted))
 
     def get_addon_names(self):
         return [each.short_name for each in self.get_addons()]
 
-    def get_or_add_addon(self, name, *args, **kwargs):
-        addon = self.get_addon(name)
+    def get_or_add_addon(self, name, auth=None, *args, **kwargs):
+        addon = self.get_addon(name, auth)
         if addon:
             return addon
-        return self.add_addon(name, *args, **kwargs)
+        return self.add_addon(name, auth, *args, **kwargs)
 
-    def get_addon(self, name, is_deleted=False):
+    def get_addon(self, name, auth=None, is_deleted=False):
         """
         In order to gradually phase out the old addon system, we are using GV to sync the old addon models with GV
         before their old pages can we deleted. When the waffle flag is enabled and GV is turned on, the OSF will make
@@ -539,7 +539,7 @@ class AddonModelMixin(models.Model):
         if hasattr(settings_model, 'sync_with_gravyvalet'):
             request, user_id = get_request_and_user_id()
             if waffle.flag_is_active(request, features.ENABLE_GV):
-                return settings_model.sync_with_gravyvalet(self, is_deleted)
+                return settings_model.sync_with_gravyvalet(self, auth, is_deleted)
 
         try:
             settings_obj = settings_model.objects.get(owner=self)
@@ -548,8 +548,11 @@ class AddonModelMixin(models.Model):
         except ObjectDoesNotExist:
             pass
 
-    def add_addon_via_gravy_valet(self, addon_name, auth):
-        resp = requests.get(settings.GV_RESOURCE_DOMAIN.format(owner_uri=self.absolute_url))
+    def add_addon_via_gravy_valet(self, addon_name, request):
+        resp = requests.get(
+            settings.GV_RESOURCE_DOMAIN.format(owner_uri=self.absolute_url),
+            cookies=request.cookies
+        )
         resp.raise_for_status()
         data = resp.json()
 
@@ -559,22 +562,22 @@ class AddonModelMixin(models.Model):
         resp = requests.post(
             settings.GV_CREATE_CONFIGURED_STORAGE_ADDON,
             payload={
-                "data": {
-                    "type": "configured-storage-addons",
-                    "attributes": {
-                        "connected_capabilities": ["ACCESS"],
+                'data': {
+                    'type': 'configured-storage-addons',
+                    'attributes': {
+                        'connected_capabilities': ['ACCESS'],
                     },
-                    "relationships": {
-                        "base_account": {
-                            "data": {
-                                "type": "authorized-storage-accounts",
-                                "id": base_account_id,
+                    'relationships': {
+                        'base_account': {
+                            'data': {
+                                'type': 'authorized-storage-accounts',
+                                'id': base_account_id,
                             },
                         },
-                        "authorized_resource": {
-                            "data": {
-                                "type": "resource-references",
-                                "resource_uri": self.absolute_url,
+                        'authorized_resource': {
+                            'data': {
+                                'type': 'resource-references',
+                                'resource_uri': self.absolute_url,
                             }
                         },
                     },
@@ -606,7 +609,7 @@ class AddonModelMixin(models.Model):
             return False
 
         # Reactivate deleted add-on if present
-        addon = self.get_addon(addon_name, is_deleted=True)
+        addon = self.get_addon(addon_name, auth, is_deleted=True)
         if addon:
             if addon.deleted:
                 addon.undelete(save=True)
@@ -615,7 +618,12 @@ class AddonModelMixin(models.Model):
                 return False
 
         request, user_id = get_request_and_user_id()
-        if waffle.flag_is_active(request, features.ENABLE_GV) and addon_name not in ('wiki', 'forward', 'twofactor'):
+        if waffle.flag_is_active(request, features.ENABLE_GV) and addon_name not in (
+                'wiki',
+                'forward',
+                'twofactor',
+                'osfstorage'
+        ):
             return self.add_addon_via_gravy_valet(addon_name, auth)
         else:
             config = apps.get_app_config(f'addons_{addon_name}')

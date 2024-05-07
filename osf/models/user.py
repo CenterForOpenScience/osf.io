@@ -792,7 +792,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         #       contributor on the nodes, as an event hook is otherwise fired
         #       which removes the credentials.
         for addon in user.get_addons():
-            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings = self.get_or_add_addon(addon.config.short_name, Auth(user))
             user_settings.merge(addon)
             user_settings.save()
 
@@ -2102,7 +2102,7 @@ def add_default_user_addons(sender, instance, created, **kwargs):
     if created:
         for addon in website_settings.ADDONS_AVAILABLE:
             if 'user' in addon.added_default:
-                instance.add_addon(addon.short_name)
+                instance.add_addon(addon.short_name, auth=None)
 
 @receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):

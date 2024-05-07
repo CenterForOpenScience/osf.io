@@ -99,8 +99,11 @@ class UserSettings(BaseOAuthUserSettings):
             pass
 
     @staticmethod
-    def sync_with_gravyvalet(owner, is_deleted):
-        resp = requests.get(GV_USER_DOMAIN.format(owner_uri=owner.absolute_url))
+    def sync_with_gravyvalet(owner, auth, is_deleted):
+        resp = requests.get(
+            GV_USER_DOMAIN.format(owner_uri=owner.absolute_url),
+            auth=auth
+        )
         settings_obj, created = UserSettings.objects.get_or_create(owner=owner)
         if resp.status_code == 404 and created:
             # addon not enabled
@@ -110,7 +113,7 @@ class UserSettings(BaseOAuthUserSettings):
 
         # addon disabled on GV, but not here
         if resp.status_code == 404 or resp.status_code == 410:
-            settings_obj.delete()
+            super(BaseOAuthUserSettings, settings_obj).delete()
             return settings_obj
         # addon disabled on GV, but not here
 
@@ -293,8 +296,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.save()
 
     @staticmethod
-    def sync_with_gravyvalet(owner, is_deleted):
-        resp = requests.get(GV_RESOURCE_DOMAIN.format(owner_uri=owner.absolute_url))
+    def sync_with_gravyvalet(owner, auth, is_deleted):
+        resp = requests.get(
+            GV_RESOURCE_DOMAIN.format(owner_uri=owner.absolute_url),
+            auth=(auth.user.username, auth.user.password)
+        )
         settings_obj, created = NodeSettings.objects.get_or_create(owner=owner)
 
         if resp.status_code == 404 and created:
