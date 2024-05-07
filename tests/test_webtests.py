@@ -789,6 +789,7 @@ class TestResendConfirmation(OsfTestCase):
         form = res.get_form('resendForm')
         form['email'] = self.unconfirmed_user.email
         res = form.submit(self.app)
+        res = form.submit(self.app)
 
         # check request and response
         assert res.status_code == 200

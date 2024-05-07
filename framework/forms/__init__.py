@@ -56,7 +56,8 @@ class NoHtmlCharacters:
         self.message = message or 'HTML is not allowed in form field'
 
     def __call__(self, form, field):
-        if not field.data == strip_html(field.data):
+        field_data = field.data or ''  # we do not aim to check equality, we aim to verify absence of HTML
+        if field_data != strip_html(field.data):
             raise ValidationError(self.message)
 
 
