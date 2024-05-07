@@ -990,16 +990,6 @@ var extractContributorNamesFromAPIData = function(contributor){
 var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
 
-    KeenTracker.getInstance().trackPrivateEvent(
-        'front-end-events', {
-            interaction: {
-                category: category,
-                action: action,
-                label: label,
-            },
-        }
-    );
-
     //in order to make the href redirect work under knockout onclick binding
     return true;
 };
