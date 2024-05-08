@@ -123,7 +123,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                                            null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     advertise_on_discover_page = models.BooleanField(default=True)
-    advisory_board = models.TextField(default='', blank=True)
+    advisory_board = models.TextField(default='', blank=True, help_text='Indicates if the provider should be advertised on the discovery page.')
     description = models.TextField(default='', blank=True)
     domain = models.URLField(blank=True, default='', max_length=200)
     domain_redirect_enabled = models.BooleanField(default=False)
