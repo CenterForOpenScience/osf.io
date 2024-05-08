@@ -203,6 +203,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         'share_publish_type',
         'reviews_workflow',
         'permissions',
+        'advertise_on_discover_page',
     ])
     available_metrics = frozenset([
         'downloads',

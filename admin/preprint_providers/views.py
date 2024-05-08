@@ -88,7 +88,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         preprint_provider_attributes = model_to_dict(preprint_provider)
 
-        preprint_provider_attributes['advertise_on_discover_page'] = preprint_provider.advertiseOnDiscoverPage
+        preprint_provider_attributes['advertise_on_discover_page'] = preprint_provider.advertise_on_discover_page
         
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
 

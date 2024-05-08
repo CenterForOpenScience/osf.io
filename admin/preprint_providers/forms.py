@@ -27,7 +27,7 @@ class PreprintProviderForm(forms.ModelForm):
         validators=[validate_slug]
     )
 
-    advertiseOnDiscoverPage = forms.BooleanField(required=False, label='Advertise on Discover Page', initial=True)
+    advertise_on_discover_page = forms.BooleanField(required=False, label='Advertise on Discover Page', initial=True)
 
 
     class Meta:
