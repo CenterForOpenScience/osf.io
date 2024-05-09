@@ -150,7 +150,7 @@ class TestAddonAuth(OsfTestCase):
 
     def test_auth_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
-        res = self.app.get(url, )
+        res = self.app.get(url)
         assert res.status_code == 401
 
     def test_auth_missing_addon(self):
