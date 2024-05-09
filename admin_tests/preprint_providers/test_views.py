@@ -188,7 +188,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_acceptable': '[]',
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
             'description': '<span>Open Preprints <code>Open</code> Science<script></script></span>',
-            'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>',
+            'footer_links': '<p>Xiv: <script>Support</script> | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>',
             'preprint_word': 'preprint'
         }
 
