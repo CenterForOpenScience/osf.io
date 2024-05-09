@@ -178,7 +178,7 @@ def before_request():
     # Request Type 2: Basic Auth with username and password in Authorization headers
     # Note: As for flask/V1 request, many views rely on an ``auth`` object that comes from the ``session``
     #       to identify the user. Thus, we still need to keep the session creation and usage here.
-    if request.authorization:
+    if request.authorization.type == 'basic':
         user = get_user(
             email=request.authorization.username,
             password=request.authorization.password
