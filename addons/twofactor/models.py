@@ -1,5 +1,6 @@
 import secrets
 from base64 import b32encode
+from datetime import datetime, timedelta
 from typing import Final
 
 from addons.base.models import BaseUserSettings
@@ -42,7 +43,8 @@ class UserSettings(BaseUserSettings):
         client = TOTP(self.totp_secret_b32)
         accepted = client.verify(
             otp=str(code),
-            valid_window=self.totp_drift * DRIFT_PERIOD,
+            for_time=datetime.now() + timedelta(seconds=self.totp_drift * DRIFT_PERIOD),
+            valid_window=1
         )
         if accepted:
             self.totp_drift += 1
