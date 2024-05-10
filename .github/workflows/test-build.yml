@@ -35,6 +35,8 @@ jobs:
     needs: build-cache
     permissions:
       checks: write
+      contents: read
+      actions: read
     services:
       postgres:
         image: postgres
@@ -62,6 +64,8 @@ jobs:
     needs: build-cache
     permissions:
       checks: write
+      contents: read
+      actions: read
     services:
       postgres:
         image: postgres
@@ -90,6 +94,8 @@ jobs:
     needs: build-cache
     permissions:
       checks: write
+      contents: read
+      actions: read
     services:
       postgres:
         image: postgres
@@ -121,6 +127,8 @@ jobs:
     needs: build-cache
     permissions:
       checks: write
+      contents: read
+      actions: read
     services:
       postgres:
         image: postgres
@@ -147,6 +155,8 @@ jobs:
     runs-on: ubuntu-20.04
     permissions:
       checks: write
+      contents: read
+      actions: read
     needs: build-cache
     services:
       postgres:
