@@ -2088,52 +2088,40 @@ class TestCheckPreprintAuth(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_access(self.preprint, Auth(user=self.user), 'upload', None)
+        res = views.check_resource_permissions(self.preprint, Auth(user=self.user), 'upload')
         assert_true(res)
 
     def test_not_has_permission_read_published(self):
-        res = views.check_access(self.preprint, Auth(), 'download', None)
+        res = views.check_resource_permissions(self.preprint, Auth(), 'download')
         assert_true(res)
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(user=user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user=user2), 'download'))
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(), 'download', None)
-        assert_equal(exc_info.exception.code, 401)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(), 'download'))
 
     def test_check_access_withdrawn_preprint_file(self):
         self.preprint.date_withdrawn = timezone.now()
         self.preprint.save()
         # Unauthenticated
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(), 'download', None)
-        assert_equal(exc_info.exception.code, 401)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(), 'download'))
 
         # Noncontributor
         user2 = AuthUserFactory()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user2), 'download'))
 
         # Read contributor
         self.preprint.add_contributor(user2, READ, save=True)
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user2), 'download'))
 
         # Admin contributor
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(self.user), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(self.user), 'download'))
 
 
 
