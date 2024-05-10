@@ -329,6 +329,15 @@ def get_file_version_from_wb(waterbutler_data: dict) -> FileVersion:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
+def get_file_node_from_wb(waterbutler_data: dict) -> FileVersion:
+    path = waterbutler_data.get('path')
+    file_id = path.strip('/')
+    try:
+        return BaseFileNode.active.get(_id=file_id)
+    except BaseFileNode.DoesNotExist:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+
 def authenticate_user_if_needed(auth, waterbutler_data, resource):
     if auth.user:
         return  # User is already authenticated
@@ -410,9 +419,11 @@ def get_auth(auth, **kwargs):
     if fileversion:
         # Trigger any file-specific signals based on the action taken (e.g., file viewed, downloaded)
         if action == 'render':
-            file_signals.file_viewed.send(auth=auth, fileversion=fileversion)
+            file_node = get_file_node_from_wb(waterbutler_data)
+            file_signals.file_viewed.send(auth=auth, fileversion=fileversion, file_node=file_node)
         elif action == 'download':
-            file_signals.file_downloaded.send(auth=auth, fileversion=fileversion)
+            file_node = get_file_node_from_wb(waterbutler_data)
+            file_signals.file_downloaded.send(auth=auth, fileversion=fileversion, file_node=file_node)
 
     # Construct the response payload including the JWT
     return construct_payload(
@@ -677,60 +688,56 @@ def addon_delete_file_node(self, target, user, event_type, payload):
 
 
 @file_signals.file_viewed.connect
-def osfstoragefile_mark_viewed(self, auth, fileversion):
+def osfstoragefile_mark_viewed(self, auth, fileversion, file_node):
     if auth.user:
         # mark fileversion as seen
         FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
 
 
 @file_signals.file_viewed.connect
-def osfstoragefile_update_view_analytics(self, auth, fileversion):
-    file = BaseFileNode.objects.get(versions__id=fileversion.id)
-    node = file.target
+def osfstoragefile_update_view_analytics(self, auth, fileversion, file_node):
+    node = file_node.target
     enqueue_update_analytics(
         node,
-        file,
+        file_node,
         fileversion.identifier,
         'view'
     )
 
 
 @file_signals.file_viewed.connect
-def osfstoragefile_viewed_update_metrics(self, auth, fileversion):
-    file = BaseFileNode.objects.filter(versions__id=fileversion.id).last()
-    resource = file.target
+def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
+    resource = file_node.target
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintView.record_for_preprint(
                 preprint=resource,
                 user=auth.user,
                 version=fileversion.identifier,
-                path=file.path,
+                path=file_node.path,
             )
         except es_exceptions.ConnectionError:
             log_exception()
 
 
 @file_signals.file_downloaded.connect
-def osfstoragefile_downloaded_update_analytics(self, auth, fileversion):
-    file = BaseFileNode.objects.filter(versions__id=fileversion.id).last()
-    resource = file.target
+def osfstoragefile_downloaded_update_analytics(self, auth, fileversion, file_node):
+    resource = file_node.target
     if not resource.is_contributor_or_group_member(auth.user):
         version_index = int(fileversion.identifier) - 1
-        enqueue_update_analytics(resource, file, version_index, 'download')
+        enqueue_update_analytics(resource, file_node, version_index, 'download')
 
 
 @file_signals.file_downloaded.connect
-def osfstoragefile_downloaded_update_metrics(self, auth, fileversion):
-    file = BaseFileNode.objects.filter(versions__id=fileversion.id).last()
-    resource = file.target
+def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node):
+    resource = file_node.target
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintDownload.record_for_preprint(
                 preprint=resource,
                 user=auth.user,
                 version=fileversion.identifier,
-                path=file.path,
+                path=file_node.path,
             )
         except es_exceptions.ConnectionError:
             log_exception()
