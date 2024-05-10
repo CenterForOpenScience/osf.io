@@ -55,6 +55,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.unreachable_url,
             auth=(self.user1.username, 'invalid password'),
+            expect_errors=True
         )
         assert res.status_code == 401
         assert res.json.get('errors')[0]['detail'] == 'Invalid username/password.'
@@ -68,6 +69,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.unreachable_url,
             auth=self.user1.auth,
+            expect_errors=True
         )
         assert res.status_code == 403, res.json
 
@@ -81,6 +83,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.reachable_url,
             auth=self.user1.auth,
+            expect_errors=True
         )
         assert res.status_code == 401
         assert res.headers['X-OSF-OTP'] == 'required; app'
@@ -97,6 +100,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
             self.reachable_url,
             auth=self.user1.auth,
             headers={'X-OSF-OTP': 'invalid otp'},
+            expect_errors=True
         )
         assert res.status_code == 401
         assert 'X-OSF-OTP' not in res.headers
