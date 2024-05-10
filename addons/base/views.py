@@ -697,14 +697,15 @@ def osfstoragefile_update_view_analytics(self, auth, fileversion):
 
 @file_signals.file_viewed.connect
 def osfstoragefile_viewed_update_metrics(self, auth, fileversion):
-    resource = BaseFileNode.objects.get(versions__id=fileversion.id).target
+    file = BaseFileNode.objects.get(versions__id=fileversion.id)
+    resource = file.target
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintView.record_for_preprint(
                 preprint=resource,
                 user=auth.user,
                 version=fileversion.identifier,
-                path=fileversion.path,
+                path=file.path,
             )
         except es_exceptions.ConnectionError:
             log_exception()
@@ -712,7 +713,7 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion):
 
 @file_signals.file_downloaded.connect
 def osfstoragefile_downloaded_update_analytics(self, auth, fileversion):
-    file = BaseFileNode.objects.get(versions__id=fileversion.id)
+    file = BaseFileNode.objects.get(versions__id=fileversion.id).last()
     resource = file.target
     if not resource.is_contributor_or_group_member(auth.user):
         version_index = int(fileversion.identifier) - 1
@@ -721,7 +722,7 @@ def osfstoragefile_downloaded_update_analytics(self, auth, fileversion):
 
 @file_signals.file_downloaded.connect
 def osfstoragefile_downloaded_update_metrics(self, auth, fileversion):
-    resource = BaseFileNode.objects.get(versions__id=fileversion.id).target
+    resource = BaseFileNode.objects.get(versions__id=fileversion.id).last().target
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintDownload.record_for_preprint(
