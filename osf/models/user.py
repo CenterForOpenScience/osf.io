@@ -3,6 +3,7 @@ import logging
 import re
 from future.moves.urllib.parse import urljoin, urlencode
 import uuid
+import waffle
 from copy import deepcopy
 
 from flask import Request as FlaskRequest
@@ -59,6 +60,10 @@ from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
+import requests
+from osf.utils.requests import get_request_and_user_id
+from osf import features
+from addons.base.utils import GravyValetAddonAppConfig
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -1219,6 +1224,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.update_guessed_names()
 
         return user
+
+    def get_addon(self, name, is_deleted=False, auth=None):
+        request, user_id = get_request_and_user_id()
+
+        default_addons = ['wiki']
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if 'user' in addon.added_default:
+                default_addons.append(addon.short_name)
+
+        if waffle.flag_is_active(request, features.ENABLE_GV) and name not in ['osfstorage', 'wiki']:
+            resp = requests.get(
+                website_settings.GV_USER_ADDON_ENDPOINT.format(account_id=name),
+                auth=auth
+            )
+            resp.raise_for_status()
+            data = resp.json()['data']
+            return GravyValetAddonAppConfig(data, self, auth)
+        else:
+            return super().get_addon(name, is_deleted)
 
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.

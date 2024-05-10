@@ -2142,3 +2142,12 @@ PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
 DEFAULT_DRAFT_NODE_TITLE = 'Untitled'
+GV_RESOURCE_DOMAIN = 'http://192.168.168.167:8004/v1/resource-references/?filter[resource_uri]={owner_uri}'
+GV_USER_DOMAIN = 'http://192.168.168.167:8004/v1/user-references/?filter[user_uri]={owner_uri}'
+GV_API_ROOT =  'http://192.168.168.167:8004/v1'
+GV_RESOURCE_ENDPOINT = GV_API_ROOT + 'resource-references/?filter[resource_uri]={resource_uri}'
+GV_USER_ENDPOINT = GV_API_ROOT + 'user-references/?filter[user_uri]={owner_uri}'
+# These two are for `get_addon` vs `get_addons`
+GV_USER_ADDON_ENDPOINT = 'http://192.168.168.167:8004/v1/authorized-storage-accounts/{account_id}'
+GV_NODE_ADDON_ENDPOINT = 'http://192.168.168.167:8004/v1/configured-storage-addons/{addon_id}'
+GV_EXTERNAL_STORAGE_ENDPOINT = 'http://192.168.168.167:8004/v1/external-storage-services/{service_id}'

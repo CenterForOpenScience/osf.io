@@ -54,3 +54,37 @@ def format_last_known_metadata(auth, node, file, error_type):
         ]
         return ''.join(parts)
     return msg
+
+
+class GravyValetAddonAppConfig:
+    class MockNodeSetting:
+        def __init__(self, resource, request, legacy_config):
+            ...
+
+    class MockUserSetting:
+        def __init__(self, resource, request, legacy_config):
+            ...
+
+    def __init__(self, gravyvalet_data, resource, auth):
+        self.gravyvalet_data = gravyvalet_data
+
+        # TODO: Names in GV must be exact matches?
+        self.legacy_config = settings.ADDONS_AVAILABLE_DICT[self.gravyvalet_data['data']['attributes']['name']]
+        self.resource = resource
+        self.auth = auth
+        self.FOLDER_SELECTED = self.legacy_config.FOLDER_SELECTED
+        self.NODE_AUTHORIZED = self.legacy_config.NODE_DEAUTHORIZED
+        self.NODE_DEAUTHORIZED = self.legacy_config.NODE_DEAUTHORIZED
+        self.actions = self.legacy_config.actions
+
+    @property
+    def node_settings(self):
+        return self.MockNodeSetting(self.resource, self.auth, self.legacy_config)
+
+    @property
+    def user_settings(self):
+        return self.MockUserSetting(self.resource, self.auth, self.legacy_config)
+
+    @property
+    def configured(self):
+        return self.legacy_config.configured
