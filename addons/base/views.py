@@ -399,7 +399,7 @@ def get_auth(auth, **kwargs):
     fileversion = None
     if waterbutler_data[provider] == 'osfstorage':
         file_node = get_osfstorage_file_node(waterbutler_data.get('path'))
-        fileversion = get_osfstorage_file_version(file_node, waterbutler_data['version'])
+        fileversion = get_osfstorage_file_version(file_node, waterbutler_data.get('version'))
 
     # Fetch Waterbutler credentials and settings for the resource
     credentials, waterbutler_settings = get_waterbutler_data(
