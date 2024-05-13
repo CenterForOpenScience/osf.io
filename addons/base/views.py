@@ -393,7 +393,7 @@ def get_auth(auth, **kwargs):
     # Get the file version from Waterbutler data, which is used for file-specific actions
     file_node = None
     fileversion = None
-    if waterbutler_data[provider] == 'osfstorage':
+    if waterbutler_data['provider'] == 'osfstorage':
         file_node = _get_osfstorage_file_node(waterbutler_data.get('path'))
         fileversion = _get_osfstorage_file_version(file_node, waterbutler_data.get('version'))
 
