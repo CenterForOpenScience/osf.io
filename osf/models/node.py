@@ -2436,19 +2436,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_addon(self, name, is_deleted=False):
         request, user_id = get_request_and_user_id()
 
-        default_addons = ['wiki']
-        for addon in settings.ADDONS_AVAILABLE:
-            if 'node' in addon.added_default:
-                default_addons.append(addon.short_name)
-
-        if waffle.flag_is_active(request, features.ENABLE_GV) and name not in ['osfstorage', 'wiki']:
+        if hasattr(request, 'user') and not isinstance(request.user, AnonymousUser) and waffle.flag_is_active(request, features.ENABLE_GV) and name not in ['osfstorage', 'wiki']:
             resp = requests.get(
-                settings.GV_EXTERNAL_STORAGE_ENDPOINT.format(service_id=name),
+                settings.GV_NODE_ADDON_ENDPOINT.format(addon_id=name),
                 auth=(request.user.username, request.user.password)
             )
-            data = resp.json()
+            configured_storage_addon = resp.json()
+            resp = requests.get(
+                configured_storage_addon['data']['relationships']['external_storage_service']['links']['related'],
+                auth=(request.user.username, request.user.password)
+            )
+            external_storage_service_data = resp.json()
             return GravyValetAddonAppConfig(
-                data,
+                configured_storage_addon,
+                external_storage_service_data,
                 self,
                 auth=(request.user.username, request.user.password)
             )

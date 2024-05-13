@@ -1,3 +1,4 @@
+import requests
 import markupsafe
 from os.path import basename
 from website.settings import MFR_SERVER_URL
@@ -58,18 +59,31 @@ def format_last_known_metadata(auth, node, file, error_type):
 
 class GravyValetAddonAppConfig:
     class MockNodeSetting:
-        def __init__(self, resource, request, legacy_config):
-            ...
+        def __init__(self, resource, auth, legacy_config):
+            resp = requests.get(
+                settings.GV_RESOURCE_DOMAIN.format(owner_uri=resource.absolute_url),
+                auth=auth
+            )
+
+            resp.raise_for_status()
+            data = resp.json()['data']
+
+            requests.get(data['relationships'], auth=auth)
 
     class MockUserSetting:
-        def __init__(self, resource, request, legacy_config):
-            ...
+        def __init__(self, resource, auth, legacy_config):
+            requests.get(
+                settings.GV_USER_DOMAIN.format(owner_uri=resource.absolute_url),
+                auth=auth
+            )
 
-    def __init__(self, gravyvalet_data, resource, auth):
-        self.gravyvalet_data = gravyvalet_data
+    def __init__(self, data, external_storage_service_data, resource, auth):
+        self.data = data
 
+        self.external_storage_service_data = external_storage_service_data
         # TODO: Names in GV must be exact matches?
-        self.legacy_config = settings.ADDONS_AVAILABLE_DICT[self.gravyvalet_data['data']['attributes']['name']]
+        self.name = self.external_storage_service_data['data']['attributes']['name']
+        self.legacy_config = settings.ADDONS_AVAILABLE_DICT[self.name]
         self.resource = resource
         self.auth = auth
         self.FOLDER_SELECTED = self.legacy_config.FOLDER_SELECTED
@@ -87,4 +101,4 @@ class GravyValetAddonAppConfig:
 
     @property
     def configured(self):
-        return self.legacy_config.configured
+        return True

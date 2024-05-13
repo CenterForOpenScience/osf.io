@@ -1,7 +1,6 @@
 import pytest
 
 from osf import features
-from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from osf_tests.factories import (
     AuthUserFactory,
@@ -150,5 +149,3 @@ class TestWaffleFilesView:
         assert attributes['provider'] == str(provider_gv_id)
         assert attributes['name'] == str(provider_gv_id)
         assert res.json['data']['id'] == f'{file.target._id}:{str(provider_gv_id)}'
-
-
