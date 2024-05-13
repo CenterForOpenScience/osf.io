@@ -323,8 +323,6 @@ def _get_osfstorage_file_node(file_path: str) -> OsfStorageFileNode:
     file_id = file_path.strip('/')
     try:
         return OsfStorageFileNode.load(file_id)
-    except OsfStorageFileNode.DoesNotExist:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File unavailable')
 
 
 def authenticate_user_if_needed(auth, waterbutler_data, resource):
