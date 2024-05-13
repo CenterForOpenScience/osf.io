@@ -302,40 +302,29 @@ def get_authenticated_resource(resource_id):
     return resource
 
 
-def get_file_version_from_wb(waterbutler_data: dict) -> FileVersion:
-    path = waterbutler_data.get('path')
-    if waterbutler_data['provider'] != 'osfstorage' or not path:
-        return
+def get_osfstorage_file_version(file_node: OsfStorageFileNode, version=None) -> FileVersion:
+    if not (file_node and file_node.is_file):
+        return None
 
-    path = waterbutler_data.get('path')
-    file_id = path.strip('/')
-    version = waterbutler_data.get('version')
-    if version:
-        try:
-            return FileVersion.objects.filter(
-                basefilenode___id=file_id,
-                identifier=int(version)
-            ).select_related('region').get()
-        except FileVersion.DoesNotExist:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    else:
-        try:
-            return BaseFileNode.active.get(
-                _id=file_id,
-            ).versions.order_by(
-                '-created'
-            ).first()
-        except BaseFileNode.DoesNotExist:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-
-def get_file_node_from_wb(waterbutler_data: dict) -> FileVersion:
-    path = waterbutler_data.get('path')
-    file_id = path.strip('/')
+    version = int(version or file_node.versions.count())
     try:
-        return BaseFileNode.active.get(_id=file_id)
-    except BaseFileNode.DoesNotExist:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        return FileVersion.objects.select_related('region').get(
+            basefilenode=file_node,
+            identifier=version
+        )
+    except FileVersion.DoesNotExist:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File Version unavailable')
+
+
+def get_osfstorage_file_node(file_path: str) -> FileVersion:
+    if not file_path:
+        return None
+
+    file_id = file_path.strip('/')
+    try:
+        return OsfStorageFileNode.load(file_id)
+    except OsfStorageFileNode.DoesNotExist:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File unavailable')
 
 
 def authenticate_user_if_needed(auth, waterbutler_data, resource):
@@ -406,7 +395,11 @@ def get_auth(auth, **kwargs):
         provider = None
 
     # Get the file version from Waterbutler data, which is used for file-specific actions
-    fileversion = get_file_version_from_wb(waterbutler_data)
+    file_node = None
+    fileversion = None
+    if waterbutler_data[provider] == 'osfstorage':
+        file_node = get_osfstorage_file_node(waterbutler_data.get('path'))
+        fileversion = get_osfstorage_file_version(file_node, waterbutler_data['version'])
 
     # Fetch Waterbutler credentials and settings for the resource
     credentials, waterbutler_settings = get_waterbutler_data(
@@ -419,10 +412,8 @@ def get_auth(auth, **kwargs):
     if fileversion:
         # Trigger any file-specific signals based on the action taken (e.g., file viewed, downloaded)
         if action == 'render':
-            file_node = get_file_node_from_wb(waterbutler_data)
             file_signals.file_viewed.send(auth=auth, fileversion=fileversion, file_node=file_node)
         elif action == 'download':
-            file_node = get_file_node_from_wb(waterbutler_data)
             file_signals.file_downloaded.send(auth=auth, fileversion=fileversion, file_node=file_node)
 
     # Construct the response payload including the JWT
