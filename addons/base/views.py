@@ -302,11 +302,11 @@ def get_authenticated_resource(resource_id):
     return resource
 
 
-def get_osfstorage_file_version(file_node: OsfStorageFileNode, version=None) -> FileVersion:
+def _get_osfstorage_file_version(file_node: OsfStorageFileNode, version_string: str = None) -> FileVersion:
     if not (file_node and file_node.is_file):
         return None
 
-    version = int(version or file_node.versions.count())
+    version = int(version_string) if version_string else file_node.versions.count()
     try:
         return FileVersion.objects.select_related('region').get(
             basefilenode=file_node,
@@ -316,7 +316,7 @@ def get_osfstorage_file_version(file_node: OsfStorageFileNode, version=None) -> 
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File Version unavailable')
 
 
-def get_osfstorage_file_node(file_path: str) -> FileVersion:
+def _get_osfstorage_file_node(file_path: str) -> OsfStorageFileNode:
     if not file_path:
         return None
 
@@ -398,8 +398,8 @@ def get_auth(auth, **kwargs):
     file_node = None
     fileversion = None
     if waterbutler_data[provider] == 'osfstorage':
-        file_node = get_osfstorage_file_node(waterbutler_data.get('path'))
-        fileversion = get_osfstorage_file_version(file_node, waterbutler_data.get('version'))
+        file_node = _get_osfstorage_file_node(waterbutler_data.get('path'))
+        fileversion = _get_osfstorage_file_version(file_node, waterbutler_data.get('version'))
 
     # Fetch Waterbutler credentials and settings for the resource
     credentials, waterbutler_settings = get_waterbutler_data(
