@@ -306,11 +306,10 @@ def _get_osfstorage_file_version(file_node: OsfStorageFileNode, version_string: 
     if not (file_node and file_node.is_file):
         return None
 
-    version = int(version_string) if version_string else file_node.versions.count()
     try:
         return FileVersion.objects.select_related('region').get(
             basefilenode=file_node,
-            identifier=version
+            identifier=version_string or str(file_node.versions.count())
         )
     except FileVersion.DoesNotExist:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File Version unavailable')
