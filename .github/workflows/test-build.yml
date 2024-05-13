@@ -54,7 +54,7 @@ jobs:
     - name: Run tests
       run: python3 -m invoke test-travis-addons -n 1 --junit
     - name: Upload report
-      if: success() || failure()    # run this step even if previous step failed
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   website:
@@ -82,7 +82,7 @@ jobs:
     - name: Run tests
       run: python3 -m invoke test-travis-website -n 1 --junit
     - name: Upload report
-      if: success() || failure()    # run this step even if previous step failed
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   api1_and_js:
@@ -113,7 +113,7 @@ jobs:
       - name: Run test
         run: python3 -m invoke test-travis-api1-and-js -n 1 --junit
       - name: Upload report
-        if: success() || failure()    # run this step even if previous step failed
+        if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
 
   api2:
@@ -140,7 +140,7 @@ jobs:
     - name: Run tests
       run: python3 -m invoke test-travis-api2 -n 1 --junit
     - name: Upload report
-      if: success() || failure()    # run this step even if previous step failed
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   api3_and_osf:
@@ -168,5 +168,5 @@ jobs:
     - name: Run tests
       run: python3 -m invoke test-travis-api3-and-osf -n 1 --junit
     - name: Upload report
-      if: success() || failure()    # run this step even if previous step failed
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
