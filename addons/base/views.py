@@ -696,7 +696,7 @@ def osfstoragefile_mark_viewed(self, auth, fileversion, file_node):
 
 @file_signals.file_viewed.connect
 def osfstoragefile_update_view_analytics(self, auth, fileversion, file_node):
-    node = file_node.target
+    resource = file_node.target
     enqueue_update_analytics(
         node,
         file_node,
