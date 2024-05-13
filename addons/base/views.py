@@ -698,7 +698,7 @@ def osfstoragefile_mark_viewed(self, auth, fileversion, file_node):
 def osfstoragefile_update_view_analytics(self, auth, fileversion, file_node):
     resource = file_node.target
     enqueue_update_analytics(
-        node,
+        resource,
         file_node,
         fileversion.identifier,
         'view'
