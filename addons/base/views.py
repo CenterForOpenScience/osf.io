@@ -320,8 +320,7 @@ def _get_osfstorage_file_node(file_path: str) -> OsfStorageFileNode:
         return None
 
     file_id = file_path.strip('/')
-    try:
-        return OsfStorageFileNode.load(file_id)
+    return OsfStorageFileNode.load(file_id)
 
 
 def authenticate_user_if_needed(auth, waterbutler_data, resource):
