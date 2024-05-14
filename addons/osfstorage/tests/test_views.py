@@ -1516,7 +1516,7 @@ class TestFileViews(StorageTestCase):
             )
         )
 
-        download_url = base_url.format(file.get_guid()._id)
+        download_url = base_url.format(file.get_guid(create=True)._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
             'Authorization': f'Bearer {token.token_id}'
@@ -1593,8 +1593,9 @@ class TestPreprintFileViews(StorageTestCase):
         download_url = base_url.format(file.get_guid(create=True)._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str(f'Bearer {token.token_id}')
+            'Authorization': f'Bearer {token.token_id}'
         }
+
         redirect = self.app.get(download_url, headers=headers)
 
         assert mock_get_client.called
