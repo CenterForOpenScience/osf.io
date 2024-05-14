@@ -1720,7 +1720,7 @@ class TestUserAccount(OsfTestCase):
             'new_password': 'thisisanewpassword',
             'confirm_password': 'thisisanewpassword',
         }
-        res = self.app.post(url, json=post_data, auth=self.user.auth)
+        res = self.app.post(url, data=post_data, auth=self.user.auth, follow_redirects=True)
         assert len(mock_push_status_message.mock_calls) == 1
         assert 'Old password is invalid' == mock_push_status_message.mock_calls[0][1][0]
         self.user.reload()
@@ -1729,7 +1729,7 @@ class TestUserAccount(OsfTestCase):
         assert res.status_code == 200
 
         # Make a second request that successfully changes password
-        res = self.app.post(url, json=correct_post_data, auth=self.user.auth)
+        res = self.app.post(url, data=correct_post_data, auth=self.user.auth)
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
         assert self.user.old_password_invalid_attempts == 0
