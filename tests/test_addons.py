@@ -163,7 +163,7 @@ class TestAddonAuth(OsfTestCase):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
     def test_action_render_marks_version_as_seen(self):
         noncontrib = AuthUserFactory()
