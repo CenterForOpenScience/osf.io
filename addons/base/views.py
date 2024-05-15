@@ -483,7 +483,7 @@ def construct_payload(auth, resource, credentials, waterbutler_settings):
 
     # Encrypt the encoded JWT with JWE
     decoded_encrypted_jwt = jwe.encrypt(
-        encoded_jwt,
+        encoded_jwt.encode(),
         WATERBUTLER_JWE_KEY
     ).decode()
 
