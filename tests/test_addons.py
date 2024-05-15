@@ -1016,28 +1016,24 @@ class TestCheckAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_access(self.node, Auth(user=self.user), 'upload', None)
+        res = views.check_resource_permissions(self.node, Auth(user=self.user), 'upload')
         assert res
 
     def test_not_has_permission_read_public(self):
         self.node.is_public = True
         self.node.save()
-        views.check_access(self.node, Auth(), 'download', None)
+        views.check_resource_permissions(self.node, Auth(), 'download')
 
     def test_not_has_permission_read_has_link(self):
         link = new_private_link('red-special', self.user, [self.node], anonymous=False)
-        views.check_access(self.node, Auth(private_key=link.key), 'download', None)
+        views.check_resource_permissions(self.node, Auth(private_key=link.key), 'download')
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
-        with pytest.raises(HTTPError) as exc_info:
-            views.check_access(self.node, Auth(user=user2), 'download', None)
-        assert exc_info.value.code == 403
+        assert not views.check_resource_permissions(self.node, Auth(user=user2), 'download')
 
     def test_not_has_permission_not_logged_in(self):
-        with pytest.raises(HTTPError) as exc_info:
-            views.check_access(self.node, Auth(), 'download', None)
-        assert exc_info.value.code == 401
+       assert not views.check_resource_permissions(self.node, Auth(), 'download')
 
     def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
@@ -1045,9 +1041,8 @@ class TestCheckAuth(OsfTestCase):
         registration = RegistrationFactory(project=self.node)
 
         component_registration = registration._nodes.first()
-
         assert not component_registration.has_permission(self.user, WRITE)
-        res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
+        res = views.check_resource_permissions(component_registration, Auth(user=self.user), 'upload')
         assert res
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
@@ -1057,7 +1052,7 @@ class TestCheckAuth(OsfTestCase):
         component_registration = RegistrationFactory(project=component, creator=component_admin)
 
         assert not component_registration.has_permission(self.user, READ)
-        res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
+        res = views.check_resource_permissions(component_registration, Auth(user=self.user), 'metadata')
         assert res
 
     def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
@@ -1065,15 +1060,14 @@ class TestCheckAuth(OsfTestCase):
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
         assert not component.has_permission(self.user, WRITE)
-        with pytest.raises(HTTPError):
-            views.check_access(component, Auth(user=self.user), 'upload', None)
+        assert not views.check_resource_permissions(component, Auth(user=self.user), 'upload')
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
 
         assert not component.has_permission(self.user, WRITE)
-        res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
+        res = views.check_resource_permissions(component, Auth(user=self.user), 'copyfrom')
         assert res
 
 
@@ -1084,79 +1078,111 @@ class TestCheckOAuth(OsfTestCase):
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
-    def test_has_permission_private_not_authenticated(self):
+    @mock.patch('framework.auth.cas.parse_auth_header')
+    @mock.patch('framework.auth.cas.get_client')
+    def test_has_permission_private_not_authenticated(self, mock_get_client, mock_parse_auth_header):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=False)
+        mock_cas_response = cas.CasResponse(authenticated=False)
+        mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
-            views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+           views.authenticate_via_oauth_bearer_token(component, 'download')
         assert exc_info.value.code == 403
 
-    def test_has_permission_private_no_scope_forbidden(self):
+    @mock.patch('framework.auth.cas.parse_auth_header')
+    @mock.patch('framework.auth.cas.get_client')
+    def test_has_permission_private_no_scope_forbidden(self, mock_get_client, mock_parse_auth_header):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {}})
+        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+                                            attributes={'accessTokenScope': {}})
+        mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
-            views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+             views.authenticate_via_oauth_bearer_token(component, 'download')
         assert exc_info.value.code == 403
 
-    def test_has_permission_public_irrelevant_scope_allowed(self):
+
+    @mock.patch('framework.auth.cas.parse_auth_header')
+    @mock.patch('framework.auth.cas.get_client')
+    def test_has_permission_public_irrelevant_scope_allowed(self, mock_get_client, mock_parse_auth_header):
         component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=True, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+        component = ProjectFactory(
+            creator=component_admin,
+            is_public=True,
+            parent=self.node
+        )
+        mock_cas_response = cas.CasResponse(
+            authenticated=True,
+            status=None,
+            user=self.user._id,
+            attributes={'accessTokenScope': {'osf.users.all_read'}}
+        )
+        mock_get_client.return_value.profile.return_value = mock_cas_response
+
+        assert not component.has_permission(self.user, WRITE)
+        result = views.authenticate_via_oauth_bearer_token(component, 'download')
+        assert result
+
+    @mock.patch('framework.auth.cas.parse_auth_header')
+    @mock.patch('framework.auth.cas.get_client')
+    def test_has_permission_private_irrelevant_scope_forbidden(self, mock_get_client, mock_parse_auth_header):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.users.all_read'}})
-
-        assert not component.has_permission(self.user, WRITE)
-        res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
-        assert res
-
-    def test_has_permission_private_irrelevant_scope_forbidden(self):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.users.all_read'}})
+        mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
-            views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+            views.authenticate_via_oauth_bearer_token(component, 'download')
         assert exc_info.value.code == 403
 
-    def test_has_permission_decommissioned_scope_no_error(self):
+    @mock.patch('framework.auth.cas.parse_auth_header')
+    @mock.patch('framework.auth.cas.get_client')
+    def test_has_permission_decommissioned_scope_no_error(self, mock_get_client, mock_parse_auth_header):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {
                                        'decommissioned.scope+write',
                                        'osf.nodes.data_read',
                                    }})
+        mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
-        res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        res = views.authenticate_via_oauth_bearer_token(component, 'download')
         assert res
 
-    def test_has_permission_write_scope_read_action(self):
+
+    @mock.patch('framework.auth.cas.parse_auth_header')
+    @mock.patch('framework.auth.cas.get_client')
+    def test_has_permission_write_scope_read_action(self, mock_get_client, mock_parse_auth_header):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_write'}})
+        mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
-        res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        res = views.authenticate_via_oauth_bearer_token(component, 'download')
         assert res
 
-    def test_has_permission_read_scope_write_action_forbidden(self):
+
+    @mock.patch('framework.auth.cas.parse_auth_header')
+    @mock.patch('framework.auth.cas.get_client')
+    def test_has_permission_read_scope_write_action_forbidden(self, mock_get_client, mock_parse_auth_header):
         component = ProjectFactory(creator=self.user, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_read'}})
+        mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert component.has_permission(self.user, WRITE)
         with pytest.raises(HTTPError) as exc_info:
-            views.check_access(component, Auth(user=self.user), 'upload', cas_resp)
+            views.authenticate_via_oauth_bearer_token(component, 'upload')
         assert exc_info.value.code == 403
 
 

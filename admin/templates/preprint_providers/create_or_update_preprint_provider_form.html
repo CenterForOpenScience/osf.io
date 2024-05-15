@@ -98,6 +98,13 @@
                         </div>
                     {% endif %}
                 {% endfor %}
+                <div class="fieldWrapper">
+                    {{ form.advertise_on_discover_page.errors }}
+                    <p>
+                        {{ form.advertise_on_discover_page.label_tag }}
+                        {{ form.advertise_on_discover_page }}
+                    </p>
+                </div>
                 {% if show_taxonomies %}
                 <div class="row" id="subjects">
                     <div class="col-md-4">

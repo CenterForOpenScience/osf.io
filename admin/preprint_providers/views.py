@@ -85,6 +85,9 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         subject_ids = preprint_provider.all_subjects.values_list('id', flat=True)
 
         preprint_provider_attributes = model_to_dict(preprint_provider)
+
+        preprint_provider_attributes['advertise_on_discover_page'] = preprint_provider.advertise_on_discover_page
+
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
 
         licenses_acceptable = list(preprint_provider.licenses_acceptable.values_list('name', flat=True))
