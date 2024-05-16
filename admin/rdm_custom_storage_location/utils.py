@@ -981,7 +981,7 @@ def save_s3compatinstitutions_credentials(institution, storage_name, host_url, a
         username=access_key, password=secret_key, separator=separator)
 
     return save_basic_storage_institutions_credentials_common(
-        institution, storage_name, bucket, provider_name, provider, separator, server_side_encryption)
+        institution, storage_name, bucket, provider_name, provider, separator, server_side_encryption=server_side_encryption)
 
 def save_ociinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
