@@ -64,7 +64,7 @@ class GravyValetAddonAppConfig:
                 settings.GV_RESOURCE_DOMAIN.format(owner_uri=resource.absolute_url),
                 auth=auth
             )
-
+            print("???")
             resp.raise_for_status()
             data = resp.json()['data']
 

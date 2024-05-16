@@ -2433,15 +2433,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     force=True
                 )
 
-    def get_addon(self, name, is_deleted=False):
-        request, user_id = get_request_and_user_id()
-
+    def get_addon(self, name, auth=None, request=None, is_deleted=False):
+        print(name)
         if hasattr(request, 'user') and not isinstance(request.user, AnonymousUser) and waffle.flag_is_active(request, features.ENABLE_GV) and name not in ['osfstorage', 'wiki']:
             resp = requests.get(
                 settings.GV_NODE_ADDON_ENDPOINT.format(addon_id=name),
                 auth=(request.user.username, request.user.password)
             )
             configured_storage_addon = resp.json()
+            print(configured_storage_addon)
             resp = requests.get(
                 configured_storage_addon['data']['relationships']['external_storage_service']['links']['related'],
                 auth=(request.user.username, request.user.password)
