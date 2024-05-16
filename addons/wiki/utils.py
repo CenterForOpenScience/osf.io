@@ -274,15 +274,13 @@ def _get_all_child_file_ids(dir_id):
     children_file = parent_dir._children.filter(type='osf.osfstoragefile', deleted__isnull=True)
 
     for child_file in children_file:
-        yield child_file._id
+        yield {'wiki_file': f'{child_file.parent.name}^{child_file.name}', 'file_id': f'{child_file._id}'}
 
     for child_folder in children_folder:
         yield from _get_all_child_file_ids(child_folder._id)
 
 def get_node_file_mapping(node, dir_id):
-    file_ids = list(_get_all_child_file_ids(dir_id))
-    node_file_infos = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', deleted__isnull=True).values_list('_id', 'name', 'parent_id__name')
-    mapping = [{'wiki_file': f'{info[2]}^{info[1]}', 'file_id': info[0]} for info in node_file_infos if info[0] in file_ids]
+    mapping = list(_get_all_child_file_ids(dir_id))
     return mapping
 
 def get_import_wiki_name_list(wiki_info):
@@ -309,19 +307,19 @@ def _get_wiki_parent(wiki, path):
 
 def get_numbered_name_for_existing_wiki(node, base_name):
     WikiPage = apps.get_model('addons_wiki.WikiPage')
-    existing_wikis = WikiPage.objects.filter(page_name__istartswith=base_name, deleted__isnull=True, node=node)
+    existing_wiki_names = WikiPage.objects.filter(page_name__istartswith=base_name, deleted__isnull=True, node=node).values_list('page_name', flat=True)
 
-    target_wikis = [wiki for wiki in existing_wikis if wiki.page_name.lower() == base_name.lower() or wiki.page_name[len(base_name) + 1: -1].isdigit()]
+    target_wiki_names = [wiki_name for wiki_name in existing_wiki_names if wiki_name.lower() == base_name.lower() or wiki_name[len(base_name) + 1: -1].isdigit()]
 
-    if not target_wikis and base_name.lower() == 'home':
-        existing_wikis = WikiPage.objects.filter(page_name='home', deleted__isnull=True, node=node)
-        target_wikis = existing_wikis
+    if not target_wiki_names and base_name.lower() == 'home':
+        existing_wiki_names = WikiPage.objects.filter(page_name='home', deleted__isnull=True, node=node).values_list('page_name', flat=True)
+        target_wiki_names = existing_wiki_names
         base_name = 'home'
 
-    if not target_wikis:
+    if not target_wiki_names:
         return ''
 
-    max_index = max((0 if wiki.page_name.lower() == base_name.lower() else int(wiki.page_name[len(base_name) + 1: -1]) for wiki in target_wikis), default='')
+    max_index = max((0 if wiki_name.lower() == base_name.lower() else int(wiki_name[len(base_name) + 1: -1]) for wiki_name in target_wiki_names), default='')
 
     return max_index + 1 if max_index != '' else max_index
 

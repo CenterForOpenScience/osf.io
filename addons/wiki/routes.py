@@ -179,20 +179,20 @@ api_routes = {
 
         # Clean Celery Tasks
         Rule([
-            '/project/<pid>/wiki/clean_celery_tasks/',
-            '/project/<pid>/node/<nid>/wiki/clean_celery_tasks/'
+            '/project/<pid>/wiki/tasks/clean/',
+            '/project/<pid>/node/<nid>/wiki/tasks/clean/'
         ], 'post', views.project_clean_celery_tasks, json_renderer),
 
         # Get Abort Wiki Import Result
         Rule([
-            '/project/<pid>/wiki/get_abort_wiki_import_result/',
-            '/project/<pid>/node/<nid>/wiki/get_abort_wiki_import_result/'
+            '/project/<pid>/wiki/abort/result/',
+            '/project/<pid>/node/<nid>/wiki/abort/result/'
         ], 'get', views.project_get_abort_wiki_import_result, json_renderer),
 
         # Update Wiki Page Sort
         Rule([
-            '/project/<pid>/wiki/update_wiki_page_sort/',
-            '/project/<pid>/node/<nid>/wiki/update_wiki_page_sort/'
+            '/project/<pid>/wiki/sort/update/',
+            '/project/<pid>/node/<nid>/wiki/sort/update/'
         ], 'post', views.project_update_wiki_page_sort, json_renderer),
 
 
