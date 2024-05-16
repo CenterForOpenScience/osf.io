@@ -320,23 +320,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'view': view or ('preview' if 'edit' in panels_used else 'current'),
         'compare': compare or 'previous',
     }
-
-    # Get import folder
-    root_dir = BaseFileNode.objects.filter(target_object_id=node.id, is_root=True).values('id').first()
-    parent_dirs = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefolder', parent=root_dir['id'], deleted__isnull=True)
-    import_dirs = []
-    for parent_dir in parent_dirs:
-        wiki_dir = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefolder', parent=parent_dir.id, deleted__isnull=True).first()
-        if not wiki_dir:
-            continue
-        wiki_file_name = wiki_dir.name + '.md'
-        if BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', parent=wiki_dir.id, name=wiki_file_name, deleted__isnull=True).exists():
-            dict = {
-                'id': parent_dir._id,
-                'name': parent_dir.name
-            }
-            import_dirs.append(dict)
-
+    import_dirs = _get_import_folder(node)
     alive_task_id = WikiImportTask.objects.values_list('task_id').filter(status=WikiImportTask.STATUS_RUNNING, node=node)
     sortable_pages_ctn = node.wikis.filter(deleted__isnull=True).exclude(page_name='home').count()
 
@@ -376,6 +360,22 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     ret['user']['can_wiki_import'] = can_wiki_import
     return ret
 
+def _get_import_folder(node):
+    # Get import folder
+    root_dir = BaseFileNode.objects.filter(target_object_id=node.id, is_root=True).values('id').first()
+    parent_dirs = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefolder', parent=root_dir['id'], deleted__isnull=True)
+    import_dirs = []
+    for parent_dir in parent_dirs:
+        wiki_dirs = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefolder', parent=parent_dir.id, deleted__isnull=True)
+        for wiki_dir in wiki_dirs:
+            wiki_file_name = wiki_dir.name + '.md'
+            if BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', parent=wiki_dir.id, name=wiki_file_name, deleted__isnull=True).exists():
+                import_dirs.append({
+                    'id': parent_dir._id,
+                    'name': parent_dir.name
+                })
+                break
+    return import_dirs
 
 @must_be_valid_project  # injects node or project
 @must_have_write_permission_or_public_wiki  # injects user
@@ -537,7 +537,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission(ADMIN)  # returns user, project
+@must_have_permission(WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, auth, node, p_wname=None, **kwargs):
@@ -755,16 +755,17 @@ def project_wiki_validate_for_import_process(dir_id, node):
     info_list = []
     duplicated_folder_list = []
     for obj in import_objects:
-        if obj.type == 'osf.osf.osfstoragefile':
+        if obj.type == 'osf.osfstoragefile':
             logger.warn(f'This file cannot be imported: {obj.name}')
             info = {
                 'path': import_dir['name'],
+                'original_name': obj.name,
                 'name': obj.name,
                 'status': 'invalid',
                 'message': 'This file cannot be imported.',
                 'parent_name': None,
             }
-            info_list.extend(info)
+            info_list.append(info)
             continue
 
         child_info_list = _validate_import_folder(node, obj, '')
@@ -821,7 +822,7 @@ def _validate_import_folder(node, folder, parent_path):
                     'message': '',
                     '_id': obj._id
                 }
-                info = _validate_import_wiki_exists_duplicated(node, info)
+                info, can_start_import = _validate_import_wiki_exists_duplicated(node, info)
                 info_list.append(info)
                 continue
 
@@ -847,7 +848,9 @@ def _validate_import_wiki_exists_duplicated(node, info):
             info['wiki_name'] = info['wiki_name'] + '(' + str(info['numbering']) + ')'
             info['path'] = info['path'] + '(' + str(info['numbering']) + ')'
             can_start_import = False
-    return info
+    else:
+        can_start_import = True
+    return info, can_start_import
 
 def _validate_import_duplicated_directry(info_list):
     folder_name_list = []
@@ -915,6 +918,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
         logger.info('wiki import process is stopped')
         return {'aborted': True}
     # Import top hierarchy wiki page
+    max_depth = _get_max_depth(replaced_wiki_info)
     for info in replaced_wiki_info:
         if info['parent_wiki_name'] is None:
             try:
@@ -929,7 +933,6 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
             except Exception as err:
                 logger.error(err)
     logger.info('imported top hierarchy wiki pages')
-    max_depth = _get_max_depth(replaced_wiki_info)
     # Import child wiki pages
     for depth in range(1, max_depth + 1):
         try:
@@ -1025,8 +1028,8 @@ def _exclude_symbols(path):
     return has_slash, has_sharp, has_dot, is_url
 
 def _exclude_tooltip(match_path):
-    rep_tooltip_single = r'(?P<path>.+?)[ ]+\'(?P<tooltip>.+?(?<!\\)(?:\\\\)*)\''
-    rep_tooltip_double = r'(?P<path>.+?)[ ]+"(?P<tooltip>.+?(?<!\\)(?:\\\\)*)"'
+    rep_tooltip_single = r'(?P<path>.+?)[ ]+\'(?P<tooltip>.*?(?<!\\)(?:\\\\)*)\''
+    rep_tooltip_double = r'(?P<path>.+?)[ ]+"(?P<tooltip>.*?(?<!\\)(?:\\\\)*)"'
     match_tooltip_single = list(re.finditer(rep_tooltip_single, match_path))
     match_tooltip_double = list(re.finditer(rep_tooltip_double, match_path))
     # exclude tooltip
@@ -1048,16 +1051,17 @@ def _check_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_ma
         another_wiki_name = file_name.split('^')[0]
         file_name = file_name.split('^')[1]
         # check as wikiName/fileName
-        file_id = _process_attachment_file_name_exist(has_hat, another_wiki_name, file_name, dir_id, node_file_mapping)
+        file_id = _process_attachment_file_name_exist(another_wiki_name, file_name, dir_id, node_file_mapping)
     else:
         # check as fileName
-        file_id = _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, node_file_mapping)
+        file_id = _process_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_mapping)
 
     return file_id
 
-def _process_attachment_file_name_exist(has_hat, wiki_name, file_name, dir_id, node_file_mapping):
+def _process_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_mapping):
     # check as fileName
-    replaced_wiki_name = _replace_common_rule(wiki_name) if has_hat else wiki_name
+    replaced_wiki_name = _replace_common_rule(wiki_name)
+    replaced_wiki_name = unicodedata.normalize('NFC', replaced_wiki_name)
     replaced_file_name = _replace_common_rule(file_name)
     replaced_file_name = unicodedata.normalize('NFC', replaced_file_name)
     wiki_file = replaced_wiki_name + '^' + replaced_file_name
@@ -1105,7 +1109,8 @@ def _create_wiki_folder(osf_cookie, p_guid, folder_name, parent_path):
     try:
         folder_response = waterbutler.create_folder(osf_cookie, p_guid, folder_name, parent_path)
         folder_response.raise_for_status()
-    except Exception:
+    except Exception as e:
+        logger.info(e)
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_short='Error when create wiki folder',
             message_long='\t' + _('An error occures when create wiki folder : ') + folder_name + '\t'
@@ -1140,7 +1145,7 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
     replaced_wiki_info = []
     rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
     rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
-    node_file_mapping = node.guids.first()._id
+    node_file_mapping = wiki_utils.get_node_file_mapping(node, dir_id)
     import_wiki_name_list = wiki_utils.get_import_wiki_name_list(wiki_info)
     for info in wiki_info:
         if task.is_aborted():
@@ -1171,7 +1176,7 @@ def _wiki_import_create_or_update(path, data, auth, node, task, p_wname=None, **
         parent_wiki = WikiPage.objects.get_for_node(node, parent_wiki_name)
         if not parent_wiki:
             # Import Error
-            return {}
+            raise Exception('Parent page does not exist')
     wiki_version = WikiVersion.objects.get_for_node(node, wiki_name)
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
@@ -1235,7 +1240,7 @@ def _create_import_error_list(wiki_infos, imported_list):
     return import_errors
 
 @must_be_valid_project
-@must_have_permission(ADMIN)
+@must_have_addon('wiki', 'node')
 def project_get_task_result(task_id, node, **kwargs):
     res = AsyncResult(task_id, app=celery_app)
     result = None
@@ -1261,7 +1266,7 @@ def _extract_err_msg(err):
 @must_have_permission(ADMIN)
 def project_clean_celery_tasks(node, **kwargs):
     qs_alive_task = WikiImportTask.objects.filter(status=WikiImportTask.STATUS_RUNNING, node=node)
-    alive_task_ids = WikiImportTask.objects.values_list('task_id').filter(status=WikiImportTask.STATUS_RUNNING, node=node)[0]
+    alive_task_ids = WikiImportTask.objects.values_list('task_id').filter(status=WikiImportTask.STATUS_RUNNING, node=node)
     for task_id in alive_task_ids:
         task = AbortableAsyncResult(task_id, app=celery_app)
         task.abort()
