@@ -53,7 +53,29 @@ class TestWaffleFilesProviderView:
             }
         )
 
-    def test_must_have_auth(self, app, addon_files_url):
+    @responses.activate
+    def test_must_have_auth(self, app, file, node, addon_files_url):
+        from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
+
+        prepare_mock_wb_response(
+            path=file.path + '/',
+            node=node,
+            provider='1',
+            files=[
+                {
+                    'name': file.name,
+                    'path': file.path,
+                    'materialized': file.materialized_path,
+                    'kind': 'file',
+                    'modified': file.modified.isoformat(),
+                    'extra': {
+                        'extra': 'readAllAboutIt'
+                    },
+                    'provider': '1'
+                },
+            ]
+        )
+
         res = app.get(addon_files_url, expect_errors=True)
         assert res.status_code == 401
 
@@ -66,6 +88,7 @@ class TestWaffleFilesProviderView:
         assert res.status_code == 403
 
     def test_get_file_provider(self, app, user, addon_files_url, file, provider_gv_id):
+
         res = app.get(
             addon_files_url,
             auth=user.auth
@@ -119,7 +142,7 @@ class TestWaffleFilesView:
                 'version': 'v2',
                 'node_id': node._id,
                 'provider': f'{provider_gv_id}/',
-                'path':  f'{file._id}/'
+                'path': f'{file._id}/'
             }
         )
 
@@ -141,8 +164,9 @@ class TestWaffleFilesView:
     @responses.activate
     def test_get_file_provider(self, app, user, file_url, file, provider_gv_id, node):
         from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
+
         prepare_mock_wb_response(
-            path=file.path,
+            path=file.path + '/',
             node=node,
             provider='1',
             files=[

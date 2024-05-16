@@ -60,7 +60,6 @@ from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
-import requests
 from osf.utils.requests import get_request_and_user_id
 from osf import features
 from addons.base.utils import GravyValetAddonAppConfig

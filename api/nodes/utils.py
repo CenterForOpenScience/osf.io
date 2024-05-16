@@ -38,7 +38,6 @@ def get_file_object(target, path, provider, request):
             obj = get_object_or_error(model, Q(target_object_id=target.pk, target_content_type=content_type, _id=path.strip('/')), request)
         return obj
 
-    from osf.utils.requests import get_current_request
     addon = target.get_addon(provider, request=request)
     if isinstance(target, AbstractNode) and not addon or not addon.configured:
         raise NotFound(f'The {provider} provider is not configured for this project.')

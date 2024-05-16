@@ -4,7 +4,6 @@ import itertools
 import logging
 import re
 import waffle
-import requests
 from future.moves.urllib.parse import urljoin
 import warnings
 from rest_framework import status as http_status

@@ -1,3 +1,4 @@
+import waffle
 from builtins import str
 
 from collections import defaultdict
@@ -40,6 +41,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ExcludeWithdrawals
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
+from osf import features
 from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
@@ -675,12 +677,16 @@ class WaterButlerMixin(object):
         # stuff list into QuerySet
         return BaseFileNode.objects.filter(id__in=[item.id for item in file_objs])
 
-    def get_file_node_from_wb_resp(self, item, auth):
+    def get_file_node_from_wb_resp(self, item):
         """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
         attrs = item['attributes']
-        provider_name = GravyValetAddonAppConfig(self, attrs['provider'], self.request).legacy_config.name
+        if waffle.flag_is_active(self.request, features.ENABLE_GV):
+            provider_determinent = GravyValetAddonAppConfig(self, attrs['provider'], self.request).legacy_config.name
+        else:
+            provider_determinent = attrs['provider']
+
         file_node = BaseFileNode.resolve_class(
-            provider_name,
+            provider_determinent,
             BaseFileNode.FOLDER if attrs['kind'] == 'folder'
             else BaseFileNode.FILE,
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
