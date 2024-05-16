@@ -469,6 +469,7 @@ class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
     )
 
     required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
 
     view_category = 'preprints'
     view_name = 'preprint-relationships-subjects'
