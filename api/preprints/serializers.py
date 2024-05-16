@@ -222,6 +222,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         # Overrides TaxonomizableSerializerMixin
         return {'preprint_id': '<_id>'}
 
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'preprints:preprint-relationships-subjects'
+
     def get_preprint_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 

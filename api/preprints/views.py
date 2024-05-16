@@ -58,7 +58,7 @@ from api.nodes.permissions import (
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
-from api.subjects.views import BaseResourceSubjectsList
+from api.subjects.views import BaseResourceSubjectsList, SubjectRelationshipBaseView
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
@@ -455,6 +455,25 @@ class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
 
     def get_resource(self):
         return self.get_preprint()
+
+class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ModeratorIfNeverPublicWithdrawn,
+        ContributorOrPublic,
+        PreprintPublishedOrWrite,
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+
+    view_category = 'preprints'
+    view_name = 'preprint-relationships-subjects'
+
+    def get_resource(self, check_object_permissions=True):
+        return self.get_preprint(check_object_permissions=check_object_permissions)
 
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*
