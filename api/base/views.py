@@ -44,7 +44,7 @@ from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
 from waffle import sample_is_active
-
+from addons.base.utils import GravyValetAddonAppConfig
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -626,14 +626,17 @@ class WaterButlerMixin(object):
         """
         node = self.get_node(check_object_permissions=False)
         content_type = ContentType.objects.get_for_model(node)
+        from addons.base.utils import GravyValetAddonAppConfig
 
         objs_to_create = defaultdict(lambda: [])
         file_objs = []
 
         for item in files_list:
             attrs = item['attributes']
+            config = GravyValetAddonAppConfig(self, attrs['provider'], self.request)
+
             base_class = BaseFileNode.resolve_class(
-                attrs['provider'],
+                config.legacy_config.short_name,
                 BaseFileNode.FOLDER if attrs['kind'] == 'folder'
                 else BaseFileNode.FILE,
             )
@@ -660,6 +663,7 @@ class WaterButlerMixin(object):
             else:
                 file_objs.append(file_obj)
 
+            file_obj.provider = config.config_id
             file_obj.update(None, attrs, user=self.request.user, save=False)
 
         bulk_update(file_objs)
@@ -671,11 +675,12 @@ class WaterButlerMixin(object):
         # stuff list into QuerySet
         return BaseFileNode.objects.filter(id__in=[item.id for item in file_objs])
 
-    def get_file_node_from_wb_resp(self, item):
+    def get_file_node_from_wb_resp(self, item, auth):
         """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
         attrs = item['attributes']
+        provider_name = GravyValetAddonAppConfig(self, attrs['provider'], self.request).legacy_config.name
         file_node = BaseFileNode.resolve_class(
-            attrs['provider'],
+            provider_name,
             BaseFileNode.FOLDER if attrs['kind'] == 'folder'
             else BaseFileNode.FILE,
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])

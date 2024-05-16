@@ -60,30 +60,33 @@ def format_last_known_metadata(auth, node, file, error_type):
 class GravyValetAddonAppConfig:
     class MockNodeSetting:
         def __init__(self, resource, auth, legacy_config):
-            resp = requests.get(
-                settings.GV_RESOURCE_DOMAIN.format(owner_uri=resource.absolute_url),
-                auth=auth
-            )
-            print("???")
-            resp.raise_for_status()
-            data = resp.json()['data']
-
-            requests.get(data['relationships'], auth=auth)
+            ...
 
     class MockUserSetting:
         def __init__(self, resource, auth, legacy_config):
-            requests.get(
-                settings.GV_USER_DOMAIN.format(owner_uri=resource.absolute_url),
-                auth=auth
-            )
+            ...
 
-    def __init__(self, data, external_storage_service_data, resource, auth):
-        self.data = data
+    @staticmethod
+    def get_configured_storage_addons_data(config_id, auth):
+        print(auth)
+        resp = requests.get(
+            settings.GV_NODE_ADDON_ENDPOINT.format(config_id=config_id),
+        )
+        return resp.json()
 
-        self.external_storage_service_data = external_storage_service_data
+    def get_external_service_addon_data(self, auth):
+        resp = requests.get(
+            self.configured_storage_addons_data['data']['relationships']['external_storage_service']['links']['related'],
+        )
+        return resp.json()
+
+    def __init__(self, resource, config_id, auth):
+        self.config_id = config_id
+        self.configured_storage_addons_data = self.get_configured_storage_addons_data(config_id, auth)
         # TODO: Names in GV must be exact matches?
-        self.name = self.external_storage_service_data['data']['attributes']['name']
-        self.legacy_config = settings.ADDONS_AVAILABLE_DICT[self.name]
+        self.external_storage_service_data = self.get_external_service_addon_data(auth)
+        self.addon_name = self.external_storage_service_data['data']['attributes']['name']
+        self.legacy_config = settings.ADDONS_AVAILABLE_DICT[self.addon_name]
         self.resource = resource
         self.auth = auth
         self.FOLDER_SELECTED = self.legacy_config.FOLDER_SELECTED

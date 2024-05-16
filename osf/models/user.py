@@ -1229,24 +1229,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         request, user_id = get_request_and_user_id()
 
         if hasattr(request, 'user') and waffle.flag_is_active(request, features.ENABLE_GV) and name not in ['osfstorage', 'wiki']:
-            resp = requests.get(
-                settings.GV_NODE_ADDON_ENDPOINT.format(addon_id=name),
-                auth=(request.user.username, request.user.password)
-            )
-            configured_storage_addon = resp.json()
-            resp = requests.get(
-                configured_storage_addon['data']['relationships']['external_storage_service']['links']['related'],
-                auth=(request.user.username, request.user.password)
-            )
-            external_storage_service_data = resp.json()
-            return GravyValetAddonAppConfig(
-                configured_storage_addon,
-                external_storage_service_data,
-                self,
-                auth=(request.user.username, request.user.password)
-            )
+            return GravyValetAddonAppConfig(self, name, auth=(request.user.username, request.user.password))
         else:
             return super().get_addon(name, is_deleted)
+
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
         """

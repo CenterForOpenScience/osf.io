@@ -163,13 +163,12 @@ class TestWaffleFilesView:
         # responses.add_passthru('http://192.168.168.167:7777/v1/resources/2839a/providers/1/66461cb004537100a208ffdd/?meta=True&view_only')
         responses.add_passthru('http://192.168.168.167:8004/v1/configured-storage-addons/1/base_account/')
         responses.add_passthru('http://192.168.168.167:8004/v1/authorized-storage-accounts/2/external_storage_service/')
-        res = app.get(
-            file_url,
-            auth=user.auth
-        )
+        res = app.get(file_url, auth=user.auth)
 
         assert res.status_code == 200
-        attributes = res.json['data']['attributes']
+        data = res.json['data']
+        assert len(data) == 1
+        attributes = data[0]['attributes']
+        assert attributes['name'] == 'test_file'
+        assert attributes['path'] == f'/{file._id}'
         assert attributes['provider'] == str(provider_gv_id)
-        assert attributes['name'] == str(provider_gv_id)
-        assert res.json['data']['id'] == str(provider_gv_id)
