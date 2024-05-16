@@ -366,12 +366,7 @@
             var result = '';
             var timeoutCtn = Math.ceil(timeout_ms / interval_ms);
             while (count < timeoutCtn) {
-                await new Promise(function(resolve){
-                    setTimeout(async function(){
-                        result = await getCeleryTaskResult(url, operation)
-                        resolve();
-                    }, interval_ms);
-                });
+                result = await getCeleryTaskResult(url, operation)
                 if (result) {
                     if(result.aborted) {
                         alert('${_("Wiki import aborted.")}');
@@ -381,6 +376,9 @@
                     }
                     break;
                 }
+                await new Promise(function(resolve){
+                    setTimeout(resolve, interval_ms);
+                });
                 count++;
             }
             if (count === timeoutCtn){
@@ -410,7 +408,6 @@
                             alert('${_("import error")}');
                         }
                     } else {
-                        console.log('no response json');
                         alert('${_("import error")}');
                     }
                     return;
@@ -419,7 +416,7 @@
         }
 
         function cleanCeleryTask() {
-            var cleanTasksUrl = ${ urls['api']['base'] | sjson, n } + 'clean_celery_tasks/';
+            var cleanTasksUrl = ${ urls['api']['base'] | sjson, n } + 'tasks/clean/';
             $.ajax({
                 type: 'POST',
                 cache: false,

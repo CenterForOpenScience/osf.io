@@ -27,8 +27,8 @@
         var $abortErrorMsg = $('.abortErrorMsg');
         $('#abort-wiki-import').on('click', async function () {
             $submitForm.attr('disabled', 'disabled').text('${_("Aborting")}');
-            const cleanTasksUrl = ${ urls['api']['base'] | sjson, n } + 'clean_celery_tasks/';
-            const getAbortWikiImportResultUrl = ${ urls['api']['base'] | sjson, n } + 'get_abort_wiki_import_result/';
+            const cleanTasksUrl = ${ urls['api']['base'] | sjson, n } + 'tasks/clean/';
+            const getAbortWikiImportResultUrl = ${ urls['api']['base'] | sjson, n } + 'abort/result/';
             const abortWikiImport = await requestAbortWikiImport(cleanTasksUrl, $abortErrorMsg);
             const abortTaskResult = await intervalGetAbortWikiImportResult(getAbortWikiImportResultUrl, ABORT_WIKI_IMPORT_INTERVAL, ABORT_WIKI_IMPORT_TIMEOUT)
         });
@@ -60,12 +60,7 @@
         var result = '';
         var timeoutCtn = Math.ceil(timeout_ms / interval_ms)
         while (count < timeoutCtn) {
-            await new Promise(function(resolve){
-                setTimeout(async function(){
-                    result = await getAbortWikiImportResult(url)
-                    resolve();
-                }, interval_ms);
-            });
+            result = await getAbortWikiImportResult(url);
             if (result) {
                 if(result.aborted) {
                     alert('Wiki import aborted.')
@@ -74,6 +69,9 @@
                 }
                 break;
             }
+            await new Promise(function(resolve){
+                setTimeout(resolve, interval_ms);
+            });
             count++;
         }
         if (count === timeoutCtn){
