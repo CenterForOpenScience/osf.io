@@ -456,6 +456,7 @@ class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
     def get_resource(self):
         return self.get_preprint()
 
+
 class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
     """
@@ -474,6 +475,16 @@ class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
 
     def get_resource(self, check_object_permissions=True):
         return self.get_preprint(check_object_permissions=check_object_permissions)
+
+    def get_object(self):
+        resource = self.get_resource(check_object_permissions=False)
+        obj = {
+            'data': resource.subjects.all(),
+            'self': resource,
+        }
+        self.check_object_permissions(self.request, resource)
+        return obj
+
 
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*
