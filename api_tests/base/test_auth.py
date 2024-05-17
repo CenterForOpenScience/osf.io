@@ -443,7 +443,7 @@ class TestCSRFValidation:
 
     @pytest.fixture
     def csrf_token(self):
-        return csrf._get_new_csrf_token()
+        return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
     @pytest.fixture
     def payload(self):
