@@ -13,7 +13,6 @@ from django.conf import settings as django_conf_settings
 from unittest import mock
 import itsdangerous
 import pytest
-import pytz
 from importlib import import_module
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
