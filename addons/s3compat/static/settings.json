@@ -3,7 +3,7 @@
                            "host": "ds.jp-east.idcfcloud.com",
                            "bucketLocations": {"us-east-1": {"name": "Fukushima"}}},
                           {"name": "SAKURA Cloud",
-                           "host": "s3.isk01.sakurastorage.jp"},
+                           "host": "s3.isk01.sakurastorage.jp:443"},
                           {"name": "Wasabi",
                            "host": "s3.wasabisys.com",
                            "bucketLocations": {
