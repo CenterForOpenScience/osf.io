@@ -1,6 +1,3 @@
-from django.utils.six.moves import input
-
-
 # From https://stackoverflow.com/a/39257511/1157536
 def ask_for_confirmation(question, default=None):
     """Ask for confirmation before proceeding.
