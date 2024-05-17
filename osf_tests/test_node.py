@@ -762,7 +762,7 @@ class TestLogging:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.EMBARGO_INITIATED
         # date is tzaware
-        assert last_log.date.tzinfo == pytz.utc
+        assert last_log.date.tzinfo == datetime.timezone.utc
 
         # updates node.modified
         assert_datetime_equal(node.modified, last_log.date)
@@ -4195,7 +4195,7 @@ class TestNodeLog:
         assert bool(log.action)
 
     def test_tz_date(self, log):
-        assert log.date.tzinfo == pytz.UTC
+        assert log.date.tzinfo == datetime.timezone.utc
 
     def test_original_node_and_current_node_for_registration_logs(self):
         user = UserFactory()

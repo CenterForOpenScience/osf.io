@@ -1675,7 +1675,7 @@ class TestAddonFileViews(OsfTestCase):
         assert file_node.history[1] == file_data
 
     @with_sentry
-    @mock.patch('framework.sentry.push_scope')
+    @mock.patch('framework.sentry.isolation_scope')
     @mock.patch('framework.sentry.capture_message')
     def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture: Mock, mock_set_context: Mock):
         file_node = self.get_test_file()
