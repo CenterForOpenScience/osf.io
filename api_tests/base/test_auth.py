@@ -491,7 +491,7 @@ class TestCSRFValidation:
                 expect_errors=True
             )
         assert res.status_code == 403
-        assert csrf.REASON_BAD_TOKEN in res.json['errors'][0]['detail']
+        assert csrf.REASON_CSRF_TOKEN_MISSING in res.json['errors'][0]['detail']
 
     def test_send_csrf_cookie_and_headers(self, app, csrf_token, url, payload):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
