@@ -57,6 +57,7 @@ from osf.models import (
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
+from osf.utils.requests import requests_retry_session
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -65,7 +66,6 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
-from osf.utils.requests import requests_retry_session
 
 ERROR_MESSAGES = {'FILE_GONE': """
 <style>
