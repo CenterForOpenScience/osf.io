@@ -1,8 +1,15 @@
 from django.conf import settings as api_settings
-from django.middleware.csrf import _sanitize_token, _get_new_csrf_string, _mask_cipher_secret
+from django.middleware.csrf import _get_new_csrf_string, _mask_cipher_secret, _check_token_format, CSRF_SECRET_LENGTH
 from framework.auth.core import get_current_user_id
 from flask import request, g
 
+
+# replacement for token sanitization, as it was removed in Django 4.2
+def _sanitize_token(token):
+    _check_token_format(token)
+    if len(token) == CSRF_SECRET_LENGTH:
+        return _mask_cipher_secret(token)
+    return token
 
 # Mostly a port of django.middleware.csrf.CsrfMiddleware._get_token
 # with the session bits removed
