@@ -9,10 +9,14 @@ from osf_tests.factories import (
 )
 from waffle.testutils import override_flag
 from django.shortcuts import reverse
+from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
 
 
 @pytest.mark.django_db
 class TestWaffleFilesProviderView:
+    """
+    Just passing id as name, no need to mock GV
+    """
 
     @pytest.fixture(autouse=True)
     def override_flag(self):
@@ -31,7 +35,6 @@ class TestWaffleFilesProviderView:
     def node(self, user):
         return ProjectFactory(
             creator=user,
-            comment_level='public'
         )
 
     @pytest.fixture()
@@ -88,17 +91,13 @@ class TestWaffleFilesProviderView:
         assert res.status_code == 403
 
     def test_get_file_provider(self, app, user, addon_files_url, file, provider_gv_id):
-
-        res = app.get(
-            addon_files_url,
-            auth=user.auth
-        )
+        res = app.get(addon_files_url, auth=user.auth)
 
         assert res.status_code == 200
         attributes = res.json['data']['attributes']
         assert attributes['provider'] == str(provider_gv_id)
         assert attributes['name'] == str(provider_gv_id)
-        assert res.json['data']['id'] == provider_gv_id
+        assert res.json['data']['id'] == str(provider_gv_id)
 
 
 @pytest.mark.django_db
@@ -146,14 +145,38 @@ class TestWaffleFilesView:
             }
         )
 
-    def test_must_have_auth(self, app, file_url):
+    @responses.activate
+    def test_must_have_auth(self, app, user, file_url, file, provider_gv_id, node):
+        prepare_mock_wb_response(
+            node=node,
+            path=file.path + '/',
+            provider='1',
+            status_code=505  # invalid auth should not reach mock
+        )
+
+        responses.add_passthru('http://192.168.168.167:8004/v1/configured-storage-addons/1/base_account/')
+        responses.add_passthru('http://192.168.168.167:8004/v1/authorized-storage-accounts/2/external_storage_service/')
+
         res = app.get(
             file_url,
+            auth=('invaid', 'auth'),
             expect_errors=True
         )
+        assert res.status_code != 505   # invalid auth should not reach mock response
         assert res.status_code == 401
 
-    def test_must_be_contributor(self, app, file_url):
+    @responses.activate
+    def test_must_be_contributor(self, app, user, file_url, file, provider_gv_id, node):
+        prepare_mock_wb_response(
+            node=node,
+            path=file.path + '/',
+            provider='1',
+            status_code=403
+        )
+
+        responses.add_passthru('http://192.168.168.167:8004/v1/configured-storage-addons/1/base_account/')
+        responses.add_passthru('http://192.168.168.167:8004/v1/authorized-storage-accounts/2/external_storage_service/')
+
         res = app.get(
             file_url,
             auth=AuthUserFactory().auth,
@@ -163,8 +186,6 @@ class TestWaffleFilesView:
 
     @responses.activate
     def test_get_file_provider(self, app, user, file_url, file, provider_gv_id, node):
-        from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
-
         prepare_mock_wb_response(
             path=file.path + '/',
             node=node,

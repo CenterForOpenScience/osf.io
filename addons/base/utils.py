@@ -68,7 +68,6 @@ class GravyValetAddonAppConfig:
 
     @staticmethod
     def get_configured_storage_addons_data(config_id, auth):
-        print(auth)
         resp = requests.get(
             settings.GV_NODE_ADDON_ENDPOINT.format(config_id=config_id),
         )

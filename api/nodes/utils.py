@@ -58,7 +58,7 @@ def get_file_object(target, path, provider, request):
         headers={'Authorization': request.META.get('HTTP_AUTHORIZATION')},
     )
 
-    if waterbutler_request.status_code == 401:
+    if waterbutler_request.status_code in (401, 403):
         raise PermissionDenied
 
     if waterbutler_request.status_code == 404:

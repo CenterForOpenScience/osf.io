@@ -1452,7 +1452,7 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
     def get_id(obj):
         from osf.utils.requests import get_current_request
         if waffle.flag_is_active(get_current_request(), features.ENABLE_GV):
-            return obj.id
+            return obj.provider
         else:
             return f'{obj.node._id}:{obj.provider}'
 
