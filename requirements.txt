@@ -55,7 +55,7 @@ sentry-sdk[django, flask, celery]==2.2.0
 django-redis==5.4.0
 
 # API requirements
-Django==4.0.10
+Django==4.2.13
 djangorestframework==3.15.1
 django-cors-headers==4.3.1
 djangorestframework-bulk==0.2.1
