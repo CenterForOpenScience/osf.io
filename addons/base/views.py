@@ -197,6 +197,8 @@ def check_resource_permissions(resource, auth, action):
         return _check_node_permissions(resource, auth, required_permission, action)
     elif isinstance(resource, Preprint):
         return _check_preprint_permissions(resource, auth, required_permission)
+    elif isinstance(resource, DraftRegistration):
+        return _check_draft_registration_permissions(resource, auth, required_permission)
     else:
         raise NotImplementedError()
 
@@ -222,6 +224,12 @@ def _check_preprint_permissions(preprint, auth, permission):
     if permission == permissions.READ:
         return preprint.can_view_files(auth)
     return preprint.can_edit(auth)
+
+
+def _check_draft_registration_permissions(draft_registration, auth, permission):
+    if permission == permissions.READ:
+        return draft_registration.can_view(auth)
+    return draft_registration.can_edit(auth)
 
 
 def _check_hierarchical_write_permissions(resource, auth):
@@ -383,7 +391,7 @@ def get_auth(auth, **kwargs):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # Validate provider, exclude Preprints that don't have `get_addon`.
-    if not isinstance(resource, Preprint):
+    if not isinstance(resource, (DraftRegistration, Preprint)):
         provider = resource.get_addon(waterbutler_data['provider'])
         if not provider:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -426,6 +434,9 @@ def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
     if isinstance(resource, Preprint):
         credentials = resource.serialize_waterbutler_credentials()
         waterbutler_settings = resource.serialize_waterbutler_settings()
+    elif isinstance(resource, DraftRegistration):
+        credentials = resource.branched_from.serialize_waterbutler_credentials()
+        waterbutler_settings = resource.branched_from.serialize_waterbutler_settings()
     elif fileversion:
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
