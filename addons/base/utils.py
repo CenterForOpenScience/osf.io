@@ -59,12 +59,28 @@ def format_last_known_metadata(auth, node, file, error_type):
 
 class GravyValetAddonAppConfig:
     class MockNodeSetting:
-        def __init__(self, resource, auth, legacy_config):
-            ...
+        def __init__(self, resource, auth, legacy_config, gv_data):
+            self.gv_data = gv_data
+
+        @property
+        def configured(self):
+            return True
+
+        @property
+        def config_id(self):
+            return self.gv_data.config_id
 
     class MockUserSetting:
-        def __init__(self, resource, auth, legacy_config):
-            ...
+        def __init__(self, resource, auth, legacy_config, gv_data):
+            self.gv_data = gv_data
+
+        @property
+        def configured(self):
+            return True
+
+        @property
+        def config_id(self):
+            return self.gv_data.config_id
 
     @staticmethod
     def get_configured_storage_addons_data(config_id, auth):
@@ -95,11 +111,11 @@ class GravyValetAddonAppConfig:
 
     @property
     def node_settings(self):
-        return self.MockNodeSetting(self.resource, self.auth, self.legacy_config)
+        return self.MockNodeSetting(self.resource, self.auth, self.legacy_config, self)
 
     @property
     def user_settings(self):
-        return self.MockUserSetting(self.resource, self.auth, self.legacy_config)
+        return self.MockUserSetting(self.resource, self.auth, self.legacy_config, self)
 
     @property
     def configured(self):

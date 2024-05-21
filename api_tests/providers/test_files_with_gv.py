@@ -38,14 +38,6 @@ class TestWaffleFilesProviderView:
         )
 
     @pytest.fixture()
-    def file(self, user, node):
-        return api_utils.create_test_file(
-            node,
-            user,
-            create_guid=False
-        )
-
-    @pytest.fixture()
     def addon_files_url(self, node, provider_gv_id):
         return reverse(
             'nodes:node-storage-provider-detail',
@@ -57,28 +49,7 @@ class TestWaffleFilesProviderView:
         )
 
     @responses.activate
-    def test_must_have_auth(self, app, file, node, addon_files_url):
-        from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
-
-        prepare_mock_wb_response(
-            path=file.path + '/',
-            node=node,
-            provider='1',
-            files=[
-                {
-                    'name': file.name,
-                    'path': file.path,
-                    'materialized': file.materialized_path,
-                    'kind': 'file',
-                    'modified': file.modified.isoformat(),
-                    'extra': {
-                        'extra': 'readAllAboutIt'
-                    },
-                    'provider': '1'
-                },
-            ]
-        )
-
+    def test_must_have_auth(self, app, node, addon_files_url):
         res = app.get(addon_files_url, expect_errors=True)
         assert res.status_code == 401
 
@@ -90,7 +61,7 @@ class TestWaffleFilesProviderView:
         )
         assert res.status_code == 403
 
-    def test_get_file_provider(self, app, user, addon_files_url, file, provider_gv_id):
+    def test_get_file_provider(self, app, user, addon_files_url, provider_gv_id):
         res = app.get(addon_files_url, auth=user.auth)
 
         assert res.status_code == 200

@@ -1228,7 +1228,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         request, user_id = get_request_and_user_id()
 
         if hasattr(request, 'user') and waffle.flag_is_active(request, features.ENABLE_GV) and name not in ['osfstorage', 'wiki']:
-            return GravyValetAddonAppConfig(self, name, auth=(request.user.username, request.user.password))
+            return GravyValetAddonAppConfig(
+                self,
+                name,
+                auth=(request.user.username, request.user.password)
+            ).user_settings
         else:
             return super().get_addon(name, is_deleted)
 

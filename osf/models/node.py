@@ -2438,7 +2438,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self,
                 name,
                 auth=(request.user.username, request.user.password)
-            )
+            ).node_settings
         else:
             return super().get_addon(name, is_deleted)
 

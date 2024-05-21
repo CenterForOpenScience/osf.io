@@ -636,7 +636,8 @@ class WaterButlerMixin(object):
         for item in files_list:
             attrs = item['attributes']
             if waffle.flag_is_active(self.request, features.ENABLE_GV):
-                short_name = GravyValetAddonAppConfig(self, attrs['provider'], self.request).legacy_config.short_name
+                gv_config = GravyValetAddonAppConfig(self, attrs['provider'], self.request)
+                short_name = gv_config.legacy_config.short_name
             else:
                 short_name = attrs['provider']
 
@@ -670,8 +671,7 @@ class WaterButlerMixin(object):
 
             # TODO: Improve robustness
             if waffle.flag_is_active(self.request, features.ENABLE_GV):
-                config = GravyValetAddonAppConfig(self, attrs['provider'], self.request).legacy_config
-                file_obj.provider = config.config_id
+                file_obj.provider = gv_config.node_settings.config_id
 
             file_obj.update(None, attrs, user=self.request.user, save=False)
 
