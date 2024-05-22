@@ -108,7 +108,7 @@ class OsfguidSequence:
 
 
 def forever_now():
-    return datetime.datetime(2123, 5, 4, tzinfo=datetime.timezone.utc)
+    return datetime.datetime(2123, 5, 4, tzinfo=datetime.UTC)
 
 
 class TestSerializers(OsfTestCase):

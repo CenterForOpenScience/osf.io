@@ -167,7 +167,7 @@ def _get_surrounding_guids(guid_referent):
     return surrounding_guids
 
 def _timestamp_to_dt(timestamp):
-    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
+    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.UTC)
 
 def _timestamp_to_date(timestamp):
     dt_obj = _timestamp_to_dt(timestamp)

@@ -64,7 +64,7 @@ class Command(BaseCommand):
         print('\t'.join((label, *map(str, lineitems))))
 
     def _generate_random_countedusage(self, n, max_age):
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.now(tz=datetime.UTC)
         for _ in range(n):
             seconds_back = random.randint(0, max_age)
             timestamp_time = now - datetime.timedelta(seconds=seconds_back)
