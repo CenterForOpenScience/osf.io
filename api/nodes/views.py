@@ -1,6 +1,6 @@
 import re
 
-from distutils.version import StrictVersion
+from packaging.version import Version
 from django.apps import apps
 from django.db.models import F, Max, Q, Subquery
 from django.utils import timezone
@@ -642,7 +642,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     ordering = ('-modified',)
 
     def get_serializer_class(self):
-        if StrictVersion(getattr(self.request, 'version', '2.0')) >= StrictVersion(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
+        if Version(getattr(self.request, 'version', '2.0')) >= Version(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
             return DraftRegistrationSerializer
         return DraftRegistrationLegacySerializer
 
@@ -673,7 +673,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     view_name = 'node-draft-registration-detail'
 
     def get_serializer_class(self):
-        if StrictVersion(getattr(self.request, 'version', '2.0')) >= StrictVersion(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
+        if Version(getattr(self.request, 'version', '2.0')) >= Version(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
             return DraftRegistrationDetailSerializer
         return DraftRegistrationDetailLegacySerializer
 

@@ -3,7 +3,7 @@ from rest_framework import exceptions as drf_exceptions
 from rest_framework import versioning as drf_versioning
 from rest_framework.compat import unicode_http_header
 from rest_framework.utils.mediatypes import _MediaType
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from api.base import exceptions
 from api.base import utils
@@ -40,7 +40,7 @@ def get_latest_sub_version(major_version):
     return LATEST_VERSIONS.get(major_version, None)
 
 def get_kebab_snake_case_field(version, field):
-    if StrictVersion(version) < StrictVersion(KEBAB_CASE_VERSION):
+    if Version(version) < Version(KEBAB_CASE_VERSION):
         return field.replace('-', '_')
     else:
         return field

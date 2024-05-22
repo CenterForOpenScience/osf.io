@@ -1,5 +1,5 @@
 import re
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from rest_framework import generics
 from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated
@@ -218,7 +218,7 @@ class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, 
     def get_object(self):
         preprint = self.get_preprint()
         auth = get_user_auth(self.request)
-        type_ = 'linked_preprint_nodes' if StrictVersion(self.request.version) < StrictVersion('2.13') else 'nodes'
+        type_ = 'linked_preprint_nodes' if Version(self.request.version) < Version('2.13') else 'nodes'
         obj = {
             'data': {'id': preprint.node._id, 'type': type_} if preprint.node and preprint.node.can_view(auth) else None,
             'self': preprint,

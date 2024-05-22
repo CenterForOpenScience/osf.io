@@ -1,5 +1,5 @@
 from django.db import connection
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -571,7 +571,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         """
         user = self.context['request'].user
         request_version = self.context['request'].version
-        default_perm = [osf_permissions.READ] if StrictVersion(request_version) < StrictVersion('2.11') else []
+        default_perm = [osf_permissions.READ] if Version(request_version) < Version('2.11') else []
 
         # View only link users should always get `READ` permissions regardless of other permissions
         if Auth(private_key=self.context['request'].query_params.get('view_only')).private_link:

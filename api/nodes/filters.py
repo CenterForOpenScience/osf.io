@@ -1,5 +1,5 @@
 from copy import deepcopy
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from django.db.models import F, Q, Exists, OuterRef
 
@@ -81,7 +81,7 @@ class UserNodesFilterMixin(NodesFilterMixin):
             if user.is_anonymous:
                 # Anonymous users have no perms to the current node in current versions, and in
                 # older versions, will have read if node is public
-                return Q() if StrictVersion(self.request.version) < StrictVersion('2.11') and perm == permissions.READ else Q(id__in=[])
+                return Q() if Version(self.request.version) < Version('2.11') and perm == permissions.READ else Q(id__in=[])
             elif perm == permissions.READ:
                 return Q(id__in=self.build_node_list(user, permissions.READ_NODE))
             elif perm == permissions.WRITE:

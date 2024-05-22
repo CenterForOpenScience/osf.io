@@ -2,7 +2,7 @@ import pytz
 import json
 from unicodedata import normalize
 
-from distutils.version import StrictVersion
+from packaging.version import Version
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -633,7 +633,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
     """
 
     def expect_cleaner_attributes(self, request):
-        return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        return Version(getattr(request, 'version', '2.0')) >= Version(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

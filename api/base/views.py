@@ -1,5 +1,5 @@
 from collections import defaultdict
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
@@ -716,7 +716,7 @@ class DeprecatedView(JSONAPIBaseView):
 
     def determine_version(self, request, *args, **kwargs):
         version, scheme = super().determine_version(request, *args, **kwargs)
-        if StrictVersion(version) > StrictVersion(self.max_version):
+        if Version(version) > Version(self.max_version):
             self.is_deprecated = True
             raise NotFound(detail=f'This route has been deprecated. It was last available in version {self.max_version}')
         return version, scheme
