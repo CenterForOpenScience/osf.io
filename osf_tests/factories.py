@@ -80,9 +80,9 @@ class UserFactory(DjangoModelFactory):
         if emails:
             # Save for M2M population
             instance.set_unusable_password()
-            instance.save()
         for email in emails:
             instance.emails.create(address=email)
+        instance.save()
         return instance
 
     @classmethod
@@ -92,9 +92,9 @@ class UserFactory(DjangoModelFactory):
         if emails and not instance.pk:
             # Save for M2M population
             instance.set_unusable_password()
-            instance.save()
         for email in emails:
             instance.emails.create(address=email)
+        instance.save()
         return instance
 
     @factory.post_generation
