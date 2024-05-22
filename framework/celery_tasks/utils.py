@@ -63,7 +63,7 @@ def logged(event, index=None):
 
 
 def extract_context(func, *args, **kwargs):
-    arginfo = inspect.getargspec(func)
+    arginfo = inspect.getfullargspec(func)
     arg_names = arginfo.args
     defaults = {
         arg_names.pop(-1): kwarg
