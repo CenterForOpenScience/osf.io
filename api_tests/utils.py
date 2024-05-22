@@ -11,7 +11,7 @@ def create_test_file(target, user, filename='test_file', create_guid=True, size=
     test_file = root_node.append_file(filename)
     if path:
         test_file._path = path
-    if path:
+    if provider:
         test_file.provider = provider
 
     if create_guid:
