@@ -11,7 +11,6 @@ python-coveralls==2.9.3 # do we need it?
 pytest-testmon==2.1.0
 pytest-asyncio==0.23.5  # The last version that supports Python 3.6 and pytest 5.0
 pytest-html==4.1.1
-asynctest==0.13.0
 factory-boy==3.3.0
 webtest-plus==1.0.0
 Faker==23.2.1
