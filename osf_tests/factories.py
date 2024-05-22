@@ -77,20 +77,20 @@ class UserFactory(DjangoModelFactory):
     def _build(cls, target_class, *args, **kwargs):
         emails = kwargs.pop('emails', [])
         instance = super(DjangoModelFactory, cls)._build(target_class, *args, **kwargs)
-        for email in emails:
-            instance.emails.create(address=email)
         instance.set_unusable_password()
         instance.save()
+        for email in emails:
+            instance.emails.create(address=email)
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         emails = kwargs.pop('emails', [])
         instance = super(DjangoModelFactory, cls)._create(target_class, *args, **kwargs)
-        for email in emails:
-            instance.emails.create(address=email)
         instance.set_unusable_password()
         instance.save()
+        for email in emails:
+            instance.emails.create(address=email)
         return instance
 
     @factory.post_generation
