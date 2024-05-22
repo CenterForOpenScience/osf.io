@@ -250,12 +250,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     model_class = apps.get_model('osf.AbstractNode')
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-modified',)  # default ordering
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -375,7 +375,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     serializer_class = NodeDetailSerializer
     view_category = 'nodes'
@@ -423,7 +423,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = OSFUser
 
-    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
@@ -549,7 +549,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     model_class = OSFUser
 
-    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
 
     serializer_class = UserSerializer
     view_category = 'nodes'
@@ -602,7 +602,7 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
     model_class = OSFUser
 
-    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
@@ -630,7 +630,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         base_permissions.TokenHasScope,
     )
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
@@ -663,7 +663,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
         base_permissions.TokenHasScope,
         IsAdminContributor,
     )
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
@@ -1114,7 +1114,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    throttle_classes = (FilesBurstRateThrottle, FilesRateThrottle, )
+    throttle_classes = (FilesBurstRateThrottle, FilesRateThrottle)
 
     view_category = 'nodes'
     view_name = 'node-files'
@@ -1194,7 +1194,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         return queryset.annotate(
             date_modified=file_annotations.DATE_MODIFIED,
-            **file_annotations.make_show_as_unviewed_annotations(self.request.user)
+            **file_annotations.make_show_as_unviewed_annotations(self.request.user),
         )
 
 
@@ -1552,7 +1552,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
     log_lookup_url_kwarg = 'node_id'
 
-    ordering = ('-date', )
+    ordering = ('-date',)
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1591,7 +1591,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     view_category = 'nodes'
     view_name = 'node-comments'
 
-    ordering = ('-created', )  # default ordering
+    ordering = ('-created',)  # default ordering
 
     def get_default_queryset(self):
         return Comment.objects.filter(node=self.get_node(), root_target__isnull=False)
@@ -1719,7 +1719,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = NodeInstitutionsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'nodes'
     view_name = 'node-relationships-institutions'
@@ -1845,7 +1845,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
     view_category = 'nodes'
     view_name = 'node-wikis'
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-modified',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -2200,7 +2200,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         base_permissions.TokenHasScope,
         ContributorOrPublic,
     )
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -2234,7 +2234,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
     required_write_scopes = [CoreScopes.NODE_REQUESTS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     serializer_class = NodeRequestSerializer
 

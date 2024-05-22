@@ -158,9 +158,11 @@ def validate_requested_scopes(data):
     scopes = ApiOAuth2Scope.objects.filter(name__in=data)
 
     if len(scopes) != len(data):
-        raise exceptions.NotFound('Scope names must be one of: {}.'.format(
-            ', '.join(ApiOAuth2Scope.objects.values_list('name', flat=True)),
-        ))
+        raise exceptions.NotFound(
+            'Scope names must be one of: {}.'.format(
+                ', '.join(ApiOAuth2Scope.objects.values_list('name', flat=True)),
+            ),
+        )
 
     if scopes.filter(is_public=False):
         raise exceptions.ValidationError('User requested invalid scope.')

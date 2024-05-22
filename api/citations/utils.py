@@ -46,7 +46,7 @@ def render_citation(node, style='apa'):
     """Given a node, return a citation"""
     reformat_styles = ['apa', 'chicago-author-date', 'modern-language-association']
     csl = node.csl
-    data = [csl, ]
+    data = [csl]
 
     bib_source = CiteProcJSON(data)
 

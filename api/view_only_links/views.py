@@ -138,7 +138,7 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
     required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
 
     serializer_class = ViewOnlyLinkNodesSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'view-only-links'
     view_name = 'view-only-link-nodes-relationships'

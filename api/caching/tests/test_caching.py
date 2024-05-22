@@ -34,10 +34,16 @@ class TestVarnish(DbTestCase):
         small = 5
         large = 10
 
-        components = [[[range(small, random.randint(small, large))
-                        for x in range(small, random.randint(small, large))]
-                       for y in range(small, random.randint(small, large))]
-                      for z in range(small, random.randint(small, large))]
+        components = [
+            [
+                [
+                    range(small, random.randint(small, large))
+                    for _ in range(small, random.randint(small, large))
+                ]
+                for _ in range(small, random.randint(small, large))
+            ]
+            for _ in range(small, random.randint(small, large))
+        ]
 
         number_of_projects = random.randint(1, 11)
         number_of_tags = random.randint(1, 11)
@@ -120,33 +126,41 @@ class TestVarnish(DbTestCase):
                     timeout=120,
                 )
 
-                python_data[key]['_'.join(
-                    embed_values,
-                )] = python_resp.json()
+                python_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = python_resp.json()
                 self.validate_keys(
                     python_resp.json(),
                     original_embed_values,
                 )
 
-                python_authed_data[key]['_'.join(
-                    embed_values,
-                )] = python_authed_resp.json()
+                python_authed_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = python_authed_resp.json()
                 self.validate_keys(
                     python_authed_resp.json(),
                     original_embed_values,
                 )
 
-                varnish_data[key]['_'.join(
-                    embed_values,
-                )] = varnish_resp.json()
+                varnish_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = varnish_resp.json()
                 self.validate_keys(
                     varnish_resp.json(),
                     original_embed_values,
                 )
 
-                varnish_authed_data[key]['_'.join(
-                    embed_values,
-                )] = varnish_authed_resp.json()
+                varnish_authed_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = varnish_authed_resp.json()
                 self.validate_keys(
                     varnish_authed_resp.json(),
                     original_embed_values,

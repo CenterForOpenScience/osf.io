@@ -78,7 +78,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
-    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle, )
+    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle)
     view_category = 'files'
     view_name = 'file-detail'
 

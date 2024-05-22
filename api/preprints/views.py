@@ -94,7 +94,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         ContributorOrPublic,
     )
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.PREPRINTS_READ]
     required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
@@ -213,7 +213,7 @@ class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, 
     required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
 
     serializer_class = PreprintNodeRelationshipSerializer
-    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON)
 
     def get_object(self):
         preprint = self.get_preprint()
@@ -503,7 +503,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
     serializer_class = ReviewActionSerializer
     model_class = ReviewAction
 
@@ -517,15 +517,17 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
-            raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
-                target.provider.name,
-                absolute_reverse(
-                    'providers:preprint-providers:preprint-provider-detail', kwargs={
-                        'provider_id': target.provider._id,
-                        'version': self.request.parser_context['kwargs']['version'],
-                    },
+            raise Conflict(
+                '{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
+                    target.provider.name,
+                    absolute_reverse(
+                        'providers:preprint-providers:preprint-provider-detail', kwargs={
+                            'provider_id': target.provider._id,
+                            'version': self.request.parser_context['kwargs']['version'],
+                        },
+                    ),
                 ),
-            ))
+            )
 
         serializer.save(user=self.request.user)
 
@@ -596,7 +598,7 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
     required_read_scopes = [CoreScopes.PREPRINT_REQUESTS_READ]
     required_write_scopes = [CoreScopes.PREPRINT_REQUESTS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     serializer_class = PreprintRequestSerializer
 

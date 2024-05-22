@@ -49,7 +49,7 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
     view_category = 'brands'
     view_name = 'brand-list'
 
-    ordering = ('name', )
+    ordering = ('name',)
 
     # overrides ListAPIView
     def get_queryset(self):

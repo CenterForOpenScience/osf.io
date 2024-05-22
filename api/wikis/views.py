@@ -170,7 +170,7 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    renderer_classes = (PlainTextRenderer, )
+    renderer_classes = (PlainTextRenderer,)
     view_category = 'wikis'
     view_name = 'wiki-content'
 
@@ -246,7 +246,7 @@ class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    renderer_classes = (PlainTextRenderer, )
+    renderer_classes = (PlainTextRenderer,)
     view_category = 'wikis'
     view_name = 'wiki-version-content'
 

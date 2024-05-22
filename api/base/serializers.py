@@ -675,9 +675,11 @@ class RelationshipField(ser.Field):
 
         field_counts_requested = [val for val in params.split(',')]
 
-        countable_fields = {field for field in self.parent.fields if
-                            getattr(self.parent.fields[field], 'json_api_link', False) or
-                            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)}
+        countable_fields = {
+            field for field in self.parent.fields if
+            getattr(self.parent.fields[field], 'json_api_link', False) or
+            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)
+        }
         for count_field in field_counts_requested:
             # Some fields will hide relationships, e.g. HideIfWithdrawal
             # Ignore related_counts for these fields
@@ -825,7 +827,7 @@ class RelationshipField(ser.Field):
             if href and not href == '{}':
                 if self.always_embed:
                     envelope = 'data'
-                query_dict = dict(format=['jsonapi', ], envelope=[envelope, ])
+                query_dict = dict(format=['jsonapi'], envelope=[envelope])
                 if 'view_only' in self.parent.context['request'].query_params.keys():
                     query_dict.update(view_only=[self.parent.context['request'].query_params['view_only']])
                 esi_url = utils.extend_querystring_params(href, query_dict)
@@ -1075,7 +1077,7 @@ class TargetField(ser.Field):
         href = value.get_absolute_url()
 
         if href:
-            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope, ], format=['jsonapi', ]))
+            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope], format=['jsonapi']))
             return f'<esi:include src="{esi_url}"/>'
         return self.to_representation(value)
 
@@ -1227,7 +1229,7 @@ class Link:
             args=arg_values,
             kwargs=kwarg_values,
             query_kwargs=query_kwarg_values,
-            **self.reverse_kwargs
+            **self.reverse_kwargs,
         )
 
 

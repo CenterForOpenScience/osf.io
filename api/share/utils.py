@@ -307,7 +307,7 @@ def format_user(user):
             'given_name': user.given_name,
             'family_name': user.family_name,
             'additional_name': user.middle_names,
-        }
+        },
     )
 
     person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri=user.absolute_url)]
@@ -422,7 +422,7 @@ def serialize_preprint(preprint, old_subjects=None):
             ),
             'date_updated': preprint.modified.isoformat(),
             'date_published': preprint.date_published.isoformat() if preprint.date_published else None,
-        }
+        },
     )
     to_visit = [
         preprint_graph,
@@ -511,7 +511,7 @@ def serialize_osf_node(osf_node, additional_attrs=None):
                 or is_qa_resource(osf_node)
             ),
             **(additional_attrs or {}),
-        }
+        },
     )
 
     to_visit = [

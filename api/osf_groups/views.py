@@ -62,7 +62,7 @@ class GroupList(GroupBaseView, generics.ListCreateAPIView, ListFilterMixin):
 
     serializer_class = GroupSerializer
     view_name = 'group-list'
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     @require_flag(OSF_GROUPS)
     def get_default_queryset(self):
@@ -124,7 +124,7 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
     model_class = apps.get_model('osf.OSFUser')
     serializer_class = GroupMemberSerializer
     view_category = 'groups'
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     def _assert_member_belongs_to_group(self, user):
         group = self.get_osf_group()

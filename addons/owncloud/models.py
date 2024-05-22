@@ -12,6 +12,7 @@ from addons.owncloud.serializer import OwnCloudSerializer
 from addons.owncloud.settings import DEFAULT_HOSTS, USE_SSL
 from osf.models.external import BasicAuthProviderMixin
 from website.util import api_v2_url
+
 logger = logging.getLogger(__name__)
 
 
@@ -157,7 +158,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'id': '/',
                 'name': '/ (Full ownCloud)',
                 'urls': {
-                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/owncloud/folders/',
+                    'folders': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/owncloud/folders/',
                         params={
                             'path': '/',
                         })
@@ -179,7 +181,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     'id': item.path,
                     'name': item.path.strip('/').split('/')[-1],
                     'urls': {
-                        'folders': api_v2_url(f'nodes/{self.owner._id}/addons/owncloud/folders/',
+                        'folders': api_v2_url(
+                            f'nodes/{self.owner._id}/addons/owncloud/folders/',
                             params={
                                 'path': item.path,
                             })
