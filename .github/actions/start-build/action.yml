@@ -20,7 +20,7 @@ runs:
     with:
       cache: "pip"
       cache-dependency-path: "**/requirements.txt"
-      python-version: '3.11'
+      python-version: '3.12'
   - name: Install lxml
     shell: bash
     run: |
