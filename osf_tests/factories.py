@@ -89,11 +89,9 @@ class UserFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         emails = kwargs.pop('emails', [])
         instance = super(DjangoModelFactory, cls)._create(target_class, *args, **kwargs)
-        if emails and not instance.pk:
-            # Save for M2M population
-            instance.set_unusable_password()
         for email in emails:
             instance.emails.create(address=email)
+        instance.set_unusable_password()
         instance.save()
         return instance
 
