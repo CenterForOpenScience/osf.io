@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import waffle
 from distutils.version import StrictVersion
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, CharField, Value, BooleanField
@@ -14,7 +13,6 @@ from addons.wiki.models import NodeSettings as WikiNodeSettings
 from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 from osf.models.node import NodeGroupObjectPermission
 from osf.utils import permissions
-from osf import features
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error, waterbutler_api_url_for, get_user_auth, has_admin_scope
@@ -40,10 +38,7 @@ def get_file_object(target, path, provider, request):
             obj = get_object_or_error(model, Q(target_object_id=target.pk, target_content_type=content_type, _id=path.strip('/')), request)
         return obj
 
-    if waffle.flag_is_active(request, features.ENABLE_GV):
-        addon = target.get_addon(provider, request=request)
-    else:
-        addon = super(target.__class__, target).get_addon(provider, request=request)
+    addon = target.get_addon(provider)
 
     if isinstance(target, AbstractNode) and not addon or not addon.configured:
         raise NotFound(f'The {provider} provider is not configured for this project.')

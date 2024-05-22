@@ -2435,11 +2435,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_addon(self, name, is_deleted=False):
         request, user_id = get_request_and_user_id()
 
-        if hasattr(request, 'user') and not isinstance(request.user, AnonymousUser) and waffle.flag_is_active(request, features.ENABLE_GV) and name not in ['osfstorage', 'wiki']:
+        if waffle.flag_is_active(request, features.ENABLE_GV):
             return GravyValetAddonAppConfig(
                 self,
                 name,
-                auth=(request.user.username, request.user.password)
+                auth=Auth(request.user) if getattr(request, 'user', None) else None
             ).node_settings
         else:
             return super().get_addon(name, is_deleted)
