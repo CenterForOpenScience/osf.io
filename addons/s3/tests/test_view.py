@@ -1,6 +1,6 @@
 from rest_framework import status as http_status
 
-from boto.exception import S3ResponseError
+from botocore.exceptions import S3ResponseError
 from unittest import mock
 import pytest
 
