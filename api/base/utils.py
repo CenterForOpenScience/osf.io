@@ -116,8 +116,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     else:
         # they passed a query
         try:
-            obj = model_cls.objects.filter(
-                query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
+            obj = model_cls.objects.filter(query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
         except model_cls.DoesNotExist:
             raise NotFound
 
