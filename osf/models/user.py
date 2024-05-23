@@ -28,7 +28,7 @@ from django.db.models.signals import post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 
-from framework.auth import Auth, signals, utils
+from framework.auth import signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
@@ -37,6 +37,8 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from api.share.utils import update_share
+from api.base.utils import get_user_auth, Auth
+
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -1228,11 +1230,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         request, user_id = get_request_and_user_id()
 
         if waffle.flag_is_active(request, features.ENABLE_GV):
-            return GravyValetAddonAppConfig(
-                self,
-                name,
-                auth=Auth(request.user) if getattr(request, 'user', None) else None
-            ).user_settings
+            return GravyValetAddonAppConfig(self, name, auth=get_user_auth(request))
         else:
             return super().get_addon(name, is_deleted)
 

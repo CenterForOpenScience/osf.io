@@ -3,6 +3,7 @@ from builtins import str
 
 from collections import defaultdict
 from distutils.version import StrictVersion
+from framework.auth import Auth
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
@@ -636,8 +637,12 @@ class WaterButlerMixin(object):
         for item in files_list:
             attrs = item['attributes']
             if waffle.flag_is_active(self.request, features.ENABLE_GV):
-                gv_config = GravyValetAddonAppConfig(self, attrs['provider'], self.request)
-                short_name = gv_config.legacy_config.short_name
+                gv_config = GravyValetAddonAppConfig(
+                    self,
+                    attrs['provider'],
+                    auth=get_user_auth(self.request),
+                )
+                short_name = gv_config.legacy_app_config.short_name
             else:
                 short_name = attrs['provider']
 
@@ -688,7 +693,11 @@ class WaterButlerMixin(object):
         """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
         attrs = item['attributes']
         if waffle.flag_is_active(self.request, features.ENABLE_GV):
-            provider_determinent = GravyValetAddonAppConfig(self, attrs['provider'], self.request).legacy_config.name
+            provider_determinent = GravyValetAddonAppConfig(
+                self,
+                attrs['provider'],
+                get_user_auth(self.request),
+            ).legacy_app_config.short_name
         else:
             provider_determinent = attrs['provider']
 

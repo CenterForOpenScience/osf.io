@@ -81,6 +81,7 @@ from osf.utils.permissions import (
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.base.utils import get_user_auth
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
@@ -2436,11 +2437,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         request, user_id = get_request_and_user_id()
 
         if waffle.flag_is_active(request, features.ENABLE_GV):
-            return GravyValetAddonAppConfig(
-                self,
-                name,
-                auth=Auth(request.user) if getattr(request, 'user', None) else None
-            ).node_settings
+            return GravyValetAddonAppConfig(self, name, auth=get_user_auth(request))
         else:
             return super().get_addon(name, is_deleted)
 

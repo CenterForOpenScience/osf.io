@@ -1,6 +1,7 @@
 import pytz
 import markupsafe
 import logging
+import waffle
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
@@ -30,6 +31,7 @@ from .subject import Subject
 from .spam import SpamMixin, SpamStatus
 from .validators import validate_title
 from .tag import Tag
+from osf import features
 from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
@@ -484,10 +486,17 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
-        return [_f for _f in [
-            self.get_addon(config.short_name)
-            for config in self.ADDONS_AVAILABLE
-        ] if _f]
+        request, user_id = get_request_and_user_id()
+        if waffle.flag_is_active(request, features.ENABLE_GV):
+            return [_f for _f in [
+                self.get_addon(config.short_name)
+                for config in self.ADDONS_AVAILABLE
+            ] if _f]
+        else:
+            return [_f for _f in [
+                super(self.__class__, self).get_addon(config.short_name)
+                for config in self.ADDONS_AVAILABLE
+            ] if _f]
 
     def get_oauth_addons(self):
         # TODO: Using hasattr is a dirty hack - we should be using issubclass().

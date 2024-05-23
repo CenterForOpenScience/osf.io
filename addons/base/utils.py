@@ -58,65 +58,51 @@ def format_last_known_metadata(auth, node, file, error_type):
 
 
 class GravyValetAddonAppConfig:
-    class MockNodeSetting:
-        def __init__(self, resource, auth, legacy_config, gv_data):
-            self.gv_data = gv_data
-
-        @property
-        def configured(self):
-            return True
-
-        @property
-        def config_id(self):
-            return self.gv_data.config_id
-
-    class MockUserSetting:
-        def __init__(self, resource, auth, legacy_config, gv_data):
-            self.gv_data = gv_data
-
-        @property
-        def configured(self):
-            return True
-
-        @property
-        def config_id(self):
-            return self.gv_data.config_id
 
     @staticmethod
     def get_configured_storage_addons_data(config_id, auth):
-        resp = requests.get(
+        return requests.get(
             settings.GV_NODE_ADDON_ENDPOINT.format(config_id=config_id),
-        )
-        return resp.json()
+            params={'include': 'external_storage_service'},
+            # auth=auth  TODO: HMAC
+        ).json()
 
-    def get_external_service_addon_data(self, auth):
-        resp = requests.get(
-            self.configured_storage_addons_data['data']['relationships']['external_storage_service']['links']['related'],
-        )
-        return resp.json()
+    @staticmethod
+    def get_authorized_storage_account(config_id, auth):
+        return requests.get(
+            settings.GV_USER_ADDON_ENDPOINT.format(config_id=config_id),
+            params={'include': 'external_storage_service'},
+            # auth=auth  TODO: HMAC
+        ).json()
 
     def __init__(self, resource, config_id, auth):
-        self.config_id = config_id
-        self.configured_storage_addons_data = self.get_configured_storage_addons_data(config_id, auth)
+        from osf.models import OSFUser, AbstractNode
+        if isinstance(resource, AbstractNode):
+            self.gv_data = self.get_configured_storage_addons_data(config_id, auth)
+        elif isinstance(resource, OSFUser):
+            self.gv_data = self.get_authorized_storage_account(config_id, auth)
+        else:
+            raise NotImplementedError()
+
         # TODO: Names in GV must be exact matches?
-        self.external_storage_service_data = self.get_external_service_addon_data(auth)
-        self.addon_name = self.external_storage_service_data['data']['attributes']['name']
-        self.legacy_config = settings.ADDONS_AVAILABLE_DICT[self.addon_name]
+        self.addon_name = self.gv_data['data']['embeds']['external_storage_service']['attributes']['name']
+        self.legacy_app_config = settings.ADDONS_AVAILABLE_DICT[self.addon_name]
+
         self.resource = resource
         self.auth = auth
-        self.FOLDER_SELECTED = self.legacy_config.FOLDER_SELECTED
-        self.NODE_AUTHORIZED = self.legacy_config.NODE_DEAUTHORIZED
-        self.NODE_DEAUTHORIZED = self.legacy_config.NODE_DEAUTHORIZED
-        self.actions = self.legacy_config.actions
+        self.FOLDER_SELECTED = self.legacy_app_config.FOLDER_SELECTED
+        self.NODE_AUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
+        self.NODE_DEAUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
+        self.actions = self.legacy_app_config.actions
 
     @property
-    def node_settings(self):
-        return self.MockNodeSetting(self.resource, self.auth, self.legacy_config, self)
-
-    @property
-    def user_settings(self):
-        return self.MockUserSetting(self.resource, self.auth, self.legacy_config, self)
+    def config(self):
+        return self.legacy_app_config
 
     @property
     def configured(self):
         return True
+
+    @property
+    def config_id(self):
+        return self.gv_data.config_id

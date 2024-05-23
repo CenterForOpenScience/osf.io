@@ -558,6 +558,7 @@ class TestUserSignals:
             serializer='json',
         )
 
+    @pytest.mark.skip('Needs GV mock enabled')
     @pytest.mark.enable_account_status_messaging
     @mock.patch('osf.external.messages.celery_publishers.celery_app.producer_pool.acquire')
     def test_publish_body_on_merger(
