@@ -62,12 +62,12 @@ class TestTokenHandler(OsfTestCase):
         self.payload['action'] = 'approve_registration_approval'
         token = TokenHandler.from_payload(self.payload)
         token.to_response()
-        assert mock_handler.called_with(
-                'registration',
-                'approve',
-                self.payload,
-                self.encoded_token
-            )
+        mock_handler.assert_called_with(
+            'registration',
+            'approve',
+            self.payload,
+            self.encoded_token
+        )
 
 class SanctionTokenHandlerBase(OsfTestCase):
 
