@@ -21,14 +21,14 @@ class _MockGVEntity:
 
     @property
     def api_path(self):
-        return 'v1/{self.resource_type}/{self.pk}/'
+        return f'v1/{self.RESOURCE_TYPE}/{self.pk}/'
 
     def serialize(self):
         data = {
             'type': self.RESOURCE_TYPE,
             'id': self.pk,
             'attributes': self._serialize_attributes(),
-            'liniks': self._serialize_links(),
+            'links': self._serialize_links(),
         }
         relationships = self._serialize_relationships()
         if relationships:
@@ -42,7 +42,7 @@ class _MockGVEntity:
         ...
 
     def _serialize_links(self):
-        return {'self': f'{settings.GRAVYVALET_URL}/{self.api_path}/'}
+        return {'self': f'{settings.GRAVYVALET_URL}/{self.api_path}'}
 
     def _format_relationship_entry(self, relationship_path, related_type=None, related_pk=None):
         relationship_api_path = f'{settings.GRAVYVALET_URL}/{self.api_path}{relationship_path}/'
@@ -125,10 +125,10 @@ class _MockAccount(_MockGVEntity):
                 related_type=_MockUserReference.RESOURCE_TYPE,
                 related_pk=self.account_owner_pk
             ),
-            'external_storage_service': self._format_relationshi_entry(
+            'external_storage_service': self._format_relationship_entry(
                 relationship_path='external_storage_service',
                 related_type=_MockAddonProvider.RESOURCE_TYPE,
-                related_id=self.provider_pk
+                related_pk=self.provider_pk
             ),
             'configured_storage_addons': self._format_relationship_entry(
                 relationship_path='configured_storage_addons'
@@ -170,10 +170,10 @@ class _MockAddon(_MockGVEntity):
                 related_type=_MockAccount.RESOURCE_TYPE,
                 related_pk=self.account.pk
             ),
-            'external_storage_service': self._format_relationshi_entry(
+            'external_storage_service': self._format_relationship_entry(
                 relationship_path='external_storage_service',
                 related_type=_MockAddonProvider.RESOURCE_TYPE,
-                related_id=self.account.provider_pk
+                related_pk=self.account.provider_pk
             ),
             'connected_operations': self._format_relationship_entry(
                 relationship_path='connected_operations'
@@ -184,10 +184,10 @@ class _MockAddon(_MockGVEntity):
 class MockGravyValet():
 
     ROUTES = {
-        r'/v1/user-references/(?P<user_pk>\d+)/authorized-storage-accounts': '_get_user_accounts',
-        r'v1/resource-references/(?P<resource_pk>\d+)/configured-storage-addons': '_get_resource_addons',
-        r'v1/user-references/((?P<pk>\d+)/|(\?filter\[user_uri\]=(?P<user_uri>.+)))': '_get_user',
-        r'v1/resource-references/((?P<pk>\d+)/|(\?filter\[resource_uri\]=(?P<resource_uri>.+)))': '_get_resource',
+        r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts/$': '_get_user_accounts',
+        r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons/$': '_get_resource_addons',
+        r'v1/user-references/((?P<pk>\d+)/|(\?filter\[user_uri\]=(?P<user_uri>.+)))$': '_get_user',
+        r'v1/resource-references/((?P<pk>\d+)/|(\?filter\[resource_uri\]=(?P<resource_uri>.+)))$': '_get_resource',
     }
 
     def __init__(self):
@@ -208,15 +208,15 @@ class MockGravyValet():
         """Reset all configured users/resources/acounts/addons and, optionally, providers."""
         if include_providers:
             # Mapping from _MockAddonProvider name to _MockAddonProvider
-            self._known_providers: dict[str, _MockAddonProvider] = {}
+            self._known_providers = {}
         # Bidirectional mapping between user uri and mock "pk"
-        self._known_users: dict[str, int] = {}
+        self._known_users = {}
         # Bidirectional mapping between resource uri and mock "pk"
-        self._known_resources: dict[str, int] = {}
+        self._known_resources = {}
         # Mapping from user "pk" to _MockAccounts for the user
-        self._user_accounts: dict[str, list[_MockAccount]] = {}
-        # Mapping from resource "pk" to _MockAddons "configured on" the resource
-        self._resource_addons: dict[str, list[_MockAddon]] = {}
+        self._user_accounts = {}
+        # Mapping from resource "pk" to _MockAddons "configured" on the resource
+        self._resource_addons = {}
 
     def _get_or_create_user_entry(self, user: OSFUser):
         user_uri = user.get_semantic_iri()
@@ -257,7 +257,7 @@ class MockGravyValet():
             provider_pk=connected_addon.pk,
             **account_attrs
         )
-        self._user_accounts.setdefault(user_uri, []).append(new_account)
+        self._user_accounts.setdefault(user_pk, []).append(new_account)
         return new_account
 
     def configure_mock_addon(self, resource: AbstractNode, connected_account: _MockAccount, **config_attrs) -> _MockAddon:
@@ -266,10 +266,10 @@ class MockGravyValet():
         new_addon = _MockAddon(
             pk=addon_pk,
             resource_pk=resource_pk,
-            connected_account=connected_account,
+            account=connected_account,
             **config_attrs
         )
-        self._resource_addons.setdefault(resource_uri, []).append(new_addon)
+        self._resource_addons.setdefault(resource_pk, []).append(new_addon)
         return new_addon
 
     @contextlib.contextmanager
@@ -348,7 +348,6 @@ class MockGravyValet():
         )
 
     def _get_resource_addons(self, resource_pk: str):  # -> tuple[int, dict, str]
-        resource_pk = int(resource_pk)
         return _format_response(
             data=self._resource_addons.get(int(resource_pk), []),
             list_view=True
