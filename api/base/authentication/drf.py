@@ -140,7 +140,8 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         Same implementation as django-rest-framework's SessionAuthentication.
         Enforce CSRF validation for session based authentication.
         """
-        reason = CSRFCheck().process_view(request, None, (), {})
+        # crutch let CSRFCheck process this view, but generally middleware shouldn't be used this way
+        reason = CSRFCheck(lambda _: _).process_view(request, None, (), {})
         if reason:
             # CSRF failed, bail with explicit error message
             raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)
