@@ -51,13 +51,13 @@ def is_bulk_request(request):
 
 
 def is_truthy(value):
-    if isinstance(value, bool):
+    if isinstance(value, bool) or value is None:
         return value
     return value.lower() in TRUTHY
 
 
 def is_falsy(value):
-    if isinstance(value, bool):
+    if isinstance(value, bool) or value is None:
         return not value
     return value.lower() in FALSY
 
