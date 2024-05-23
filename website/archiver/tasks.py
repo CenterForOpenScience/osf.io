@@ -32,6 +32,8 @@ from osf.models import (
     AbstractNode,
     DraftRegistration,
 )
+import bleach
+import unicodedata
 
 
 def create_app_context():
@@ -42,6 +44,13 @@ def create_app_context():
 
 
 logger = get_task_logger(__name__)
+
+
+def normalize_unicode_filename(filename):
+    return [
+        bleach.clean(unicodedata.normalize(form, filename)).replace('&amp;', '&')
+        for form in ['NFD', 'NFC']
+    ]
 
 
 class ArchiverSizeExceeded(Exception):
@@ -203,7 +212,7 @@ def archive_addon(addon_short_name, job_pk):
         rename_suffix = ' (draft)' if addon_short_name.split('-')[-1] == 'draft' else ' (published)'
         addon_short_name = 'dataverse'
     src_provider = src.get_addon(addon_short_name)
-    folder_name = src_provider.archive_folder_name
+    folder_name_nfd, folder_name_nfc = normalize_unicode_filename(src_provider.archive_folder_name)
     rename = '{}{}'.format(folder_name, rename_suffix)
     url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)

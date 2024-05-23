@@ -1,5 +1,6 @@
 import bleach
 import functools
+import unicodedata
 
 from collections import defaultdict
 from django.db.models import CharField, OuterRef, Subquery
@@ -20,6 +21,12 @@ from website.archiver import (
 
 FILE_HTML_LINK_TEMPLATE = settings.DOMAIN + 'project/{registration_guid}/files/osfstorage/{file_id}'
 FILE_DOWNLOAD_LINK_TEMPLATE = settings.DOMAIN + 'download/{file_id}'
+
+def normalize_unicode_filename(filename):
+    return [
+        bleach.clean(unicodedata.normalize(form, filename)).replace('&amp;', '&')
+        for form in ['NFD', 'NFC']
+    ]
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
@@ -160,7 +167,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     disk_usage = fileobj_metadata.get('size')
     if fileobj_metadata['kind'] == 'file':
         result = StatResult(
-            target_name=fileobj_metadata['name'],
+            target_name=normalize_unicode_filename(fileobj_metadata['name'])[0],
             target_id=fileobj_metadata['path'].lstrip('/'),
             disk_usage=disk_usage or 0,
         )
@@ -168,7 +175,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     else:
         return AggregateStatResult(
             target_id=fileobj_metadata['path'].lstrip('/'),
-            target_name=fileobj_metadata['name'],
+            target_name=normalize_unicode_filename(fileobj_metadata['name'])[0],
             targets=[aggregate_file_tree_metadata(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
         )
 
@@ -322,7 +329,7 @@ def _make_file_response(file_info, parent_guid):
     archived_file_id = file_info['path'].lstrip('/')
     return {
         'file_id': archived_file_id,
-        'file_name': bleach.clean(file_info['name']).replace('&amp;', '&'),
+        'file_name': normalize_unicode_filename(bleach.clean(file_info['name']).replace('&amp;', '&'))[0],
         'file_urls': {
             'html':
                 FILE_HTML_LINK_TEMPLATE.format(
