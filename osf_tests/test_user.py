@@ -1,4 +1,5 @@
 # Tests ported from tests/test_models.py and tests/test_user.py
+import datetime
 import os
 import json
 import datetime as dt
@@ -12,7 +13,6 @@ from django.conf import settings as django_conf_settings
 from unittest import mock
 import itsdangerous
 import pytest
-import pytz
 from importlib import import_module
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
@@ -484,7 +484,7 @@ class TestOSFUser:
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
-        assert u.date_registered.tzinfo == pytz.utc
+        assert u.date_registered.tzinfo == datetime.timezone.utc
 
     def test_cant_create_user_without_full_name(self):
         u = OSFUser(username=fake_email())

@@ -1,5 +1,5 @@
 from django.contrib import admin, messages
-from django.conf.urls import url
+from django.urls import re_path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
@@ -88,7 +88,7 @@ class NotableDomainAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         return [
-            url(
+            re_path(
                 r'^bulkadd/$',
                 self.admin_site.admin_view(self.bulk_add_view),
                 name='osf_notabledomain_bulkadd',

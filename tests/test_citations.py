@@ -149,8 +149,8 @@ class CitationsViewsTestCase(OsfTestCase):
         # populate the DB with parsed citation styles
         try:
             parse_citation_styles.main()
-        except OSError:
-            pass
+        except OSError as e:
+            raise e
 
     def test_list_styles(self):
         # Response includes a list of available citation styles

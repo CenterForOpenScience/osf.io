@@ -199,7 +199,8 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             provider = PreprintProvider.objects.get(id=request.POST.get('provider_id'))
             try:
                 taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
-                if request.is_ajax():
+                # Replacement as is_ajax has been removed
+                if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
                     # An ajax request is for validation only, so run that validation!
                     response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
                     if response_data:

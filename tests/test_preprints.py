@@ -7,7 +7,6 @@ import time
 from urllib.parse import urljoin
 import datetime
 from django.utils import timezone
-import pytz
 import itsdangerous
 from importlib import import_module
 import pytest_socket
@@ -210,7 +209,7 @@ class TestLogging:
         last_log = preprint.logs.latest()
         assert last_log.action == PreprintLog.FILE_UPDATED
         # date is tzaware
-        assert last_log.created.tzinfo == pytz.utc
+        assert last_log.created.tzinfo == datetime.timezone.utc
 
         # updates preprint.modified
         assert_datetime_equal(preprint.modified, last_log.created)

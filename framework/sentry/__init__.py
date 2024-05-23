@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import logging
+from typing import Literal
 
-from sentry_sdk import init, capture_exception, capture_message, push_scope
+from sentry_sdk import init, capture_exception, capture_message, isolation_scope
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -19,7 +20,7 @@ if enabled:
         integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
     )
 
-LOG_LEVEL_MAP = {
+LOG_LEVEL_MAP: dict[int, Literal['debug', 'info', 'warning', 'error', 'critical']] = {
     logging.DEBUG: 'debug',
     logging.INFO: 'info',
     logging.WARNING: 'warning',
@@ -45,7 +46,7 @@ def log_exception(exception: Exception, skip_session=False):
     extra = {
         'session': {} if skip_session else get_session_data(),
     }
-    with push_scope() as scope:
+    with isolation_scope() as scope:
         for key, value in extra.items():
             scope.set_extra(key, value)
         return capture_exception(exception)
@@ -62,7 +63,7 @@ def log_message(message, skip_session=False, extra_data=None, level=logging.ERRO
     }
     if extra_data is not None:
         extra.update(extra_data)
-    with push_scope() as scope:
+    with isolation_scope() as scope:
         for key, value in extra.items():
             scope.set_extra(key, value)
         level_str = LOG_LEVEL_MAP.get(level, 'error')

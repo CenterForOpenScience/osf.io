@@ -1057,6 +1057,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         user.update_guessed_names()
         user.set_password(password)
+        user.save()
         return user
 
     def set_password(self, raw_password, notify=True):
