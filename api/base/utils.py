@@ -49,11 +49,18 @@ def is_bulk_request(request):
     content_type = request.content_type
     return 'ext=bulk' in content_type
 
+
 def is_truthy(value):
-    return value in TRUTHY
+    if isinstance(value, bool):
+        return value
+    return value.lower() in TRUTHY
+
 
 def is_falsy(value):
-    return value in FALSY
+    if isinstance(value, bool):
+        return not value
+    return value.lower() in FALSY
+
 
 def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the
@@ -109,7 +116,8 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     else:
         # they passed a query
         try:
-            obj = model_cls.objects.filter(query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
+            obj = model_cls.objects.filter(
+                query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
         except model_cls.DoesNotExist:
             raise NotFound
 
@@ -120,9 +128,11 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         try:
             # TODO This could be added onto with eager on the queryset and the embedded fields of the api
             if isinstance(query, dict):
-                obj = model_cls.objects.get(**query) if not select_for_update else model_cls.objects.filter(**query).select_for_update().get()
+                obj = model_cls.objects.get(**query) if not select_for_update else (model_cls.objects.filter(**query).
+                                                                                    select_for_update().get())
             else:
-                obj = model_cls.objects.get(query) if not select_for_update else model_cls.objects.filter(query).select_for_update().get()
+                obj = model_cls.objects.get(query) if not select_for_update else (model_cls.objects.filter(query).
+                                                                                  select_for_update().get())
         except ObjectDoesNotExist:
             raise NotFound
 
@@ -132,18 +142,21 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     # disabled.
     if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    if check_deleted and (model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False)):
+    if check_deleted and (model_cls is not OSFUser and not getattr(obj, 'is_active', True)
+                          or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False, )):
         if display_name is None:
             raise Gone
         else:
             raise Gone(detail=f'The requested {display_name} is no longer available.')
     return obj
 
+
 def default_node_list_queryset(model_cls):
     Node = apps.get_model('osf', 'Node')
     Registration = apps.get_model('osf', 'Registration')
     assert model_cls in {Node, Registration}
     return model_cls.objects.filter(is_deleted=False)
+
 
 def default_node_permission_queryset(user, model_cls):
     """
@@ -155,6 +168,7 @@ def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
     return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
+
 def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
@@ -164,12 +178,14 @@ def default_node_list_permission_queryset(user, model_cls, **annotations):
         qs = qs.annotate(**annotations)
     return qs
 
+
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlsplit(url)
     orig_params = parse_qs(query)
     orig_params.update(params)
     query = urlencode(orig_params, True)
     return urlunsplit([scheme, netloc, path, query, ''])
+
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():
@@ -222,7 +238,9 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_u
     if provider != 'osfstorage':
         base_url = None
     # NOTE: furl encoding to be verified later
-    url = furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL))
+    url = furl(
+        website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL),
+    )
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
     url.add(path=[quote(x) for x in segments])
     url.args.update(kwargs)
