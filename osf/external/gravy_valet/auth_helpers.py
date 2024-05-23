@@ -1,4 +1,5 @@
 import base64
+import email.utils
 import hashlib
 import hmac
 import re
@@ -8,6 +9,7 @@ import urllib
 from django.utils import timezone
 
 from osf.models import OSFUser, AbstractNode
+from osf.utils import permissions as osf_permissions
 from website import settings
 
 _AUTH_HEADER_REGEX = re.compile(
@@ -16,7 +18,7 @@ _AUTH_HEADER_REGEX = re.compile(
 
 
 def _sign_message(message: str, hmac_key: str = None) -> str:
-    key = hmac_key or settings.DEFAULT_HMAC_KEY
+    key = hmac_key or settings.DEFAULT_HMAC_SECRET
     encoded_message = base64.b64encode(message.encode())
     return hmac.new(
         key=key.encode(), digestmod=hashlib.sha256, msg=encoded_message
@@ -30,12 +32,12 @@ def _get_signed_components(
     if isinstance(body, str):
         body = body.encode()
     content_hash = hashlib.sha256(body).hexdigest() if body else None
-    auth_timestamp = timezone.now()
+    auth_timestamp = email.utils.format_datetime(timezone.now())
     signed_segments = [
         request_method,
         parsed_url.path,
         parsed_url.query,
-        str(auth_timestamp),
+        auth_timestamp,
         content_hash,
         *additional_headers.values()
     ]
@@ -44,9 +46,24 @@ def _get_signed_components(
     signed_headers = {'X-Authorization-Timestamp': auth_timestamp}
     if content_hash:
         signed_headers['X-Content-SHA256'] = content_hash
-    # order matters, so append additional headers at the end
-    signed_headers |= additional_headers
+    # order matters, so append additional headers at the end for consistency
+    signed_headers.update(additional_headers)
     return signed_segments, signed_headers
+
+
+def _make_permissions_headers(requesting_user=None, requested_resource=None):
+    osf_permissions_headers = {}
+    if requesting_user:
+        osf_permissions_headers['X-Requesting-User-URI'] = requesting_user.get_semantic_iri()
+    if requested_resource:
+        osf_permissions_headers['X-Requested-Resource-URI'] = requested_resource.get_semantic_iri()
+        user_permissions = ''
+        if requesting_user:
+            user_permissions = ';'.join(requested_resource.get_permissions(requesting_user))
+        if (not requesting_user or not user_permissions) and requested_resource.is_public:
+            user_permissions = osf_permissions.READ
+        osf_permissions_headers['X-Requested-Resource-Permissions'] = user_permissions
+    return osf_permissions_headers
 
 
 def make_gravy_valet_hmac_headers(
@@ -54,16 +71,13 @@ def make_gravy_valet_hmac_headers(
     request_method: str,
     body: typing.Union[str, bytes] = '',
     hmac_key: typing.Optional[str] = None,
-    requested_user: typing.Optional[OSFUser] = None,
+    requesting_user: typing.Optional[OSFUser] = None,
     requested_resource: typing.Optional[AbstractNode] = None
 ) -> dict:
 
     osf_permissions_headers = {}
-    if requested_user:
-        osf_permissions_headers['X-Curernt-User-URI'] = requested_user.get_semantic_iri()
-    if requested_user and requested_resource:
-        osf_permissions_headers['X-Requested-Resource-URI'] = requested_resource.get_semantic_iri()
-        osf_permissions_headers['X-Requested-Resource-Permissions'] = ';'.join(requested_resource.get_permissions(requested_user))
+    if requesting_user or requested_resource:
+        osf_permissions_headers = _make_permissions_headers(requesting_user, requested_resource)
 
     signed_string_segments, signed_headers = _get_signed_components(
         request_url, request_method, body, **osf_permissions_headers
@@ -83,10 +97,10 @@ def make_gravy_valet_hmac_headers(
 
 
 def _reconstruct_string_to_sign_from_request(request, signed_headers: typing.List[str]) -> str:
-    signed_segments = [request.method, request.path]
-    query_string = request.META.get('QUERY_STRING')
-    if query_string:
-        signed_segments.append(query_string)
+    parsed_url = urllib.parse.urlparse(request.url)
+    signed_segments = [request.method, parsed_url.path]
+    if parsed_url.query:
+        signed_segments.append(parsed_url.query)
     signed_segments.extend(
         [str(request.headers[signed_header]) for signed_header in signed_headers]
     )

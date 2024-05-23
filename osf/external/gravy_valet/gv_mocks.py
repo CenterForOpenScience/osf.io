@@ -8,8 +8,9 @@ import urllib.parse
 import dataclasses  # backport
 import responses
 
-from . import hmac
+from . import auth_helpers
 from osf.models import OSFUser, AbstractNode
+from osf.utils import permissions as osf_permissions
 from website import settings
 
 
@@ -82,15 +83,18 @@ class _MockAddonProvider(_MockGVEntity):
 
     RESOURCE_TYPE = 'external-storage-services'
     name: str
+    max_upload_mb: int = 2**10
+    max_concurrent_uploads: int = -5
+    icon_url: str = 'vetted-url-for-icon.png'
 
     def _serialize_attributes(self):
         return {
             'name': self.name,
-            'max_upload_mb': 2**10,
-            'max_concurrent_uploads': -5,
+            'max_upload_mb': self.max_upload_mb,
+            'max_concurrent_uploads': self.max_concurrent_uploads,
             'configurable_api_root': False,
             'terms_of_service_features': [],
-            'icon_url': 'vetted-url-for-icon.png',
+            'icon_url': self.icon_url,
         }
 
     def _serialize_relationships(self):
@@ -105,7 +109,7 @@ class _MockAddonProvider(_MockGVEntity):
 class _MockAccount(_MockGVEntity):
 
     RESOURCE_TYPE = 'authorized-storage-accounts'
-    provider_pk: int
+    provider: _MockAddonProvider
     account_owner_pk: int
     display_name: str = ''
 
@@ -128,7 +132,7 @@ class _MockAccount(_MockGVEntity):
             'external_storage_service': self._format_relationship_entry(
                 relationship_path='external_storage_service',
                 related_type=_MockAddonProvider.RESOURCE_TYPE,
-                related_pk=self.provider_pk
+                related_pk=self.provider.pk
             ),
             'configured_storage_addons': self._format_relationship_entry(
                 relationship_path='configured_storage_addons'
@@ -149,11 +153,11 @@ class _MockAddon(_MockGVEntity):
 
     def _serialize_attributes(self):
         return {
-            'name': self.display_name,
+            'display_name': self.display_name,
             'root_folder': self.root_folder,
-            'max_upload_mb': 2**10,
-            'max_concurrent_uploads': -5,
-            'icon_url': 'vetted-url-for-icon.png',
+            'max_upload_mb': self.account.provider.max_upload_mb,
+            'max_concurrent_uploads': self.account.provider.max_concurrent_uploads,
+            'icon_url': self.account.provider.icon_url,
             'connected_capabilities': ['ACCESS'],
             'connected_operation_names': ['get_root_items'],
         }
@@ -173,7 +177,7 @@ class _MockAddon(_MockGVEntity):
             'external_storage_service': self._format_relationship_entry(
                 relationship_path='external_storage_service',
                 related_type=_MockAddonProvider.RESOURCE_TYPE,
-                related_pk=self.account.provider_pk
+                related_pk=self.account.provider.pk
             ),
             'connected_operations': self._format_relationship_entry(
                 relationship_path='connected_operations'
@@ -184,7 +188,7 @@ class _MockAddon(_MockGVEntity):
 class MockGravyValet():
 
     ROUTES = {
-        r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts/$': '_get_user_accounts',
+        r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts/(\?include=(?P<includes>(\w+,)+))?$': '_get_user_accounts',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons/$': '_get_resource_addons',
         r'v1/user-references/((?P<pk>\d+)/|(\?filter\[user_uri\]=(?P<user_uri>.+)))$': '_get_user',
         r'v1/resource-references/((?P<pk>\d+)/|(\?filter\[resource_uri\]=(?P<resource_uri>.+)))$': '_get_resource',
@@ -250,11 +254,11 @@ class MockGravyValet():
     def configure_mock_account(self, user: OSFUser, addon_name: str, **account_attrs) -> _MockAccount:
         user_uri, user_pk = self._get_or_create_user_entry(user)
         account_pk = _get_nested_count(self._user_accounts) + 1
-        connected_addon = self._known_providers[addon_name]
+        connected_provider = self._known_providers[addon_name]
         new_account = _MockAccount(
             pk=account_pk,
             account_owner_pk=user_pk,
-            provider_pk=connected_addon.pk,
+            provider=connected_provider,
             **account_attrs
         )
         self._user_accounts.setdefault(user_pk, []).append(new_account)
@@ -285,20 +289,21 @@ class MockGravyValet():
 
     def _route_request(self, request):  # -> tuple[int, dict, str]
         if self.validate_headers:
-            try:
-                hmac.validate_signed_headers(request)
-            except ValueError:
-                return (400, {}, '')
+            error_response = _validate_request(request)
+            if error_response:
+                return error_response
+
         for route_expr, routed_func_name in self.ROUTES.items():
             url_regex = re.compile(f'{settings.GRAVYVALET_URL}/{route_expr}')
             route_match = url_regex.match(urllib.parse.unquote(request.url))
             if route_match:
                 func = getattr(self, routed_func_name)
-                return func(**route_match.groupdict())
+                return func(headers=request.headers, **route_match.groupdict())
         raise ValueError(f'No matching routes for {request.url}')
 
     def _get_user(
         self,
+        headers: dict,
         pk=None,  # str | None
         user_uri=None,  # str | None
     ):  # -> tuple[int, dict, str]
@@ -314,41 +319,62 @@ class MockGravyValet():
             pk = int(pk)
             user_uri = self._known_users[pk]
 
-        return _format_response(
+        permissions_error_response = None
+        if self.validate_headers:
+            permissions_error_response = _validate_user(user_uri, headers)
+
+        return permissions_error_response or _format_response(
             data=_MockUserReference(pk=pk, uri=user_uri),
             list_view=list_view
         )
 
     def _get_resource(
         self,
+        headers: dict,
         pk=None,  # str | None
         resource_uri=None,  # str | None
     ):  # -> typing.Tuple[int, dict, str]:
         if bool(pk) == bool(resource_uri):
             raise ValueError('Must have exactly one of user PK or uri for lookup')
 
-        # if passed the resource_uri, call came through list endpoint with filter
         if resource_uri:
-            list_view = True
+            list_view = True  # call came through list endpoint with filter
             pk = self._known_resources[resource_uri]
         else:
             list_view = False
             pk = int(pk)
             resource_uri = self._known_resources[pk]
 
-        return _format_response(
+        permissions_error_response = None
+        if self.validate_headers:
+            permissions_error_response = _validate_resource_access(resource_uri, headers)
+
+        return permissions_error_response or _format_response(
             data=_MockResourceReference(pk=pk, uri=resource_uri),
             list_view=list_view
         )
 
-    def _get_user_accounts(self, user_pk: str):  # -> tuple[int, dict, str]
-        return _format_response(
-            data=self._user_accounts.get(int(user_pk), []),
+    def _get_user_accounts(self, headers: dict, user_pk: str, includes: str = None):  # -> tuple[int, dict, str]
+        user_pk = int(user_pk)
+
+        permissions_error_response = None
+        if self.validate_headers:
+            user_uri = self._known_users[user_pk]
+            permissions_error_response = _validate_user(user_uri, headers)
+
+        return permissions_error_response or _format_response(
+            data=self._user_accounts.get(user_pk, []),
             list_view=True
         )
 
-    def _get_resource_addons(self, resource_pk: str):  # -> tuple[int, dict, str]
-        return _format_response(
+    def _get_resource_addons(self, headers: dict, resource_pk: str):  # -> tuple[int, dict, str]
+        resource_pk = int(resource_pk)
+        permissions_error_response = None
+        if self.validate_headers:
+            resource_uri = self._known_resources[resource_pk]
+            permissions_error_response = _validate_resource_access(resource_uri, headers)
+
+        return permissions_error_response or _format_response(
             data=self._resource_addons.get(int(resource_pk), []),
             list_view=True
         )
@@ -379,3 +405,30 @@ def _format_response(
 def _get_nested_count(d):  # dict[Any, Any] -> int:
     """Get the total number of entries from a dictionary with lists for values."""
     return sum(map(len, itertools.chain(d.values())))
+
+
+def _validate_request(request):
+    try:
+        auth_helpers.validate_signed_headers(request)
+    except ValueError:
+        error_code = 403 if request.headers.get('X-Requesting-User-URI') else 401
+        return (error_code, {}, '')
+
+
+def _validate_user(requested_user_uri, headers):
+    requesting_user_uri = headers.get('X-Requesting-User-URI')
+    if requesting_user_uri is None:
+        return (401, {}, '')  # UNAUTHORIZED
+    if requesting_user_uri != requested_user_uri:
+        return (403, {}, '')  # FORBIDDEN
+
+
+def _validate_resource_access(requested_resource_uri, headers):
+    headers_requested_resource = headers.get('X-Requested-Resource-URI')
+    if not headers_requested_resource or headers_requested_resource != requested_resource_uri:
+        return (400, {}, '')  # generously assume malformed request on mismatch between headers and request
+    requesting_user_uri = headers.get('X-Requesting-User-URI')
+    permission_denied_error_code = 403 if requesting_user_uri else 401
+    resource_permissions = headers.get('X-Requested-Resource-Permissions', '').split(';')
+    if osf_permissions.READ not in resource_permissions:
+        return (permission_denied_error_code, {}, '')
