@@ -188,10 +188,12 @@ class _MockAddon(_MockGVEntity):
 class MockGravyValet():
 
     ROUTES = {
-        r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts/(\?include=(?P<includes>(\w+,)+))?$': '_get_user_accounts',
-        r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons/$': '_get_resource_addons',
         r'v1/user-references/((?P<pk>\d+)/|(\?filter\[user_uri\]=(?P<user_uri>.+)))$': '_get_user',
         r'v1/resource-references/((?P<pk>\d+)/|(\?filter\[resource_uri\]=(?P<resource_uri>.+)))$': '_get_resource',
+        r'v1/authorized-storage-accounts/(?P<pk>\d+)/$': '_get_account',
+        r'v1/configured-storage-addons/(?P<pk>\d+)/$': '_get_addon',
+        r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts/(\?include=(?P<includes>(\w+,)+))?$': '_get_user_accounts',
+        r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons/(\?include=(?P<includes>(\w+,)+))?$': '_get_resource_addons',
     }
 
     def __init__(self):
@@ -319,11 +321,12 @@ class MockGravyValet():
             pk = int(pk)
             user_uri = self._known_users[pk]
 
-        permissions_error_response = None
         if self.validate_headers:
             permissions_error_response = _validate_user(user_uri, headers)
+            if permissions_error_response:
+                return permissions_error_response
 
-        return permissions_error_response or _format_response(
+        return _format_response(
             data=_MockUserReference(pk=pk, uri=user_uri),
             list_view=list_view
         )
@@ -345,36 +348,76 @@ class MockGravyValet():
             pk = int(pk)
             resource_uri = self._known_resources[pk]
 
-        permissions_error_response = None
         if self.validate_headers:
             permissions_error_response = _validate_resource_access(resource_uri, headers)
+            if permissions_error_response:
+                return permissions_error_response
 
-        return permissions_error_response or _format_response(
+        return _format_response(
             data=_MockResourceReference(pk=pk, uri=resource_uri),
             list_view=list_view
         )
 
+    def _get_account(self, headers: dict, pk: str):  # -> tuple[int, dict, str]
+        pk = int(pk)
+        account = None
+        for account in itertools.chain.from_iterable(self._user_accounts.values()):
+            if account.pk == pk:
+                account = account
+                break
+
+        if not account:
+            return (404, {}, '')  # NOT FOUND
+
+        if self.validate_headers:
+            user_uri = self._known_users[account.account_owner_pk]
+            permissions_error_response = _validate_user(user_uri, headers)
+            if permissions_error_response:
+                return permissions_error_response
+
+        return _format_response(data=account, list_view=False)
+
+    def _get_addon(self, headers: dict, pk: str):  # -> tuple[int, dict, str]
+        pk = int(pk)
+        addon = None
+        for addon in itertools.chain.from_iterable(self._resource_addons.values()):
+            if addon.pk == pk:
+                addon = addon
+                break
+
+        if not addon:
+            return (404, {}, '')  # NOT FOUND
+
+        if self.validate_headers:
+            resource_uri = self._known_resources[addon.resource_pk]
+            permissions_error_response = _validate_resource_access(resource_uri, headers)
+            if permissions_error_response:
+                return permissions_error_response
+
+        return _format_response(data=addon, list_view=False)
+
     def _get_user_accounts(self, headers: dict, user_pk: str, includes: str = None):  # -> tuple[int, dict, str]
         user_pk = int(user_pk)
-
-        permissions_error_response = None
         if self.validate_headers:
             user_uri = self._known_users[user_pk]
             permissions_error_response = _validate_user(user_uri, headers)
+            if permissions_error_response:
+                return permissions_error_response
 
-        return permissions_error_response or _format_response(
+        return _format_response(
             data=self._user_accounts.get(user_pk, []),
             list_view=True
         )
 
-    def _get_resource_addons(self, headers: dict, resource_pk: str):  # -> tuple[int, dict, str]
+    def _get_resource_addons(self, headers: dict, resource_pk: str, includes: str = None):  # -> tuple[int, dict, str]
         resource_pk = int(resource_pk)
-        permissions_error_response = None
         if self.validate_headers:
             resource_uri = self._known_resources[resource_pk]
             permissions_error_response = _validate_resource_access(resource_uri, headers)
+            if permissions_error_response:
+                return permissions_error_response
 
-        return permissions_error_response or _format_response(
+        return _format_response(
             data=self._resource_addons.get(int(resource_pk), []),
             list_view=True
         )

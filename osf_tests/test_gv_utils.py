@@ -63,7 +63,7 @@ class TestMockGV:
     def addon_three(self, project_two, account_one, mock_gv):
         return mock_gv.configure_mock_addon(project_two, account_one)
 
-    def test_mock_gv__user_route__pk(self, mock_gv, test_user, account_one):
+    def test_user_route__pk(self, mock_gv, test_user, account_one):
         gv_user_detail_url = f'{GRAVYVALET_URL}/v1/user-references/{account_one.account_owner_pk}/'
         with mock_gv.run_mock():
             resp = requests.get(gv_user_detail_url)
@@ -76,7 +76,7 @@ class TestMockGV:
         retrieved_accounts_link = json_data['relationships']['authorized_storage_accounts']['links']['related']
         assert retrieved_accounts_link == expected_accounts_link
 
-    def test_mock_gv__user_route__filter(self, mock_gv, test_user, account_one):
+    def test_user_route__filter(self, mock_gv, test_user, account_one):
         gv_user_detail_url = f'{GRAVYVALET_URL}/v1/user-references/{account_one.account_owner_pk}/'
         gv_user_filtered_list_url = f'{GRAVYVALET_URL}/v1/user-references/?filter[user_uri]={test_user.get_semantic_iri()}'
         with mock_gv.run_mock():
@@ -85,7 +85,7 @@ class TestMockGV:
         assert filtered_list_resp.status_code == 200
         assert filtered_list_resp.json()['data'][0] == detail_resp.json()['data']
 
-    def test_mock_gv__user_route__accounts_link(self, mock_gv, test_user, account_one, account_two, account_three):
+    def test_user_route__accounts_link(self, mock_gv, test_user, account_one, account_two, account_three):
         gv_user_detail_url = f'{GRAVYVALET_URL}/v1/user-references/{account_one.account_owner_pk}/'
         with mock_gv.run_mock():
             user_resp = requests.get(gv_user_detail_url)
@@ -100,7 +100,7 @@ class TestMockGV:
         for serialized_account in json_data:
             assert serialized_account == expected_accounts_by_pk[serialized_account['id']].serialize()
 
-    def test_mock_gv__resource_route__pk(self, mock_gv, project_one, addon_one):
+    def test_resource_route__pk(self, mock_gv, project_one, addon_one):
         gv_resource_detail_url = f'{GRAVYVALET_URL}/v1/resource-references/{addon_one.resource_pk}/'
         with mock_gv.run_mock():
             resp = requests.get(gv_resource_detail_url)
@@ -113,7 +113,7 @@ class TestMockGV:
         retrieved_addons_link = json_data['relationships']['configured_storage_addons']['links']['related']
         assert retrieved_addons_link == expected_addons_link
 
-    def test_mock_gv__resource_route__filter(self, mock_gv, project_one, addon_one):
+    def test_resource_route__filter(self, mock_gv, project_one, addon_one):
         gv_resource_detail_url = f'{GRAVYVALET_URL}/v1/resource-references/{addon_one.resource_pk}/'
         gv_resource_filtered_list_url = f'{GRAVYVALET_URL}/v1/resource-references/?filter[resource_uri]={project_one.get_semantic_iri()}'
         with mock_gv.run_mock():
@@ -122,7 +122,7 @@ class TestMockGV:
         assert filtered_list_resp.status_code == 200
         assert filtered_list_resp.json()['data'][0] == detail_resp.json()['data']
 
-    def test_mock_gv__resource_route__addons_link(self, mock_gv, addon_one, addon_two, addon_three):
+    def test_resource_route__addons_link(self, mock_gv, addon_one, addon_two, addon_three):
         # addon three is the only one connected to project two
         gv_resource_detail_url = f'{GRAVYVALET_URL}/v1/resource-references/{addon_three.resource_pk}/'
         with mock_gv.run_mock():
@@ -135,6 +135,26 @@ class TestMockGV:
         assert len(json_data) == 1
         assert json_data[0] == addon_three.serialize()
 
+    def test_account_route(self, mock_gv, account_one):
+        gv_account_detail_url = f'{GRAVYVALET_URL}/v1/authorized-storage-accounts/{account_one.pk}/'
+        with mock_gv.run_mock():
+            resp = requests.get(gv_account_detail_url)
+        assert resp.status_code == 200
+        json_data = resp.json()['data']
+        assert json_data['id'] == account_one.pk
+        assert json_data['relationships']['account_owner']['data']['id'] == account_one.account_owner_pk
+        assert json_data['relationships']['external_storage_service']['data']['id'] == account_one.provider.pk
+
+    def test_addon_route(self, mock_gv, addon_one):
+        gv_addon_detail_url = f'{GRAVYVALET_URL}/v1/configured-storage-addons/{addon_one.pk}/'
+        with mock_gv.run_mock():
+            resp = requests.get(gv_addon_detail_url)
+        assert resp.status_code == 200
+        json_data = resp.json()['data']
+        assert json_data['id'] == addon_one.pk
+        assert json_data['relationships']['authorized_resource']['data']['id'] == addon_one.resource_pk
+        assert json_data['relationships']['base_account']['data']['id'] == addon_one.account.pk
+        assert json_data['relationships']['external_storage_service']['data']['id'] == addon_one.account.provider.pk
 
 @pytest.mark.django_db
 class TestHMACValidation:
