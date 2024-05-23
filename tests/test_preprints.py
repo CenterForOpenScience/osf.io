@@ -7,7 +7,6 @@ import time
 from urllib.parse import urljoin
 import datetime
 from django.utils import timezone
-import pytz
 import itsdangerous
 from importlib import import_module
 import pytest_socket
