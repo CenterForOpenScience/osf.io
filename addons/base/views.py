@@ -197,8 +197,9 @@ def check_resource_permissions(resource, auth, action):
         return _check_node_permissions(resource, auth, required_permission, action)
     elif isinstance(resource, Preprint):
         return _check_preprint_permissions(resource, auth, required_permission)
-    elif isinstance(resource, DraftRegistration):
-        return _check_draft_registration_permissions(resource, auth, required_permission)
+    elif isinstance(resource, DraftNode):
+        draft_registration = resource.registered_draft.first()
+        return _check_draft_registration_permissions(draft_registration, auth, required_permission)
     else:
         raise NotImplementedError()
 
@@ -301,9 +302,6 @@ def get_authenticated_resource(resource_id):
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
-    # Convert a DraftNode to its corresponding node if applicable.
-    resource = resource.registered_draft.first() if isinstance(resource, DraftNode) else resource
-
     if resource.deleted:
         raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been deleted.')
 
@@ -391,7 +389,7 @@ def get_auth(auth, **kwargs):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # Validate provider, exclude Preprints that don't have `get_addon`.
-    if not isinstance(resource, (DraftRegistration, Preprint)):
+    if not isinstance(resource, Preprint):
         provider = resource.get_addon(waterbutler_data['provider'])
         if not provider:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -434,9 +432,6 @@ def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
     if isinstance(resource, Preprint):
         credentials = resource.serialize_waterbutler_credentials()
         waterbutler_settings = resource.serialize_waterbutler_settings()
-    elif isinstance(resource, DraftRegistration):
-        credentials = resource.branched_from.serialize_waterbutler_credentials()
-        waterbutler_settings = resource.branched_from.serialize_waterbutler_settings()
     elif fileversion:
         credentials = fileversion.region.waterbutler_credentials
         waterbutler_settings = fileversion.serialize_waterbutler_settings(
