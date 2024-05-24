@@ -14,6 +14,8 @@ from website import settings
 _AUTH_HEADER_REGEX = re.compile(
     r'^HMAC-SHA256 SignedHeaders=(?P<headers>[\w;-]*)&Signature=(?P<signature>[^\W_]*$)'
 )
+TIMESTAMP_HEADER = 'X-Authorization-Timestamp'
+CONTENT_HASH_HEADER = 'X-Content-SHA256'
 USER_HEADER = 'X-Requesting-User-URI'
 RESOURCE_HEADER = 'X-Requested-Resource-URI'
 PERMISSIONS_HEADER = 'X-Requested-Resource-Permissions'
@@ -45,9 +47,9 @@ def _get_signed_components(
     ]
     # Filter out query string and content_hash if none present
     signed_segments = [segment for segment in signed_segments if segment]
-    signed_headers = {'X-Authorization-Timestamp': auth_timestamp}
+    signed_headers = {TIMESTAMP_HEADER: auth_timestamp}
     if content_hash:
-        signed_headers['X-Content-SHA256'] = content_hash
+        signed_headers[CONTENT_HASH_HEADER] = content_hash
     # order matters, so append additional headers at the end for consistency
     signed_headers.update(additional_headers)
     return signed_segments, signed_headers
