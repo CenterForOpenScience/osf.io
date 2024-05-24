@@ -1,5 +1,4 @@
 import base64
-import email.utils
 import hashlib
 import hmac
 import re
@@ -15,6 +14,9 @@ from website import settings
 _AUTH_HEADER_REGEX = re.compile(
     r'^HMAC-SHA256 SignedHeaders=(?P<headers>[\w;-]*)&Signature=(?P<signature>[^\W_]*$)'
 )
+USER_HEADER = 'X-Requesting-User-URI'
+RESOURCE_HEADER = 'X-Requested-Resource-URI'
+PERMISSIONS_HEADER = 'X-Requested-Resource-Permissions'
 
 
 def _sign_message(message: str, hmac_key: str = None) -> str:
@@ -32,7 +34,7 @@ def _get_signed_components(
     if isinstance(body, str):
         body = body.encode()
     content_hash = hashlib.sha256(body).hexdigest() if body else None
-    auth_timestamp = email.utils.format_datetime(timezone.now())
+    auth_timestamp = timezone.now().isoformat()
     signed_segments = [
         request_method,
         parsed_url.path,
@@ -54,15 +56,15 @@ def _get_signed_components(
 def _make_permissions_headers(requesting_user=None, requested_resource=None):
     osf_permissions_headers = {}
     if requesting_user:
-        osf_permissions_headers['X-Requesting-User-URI'] = requesting_user.get_semantic_iri()
+        osf_permissions_headers[USER_HEADER] = requesting_user.get_semantic_iri()
     if requested_resource:
-        osf_permissions_headers['X-Requested-Resource-URI'] = requested_resource.get_semantic_iri()
+        osf_permissions_headers[RESOURCE_HEADER] = requested_resource.get_semantic_iri()
         user_permissions = ''
         if requesting_user:
             user_permissions = ';'.join(requested_resource.get_permissions(requesting_user))
         if (not requesting_user or not user_permissions) and requested_resource.is_public:
             user_permissions = osf_permissions.READ
-        osf_permissions_headers['X-Requested-Resource-Permissions'] = user_permissions
+        osf_permissions_headers[PERMISSIONS_HEADER] = user_permissions
     return osf_permissions_headers
 
 
@@ -102,9 +104,9 @@ def _reconstruct_string_to_sign_from_request(request, signed_headers: typing.Lis
     if parsed_url.query:
         signed_segments.append(parsed_url.query)
     signed_segments.extend(
-        [str(request.headers[signed_header]) for signed_header in signed_headers]
+        str(request.headers[signed_header]) for signed_header in signed_headers
     )
-    return '\n'.join([segment for segment in signed_segments if segment])
+    return '\n'.join(segment for segment in signed_segments if segment)
 
 
 def validate_signed_headers(request, hmac_key: typing.Optional[str] = None):

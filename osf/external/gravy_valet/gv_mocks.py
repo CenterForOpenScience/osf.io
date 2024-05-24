@@ -4,6 +4,7 @@ import json
 import typing
 import re
 import urllib.parse
+from http import HTTPStatus
 
 import dataclasses  # backport
 import responses
@@ -188,8 +189,8 @@ class _MockAddon(_MockGVEntity):
 class MockGravyValet():
 
     ROUTES = {
-        r'v1/user-references/((?P<pk>\d+)/|(\?filter\[user_uri\]=(?P<user_uri>.+)))$': '_get_user',
-        r'v1/resource-references/((?P<pk>\d+)/|(\?filter\[resource_uri\]=(?P<resource_uri>.+)))$': '_get_resource',
+        r'v1/user-references/((?P<pk>\d+)/|(\?filter\[user_uri\]=(?P<user_uri>[^&]+)))$': '_get_user',
+        r'v1/resource-references/((?P<pk>\d+)/|(\?filter\[resource_uri\]=(?P<resource_uri>[^&]+)))$': '_get_resource',
         r'v1/authorized-storage-accounts/(?P<pk>\d+)/$': '_get_account',
         r'v1/configured-storage-addons/(?P<pk>\d+)/$': '_get_addon',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts/(\?include=(?P<includes>(\w+,)+))?$': '_get_user_accounts',
@@ -253,7 +254,12 @@ class MockGravyValet():
         self._known_providers[provider_name] = new_provider
         return new_provider
 
-    def configure_mock_account(self, user: OSFUser, addon_name: str, **account_attrs) -> _MockAccount:
+    def configure_mock_account(
+        self,
+        user: OSFUser,
+        addon_name: str,
+        **account_attrs
+    ) -> _MockAccount:
         user_uri, user_pk = self._get_or_create_user_entry(user)
         account_pk = _get_nested_count(self._user_accounts) + 1
         connected_provider = self._known_providers[addon_name]
@@ -266,7 +272,12 @@ class MockGravyValet():
         self._user_accounts.setdefault(user_pk, []).append(new_account)
         return new_account
 
-    def configure_mock_addon(self, resource: AbstractNode, connected_account: _MockAccount, **config_attrs) -> _MockAddon:
+    def configure_mock_addon(
+        self,
+        resource: AbstractNode,
+        connected_account: _MockAccount,
+        **config_attrs
+    ) -> _MockAddon:
         resource_uri, resource_pk = self._get_or_create_resource_entry(resource)
         addon_pk = _get_nested_count(self._resource_addons) + 1
         new_addon = _MockAddon(
@@ -283,7 +294,7 @@ class MockGravyValet():
         with responses.RequestsMock() as requests_mock:
             requests_mock.add_callback(
                 responses.GET,
-                re.compile(f'{settings.GRAVYVALET_URL}.*'),
+                re.compile(f'{re.escape(settings.GRAVYVALET_URL)}.*'),
                 callback=self._route_request,
                 content_type='application/json',
             )
@@ -296,7 +307,7 @@ class MockGravyValet():
                 return error_response
 
         for route_expr, routed_func_name in self.ROUTES.items():
-            url_regex = re.compile(f'{settings.GRAVYVALET_URL}/{route_expr}')
+            url_regex = re.compile(f'{re.escape(settings.GRAVYVALET_URL)}/{route_expr}')
             route_match = url_regex.match(urllib.parse.unquote(request.url))
             if route_match:
                 func = getattr(self, routed_func_name)
@@ -396,7 +407,12 @@ class MockGravyValet():
 
         return _format_response(data=addon, list_view=False)
 
-    def _get_user_accounts(self, headers: dict, user_pk: str, includes: str = None):  # -> tuple[int, dict, str]
+    def _get_user_accounts(
+        self,
+        headers: dict,
+        user_pk: str,
+        includes: str = None
+    ):  # -> tuple[int, dict, str]
         user_pk = int(user_pk)
         if self.validate_headers:
             user_uri = self._known_users[user_pk]
@@ -409,7 +425,12 @@ class MockGravyValet():
             list_view=True
         )
 
-    def _get_resource_addons(self, headers: dict, resource_pk: str, includes: str = None):  # -> tuple[int, dict, str]
+    def _get_resource_addons(
+        self,
+        headers: dict,
+        resource_pk: str,
+        includes: str = None
+    ):  # -> tuple[int, dict, str]
         resource_pk = int(resource_pk)
         if self.validate_headers:
             resource_uri = self._known_resources[resource_pk]
@@ -425,7 +446,7 @@ class MockGravyValet():
 
 def _format_response(
     data,  # _MockGVEntity | list[_MockGVEntity]
-    status_code: int = 200,
+    status_code: int = HTTPStatus.OK,
     list_view: bool = False,
     headers: dict = None,
 ):  # -> tuple[int, dict, str]:
@@ -447,31 +468,38 @@ def _format_response(
 
 def _get_nested_count(d):  # dict[Any, Any] -> int:
     """Get the total number of entries from a dictionary with lists for values."""
-    return sum(map(len, itertools.chain(d.values())))
+    return sum(map(len, d.values()))
 
 
 def _validate_request(request):
     try:
         auth_helpers.validate_signed_headers(request)
     except ValueError:
-        error_code = 403 if request.headers.get('X-Requesting-User-URI') else 401
+        error_code = (
+            HTTPStatus.FORBIDDEN
+            if request.headers.get(auth_helpers.USER_HEADER)
+            else HTTPStatus.UNAUTHORIZED
+        )
         return (error_code, {}, '')
 
 
 def _validate_user(requested_user_uri, headers):
-    requesting_user_uri = headers.get('X-Requesting-User-URI')
+    requesting_user_uri = headers.get(auth_helpers.USER_HEADER)
     if requesting_user_uri is None:
-        return (401, {}, '')  # UNAUTHORIZED
+        return (HTTPStatus.UNAUTHORIZED, {}, '')  # UNAUTHORIZED
     if requesting_user_uri != requested_user_uri:
-        return (403, {}, '')  # FORBIDDEN
+        return (HTTPStatus.FORBIDDEN, {}, '')  # FORBIDDEN
 
 
 def _validate_resource_access(requested_resource_uri, headers):
-    headers_requested_resource = headers.get('X-Requested-Resource-URI')
+    headers_requested_resource = headers.get(auth_helpers.RESOURCE_HEADER)
+    # generously assume malformed request on mismatch between headers and request
     if not headers_requested_resource or headers_requested_resource != requested_resource_uri:
-        return (400, {}, '')  # generously assume malformed request on mismatch between headers and request
-    requesting_user_uri = headers.get('X-Requesting-User-URI')
-    permission_denied_error_code = 403 if requesting_user_uri else 401
-    resource_permissions = headers.get('X-Requested-Resource-Permissions', '').split(';')
+        return (HTTPStatus.BAD_REQUEST, {}, '')
+    requesting_user_uri = headers.get(auth_helpers.USER_HEADER)
+    permission_denied_error_code = (
+        HTTPStatus.FORBIDDEN if requesting_user_uri else HTTPStatus.UNAUTHORIZED
+    )
+    resource_permissions = headers.get(auth_helpers.PERMISSIONS_HEADER, '').split(';')
     if osf_permissions.READ not in resource_permissions:
         return (permission_denied_error_code, {}, '')

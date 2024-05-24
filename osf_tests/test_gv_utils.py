@@ -1,5 +1,6 @@
 import pytest
 import requests
+from http import HTTPStatus
 
 from osf.external.gravy_valet import (
     auth_helpers as gv_auth,
@@ -67,7 +68,7 @@ class TestMockGV:
         gv_user_detail_url = f'{GRAVYVALET_URL}/v1/user-references/{account_one.account_owner_pk}/'
         with mock_gv.run_mock():
             resp = requests.get(gv_user_detail_url)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
         json_data = resp.json()['data']
         assert json_data['id'] == account_one.account_owner_pk
         assert json_data['attributes']['user_uri'] == test_user.get_semantic_iri()
@@ -82,17 +83,17 @@ class TestMockGV:
         with mock_gv.run_mock():
             detail_resp = requests.get(gv_user_detail_url)
             filtered_list_resp = requests.get(gv_user_filtered_list_url)
-        assert filtered_list_resp.status_code == 200
+        assert filtered_list_resp.status_code == HTTPStatus.OK
         assert filtered_list_resp.json()['data'][0] == detail_resp.json()['data']
 
-    def test_user_route__accounts_link(self, mock_gv, test_user, account_one, account_two, account_three):
+    def test_user_route__accounts_link(self, mock_gv, account_one, account_two, account_three):
         gv_user_detail_url = f'{GRAVYVALET_URL}/v1/user-references/{account_one.account_owner_pk}/'
         with mock_gv.run_mock():
             user_resp = requests.get(gv_user_detail_url)
             accounts_resp = requests.get(
                 user_resp.json()['data']['relationships']['authorized_storage_accounts']['links']['related']
             )
-        assert accounts_resp.status_code == 200
+        assert accounts_resp.status_code == HTTPStatus.OK
         json_data = accounts_resp.json()['data']
         # Should not find account_three
         expected_accounts_by_pk = {account.pk: account for account in [account_one, account_two]}
@@ -104,7 +105,7 @@ class TestMockGV:
         gv_resource_detail_url = f'{GRAVYVALET_URL}/v1/resource-references/{addon_one.resource_pk}/'
         with mock_gv.run_mock():
             resp = requests.get(gv_resource_detail_url)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
         json_data = resp.json()['data']
         assert json_data['id'] == addon_one.resource_pk
         assert json_data['attributes']['resource_uri'] == project_one.get_semantic_iri()
@@ -119,7 +120,7 @@ class TestMockGV:
         with mock_gv.run_mock():
             detail_resp = requests.get(gv_resource_detail_url)
             filtered_list_resp = requests.get(gv_resource_filtered_list_url)
-        assert filtered_list_resp.status_code == 200
+        assert filtered_list_resp.status_code == HTTPStatus.OK
         assert filtered_list_resp.json()['data'][0] == detail_resp.json()['data']
 
     def test_resource_route__addons_link(self, mock_gv, addon_one, addon_two, addon_three):
@@ -130,7 +131,7 @@ class TestMockGV:
             addons_resp = requests.get(
                 resource_resp.json()['data']['relationships']['configured_storage_addons']['links']['related']
             )
-        assert addons_resp.status_code == 200
+        assert addons_resp.status_code == HTTPStatus.OK
         json_data = addons_resp.json()['data']
         assert len(json_data) == 1
         assert json_data[0] == addon_three.serialize()
@@ -139,7 +140,7 @@ class TestMockGV:
         gv_account_detail_url = f'{GRAVYVALET_URL}/v1/authorized-storage-accounts/{account_one.pk}/'
         with mock_gv.run_mock():
             resp = requests.get(gv_account_detail_url)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
         json_data = resp.json()['data']
         assert json_data['id'] == account_one.pk
         assert json_data['relationships']['account_owner']['data']['id'] == account_one.account_owner_pk
@@ -149,7 +150,7 @@ class TestMockGV:
         gv_addon_detail_url = f'{GRAVYVALET_URL}/v1/configured-storage-addons/{addon_one.pk}/'
         with mock_gv.run_mock():
             resp = requests.get(gv_addon_detail_url)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
         json_data = resp.json()['data']
         assert json_data['id'] == addon_one.pk
         assert json_data['relationships']['authorized_resource']['data']['id'] == addon_one.resource_pk
@@ -161,6 +162,7 @@ class TestHMACValidation:
 
     @pytest.fixture
     def mock_gv(self):
+        #validate_headers == True by default
         return gv_mocks.MockGravyValet()
 
     @pytest.fixture
@@ -197,13 +199,13 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == HTTPStatus.FORBIDDEN
 
     def test_validate_headers__missing_headers(self, mock_gv, contributor, external_account):
         request_url = f'{GRAVYVALET_URL}/v1/user-references/{external_account.account_owner_pk}/'
         with mock_gv.run_mock():
             resp = requests.get(request_url)
-        assert resp.status_code == 401
+        assert resp.status_code == HTTPStatus.UNAUTHORIZED
 
     @pytest.mark.parametrize('subpath', ['', 'authorized_storage_accounts/'])
     def test_validate_user__success(self, mock_gv, contributor, external_account, subpath):
@@ -215,7 +217,7 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('subpath', ['', 'authorized_storage_accounts/'])
     def test_validate_user__wrong_user(self, mock_gv, noncontributor, external_account, subpath):
@@ -227,10 +229,10 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize('subpath', ['', 'authorized_storage_accounts/'])
-    def test_validate_user__no_user(self, mock_gv, noncontributor, external_account, subpath):
+    def test_validate_user__no_user(self, mock_gv, external_account, subpath):
         request_url = f'{GRAVYVALET_URL}/v1/user-references/{external_account.account_owner_pk}/{subpath}'
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
@@ -238,7 +240,7 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 401
+        assert resp.status_code == HTTPStatus.UNAUTHORIZED
 
     @pytest.mark.parametrize('subpath', ['', 'configured_storage_addons/'])
     def test_validate_resource__success(self, mock_gv, contributor, resource, configured_addon, subpath):
@@ -251,7 +253,20 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
+
+    @pytest.mark.parametrize('subpath', ['', 'configured_storage_addons/'])
+    def test_validate_resource__wrong_resource(self, mock_gv, contributor, configured_addon, subpath):
+        request_url = f'{GRAVYVALET_URL}/v1/resource-references/{configured_addon.resource_pk}/{subpath}'
+        auth_headers = gv_auth.make_gravy_valet_hmac_headers(
+            request_url=request_url,
+            request_method='GET',
+            requesting_user=contributor,
+            requested_resource=factories.ProjectFactory(creator=contributor),
+        )
+        with mock_gv.run_mock():
+            resp = requests.get(request_url, headers=auth_headers)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST
 
     @pytest.mark.parametrize('subpath', ['', 'configured_storage_addons/'])
     def test_validate_resource__noncontributor__public_resource(self, mock_gv, noncontributor, resource, configured_addon, subpath):
@@ -266,7 +281,7 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('subpath', ['', 'configured_storage_addons/'])
     def test_validate_resource__noncontributor__private_resource(self, mock_gv, noncontributor, resource, configured_addon, subpath):
@@ -281,7 +296,7 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize('subpath', ['', 'configured_storage_addons/'])
     def test_validate_resource__unauthenticated_user__public_resource(self, mock_gv, resource, configured_addon, subpath):
@@ -295,7 +310,7 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 200
+        assert resp.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('subpath', ['', 'configured_storage_addons/'])
     def test_validate_resource__unauthenticated_user__private_resource(self, mock_gv, resource, configured_addon, subpath):
@@ -309,4 +324,4 @@ class TestHMACValidation:
         )
         with mock_gv.run_mock():
             resp = requests.get(request_url, headers=auth_headers)
-        assert resp.status_code == 401
+        assert resp.status_code == HTTPStatus.UNAUTHORIZED
