@@ -15,6 +15,13 @@ from osf.utils import permissions as osf_permissions
 from website import settings
 
 
+class MockGVError(Exception):
+
+    def __init__(self, status_code, *args, **kwargs):
+        self.status_code = status_code
+        super().__init__(*args, **kwargs)
+
+
 @dataclasses.dataclass
 class _MockGVEntity:
 
@@ -302,26 +309,37 @@ class MockGravyValet():
 
     def _route_request(self, request):  # -> tuple[int, dict, str]
         if self.validate_headers:
-            error_response = _validate_request(request)
-            if error_response:
-                return error_response
+            try:
+                _validate_request(request)
+            except MockGVError as e:
+                return (e.status_code, {}, '')
 
+        status_code = 200
         for route_expr, routed_func_name in self.ROUTES.items():
             url_regex = re.compile(f'{re.escape(settings.GRAVYVALET_URL)}/{route_expr}')
             route_match = url_regex.match(urllib.parse.unquote(request.url))
             if route_match:
                 func = getattr(self, routed_func_name)
-                return func(headers=request.headers, **route_match.groupdict())
-        raise ValueError(f'No matching routes for {request.url}')
+                try:
+                    body = func(headers=request.headers, **route_match.groupdict())
+                except KeyError:  # entity lookup failed somewhere
+                    status_code = HTTPStatus.NOT_FOUND
+                    body = ''
+                except MockGVError as e:
+                    status_code = e.status_code
+                    body = ''
+                return (status_code, {}, body)
+
+        return (HTTPStatus.NOT_FOUND, {}, '')
 
     def _get_user(
         self,
         headers: dict,
         pk=None,  # str | None
         user_uri=None,  # str | None
-    ):  # -> tuple[int, dict, str]
-        if not (pk or user_uri):
-            raise ValueError('Must have either user PK or uri for lookup')
+    ) -> str:
+        if bool(pk) == bool(user_uri):
+            raise MockGVError(HTTPStatus.BAD_REQUEST)
 
         # if passed the user_uri, call came through list endpoint with filter
         if user_uri:
@@ -333,9 +351,7 @@ class MockGravyValet():
             user_uri = self._known_users[pk]
 
         if self.validate_headers:
-            permissions_error_response = _validate_user(user_uri, headers)
-            if permissions_error_response:
-                return permissions_error_response
+            _validate_user(user_uri, headers)
 
         return _format_response(
             data=_MockUserReference(pk=pk, uri=user_uri),
@@ -347,12 +363,13 @@ class MockGravyValet():
         headers: dict,
         pk=None,  # str | None
         resource_uri=None,  # str | None
-    ):  # -> typing.Tuple[int, dict, str]:
+    ) -> str:
         if bool(pk) == bool(resource_uri):
-            raise ValueError('Must have exactly one of user PK or uri for lookup')
+            raise MockGVError(HTTPStatus.BAD_REQUEST)
 
+        # if passed the resource_uri, call came through list endpoint with filter
         if resource_uri:
-            list_view = True  # call came through list endpoint with filter
+            list_view = True
             pk = self._known_resources[resource_uri]
         else:
             list_view = False
@@ -360,9 +377,7 @@ class MockGravyValet():
             resource_uri = self._known_resources[pk]
 
         if self.validate_headers:
-            permissions_error_response = _validate_resource_access(resource_uri, headers)
-            if permissions_error_response:
-                return permissions_error_response
+            _validate_resource_access(resource_uri, headers)
 
         return _format_response(
             data=_MockResourceReference(pk=pk, uri=resource_uri),
@@ -378,13 +393,11 @@ class MockGravyValet():
                 break
 
         if not account:
-            return (404, {}, '')  # NOT FOUND
+            raise MockGVError(HTTPStatus.NOT_FOUND)
 
         if self.validate_headers:
             user_uri = self._known_users[account.account_owner_pk]
-            permissions_error_response = _validate_user(user_uri, headers)
-            if permissions_error_response:
-                return permissions_error_response
+            _validate_user(user_uri, headers)
 
         return _format_response(data=account, list_view=False)
 
@@ -397,13 +410,11 @@ class MockGravyValet():
                 break
 
         if not addon:
-            return (404, {}, '')  # NOT FOUND
+            raise MockGVError(HTTPStatus.NOT_FOUND)
 
         if self.validate_headers:
             resource_uri = self._known_resources[addon.resource_pk]
-            permissions_error_response = _validate_resource_access(resource_uri, headers)
-            if permissions_error_response:
-                return permissions_error_response
+            _validate_resource_access(resource_uri, headers)
 
         return _format_response(data=addon, list_view=False)
 
@@ -412,47 +423,33 @@ class MockGravyValet():
         headers: dict,
         user_pk: str,
         includes: str = None
-    ):  # -> tuple[int, dict, str]
+    ) -> str:
         user_pk = int(user_pk)
         if self.validate_headers:
             user_uri = self._known_users[user_pk]
-            permissions_error_response = _validate_user(user_uri, headers)
-            if permissions_error_response:
-                return permissions_error_response
+            _validate_user(user_uri, headers)
 
-        return _format_response(
-            data=self._user_accounts.get(user_pk, []),
-            list_view=True
-        )
+        return _format_response(data=self._user_accounts.get(user_pk, []), list_view=True)
 
     def _get_resource_addons(
         self,
         headers: dict,
         resource_pk: str,
         includes: str = None
-    ):  # -> tuple[int, dict, str]
+    ) -> str:
         resource_pk = int(resource_pk)
         if self.validate_headers:
             resource_uri = self._known_resources[resource_pk]
-            permissions_error_response = _validate_resource_access(resource_uri, headers)
-            if permissions_error_response:
-                return permissions_error_response
+            _validate_resource_access(resource_uri, headers)
 
-        return _format_response(
-            data=self._resource_addons.get(int(resource_pk), []),
-            list_view=True
-        )
+        return _format_response(data=self._resource_addons.get(resource_pk, []), list_view=True)
 
 
 def _format_response(
     data,  # _MockGVEntity | list[_MockGVEntity]
-    status_code: int = HTTPStatus.OK,
     list_view: bool = False,
-    headers: dict = None,
-):  # -> tuple[int, dict, str]:
+) -> str:
     """Returns the expected (status, headers, json) tuple expected by callbacks for MockRequest."""
-    headers = headers or {}
-    serialized_data = None
     if list_view:
         if not isinstance(data, list):
             data = [data]
@@ -463,7 +460,7 @@ def _format_response(
     response_dict = {
         'data': serialized_data
     }
-    return (status_code, headers, json.dumps(response_dict))
+    return json.dumps(response_dict)
 
 
 def _get_nested_count(d):  # dict[Any, Any] -> int:
@@ -480,26 +477,26 @@ def _validate_request(request):
             if request.headers.get(auth_helpers.USER_HEADER)
             else HTTPStatus.UNAUTHORIZED
         )
-        return (error_code, {}, '')
+        raise MockGVError(error_code)
 
 
 def _validate_user(requested_user_uri, headers):
     requesting_user_uri = headers.get(auth_helpers.USER_HEADER)
     if requesting_user_uri is None:
-        return (HTTPStatus.UNAUTHORIZED, {}, '')  # UNAUTHORIZED
+        raise MockGVError(HTTPStatus.UNAUTHORIZED)
     if requesting_user_uri != requested_user_uri:
-        return (HTTPStatus.FORBIDDEN, {}, '')  # FORBIDDEN
+        raise MockGVError(HTTPStatus.FORBIDDEN)
 
 
 def _validate_resource_access(requested_resource_uri, headers):
     headers_requested_resource = headers.get(auth_helpers.RESOURCE_HEADER)
     # generously assume malformed request on mismatch between headers and request
     if not headers_requested_resource or headers_requested_resource != requested_resource_uri:
-        return (HTTPStatus.BAD_REQUEST, {}, '')
+        raise MockGVError(HTTPStatus.BAD_REQUEST)
     requesting_user_uri = headers.get(auth_helpers.USER_HEADER)
     permission_denied_error_code = (
         HTTPStatus.FORBIDDEN if requesting_user_uri else HTTPStatus.UNAUTHORIZED
     )
     resource_permissions = headers.get(auth_helpers.PERMISSIONS_HEADER, '').split(';')
     if osf_permissions.READ not in resource_permissions:
-        return (permission_denied_error_code, {}, '')
+        raise MockGVError(permission_denied_error_code)
