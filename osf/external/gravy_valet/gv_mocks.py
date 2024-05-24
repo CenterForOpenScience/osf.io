@@ -353,7 +353,7 @@ class MockGravyValet():
         if self.validate_headers:
             _validate_user(user_uri, headers)
 
-        return _format_response(
+        return _format_response_body(
             data=_MockUserReference(pk=pk, uri=user_uri),
             list_view=list_view
         )
@@ -379,7 +379,7 @@ class MockGravyValet():
         if self.validate_headers:
             _validate_resource_access(resource_uri, headers)
 
-        return _format_response(
+        return _format_response_body(
             data=_MockResourceReference(pk=pk, uri=resource_uri),
             list_view=list_view
         )
@@ -399,7 +399,7 @@ class MockGravyValet():
             user_uri = self._known_users[account.account_owner_pk]
             _validate_user(user_uri, headers)
 
-        return _format_response(data=account, list_view=False)
+        return _format_response_body(data=account, list_view=False)
 
     def _get_addon(self, headers: dict, pk: str):  # -> tuple[int, dict, str]
         pk = int(pk)
@@ -416,7 +416,7 @@ class MockGravyValet():
             resource_uri = self._known_resources[addon.resource_pk]
             _validate_resource_access(resource_uri, headers)
 
-        return _format_response(data=addon, list_view=False)
+        return _format_response_body(data=addon, list_view=False)
 
     def _get_user_accounts(
         self,
@@ -429,7 +429,7 @@ class MockGravyValet():
             user_uri = self._known_users[user_pk]
             _validate_user(user_uri, headers)
 
-        return _format_response(data=self._user_accounts.get(user_pk, []), list_view=True)
+        return _format_response_body(data=self._user_accounts.get(user_pk, []), list_view=True)
 
     def _get_resource_addons(
         self,
@@ -442,10 +442,10 @@ class MockGravyValet():
             resource_uri = self._known_resources[resource_pk]
             _validate_resource_access(resource_uri, headers)
 
-        return _format_response(data=self._resource_addons.get(resource_pk, []), list_view=True)
+        return _format_response_body(data=self._resource_addons.get(resource_pk, []), list_view=True)
 
 
-def _format_response(
+def _format_response_body(
     data,  # _MockGVEntity | list[_MockGVEntity]
     list_view: bool = False,
 ) -> str:
