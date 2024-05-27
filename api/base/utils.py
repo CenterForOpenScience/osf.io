@@ -49,11 +49,18 @@ def is_bulk_request(request):
     content_type = request.content_type
     return 'ext=bulk' in content_type
 
+
 def is_truthy(value):
-    return value in TRUTHY
+    if isinstance(value, bool) or value is None:
+        return value
+    return str(value).lower() in TRUTHY
+
 
 def is_falsy(value):
-    return value in FALSY
+    if isinstance(value, bool) or value is None:
+        return not value
+    return str(value).lower() in FALSY
+
 
 def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the
@@ -139,11 +146,13 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
             raise Gone(detail=f'The requested {display_name} is no longer available.')
     return obj
 
+
 def default_node_list_queryset(model_cls):
     Node = apps.get_model('osf', 'Node')
     Registration = apps.get_model('osf', 'Registration')
     assert model_cls in {Node, Registration}
     return model_cls.objects.filter(is_deleted=False)
+
 
 def default_node_permission_queryset(user, model_cls):
     """
@@ -155,6 +164,7 @@ def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
     return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
+
 def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
@@ -164,12 +174,14 @@ def default_node_list_permission_queryset(user, model_cls, **annotations):
         qs = qs.annotate(**annotations)
     return qs
 
+
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlsplit(url)
     orig_params = parse_qs(query)
     orig_params.update(params)
     query = urlencode(orig_params, True)
     return urlunsplit([scheme, netloc, path, query, ''])
+
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():

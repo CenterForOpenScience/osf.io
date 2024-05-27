@@ -84,7 +84,10 @@ class TestUserSettingsUpdateTwoFactor:
 
     def test_update_two_factor_enabled(self, app, user_one, url, payload):
         # Invalid data type
-        payload['data']['attributes']['two_factor_enabled'] = 'yEs'
+
+        # Previously, certain string values like 'yEs' have been interpreted as not truthy,
+        # but the current implementation requires distinct rejecting like 'yEp' or similar variants.
+        payload['data']['attributes']['two_factor_enabled'] = 'yEp'
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
