@@ -22,6 +22,7 @@ from website.archiver import (
     AggregateStatResult,
 )
 from website.archiver import utils
+from website.archiver.utils import normalize_unicode_filename
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
@@ -32,7 +33,6 @@ from osf.models import (
     AbstractNode,
     DraftRegistration,
 )
-import bleach
 import unicodedata
 
 
@@ -44,14 +44,6 @@ def create_app_context():
 
 
 logger = get_task_logger(__name__)
-
-
-def normalize_unicode_filename(filename):
-    return [
-        bleach.clean(unicodedata.normalize(form, filename)).replace('&amp;', '&')
-        for form in ['NFD', 'NFC']
-    ]
-
 
 class ArchiverSizeExceeded(Exception):
     def __init__(self, result, *args, **kwargs):

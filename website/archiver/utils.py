@@ -24,7 +24,7 @@ FILE_DOWNLOAD_LINK_TEMPLATE = settings.DOMAIN + 'download/{file_id}'
 
 def normalize_unicode_filename(filename):
     return [
-        bleach.clean(unicodedata.normalize(form, filename)).replace('&amp;', '&')
+        bleach.clean(unicodedata.normalize(form, filename)).replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
         for form in ['NFD', 'NFC']
     ]
 
@@ -329,7 +329,7 @@ def _make_file_response(file_info, parent_guid):
     archived_file_id = file_info['path'].lstrip('/')
     return {
         'file_id': archived_file_id,
-        'file_name': normalize_unicode_filename(bleach.clean(file_info['name']).replace('&amp;', '&'))[0],
+        'file_name': normalize_unicode_filename(file_info['name'])[0],
         'file_urls': {
             'html':
                 FILE_HTML_LINK_TEMPLATE.format(
