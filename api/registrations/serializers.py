@@ -1,6 +1,5 @@
 import pytz
 import json
-from unicodedata import normalize
 from website.archiver.utils import normalize_unicode_filename
 
 from distutils.version import StrictVersion
