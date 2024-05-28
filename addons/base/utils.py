@@ -3,6 +3,10 @@ import markupsafe
 from os.path import basename
 from website.settings import MFR_SERVER_URL
 
+
+from api.caching import settings as cache_settings
+from api.caching.utils import legacy_addon_cache
+
 from website import settings
 
 
@@ -76,6 +80,13 @@ class GravyValetAddonAppConfig:
         ).json()
 
     def __init__(self, resource, config_id, auth):
+    def cache_config_id_translation(self):
+        """
+        Cache what legacy addon name corresponds to which config ids.
+        """
+
+        key = cache_settings.LEGACY_ADDON_KEY.format(target_id=self.config_id)
+        legacy_addon_cache.set(key, self.addon_name, settings.STORAGE_USAGE_CACHE_TIMEOUT)
         from osf.models import OSFUser, AbstractNode
         if isinstance(resource, AbstractNode):
             self.gv_data = self.get_configured_storage_addons_data(config_id, auth)
@@ -86,6 +97,7 @@ class GravyValetAddonAppConfig:
 
         # TODO: Names in GV must be exact matches?
         self.addon_name = self.gv_data['data']['embeds']['external_storage_service']['attributes']['name']
+        self.cache_config_id_translation()
         self.legacy_app_config = settings.ADDONS_AVAILABLE_DICT[self.addon_name]
 
         self.resource = resource
