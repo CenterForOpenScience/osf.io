@@ -368,7 +368,6 @@ services:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - ./:/code:cached
-      # - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
 
   assets:
@@ -380,7 +379,6 @@ services:
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      # - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -395,7 +393,6 @@ services:
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      # - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -428,8 +425,7 @@ services:
 #      - .docker-compose.env
 #    volumes:
 #      - ./:/code
-#      # - osf_requirements_vol:/usr/local/lib/python3.6
-#      - osf_requirements_3_10_vol:/usr/lib/python3.10
+#      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
 
@@ -449,7 +445,6 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      # - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -475,7 +470,6 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      # - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -499,7 +493,6 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      # - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -523,7 +516,6 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      # - osf_requirements_vol:/usr/local/lib/python3.6
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules

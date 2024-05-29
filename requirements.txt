@@ -87,7 +87,7 @@ google-cloud-storage==2.16.0  # dependency of django-storages, hard-pin to versi
 django-dirtyfields==1.9.2
 django-extensions==3.2.3
 psycopg2==2.9.9 --no-binary psycopg2
-
+packaging==24.0
 # Reviews requirements
 transitions==0.8.11
 
