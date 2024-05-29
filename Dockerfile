@@ -1,4 +1,4 @@
-FROM python:3.12-alpine3.17
+FROM python:3.12-alpine3.17 as base
 
 # Creation of www-data group was removed as it is created by default in alpine 3.14 and higher
 # Alpine does not create a www-data user, so we still need to create that. 82 is the standard
@@ -16,70 +16,46 @@ RUN apk add --no-cache --virtual .run-deps \
     su-exec \
     bash \
     git \
-    # lxml2
     libxml2 \
     libxslt \
-    # psycopg2
-    postgresql-libs \
-    # cryptography
+    libpq-dev \
     libffi \
-    # gevent
     libev \
     libevent \
-    && yarn global add bower
+    && yarn global add bower \
+    && mkdir -p /var/www \
+    && chown www-data:www-data /var/www
 
-# Setuptools lower than 58.0.0 are needed for rdflib-jsonld on python 3.10
-RUN pip3 install --upgrade "pip>=24.0" "setuptools"
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_OPTIONS_ALWAYS_COPY=1 \
+    POETRY_VIRTUALENVS_CREATE=0
 
-WORKDIR /code
+FROM base as build
 
-COPY ./requirements.txt ./
-COPY ./requirements/ ./requirements/
-COPY ./addons/bitbucket/requirements.txt ./addons/bitbucket/
-COPY ./addons/boa/requirements.txt ./addons/boa/
-COPY ./addons/box/requirements.txt ./addons/box/
-#COPY ./addons/citations/requirements.txt ./addons/citations/
-COPY ./addons/dataverse/requirements.txt ./addons/dataverse/
-COPY ./addons/dropbox/requirements.txt ./addons/dropbox/
-#COPY ./addons/figshare/requirements.txt ./addons/figshare/
-#COPY ./addons/forward/requirements.txt ./addons/forward/
-COPY ./addons/github/requirements.txt ./addons/github/
-COPY ./addons/gitlab/requirements.txt ./addons/gitlab/
-#COPY ./addons/googledrive/requirements.txt ./addons/googledrive/
-COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
-COPY ./addons/onedrive/requirements.txt /code/addons/onedrive/
-#COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
-COPY ./addons/owncloud/requirements.txt ./addons/owncloud/
-COPY ./addons/s3/requirements.txt ./addons/s3/
-COPY ./addons/twofactor/requirements.txt ./addons/twofactor/
-#COPY ./addons/wiki/requirements.txt ./addons/wiki/
-COPY ./addons/zotero/requirements.txt ./addons/zotero/
+ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    YARN_CACHE_FOLDER=/tmp/yarn-cache \
+    POETRY_CACHE_DIR=/tmp/poetry-cache \
+    POETRY_HOME=/tmp/poetry
+
+RUN python3 -m venv $POETRY_HOME
+RUN $POETRY_HOME/bin/pip install poetry==1.8.3
+
 
 RUN set -ex \
-    && mkdir -p /var/www \
-    && chown www-data:www-data /var/www \
     && apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
-        # lxml2
         musl-dev \
         libxml2-dev \
         libxslt-dev \
-        # psycopg2
-        postgresql-dev \
         # cryptography
-        libffi-dev \
-    && pip3 install --upgrade pip \
-    && for reqs_file in \
-        /code/addons/*/requirements.txt \
-        /code/requirements/release.txt \
-    ; do \
-        pip3 install --no-cache-dir -r "$reqs_file" \
-    ; done \
-    && (pip3 uninstall uritemplate.py --yes || true) \
-    && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
-    && python3 -m compileall /usr/lib/python3.12 \
-    && apk del .build-deps
+        libffi-dev
+
+WORKDIR /code
+COPY pyproject.toml .
+COPY poetry.lock .
+# Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
+RUN $POETRY_HOME/bin/poetry install --without=dev --no-root --compile
 
 # Settings
 COPY ./tasks/ ./tasks/
@@ -154,7 +130,8 @@ COPY ./ ./
 ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
-# TODO: Admin/API should fully specify their bower static deps, and not include ./website/static in their defaults.py.
+# TODO: Admin/API should fully specify their bower static deps, and not
+#       include ./website/static in their defaults.py.
 #       (this adds an additional 300+mb to the build image)
 
 RUN for module in \
@@ -172,4 +149,11 @@ RUN for module in \
    ; done \
    && rm ./website/settings/local.py ./api/base/settings/local.py
 
-CMD ["su-exec", "nobody", "invoke", "--list"]
+FROM base as runtime
+
+WORKDIR /code
+COPY --from=build /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /code /code
+
+CMD ["su-exec", "nobody", "python", "-m", "invoke", "--list"]
