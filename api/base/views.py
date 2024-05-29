@@ -634,20 +634,23 @@ class WaterButlerMixin(object):
         objs_to_create = defaultdict(lambda: [])
         file_objs = []
 
+        provider_short_name = files_list[0]['provider']
+
+        if waffle.flag_is_active(self.request, features.ENABLE_GV):
+            user = getattr(self.request, 'user', None)
+            gv_config = GravyValetAddonAppConfig(
+                resource=self,
+                config_id=provider_short_name,
+                auth=user,
+            )
+            provider_short_name = gv_config.addon_name
+
+
         for item in files_list:
             attrs = item['attributes']
-            if waffle.flag_is_active(self.request, features.ENABLE_GV):
-                gv_config = GravyValetAddonAppConfig(
-                    self,
-                    attrs['provider'],
-                    auth=get_user_auth(self.request),
-                )
-                short_name = gv_config.legacy_app_config.short_name
-            else:
-                short_name = attrs['provider']
 
             base_class = BaseFileNode.resolve_class(
-                short_name,
+                provider_short_name,
                 BaseFileNode.FOLDER if attrs['kind'] == 'folder'
                 else BaseFileNode.FILE,
             )
@@ -676,7 +679,7 @@ class WaterButlerMixin(object):
 
             # TODO: Improve robustness
             if waffle.flag_is_active(self.request, features.ENABLE_GV):
-                file_obj.provider = gv_config.node_settings.config_id
+                file_obj.provider = gv_config.legacy_app_config.config_id
 
             file_obj.update(None, attrs, user=self.request.user, save=False)
 

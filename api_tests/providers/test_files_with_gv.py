@@ -10,6 +10,18 @@ from osf_tests.factories import (
 from waffle.testutils import override_flag
 from django.shortcuts import reverse
 from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
+import pytest
+import requests
+from http import HTTPStatus
+
+from osf.external.gravy_valet import (
+    auth_helpers as gv_auth,
+    gv_mocks
+)
+from osf_tests import factories
+from website.settings import GRAVYVALET_URL
+
+
 
 
 @pytest.mark.django_db
@@ -32,24 +44,22 @@ class TestWaffleFilesProviderView:
         return 1
 
     @pytest.fixture()
-    def node(self, user):
-        return ProjectFactory(
-            creator=user,
-        )
+    def resource(self, user):
+        return ProjectFactory(creator=user)
 
     @pytest.fixture()
-    def addon_files_url(self, node, provider_gv_id):
+    def addon_files_url(self, resource, provider_gv_id):
         return reverse(
             'nodes:node-storage-provider-detail',
             kwargs={
                 'version': 'v2',
-                'node_id': node._id,
+                'node_id': resource._id,
                 'provider': provider_gv_id
             }
         )
 
     @responses.activate
-    def test_must_have_auth(self, app, node, addon_files_url):
+    def test_must_have_auth(self, app, resource, addon_files_url):
         res = app.get(addon_files_url, expect_errors=True)
         assert res.status_code == 401
 
@@ -79,6 +89,28 @@ class TestWaffleFilesView:
         with override_flag(features.ENABLE_GV, active=True):
             yield
 
+    @pytest.fixture
+    def mock_gv(self):
+        mock_gv = gv_mocks.MockGravyValet()
+        mock_gv.validate_headers = False
+        return mock_gv
+
+    @pytest.fixture
+    def external_service(self, mock_gv):
+        return mock_gv.configure_mock_provider('box')
+
+    @pytest.fixture
+    def external_account(self, mock_gv, user, external_service):
+        return mock_gv.configure_mock_account(user, external_service.name)
+
+    @pytest.fixture
+    def configured_addon(self, mock_gv, resource, external_account):
+        return mock_gv.configure_mock_addon(resource, external_account)
+
+    @pytest.fixture
+    def account_one(self, user, external_service, mock_gv):
+        return mock_gv.configure_mock_account(user, external_service.name)
+
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
@@ -88,16 +120,16 @@ class TestWaffleFilesView:
         return 1
 
     @pytest.fixture()
-    def node(self, user):
+    def resource(self, user):
         return ProjectFactory(
             creator=user,
             comment_level='public'
         )
 
     @pytest.fixture()
-    def file(self, user, node):
+    def file(self, user, resource):
         return api_utils.create_test_file(
-            node,
+            resource,
             user,
             path='Test path',
             create_guid=False,
@@ -105,28 +137,25 @@ class TestWaffleFilesView:
         )
 
     @pytest.fixture()
-    def file_url(self, node, provider_gv_id, file):
+    def file_url(self, resource, provider_gv_id, file):
         return reverse(
             'nodes:node-files',
             kwargs={
                 'version': 'v2',
-                'node_id': node._id,
+                'node_id': resource._id,
                 'provider': f'{provider_gv_id}/',
                 'path': f'{file._id}/'
             }
         )
 
     @responses.activate
-    def test_must_have_auth(self, app, user, file_url, file, provider_gv_id, node):
+    def test_must_have_auth(self, app, user, file_url, file, provider_gv_id, mock_gv, resource):
         prepare_mock_wb_response(
-            node=node,
+            node=resource,
             path=file.path + '/',
             provider='1',
             status_code=505  # invalid auth should not reach mock
         )
-
-        responses.add_passthru('http://192.168.168.167:8004/v1/configured-storage-addons/1/base_account/')
-        responses.add_passthru('http://192.168.168.167:8004/v1/authorized-storage-accounts/2/external_storage_service/')
 
         res = app.get(
             file_url,
@@ -137,16 +166,13 @@ class TestWaffleFilesView:
         assert res.status_code == 401
 
     @responses.activate
-    def test_must_be_contributor(self, app, user, file_url, file, provider_gv_id, node):
+    def test_must_be_contributor(self, app, user, file_url, file, provider_gv_id, mock_gv, account_one, configured_addon, resource):
         prepare_mock_wb_response(
-            node=node,
+            node=resource,
             path=file.path + '/',
             provider='1',
             status_code=403
         )
-
-        responses.add_passthru('http://192.168.168.167:8004/v1/configured-storage-addons/1/base_account/')
-        responses.add_passthru('http://192.168.168.167:8004/v1/authorized-storage-accounts/2/external_storage_service/')
 
         res = app.get(
             file_url,
@@ -155,11 +181,10 @@ class TestWaffleFilesView:
         )
         assert res.status_code == 403
 
-    @responses.activate
-    def test_get_file_provider(self, app, user, file_url, file, provider_gv_id, node):
+    def test_get_file_provider(self, app, user, file_url, file, provider_gv_id, resource, mock_gv, account_one):
         prepare_mock_wb_response(
             path=file.path + '/',
-            node=node,
+            node=resource,
             provider='1',
             files=[
                 {
@@ -176,10 +201,8 @@ class TestWaffleFilesView:
             ]
         )
 
-        # responses.add_passthru('http://192.168.168.167:7777/v1/resources/2839a/providers/1/66461cb004537100a208ffdd/?meta=True&view_only')
-        responses.add_passthru('http://192.168.168.167:8004/v1/configured-storage-addons/1/base_account/')
-        responses.add_passthru('http://192.168.168.167:8004/v1/authorized-storage-accounts/2/external_storage_service/')
-        res = app.get(file_url, auth=user.auth)
+        with mock_gv.run_mock():
+            res = app.get(file_url, auth=user.auth)
 
         assert res.status_code == 200
         data = res.json['data']

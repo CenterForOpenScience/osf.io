@@ -486,17 +486,10 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
-        request, user_id = get_request_and_user_id()
-        if waffle.flag_is_active(request, features.ENABLE_GV):
-            return [_f for _f in [
-                self.get_addon(config.short_name)
-                for config in self.ADDONS_AVAILABLE
-            ] if _f]
-        else:
-            return [_f for _f in [
-                super(self.__class__, self).get_addon(config.short_name)
-                for config in self.ADDONS_AVAILABLE
-            ] if _f]
+        return [_f for _f in [
+            self.get_addon(config.short_name)
+            for config in self.ADDONS_AVAILABLE
+        ] if _f]
 
     def get_oauth_addons(self):
         # TODO: Using hasattr is a dirty hack - we should be using issubclass().

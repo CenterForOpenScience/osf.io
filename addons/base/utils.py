@@ -64,22 +64,34 @@ def format_last_known_metadata(auth, node, file, error_type):
 class GravyValetAddonAppConfig:
 
     @staticmethod
-    def get_configured_storage_addons_data(config_id, auth):
-        return requests.get(
-            settings.GV_NODE_ADDON_ENDPOINT.format(config_id=config_id),
-            params={'include': 'external_storage_service'},
-            # auth=auth  TODO: HMAC
-        ).json()
+    def get_configured_storage_addons_data(config_id, user):
+        from osf.external.gravy_valet import auth_helpers as gv_auth
+        url = settings.GV_NODE_ADDON_ENDPOINT.format(config_id=config_id)
+
+        auth_headers = gv_auth.make_gravy_valet_hmac_headers(
+            request_url=url,
+            request_method='GET',
+            requesting_user=user,
+        )
+
+        resp = requests.get(url, headers=auth_headers)
+        resp.raise_for_status()
+        return resp.json()
 
     @staticmethod
-    def get_authorized_storage_account(config_id, auth):
-        return requests.get(
-            settings.GV_USER_ADDON_ENDPOINT.format(config_id=config_id),
-            params={'include': 'external_storage_service'},
-            # auth=auth  TODO: HMAC
-        ).json()
+    def get_authorized_storage_account(config_id, user):
+        from osf.external.gravy_valet import auth_helpers as gv_auth
+        url = settings.GV_USER_ADDON_ENDPOINT.format(config_id=config_id)
+        auth_headers = gv_auth.make_gravy_valet_hmac_headers(
+            request_url=url,
+            request_method='GET',
+            requesting_user=user,
+        )
 
-    def __init__(self, resource, config_id, auth):
+        resp = requests.get(url, headers=auth_headers)
+        resp.raise_for_status()
+        return resp.json()
+
     def cache_config_id_translation(self):
         """
         Cache what legacy addon name corresponds to which config ids.
@@ -87,11 +99,20 @@ class GravyValetAddonAppConfig:
 
         key = cache_settings.LEGACY_ADDON_KEY.format(target_id=self.config_id)
         legacy_addon_cache.set(key, self.addon_name, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+
+    def __init__(self, resource, config_id, user):
+        self.resource = resource
+        self.user = user
+        self.FOLDER_SELECTED = self.legacy_app_config.FOLDER_SELECTED
+        self.NODE_AUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
+        self.NODE_DEAUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
+        self.actions = self.legacy_app_config.actions
+
         from osf.models import OSFUser, AbstractNode
         if isinstance(resource, AbstractNode):
-            self.gv_data = self.get_configured_storage_addons_data(config_id, auth)
+            self.gv_data = self.get_configured_storage_addons_data(config_id, user)
         elif isinstance(resource, OSFUser):
-            self.gv_data = self.get_authorized_storage_account(config_id, auth)
+            self.gv_data = self.get_authorized_storage_account(config_id, user)
         else:
             raise NotImplementedError()
 
@@ -100,12 +121,6 @@ class GravyValetAddonAppConfig:
         self.cache_config_id_translation()
         self.legacy_app_config = settings.ADDONS_AVAILABLE_DICT[self.addon_name]
 
-        self.resource = resource
-        self.auth = auth
-        self.FOLDER_SELECTED = self.legacy_app_config.FOLDER_SELECTED
-        self.NODE_AUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
-        self.NODE_DEAUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
-        self.actions = self.legacy_app_config.actions
 
     @property
     def config(self):
