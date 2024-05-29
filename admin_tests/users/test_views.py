@@ -571,7 +571,6 @@ class TestUserMerge(AdminTestCase):
         self.request = RequestFactory().post('/fake_path')
 
     @mock.patch('osf.models.user.OSFUser.merge_user')
-    @pytest.mark.skip(reason='This test has been broken for long time, python 3.12 upgrade revealed it')
     def test_merge_user(self, mock_merge_user):
         user = UserFactory()
         user_merged = UserFactory()

@@ -2026,7 +2026,6 @@ class TestAddingContributorViews(OsfTestCase):
         assert mock_send_mail.call_count == 2
 
     @mock.patch('website.project.views.contributor.send_claim_email')
-    @pytest.mark.skip(reason='This test has been broken for long time, python 3.12 upgrade revealed it')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
         name, email = fake.name(), fake_email()
         pseudouser = {
@@ -2296,7 +2295,6 @@ class TestUserInviteViews(OsfTestCase):
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
-    @pytest.mark.skip(reason='This test has been broken for long time, python 3.12 upgrade revealed it')
     def test_send_claim_email_to_given_email(self, send_mail):
         project = ProjectFactory()
         given_email = fake_email()
@@ -2752,7 +2750,6 @@ class TestClaimViews(OsfTestCase):
         assert unreg.family_name == parsed_name['family_name']
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
-    @pytest.mark.skip(reason='This test has been broken for long time, python 3.12 upgrade revealed it')
     def test_claim_user_post_returns_fullname(self, send_mail):
         url = '/api/v1/user/{}/{}/claim/email/'.format(self.user._primary_key,
                                                          self.project._primary_key)
@@ -3459,7 +3456,6 @@ class TestAuthViews(OsfTestCase):
         assert mock_send_confirm_email.called
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    @pytest.mark.skip(reason='This test has been broken for long time, python 3.12 upgrade revealed it')
     def test_resend_confirmation(self, send_mail):
         email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
