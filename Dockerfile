@@ -78,7 +78,6 @@ RUN set -ex \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
-    # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
     && python3 -m compileall /usr/lib/python3.12 \
     && apk del .build-deps
 
