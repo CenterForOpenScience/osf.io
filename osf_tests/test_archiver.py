@@ -532,21 +532,21 @@ class TestArchiverTasks(ArchiverTestCase):
         mock_make_copy_request.assert_called_with(
             self.archive_job._id,
             settings.WATERBUTLER_URL + '/ops/copy',
-            data=dict(
-                source=dict(
-                    cookie=cookie,
-                    nid=self.src._id,
-                    provider='osfstorage',
-                    path='/',
-                ),
-                destination=dict(
-                    cookie=cookie,
-                    nid=self.dst._id,
-                    provider=settings.ARCHIVE_PROVIDER,
-                    path='/',
-                ),
-                rename='Archive of OSF Storage',
-            )
+            data={
+                'rename': 'Archive of OSF Storage',
+                'source': {
+                    'cookie': cookie,
+                    'nid': self.src._id,
+                    'provider': 'osfstorage',
+                    'path': '/',
+                },
+                'destination': {
+                    'cookie': cookie,
+                    'nid': self.dst._id,
+                    'provider': settings.ARCHIVE_PROVIDER,
+                    'path': '/',
+                },
+            }
         )
 
     def test_archive_success(self):

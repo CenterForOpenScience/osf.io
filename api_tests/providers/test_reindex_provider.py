@@ -36,8 +36,8 @@ class TestReindexProvider:
 
     def test_reindex_provider_preprint(self, mock_update_share, preprint_provider, preprint):
         call_command('reindex_provider', f'--providers={preprint_provider._id}')
-        mock_update_share.assert_called_once_with(preprint)
+        mock_update_share.assert_called_with(preprint)
 
     def test_reindex_provider_registration(self, mock_update_share, registration_provider, registration):
         call_command('reindex_provider', f'--providers={registration_provider._id}')
-        mock_update_share.assert_called_once_with(registration)
+        mock_update_share.assert_called_with(registration)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Views tests for the OSF."""
+from unittest.mock import MagicMock, ANY
 from urllib import parse
 
 import datetime as dt
@@ -2042,7 +2043,7 @@ class TestAddingContributorViews(OsfTestCase):
         }
         url = self.project.api_url_for('project_contributors_post')
         self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
-        send_mail.assert_called_with(email=email)
+        send_mail.assert_called_with(email, ANY,ANY,notify=True, email_template='default')
 
     @mock.patch('website.mails.send_mail')
     def test_email_sent_when_reg_user_is_added(self, send_mail):
@@ -2306,11 +2307,19 @@ class TestUserInviteViews(OsfTestCase):
         project.save()
         send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
 
-        assert send_mail.called
         send_mail.assert_called_with(
-            to_addr=given_email,
-            mail=mails.INVITE_DEFAULT,
+            given_email,
+            mails.INVITE_DEFAULT,
+            user=unreg_user,
+            referrer=ANY,
+            node=project,
+            claim_url=ANY,
+            email=unreg_user.email,
+            fullname=unreg_user.fullname,
+            branded_service=None,
             can_change_preferences=False,
+            logo='osf_logo',
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2751,15 +2760,33 @@ class TestClaimViews(OsfTestCase):
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_returns_fullname(self, send_mail):
-        url = '/api/v1/user/{}/{}/claim/email/'.format(self.user._primary_key,
-                                                         self.project._primary_key)
-        res = self.app.post(url,
-                                 json={'value': self.given_email,
-                                     'pk': self.user._primary_key},
-                                 auth=self.referrer.auth)
+        url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
+        res = self.app.post(
+            url,
+            auth=self.referrer.auth,
+            json={
+                'value': self.given_email,
+                'pk': self.user._primary_key
+            },
+        )
         assert res.json['fullname'] == self.given_name
         assert send_mail.called
-        send_mail.assert_called_with(to_addr=self.given_email)
+
+        send_mail.assert_called_with(
+            self.given_email,
+            mails.INVITE_DEFAULT,
+            user=self.user,
+            referrer=self.referrer,
+            node=ANY,
+            claim_url=ANY,
+            email=self.user.email,
+            fullname=self.user.fullname,
+            branded_service=None,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            can_change_preferences=False,
+            logo='osf_logo'
+        )
+
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
@@ -3456,7 +3483,7 @@ class TestAuthViews(OsfTestCase):
         assert mock_send_confirm_email.called
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation(self, send_mail):
+    def test_resend_confirmation(self, send_mail: MagicMock):
         email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
@@ -3465,7 +3492,17 @@ class TestAuthViews(OsfTestCase):
         self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert send_mail.called
         send_mail.assert_called_with(
-            to_addr=email
+            email,
+            mails.CONFIRM_EMAIL,
+            user=self.user,
+            confirmation_url=ANY,
+            email='test@mail.com',
+            merge_target=None,
+            external_id_provider=None,
+            branded_preprints_provider=None,
+            osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            can_change_preferences=False,
+            logo='osf_logo'
         )
         self.user.reload()
         assert token != self.user.get_confirmation_token(email)

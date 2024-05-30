@@ -585,4 +585,4 @@ class TestUserMerge(AdminTestCase):
         assert valid_form.is_valid()
 
         view.form_valid(valid_form)
-        mock_merge_user.assert_called_with()
+        mock_merge_user.assert_called_with(user_merged)
