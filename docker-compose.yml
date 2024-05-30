@@ -362,13 +362,15 @@ services:
       - /bin/bash
       - -c
       - python3 -m invoke requirements --all &&
-        (python3 -m compileall /usr/local/lib/python3.12)
+        (python3 -m compileall /usr/local/lib/python3.12) &&
+        rm -rf /python3.12 &&
+        cp -Rf -p /usr/lib/python3.12 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
+      - osf_requirements_3_12_vol:/python3.12
 
   assets:
     image: quay.io/centerforopenscience/osf:develop

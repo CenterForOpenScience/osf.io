@@ -118,14 +118,17 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     is_preprint_orphan = NoneIfWithdrawal(ser.BooleanField(read_only=True))
     license_record = NodeLicenseSerializer(required=False, source='license')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_is_public = ser.BooleanField(read_only=True, source='node__is_public', help_text='Is supplementary project public?')
+    node_is_public = ser.BooleanField(
+        read_only=True, source='node__is_public',
+        help_text='Is supplementary project public?',
+    )
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
 
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
-        'for the current user on this preprint.',
+                  'for the current user on this preprint.',
     )
     public = ser.BooleanField(source='is_public', required=False, read_only=True)
     contributors = RelationshipField(
@@ -235,7 +238,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         return {'preprint_id': '<_id>'}
 
     def get_preprint_url(self, obj):
-        return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
+        return absolute_reverse(
+            'preprints:preprint-detail', kwargs={
+                'preprint_id': obj._id, 'version':
+                self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
@@ -267,16 +275,17 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
+            url = absolute_reverse(
+                'preprints:preprint-review-action-list',
+                kwargs={
+                    'version': self.context['request'].parser_context['kwargs']['version'],
+                    'preprint_id': preprint._id,
+                },
+            )
             raise Conflict(
-                '{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
-                    preprint.provider.name,
-                    absolute_reverse(
-                        'preprints:preprint-review-action-list', kwargs={
-                            'version': self.context['request'].parser_context['kwargs']['version'],
-                            'preprint_id': preprint._id,
-                        },
-                    ),
-                ),
+                f'{preprint.provider.name} uses a moderation workflow, so preprints must be submitted '
+                'for review instead of published directly. '
+                f'Submit a preprint by creating a `submit` Action at {url}',
             )
 
         save_preprint = False
@@ -325,7 +334,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             if validated_data['article_doi'] == doi:
                 raise exceptions.ValidationError(
                     detail=f'The `article_doi` "{doi}" is already associated with this'
-                    f' preprint please enter a peer-reviewed publication\'s DOI',
+                           f' preprint please enter a peer-reviewed publication\'s DOI',
                 )
 
             preprint.article_doi = validated_data['article_doi']
@@ -396,7 +405,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if published is not None:
             if not preprint.primary_file:
-                raise exceptions.ValidationError(detail='A valid primary_file must be set before publishing a preprint.')
+                raise exceptions.ValidationError(
+                    detail='A valid primary_file must be set before publishing a preprint.',
+                )
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
@@ -408,7 +419,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if recently_published:
             for author in preprint.contributors:
                 if author != auth.user:
-                    project_signals.contributor_added.send(preprint, contributor=author, auth=auth, email_template='preprint')
+                    project_signals.contributor_added.send(
+                        preprint,
+                        contributor=author,
+                        auth=auth,
+                        email_template='preprint',
+                    )
 
         return preprint
 
@@ -440,7 +456,6 @@ class PreprintCreateSerializer(PreprintSerializer):
 
 
 class PreprintCitationSerializer(NodeCitationSerializer):
-
     class Meta:
         type_ = 'preprint-citation'
 
@@ -526,7 +541,10 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
 
         if data.get('type', None) is not None and data.get('id', None) is not None:
-            raise DRFValidationError({'data': 'Data must be null. This endpoint can only be used to unset the supplemental project.'}, 400)
+            raise DRFValidationError(
+                {'data': 'Data must be null. This endpoint can only be used to unset the supplemental project.'},
+                400,
+            )
         return data
 
     def make_instance_obj(self, obj):

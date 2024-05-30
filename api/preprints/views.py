@@ -517,16 +517,16 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
+            url = absolute_reverse(
+                'providers:preprint-providers:preprint-provider-detail',
+                kwargs={
+                    'provider_id': target.provider._id,
+                    'version': self.request.parser_context['kwargs']['version'],
+                },
+            )
             raise Conflict(
-                '{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
-                    target.provider.name,
-                    absolute_reverse(
-                        'providers:preprint-providers:preprint-provider-detail', kwargs={
-                            'provider_id': target.provider._id,
-                            'version': self.request.parser_context['kwargs']['version'],
-                        },
-                    ),
-                ),
+                f'{target.provider.name} is an unmoderated provider. '
+                f'If you are an admin, set up moderation by setting `reviews_workflow` at {url}',
             )
 
         serializer.save(user=self.request.user)

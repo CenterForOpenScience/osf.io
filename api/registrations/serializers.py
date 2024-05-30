@@ -98,18 +98,19 @@ class RegistrationSerializer(NodeSerializer):
     article_doi = ser.CharField(required=False, allow_null=True)
     public = HideIfWithdrawal(
         ser.BooleanField(
-            source='is_public', required=False,
-                   help_text='Nodes that are made public will give read-only access '
-            'to everyone. Private nodes require explicit read '
-            'permission. Write and admin access are the same for '
-            'public and private nodes. Administrators on a parent '
-            'node have implicit read permissions for all child nodes',
+            source='is_public',
+            required=False,
+            help_text='Nodes that are made public will give read-only access '
+                      'to everyone. Private nodes require explicit read '
+                      'permission. Write and admin access are the same for '
+                      'public and private nodes. Administrators on a parent '
+                      'node have implicit read permissions for all child nodes',
         ),
     )
     current_user_permissions = HideIfWithdrawal(
         ser.SerializerMethodField(
             help_text='List of strings representing the permissions '
-            'for the current user on this node.',
+                      'for the current user on this node.',
         ),
     )
 
@@ -145,21 +146,32 @@ class RegistrationSerializer(NodeSerializer):
     )
     has_project = ser.SerializerMethodField()
 
-    date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
-    embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+    date_registered = VersionedDateTimeField(
+        source='registered_date',
+        read_only=True,
+        help_text='Date time of registration.',
+    )
+    date_withdrawn = VersionedDateTimeField(
+        read_only=True,
+        help_text='Date time of when this registration was retracted.',
+    )
+    embargo_end_date = HideIfWithdrawal(
+        ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'),
+    )
     custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
 
     withdrawal_justification = ser.CharField(read_only=True)
     template_from = HideIfWithdrawal(
         ser.CharField(
-            read_only=True, allow_blank=False, allow_null=False,
+            read_only=True,
+            allow_blank=False,
+            allow_null=False,
             help_text='Specify a node id for a node you would like to use as a template for the '
-            'new node. Templating is like forking, except that you do not copy the '
-            'files, only the project structure. Some information is changed on the top '
-            'level project by submitting the appropriate fields in the request body, '
-            'and some information will not change. By default, the description will '
-            'be cleared and the project will be made private.',
+                      'new node. Templating is like forking, except that you do not copy the '
+                      'files, only the project structure. Some information is changed on the top '
+                      'level project by submitting the appropriate fields in the request body, '
+                      'and some information will not change. By default, the description will '
+                      'be cleared and the project will be made private.',
         ),
     )
 
