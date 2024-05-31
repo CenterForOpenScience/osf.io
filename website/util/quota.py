@@ -50,8 +50,26 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
     return db_sum['filesize_sum'] if db_sum['filesize_sum'] is not None else 0
 
 
-def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE):
-    used = used_quota(user._id, storage_type)
+def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE, is_recalculating_quota=False):
+    """Update user's used quota
+
+    - If the function is called in recalculate quota process and storage_type parameter is 2 (for NII Storage),
+      update used quota for storage_type = 2 with total file size from projects with storage_type = 1 and 2
+    - Otherwise, update used quota for specified storage_type with total file size from projects with that storage_type
+
+    :param user: user to be updated used quota
+    :param storage_type: storage type
+    :param is_recalculating_quota: a boolean to know whether the function is used in recalculate quota process or not
+    """
+    if is_recalculating_quota and storage_type == UserQuota.CUSTOM_STORAGE:
+        # If the function is called in recalculate quota process and storage_type parameter is 2 (for NII Storage),
+        # get total file size of projects with storage_type 1 and 2
+        used_quota_for_nii_default_storage = used_quota(user._id, UserQuota.NII_STORAGE)
+        used_quota_for_nii_custom_storage = used_quota(user._id, UserQuota.CUSTOM_STORAGE)
+        used = used_quota_for_nii_default_storage + used_quota_for_nii_custom_storage
+    else:
+        # Get total file size of projects with specified storage_type
+        used = used_quota(user._id, storage_type)
 
     try:
         if check_select_for_update():

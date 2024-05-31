@@ -495,7 +495,7 @@ msgstr "タイムスタンプ環境"
 
 #: admin/templates/base.html:313
 msgid "Quota for NII Storage"
-msgstr "クォータ管理"
+msgstr "NIIストレージのクォータ"
 
 #: admin/templates/base.html:316
 #: admin/templates/rdm_custom_storage_location/institutional_storage.html:16
@@ -845,8 +845,11 @@ msgstr "クォータ一律設定 (GB)"
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:129
 #: admin/templates/institutions/user_list_by_institute.html:181
-msgid "Value must be an integer number greater than or equal 1"
-msgstr "値は1以上の整数である必要があります"
+msgid "Value must be an integer number greater than or equal 0"
+msgstr "値は0以上の整数である必要があります"
+
+msgid "Please enter Each user Quota for Institutional Storage (GB) within 0~2147483647."
+msgstr "クォータ一律設定 (GB)は0~2147483647の以内でご入力ください。"
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:134
 #: admin/templates/institutions/user_list_by_institute.html:186
@@ -989,6 +992,9 @@ msgstr "フォームを隠す"
 
 #: admin/templates/institutions/institution_list.html:11
 #: admin/templates/institutions/institution_list.html:14
+msgid "List of Institutions using NII storage"
+msgstr "NIIストレージ使用の機関のリスト"
+
 #: admin/templates/institutions/list.html:11
 #: admin/templates/institutions/list.html:14
 #: admin/templates/rdm_keymanagement/institutions.html:11
@@ -1001,6 +1007,9 @@ msgid "List of Institutions"
 msgstr "機関のリスト"
 
 #: admin/templates/institutions/institution_list.html:23
+msgid "Recalculate quota for all institutions"
+msgstr "全機関のクォータ再計算"
+
 #: admin/templates/institutions/statistical_status_default_storage_user.html:12
 msgid "Recalculate quota"
 msgstr "クォータ再計算"
@@ -1093,6 +1102,10 @@ msgstr "氏名"
 #: admin/templates/institutions/user_list_by_institute.html:175
 msgid "Each user Quota for NII Storage (GB)"
 msgstr "クォータ一律設定 (GB)"
+
+#: admin/templates/institutions/user_list_by_institute.html:181
+msgid "Please enter Each user Quota for NII Storage (GB) within 0~2147483647."
+msgstr "クォータ一律設定 (GB)は0~2147483647の以内でご入力ください。"
 
 #: admin/templates/institutions/user_list_by_institute.html:193
 msgid "Export All Users Statistics (TSV)"
@@ -3753,3 +3766,11 @@ msgstr "このエクスポート プロセスをアボートできません。"
 
 msgid "Cannot be restored because export data does not exist"
 msgstr "エクスポートデータが存在しないため、復元できません。"
+
+#: admin/templates/users/user.html:310
+msgid "Please enter Quota for NII Storage (GB) within 0~2147483647."
+msgstr "NIIストレージの割当て(GB)は0~2147483647の以内でご入力ください。"
+
+#: admin/templates/users/user_details.html:62
+msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
+msgstr "機関ストレージの割当て(GB)は0~2147483647の以内でご入力ください。"
