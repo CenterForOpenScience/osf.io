@@ -209,7 +209,7 @@ class TestLogging:
         last_log = preprint.logs.latest()
         assert last_log.action == PreprintLog.FILE_UPDATED
         # date is tzaware
-        assert last_log.created.tzinfo == datetime.timezone.utc
+        assert last_log.created.tzinfo == datetime.UTC
 
         # updates preprint.modified
         assert_datetime_equal(preprint.modified, last_log.created)

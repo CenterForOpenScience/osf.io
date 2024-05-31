@@ -71,7 +71,7 @@ class DraftNodeDraftRegistrationsList(JSONAPIBaseView, generics.ListAPIView, Dra
         base_permissions.TokenHasScope,
     )
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]

@@ -1,4 +1,3 @@
-from asynctest import TestCase as AsyncTestCase
 from boaapi.boa_client import BoaException
 from boaapi.status import CompilerStatus, ExecutionStatus
 from http.client import HTTPMessage
@@ -135,7 +134,8 @@ class TestSubmitToBoa(OsfTestCase):
 
 
 @pytest.mark.django_db
-class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
+@pytest.mark.asyncio
+class TestSubmitToBoaAsync(OsfTestCase):
 
     def setUp(self):
         super().setUp()

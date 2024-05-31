@@ -1,6 +1,6 @@
 from rest_framework import status as http_status
 
-from boto.exception import S3ResponseError
+from botocore.exceptions import NoCredentialsError
 from unittest import mock
 import pytest
 
@@ -263,14 +263,14 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
 
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):
-        error = S3ResponseError(418, 'because Im a test')
+        error = NoCredentialsError(operation_name='create_bucket')
         error.message = 'This should work'
         mock_make.side_effect = error
 
         url = f'/api/v1/project/{self.project._id}/s3/newbucket/'
         ret = self.app.post(url, json={'bucket_name': 'doesntevenmatter'}, auth=self.user.auth)
 
-        assert ret.text == '{"message": "This should work", "title": "Problem connecting to S3"}'
+        assert ret.text == '{"message": "Unable to locate credentials", "title": "Problem connecting to S3"}'
 
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_bad_location_fails(self, mock_make):

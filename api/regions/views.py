@@ -58,7 +58,7 @@ class RegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'regions'
     view_name = 'region-list'
 
-    ordering = ('name', )
+    ordering = ('name',)
 
     def get_default_queryset(self):
         return Region.objects.all()
@@ -84,7 +84,7 @@ class RegionDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegionMixin):
     view_category = 'regions'
     view_name = 'region-detail'
 
-    ordering = ('name', )
+    ordering = ('name',)
 
     def get_object(self):
         return self.get_region()

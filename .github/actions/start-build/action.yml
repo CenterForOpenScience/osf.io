@@ -20,7 +20,7 @@ runs:
     with:
       cache: "pip"
       cache-dependency-path: "**/requirements.txt"
-      python-version: '3.10'
+      python-version: '3.12'
   - name: Install lxml
     shell: bash
     run: |
@@ -37,7 +37,7 @@ runs:
     shell: bash
     run: |
       # pinned pip to 21.0a and setuptools<58.0.0 as current dependencies do not build on newer versions of pip and setuptools
-      pip install --upgrade pip==21.0.1 "setuptools<58.0.0" "wheel==0.38.4"
+      pip install --upgrade pip==24.0.0 setuptools
       pip install invoke==2.2.0
       #lowest flake8 version to support python 3.10
       pip install flake8==7.0.0 --force-reinstall --upgrade

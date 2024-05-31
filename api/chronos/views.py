@@ -76,7 +76,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     required_write_scopes = [CoreScopes.CHRONOS_SUBMISSION_WRITE]
 
     serializer_class = ChronosSubmissionSerializer
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning

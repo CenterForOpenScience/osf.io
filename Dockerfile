@@ -1,4 +1,4 @@
-FROM node:18-alpine3.17
+FROM python:3.12-alpine3.17
 
 # Creation of www-data group was removed as it is created by default in alpine 3.14 and higher
 # Alpine does not create a www-data user, so we still need to create that. 82 is the standard
@@ -9,11 +9,12 @@ RUN set -x \
 RUN apk add --no-cache --virtual .run-deps \
     gcc \
     g++ \
-    python3-dev \
+    nodejs \
+    npm \
+    yarn \
     libxslt-dev \
     su-exec \
     bash \
-    python3 \
     git \
     # lxml2
     libxml2 \
@@ -28,8 +29,7 @@ RUN apk add --no-cache --virtual .run-deps \
     && yarn global add bower
 
 # Setuptools lower than 58.0.0 are needed for rdflib-jsonld on python 3.10
-RUN python3 -m ensurepip && \
-    pip3 install --upgrade pip==21.0 "setuptools<58.0.0"
+RUN pip3 install --upgrade "pip>=24.0" "setuptools"
 
 WORKDIR /code
 
@@ -61,7 +61,6 @@ RUN set -ex \
     && apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
-        python3-dev \
         # lxml2
         musl-dev \
         libxml2-dev \
@@ -79,8 +78,7 @@ RUN set -ex \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
-    # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
-    && python3 -m compileall /usr/lib/python3.10 || true \
+    && python3 -m compileall /usr/lib/python3.12 \
     && apk del .build-deps
 
 # Settings

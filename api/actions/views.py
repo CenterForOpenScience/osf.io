@@ -158,7 +158,7 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
     serializer_class = ReviewActionSerializer
     model_class = ReviewAction
 
@@ -172,15 +172,17 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
-            raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
-                target.provider.name,
-                absolute_reverse(
-                    'providers:preprint-providers:preprint-provider-detail', kwargs={
-                        'provider_id': target.provider._id,
-                        'version': self.request.parser_context['kwargs']['version'],
-                    },
+            raise Conflict(
+                '{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
+                    target.provider.name,
+                    absolute_reverse(
+                        'providers:preprint-providers:preprint-provider-detail', kwargs={
+                            'provider_id': target.provider._id,
+                            'version': self.request.parser_context['kwargs']['version'],
+                        },
+                    ),
                 ),
-            ))
+            )
 
         serializer.save(user=self.request.user)
 
@@ -203,7 +205,7 @@ class NodeRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, NodeReque
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
     serializer_class = NodeRequestActionSerializer
 
     view_category = 'request-actions'
@@ -226,7 +228,7 @@ class PreprintRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, Prepr
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
     serializer_class = PreprintRequestActionSerializer
 
     view_category = 'request-actions'

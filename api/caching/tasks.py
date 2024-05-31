@@ -88,20 +88,26 @@ def ban_url(instance):
                     ),
                 )
             except Exception as ex:
-                logger.error('Banning {} failed: {}'.format(
-                    url_to_ban,
-                    ex.message,
-                ))
+                logger.error(
+                    'Banning {} failed: {}'.format(
+                        url_to_ban,
+                        ex.message,
+                    ),
+                )
             else:
                 if not response.ok:
-                    logger.error('Banning {} failed: {}'.format(
-                        url_to_ban,
-                        response.text,
-                    ))
+                    logger.error(
+                        'Banning {} failed: {}'.format(
+                            url_to_ban,
+                            response.text,
+                        ),
+                    )
                 else:
-                    logger.info('Banning {} succeeded'.format(
-                        url_to_ban,
-                    ))
+                    logger.info(
+                        'Banning {} succeeded'.format(
+                            url_to_ban,
+                        ),
+                    )
 
 
 @app.task(max_retries=5, default_retry_delay=10)
@@ -140,7 +146,7 @@ def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
 
     if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
-        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
+        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id), {}, celery=True)
 
 def update_storage_usage_with_size(payload):
     BaseFileNode = apps.get_model('osf.basefilenode')

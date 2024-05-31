@@ -87,63 +87,81 @@ class UserSerializer(JSONAPISerializer):
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
-    links = HideIfDisabled(LinksField(
-        {
-            'html': 'absolute_url',
-            'profile_image': 'profile_image_url',
-        },
-    ))
+    links = HideIfDisabled(
+        LinksField(
+            {
+                'html': 'absolute_url',
+                'profile_image': 'profile_image_url',
+            },
+        ),
+    )
 
-    nodes = HideIfDisabled(RelationshipField(
-        related_view='users:user-nodes',
-        related_view_kwargs={'user_id': '<_id>'},
-        related_meta={
-            'projects_in_common': 'get_projects_in_common',
-            'count': 'get_node_count',
-        },
-    ))
+    nodes = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-nodes',
+            related_view_kwargs={'user_id': '<_id>'},
+            related_meta={
+                'projects_in_common': 'get_projects_in_common',
+                'count': 'get_node_count',
+            },
+        ),
+    )
 
-    groups = HideIfDisabled(RelationshipField(
-        related_view='users:user-groups',
-        related_view_kwargs={'user_id': '<_id>'},
-    ))
+    groups = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-groups',
+            related_view_kwargs={'user_id': '<_id>'},
+        ),
+    )
 
-    registrations = HideIfDisabled(RelationshipField(
-        related_view='users:user-registrations',
-        related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'count': 'get_registration_count'},
-    ))
+    registrations = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-registrations',
+            related_view_kwargs={'user_id': '<_id>'},
+            related_meta={'count': 'get_registration_count'},
+        ),
+    )
 
-    institutions = HideIfDisabled(RelationshipField(
-        related_view='users:user-institutions',
-        related_view_kwargs={'user_id': '<_id>'},
-        self_view='users:user-institutions-relationship',
-        self_view_kwargs={'user_id': '<_id>'},
-        related_meta={'count': 'get_institutions_count'},
-    ))
+    institutions = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-institutions',
+            related_view_kwargs={'user_id': '<_id>'},
+            self_view='users:user-institutions-relationship',
+            self_view_kwargs={'user_id': '<_id>'},
+            related_meta={'count': 'get_institutions_count'},
+        ),
+    )
 
-    preprints = HideIfDisabled(RelationshipField(
-        related_view='users:user-preprints',
-        related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'count': 'get_preprint_count'},
-    ))
+    preprints = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-preprints',
+            related_view_kwargs={'user_id': '<_id>'},
+            related_meta={'count': 'get_preprint_count'},
+        ),
+    )
 
-    emails = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user-emails',
-        related_view_kwargs={'user_id': '<_id>'},
-    ))
+    emails = ShowIfCurrentUser(
+        RelationshipField(
+            related_view='users:user-emails',
+            related_view_kwargs={'user_id': '<_id>'},
+        ),
+    )
 
-    default_region = ShowIfCurrentUser(RegionRelationshipField(
-        related_view='regions:region-detail',
-        related_view_kwargs={'region_id': 'get_default_region_id'},
-        read_only=False,
-    ))
+    default_region = ShowIfCurrentUser(
+        RegionRelationshipField(
+            related_view='regions:region-detail',
+            related_view_kwargs={'region_id': 'get_default_region_id'},
+            read_only=False,
+        ),
+    )
 
-    settings = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user_settings',
-        related_view_kwargs={'user_id': '<_id>'},
-        read_only=True,
-    ))
+    settings = ShowIfCurrentUser(
+        RelationshipField(
+            related_view='users:user_settings',
+            related_view_kwargs={'user_id': '<_id>'},
+            read_only=True,
+        ),
+    )
 
     class Meta:
         type_ = 'users'

@@ -12,7 +12,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # DEBUG_PROPAGATE_EXCEPTIONS = True
 
 if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
+    INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django')
     MIDDLEWARE += (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
         'nplusone.ext.django.NPlusOneMiddleware',

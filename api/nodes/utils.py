@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from packaging.version import Version
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, CharField, Value, BooleanField
 from django.contrib.auth.models import Permission
@@ -70,7 +70,7 @@ def get_file_object(target, path, provider, request):
         raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 def enforce_no_children(request):
-    return StrictVersion(request.version) < StrictVersion('2.12')
+    return Version(request.version) < Version('2.12')
 
 class NodeOptimizationMixin:
     """Mixin with convenience method for optimizing serialization of nodes.

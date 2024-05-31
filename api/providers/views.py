@@ -123,7 +123,7 @@ class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     required_write_scopes = [CoreScopes.NULL]
 
     pagination_class = MaxSizePagination
-    ordering = ('name', )
+    ordering = ('name',)
 
     def get_default_queryset(self):
         return self.model_class.objects.all()
@@ -327,7 +327,7 @@ class PreprintProviderSubjects(BaseProviderSubjects):
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
-    ordering = ('is_other', 'text',)
+    ordering = ('is_other', 'text')
 
 class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
@@ -342,7 +342,7 @@ class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIVi
 
     serializer_class = TaxonomySerializer
 
-    ordering = ('is_other', 'text',)
+    ordering = ('is_other', 'text')
 
     def get_queryset(self):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
@@ -638,11 +638,13 @@ class ProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreat
         provider = self.get_provider()
         admin_group = provider.get_group(ADMIN)
         mod_group = provider.get_group('moderator')
-        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
-            When(groups=admin_group, then=Value(ADMIN)),
-            default=Value('moderator'),
-            output_field=CharField(),
-        )).order_by('fullname')
+        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(
+            permission_group=Case(
+                When(groups=admin_group, then=Value(ADMIN)),
+                default=Value('moderator'),
+                output_field=CharField(),
+            ),
+        ).order_by('fullname')
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -740,11 +742,13 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
         schemas = provider.schemas.get_latest_versions(request=self.request, invisible=True).filter(active=True)
         if not default_schema_id:
             return schemas
-        filtered = schemas.annotate(default_schema_ordering=Case(
-            When(id=default_schema_id, then=Value(1)),
-            default=Value(0),
-            output_field=IntegerField(),
-        )).order_by('-default_schema_ordering', 'name')
+        filtered = schemas.annotate(
+            default_schema_ordering=Case(
+                When(id=default_schema_id, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+        ).order_by('-default_schema_ordering', 'name')
         return filtered
 
     def get_queryset(self):

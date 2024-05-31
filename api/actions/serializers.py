@@ -191,12 +191,14 @@ class ReviewActionSerializer(BaseActionSerializer):
         filter_key='target__provider___id',
     )
 
-    creator = HideIfProviderCommentsAnonymous(RelationshipField(
-        read_only=True,
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<creator._id>'},
-        always_embed=True,
-    ))
+    creator = HideIfProviderCommentsAnonymous(
+        RelationshipField(
+            read_only=True,
+            related_view='users:user-detail',
+            related_view_kwargs={'user_id': '<creator._id>'},
+            always_embed=True,
+        ),
+    )
 
     target = TargetRelationshipField(
         target_class=Preprint,

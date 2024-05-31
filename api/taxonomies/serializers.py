@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion, RelationshipField
 from api.subjects.serializers import UpdateSubjectsMixin
@@ -119,7 +119,7 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
         :param object request: Request object
         :return bool: Subjects should be serialized as relationships
         """
-        return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(subjects_as_relationships_version)
+        return Version(getattr(request, 'version', '2.0')) >= Version(subjects_as_relationships_version)
 
 
 class TaxonomySerializer(JSONAPISerializer):

@@ -156,7 +156,7 @@ class FilterMixin:
     COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
     COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS
 
-    LIST_FIELDS = (ser.ListField, )
+    LIST_FIELDS = (ser.ListField,)
     RELATIONSHIP_FIELDS = (RelationshipField, TargetField)
 
     def __init__(self, *args, **kwargs):

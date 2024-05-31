@@ -240,12 +240,14 @@ class BaseFileSerializer(JSONAPISerializer):
         related_view_kwargs={'file_id': '<_id>'},
         kind='file',
     )
-    comments = HideIfPreprint(FileRelationshipField(
-        related_view='nodes:node-comments',
-        related_view_kwargs={'node_id': '<target._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': 'get_file_guid'},
-    ))
+    comments = HideIfPreprint(
+        FileRelationshipField(
+            related_view='nodes:node-comments',
+            related_view_kwargs={'node_id': '<target._id>'},
+            related_meta={'unread': 'get_unread_comments_count'},
+            filter={'target': 'get_file_guid'},
+        ),
+    )
 
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),

@@ -168,7 +168,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     view_name = 'collection-list'
     model_class = Collection
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-modified',)  # default ordering
 
     def get_default_queryset(self):
         user = self.request.user
@@ -402,7 +402,7 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
     view_category = 'collections'
     view_name = 'collection-submission-detail'
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -441,7 +441,7 @@ class LegacyCollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateD
     view_category = 'collections'
     view_name = 'collection-submission-detail'
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -763,7 +763,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = CollectionSubmission
 
-    ordering = ('_order', '-modified',)
+    ordering = ('_order', '-modified')
 
     def get_queryset(self):
         return self.get_collection().collectionsubmission_set.filter(

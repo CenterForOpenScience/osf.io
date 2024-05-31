@@ -48,8 +48,10 @@ class TokenHasScope(permissions.BasePermission):
             normalized_scopes = oauth_scopes.normalize_scopes(allowed_scopes)
         except KeyError:
             # This should never fire: it implies that CAS issued a scope name not in the master list of scopes
-            raise exceptions.APIException('OAuth2 token specifies unrecognized scope. User token specifies '
-                                          'the following scopes: {}'.format(', '.join(allowed_scopes)))
+            raise exceptions.APIException(
+                'OAuth2 token specifies unrecognized scope. User token specifies '
+                'the following scopes: {}'.format(', '.join(allowed_scopes)),
+            )
 
         return required_scopes.issubset(normalized_scopes)
 

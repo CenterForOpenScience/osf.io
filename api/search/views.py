@@ -36,7 +36,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
     )
 
     pagination_class = SearchPagination
-    filter_backends = [ElasticOSFOrderingFilter, ]
+    filter_backends = [ElasticOSFOrderingFilter]
 
     @property
     def search_fields(self):
@@ -50,7 +50,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
 
     def get_parsers(self):
         if self.request.method == 'POST':
-            return (SearchParser(), )
+            return (SearchParser(),)
         return super().get_parsers()
 
     def get_queryset(self, query=None):

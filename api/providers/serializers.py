@@ -366,7 +366,7 @@ class ModeratorSerializer(JSONAPISerializer):
         mails.send_mail(
             user.username,
             template,
-            **context
+            **context,
         )
         return user
 

@@ -65,7 +65,7 @@ class CanSubmitToCollectionOrPublic(permissions.BasePermission):
 
 class CanUpdateDeleteCollectionSubmissionOrPublic(permissions.BasePermission):
 
-    acceptable_models = (CollectionSubmission, )
+    acceptable_models = (CollectionSubmission,)
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict):
@@ -136,7 +136,7 @@ class CollectionWriteOrPublicForRelationshipPointers(permissions.BasePermission)
 
 class CollectionSubmissionActionListPermission(permissions.BasePermission):
 
-    acceptable_models = (CollectionSubmission, )
+    acceptable_models = (CollectionSubmission,)
 
     def has_object_permission(self, request, view, collection_submission):
         if request.method != 'POST':

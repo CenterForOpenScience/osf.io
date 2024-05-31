@@ -259,7 +259,7 @@ class TestNodeReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.node._id)
         with mock_update_share() as _shmock:
             view.post(self.request)
-            assert _shmock.called_once_with(self.node)
+            _shmock.assert_called_once_with(self.node)
         assert AdminLogEntry.objects.count() == count + 1
 
     def test_reindex_registration_share(self):
@@ -268,7 +268,7 @@ class TestNodeReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.registration._id)
         with mock_update_share() as _shmock:
             view.post(self.request)
-            assert _shmock.called_once_with(self.registration)
+            _shmock.assert_called_once_with(self.registration)
         assert AdminLogEntry.objects.count() == count + 1
 
     @mock.patch('website.search.search.update_node')

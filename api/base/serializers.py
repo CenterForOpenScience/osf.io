@@ -6,7 +6,7 @@ from furl import furl
 import waffle
 from django.urls import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -393,7 +393,7 @@ class VersionedDateTimeField(ser.DateTimeField):
     def to_representation(self, value):
         request = self.context.get('request')
         if request:
-            if StrictVersion(request.version) >= '2.2':
+            if Version(request.version) >= Version('2.2'):
                 self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
             else:
                 self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
@@ -675,9 +675,11 @@ class RelationshipField(ser.Field):
 
         field_counts_requested = [val for val in params.split(',')]
 
-        countable_fields = {field for field in self.parent.fields if
-                            getattr(self.parent.fields[field], 'json_api_link', False) or
-                            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)}
+        countable_fields = {
+            field for field in self.parent.fields if
+            getattr(self.parent.fields[field], 'json_api_link', False) or
+            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)
+        }
         for count_field in field_counts_requested:
             # Some fields will hide relationships, e.g. HideIfWithdrawal
             # Ignore related_counts for these fields
@@ -825,7 +827,7 @@ class RelationshipField(ser.Field):
             if href and not href == '{}':
                 if self.always_embed:
                     envelope = 'data'
-                query_dict = dict(format=['jsonapi', ], envelope=[envelope, ])
+                query_dict = dict(format=['jsonapi'], envelope=[envelope])
                 if 'view_only' in self.parent.context['request'].query_params.keys():
                     query_dict.update(view_only=[self.parent.context['request'].query_params['view_only']])
                 esi_url = utils.extend_querystring_params(href, query_dict)
@@ -900,7 +902,7 @@ class RelationshipField(ser.Field):
         if url is None:
             # Prior to 2.9, empty relationships were omitted from the response.
             # This conflicts with the JSON-API spec and was fixed in 2.9.
-            if StrictVersion(request.version) < StrictVersion('2.9'):
+            if Version(request.version) < Version('2.9'):
                 raise SkipField
             else:
                 return {'data': None}
@@ -945,7 +947,7 @@ class RelationshipField(ser.Field):
                         related_id = resolved_url.kwargs['institution_id']
                         related_type = 'institution-summary-metrics'
                     elif related_type == 'collections' and related_class.view_name == 'collection-submission-detail':
-                        related_id = f'{resolved_url.kwargs["collection_submission_id"]}-{resolved_url.kwargs["collection_id"]}'
+                        related_id = f'{resolved_url.kwargs['collection_submission_id']}-{resolved_url.kwargs['collection_id']}'
                         related_type = 'collection-submission'
                     elif related_type == 'collection-providers' and related_class.view_name == 'collection-provider-detail':
                         related_id = resolved_url.kwargs['provider_id']
@@ -1075,7 +1077,7 @@ class TargetField(ser.Field):
         href = value.get_absolute_url()
 
         if href:
-            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope, ], format=['jsonapi', ]))
+            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope], format=['jsonapi']))
             return f'<esi:include src="{esi_url}"/>'
         return self.to_representation(value)
 
@@ -1227,7 +1229,7 @@ class Link:
             args=arg_values,
             kwargs=kwarg_values,
             query_kwargs=query_kwarg_values,
-            **self.reverse_kwargs
+            **self.reverse_kwargs,
         )
 
 
@@ -1732,7 +1734,7 @@ class LinkedNode(JSONAPIRelationshipSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_nodes'
             return 'nodes'
 
@@ -1743,7 +1745,7 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_registrations'
             return 'registrations'
 
@@ -1752,7 +1754,7 @@ class LinkedPreprint(LinkedNode):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_preprints'
             return 'preprints'
 
@@ -1773,7 +1775,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_nodes'
             return 'nodes'
 
@@ -1855,7 +1857,7 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_registrations'
             return 'registrations'
 
@@ -1934,7 +1936,7 @@ class LinkedPreprintsRelationshipSerializer(LinkedNodesRelationshipSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_preprints'
             return 'preprints'
 

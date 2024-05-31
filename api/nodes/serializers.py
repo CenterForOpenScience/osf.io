@@ -1,5 +1,5 @@
 from django.db import connection
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -398,11 +398,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    wikis = HideIfWikiDisabled(RelationshipField(
-        related_view='nodes:node-wikis',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_wiki_page_count'},
-    ))
+    wikis = HideIfWikiDisabled(
+        RelationshipField(
+            related_view='nodes:node-wikis',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_wiki_page_count'},
+        ),
+    )
 
     forked_from = RelationshipField(
         related_view=lambda node: (
@@ -470,17 +472,21 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         required=False,
     )
 
-    draft_registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_draft_registration_count'},
-    ))
+    draft_registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-draft-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_draft_registration_count'},
+        ),
+    )
 
-    registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_registration_count'},
-    ))
+    registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_registration_count'},
+        ),
+    )
 
     region = RegionRelationshipField(
         related_view='regions:region-detail',
@@ -527,10 +533,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    preprints = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    preprints = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-preprints',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
     storage = RelationshipField(
         related_view='nodes:node-storage',
@@ -542,11 +550,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    subjects_acceptable = HideIfRegistration(RelationshipField(
-        related_view='subjects:subject-list',
-        related_view_kwargs={},
-        read_only=True,
-    ))
+    subjects_acceptable = HideIfRegistration(
+        RelationshipField(
+            related_view='subjects:subject-list',
+            related_view_kwargs={},
+            read_only=True,
+        ),
+    )
 
     @property
     def subjects_related_view(self):
@@ -571,7 +581,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         """
         user = self.context['request'].user
         request_version = self.context['request'].version
-        default_perm = [osf_permissions.READ] if StrictVersion(request_version) < StrictVersion('2.11') else []
+        default_perm = [osf_permissions.READ] if Version(request_version) < Version('2.11') else []
 
         # View only link users should always get `READ` permissions regardless of other permissions
         if Auth(private_key=self.context['request'].query_params.get('view_only')).private_link:
@@ -1051,11 +1061,13 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
         return external_account
 
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
-        if (folder_info and not (   # If we have folder information to set
+        if (
+            folder_info and not (   # If we have folder information to set
                 instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
                     instance.folder_id == folder_info or (hasattr(folder_info, 'get') and instance.folder_id == folder_info.get('id', False))
                 )
-        )):
+            )
+        ):
             if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
                 raise exceptions.PermissionDenied('Requested action requires addon ownership.')
             return True

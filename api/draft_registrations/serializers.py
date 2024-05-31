@@ -208,10 +208,12 @@ class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):
         related_view_kwargs={'draft_id': '<draft_registration._id>'},
     )
 
-    node = HideIfDraftRegistration(RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'},
-    ))
+    node = HideIfDraftRegistration(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<node._id>'},
+        ),
+    )
 
     class Meta:
         type_ = 'contributors'

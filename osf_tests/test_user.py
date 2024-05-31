@@ -484,7 +484,7 @@ class TestOSFUser:
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
-        assert u.date_registered.tzinfo == datetime.timezone.utc
+        assert u.date_registered.tzinfo == datetime.UTC
 
     def test_cant_create_user_without_full_name(self):
         u = OSFUser(username=fake_email())

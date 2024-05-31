@@ -602,7 +602,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.embargo.reload()
         assert self.registration.embargo_end_date
         assert not self.registration.is_pending_embargo
-        assert mock_redirect.called_with(self.registration.web_url_for('view_project'))
+        mock_redirect.assert_called_with(self.registration.web_url_for('view_project'))
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
         assert not self.registration.is_pending_embargo
@@ -865,7 +865,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.embargo.reload()
         assert self.registration.embargo_end_date
         assert not self.registration.is_pending_embargo
-        assert mock_redirect.called_with(self.registration.web_url_for('view_project'))
+        mock_redirect.assert_called_with(self.registration.web_url_for('view_project'))
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
         assert not self.registration.is_pending_embargo

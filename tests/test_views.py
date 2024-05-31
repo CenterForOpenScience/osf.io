@@ -2042,7 +2042,7 @@ class TestAddingContributorViews(OsfTestCase):
         }
         url = self.project.api_url_for('project_contributors_post')
         self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
-        assert send_mail.called_with(email=email)
+        send_mail.assert_called_with(email=email)
 
     @mock.patch('website.mails.send_mail')
     def test_email_sent_when_reg_user_is_added(self, send_mail):
@@ -2307,7 +2307,7 @@ class TestUserInviteViews(OsfTestCase):
         send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
 
         assert send_mail.called
-        assert send_mail.called_with(
+        send_mail.assert_called_with(
             to_addr=given_email,
             mail=mails.INVITE_DEFAULT,
             can_change_preferences=False,
@@ -2759,7 +2759,7 @@ class TestClaimViews(OsfTestCase):
                                  auth=self.referrer.auth)
         assert res.json['fullname'] == self.given_name
         assert send_mail.called
-        assert send_mail.called_with(to_addr=self.given_email)
+        send_mail.assert_called_with(to_addr=self.given_email)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
@@ -2770,9 +2770,9 @@ class TestClaimViews(OsfTestCase):
         assert send_mail.called
         assert send_mail.call_count == 2
         call_to_invited = send_mail.mock_calls[0]
-        assert call_to_invited.called_with(to_addr=email)
+        call_to_invited.assert_called_with(to_addr=email)
         call_to_referrer = send_mail.mock_calls[1]
-        assert call_to_referrer.called_with(to_addr=self.given_email)
+        call_to_referrer.assert_called_with(to_addr=self.given_email)
 
     def test_claim_url_with_bad_token_returns_400(self):
         url = self.project.web_url_for(
@@ -3464,7 +3464,7 @@ class TestAuthViews(OsfTestCase):
         header = {'address': email, 'primary': False, 'confirmed': False}
         self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert send_mail.called
-        assert send_mail.called_with(
+        send_mail.assert_called_with(
             to_addr=email
         )
         self.user.reload()
