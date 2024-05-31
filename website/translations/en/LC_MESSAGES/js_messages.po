@@ -3628,6 +3628,34 @@ msgstr ""
 msgid "Copy files:"
 msgstr ""
 
+#: website/static/js/fangorn.js:2791
+msgid "Properties"
+msgstr ""
+
+#: website/static/js/fangorn.js:2750
+msgid "Sizes: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2755
+msgid "Total items: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2761
+msgid "Created at: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2767
+msgid "Updated at: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2773
+msgid "Updated by: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2665
+msgid "Loading..."
+msgstr ""
+
 #: website/static/js/fangorn.js:2649
 msgid ""
 " Press Option (Alt in Windows) while dragging a file to a new folder or "
@@ -7313,6 +7341,10 @@ msgstr ""
 
 #: website/static/js/pages/wiki-edit-page.js:88
 msgid "An unexpected error occurred. Please try again."
+msgstr ""
+
+#: website/static/js/fangorn.js:2732
+msgid "A server error occurred. Please contact %1$s."
 msgstr ""
 
 #: website/static/js/pages/wiki-edit-page.js:108

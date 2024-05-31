@@ -114,6 +114,9 @@ msgstr "削除中..."
 #: website/static/js/folderPickerNodeConfig.js:591
 #: website/static/js/pages/profile-settings-addons-page.js:72
 #: website/static/js/pages/project-settings-page.js:118
+#: website/static/js/fangorn.js:2674
+#: website/static/js/fangorn.js:2684
+#: website/static/js/fangorn.js:2807
 msgid "Close"
 msgstr "閉じる"
 
@@ -4850,6 +4853,34 @@ msgstr "すべてのストレージアドオンで利用できるわけではあ
 msgid "Copy files:"
 msgstr "ファイルをコピー："
 
+#: website/static/js/fangorn.js:2791
+msgid "Properties"
+msgstr "プロパティ"
+
+#: website/static/js/fangorn.js:2750
+msgid "Sizes: "
+msgstr "サイズ: "
+
+#: website/static/js/fangorn.js:2755
+msgid "Total items: "
+msgstr "合計アイテム数: "
+
+#: website/static/js/fangorn.js:2761
+msgid "Created at: "
+msgstr "作成日時: "
+
+#: website/static/js/fangorn.js:2767
+msgid "Updated at: "
+msgstr "更新日時: "
+
+#: website/static/js/fangorn.js:2773
+msgid "Updated by: "
+msgstr "更新者: "
+
+#: website/static/js/fangorn.js:2665
+msgid "Loading..."
+msgstr "読み込み中..."
+
 #: website/static/js/fangorn.js:2649
 msgid ""
 " Press Option (Alt in Windows) while dragging a file to a new folder or "
@@ -8563,6 +8594,10 @@ msgstr "Wikiの名前変更中のエラー"
 #: website/static/js/pages/wiki-edit-page.js:88
 msgid "An unexpected error occurred. Please try again."
 msgstr "予期しないエラーが発生しました。 もう一度やり直してください。"
+
+#: website/static/js/fangorn.js:2732
+msgid "A server error occurred. Please contact %1$s."
+msgstr "サーバーエラーが発生しました。%1$sにお問い合わせください。"
 
 #: website/static/js/pages/wiki-edit-page.js:108
 msgid "<p>Could not retrieve wiki pages. If this issue persists, "

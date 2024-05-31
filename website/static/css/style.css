@@ -960,3 +960,12 @@ table.add-links {
 .alert-link {
     font-weight: 700;
 }
+
+/* Create a limit 2 break line text */
+.two-line-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}

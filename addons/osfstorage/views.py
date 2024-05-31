@@ -211,6 +211,8 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'path', '/' || F._id || '/'
                         , 'name', F.name
                         , 'kind', 'folder'
+                        , 'modified', F.modified
+                        , 'created', F.created
                     )
                 END
             )
