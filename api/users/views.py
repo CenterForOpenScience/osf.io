@@ -146,8 +146,8 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_list).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.RequiresScopedRequestOrReadOnly,
+        drf_permissions.IsAuthenticated,
+        base_permissions.RequiresScopedRequest,
         base_permissions.TokenHasScope,
     )
 
