@@ -9,7 +9,8 @@ const fangorn = require('js/fangorn');
 const Fangorn = fangorn.Fangorn;
 const $osf = require('js/osfHelpers');
 
-const _ = require('js/rdmGettext')._;
+const rdmGettext = require('js/rdmGettext');
+const _ = rdmGettext._;
 const sprintf = require('agh.sprintf').sprintf;
 
 const logPrefix = '[weko]';
@@ -21,6 +22,7 @@ var fileViewButtons = null;
 var hashProcessed = false;
 var uploadCount = 0;
 var uploadReservedHandler = null;
+var lastTreebeard = null;
 
 // Define Fangorn Button Actions
 const wekoItemButtons = {
@@ -31,6 +33,8 @@ const wekoItemButtons = {
         const mode = tb.toolbarMode;
 
         if (tb.options.placement !== 'fileview') {
+            lastTreebeard = tb;
+
             if ((item.data.extra || {}).weko === 'item') {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
@@ -131,6 +135,22 @@ function gotoItem (item) {
     window.open(item.data.extra.weko_web_url, '_blank');
 }
 
+function wekoLazyLoadOnLoad(tree, event) {
+    const lang = rdmGettext.getBrowserLang();
+    (tree.children || []).forEach(function(item) {
+        if (!item.data || !item.data.extra || item.data.extra.weko !== 'item') {
+            return;
+        }
+        const titles = (item.data.extra.item_title || []).filter(function(t) {
+            return t.subitem_title_language === lang;
+        });
+        if (titles.length === 0) {
+            return;
+        }
+        item.data.name = titles[0].subitem_title;
+    });
+}
+
 function wekoFolderIcons(item) {
     if (item.data.iconUrl) {
         return m('img', {
@@ -140,6 +160,9 @@ function wekoFolderIcons(item) {
                 height: 'auto'
             }
         }, ' ');
+    }
+    if (item.data.extra && item.data.extra.weko === 'item') {
+        return m('div.weko-item-icon');
     }
     return undefined;
 }
@@ -436,14 +459,22 @@ function createMetadataSelectorBase(item, schemaCallback, projectMetadataCallbac
             type: 'GET',
             dataType: 'json'
         }).done(function (data) {
-            const schemas = (data.data.attributes || [])
+            const availableSchemas = (data.data.attributes || []);
+            const schemas = availableSchemas
                 .filter(function(r) {
                     const items = fileMetadata.items || [];
                     return items.find(function(i) {
                         return i.schema === r.id;
                     });
                 });
-            schemaCallback(schemas);
+            const disabledSchemas = availableSchemas
+                .filter(function(r) {
+                    const items = fileMetadata.items || [];
+                    return !items.find(function(i) {
+                        return i.schema === r.id;
+                    });
+                });
+            schemaCallback(schemas, disabledSchemas);
         })
         .fail(function(xhr, status, error) {
             Raven.captureMessage('Error while retrieving addon info', {
@@ -549,10 +580,17 @@ function createMetadataSelectorForJQuery(item, changedCallback) {
     const errorCallback = function(action, error) {
         errorView.text(_('Error occurred while ') + action + ': ' + error).show();
     };
-    const schemaCallback = function(schemas) {
+    const schemaCallback = function(schemas, disabledSchemas) {
         (schemas || []).forEach(function(s) {
             schemaSelect.append($('<option></option>').attr('value', s.id).text(s.attributes.name));
         });
+        (disabledSchemas || []).forEach(function(s) {
+            schemaSelect.append($('<option></option>').attr('value', s.id).attr('disabled', 'disabled')
+                .text(s.attributes.name));
+        });
+        if (schemas.length === 0) {
+            errorView.text(_('No file metadata is defined for the schema available for depositting to WEKO.')).show();
+        }
         schemaLoading.hide();
         valueChanged();
     };
@@ -580,7 +618,7 @@ function createMetadataSelectorForJQuery(item, changedCallback) {
         .append(metadataLoading)
         .append(refreshButton)
         .append(metadataSelect)
-        .append($('<div></div>').addClass('help-block').text(_('Select a registration for the file.')));
+        .append($('<div></div>').addClass('help-block').text(_('Select a registration for the file. You can also select a draft registration.')));
     return $('<div></div>')
         .append(errorView)
         .append(schemaSelectPanel)
@@ -614,7 +652,7 @@ function showConfirmDeposit(tb, contextItem, callback) {
             dialog.modal('hide');
         });
     });
-    const save = $('<a href="#" class="btn btn-primary"></a>').text(_('OK'));
+    const save = $('<a href="#" class="btn btn-primary"></a>').text(_('OK')).attr('disabled', 'disabled');
     save.click(function() {
         okHandler(function() {
             dialog.modal('hide');
@@ -623,6 +661,7 @@ function showConfirmDeposit(tb, contextItem, callback) {
     const optionsHandler = function(valid, schema, projectMetadatas) {
         options.schema = schema;
         options.project_metadatas = projectMetadatas;
+        save.attr('disabled', valid ? null : 'disabled');
     };
     dialog
         .append($('<div class="modal-dialog modal-lg"></div>')
@@ -885,15 +924,16 @@ function addDepositButtonToMetadataDialog() {
                         nodeApiUrl: contextVars.node.urls.api
                     }, item.data),
                 }
-                deposit(null, item_);
+                deposit(lastTreebeard, item_);
                 return;
             }
-            deposit(null, item);
+            deposit(lastTreebeard, item);
         }
     };
 }
 
 Fangorn.config.weko = {
+    lazyLoadOnLoad: wekoLazyLoadOnLoad,
     folderIcon: wekoFolderIcons,
     itemButtons: wekoItemButtons,
     resolveRows: wekoColumns,

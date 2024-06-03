@@ -24,9 +24,9 @@ fake_host = 'https://weko3.test.nii.ac.jp/weko/sword/'
 
 
 def mock_requests_get(url, **kwargs):
-    if url == 'https://weko3.test.nii.ac.jp/weko/api/tree':
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/tree?action=browsing':
         return utils.MockResponse(utils.fake_weko_indices, 200)
-    if url == 'https://weko3.test.nii.ac.jp/weko/api/index/?search_type=2&q=100':
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/index/?q=100':
         return utils.MockResponse(utils.fake_weko_items, 200)
     if url == 'https://weko3.test.nii.ac.jp/weko/api/records/1000':
         return utils.MockResponse(utils.fake_weko_item, 200)
@@ -68,6 +68,7 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         self.no_repo_institution = InstitutionFactory()
         self.user_has_no_repo = AuthUserFactory()
         self.user_has_no_repo.affiliated_institutions.add(self.no_repo_institution)
+        self.project.add_contributor(self.user_has_no_repo)
 
     def tearDown(self):
         self.mock_requests_get.stop()
@@ -177,6 +178,26 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
             self.user,
+            self.client
+        )
+        serialized_except_repos = dict(
+            [(key, value) for key, value in serialized.items() if key != 'repositories']
+        )
+        result_except_repos = dict(
+            [(key, value) for key, value in res.json['result'].items() if key != 'repositories']
+        )
+        assert_equal(serialized_except_repos, result_except_repos)
+        assert_equal(len(res.json['result']['repositories']), 1)
+        assert_equal(res.json['result']['repositories'][0]['name'], 'WEKO test account')
+
+    def test_get_config_for_user_has_no_repo(self):
+        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user_has_no_repo.auth)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_in('result', res.json)
+        serialized = self.Serializer().serialize_settings(
+            self.node_settings,
+            self.user_has_no_repo,
             self.client
         )
         assert_equal(serialized, res.json['result'])

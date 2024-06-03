@@ -451,9 +451,12 @@ msgstr "送信するファイルメタデータのメタデータ様式を選択
 msgid "Project Metadata"
 msgstr "プロジェクトメタデータ"
 
+msgid "No file metadata is defined for the schema available for depositting to WEKO."
+msgstr "WEKOに登録可能なスキーマに関するファイルメタデータが定義されていません。"
+
 #: addons/weko/static/wekoFangornConfig.js:583
-msgid "Select a registration for the file."
-msgstr "送信するプロジェクトメタデータを選択してください。"
+msgid "Select a registration for the file. You can also select a draft registration."
+msgstr "送信するプロジェクトメタデータを選択してください。下書きも指定可能です。"
 
 #: addons/weko/static/wekoFangornConfig.js:607
 msgid ""

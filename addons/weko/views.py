@@ -14,8 +14,7 @@ from framework.celery_tasks import app as celery_app
 
 from addons.base import generic_views
 from .apps import SHORT_NAME
-from .serializer import WEKOSerializer
-from . import settings as weko_settings
+from .serializer import WEKOSerializer, get_repository_options
 from osf.utils import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -29,7 +28,6 @@ from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
-from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.metadata import SHORT_NAME as METADATA_SHORT_NAME
 from .deposit import deposit_metadata
 from .schema import get_available_schema_id
@@ -37,20 +35,6 @@ from .schema import get_available_schema_id
 
 logger = logging.getLogger('addons.weko.views')
 
-
-def _get_repository_options(user):
-    repos = list(weko_settings.REPOSITORY_IDS)
-    for institution_id in user.affiliated_institutions.all():
-        rdm_addon_option = get_rdm_addon_option(institution_id, SHORT_NAME, create=False)
-        if rdm_addon_option is None:
-            continue
-        for account in rdm_addon_option.external_accounts.all():
-            display_name = account.display_name if '#' not in account.display_name else account.display_name[account.display_name.index('#') + 1:]
-            repos.append({
-                'id': account.provider_id,
-                'name': display_name,
-            })
-    return repos
 
 def _response_files_metadata(addon, files):
     return {
@@ -182,7 +166,7 @@ def weko_user_config_get(auth, **kwargs):
             'urls': {
                 'accounts': api_url_for('weko_account_list'),
             },
-            'repositories': _get_repository_options(auth.user),
+            'repositories': get_repository_options(auth.user),
         },
     }, http_status.HTTP_200_OK
 

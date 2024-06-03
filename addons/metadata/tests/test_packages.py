@@ -120,6 +120,8 @@ class TestExportAndImport(OsfTestCase):
 
     def setUp(self):
         super(TestExportAndImport, self).setUp()
+        self.mock_fetch_metadata_asset_files = mock.patch('addons.metadata.models.fetch_metadata_asset_files')
+        self.mock_fetch_metadata_asset_files.start()
         self.work_dir = tempfile.mkdtemp()
         self.node = ProjectFactory()
         self.node.add_addon('metadata', auth=Auth(self.node.creator))
@@ -328,6 +330,7 @@ class TestExportAndImport(OsfTestCase):
 
     def tearDown(self):
         shutil.rmtree(self.work_dir)
+        self.mock_fetch_metadata_asset_files.stop()
         super(TestExportAndImport, self).tearDown()
 
     # TC-A-2023-7-001

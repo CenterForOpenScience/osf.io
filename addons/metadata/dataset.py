@@ -75,18 +75,25 @@ def metadata_get_importing_dataset(auth, task_id=None, **kwargs):
         'error': error,
     }
 
+def _remove_quotes(s):
+    if s.startswith('"') and s.endswith('"'):
+        return s[1:-1]
+    if s.startswith("'") and s.endswith("'"):
+        return s[1:-1]
+    return s
+
 def _extract_filename(content_url, response):
     # get filename from Content-Disposition header if available
     if 'Content-Disposition' not in response.headers:
         return unquote(content_url.rstrip('/').split('/')[-1])
     content_disposition = response.headers['Content-Disposition']
     if 'filename=' in content_disposition:
-        return unquote(content_disposition.split('filename=')[1])
+        return unquote(_remove_quotes(content_disposition.split('filename=')[1]))
     if 'filename*=' in content_disposition:
         filename_with_enc = content_disposition.split('filename*=')[1]
         if not filename_with_enc.startswith("UTF-8''"):
             raise ValueError('Invalid filename encoding: {}'.format(filename_with_enc))
-        return unquote(filename_with_enc[7:])
+        return unquote(_remove_quotes(filename_with_enc[7:]))
 
 @celery_app.task(bind=True, max_retries=1)
 def import_dataset(self, user_id, node_id, dataset_url, provider, filepath):
@@ -165,7 +172,7 @@ def import_dataset(self, user_id, node_id, dataset_url, provider, filepath):
                     raise ValueError('Dataset too large')
             total_size = 0
             with open(temp_filepath, 'wb') as temp_file:
-                for chunk in response.iter_content():
+                for chunk in response.iter_content(chunk_size=1024 * 1024):
                     if total_size + len(chunk) > MAX_IMPORTABLE_DATASET_BYTES:
                         raise ValueError('Dataset too large')
                     temp_file.write(chunk)

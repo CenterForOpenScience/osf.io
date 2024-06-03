@@ -8,9 +8,9 @@ from admin.rdm_addons.utils import get_rdm_addon_option
 from requests import exceptions as requests_exceptions
 
 
-def _get_repository_options(node_settings):
+def get_repository_options(user):
     repos = list(weko_settings.REPOSITORY_IDS)
-    for institution_id in node_settings.owner.affiliated_institutions.all():
+    for institution_id in user.affiliated_institutions.all():
         rdm_addon_option = get_rdm_addon_option(institution_id, SHORT_NAME, create=False)
         if rdm_addon_option is None:
             continue
@@ -85,7 +85,6 @@ class WEKOSerializer(OAuthAddonSerializer):
     @property
     def serialized_node_settings(self):
         result = super(WEKOSerializer, self).serialized_node_settings
-        result['repositories'] = _get_repository_options(self.node_settings)
 
         # Update with WEKO specific fields
         if self.node_settings.has_auth:
@@ -118,7 +117,7 @@ class WEKOSerializer(OAuthAddonSerializer):
         valid_credentials = self.credentials_are_valid(user_settings, client)
 
         result = {
-            'repositories': _get_repository_options(self.node_settings),
+            'repositories': get_repository_options(current_user),
             'userIsOwner': user_is_owner,
             'nodeHasAuth': node_settings.has_auth,
             'urls': self.serialized_urls,

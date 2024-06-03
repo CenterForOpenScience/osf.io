@@ -45,7 +45,7 @@ class Client(object):
         """
         Get all indices from the WEKO.
         """
-        root = self._get('api/tree')
+        root = self._get('api/tree?action=browsing')
         indices = []
         for desc in root:
             indices.append(Index(self, desc))
@@ -61,7 +61,7 @@ class Client(object):
         return self._base_host + 'records/' + item_id
 
     def get_index_items_url(self, index_id):
-        return self._base_host + 'search?search_type=2&q=' + index_id
+        return self._base_host + 'search?q=' + index_id
 
     def deposit(self, files, headers=None):
         return self._post('sword/service-document', files=files, headers=headers)
@@ -133,7 +133,7 @@ class Index(object):
         return [Index(self.client, i, parent=self) for i in self.raw['children']]
 
     def get_items(self):
-        root = self.client._get(f'api/index/?search_type=2&q={self.identifier}')
+        root = self.client._get(f'api/index/?q={self.identifier}')
         logger.debug(f'get_items: {root}')
         items = []
         for entry in root['hits']['hits']:

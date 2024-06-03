@@ -10,9 +10,9 @@ from addons.weko.tests import utils
 
 
 def mock_requests_get(url, **kwargs):
-    if url == 'https://test.sample.nii.ac.jp/api/tree':
+    if url == 'https://test.sample.nii.ac.jp/api/tree?action=browsing':
         return utils.MockResponse(utils.fake_weko_indices, 200)
-    if url == 'https://test.sample.nii.ac.jp/api/index/?search_type=2&q=100':
+    if url == 'https://test.sample.nii.ac.jp/api/index/?q=100':
         return utils.MockResponse(utils.fake_weko_items, 200)
     if url == 'https://test.sample.nii.ac.jp/api/records/1000':
         return utils.MockResponse(utils.fake_weko_item, 200)

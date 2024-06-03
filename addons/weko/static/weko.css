@@ -7,3 +7,10 @@
     /* Hide cancel button in progress bar */
     display: none !important;
 }
+
+.weko-item-icon {
+    background: url('/static/img/hgrid/fontawesome/file-text-o.png');
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}

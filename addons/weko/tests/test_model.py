@@ -26,9 +26,9 @@ fake_host = 'https://weko3.test.nii.ac.jp/weko/sword/'
 
 
 def mock_requests_get(url, **kwargs):
-    if url == 'https://weko3.test.nii.ac.jp/weko/api/tree':
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/tree?action=browsing':
         return utils.MockResponse(utils.fake_weko_indices, 200)
-    if url == 'https://weko3.test.nii.ac.jp/weko/api/index/?search_type=2&q=100':
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/index/?q=100':
         return utils.MockResponse(utils.fake_weko_items, 200)
     if url == 'https://weko3.test.nii.ac.jp/weko/api/records/1000':
         return utils.MockResponse(utils.fake_weko_item, 200)

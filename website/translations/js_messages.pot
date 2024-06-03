@@ -445,8 +445,11 @@ msgstr ""
 msgid "Project Metadata"
 msgstr ""
 
+msgid "No file metadata is defined for the schema available for depositting to WEKO."
+msgstr ""
+
 #: addons/weko/static/wekoFangornConfig.js:583
-msgid "Select a registration for the file."
+msgid "Select a registration for the file. You can also select a draft registration."
 msgstr ""
 
 #: addons/weko/static/wekoFangornConfig.js:607

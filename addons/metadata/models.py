@@ -22,6 +22,7 @@ from osf.models.user import OSFUser
 from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
+from osf.exceptions import SchemaBlockConversionError
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
@@ -413,10 +414,14 @@ class NodeSettings(BaseNodeSettings):
                 raise ValueError('Schema has no grdm-files field')
             draft_metadata = draft.registration_metadata
             draft_files = get_draft_files(draft_metadata)
+            updated = False
             for draft_file in draft_files:
                 if draft_file['path'] != filepath:
                     continue
                 draft_file['metadata'] = metadata
+                updated = True
+            if not updated:
+                continue
             self._update_draft_grdm_files(draft, draft_files)
 
     def _remove_draft_files(self, schema, filepath):
@@ -434,12 +439,16 @@ class NodeSettings(BaseNodeSettings):
 
     def _update_draft_grdm_files(self, draft, draft_files):
         value = json.dumps(draft_files, indent=2) if len(draft_files) > 0 else ''
-        draft.update_metadata({
-            FIELD_GRDM_FILES: {
-                'value': value,
-            },
-        })
-        draft.save()
+        try:
+            draft.update_metadata({
+                FIELD_GRDM_FILES: {
+                    'value': value,
+                },
+            })
+            draft.save()
+        except SchemaBlockConversionError as e:
+            logger.warning('Failed to update draft metadata due to schema block conversion error. Ignoring.')
+            logger.exception(e)
 
     def _get_related_schemas(self, metadata):
         if metadata is None or len(metadata) == 0:
