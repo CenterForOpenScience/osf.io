@@ -23,12 +23,22 @@ var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
 var SocialShare = require('js/components/socialshare');
+var gettext = require('js/rdmGettext')._;
 
 var ctx = window.contextVars;
 var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
 var currentUserRequestState = ctx.currentUserRequestState;
+
+var STATE_MAP = {
+    copy: {
+        display: gettext('Copying ')
+    },
+    move: {
+        display: gettext('Moving ')
+    },
+};
 
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
@@ -580,6 +590,22 @@ $(document).ready(function () {
                                 filter: false,
                                 custom: Fangorn.DefaultColumns._fangornModifiedColumn
                             }];
+                    if (item.data.status)
+                    {
+                        var keys = Object.keys(STATE_MAP);
+                        if(keys.includes(item.data.status))
+                        {
+                            var defaultColumns = [{
+                                data : '',  // Data field name
+                                css : 't-a-c',
+                                custom : function(){ return m('span.text-muted', [STATE_MAP[item.data.status].display, item.data.name, '...']); }
+                            }, {
+                                data : '',  // Data field name
+                                custom : function(){ return '';}
+                            }];
+                        }
+                    }
+
                     if (item.parentID) {
                         item.data.permissions = item.data.permissions || item.parent().data.permissions;
                         if (item.data.kind === 'folder') {
