@@ -595,7 +595,7 @@ $(document).ready(function () {
                         var keys = Object.keys(STATE_MAP);
                         if(keys.includes(item.data.status))
                         {
-                            var defaultColumns = [{
+                            defaultColumns = [{
                                 data : '',  // Data field name
                                 css : 't-a-c',
                                 custom : function(){ return m('span.text-muted', [STATE_MAP[item.data.status].display, item.data.name, '...']); }
