@@ -530,22 +530,14 @@ class TestArchiverTasks(ArchiverTestCase):
         assert self.archive_job.get_target('osfstorage').status == ARCHIVER_INITIATED
         cookie = self.user.get_or_create_cookie()
         mock_make_copy_request.assert_called_with(
-            self.archive_job._id,
-            settings.WATERBUTLER_URL + '/ops/copy',
+            job_pk=self.archive_job._id,
+            url=f'{settings.WATERBUTLER_URL}/v1/resources/{self.src._id}/providers/osfstorage/?cookie={cookie.decode()}',
             data={
+                'action': 'copy',
+                'path': '/',
                 'rename': 'Archive of OSF Storage',
-                'source': {
-                    'cookie': cookie,
-                    'nid': self.src._id,
-                    'provider': 'osfstorage',
-                    'path': '/',
-                },
-                'destination': {
-                    'cookie': cookie,
-                    'nid': self.dst._id,
-                    'provider': settings.ARCHIVE_PROVIDER,
-                    'path': '/',
-                },
+                'resource': self.archive_job.info()[1]._id,
+                'provider': 'osfstorage',
             }
         )
 
@@ -1135,7 +1127,7 @@ class TestArchiverScripts(ArchiverTestCase):
         failed.sort()
         assert failed == failures
         for pk in legacy:
-            assert not (pk in failed)
+            assert pk not in failed
 
 
 class TestArchiverDecorators(ArchiverTestCase):
