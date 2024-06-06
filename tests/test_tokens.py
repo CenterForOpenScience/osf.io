@@ -1,20 +1,19 @@
+from unittest import mock
+from unittest.mock import patch
+
 import jwt
 import pytest
+from django.db.models import Q
 from rest_framework import status as http_status
 
-from unittest import mock
-from django.db.models import Q
-
-from tests.base import OsfTestCase
-from osf_tests import factories
-from tests.utils import mock_auth
-
 from framework.exceptions import HTTPError
-
-from website import settings
+from osf.exceptions import TokenHandlerNotFound
 from osf.models import AbstractNode, Embargo, RegistrationApproval, Retraction, Sanction
 from osf.utils.tokens import decode, encode, TokenHandler
-from osf.exceptions import TokenHandlerNotFound
+from osf_tests import factories
+from tests.base import OsfTestCase
+from tests.utils import mock_auth
+from website import settings
 
 NO_SANCTION_MSG = 'There is no {0} associated with this token.'
 APPROVED_MSG = 'This registration is not pending {0}.'
@@ -33,7 +32,8 @@ class TestTokenHandler(OsfTestCase):
         self.encoded_token = jwt.encode(
             self.payload,
             self.secret,
-            algorithm=settings.JWT_ALGORITHM)
+            algorithm=settings.JWT_ALGORITHM
+        )
 
     def test_encode(self):
         assert encode(self.payload) == self.encoded_token
@@ -57,14 +57,19 @@ class TestTokenHandler(OsfTestCase):
         with pytest.raises(TokenHandlerNotFound):
             token.to_response()
 
-    @mock.patch('osf.utils.tokens.handlers.sanction_handler')
-    def test_token_process_with_valid_action(self, mock_handler):
-        self.payload['action'] = 'approve_registration_approval'
+    def test_token_process_with_valid_action(self, ):
+        action = 'approve_registration_approval'
+        self.payload['action'] = action
+        self.encoded_token = jwt.encode(
+            self.payload,
+            self.secret,
+            algorithm=settings.JWT_ALGORITHM
+        )
         token = TokenHandler.from_payload(self.payload)
-        token.to_response()
-        mock_handler.assert_called_with(
-            'registration',
-            'approve',
+        with patch.object(token, 'HANDLERS') as mock_handlers:
+            token.to_response()
+        mock_handlers.get.assert_called_once_with(action)
+        mock_handlers.get.return_value.assert_called_with(
             self.payload,
             self.encoded_token
         )
