@@ -256,6 +256,7 @@ DATACITE_RESOURCE_TYPES_GENERAL = {
 }
 DATACITE_RESOURCE_TYPE_BY_OSF_TYPE = {
     OSF.Preprint: 'Preprint',
+    OSF.Registration: 'StudyRegistration',
 }
 
 ##### END osfmap #####
