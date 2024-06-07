@@ -472,13 +472,11 @@ class TestArchiverTasks(ArchiverTestCase):
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage']]
-        with mock.patch.object(celery, 'group') as mock_group:
-            archive_node(results, self.archive_job._id)
-        archive_osfstorage_signature = archive_addon.si(
-            'osfstorage',
-            self.archive_job._id
+        archive_node(results, self.archive_job._id)
+        mock_archive_addon.assert_called_with(
+            addon_short_name='osfstorage',
+            job_pk=self.archive_job._id,
         )
-        mock_group.assert_called_with(archive_osfstorage_signature)
 
     @use_fake_addons
     def test_archive_node_fail(self):
@@ -516,19 +514,18 @@ class TestArchiverTasks(ArchiverTestCase):
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
-        with mock.patch.object(celery, 'group') as mock_group:
-            archive_node(results, self.archive_job._id)
-        archive_dropbox_signature = archive_addon.si(
-            'dropbox',
-            self.archive_job._id
+        archive_node(results, self.archive_job._id)
+        mock_archive_addon.assert_called_with(
+            addon_short_name='dropbox',
+            job_pk=self.archive_job._id,
         )
-        mock_group.assert_called_with(archive_dropbox_signature)
 
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
         archive_addon('osfstorage', self.archive_job._id)
         assert self.archive_job.get_target('osfstorage').status == ARCHIVER_INITIATED
         cookie = self.user.get_or_create_cookie()
+
         mock_make_copy_request.assert_called_with(
             job_pk=self.archive_job._id,
             url=f'{settings.WATERBUTLER_URL}/v1/resources/{self.src._id}/providers/osfstorage/?cookie={cookie.decode()}',
