@@ -578,6 +578,22 @@ $(document).ready(function () {
                     if(item.data.permissions && !item.data.permissions.view){
                         item.css += ' tb-private-row';
                     }
+
+                    // Reference _fangornResolveRows function of fangorn.js
+                    if (item.data.status) {
+                        var keys = Object.keys(STATE_MAP);
+                        if(keys.includes(item.data.status)) {
+                            return [{
+                                data : '',  // Data field name
+                                css : 't-a-c',
+                                custom : function(){ return m('span.text-muted', [STATE_MAP[item.data.status].display, item.data.name, '...']); }
+                            }, {
+                                data : '',  // Data field name
+                                custom : function(){ return '';}
+                            }];
+                        }
+                    }
+
                     var defaultColumns = [
                                 {
                                 data: 'name',
@@ -590,21 +606,6 @@ $(document).ready(function () {
                                 filter: false,
                                 custom: Fangorn.DefaultColumns._fangornModifiedColumn
                             }];
-                    if (item.data.status)
-                    {
-                        var keys = Object.keys(STATE_MAP);
-                        if(keys.includes(item.data.status))
-                        {
-                            defaultColumns = [{
-                                data : '',  // Data field name
-                                css : 't-a-c',
-                                custom : function(){ return m('span.text-muted', [STATE_MAP[item.data.status].display, item.data.name, '...']); }
-                            }, {
-                                data : '',  // Data field name
-                                custom : function(){ return '';}
-                            }];
-                        }
-                    }
 
                     if (item.parentID) {
                         item.data.permissions = item.data.permissions || item.parent().data.permissions;
