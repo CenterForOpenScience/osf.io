@@ -98,7 +98,7 @@ class TestDataCiteClient:
 
         resource_type = root.find('{%s}resourceType' % schema40.ns[None])
         assert resource_type.text == 'Pre-registration'
-        assert resource_type.attrib['resourceTypeGeneral'] == 'Text'
+        assert resource_type.attrib['resourceTypeGeneral'] == 'StudyRegistration'
 
     def test_datcite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
