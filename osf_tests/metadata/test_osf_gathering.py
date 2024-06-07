@@ -168,6 +168,14 @@ class TestOsfGathering(TestCase):
             (self.registrationfocus.iri, DCTERMS.type, _datacite_studyregistration_ref),
             (_datacite_studyregistration_ref, rdflib.RDFS.label, Literal('StudyRegistration', lang='en')),
         })
+        # focus: file
+        assert_triples(osf_gathering.gather_flexible_types(self.filefocus), set())
+        self.filefocus.guid_metadata_record.resource_type_general = 'Dataset'
+        _datacite_dataset_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#Dataset')
+        assert_triples(osf_gathering.gather_flexible_types(self.filefocus), {
+            (self.filefocus.iri, DCTERMS.type, _datacite_dataset_ref),
+            (_datacite_dataset_ref, rdflib.RDFS.label, Literal('Dataset', lang='en')),
+        })
 
     def test_gather_created(self):
         # focus: project
