@@ -4857,25 +4857,33 @@ msgstr "ファイルをコピー："
 msgid "Properties"
 msgstr "プロパティ"
 
-#: website/static/js/fangorn.js:2750
-msgid "Sizes: "
+#: website/static/js/fangorn.js:2791
+msgid "Size: "
 msgstr "サイズ: "
 
+#: website/static/js/fangorn.js:2793
+msgid "Total size: "
+msgstr "合計サイズ: "
+
+#: website/static/js/fangorn.js:2810
+msgid "Path: "
+msgstr "パス: "
+
 #: website/static/js/fangorn.js:2755
-msgid "Total items: "
-msgstr "合計アイテム数: "
+msgid "Total files: "
+msgstr "合計ファイル数: "
 
 #: website/static/js/fangorn.js:2761
 msgid "Created at: "
 msgstr "作成日時: "
 
 #: website/static/js/fangorn.js:2767
-msgid "Updated at: "
+msgid "Modified at: "
 msgstr "更新日時: "
 
 #: website/static/js/fangorn.js:2773
-msgid "Updated by: "
-msgstr "更新者: "
+msgid "Modified by: "
+msgstr "最終更新者: "
 
 #: website/static/js/fangorn.js:2665
 msgid "Loading..."

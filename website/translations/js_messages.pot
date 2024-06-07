@@ -3583,12 +3583,20 @@ msgstr ""
 msgid "Properties"
 msgstr ""
 
-#: website/static/js/fangorn.js:2750
-msgid "Sizes: "
+#: website/static/js/fangorn.js:2791
+msgid "Size: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2793
+msgid "Total size: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2810
+msgid "Path: "
 msgstr ""
 
 #: website/static/js/fangorn.js:2755
-msgid "Total items: "
+msgid "Total files: "
 msgstr ""
 
 #: website/static/js/fangorn.js:2761
@@ -3596,11 +3604,11 @@ msgid "Created at: "
 msgstr ""
 
 #: website/static/js/fangorn.js:2767
-msgid "Updated at: "
+msgid "Modified at: "
 msgstr ""
 
 #: website/static/js/fangorn.js:2773
-msgid "Updated by: "
+msgid "Modified by: "
 msgstr ""
 
 #: website/static/js/fangorn.js:2665

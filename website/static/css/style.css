@@ -963,6 +963,7 @@ table.add-links {
 
 /* Create a limit 2 break line text */
 .two-line-ellipsis {
+    position: relative;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
