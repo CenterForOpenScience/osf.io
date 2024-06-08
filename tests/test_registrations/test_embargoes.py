@@ -585,7 +585,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_embargo
         assert res.status_code == 400
 
-    @mock.patch('flask.redirect')
+    @mock.patch('website.project.views.node.redirect')
     def test_GET_approve_with_valid_token_redirects(self, mock_redirect):
         self.registration.embargo_registration(
             self.user,
@@ -602,7 +602,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.embargo.reload()
         assert self.registration.embargo_end_date
         assert not self.registration.is_pending_embargo
-        mock_redirect.assert_called_with(self.registration.web_url_for('view_project'))
+        mock_redirect.assert_not_called()
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
         assert not self.registration.is_pending_embargo
@@ -848,7 +848,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_embargo
         assert res.status_code == 400
 
-    @mock.patch('flask.redirect')
+    @mock.patch('website.project.views.node.redirect')
     def test_GET_approve_with_valid_token_redirects(self, mock_redirect):
         self.registration.embargo_registration(
             self.user,
@@ -865,7 +865,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.embargo.reload()
         assert self.registration.embargo_end_date
         assert not self.registration.is_pending_embargo
-        mock_redirect.assert_called_with(self.registration.web_url_for('view_project'))
+        mock_redirect.assert_called_with(f'/{self.registration._id}/')
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
         assert not self.registration.is_pending_embargo
