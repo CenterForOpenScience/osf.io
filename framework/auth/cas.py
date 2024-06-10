@@ -3,7 +3,7 @@
 import furl
 from rest_framework import status as http_status
 import json
-from future.moves.urllib.parse import quote, urlparse, parse_qs, urlunparse
+from future.moves.urllib.parse import quote, urlparse, parse_qs, urlunparse, urlencode
 
 from lxml import etree
 import requests
@@ -260,7 +260,8 @@ def make_response_from_ticket(ticket, service_url):
     if 'ticket' in querys:
         querys.pop('ticket')
     client = get_client()
-    re_service_url = urlunparse(parsed_url._replace(query=querys))
+    re_query = urlencode(querys, True)
+    re_service_url = urlunparse(parsed_url._replace(query=re_query))
     cas_resp = client.service_validate(ticket, re_service_url)
     if cas_resp.authenticated:
         user, external_credential, action = get_user_from_cas_resp(cas_resp)

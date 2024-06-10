@@ -124,7 +124,8 @@ def before_request():
         parsed_url = urlparse(request.url)
         querys = parse_qs(parsed_url.query)
         querys.pop('ticket')
-        service_url = urlunparse(parsed_url._replace(query=querys))
+        re_query = urlencode(querys, True)
+        service_url = urlunparse(parsed_url._replace(query=re_query))
         # Attempt to authenticate wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url)
 
