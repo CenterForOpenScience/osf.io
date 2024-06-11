@@ -22,6 +22,7 @@ from website.archiver import (
     AggregateStatResult,
 )
 from website.archiver import utils
+from website.archiver.utils import normalize_unicode_filenames
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
@@ -42,7 +43,6 @@ def create_app_context():
 
 
 logger = get_task_logger(__name__)
-
 
 class ArchiverSizeExceeded(Exception):
     def __init__(self, result, *args, **kwargs):
@@ -203,8 +203,8 @@ def archive_addon(addon_short_name, job_pk):
         rename_suffix = ' (draft)' if addon_short_name.split('-')[-1] == 'draft' else ' (published)'
         addon_short_name = 'dataverse'
     src_provider = src.get_addon(addon_short_name)
-    folder_name = src_provider.archive_folder_name
-    rename = '{}{}'.format(folder_name, rename_suffix)
+    folder_name_nfd, folder_name_nfc = normalize_unicode_filenames(src_provider.archive_folder_name)
+    rename = '{}{}'.format(folder_name_nfd, rename_suffix)
     url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)
     make_copy_request.delay(job_pk=job_pk, url=url, data=data)
