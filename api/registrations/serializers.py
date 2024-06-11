@@ -1,6 +1,6 @@
 import pytz
 import json
-from website.archiver.utils import normalize_unicode_filename
+from website.archiver.utils import normalize_unicode_filenames
 
 from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
@@ -773,7 +773,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             return False
 
         # Confirm that the file has the expected name
-        normalized_file_name = normalize_unicode_filename(file_metadata['file_name'])
+        normalized_file_name = normalize_unicode_filenames(file_metadata['file_name'])
         if attached_file.name not in normalized_file_name:
             return False
 
