@@ -586,7 +586,7 @@ class TestArchiverTasks(ArchiverTestCase):
     def test_archive_success_escaped_file_names(self):
         file_tree = file_tree_factory(0, 0, 0)
         fake_file = file_factory(name='>and&and<')
-        fake_file_name = normalize_unicode_filenames(fake_file['name'])['0']
+        fake_file_name = normalize_unicode_filenames(fake_file['name'])[0]
         file_tree['children'] = [fake_file]
 
         node = factories.NodeFactory(creator=self.user)
