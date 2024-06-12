@@ -15,8 +15,9 @@ from addons.bitbucket.exceptions import NotFoundError
 from framework.auth import Auth
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
+from rest_framework import exceptions as drf_exceptions
 from website import settings
-from website.util import web_url_for
+from website.util import web_url_for, api_v2_url
 
 hook_domain = bitbucket_settings.HOOK_DOMAIN or settings.DOMAIN
 
@@ -454,3 +455,46 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)
+
+    def get_folders(self, path, folder_id):
+        return [{
+            'id': repo['full_name'],
+            'path': '/',
+            'addon': 'bitbucket',
+            'kind': 'folder',
+            'name': repo['full_name'],
+            'urls': {
+                'folders': api_v2_url(f'nodes/{self.owner._id}/addons/bitbucket/folders/'),
+            }
+        } for repo in BitbucketClient(access_token=self.external_account.oauth_key).repos()]
+
+    def set_folder(self, folder_id, auth):
+        connection = BitbucketClient(access_token=self.external_account.oauth_key)
+
+        # Validate folder_id is correct format
+        try:
+            username, repo = folder_id.split('/')
+        except ValueError:
+            raise drf_exceptions.PermissionDenied(f'The credentials provided are incorrect.')
+
+        # Validate folder_id is correct value
+        if not connection.repo(username, repo):
+            raise drf_exceptions.PermissionDenied(f'The credentials provided are incorrect.')
+
+        if folder_id != self.repo:
+            # Change NodeSettings and log
+            self.repo = repo
+            self.user = username
+            self.owner.add_log(
+                action='bitbucket_repo_linked',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                    'bitbucket': {
+                        'user': self.external_account.display_name,
+                        'repo': folder_id
+                    }
+                },
+                auth=auth
+            )
+            self.save()
