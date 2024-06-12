@@ -36,13 +36,13 @@ def get_status_for_error(e: exceptions.ClientError) -> int:
 
 def get_bucket_names(node_settings):
     try:
-        buckets = connect_s3(node_settings=node_settings).get_all_buckets()
+        response = connect_s3(node_settings=node_settings).list_buckets()
     except exceptions.NoCredentialsError:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     except exceptions.ClientError as e:
         raise HTTPError(get_status_for_error(e))
 
-    return [bucket.name for bucket in buckets]
+    return [bucket['Name'] for bucket in response['Buckets']]
 
 
 def validate_bucket_location(location):
@@ -63,12 +63,18 @@ def validate_bucket_name(name):
 
 
 def create_bucket(node_settings, bucket_name, location=''):
-    return connect_s3(node_settings=node_settings).create_bucket(
-        Bucket=bucket_name,
-        CreateBucketConfiguration={
-            'LocationConstraint': location
-        }
-    )
+    client = connect_s3(node_settings=node_settings)
+
+    # default bucket location won't work with location constraint
+    if not location or location == 'us-east-1':
+        return client.create_bucket(Bucket=bucket_name)
+    else:
+        return client.create_bucket(
+            Bucket=bucket_name,
+            CreateBucketConfiguration={
+                'LocationConstraint': location,
+            }
+        )
 
 
 def bucket_exists(access_key, secret_key, bucket_name):
@@ -82,7 +88,7 @@ def bucket_exists(access_key, secret_key, bucket_name):
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        connect_s3(access_key, secret_key).head_bucket(bucket_name)
+        connect_s3(access_key, secret_key).head_bucket(Bucket=bucket_name)
     except exceptions.ClientError as e:
         if get_status_for_error(e) not in (301, 302):
             return False
@@ -112,7 +118,7 @@ class Owner:
 
     @classmethod
     def from_dict(cls, data):
-        return cls(data['DisplayName'], data['Id'])
+        return cls(data['DisplayName'], data['ID'])
 
 
 def get_user_info(access_key: str, secret_key: str) -> Owner | None:
@@ -135,7 +141,7 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        return connect_s3(access_key, secret_key).get_bucket_location(bucket_name)['LocationConstraint']
+        return connect_s3(access_key, secret_key).get_bucket_location(Bucket=bucket_name)['LocationConstraint']
     except exceptions.NoCredentialsError:
         raise InvalidAuthError()
     except exceptions.ClientError:
