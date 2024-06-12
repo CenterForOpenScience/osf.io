@@ -569,7 +569,7 @@ class TestPreprintUpdate:
         assert preprint.article_doi == '10.1234/test'
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
-        assert preprint_detail['links']['doi'] == f'https://doi.org/10.1234/test'
+        assert preprint_detail['links']['doi'] == 'https://doi.org/10.1234/test'
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513
@@ -655,6 +655,20 @@ class TestPreprintUpdate:
         assert res.status_code == 200
         preprint.reload()
         assert preprint.tags.count() == 0
+
+        # Filter empty tags
+        update_tags_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'tags': ['', 'foo']
+            }
+        )
+        res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        preprint.reload()
+        actual_tags = list(preprint.tags.all().values_list('name', flat=True))
+        assert actual_tags == ['foo']
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(
