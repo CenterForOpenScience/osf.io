@@ -282,7 +282,6 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
                 response = OAuth2Session(
                     self.client_id,
                     redirect_uri=redirect_uri,
-                    state=request.args.get('state')
                 ).fetch_token(
                     self.callback_url,
                     include_client_id=True,
