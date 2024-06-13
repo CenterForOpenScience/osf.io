@@ -95,6 +95,7 @@ from api.nodes.permissions import (
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
+    BoaNodeAddonSettingsSerializer,
     NodeAddonSettingsSerializer,
     NodeLinksSerializer,
     NodeForksSerializer,
@@ -1422,8 +1423,12 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         """
         Use NodeDetailSerializer which requires 'id'
         """
-        if 'provider' in self.kwargs and self.kwargs['provider'] == 'forward':
+        provider = self.kwargs.get('provider')
+
+        if provider == 'forward':
             return ForwardNodeAddonSettingsSerializer
+        elif provider == 'boa':
+            return BoaNodeAddonSettingsSerializer
         else:
             return NodeAddonSettingsSerializer
 
