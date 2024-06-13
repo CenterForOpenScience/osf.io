@@ -8,17 +8,14 @@ var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 
-var MAX_PAGES_ON_PAGINATOR = 7;
-var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 var LOG_PAGE_SIZE_LIMITED = 3;
 var LOG_PAGE_SIZE = 6;
 var PROFILE_IMAGE_SIZE = 16;
 
-var _buildLogUrl = function(node, page, limitLogs) {
-    var logPage = page || 1;
+var _buildLogUrl = function(node, limitLogs) {
     var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
     var size = limitLogs ? LOG_PAGE_SIZE_LIMITED : LOG_PAGE_SIZE;
-    var query = { 'page[size]': size, 'page': logPage, 'embed': ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node', 'group',], 'profile_image_size': PROFILE_IMAGE_SIZE};
+    var query = { 'page[size]': size, 'embed': ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node', 'group',], 'profile_image_size': PROFILE_IMAGE_SIZE};
     var viewOnly = $osf.urlParams().view_only;
     if (viewOnly) {
         query.view_only = viewOnly;
@@ -39,8 +36,6 @@ var LogFeed = {
         self.nextPage = m.prop('');
         self.prevPage = m.prop('');
         self.totalPages = m.prop(0);
-        self.currentPage = m.prop(0);
-        self.pageToGet = m.prop(0);
 
         self.getLogs = function _getLogs (url) {
             self.activityLogs([]); // Empty logs from other projects while load is happening;
@@ -54,9 +49,7 @@ var LogFeed = {
                 self.prevPage(result.links.prev);
 
                 var params = $osf.urlParams(url);
-                var page = params.page || 1;
-                self.currentPage(parseInt(page));
-                self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
+                self.totalPages(Math.ceil(result.meta.total / result.meta.per_page));
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
@@ -73,9 +66,9 @@ var LogFeed = {
             );
         };
 
-        self.getCurrentLogs = function _getCurrentLogs (node, page){
+        self.getCurrentLogs = function _getCurrentLogs (node){
             if(!self.logRequestPending()) {
-                var url = _buildLogUrl(node, page, self.limitLogs);
+                var url = _buildLogUrl(node, self.limitLogs);
                 return self.getLogs(url);
             }
         };
@@ -91,108 +84,12 @@ var LogFeed = {
             // previous page
             ctrl.paginators().push({
                 url: function() { return ctrl.prevPage(); },
-                text: '<'
-            });
-            // first page
-            ctrl.paginators().push({
-                text: 1,
-                url: function() {
-                    ctrl.pageToGet(1);
-                    if(ctrl.pageToGet() !== ctrl.currentPage()) {
-                        return _buildLogUrl(ctrl.node, ctrl.pageToGet());
-                    }
-                }
-            });
-            // no ellipses
-            if (ctrl.totalPages() <= MAX_PAGES_ON_PAGINATOR) {
-                for (i = 2; i < ctrl.totalPages(); i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildLogUrl(ctrl.node, ctrl.pageToGet());
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-            }
-            // one ellipse at the end
-            else if (ctrl.currentPage() < MAX_PAGES_ON_PAGINATOR_SIDE - 1) {
-                for (i = 2; i < MAX_PAGES_ON_PAGINATOR_SIDE; i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildLogUrl(ctrl.node, ctrl.pageToGet());
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-            }
-            // one ellipse at the beginning
-            else if (ctrl.currentPage() > ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2) {
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-                for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2; i <= ctrl.totalPages() - 1; i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildLogUrl(ctrl.node, ctrl.pageToGet());
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-            }
-            // two ellipses
-            else {
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-                for (i = parseInt(ctrl.currentPage()) - 1; i <= parseInt(ctrl.currentPage()) + 1; i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildLogUrl(ctrl.node, ctrl.pageToGet());
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-            }
-            // last page
-            ctrl.paginators().push({
-                text: ctrl.totalPages(),
-                url: function() {
-                    ctrl.pageToGet(ctrl.totalPages());
-                    if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                        return _buildLogUrl(ctrl.node, ctrl.pageToGet());
-                    }
-                }
+                text: '< Previous Page'
             });
             // next page
             ctrl.paginators().push({
                 url: function() { return ctrl.nextPage(); },
-                text: '>'
+                text: 'Next Page >'
             });
         }
 
