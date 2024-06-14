@@ -284,6 +284,7 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
                     redirect_uri=redirect_uri,
                 ).fetch_token(
                     self.callback_url,
+                    include_client_id=True,
                     client_secret=self.client_secret,
                     code=request.args.get('code'),
                 )
