@@ -12,12 +12,22 @@
         {
           "qid": "title-of-dataset",
           "nav": "データセットの名称",
-          "title": "データセットの名称|Title of Dataset",
+          "title": "データセットの名称（日本語）|Title of Dataset（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
           "space_normalization": true,
           "help": "（※）記入上の注意・GakuNin RDM上の〇〇PJ共有領域内に作成したコンポーネントの名称に合わせて記入して下さい。|（※）Notes for Filling Out・Please fill in according to the names of the components created within the 〇〇PJ shared area on GakuNin RDM."
+        },
+        {
+          "qid": "title-of-dataset-en",
+          "nav": "データセットの名称",
+          "title": "Title of Dataset（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "（※）Notes for Filling Out・Please fill in according to the names of the components created within the 〇〇PJ shared area on GakuNin RDM."
         },
         {
           "qid": "date-registered-in-metadata",
@@ -42,29 +52,56 @@
         {
           "qid": "purpose-of-experiment",
           "nav": "データの説明",
-          "title": "実験（もしくは解析結果・解析ツールなど）の目的|Purpose of experiment（Purpose of Analytical results or Analytical tools)",
+          "title": "実験（もしくは解析結果・解析ツールなど）の目的（日本語）|Purpose of experiment（Purpose of Analytical results or Analytical tools)（Japanese）",
           "type": "string",
           "format": "text",
           "space_normalization": true,
           "required": true
+        },
+        {
+          "qid": "purpose-of-experiment-en",
+          "nav": "データの説明",
+          "title": "Purpose of experiment（Purpose of Analytical results or Analytical tools)（English）",
+          "type": "string",
+          "format": "text",
+          "space_normalization": true,
+          "required": false
         },
         {
           "qid": "description-of-experimental-condition",
           "nav": "データの説明",
-          "title": "実験状況など（もしくは解析結果・解析ツールの背景など）の説明|Description of experimental condition（Description of  Analytical results or Analytical tools)",
+          "title": "実験状況など（もしくは解析結果・解析ツールの背景など）の説明（日本語）|Description of experimental condition（Description of  Analytical results or Analytical tools)（Japanese）",
           "type": "string",
           "format": "text",
           "space_normalization": true,
           "required": true
         },
         {
+          "qid": "description-of-experimental-condition-en",
+          "nav": "データの説明",
+          "title": "Description of experimental condition（Description of  Analytical results or Analytical tools)（English）",
+          "type": "string",
+          "format": "text",
+          "space_normalization": true,
+          "required": false
+        },
+        {
           "qid": "keyword",
           "nav": "データの説明",
-          "title": "キーワード|Keywords",
+          "title": "キーワード（日本語）|Keywords（Japanese）",
           "type": "string",
           "format": "text",
           "space_normalization": true,
           "required": true
+        },
+        {
+          "qid": "keyword-en",
+          "nav": "データの説明",
+          "title": "Keywords（English）",
+          "type": "string",
+          "format": "text",
+          "space_normalization": true,
+          "required": false
         },
         {
           "qid": "the-presence-of-metadata-files-created-for-a-specific-modality-in-other-databases",
@@ -74,12 +111,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Yes",
-              "tooltip": "有|Yes|0"
+              "text": "有/Yes",
+              "tooltip": "有|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "無|No|1"
+              "text": "無/No",
+              "tooltip": "無|No"
             }
           ],
           "space_normalization": true,
@@ -129,15 +166,52 @@
           "format": "e-rad-award-funder",
           "options": [
               {
-                "text": "Biology",
-                "tooltip": "生物学|Biology|0"
+                "text": "自然科学一般/Natural Science",
+                "tooltip": "自然科学一般|Natural Science"
               },
               {
-                "text": "Medicine",
-                "tooltip": "医学|Medicine|1"
+                "text": "ライフサイエンス/Life Science",
+                "tooltip": "ライフサイエンス|Life Science"
+              },
+              {
+                "text": "情報通信/Informatics",
+                "tooltip": "情報通信|Informatics"
+              },
+              {
+                "text": "環境/Environmental science",
+                "tooltip": "環境|Environmental science"
+              },
+              {
+                "text": "ナノテク・材料/Nanotechnology/Materials",
+                "tooltip": "ナノテク・材料|Nanotechnology/Materials"
+              },
+              {
+                "text": "エネルギー/Energy Engineering",
+                "tooltip": "エネルギー|Energy Engineering"
+              },
+              {
+                "text": "ものづくり技術/Manufacturing Technology",
+                "tooltip": "ものづくり技術|Manufacturing Technology"
+              },
+              {
+                "text": "社会基盤/Social Infrastructure",
+                "tooltip": "社会基盤|Social Infrastructure"
+              },
+              {
+                "text": "フロンティア/Frontier Technology",
+                "tooltip": "フロンティア|Frontier Technology"
+              },
+              {
+                "text": "人文・社会/Humanities & Social Sciences",
+                "tooltip": "人文・社会|Humanities & Social Sciences"
+              },
+              {
+                "text": "その他/Others",
+                "tooltip": "その他|Others"
               }
           ],
-          "required": true
+          "required": true,
+          "help": "https://ndlsearch.ndl.go.jp/guideline/researchdata#main_6"
         },
         {
           "qid": "necessity-of-contact-and-permission",
@@ -147,16 +221,16 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "NCR",
-              "tooltip": "連絡不要|No contact required|0"
+              "text": "連絡不要/No contact required",
+              "tooltip": "連絡不要|No contact required"
             },
             {
-              "text": "CR",
-              "tooltip": "連絡が必要|Contact required|1"
+              "text": "連絡が必要/Contact required",
+              "tooltip": "連絡が必要|Contact required"
             },
             {
-              "text": "PR",
-              "tooltip": "許諾が必要|Permission required|2"
+              "text": "許諾が必要/Permission required",
+              "tooltip": "許諾が必要|Permission required"
             }
           ],
           "required": true,
@@ -170,12 +244,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Necessary",
-              "tooltip": "要|Necessary|0"
+              "text": "要/Necessary",
+              "tooltip": "要|Necessary"
             },
             {
-              "text": "Unnecessary",
-              "tooltip": "不要|Unnecessary|1"
+              "text": "不要/Unnecessary",
+              "tooltip": "不要|Unnecessary"
             }
           ],
           "required": true,
@@ -184,20 +258,38 @@
         {
           "qid": "names-to-be-included-in-the-acknowledgments",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "謝辞に記載する名称（個人名、グループ名等）、または謝辞全文 |Name to be included in the Acknowledgment (individuals, groups, etc.) or the full text of the Acknowledgments",
+          "title": "謝辞に記載する名称（個人名、グループ名等）、または謝辞全文（日本語）|Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
           "help": "利用者が論文等で成果を公表する際に、提供者を謝辞に明示する場合の書き方を記載　e.g. 東大太郎, ○○大学△△グループ|Describe how to explicitly acknowledge the provider in the acknowledgments when the user publishes results in papers or similar publications e.g. Daitaro Tokyo, ○○ University △△Group"
         },
         {
+          "qid": "names-to-be-included-in-the-acknowledgments-en",
+          "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
+          "title": "Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "help": "Describe how to explicitly acknowledge the provider in the acknowledgments when the user publishes results in papers or similar publications e.g. Daitaro Tokyo, ○○ University △△Group"
+        },
+        {
           "qid": "other-conditions-or-special-notes",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "その他条件、あるいは、特記事項 |Other Conditions or Special Notes",
+          "title": "その他条件、あるいは、特記事項（日本語）|Other Conditions or Special Notes（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
           "help": "e.g. 倫理審査委員会の審査承認が必要, クレジット表記を条件とする, 利用前に協議が必要|e.g. Ethical review committee approval necessary, Credit Attribution required, Contact required before Publication"
+        },
+        {
+          "qid": "other-conditions-or-special-notes-en",
+          "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
+          "title": "Other Conditions or Special Notes（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "help": "e.g. Ethical review committee approval necessary, Credit Attribution required, Contact required before Publication"
         },
         {
           "qid": "data-policy-license",
@@ -206,98 +298,101 @@
           "required": true,
           "type": "choose",
           "format": "e-rad-award-funder",
-          "help": "数理解析ツールをデポジットした場合に記入| In case of Mathematical analysis tools",
           "options": [
             {
-              "text": "NO_LICENSE",
+              "text": "該当なし（解析ツールではない） /N/A (NOT analytical tools)",
+              "tooltip": "該当なし（解析ツールではない）|N/A (NOT analytical tools)"
+            },
+            {
+              "text": "ライセンスなし/No license",
               "tooltip": "ライセンスなし|No license|NO_LICENSE"
             },
             {
-              "text": "CC0",
-              "tooltip": "CC0 1.0 Universal|CC0"
+              "text": "CC0 1.0 Universal",
+              "tooltip": "CC0 1.0 Universal|CC0 1.0 Universal|CC0"
             },
             {
-              "text": "CC0PD",
+              "text": "CC0 1.0 パブリック・ドメイン提供/CC0 1.0 Public Domain Dedication",
               "tooltip": "CC0 1.0 パブリック・ドメイン提供|CC0 1.0 Public Domain Dedication|CC0PD"
             },
             {
-              "text": "CCBY",
+              "text": "CC BY 4.0 表示 国際/CC BY 4.0 Attribution International",
               "tooltip": "CC BY 4.0 表示 国際|CC BY 4.0 Attribution International|CCBY"
             },
             {
-              "text": "CCBYSA",
+              "text": "CC BY-SA 4.0 表示—継承/CC BY-SA 4.0 Attribution-ShareAlike",
               "tooltip": "CC BY-SA 4.0 表示—継承|CC BY-SA 4.0 Attribution-ShareAlike|CCBYSA"
             },
             {
-              "text": "CCBYND",
+              "text": "CC BY-ND 4.0 表示—改変禁止/CC BY-ND 4.0 Attribution—NoDerivatives",
               "tooltip": "CC BY-ND 4.0 表示—改変禁止|CC BY-ND 4.0 Attribution—NoDerivatives|CCBYND"
             },
             {
-              "text": "CCBYNC",
+              "text": "CC BY-NC 4.0 表示—非営利/CC BY-NC 4.0 Attribution—NonCommercial",
               "tooltip": "CC BY-NC 4.0 表示—非営利|CC BY-NC 4.0 Attribution—NonCommercial|CCBYNC"
             },
             {
-              "text": "CCBYNCSA",
+              "text": "CC BY-NC-SA 4.0 表示—非営利—継承/CC BY-NC-SA 4.0 Attribution—NonCommercial—ShareAlike",
               "tooltip": "CC BY-NC-SA 4.0 表示—非営利—継承|CC BY-NC-SA 4.0 Attribution—NonCommercial—ShareAlike|CCBYNCSA"
             },
             {
-              "text": "CCBYNCND",
+              "text": "CC BY-NC-ND 4.0 表示—非営利—改変禁止/CC BY-NC-ND 4.0 Attribution—NonCommercial—NoDerivatives",
               "tooltip": "CC BY-NC-ND 4.0 表示—非営利—改変禁止|CC BY-NC-ND 4.0 Attribution—NonCommercial—NoDerivatives|CCBYNCND"
             },
             {
-              "text": "AFL",
-              "tooltip": "Academic Free License (AFL) 3.0|AFL"
+              "text": "Academic Free License (AFL) 3.0",
+              "tooltip": "Academic Free License (AFL) 3.0|Academic Free License (AFL) 3.0|AFL"
             },
             {
-              "text": "PD",
+              "text": "パブリックドメイン/Public Domain",
               "tooltip": "パブリックドメイン|Public Domain|PD"
             },
             {
-              "text": "MIT",
-              "tooltip": "MIT License|MIT"
+              "text": "MIT License",
+              "tooltip": "MIT License|MIT License|MIT"
             },
             {
-              "text": "Apache2",
-              "tooltip": "Apache License 2.0|Apache2"
+              "text": "Apache License 2.0",
+              "tooltip": "Apache License 2.0|Apache License 2.0|Apache2"
             },
             {
-              "text": "BSD2",
-              "tooltip": "BSD 2-Clause \"Simplified\" License|BSD2"
+              "text": "BSD 2-Clause \"Simplified\" License",
+              "tooltip": "BSD 2-Clause \"Simplified\" License|BSD 2-Clause \"Simplified\" License|BSD2"
             },
             {
-              "text": "BSD3",
-              "tooltip": "BSD 3-Clause \"New\"/\"Revised\" License|BSD3"
+              "text": "BSD 3-Clause \"New\"/\"Revised\" License",
+              "tooltip": "BSD 3-Clause \"New\"/\"Revised\" License|BSD 3-Clause \"New\"/\"Revised\" License|BSD3"
             },
             {
-              "text": "GPL3",
-              "tooltip": "GNU General Public License (GPL) 3.0|GPL3"
+              "text": "GNU General Public License (GPL) 3.0",
+              "tooltip": "GNU General Public License (GPL) 3.0|GNU General Public License (GPL) 3.0|GPL3"
             },
             {
-              "text": "GPL2",
-              "tooltip": "GNU General Public License (GPL) 2.0|GPL2"
+              "text": "GNU General Public License (GPL) 2.0",
+              "tooltip": "GNU General Public License (GPL) 2.0|GNU General Public License (GPL) 2.0|GPL2"
             },
             {
-              "text": "Artistic2",
-              "tooltip": "Artistic License 2.0|Artistic2"
+              "text": "Artistic License 2.0",
+              "tooltip": "Artistic License 2.0|Artistic License 2.0|Artistic2"
             },
             {
-              "text": "Eclipse1",
-              "tooltip": "Eclipse Public License 1.0|Eclipse1"
+              "text": "Eclipse Public License 1.0",
+              "tooltip": "Eclipse Public License 1.0|Eclipse Public License 1.0|Eclipse1"
             },
             {
-              "text": "LGPL3",
-              "tooltip": "GNU Lesser General Public License (LGPL) 3.0|LGPL3"
+              "text": "GNU Lesser General Public License (LGPL) 3.0",
+              "tooltip": "GNU Lesser General Public License (LGPL) 3.0|GNU Lesser General Public License (LGPL) 3.0|LGPL3"
             },
             {
-              "text": "LGPL2_1",
-              "tooltip": "GNU Lesser General Public License (LGPL) 2.1|LGPL2_1"
+              "text": "GNU Lesser General Public License (LGPL) 2.1",
+              "tooltip": "GNU Lesser General Public License (LGPL) 2.1|GNU Lesser General Public License (LGPL) 2.1|LGPL2_1"
             },
             {
-              "text": "Mozilla2",
-              "tooltip": "Mozilla Public License 2.0|Mozilla2"
+              "text": "Mozilla Public License 2.0",
+              "tooltip": "Mozilla Public License 2.0|Mozilla Public License 2.0|Mozilla2"
             },
             {
-              "text": "OTHER",
+              "text": "その他/Other",
               "tooltip": "その他|Other|OTHER"
             }
           ]
@@ -310,12 +405,12 @@
           "format": "e-rad-award-funder",
           "options": [
               {
-                "text": "Pay",
-                "tooltip": "有償|Pay|0"
+                "text": "有償/Pay",
+                "tooltip": "有償|Pay"
               },
               {
-                "text": "Free",
-                "tooltip": "無償|Free|1"
+                "text": "無償/Free",
+                "tooltip": "無償|Free"
               }
           ],
           "required": true
@@ -328,12 +423,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Yes",
-              "tooltip": "可|Yes|0"
+              "text": "可/Yes",
+              "tooltip": "可|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "否|No|1"
+              "text": "否/No",
+              "tooltip": "否|No"
             }
           ],
           "required": true
@@ -346,20 +441,20 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "open access",
-              "tooltip": "公開|open access|0"
+              "text": "公開/open access",
+              "tooltip": "公開|open access"
             },
             {
-              "text": "restricted access",
-              "tooltip": "共有|restricted access|1"
+              "text": "共有/restricted access",
+              "tooltip": "共有|restricted access"
             },
             {
-              "text": "metadata only access",
-              "tooltip": "非共有・非公開|metadata only access|2"
+              "text": "非共有・非公開/metadata only access",
+              "tooltip": "非共有・非公開|metadata only access"
             },
             {
-              "text": "embargoed access",
-              "tooltip": "公開期間猶予|embargoed access|3"
+              "text": "公開期間猶予/embargoed access",
+              "tooltip": "公開期間猶予|embargoed access"
             }
           ],
           "required": true
@@ -383,47 +478,47 @@
           "options": [
             {
               "text": "GakuNin RDM",
-              "tooltip": "GakuNin RDM|GakuNin RDM|GakuNin RDM"
+              "tooltip": "GakuNin RDM"
             },
             {
-              "text": "NBDC Human Database",
-              "tooltip": "NBDCヒトデータベース|NBDC Human Database|NBDC Human Database"
+              "text": "NBDCヒトデータベース/NBDC Human Database",
+              "tooltip": "NBDCヒトデータベース|NBDC Human Database"
             },
             {
               "text": "GEO",
-              "tooltip": "GEO|GEO|GEO"
+              "tooltip": "GEO"
             },
             {
               "text": "OneDrive",
-              "tooltip": "OneDrive|OneDrive|OneDrive"
+              "tooltip": "OneDrive"
             },
             {
               "text": "Dropbox",
-              "tooltip": "Dropbox|Dropbox|Dropbox"
+              "tooltip": "Dropbox"
             },
             {
               "text": "Amazon S3",
-              "tooltip": "Amazon S3|Amazon S3|Amazon S3"
+              "tooltip": "Amazon S3"
             },
             {
               "text": "GitHub",
-              "tooltip": "GitHub|GitHub|GitHub"
+              "tooltip": "GitHub"
             },
             {
               "text": "BOX",
-              "tooltip": "BOX|BOX|BOX"
+              "tooltip": "BOX"
             },
             {
               "text": "Google Drive",
-              "tooltip": "Google Drive|Google Drive|Google Drive"
+              "tooltip": "Google Drive"
             },
             {
-              "text": "Laboratory Storage",
-              "tooltip": "研究室内ストレージ|Laboratory Storage|Laboratory Storage"
+              "text": "研究室内ストレージ/Laboratory Storage",
+              "tooltip": "研究室内ストレージ|Laboratory Storage"
             },
             {
-              "text": "OTHER",
-              "tooltip": "その他|Other|OTHER"
+              "text": "その他/Other",
+              "tooltip": "その他|Other"
             }
           ],
           "required": true
@@ -442,16 +537,25 @@
         {
           "qid": "other-supplementary-information",
           "nav": "リポジトリ",
-          "title": "その他補足事項|Other supplementary information",
+          "title": "その他補足事項（日本語）|Other supplementary information（Japanese）",
           "type": "string",
           "format": "textarea",
           "required": false,
-          "help": "（※）「リポジトリ情報」で「その他」を選んだ場合や複数利用している場合はそのリポジトリを全て記入。またはURLの記載場所が足りない場合もこちらに記入。 |（（※）If there is not enough space, write here "
+          "help": "（※）「リポジトリ情報」で「その他」を選んだ場合や複数利用している場合はそのリポジトリを全て記入。またはURLの記載場所が足りない場合もこちらに記入。 |（※）If there is not enough space, write here "
+        },
+        {
+          "qid": "other-supplementary-information-en",
+          "nav": "リポジトリ",
+          "title": "Other supplementary information（English）",
+          "type": "string",
+          "format": "textarea",
+          "required": false,
+          "help": "（※）If there is not enough space, write here "
         },
         {
           "qid": "name-of-data-creator",
           "nav": "データ作成者（解析結果・解析ツール作成者）",
-          "title": "データ作成者 氏名|Name of data creator",
+          "title": "データ作成者 氏名（日本語）|Name of data creator（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
@@ -459,14 +563,34 @@
           "help": "e.g. 東大太郎|e.g. Taro Todai"
         },
         {
+          "qid": "name-of-data-creator-en",
+          "nav": "データ作成者（解析結果・解析ツール作成者）",
+          "title": "Name of data creator（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "e.g. Taro Todai"
+        },
+        {
           "qid": "belonging-of-data-creator",
           "nav": "データ作成者（解析結果・解析ツール作成者）",
-          "title": "データ作成者  所属|Belonging of data creator",
+          "title": "データ作成者  所属（日本語）|Belonging of data creator（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
           "space_normalization": true,
           "help": "e.g. 東京大学|e.g. The University of Tokyo"
+        },
+        {
+          "qid": "belonging-of-data-creator-en",
+          "nav": "データ作成者（解析結果・解析ツール作成者）",
+          "title": "Belonging of data creator（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "e.g. The University of Tokyo"
         },
         {
           "qid": "contact-of-data-creator",
@@ -481,7 +605,7 @@
         {
           "qid": "name-of-data-manager",
           "nav": "データ管理者（解析結果・解析ツール管理者）",
-          "title": "データ管理者 氏名|Name of data manager",
+          "title": "データ管理者 氏名（日本語）|Name of data manager（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
@@ -489,14 +613,34 @@
           "help": "e.g. 東大太郎|e.g. Taro Todai"
         },
         {
+          "qid": "name-of-data-manager-en",
+          "nav": "データ管理者（解析結果・解析ツール管理者）",
+          "title": "Name of data manager（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "e.g. Taro Todai"
+        },
+        {
           "qid": "belonging-of-data-manager",
           "nav": "データ管理者（解析結果・解析ツール管理者）",
-          "title": "データ管理者  所属|Belonging of data manager ",
+          "title": "データ管理者  所属（日本語）|Belonging of data manager（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
           "space_normalization": true,
           "help": "e.g. 東京大学|e.g. The University of Tokyo"
+        },
+        {
+          "qid": "belonging-of-data-manager-en",
+          "nav": "データ管理者（解析結果・解析ツール管理者）",
+          "title": "Belonging of data manager（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "e.g. The University of Tokyo"
         },
         {
           "qid": "contact-of-data-manager",
@@ -511,21 +655,40 @@
         {
           "qid": "target-type-of-acquired-data",
           "nav": "取得データの対象種別",
-          "title": "取得データの対象種別|Target type of acquired data",
+          "title": "取得データの対象種別（日本語）|Target type of acquired data（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
           "help": "e.g. ヒト、マウス（動物の場合）、培養細胞（その他）|e.g. Human, mouse (for animals), cultured cells (other)"
         },
         {
+          "qid": "target-type-of-acquired-data-en",
+          "nav": "取得データの対象種別",
+          "title": "Target type of acquired data（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "help": "e.g. Human, mouse (for animals), cultured cells (other)"
+        },
+        {
           "qid": "ethics-review-committee-approval",
           "nav": "倫理審査委員会承認 ",
-          "title": "倫理審査委員会承認|Ethics Review Committee Approval ",
+          "title": "倫理審査委員会承認（日本語）|Ethics Review Committee Approval（Japanese）",
           "type": "string",
           "format": "text",
           "required": true,
           "space_normalization": true,
           "help": "e.g. ○○委員会/不要|e.g. ○○Comittee/Unnecessary"
+        },
+        {
+          "qid": "ethics-review-committee-approval-en",
+          "nav": "倫理審査委員会承認 ",
+          "title": "Ethics Review Committee Approval（English）",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "e.g. ○○Comittee/Unnecessary"
         },
         {
           "qid": "informed-consent",
@@ -535,16 +698,16 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Yes",
-              "tooltip": "有|Yes|0"
+              "text": "有/Yes",
+              "tooltip": "有|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "無|No|1"
+              "text": "無/No",
+              "tooltip": "無|No"
             },
             {
-              "text": "Unnecessary",
-              "tooltip": "不要|Unnecessary|2"
+              "text": "不要/Unnecessary",
+              "tooltip": "不要|Unnecessary"
             }
           ],
           "required": true
@@ -557,12 +720,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "|Yes",
-              "tooltip": "有|Yes|0"
+              "text": "有/Yes",
+              "tooltip": "有|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "無|No|1"
+              "text": "無/No",
+              "tooltip": "無|No"
             }
           ],
           "required": false
@@ -575,12 +738,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Yes",
-              "tooltip": "有|Yes|0"
+              "text": "有/Yes",
+              "tooltip": "有|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "無|No|1"
+              "text": "無/No",
+              "tooltip": "無|No"
             }
           ],
           "required": false
@@ -593,12 +756,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Yes",
-              "tooltip": "有|Yes|0"
+              "text": "有/Yes",
+              "tooltip": "有|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "無|No|1"
+              "text": "無/No",
+              "tooltip": "無|No"
             }
           ],
           "required": false
@@ -611,12 +774,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Opt-out procedure",
-              "tooltip": "オプトアウト手続き|Opt-out procedure|0"
+              "text": "オプトアウト手続き/Opt-out procedure",
+              "tooltip": "オプトアウト手続き|Opt-out procedure"
             },
             {
-              "text": "Agree not to",
-              "tooltip": "同意不要|Agree not to|1"
+              "text": "同意不要/Agree not to",
+              "tooltip": "同意不要|Agree not to"
             }
           ],
           "required": false
@@ -629,12 +792,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Yes",
-              "tooltip": "有|Yes|0"
+              "text": "有/Yes",
+              "tooltip": "有|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "無|No|1"
+              "text": "無/No",
+              "tooltip": "無|No"
             }
           ],
           "required": false
@@ -647,12 +810,12 @@
           "format": "e-rad-award-funder",
           "options": [
             {
-              "text": "Yes",
-              "tooltip": "有|Yes|0"
+              "text": "有/Yes",
+              "tooltip": "有|Yes"
             },
             {
-              "text": "No",
-              "tooltip": "無|No|1"
+              "text": "無/No",
+              "tooltip": "無|No"
             }
           ],
           "required": true
@@ -660,7 +823,7 @@
         {
           "qid": "conflict-of-interest",
           "nav": "利益相反の有無（有の場合）",
-          "title": "利益相反の有無（有の場合）|conflict of interest（Yes） ",
+          "title": "利益相反の有無（有の場合）（日本語）|conflict of interest（Yes）（Japanese）",
           "type": "string",
           "format": "text",
           "space_normalization": true,
@@ -668,9 +831,28 @@
           "help": "e.g. 企業名|e.g. Company's name"
         },
         {
+          "qid": "conflict-of-interest-en",
+          "nav": "利益相反の有無（有の場合）",
+          "title": "conflict of interest（Yes）（English）",
+          "type": "string",
+          "format": "text",
+          "space_normalization": true,
+          "required": false,
+          "help": "e.g. Company's name"
+        },
+        {
           "qid": "remarks-3",
           "nav": "備考",
-          "title": "備考|Remarks",
+          "title": "備考（日本語）|Remarks（Japanese）",
+          "type": "string",
+          "format": "textarea",
+          "space_normalization": true,
+          "required": false
+        },
+        {
+          "qid": "remarks-3-en",
+          "nav": "備考",
+          "title": "Remarks（English）",
           "type": "string",
           "format": "textarea",
           "space_normalization": true,
