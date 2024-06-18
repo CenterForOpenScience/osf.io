@@ -79,8 +79,12 @@ def get_current_user_id():
     current_session = get_session()
     return current_session.get('auth_user_id', None) if current_session else None
 
+def _get_current_user():
+    current_user = _get_current_user_from_session()
+    if not current_user:
+        current_user, _ = _get_current_user_and_scopes_from_token()
+    return current_user
 
-# TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user_from_session():
     from osf.models import OSFUser
     current_user_id = get_current_user_id()
@@ -88,7 +92,7 @@ def _get_current_user_from_session():
         return OSFUser.load(current_user_id, select_for_update=check_select_for_update(request))
     return None
 
-def _get_current_user_and_scopes_from_oauth_token():
+def _get_current_user_and_scopes_from_token():
     from framework.auth import cas
     from osf.models import OSFUser
     header_token = request.headers.get('Authorization')
@@ -207,7 +211,7 @@ class Auth(object):
         token_scopes = None
         user = request_args.get('user') or kwargs.get('user') or _get_current_user_from_session()
         if not user:
-            user, token_scopes = _get_current_user_and_scopes_from_oauth_token()
+            user, token_scopes = _get_current_user_and_scopes_from_token()
         private_key = request_args.get('view_only')
         return cls(
             user=user,
