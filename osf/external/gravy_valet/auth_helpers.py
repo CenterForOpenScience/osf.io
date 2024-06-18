@@ -75,6 +75,7 @@ def make_gravy_valet_hmac_headers(
     request_method: str,
     body: typing.Union[str, bytes] = '',
     hmac_key: typing.Optional[str] = None,
+    additional_header: typing.Optional[dict] = None,
     requesting_user: typing.Optional[OSFUser] = None,
     requested_resource: typing.Optional[AbstractNode] = None
 ) -> dict:
