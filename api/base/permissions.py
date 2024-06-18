@@ -111,6 +111,21 @@ class RequiresScopedRequestOrReadOnly(TokenHasScope):
         return self._verify_scopes(request, view, token)
 
 
+class RequiresScopedRequest(TokenHasScope):
+    message = 'Write requests to this view are restricted to properly-scoped tokens.'
+
+    def has_object_permission(self, request, view, obj):
+        # FIXME: Implement request.user validation if necessary
+        return self.has_permission(request, view)
+
+    def has_permission(self, request, view):
+        token = request.auth
+
+        if token is None or not isinstance(token, CasResponse):
+            return False
+        return self._verify_scopes(request, view, token)
+
+
 class RequestHasAdminScope(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if has_admin_scope(request):
