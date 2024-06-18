@@ -112,7 +112,7 @@ def _get_current_user_and_scopes_from_token():
         cas_auth_response.user,
         select_for_update=check_select_for_update(request)
     )
-    token_scopes = oauth_scopes.normalize_scopes(cas_auth_response.attributes('accessTokenScope'))
+    token_scopes = oauth_scopes.normalize_scopes(cas_auth_response.attributes.get('accessTokenScope', []))
     return token_user, token_scopes
 
 
