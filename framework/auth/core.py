@@ -10,6 +10,7 @@ from django.db.models import Subquery
 from django.core.validators import URLValidator
 from flask import request
 
+from framework.auth import oauth_scopes
 from framework.sessions import get_session
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.utils.requests import check_select_for_update
@@ -80,30 +81,35 @@ def get_current_user_id():
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
-def _get_current_user():
+def _get_current_user_from_session():
     from osf.models import OSFUser
-    from framework.auth import cas
     current_user_id = get_current_user_id()
-    header_token = request.headers.get('Authorization', None)
     if current_user_id:
         return OSFUser.load(current_user_id, select_for_update=check_select_for_update(request))
-    elif header_token and 'bearer' in header_token.lower():
-        # instead of querying directly here, let CAS deal with the authentication
-        client = cas.get_client()
-        auth_token = cas.parse_auth_header(header_token)
+    return None
 
-        try:
-            cas_auth_response = client.profile(auth_token)
-        except cas.CasHTTPError:
-            return None
+def _get_current_user_and_scopes_from_oauth_token():
+    from framework.auth import cas
+    from osf.models import OSFUser
+    header_token = request.headers.get('Authorization')
+    if not (header_token and header_token.startswith('Bearer ')):
+        return None, None
+    client = cas.get_client()
+    auth_token = cas.parse_auth_header(header_token)
+    try:
+        cas_auth_response = client.profile(auth_token)
+    except cas.CasHTTPError:
+        return None, None
 
-        return OSFUser.load(
-            cas_auth_response.user,
-            select_for_update=check_select_for_update(request)
-        ) if cas_auth_response.authenticated else None
+    if not cas_auth_response.authenticated:
+        return None, None
 
-    else:
-        return None
+    token_user = OSFUser.load(
+        cas_auth_response.user,
+        select_for_update=check_select_for_update(request)
+    )
+    token_scopes = oauth_scopes.normalize_scopes(cas_auth_response.attributes('accessTokenScope'))
+    return token_user, token_scopes
 
 
 # TODO: This should be a class method of User?
@@ -165,10 +171,11 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 class Auth(object):
 
     def __init__(self, user=None, api_node=None,
-                 private_key=None):
+                 private_key=None, token_scopes=None):
         self.user = user
         self.api_node = api_node
         self.private_key = private_key
+        self.token_scopes = token_scopes
 
     def __repr__(self):
         return ('<Auth(user="{self.user}", '
@@ -197,9 +204,13 @@ class Auth(object):
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+        token_scopes = None
+        user = request_args.get('user') or kwargs.get('user') or _get_current_user_from_session()
+        if not user:
+            user, token_scopes = _get_current_user_and_scopes_from_oauth_token()
         private_key = request_args.get('view_only')
         return cls(
             user=user,
             private_key=private_key,
+            token_scopes=token_scopes
         )

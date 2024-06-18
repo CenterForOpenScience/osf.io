@@ -1,7 +1,9 @@
 import datetime
-from rest_framework import status as http_status
+import enum
 import os
 import uuid
+
+from rest_framework import status as http_status
 import markupsafe
 from future.moves.urllib.parse import quote
 from django.utils import timezone
@@ -26,13 +28,11 @@ from addons.osfstorage.utils import enqueue_update_analytics
 
 from framework import sentry
 from framework.auth import Auth
-from framework.auth import cas
-from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
-from framework.routing import json_renderer, proxy_url
+from framework.routing import proxy_url
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
@@ -66,6 +66,13 @@ from website.util import rubeus
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 from osf.utils.requests import requests_retry_session
+
+
+class PermissionsResponse(enum.Enum):
+    PUBLIC_RESOURCE = enum.auto()
+    PERMISSION_GRANTED = enum.auto()
+    PERMISSION_DENIED = enum.auto()
+
 
 ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
@@ -192,17 +199,24 @@ def check_resource_permissions(resource, auth, action):
 
     required_permission = get_permission_for_action(action)
     if isinstance(resource, Registration):
-        return _check_registration_permissions(resource, auth, required_permission, action)
+        has_permission = _check_registration_permissions(resource, auth, required_permission, action)
+        is_public = resource.is_public
     elif isinstance(resource, Node):
-        return _check_node_permissions(resource, auth, required_permission, action)
+        has_permission = _check_node_permissions(resource, auth, required_permission, action)
+        is_public = resource.is_public
     elif isinstance(resource, Preprint):
-        return _check_preprint_permissions(resource, auth, required_permission)
+        has_permission = _check_preprint_permissions(resource, auth, required_permission)
+        is_public = resource.verified_publishable
     elif isinstance(resource, DraftNode):
         draft_registration = resource.registered_draft.first()
-        return _check_draft_registration_permissions(draft_registration, auth, required_permission)
+        has_permission = _check_draft_registration_permissions(draft_registration, auth, required_permission)
+        is_public = False
     else:
         raise NotImplementedError()
 
+    if has_permission and _confirm_token_scopes(resource, auth, required_permission, is_public):
+        return True
+    return False
 
 def _check_registration_permissions(registration, auth, permission, action):
     if permission == permissions.READ:
@@ -242,6 +256,19 @@ def _check_hierarchical_write_permissions(resource, auth):
     return False
 
 
+def _confirm_token_scopes(resource, auth, required_permission, resource_is_public):
+    # Don't apply additional limitations if not authed via Bearer Token
+    if not auth.token_scopes:
+        return True
+
+    action_is_read_only = (required_permission == permissions.READ)
+    if action_is_read_only and resource_is_public:
+        return True
+
+    required_scope = resource.file_read_scope if action_is_read_only else resource.file_write_scope
+    return required_scope in auth.token_scopes
+
+
 def make_auth(user):
     if user is not None:
         return {
@@ -250,36 +277,6 @@ def make_auth(user):
             'name': user.fullname,
         }
     return {}
-
-
-def authenticate_via_oauth_bearer_token(resource, action):
-    authorization = request.headers.get('Authorization')
-    client = cas.get_client()
-
-    try:
-        access_token = cas.parse_auth_header(authorization)
-        cas_resp = client.profile(access_token)
-    except cas.CasError as err:
-        sentry.log_exception()
-        return json_renderer(err)  # Assuming json_renderer wraps the error in a Response
-
-    permission = get_permission_for_action(action)
-    if permission == permissions.READ:
-        if resource.can_view_files():
-            return OSFUser.load(cas_resp.user)
-        required_scope = resource.file_read_scope
-    else:
-        required_scope = resource.file_write_scope
-
-    token = cas_resp.attributes.get('accessTokenScope')
-    if not token or not cas_resp.authenticated:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-    normalize_scopes = oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope'])
-    if required_scope not in normalize_scopes:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-    return OSFUser.load(cas_resp.user)
 
 
 def decrypt_and_decode_jwt_payload():
@@ -329,23 +326,6 @@ def _get_osfstorage_file_node(file_path: str) -> OsfStorageFileNode:
     return OsfStorageFileNode.load(file_id)
 
 
-def authenticate_user_if_needed(auth, waterbutler_data, resource):
-    if auth.user:
-        return  # User is already authenticated
-
-    if 'cookie' in waterbutler_data:
-        auth.user = OSFUser.from_cookie(waterbutler_data.get('cookie'))
-        if not auth.user:
-            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'Invalid user cookie.')
-
-    authorization = request.headers.get('Authorization')
-    if authorization and authorization.startswith('Bearer '):
-        auth.user = authenticate_via_oauth_bearer_token(resource, waterbutler_data['action'])
-
-    if not auth.user:
-        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'User authentication failed.')
-
-
 @collect_auth
 def get_auth(auth, **kwargs):
     """
@@ -379,9 +359,6 @@ def get_auth(auth, **kwargs):
 
     # Authenticate the resource based on the node_id and handle potential draft nodes
     resource = get_authenticated_resource(waterbutler_data['nid'])
-
-    # Authenticate the user using cookie or Oauth if possible
-    authenticate_user_if_needed(auth, waterbutler_data, resource)
 
     # Verify the user has permission to perform the requested action on the node
     action = waterbutler_data['action']
