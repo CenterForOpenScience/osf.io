@@ -149,7 +149,8 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
+        base_permissions.RequiresScopedRequest,
         base_permissions.TokenHasScope,
     )
 
