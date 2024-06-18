@@ -208,7 +208,7 @@ class Auth(object):
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-        user, token_scopes = _get_current_user_and_scopes_from_token
+        user, token_scopes = _get_current_user_and_scopes_from_token()
         if not user:
             token_scopes = None
             user = request_args.get('user') or kwargs.get('user') or _get_current_user_from_session()
