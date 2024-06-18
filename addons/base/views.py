@@ -1,5 +1,4 @@
 import datetime
-import enum
 import os
 import uuid
 
@@ -66,12 +65,6 @@ from website.util import rubeus
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 from osf.utils.requests import requests_retry_session
-
-
-class PermissionsResponse(enum.Enum):
-    PUBLIC_RESOURCE = enum.auto()
-    PERMISSION_GRANTED = enum.auto()
-    PERMISSION_DENIED = enum.auto()
 
 
 ERROR_MESSAGES = {'FILE_GONE': u"""
