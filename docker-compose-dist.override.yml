@@ -3,6 +3,10 @@ version: "3.4"
 # Additional configuration for development on services linked with osf.io
 # services:
 
+#  gv:
+#    volumes:
+#      - ../gravyvalet:/code:cached
+#
 #  wb:
 #    volumes:
 #      - ../waterbutler:/code:cached
