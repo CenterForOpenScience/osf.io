@@ -28,7 +28,6 @@ from osf.models import Guid, RegistrationSchema, Registration
 from osf.models.archive import ArchiveTarget, ArchiveJob
 from osf.models.base import generate_object_id
 from osf.utils.migrations import map_schema_to_schemablocks
-from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
 
@@ -573,7 +572,7 @@ class TestArchiverTasks(ArchiverTestCase):
     def test_archive_success_escaped_file_names(self):
         file_tree = file_tree_factory(0, 0, 0)
         fake_file = file_factory(name='>and&and<')
-        fake_file_name = strip_html(fake_file['name']).replace('&amp;', '&')
+        fake_file_name = normalize_unicode_filenames(fake_file['name'])[0]
         file_tree['children'] = [fake_file]
 
         node = factories.NodeFactory(creator=self.user)

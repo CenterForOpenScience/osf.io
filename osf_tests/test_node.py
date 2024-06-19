@@ -687,7 +687,7 @@ class TestProject:
                     for addon in node.addons
                     if addon.config.short_name == addon_config.short_name
                 ])
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=datetime.timezone.utc)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=datetime.UTC)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             deleted_node = NodeFactory(is_deleted=True)
         assert deleted_node.is_deleted
