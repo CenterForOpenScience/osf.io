@@ -480,43 +480,6 @@ services:
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
 
-  gv-requirements:
-    image: quay.io/centerforopenscience/gravyvalet:develop
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
-    command:
-      - /bin/bash
-      - -c
-      - pip install -r requirements/dev-requirements.txt &&
-        (python3 -m compileall /usr/local/lib/python3.12 || true) &&
-        rm -Rf /python3.12/* &&
-        cp -Rf -p /usr/local/lib/python3.12 /
-    restart: 'no'
-    environment:
-      DJANGO_SETTINGS_MODULE: api.base.settings
-    volumes:
-      - gv_requirements_vol:/python3.12
-
-  gv:
-    image: quay.io/centerforopenscience/gravyvalet:develop
-    command: python manage.py runserver 0.0.0.0:8004
-    restart: unless-stopped
-    ports:
-      - 8004:8004
-    depends_on:
-      - postgres
-    env_file:
-      - .docker-compose.gv.env
-      - .docker-compose.env
-    environment:
-      DJANGO_SETTINGS_MODULE: app.settings
-      POSTGRES_DB: gravyvalet
-      POSTGRES_USER: postgres
-      SECRET_KEY: secret
-    volumes:
-      - gv_requirements_vol:/usr/local/lib/python3.12
-    stdin_open: true
-
   api:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke apiserver -h 0.0.0.0
@@ -563,6 +526,48 @@ services:
       - ember_osf_web_dist_vol:/ember_osf_web
       - preprints_dist_vol:/preprints
       - reviews_dist_vol:/reviews
+    stdin_open: true
+
+
+  ######
+  # GV #
+  ######
+
+  gv-requirements:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    # Need to allocate tty to be able to call invoke for requirements task
+    tty: true
+    command:
+      - /bin/bash
+      - -c
+      - pip install -r requirements/dev-requirements.txt &&
+        (python3 -m compileall /usr/local/lib/python3.12 || true) &&
+        rm -Rf /python3.12/* &&
+        cp -Rf -p /usr/local/lib/python3.12 /
+    restart: 'no'
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
+    volumes:
+      - gv_requirements_vol:/python3.12
+
+  gv:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    command: python manage.py runserver 0.0.0.0:8004
+    restart: unless-stopped
+    ports:
+      - 8004:8004
+    depends_on:
+      - postgres
+    env_file:
+      - .docker-compose.gv.env
+      - .docker-compose.env
+    environment:
+      DJANGO_SETTINGS_MODULE: app.settings
+      POSTGRES_DB: gravyvalet
+      POSTGRES_USER: postgres
+      SECRET_KEY: secret
+    volumes:
+      - gv_requirements_vol:/usr/local/lib/python3.12
     stdin_open: true
 
   pigeon:
