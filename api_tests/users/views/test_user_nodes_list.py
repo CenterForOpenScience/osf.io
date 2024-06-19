@@ -106,10 +106,10 @@ class TestUserNodes:
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    #   test_anonymous_gets_200
+    #   test_anonymous_gets_401
         url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
-        res = app.get(url)
-        assert res.status_code == 200
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_projects_logged_in
@@ -129,17 +129,8 @@ class TestUserNodes:
 
     #   test_get_projects_not_logged_in
         url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
-        res = app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert public_project_user_one._id in ids
-        assert private_project_user_one._id not in ids
-        assert public_project_user_two._id not in ids
-        assert private_project_user_two._id not in ids
-        assert folder._id not in ids
-        assert deleted_project_user_one._id not in ids
-        assert registration._id not in ids
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     #   test_get_projects_logged_in_as_different_user
         url = '/{}users/{}/nodes/'.format(API_BASE, user_two._id)
@@ -382,18 +373,17 @@ class TestNodeListPermissionFiltering:
         # test filter nonauthenticated_user v2.11
         read_node.is_public = True
         read_node.save()
-        res = app.get('{}read&version=2.11'.format(url))
-        assert len(res.json['data']) == 0
+        res = app.get('{}read&version=2.11'.format(url), expect_errors=True)
+        assert res.status_code == 401
 
         # test filter nonauthenticated_user v2.2
-        res = app.get('{}read&version=2.2'.format(url))
-        assert len(res.json['data']) == 1
-        assert set([read_node._id]) == set([node['id'] for node in res.json['data']])
+        res = app.get('{}read&version=2.2'.format(url), expect_errors=True)
+        assert res.status_code == 401
 
         # test filter nonauthenticated_user v2.2
-        res = app.get('{}write&version=2.2'.format(url))
-        assert len(res.json['data']) == 0
+        res = app.get('{}write&version=2.2'.format(url), expect_errors=True)
+        assert res.status_code == 401
 
         # test filter nonauthenticated_user v2.2
-        res = app.get('{}admin&version=2.2'.format(url))
-        assert len(res.json['data']) == 0
+        res = app.get('{}admin&version=2.2'.format(url), expect_errors=True)
+        assert res.status_code == 401

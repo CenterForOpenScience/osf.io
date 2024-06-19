@@ -47,10 +47,8 @@ class TestUserGroupList:
     def test_return_manager_groups(self, app, member, manager, user, osf_group, second_osf_group, manager_url):
         with override_flag(OSF_GROUPS, active=True):
             # test nonauthenticated
-            res = app.get(manager_url)
-            assert res.status_code == 200
-            ids = [group['id'] for group in res.json['data']]
-            assert len(ids) == 0
+            res = app.get(manager_url, expect_errors=True)
+            assert res.status_code == 401
 
             # test authenticated user
             res = app.get(manager_url, auth=user.auth)
@@ -91,10 +89,8 @@ class TestUserGroupList:
     def test_return_member_groups(self, app, member, manager, user, osf_group, second_osf_group, member_url):
         with override_flag(OSF_GROUPS, active=True):
             # test nonauthenticated
-            res = app.get(member_url)
-            assert res.status_code == 200
-            data = res.json['data']
-            assert len(data) == 0
+            res = app.get(member_url, expect_errors=True)
+            assert res.status_code == 401
 
             # test authenticated user
             res = app.get(member_url, auth=user.auth)
