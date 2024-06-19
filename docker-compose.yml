@@ -507,6 +507,7 @@ services:
       - postgres
     env_file:
       - .docker-compose.gv.env
+      - .docker-compose.env
     environment:
       DJANGO_SETTINGS_MODULE: app.settings
       POSTGRES_DB: gravyvalet
