@@ -2,7 +2,6 @@ import base64
 import hashlib
 import hmac
 import re
-import typing
 import urllib
 
 from django.utils import timezone
