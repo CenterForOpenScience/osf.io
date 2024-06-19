@@ -37,10 +37,9 @@ class TestUserQuickFiles:
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_anonymous_gets_200(self, app, url):
-        res = app.get(url)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
+    def test_anonymous_gets_401(self, app, url):
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_get_files_logged_in(self, app, user, url):
         res = app.get(url, auth=user.auth)
@@ -51,11 +50,8 @@ class TestUserQuickFiles:
         assert len(ids) == OsfStorageFile.objects.count()
 
     def test_get_files_not_logged_in(self, app, url):
-        res = app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert len(ids) == OsfStorageFile.objects.count()
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_get_files_logged_in_as_different_user(self, app, user, url):
         user_two = AuthUserFactory()
@@ -123,9 +119,15 @@ class TestUserQuickFiles:
         assert 'upload' in file_detail_json['links']
         assert file_detail_json['links']['upload'] == waterbutler_url
 
-    def test_disabled_users_quickfiles_gets_410(self, app, user, quickfiles, url):
+    def test_disabled_users_quickfiles_gets_400(self, app, user, quickfiles, url):
+        user.is_disabled = True
+        user.save()
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.content_type == 'application/vnd.api+json'
+
+    def test_disabled_users_quickfiles_gets_410_not_logged_in(self, app, user, quickfiles, url):
         user.is_disabled = True
         user.save()
         res = app.get(url, expect_errors=True)
-        assert res.status_code == 410
-        assert res.content_type == 'application/vnd.api+json'
+        assert res.status_code == 401

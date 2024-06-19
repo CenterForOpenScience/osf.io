@@ -52,11 +52,10 @@ class TestUserPreprints:
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    #   test_anonymous_gets_200
+    #   test_anonymous_gets_401
         url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
-        res = app.get(url)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     #   test_get_preprints_logged_in
         url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
@@ -70,13 +69,8 @@ class TestUserPreprints:
 
     #   test_get_projects_not_logged_in
         url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
-        res = app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert preprint._id in ids
-        assert project_public._id not in ids
-        assert project_private._id not in ids
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     #   test_get_projects_logged_in_as_different_user
         url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
@@ -309,8 +303,8 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         preprint.machine_state = 'initial'
         preprint.save()
         # unauth
-        res = app.get(url)
-        assert len(res.json['data']) == 0
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
         # non_contrib
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 0

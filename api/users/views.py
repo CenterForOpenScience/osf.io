@@ -35,8 +35,8 @@ from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 from api.users.permissions import (
-    CurrentUser, ReadOnlyOrCurrentUser,
-    ReadOnlyOrCurrentUserRelationship,
+    CurrentUser,
+    CurrentUserRelationship,
     ClaimUserPermission,
 )
 from api.users.serializers import (
@@ -175,8 +175,8 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_read).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ReadOnlyOrCurrentUser,
+        drf_permissions.IsAuthenticated,
+        CurrentUser,
         base_permissions.TokenHasScope,
     )
 
@@ -211,7 +211,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_addons_list).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -235,7 +235,7 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, Addo
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_addons_read).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -255,7 +255,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/Users_addon_accounts_list).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -276,7 +276,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/Users_addon_accounts_read).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -302,7 +302,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_nodes_list).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
 
@@ -339,7 +339,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
 
 class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
     required_read_scopes = [CoreScopes.OSF_GROUPS_READ]
@@ -367,7 +367,7 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
 class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, UserMixin, ListFilterMixin):
 
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
 
@@ -400,7 +400,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
     """
 
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
 
@@ -434,7 +434,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_institutions_list).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
 
@@ -459,7 +459,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_registrations_list).
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
 
@@ -511,9 +511,9 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        ReadOnlyOrCurrentUserRelationship,
+        CurrentUserRelationship,
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -556,7 +556,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """
     permission_classes = (
         base_permissions.TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         CurrentUser,
     )
 
@@ -584,7 +584,7 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
     """
     permission_classes = (
         base_permissions.TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         CurrentUser,
     )
 
@@ -619,7 +619,7 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
 
 class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -650,7 +650,7 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
 class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -702,7 +702,7 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -810,7 +810,7 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
 class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
@@ -855,7 +855,7 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
 
 class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
