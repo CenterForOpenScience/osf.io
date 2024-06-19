@@ -361,8 +361,9 @@ services:
     command:
       - /bin/bash
       - -c
-      - python3 -m invoke requirements --all &&
-        (python3 -m compileall /usr/local/lib/python3.12) &&
+      - python -m venv /tmp/venv
+        && /tmp/venv/bin/pip install poetry==1.8.0 &&
+        /tmp/venv/bin/poetry install --no-root --without release --compile --sync &&
         rm -rf /python3.12/* &&
         cp -Rf -p /usr/local/lib/python3.12 /
     restart: 'no'

@@ -52,7 +52,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-addons -n 1 --junit
+      run: poetry run python3 -m invoke test-travis-addons -n 1 --junit
     - name: Upload report
       if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -65,7 +65,6 @@ jobs:
     services:
       postgres:
         image: postgres
-
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -80,7 +79,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-website -n 1 --junit
+      run: poetry run python3 -m invoke test-travis-website -n 1 --junit
     - name: Upload report
       if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -93,7 +92,6 @@ jobs:
     services:
       postgres:
         image: postgres
-
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -108,10 +106,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
-        run: |
-          python3 -m invoke assets --dev
+        run: poetry run python3 -m invoke assets --dev
       - name: Run test
-        run: python3 -m invoke test-travis-api1-and-js -n 1 --junit
+        run: poetry run python3 -m invoke test-travis-api1-and-js -n 1 --junit
       - name: Upload report
         if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
@@ -138,7 +135,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-api2 -n 1 --junit
+      run: poetry run python3 -m invoke test-travis-api2 -n 1 --junit
     - name: Upload report
       if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -166,7 +163,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: python3 -m invoke test-travis-api3-and-osf -n 1 --junit
+      run: poetry run python3 -m invoke test-travis-api3-and-osf -n 1 --junit
     - name: Upload report
       if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
