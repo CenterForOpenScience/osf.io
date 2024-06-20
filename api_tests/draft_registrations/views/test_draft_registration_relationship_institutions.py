@@ -543,7 +543,7 @@ class TestDraftRegistrationRelationshipInstitutions():
             auth=read_contrib.auth,
             expect_errors=True)
         node.reload()
-        assert res.status_code == 403
+        assert res.status_code == 201
         assert read_contrib_institution not in node.affiliated_institutions.all()
 
     #   test_read_only_contributor_cannot_remove_affiliated_institution

@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
 from addons.base.exceptions import InvalidAuthError
 from api.addons.serializers import NodeAddonFolderSerializer
@@ -19,6 +19,7 @@ from api.base.exceptions import (
     InvalidModelValueError,
     JSONAPIException,
     Gone,
+    RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
     PermanentlyMovedError,
@@ -1749,21 +1750,11 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         node.save()
 
     def create(self, *args, **kwargs):
-        node = self.get_resource()
-        user = self.request.user
-        current_institutions = list(node.affiliated_institutions.all())
-
-        payload = self.request.data.get('data', [])
-        institutions_to_add = [Institution.load(item['id']) for item in payload if Institution.load(item['id']) not in current_institutions]
-
-        if not institutions_to_add:
+        try:
+            ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
-
-        for institution in institutions_to_add:
-            node.add_affiliated_institution(institution, user)
-            node.save()
-
-        return Response(status=HTTP_201_CREATED)
+        return ret
 
 
 class NodeStorage(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
