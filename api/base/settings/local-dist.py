@@ -21,6 +21,7 @@ if DEBUG:
         'SHOW_TOOLBAR_CALLBACK': lambda _: True,
     }
     ALLOWED_HOSTS.append('localhost')
+    ALLOWED_HOSTS.append('192.168.168.167') #allow requests from GV
 
     # django-silk
     INSTALLED_APPS += ('silk',)

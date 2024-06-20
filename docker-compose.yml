@@ -546,7 +546,7 @@ services:
         cp -Rf -p /usr/local/lib/python3.12 /
     restart: 'no'
     environment:
-      DJANGO_SETTINGS_MODULE: api.base.settings
+      DJANGO_SETTINGS_MODULE: app.settings
     volumes:
       - gv_requirements_vol:/python3.12
 
@@ -559,13 +559,10 @@ services:
     depends_on:
       - postgres
     env_file:
-      - .docker-compose.gv.env
       - .docker-compose.env
+      - .docker-compose.gv.env
     environment:
       DJANGO_SETTINGS_MODULE: app.settings
-      POSTGRES_DB: gravyvalet
-      POSTGRES_USER: postgres
-      SECRET_KEY: secret
     volumes:
       - gv_requirements_vol:/usr/local/lib/python3.12
     stdin_open: true
