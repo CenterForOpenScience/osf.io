@@ -7,58 +7,83 @@ from osf.models import Node, OSFUser
 from . import request_helpers as gv_requests
 
 
-class _LegacyConfigsForImps(enum.Enum):
+class _LegacyConfigsForWBKey(enum.Enum):
     """Mapping from a GravyValet StorageImp name to the Addon config."""
     box = BoxAddonAppConfig
 
 
-def make_fake_node_settings(gv_data, requested_resource, requesting_user):
-    service_wb_key = gv_data.get_nested_attribute(
+def make_generic_node_settings(gv_addon_data, requested_resource, requesting_user):
+    service_wb_key = gv_addon_data.get_included_attribute(
         attribute_path=('base_account', 'external_storage_service'),
         attribute_name='wb_key'
     )
-    legacy_config = _LegacyConfigsForImps(service_wb_key)
-    return FakeNodeSettings(
-        config=FakeAddonConfig.from_legacy_config(legacy_config),
-        gv_id=gv_data.resource_id,
-        folder_id=gv_data.get_attribute('configured_root_id'),
+    legacy_config = _LegacyConfigsForWBKey(service_wb_key)
+    return EphemeralNodeSettings(
+        config=EphemeralAddonConfig.from_legacy_config(legacy_config),
+        gv_id=gv_addon_data.resource_id,
+        folder_id=gv_addon_data.get_attribute('configured_root_id'),
         configured_resource=requested_resource,
+        active_user=requesting_user,
+    )
+
+def make_generic_user_settings(gv_account_data, requesting_user):
+    service_wb_key = gv_account_data.get_included_attribute(
+        attribute_path=('external_storage_service'),
+        attribute_name='wb_key'
+    )
+    legacy_config = _LegacyConfigsForWBKey(service_wb_key)
+    return EphemeralUserSettings(
+        config=EphemeralAddonConfig.from_legacy_config(legacy_config),
+        gv_id=gv_account_data.resource_id,
         active_user=requesting_user,
     )
 
 
 @dataclasses.dataclass
-class FakeAddonConfig:
+class EphemeralAddonConfig:
+    '''Minimalist dataclass for storing the actually used properties of an AddonConfig'''
+    name: str
+    label: str
     short_name: str
+    full_name: str
 
     @classmethod
     def from_legacy_config(legacy_config):
-        return FakeAddonConfig(
-            short_name=legacy_config.short_name
+        return EphemeralAddonConfig(
+            name=legacy_config.name,
+            label=legacy_config.label,
+            full_name=legacy_config.full_name,
+            short_name=legacy_config.short_name,
         )
 
 
 @dataclasses.dataclass
-class FakeNodeSettings:
-    config: FakeAddonConfig
+class EphemeralNodeSettings:
+    '''Minimalist dataclass for storing/translating the actually used properties of NodeSettings.'''
+    config: EphemeralAddonConfig
     folder_id: str
     gv_id: str
-    configured_resource: Node
-    active_user: OSFUser
     _storage_config: dict | None
     _credentials: dict | None
+
+    # These are needed in order to make further requests for credentials
+    configured_resource: Node
+    active_user: OSFUser
 
     @property
     def short_name(self):
         return self.config.short_name
 
     def serialize_waterbutler_credentials(self):
+        # sufficient for most OAuth services, including Box
+        # TODO: Define per-service translation (or common schemes)
         if self._credentials is None:
             self._fetch_wb_config()
         return self._credentials
 
     def serialize_waterbutler_settings(self):
-        # sufficient for box
+        # sufficient for Box
+        # TODO: Define per-service translation (or common schemes)
         return {
             'folder': self.folder_id,
             'service': self.short_name,
@@ -75,13 +100,13 @@ class FakeNodeSettings:
 
 
 @dataclasses.dataclass
-class FakeUserSettings:
-    config: FakeAddonConfig
+class EphemeralUserSettings:
+    '''Minimalist dataclass for storing the actually used properties of UserSettings.'''
+    config: EphemeralAddonConfig
     gv_id: str
+    # This is needed to support making further requests
+    active_user: OSFUser
 
-
-def _get_service_name_from_gv_data(gv_data):
-    return gv_data.get_included_attribute('base_account.external_storage_service.wb_key')
-
-def _get_configured_folder_from_gv_data(gv_data):
-    return gv_data.get_attribute('root_folder')
+    @property
+    def short_name(self):
+        return self.config.short_name

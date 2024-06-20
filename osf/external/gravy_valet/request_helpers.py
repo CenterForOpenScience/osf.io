@@ -1,11 +1,13 @@
 from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 
+import logging
 import dataclasses
 import requests
 
 from . import auth_helpers
 from website import settings
 
+logger = logging.getLogger(__name__)
 
 # Use urljoin here to handle inconsistent use of trailing slash
 API_BASE = urljoin(settings.GRAVYVALET_URL, 'v1/')
@@ -15,10 +17,10 @@ ACCOUNT_ENDPOINT = f'{API_BASE}authorized-storage-accounts/{{pk}}'
 ADDON_ENDPOINT = f'{API_BASE}configured-storage-addons/{{pk}}'
 WB_CONFIG_ENDPOINT = f'{ADDON_ENDPOINT}/waterbutler-config'
 
-USER_FILTER_ENDPOINT = f'{API_BASE}user-references?filter[user_uri]={{uri}}'
+USER_LIST_ENDPOINT = f'{API_BASE}user-references'
 USER_DETAIL_ENDPOINT = f'{API_BASE}user-references/{{pk}}'
 
-RESOURCE_FILTER_ENDPOINT = f'{API_BASE}resource-references?filter[resource_uri]={{uri}}'
+RESOURCE_LIST_ENDPOINT = f'{API_BASE}resource-references'
 RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
 
 ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
@@ -37,7 +39,7 @@ def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
 def get_addon(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
     '''Return a JSONAPIResultEntry representing a known ConfiguredStorageAddon.'''
     return get_gv_result(
-        endpoint=ADDON_ENDPOINT.format(pk=gv_addon_pk),
+        endpoint_url=ADDON_ENDPOINT.format(pk=gv_addon_pk),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         params={'include': ADDON_EXTERNAL_SERVICE_PATH},
@@ -47,8 +49,9 @@ def get_addon(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIRe
 def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Returns an iterator of JSONAPIResultEntries representing all of the AuthorizedStorageAccounts for a user.'''
     user_result = get_gv_result(
-        endpoint_url=USER_FILTER_ENDPOINT.format(uri=requesting_user.get_semantic_iri()),
+        endpoint_url=USER_LIST_ENDPOINT,
         requesting_user=requesting_user,
+        params={'filter[user_uri]': requesting_user.get_semantic_iri()},
     )
     if not user_result:
         return None
@@ -62,9 +65,10 @@ def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIRes
 def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Returns an iterator of JSONAPIResultEntires representing all of the ConfiguredStorageAddons for a resource.'''
     resource_result = get_gv_result(
-        endpoint_url=RESOURCE_FILTER_ENDPOINT.format(uri=requested_resource.get_semantic_iri()),
+        endpoint_url=RESOURCE_LIST_ENDPOINT,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
+        params={'filter[resource_uri]': requested_resource.get_semantic_iri()},
     )
     if not resource_result:
         return None
@@ -78,23 +82,25 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
 
 def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
     return get_gv_result(
-        endpoint=WB_CONFIG_ENDPOINT.format(pk=gv_addon_pk),
+        endpoint_url=WB_CONFIG_ENDPOINT.format(pk=gv_addon_pk),
         requesting_user=requesting_user,
         requested_resource=requested_resource
     )
 
 
 def get_gv_result(**kwargs):  # -> JSONAPIResultEntry
-    '''Processes the result of a request to a GravyValet detail endpoint into a JSONAPIResultEntry.
+    '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.
 
     kwargs must match _make_gv_request
     '''
-    response = _make_gv_request(**kwargs)
-    response_json = response.json()
-    if not response['data']:
+    response_json = _make_gv_request(**kwargs).json()
+    if not response_json['data']:
         return None
+    data = response_json['data']
+    if isinstance(data, list):
+        data = data[0]  # Assume filtered list endpoint
     included_entities_lookup = _format_included_entities(response_json.get('included', []))
-    return JSONAPIResultEntry(response_json['data'], included_entities_lookup)
+    return JSONAPIResultEntry(data, included_entities_lookup)
 
 
 def iterate_gv_results(**kwargs):  # -> typing.Iterator[JSONAPIResultEntry]
@@ -102,12 +108,12 @@ def iterate_gv_results(**kwargs):  # -> typing.Iterator[JSONAPIResultEntry]
 
     kwargs must match _make_gv_request
     '''
-
     response_json = _make_gv_request(**kwargs).json()
     if not response_json['data']:
         return  # empty iterator
     included_entities_lookup = _format_included_entities(response_json.get('included', []))
-    yield from (JSONAPIResultEntry(entry, included_entities_lookup) for entry in response_json['data'])
+    for entry in response_json['data']:
+        yield JSONAPIResultEntry(entry, included_entities_lookup)
 
 
 def _make_gv_request(
@@ -122,12 +128,12 @@ def _make_gv_request(
     auth_headers = auth_helpers.make_gravy_valet_hmac_headers(
         request_url=full_url,
         request_method=request_method,
-        additional_headers=auth_helpers._make_permissions_headers(
+        additional_headers=auth_helpers.make_permissions_headers(
             requesting_user=requesting_user,
-            requested_resource=requested_resource
+            requested_resource=requested_resource,
         )
     )
-    response = requests.get(full_url, headers=auth_headers, params=params)
+    response = requests.get(endpoint_url, headers=auth_headers, params=params)
     if not response.ok:
         # log error to Sentry
         pass
@@ -145,7 +151,7 @@ def _format_included_entities(included_entities_json):
         for entity in included_entities_json
     }
     for entity in included_entities_by_type_and_id.values():
-        entity._extract_included_relationships(included_entities_by_type_and_id)
+        entity.extract_included_relationships(included_entities_by_type_and_id)
     return included_entities_by_type_and_id
 
 
@@ -163,8 +169,9 @@ class JSONAPIResultEntry:
         self.resource_id = result_entry['id']
         self._attributes = dict(result_entry['attributes'])
         self._relationships = _extract_relationships(result_entry['relationships'])
+        self._includes = {}
         if included_entities_lookup:
-            self._includes = self._extract_included_relationships(included_entities_lookup)
+            self.extract_included_relationships(included_entities_lookup)
 
     def get_attribute(self, attribute_name):
         return self._attributes.get(attribute_name)

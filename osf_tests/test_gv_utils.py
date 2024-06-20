@@ -69,9 +69,6 @@ class TestFakeGV:
 
     def test_user_route__pk(self, fake_gv, test_user, account_one):
         gv_user_detail_url = gv_requests.USER_DETAIL_ENDPOINT.format(pk=account_one.account_owner_pk)
-        logger.critical('DEBUG DEBUG DEBUG')
-        logger.critical(gv_user_detail_url)
-        logger.critical('\n\n\n')
         with fake_gv.run_fake():
             resp = requests.get(gv_user_detail_url)
         assert resp.status_code == HTTPStatus.OK
@@ -85,10 +82,13 @@ class TestFakeGV:
 
     def test_user_route__filter(self, fake_gv, test_user, account_one):
         gv_user_detail_url = gv_requests.USER_DETAIL_ENDPOINT.format(pk=account_one.account_owner_pk)
-        gv_user_filtered_list_url = gv_requests.USER_FILTER_ENDPOINT.format(uri=test_user.get_semantic_iri())
+        gv_user_list_url = gv_requests.USER_LIST_ENDPOINT
         with fake_gv.run_fake():
             detail_resp = requests.get(gv_user_detail_url)
-            filtered_list_resp = requests.get(gv_user_filtered_list_url)
+            filtered_list_resp = requests.get(
+                gv_user_list_url,
+                params={'filter[user_uri]': test_user.get_semantic_iri()}
+            )
         assert filtered_list_resp.status_code == HTTPStatus.OK
         assert filtered_list_resp.json()['data'][0] == detail_resp.json()['data']
 
@@ -122,10 +122,13 @@ class TestFakeGV:
 
     def test_resource_route__filter(self, fake_gv, project_one, addon_one):
         gv_resource_detail_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=addon_one.resource_pk)
-        gv_resource_filtered_list_url = gv_requests.RESOURCE_FILTER_ENDPOINT.format(uri=project_one.get_semantic_iri())
+        gv_resource_list_url = gv_requests.RESOURCE_LIST_ENDPOINT
         with fake_gv.run_fake():
             detail_resp = requests.get(gv_resource_detail_url)
-            filtered_list_resp = requests.get(gv_resource_filtered_list_url)
+            filtered_list_resp = requests.get(
+                gv_resource_list_url,
+                params={'filter[resource_uri]': project_one.get_semantic_iri()},
+            )
         assert filtered_list_resp.status_code == HTTPStatus.OK
         assert filtered_list_resp.json()['data'][0] == detail_resp.json()['data']
 
@@ -201,8 +204,10 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requesting_user=contributor,
-            hmac_key='bad key'
+            hmac_key='bad key',
+            additional_headers=gv_auth.make_permissions_headers(
+                requesting_user=contributor
+            ),
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -222,7 +227,9 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requesting_user=contributor
+            additional_headers=gv_auth.make_permissions_headers(
+                requesting_user=contributor
+            ),
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -235,7 +242,9 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requesting_user=noncontributor,
+            additional_headers=gv_auth.make_permissions_headers(
+                requesting_user=noncontributor,
+            )
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -260,8 +269,10 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requesting_user=contributor,
-            requested_resource=resource,
+            additional_headers=gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=resource,
+            ),
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -274,8 +285,10 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requesting_user=contributor,
-            requested_resource=factories.ProjectFactory(creator=contributor),
+            additional_headers=gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=factories.ProjectFactory(creator=contributor),
+            ),
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -290,8 +303,10 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requesting_user=noncontributor,
-            requested_resource=resource,
+            additional_headers=gv_auth.make_permissions_headers(
+                requesting_user=noncontributor,
+                requested_resource=resource,
+            ),
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -306,8 +321,10 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requesting_user=noncontributor,
-            requested_resource=resource,
+            additional_headers=gv_auth.make_permissions_headers(
+                requesting_user=noncontributor,
+                requested_resource=resource,
+            ),
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -322,7 +339,9 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requested_resource=resource,
+            additional_headers=gv_auth.make_permissions_headers(
+                requested_resource=resource
+            ),
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -337,7 +356,9 @@ class TestHMACValidation:
         auth_headers = gv_auth.make_gravy_valet_hmac_headers(
             request_url=request_url,
             request_method='GET',
-            requested_resource=resource,
+            additional_headers=gv_auth.make_permissions_headers(
+                requested_resource=resource,
+            )
         )
         with fake_gv.run_fake():
             resp = requests.get(request_url, headers=auth_headers)
@@ -375,3 +396,91 @@ class TestRequestHelpers:
     @pytest.fixture
     def configured_addon(self, fake_gv, resource, external_account):
         return fake_gv.configure_fake_addon(resource, external_account)
+
+    def test_get_account(self, contributor, external_account, external_service, fake_gv):
+        with fake_gv.run_fake():
+            result = gv_requests.get_account(
+                gv_account_pk=external_account.pk,
+                requesting_user=contributor
+            )
+        retrieved_id = result.resource_id
+        assert retrieved_id == external_account.pk
+        retrieved_account_name = result.get_attribute('display_name')
+        assert retrieved_account_name == external_account.display_name
+        retrieved_service_name = result.get_included_attribute(
+            include_path=['external_storage_service'],
+            attribute_name='display_name'
+        )
+        assert retrieved_service_name == external_service.name
+
+    def test_get_addon(self, resource, contributor, configured_addon, external_account, external_service, fake_gv):
+        with fake_gv.run_fake():
+            result = gv_requests.get_addon(
+                gv_addon_pk=external_account.pk,
+                requested_resource=resource,
+                requesting_user=contributor,
+            )
+        retrieved_id = result.resource_id
+        assert retrieved_id == configured_addon.pk
+        retrieved_addon_name = result.get_attribute('display_name')
+        assert retrieved_addon_name == configured_addon.display_name
+        retrieved_service_name = result.get_included_attribute(
+            include_path=['base_account', 'external_storage_service'],
+            attribute_name='display_name'
+        )
+        assert retrieved_service_name == external_service.name
+
+    def test_get_user_accounts(self, contributor, fake_gv, external_service):
+        expected_account_count = 5
+        expected_accounts = {
+            account.pk: account for account in (
+                fake_gv.configure_fake_account(contributor, external_service.name)
+                for _ in range(expected_account_count)
+            )
+        }
+        # unrelated account, will KeyError below if returned in request results
+        fake_gv.configure_fake_account(factories.UserFactory(), external_service.name)
+        with fake_gv.run_fake():
+            accounts_iterator = gv_requests.iterate_accounts_for_user(
+                requesting_user=contributor
+            )
+            # Need to keep this in the context manager, as generator does not fire request until first access to data
+            for retrieved_account in accounts_iterator:
+                configured_account = expected_accounts.pop(retrieved_account.resource_id)
+                assert retrieved_account.get_attribute('display_name') == configured_account.display_name
+                assert retrieved_account.get_included_attribute(
+                    include_path=['external_storage_service'],
+                    attribute_name='display_name'
+                ) == external_service.name
+
+        assert not expected_accounts  # all accounts popped
+
+    def test_get_resource_addons(self, resource, contributor, fake_gv):
+        service_one = fake_gv.configure_fake_provider('argle')
+        service_two = fake_gv.configure_fake_provider('bargle')
+        account_one = fake_gv.configure_fake_account(contributor, service_one.name)
+        account_two = fake_gv.configure_fake_account(contributor, service_two.name)
+        account_three = fake_gv.configure_fake_account(contributor, service_one.name)
+        addon_one = fake_gv.configure_fake_addon(resource, account_one)
+        addon_two = fake_gv.configure_fake_addon(resource, account_two)
+        addon_three = fake_gv.configure_fake_addon(resource, account_three)
+        # Unrelated Addon, will KeyError below if retured in request results
+        fake_gv.configure_fake_addon(factories.ProjectFactory(creator=contributor), account_one)
+
+        expected_addons = {addon.pk: addon for addon in [addon_one, addon_two, addon_three]}
+        with fake_gv.run_fake():
+            addons_iterator = gv_requests.iterate_addons_for_resource(
+                requested_resource=resource,
+                requesting_user=contributor,
+            )
+            # Need to keep this in the context manager, as generator does not fire request until first access to data
+            for retrieved_addon in addons_iterator:
+                configured_addon = expected_addons.pop(retrieved_addon.resource_id)
+                assert retrieved_addon.get_attribute('display_name') == configured_addon.display_name
+                assert retrieved_addon.get_nested_member('base_account').resource_id == configured_addon.base_account.pk
+                assert retrieved_addon.get_included_attribute(
+                    include_path=['base_account', 'external_storage_service'],
+                    attribute_name='display_name'
+                ) == configured_addon.base_account.external_storage_service.name
+
+        assert not expected_addons  # all addons popped

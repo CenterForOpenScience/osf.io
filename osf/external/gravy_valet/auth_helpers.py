@@ -55,7 +55,10 @@ def _get_signed_components(
     return signed_segments, signed_headers
 
 
-def _make_permissions_headers(requesting_user=None, requested_resource=None):
+def make_permissions_headers(
+    requesting_user: typing.Optional[OSFUser] = None,
+    requested_resource: typing.Optional[AbstractNode] = None
+) -> dict:
     osf_permissions_headers = {}
     if requesting_user:
         osf_permissions_headers[USER_HEADER] = requesting_user.get_semantic_iri()
@@ -75,17 +78,12 @@ def make_gravy_valet_hmac_headers(
     request_method: str,
     body: typing.Union[str, bytes] = '',
     hmac_key: typing.Optional[str] = None,
-    additional_header: typing.Optional[dict] = None,
-    requesting_user: typing.Optional[OSFUser] = None,
-    requested_resource: typing.Optional[AbstractNode] = None
+    additional_headers: typing.Optional[dict] = None,
 ) -> dict:
 
-    osf_permissions_headers = {}
-    if requesting_user or requested_resource:
-        osf_permissions_headers = _make_permissions_headers(requesting_user, requested_resource)
-
+    additional_headers = additional_headers or {}
     signed_string_segments, signed_headers = _get_signed_components(
-        request_url, request_method, body, **osf_permissions_headers
+        request_url, request_method, body, **additional_headers
     )
     signature = _sign_message(
         message='\n'.join(signed_string_segments), hmac_key=hmac_key

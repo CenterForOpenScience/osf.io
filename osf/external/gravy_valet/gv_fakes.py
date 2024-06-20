@@ -1,8 +1,9 @@
 import contextlib
 import itertools
 import json
-import typing
+import logging
 import re
+import typing
 import urllib.parse
 from http import HTTPStatus
 
@@ -15,7 +16,9 @@ from osf.utils import permissions as osf_permissions
 from website import settings
 
 
-INCLUDE_REGEX = r'(\?include=(?P<include_param>.+))?'
+logger = logging.getLogger(__name__)
+
+INCLUDE_REGEX = r'(\?include=(?P<include_param>.+))'
 
 class FakeGVError(Exception):
 
@@ -96,15 +99,17 @@ class _FakeAddonProvider(_FakeGVEntity):
     max_upload_mb: int = 2**10
     max_concurrent_uploads: int = -5
     icon_url: str = 'vetted-url-for-icon.png'
+    wb_key: str = None
 
     def _serialize_attributes(self):
         return {
-            'name': self.name,
+            'display_name': self.name,
             'max_upload_mb': self.max_upload_mb,
             'max_concurrent_uploads': self.max_concurrent_uploads,
             'configurable_api_root': False,
             'terms_of_service_features': [],
             'icon_url': self.icon_url,
+            'wb_key': self.wb_key or self.name
         }
 
     def _serialize_relationships(self):
@@ -200,12 +205,12 @@ class _FakeAddon(_FakeGVEntity):
 class FakeGravyValet():
 
     ROUTES = {
-        r'v1/user-references(/(?P<pk>\d+)|(\?filter\[user_uri\]=(?P<user_uri>[^&]+)))$': '_get_user',
-        r'v1/resource-references(/(?P<pk>\d+)|(\?filter\[resource_uri\]=(?P<resource_uri>[^&]+)))$': '_get_resource',
-        r'v1/authorized-storage-accounts/(?P<pk>\d+)$': '_get_account',
-        r'v1/configured-storage-addons/(?P<pk>\d+)$': '_get_addon',
-        r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts$': '_get_user_accounts',
-        r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons$': '_get_resource_addons',
+        r'v1/user-references(/(?P<pk>\d+)|(\?filter\[user_uri\]=(?P<user_uri>[^&]+)))': '_get_user',
+        r'v1/resource-references(/(?P<pk>\d+)|(\?filter\[resource_uri\]=(?P<resource_uri>[^&]+)))': '_get_resource',
+        r'v1/authorized-storage-accounts/(?P<pk>\d+)': '_get_account',
+        r'v1/configured-storage-addons/(?P<pk>\d+)': '_get_addon',
+        r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts': '_get_user_accounts',
+        r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons': '_get_resource_addons',
     }
 
     def __init__(self):
@@ -320,13 +325,14 @@ class FakeGravyValet():
 
         status_code = 200
         for route_expr, routed_func_name in self.ROUTES.items():
-            url_regex = re.compile(f'{re.escape(settings.GRAVYVALET_URL)}/{route_expr}{INCLUDE_REGEX}')
+            url_regex = re.compile(f'{re.escape(settings.GRAVYVALET_URL)}/{route_expr}({INCLUDE_REGEX}|$)')
             route_match = url_regex.match(urllib.parse.unquote(request.url))
             if route_match:
                 func = getattr(self, routed_func_name)
                 try:
                     body = func(headers=request.headers, **route_match.groupdict())
                 except KeyError:  # entity lookup failed somewhere
+                    logger.critical('BAD LOOKUP')
                     status_code = HTTPStatus.NOT_FOUND
                     body = ''
                 except FakeGVError as e:
@@ -334,6 +340,7 @@ class FakeGravyValet():
                     body = ''
                 return (status_code, {}, body)
 
+        logger.critical('route not found')
         return (HTTPStatus.NOT_FOUND, {}, '')
 
     def _get_user(
@@ -406,6 +413,7 @@ class FakeGravyValet():
                 break
 
         if not account:
+            logger.critical('Account not found')
             raise FakeGVError(HTTPStatus.NOT_FOUND)
 
         if self.validate_headers:
@@ -509,9 +517,9 @@ def _format_includes(data, includes):
             source_object = entry
             for member in included_members:
                 included_entry = getattr(source_object, member)
-                included_data.add(included_entry.serialize())
+                included_data.add(included_entry)
                 source_object = included_entry
-    return json.dumps(list(included_data))
+    return [included_entity.serialize() for included_entity in included_data]
 
 
 def _get_nested_count(d):  # dict[Any, Any] -> int:
