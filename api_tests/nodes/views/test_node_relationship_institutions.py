@@ -7,8 +7,6 @@ from osf_tests.factories import (
     NodeFactory,
 )
 from osf.utils import permissions
-from rest_framework.status import HTTP_204_NO_CONTENT
-
 
 @pytest.mark.django_db
 class TestNodeRelationshipInstitutions:
@@ -229,7 +227,7 @@ class TestNodeRelationshipInstitutions:
             auth=user.auth
         )
 
-        assert res.status_code == HTTP_204_NO_CONTENT
+        assert res.status_code == 204
         node.reload()
         assert institution_one in node.affiliated_institutions.all()
 
