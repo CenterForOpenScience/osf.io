@@ -43,8 +43,6 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
-import logging
-logger = logging.getLogger(__name__)
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
