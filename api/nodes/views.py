@@ -19,7 +19,6 @@ from api.base.exceptions import (
     InvalidModelValueError,
     JSONAPIException,
     Gone,
-    RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
     PermanentlyMovedError,
