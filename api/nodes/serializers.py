@@ -4,7 +4,6 @@ from distutils.version import StrictVersion
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
     InvalidModelValueError,
-    RelationshipPostMakesNoChanges,
 )
 from api.base.serializers import (
     VersionedDateTimeField, HideIfRegistration, IDField,
