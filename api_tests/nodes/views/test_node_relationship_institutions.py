@@ -214,7 +214,7 @@ class TestNodeRelationshipInstitutions:
         node.reload()
         assert node.affiliated_institutions.count() == 0
 
-    def test_using_post_making_no_changes_returns_204(
+    def test_using_post_making_no_changes_returns_201(
             self, app, user, institution_one,
             node, node_institutions_url, create_payload):
         node.affiliated_institutions.add(institution_one)
@@ -227,7 +227,7 @@ class TestNodeRelationshipInstitutions:
             auth=user.auth
         )
 
-        assert res.status_code == 204
+        assert res.status_code == 201
         node.reload()
         assert institution_one in node.affiliated_institutions.all()
 
@@ -557,7 +557,7 @@ class TestNodeRelationshipInstitutions:
             auth=read_contrib.auth,
             expect_errors=True)
         node.reload()
-        assert res.status_code == 201
+        assert res.status_code == 403
         assert read_contrib_institution not in node.affiliated_institutions.all()
 
     #   test_read_only_contributor_cannot_remove_affiliated_institution
