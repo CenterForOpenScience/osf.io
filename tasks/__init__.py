@@ -278,9 +278,6 @@ def requirements(ctx, base=False, addons=False, release=False, dev=True, all=Tru
                 pip_install(req_file),
                 echo=True
             )
-    # fix URITemplate name conflict h/t @github
-    ctx.run('pip3 uninstall uritemplate.py --yes || true')
-    ctx.run('pip3 install --no-cache-dir uritemplate.py==0.3.0')
 
 
 @task
