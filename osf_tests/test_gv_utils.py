@@ -409,7 +409,7 @@ class TestRequestHelpers:
         retrieved_account_name = result.get_attribute('display_name')
         assert retrieved_account_name == external_account.display_name
         retrieved_service_name = result.get_included_attribute(
-            include_path=['external_storage_service'],
+            include_path=('external_storage_service',),
             attribute_name='display_name'
         )
         assert retrieved_service_name == external_service.name
@@ -426,7 +426,7 @@ class TestRequestHelpers:
         retrieved_addon_name = result.get_attribute('display_name')
         assert retrieved_addon_name == configured_addon.display_name
         retrieved_service_name = result.get_included_attribute(
-            include_path=['base_account', 'external_storage_service'],
+            include_path=('base_account', 'external_storage_service'),
             attribute_name='display_name'
         )
         assert retrieved_service_name == external_service.name
@@ -450,7 +450,7 @@ class TestRequestHelpers:
                 configured_account = expected_accounts.pop(retrieved_account.resource_id)
                 assert retrieved_account.get_attribute('display_name') == configured_account.display_name
                 assert retrieved_account.get_included_attribute(
-                    include_path=['external_storage_service'],
+                    include_path=('external_storage_service',),
                     attribute_name='display_name'
                 ) == external_service.name
 
@@ -478,9 +478,9 @@ class TestRequestHelpers:
             for retrieved_addon in addons_iterator:
                 configured_addon = expected_addons.pop(retrieved_addon.resource_id)
                 assert retrieved_addon.get_attribute('display_name') == configured_addon.display_name
-                assert retrieved_addon.get_nested_member('base_account').resource_id == configured_addon.base_account.pk
+                assert retrieved_addon.get_included_member('base_account').resource_id == configured_addon.base_account.pk
                 assert retrieved_addon.get_included_attribute(
-                    include_path=['base_account', 'external_storage_service'],
+                    include_path=('base_account', 'external_storage_service'),
                     attribute_name='display_name'
                 ) == configured_addon.base_account.external_storage_service.name
 
@@ -514,31 +514,31 @@ class TestEphemeralSettings:
     def fake_box_addon(self, fake_gv, project, fake_box_account):
         return fake_gv.configure_fake_addon(project, fake_box_account)
 
-    def test_make_fake_user_settings(self, contributor, fake_box_account, fake_gv):
+    def test_make_ephemeral_user_settings(self, contributor, fake_box_account, fake_gv):
         with fake_gv.run_fake():
             account_data = gv_requests.get_account(
-                gv_account_id=fake_box_account.pk,
+                gv_account_pk=fake_box_account.pk,
                 requesting_user=contributor,
             )
-        ephemeral_config = translations.make_epehemral_user_settings(account_data, requesting_user=contributor)
+        ephemeral_config = translations.make_ephemeral_user_settings(account_data, requesting_user=contributor)
         assert ephemeral_config.short_name == 'box'
         assert ephemeral_config.gv_id == fake_box_account.pk
         assert ephemeral_config.config.name == 'addons.box'
 
-    def testmake_fake_node_settings(self, contributor, project, fake_box_addon, fake_gv):
+    def test_make_ephemeral_node_settings(self, contributor, project, fake_box_addon, fake_gv):
         with fake_gv.run_fake():
             addon_data = gv_requests.get_addon(
-                gv_addon_id=fake_box_addon.pk,
+                gv_addon_pk=fake_box_addon.pk,
                 requesting_user=contributor,
                 requested_resource=project,
             )
-        ephemeral_config = translations.make_epehemral_node_settings(
+        ephemeral_config = translations.make_ephemeral_node_settings(
             addon_data, requesting_user=contributor, requested_resource=project
         )
         assert ephemeral_config.short_name == 'box'
         assert ephemeral_config.gv_id == fake_box_addon.pk
         assert ephemeral_config.config.name == 'addons.box'
-        assert ephemeral_config.serialize_waterbutler_settings == {
+        assert ephemeral_config.serialize_waterbutler_settings() == {
             'folder': fake_box_addon.root_folder,
             'service': 'box'
         }

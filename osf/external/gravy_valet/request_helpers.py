@@ -3,6 +3,7 @@ from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 import logging
 import dataclasses
 import requests
+import typing
 
 from . import auth_helpers
 from website import settings
@@ -185,7 +186,7 @@ class JSONAPIResultEntry:
     def get_included_member(self, relationship_name):
         return self._includes.get(relationship_name)
 
-    def get_included_attribute(self, include_path: list, attribute_name: str):
+    def get_included_attribute(self, include_path: typing.Iterator, attribute_name: str):
         related_object = self
         for relationship_name in include_path:
             related_object = related_object.get_included_member(relationship_name)
