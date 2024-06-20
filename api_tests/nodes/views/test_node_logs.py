@@ -93,6 +93,15 @@ class TestNodeLogList:
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'tag_added'
         assert 'Rheisen' == public_project.logs.latest().params['tag']
 
+    def test_escape_ampersand(self, app, user, user_auth, public_project, public_url):
+        public_project.add_tag('cats&amp;dogs', auth=user_auth)
+        assert public_project.logs.latest().action == 'tag_added'
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'tag_added'
+        assert res.json['data'][API_LATEST]['attributes']['params']['tag'] == 'cats&dogs'
+
     def test_remove_tag(
             self, app, user, user_auth,
             public_project, public_url):
