@@ -1,6 +1,7 @@
 from django.db import connection
 from distutils.version import StrictVersion
 
+from addons.s3.utils import connect_s3
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
     InvalidModelValueError,
@@ -43,6 +44,7 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+from boto.exception import S3ResponseError
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -1100,6 +1102,48 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
                 raise exceptions.NotFound('Unable to find requested folder.')
             except InvalidAuthError:
                 raise exceptions.PermissionDenied('Addon credentials are invalid.')
+
+        return instance
+
+
+class S3NodeAddonSettingsSerializer(NodeAddonSettingsSerializer):
+
+    access_token = ser.CharField(required=False, allow_null=True, write_only=True)
+    secret_token = ser.CharField(required=False, allow_null=True, write_only=True)
+
+    def update(self, instance, validated_data):
+        """
+        Overrides NodeSettings behavior to allow S3 specific behavior.
+        """
+        instance = super().update(instance, validated_data)
+
+        access_token = validated_data.get('access_token')
+        secret_token = validated_data.get('secret_token')
+        if access_token and secret_token:
+            # Validate S3 credentials before creating account
+            try:
+                user_info = connect_s3(access_token, secret_token).get_all_buckets().owner
+            except S3ResponseError:
+                raise exceptions.PermissionDenied('The S3 credentials provided are incorrect.')
+
+            account, created = ExternalAccount.objects.update_or_create(
+                provider='s3',
+                provider_id=user_info.id,
+                defaults={
+                    'display_name': user_info.display_name,
+                    'oauth_key': access_token,
+                    'oauth_secret': secret_token,
+                },
+            )
+            # If the user adds credentials via the v2 API add them to that user's user settings too.
+            instance.external_account = account
+            user = self.context['request'].user
+            instance.user_settings = user.get_or_add_addon('s3')
+            instance.save()
+
+            if not user.external_accounts.filter(id=account.id).exists():
+                user.external_accounts.add(account)
+                user.save()
 
         return instance
 
