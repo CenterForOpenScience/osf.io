@@ -6,10 +6,10 @@ from http import HTTPStatus
 from osf.external.gravy_valet import (
     auth_helpers as gv_auth,
     translations,
-    gv_fakes,
     request_helpers as gv_requests
 )
 from osf_tests import factories
+from osf_tests.external.gravy_valet import gv_fakes
 from website.settings import GRAVYVALET_URL
 
 logger = logging.getLogger(__name__)

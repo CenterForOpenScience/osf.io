@@ -8,7 +8,7 @@ from . import request_helpers as gv_requests
 
 
 class _LegacyConfigsForWBKey(enum.Enum):
-    """Mapping from a GravyValet StorageImp name to the Addon config."""
+    """Mapping from a GV ExternalStorageService's waterbutler key to the legacy Addon config."""
     box = BoxAddonAppConfig
 
 

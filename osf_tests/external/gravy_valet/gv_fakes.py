@@ -10,7 +10,7 @@ from http import HTTPStatus
 import dataclasses  # backport
 import responses
 
-from . import auth_helpers
+from osf.external.gravy_valet import auth_helpers
 from osf.models import OSFUser, AbstractNode
 from osf.utils import permissions as osf_permissions
 from website import settings
@@ -491,7 +491,7 @@ def _format_response_body(
     list_view: bool = False,
     include_param='',
 ) -> str:
-    """Returns the expected (status, headers, json) tuple expected by callbacks for FakeRequest."""
+    """Formates the stringified json body for responses."""
     if list_view:
         if not isinstance(data, list):
             data = [data]

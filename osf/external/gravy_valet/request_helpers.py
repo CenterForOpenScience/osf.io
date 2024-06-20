@@ -89,12 +89,22 @@ def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user):  #
     )
 
 
-def get_gv_result(**kwargs):  # -> JSONAPIResultEntry
-    '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.
+def get_gv_result(
+    endpoint_url: str,
+    requesting_user,
+    requested_resource=None,
+    request_method='GET',
+    params: dict = None,
+):  # -> JSONAPIResultEntry
+    '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
+    response_json = _make_gv_request(
+        endpoint_url=endpoint_url,
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        request_method=request_method,
+        params=params,
+    ).json()
 
-    kwargs must match _make_gv_request
-    '''
-    response_json = _make_gv_request(**kwargs).json()
     if not response_json['data']:
         return None
     data = response_json['data']
@@ -104,12 +114,22 @@ def get_gv_result(**kwargs):  # -> JSONAPIResultEntry
     return JSONAPIResultEntry(data, included_entities_lookup)
 
 
-def iterate_gv_results(**kwargs):  # -> typing.Iterator[JSONAPIResultEntry]
-    '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.
+def iterate_gv_results(
+    endpoint_url: str,
+    requesting_user,
+    requested_resource=None,
+    request_method='GET',
+    params: dict = None,
+):  # -> typing.Iterator[JSONAPIResultEntry]
+    '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
+    response_json = _make_gv_request(
+        endpoint_url=endpoint_url,
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        request_method=request_method,
+        params=params
+    ).json()
 
-    kwargs must match _make_gv_request
-    '''
-    response_json = _make_gv_request(**kwargs).json()
     if not response_json['data']:
         return  # empty iterator
     included_entities_lookup = _format_included_entities(response_json.get('included', []))
@@ -122,7 +142,7 @@ def _make_gv_request(
     requesting_user,
     requested_resource=None,
     request_method='GET',
-    params: dict = None
+    params: dict = None,
 ):
     '''Generates HMAC-Signed auth headers and makes a request to GravyValet, returning the result.'''
     full_url = urlunparse(urlparse(endpoint_url)._replace(query=urlencode(params)))
