@@ -75,9 +75,6 @@ def update_institutions(node, new_institutions, user, post=False):
         new_institutions=new_institutions,
     )
 
-    if post and not len(add) and node.affiliated_institutions.count() == 0:
-        raise RelationshipPostMakesNoChanges
-
     if not post:
         for inst in remove:
             if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, osf_permissions.ADMIN):
