@@ -9,11 +9,15 @@ from website.notifications.events.files import (
     AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )
 from website.notifications.events import utils
+from website import settings
 from addons.base import signals
+from api.caching.utils import storage_usage_cache
+from api.caching import settings as cache_settings
 from framework.auth import Auth
 from osf_tests import factories
-from osf.utils.permissions import WRITE
+from osf.utils.permissions import ADMIN, WRITE
 from tests.base import OsfTestCase, NotificationTestCase
+from osf.models import NotificationDigest
 
 email_transactional = 'email_transactional'
 email_digest = 'email_digest'
@@ -181,6 +185,100 @@ class TestFileUpdated(OsfTestCase):
         self.event.perform()
         # notify('exd', 'file_updated', 'user', self.project, timezone.now())
         assert_true(mock_notify.called)
+
+
+class TestFileUpdatesStorageMessaging(OsfTestCase):
+    def setUp(self):
+        super().setUp()
+        self.creator = factories.AuthUserFactory()
+        self.write_contrib = factories.AuthUserFactory()
+        self.admin_contrib = factories.AuthUserFactory()
+        self.project = factories.ProjectFactory(creator=self.creator)
+        self.project.add_contributor(self.write_contrib, permissions=WRITE)
+        self.project.add_contributor(self.admin_contrib, permissions=ADMIN)
+        self.storage_usage_key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.project._id)
+        self.sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + 'file_updated',
+            owner=self.project,
+            event_name='file_updated',
+        )
+        self.sub.save()
+
+    def test_storage_usage_notification_private_project(self):
+        storage_usage_cache.set(self.storage_usage_key, 0)
+        event = event_registry['file_updated'](self.creator, self.project, 'file_updated', payload=file_payload)
+        assert event.storage_limit_context is None
+        event.perform()
+
+        # A part of the rendered storage usage message if the recipient is an admin, the project is private, and the project is approaching/over storage limits
+        admin_sub_message = 'the 5GB OSF Storage limit and requires your attention.'
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.admin_contrib.id).message
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.write_contrib.id).message
+
+    def test_storage_usage_notification_private_project_approaching(self):
+        storage_usage_cache.set(self.storage_usage_key, (settings.STORAGE_LIMIT_PRIVATE * settings.GBs)-1)
+        event = event_registry['file_updated'](self.creator, self.project, 'file_updated', payload=file_payload)
+        assert_equal(event.storage_limit_context, {'public': False, 'storage_limit_status': 'approaching'})
+        event.perform()
+
+        # A part of the rendered storage usage message if the recipient is an admin, the project is private, and the project is approaching storage limits
+        admin_sub_message = 'This private project is approaching the 5GB OSF Storage limit and requires your attention.'
+        assert admin_sub_message in NotificationDigest.objects.get(user_id=self.admin_contrib.id).message
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.write_contrib.id).message
+
+
+    def test_storage_usage_notification_private_project_over(self):
+        storage_usage_cache.set(self.storage_usage_key, (settings.STORAGE_LIMIT_PRIVATE * settings.GBs)+1)
+        event = event_registry['file_updated'](self.creator, self.project, 'file_updated', payload=file_payload)
+        assert_equal(event.storage_limit_context, {'public': False, 'storage_limit_status': 'over'})
+        event.perform()
+
+        # A part of the rendered storage usage message if the recipient is an admin, the project is private, and the project is over storage limits
+        admin_sub_message = 'This private project is over the 5GB OSF Storage limit and requires your attention.'
+        assert admin_sub_message in NotificationDigest.objects.get(user_id=self.admin_contrib.id).message
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.write_contrib.id).message
+
+    def test_storage_usage_notification_public_project(self):
+        self.project.is_public = True
+        self.project.save()
+
+        storage_usage_cache.set(self.storage_usage_key, 0)
+        event = event_registry['file_updated'](self.creator, self.project, 'file_updated', payload=file_payload)
+        assert event.storage_limit_context is None
+        event.perform()
+
+        # A part of the rendered storage usage message if the recipient is an admin, the project is public, and the project is approaching/over storage limits
+        admin_sub_message = 'the 50GB OSF Storage limit and requires your attention.'
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.admin_contrib.id).message
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.write_contrib.id).message
+
+    def test_storage_usage_notification_public_project_approaching(self):
+        self.project.is_public = True
+        self.project.save()
+
+        storage_usage_cache.set(self.storage_usage_key, (settings.STORAGE_LIMIT_PUBLIC * settings.GBs)-1)
+        event = event_registry['file_updated'](self.creator, self.project, 'file_updated', payload=file_payload)
+        assert_equal(event.storage_limit_context, {'public': True, 'storage_limit_status': 'approaching'})
+        event.perform()
+
+        # A part of the rendered storage usage message if the recipient is an admin, the project is private, and the project is approaching storage limits
+        admin_sub_message = 'This public project is approaching the 50GB OSF Storage limit and requires your attention.'
+        assert admin_sub_message in NotificationDigest.objects.get(user_id=self.admin_contrib.id).message
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.write_contrib.id).message
+
+    def test_storage_usage_notification_public_project_over(self):
+        self.project.is_public = True
+        self.project.save()
+
+        storage_usage_cache.set(self.storage_usage_key, (settings.STORAGE_LIMIT_PUBLIC * settings.GBs)+1)
+        event = event_registry['file_updated'](self.creator, self.project, 'file_updated', payload=file_payload)
+        assert_equal(event.storage_limit_context, {'public': True, 'storage_limit_status': 'over'})
+        event.perform()
+
+        # A part of the rendered storage usage message if the recipient is an admin, the project is public, and the project is over storage limits
+        admin_sub_message = 'This public project is over the 50GB OSF Storage limit and requires your attention.'
+        assert admin_sub_message in NotificationDigest.objects.get(user_id=self.admin_contrib.id).message
+        assert admin_sub_message not in NotificationDigest.objects.get(user_id=self.write_contrib.id).message
 
 
 class TestFileAdded(NotificationTestCase):
