@@ -75,9 +75,8 @@ def update_institutions(node, new_institutions, user, post=False):
         new_institutions=new_institutions,
     )
 
-    if post and not len(add):
-        if node.affiliated_institutions.count() == 0:
-            raise RelationshipPostMakesNoChanges
+    if post and not len(add) and node.affiliated_institutions.count() == 0:
+        raise RelationshipPostMakesNoChanges
 
     if not post:
         for inst in remove:
