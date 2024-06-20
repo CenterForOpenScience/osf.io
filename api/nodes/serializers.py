@@ -1,3 +1,5 @@
+import gitlab
+
 from django.db import connection
 from distutils.version import StrictVersion
 
@@ -43,6 +45,7 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+from addons.gitlab.api import GitLabClient
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -2049,3 +2052,54 @@ class NodeGroupsDetailSerializer(NodeGroupsSerializer):
             # permission is in writeable_method_fields, so validation happens on OSF Group model
             raise exceptions.ValidationError(detail=str(e))
         return obj
+
+
+class GitlabNodeAddonSettingsSerializer(NodeAddonSettingsSerializer):
+    """
+    This overrides the serializer to provide specific behavior for Gitlab addons, it adds the ability to add Gitlab
+    credential entirely via the v2 API.
+    """
+
+    host = ser.CharField(required=False, allow_null=True, write_only=True)
+    access_token = ser.CharField(required=False, allow_null=True, write_only=True)
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+
+        host = validated_data.get('host')
+        access_token = validated_data.get('access_token')
+        # Validate host and access_token
+        if host and access_token:
+            client = GitLabClient(access_token=access_token, host=host)
+            try:
+                client.gitlab.auth()
+                user = client.gitlab.user
+            except ConnectionError:
+                raise exceptions.PermissionDenied('Gitlab host is invalid')
+            except gitlab.exceptions.GitlabAuthenticationError:
+                raise exceptions.PermissionDenied('Gitlab credentials were invalid')
+            except gitlab.exceptions.GitlabGetError:
+                raise exceptions.PermissionDenied('Gitlab credentials were invalid')
+
+            # When user's add credentials via API, make sure it's also saved to their user settings as well
+            account, created = ExternalAccount.objects.update_or_create(
+                provider='gitlab',
+                provider_id=user.web_url,  # unique for host/username
+                defaults={
+                    'display_name': user.username,
+                    'oauth_key': access_token,
+                    'oauth_secret': host,
+                },
+            )
+            instance.external_account_id = account.id
+            user = self.context['request'].user
+            if not user.external_accounts.filter(id=account.id).exists():
+                user.external_accounts.add(account)
+                user.save()
+
+        return instance
+
+    def get_folder_info(self, data, addon_name):
+        if data.get('folder_id') and data.get('folder_path'):
+            return True, data
+        return False, None
