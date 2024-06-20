@@ -116,6 +116,7 @@ from api.nodes.serializers import (
     NodeGroupsSerializer,
     NodeGroupsCreateSerializer,
     NodeGroupsDetailSerializer,
+    OwncloudNodeAddonSettingsSerializer,
 )
 from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
 from api.osf_groups.views import OSFGroupMixin
@@ -1422,8 +1423,11 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         """
         Use NodeDetailSerializer which requires 'id'
         """
-        if 'provider' in self.kwargs and self.kwargs['provider'] == 'forward':
+        provider = self.kwargs.get('provider')
+        if provider == 'forward':
             return ForwardNodeAddonSettingsSerializer
+        elif provider == 'owncloud':
+            return OwncloudNodeAddonSettingsSerializer
         else:
             return NodeAddonSettingsSerializer
 

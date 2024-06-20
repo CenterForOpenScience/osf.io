@@ -21,6 +21,7 @@ from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNode
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
+from api_tests.addons_tests.owncloud.test_configure_owncloud import mock_owncloud_client
 
 from addons.mendeley.tests.factories import (
     MendeleyAccountFactory, MendeleyNodeSettingsFactory
@@ -996,6 +997,10 @@ class TestNodeOwnCloudAddon(
             'path': '/',
             'id': '/'
         }
+
+    def test_settings_detail_PUT_all_sets_settings(self):
+        with mock.patch('addons.owncloud.models.OwnCloudClient', return_value=mock_owncloud_client()):
+            return super().test_settings_detail_PUT_all_sets_settings()
 
 
 class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):

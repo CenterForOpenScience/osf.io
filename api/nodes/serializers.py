@@ -1,5 +1,8 @@
 from django.db import connection
 from distutils.version import StrictVersion
+import owncloud
+import requests
+from owncloud import Client as OwnCloudClient
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -43,6 +46,7 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+from addons.owncloud.settings import USE_SSL
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -2049,3 +2053,53 @@ class NodeGroupsDetailSerializer(NodeGroupsSerializer):
             # permission is in writeable_method_fields, so validation happens on OSF Group model
             raise exceptions.ValidationError(detail=str(e))
         return obj
+
+
+class OwncloudNodeAddonSettingsSerializer(NodeAddonSettingsSerializer):
+    """
+    This serializer adds specific behavior for the OwnCloud addon. It enables a user to add and update their owncloud
+    credentials to their node settings via the API.
+    """
+
+    host = ser.CharField(required=False, allow_null=True, write_only=True)
+    username = ser.CharField(required=False, allow_null=True, write_only=True)
+    password = ser.CharField(required=False, allow_null=True, write_only=True)
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        username = validated_data.get('username')
+        password = validated_data.get('password')
+        host = validated_data.get('host')
+
+        if username and password and host:
+            # Validate credentials before adding them to NodeSettings
+            try:
+                client = OwnCloudClient(host, verify_certs=USE_SSL)
+            except requests.exceptions.ConnectionError:
+                raise exceptions.ValidationError('Invalid ownCloud server.')
+
+            try:
+                client.login(username, password)
+                client.logout()
+            except owncloud.owncloud.HTTPResponseError:
+                raise exceptions.PermissionDenied('ownCloud Login failed.')
+
+            # Add credentials to user settings if user makes them via the v2 API,
+            account, created = ExternalAccount.objects.get_or_create(
+                provider='owncloud',
+                provider_id=f'{host}:{username}'.lower(),
+            )
+            account.display_name = username
+            account.oauth_key = password
+            account.oauth_secret = host
+            account.save()
+
+            instance.external_account = account
+            instance.save()
+
+            user = self.context['request'].user
+            if not user.external_accounts.filter(id=account.id).exists():
+                user.external_accounts.add(account)
+                user.save()
+
+        return instance
