@@ -5,6 +5,7 @@ from http import HTTPStatus
 
 from osf.external.gravy_valet import (
     auth_helpers as gv_auth,
+    translations,
     gv_fakes,
     request_helpers as gv_requests
 )
@@ -484,3 +485,60 @@ class TestRequestHelpers:
                 ) == configured_addon.base_account.external_storage_service.name
 
         assert not expected_addons  # all addons popped
+
+
+@pytest.mark.django_db
+class TestEphemeralSettings:
+
+    @pytest.fixture
+    def fake_gv(self):
+        return gv_fakes.FakeGravyValet()
+
+    @pytest.fixture
+    def fake_box(self, fake_gv):
+        return fake_gv.configure_fake_provider('box')
+
+    @pytest.fixture
+    def contributor(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture
+    def project(self, contributor):
+        return factories.ProjectFactory(creator=contributor)
+
+    @pytest.fixture
+    def fake_box_account(self, fake_gv, fake_box, contributor):
+        return fake_gv.configure_fake_account(contributor, fake_box.name)
+
+    @pytest.fixture
+    def fake_box_addon(self, fake_gv, project, fake_box_account):
+        return fake_gv.configure_fake_addon(project, fake_box_account)
+
+    def test_make_fake_user_settings(self, contributor, fake_box_account, fake_gv):
+        with fake_gv.run_fake():
+            account_data = gv_requests.get_account(
+                gv_account_id=fake_box_account.pk,
+                requesting_user=contributor,
+            )
+        ephemeral_config = translations.make_epehemral_user_settings(account_data, requesting_user=contributor)
+        assert ephemeral_config.short_name == 'box'
+        assert ephemeral_config.gv_id == fake_box_account.pk
+        assert ephemeral_config.config.name == 'addons.box'
+
+    def testmake_fake_node_settings(self, contributor, project, fake_box_addon, fake_gv):
+        with fake_gv.run_fake():
+            addon_data = gv_requests.get_addon(
+                gv_addon_id=fake_box_addon.pk,
+                requesting_user=contributor,
+                requested_resource=project,
+            )
+        ephemeral_config = translations.make_epehemral_node_settings(
+            addon_data, requesting_user=contributor, requested_resource=project
+        )
+        assert ephemeral_config.short_name == 'box'
+        assert ephemeral_config.gv_id == fake_box_addon.pk
+        assert ephemeral_config.config.name == 'addons.box'
+        assert ephemeral_config.serialize_waterbutler_settings == {
+            'folder': fake_box_addon.root_folder,
+            'service': 'box'
+        }

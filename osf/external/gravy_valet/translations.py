@@ -12,7 +12,7 @@ class _LegacyConfigsForWBKey(enum.Enum):
     box = BoxAddonAppConfig
 
 
-def make_generic_node_settings(gv_addon_data, requested_resource, requesting_user):
+def make_ephemeral_node_settings(gv_addon_data, requested_resource, requesting_user):
     service_wb_key = gv_addon_data.get_included_attribute(
         attribute_path=('base_account', 'external_storage_service'),
         attribute_name='wb_key'
@@ -26,7 +26,7 @@ def make_generic_node_settings(gv_addon_data, requested_resource, requesting_use
         active_user=requesting_user,
     )
 
-def make_generic_user_settings(gv_account_data, requesting_user):
+def make_ephemeral_user_settings(gv_account_data, requesting_user):
     service_wb_key = gv_account_data.get_included_attribute(
         attribute_path=('external_storage_service'),
         attribute_name='wb_key'
