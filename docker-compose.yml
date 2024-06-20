@@ -533,7 +533,7 @@ services:
   # GV #
   ######
 
-  gv-requirements:
+  gv_requirements:
     image: quay.io/centerforopenscience/gravyvalet:develop
     # Need to allocate tty to be able to call invoke for requirements task
     tty: true

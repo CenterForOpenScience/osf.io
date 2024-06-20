@@ -6,7 +6,11 @@ version: "3.4"
 #  gv:
 #    volumes:
 #      - ../gravyvalet:/code:cached
-#
+
+#  gv_requirements:
+#    volumes:
+#      - ../gravyvalet:/code:cached
+
 #  wb:
 #    volumes:
 #      - ../waterbutler:/code:cached
