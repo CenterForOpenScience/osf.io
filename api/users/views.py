@@ -220,13 +220,20 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     serializer_class = UserAddonSettingsSerializer
     view_category = 'users'
     view_name = 'user-addons'
+    ordering_fields = ('name',)
 
-    ordering = ('-id',)
+    def get_default_queryset(self):
+        addons = []
+        # Since there's no queryset, just a list, we have to map short_name to it's serializer field.
+        for addon in self.get_user().get_addons():
+            if 'accounts' in addon.config.configs:
+                addon.name = addon.config.short_name
+                addons.append(addon)
+
+        return addons
 
     def get_queryset(self):
-        qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
-        sorted(qs, key=lambda addon: addon.id, reverse=True)
-        return qs
+        return self.get_queryset_from_request()
 
 
 class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
