@@ -466,7 +466,7 @@ def construct_payload(auth, resource, credentials, waterbutler_settings):
     jwt_data = {
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
-            'auth': make_auth(auth),
+            'auth': make_auth(auth.user),
             'credentials': credentials,
             'settings': waterbutler_settings,
             'callback_url': callback_url
