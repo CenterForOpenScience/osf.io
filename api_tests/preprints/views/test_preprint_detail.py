@@ -28,6 +28,7 @@ from osf_tests.factories import (
     ProjectFactory,
     SubjectFactory,
     PreprintProviderFactory,
+    InstitutionFactory
 )
 from website.settings import DOI_FORMAT, CROSSREF_URL
 
@@ -249,6 +250,10 @@ class TestPreprintUpdate:
     @pytest.fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
 
     @pytest.fixture()
     def url(self, preprint):
@@ -1151,6 +1156,35 @@ class TestPreprintUpdate:
         assert preprint.has_prereg_links == 'no'
         assert preprint.why_no_prereg == 'My dog ate it.'
 
+    def test_update_affiliated_institutions(self, app, user, preprint, url, institution):
+        update_institutions_payload = {
+            'data': {
+                'type': 'preprints',
+                'id': preprint._id,
+                'relationships': {
+                    'affiliated_institutions': {
+                        'data': [{'type': 'institutions', 'id': institution._id}]
+                    }
+                }
+            }
+        }
+
+        # Test with unauthorized user
+        unauthorized_user = AuthUserFactory()
+        res = app.patch_json_api(url, update_institutions_payload, auth=unauthorized_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Test with authorized user
+        res = app.patch_json_api(url, update_institutions_payload, auth=user.auth)
+        assert res.status_code == 200
+
+        preprint.reload()
+        assert institution in preprint.affiliated_institutions.all()
+
+        # Verify the log entry
+        log = preprint.logs.latest()
+        assert log.action == 'affiliated_institution_added'
+        assert log.params['institution'] == institution._id
 
 @pytest.mark.django_db
 class TestPreprintUpdateSubjects(UpdateSubjectsMixin):
