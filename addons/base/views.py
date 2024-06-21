@@ -342,9 +342,6 @@ def authenticate_user_if_needed(auth, waterbutler_data, resource):
     if authorization and authorization.startswith('Bearer '):
         auth.user = authenticate_via_oauth_bearer_token(resource, waterbutler_data['action'])
 
-    if not auth.user:
-        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'User authentication failed.')
-
 
 @collect_auth
 def get_auth(auth, **kwargs):
