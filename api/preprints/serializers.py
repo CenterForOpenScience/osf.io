@@ -190,6 +190,15 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
+    affiliated_institutions = RelationshipField(
+        related_view='preprints:preprints-affiliated-institutions',
+        related_view_kwargs={'preprint_id': '<_id>'},
+        self_view='preprints:preprints-affiliated-institutions',
+        self_view_kwargs={'preprint_id': '<_id>'},
+        read_only=False,
+        required=False,
+    )
+
     links = LinksField(
         {
             'self': 'get_preprint_url',
@@ -377,6 +386,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if 'prereg_link_info' in validated_data:
             try:
                 preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'affiliated_institutions' in validated_data:
+            try:
+                preprint.update_institutional_affiliation(auth, validated_data['affiliated_institutions'])
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
