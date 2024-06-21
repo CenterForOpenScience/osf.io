@@ -62,6 +62,10 @@ from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
+from api.institutions.serializers import InstitutionSerializer
+from osf.models import Institution
+
+
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
@@ -614,3 +618,30 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_institutions_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic,
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionSerializer
+
+    model = Institution
+    view_category = 'preprint'
+    view_name = 'preprint-institutions'
+
+    ordering = ('-id',)
+
+    def get_resource(self):
+        return self.get_node()
+
+    def get_queryset(self):
+        resource = self.get_preprint()
+        return resource.affiliated_institutions.all() or []

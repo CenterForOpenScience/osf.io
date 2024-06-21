@@ -88,6 +88,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
 
 class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
+        'affiliated_institutions',
         'id',
         'date_created',
         'date_modified',
@@ -191,12 +192,13 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     ))
 
     affiliated_institutions = RelationshipField(
-        related_view='preprints:preprints-affiliated-institutions',
+        related_view='preprints:preprint-institutions',
         related_view_kwargs={'preprint_id': '<_id>'},
-        self_view='preprints:preprints-affiliated-institutions',
+        self_view='preprints:preprint-institutions',
         self_view_kwargs={'preprint_id': '<_id>'},
         read_only=False,
         required=False,
+        allow_null=True,
     )
 
     links = LinksField(
@@ -392,7 +394,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if 'affiliated_institutions' in validated_data:
             try:
                 preprint.update_institutional_affiliation(auth, validated_data['affiliated_institutions'])
-            except PreprintStateError as e:
+            except Exception as e:
                 raise exceptions.ValidationError(detail=str(e))
 
         if published is not None:

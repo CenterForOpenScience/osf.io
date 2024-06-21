@@ -339,9 +339,9 @@ class AffiliatedInstitutionMixin(models.Model):
                 self.save()
             self.update_search()
 
-    def update_institutional_affiliation(self, institution_ids, user):
-
-        current_institutions = set(self.affiliated_institutions.values_list('id', flat=True))
+    def update_institutional_affiliation(self, auth, institution_ids):
+        user = auth.user
+        current_institutions = set(self.affiliated_institutions.values_list('_id', flat=True))
 
         institutions_to_add = set(institution_ids) - current_institutions
         institutions_to_remove = current_institutions - set(institution_ids)
@@ -350,18 +350,18 @@ class AffiliatedInstitutionMixin(models.Model):
 
         for institution_id in institutions_to_add:
             try:
-                institution = Institution.objects.get(id=institution_id)
+                institution = Institution.objects.get(_id=institution_id)
                 self.add_affiliated_institution(institution, user, save=False, log=True)
             except Institution.DoesNotExist:
-                raise UserNotAffiliatedError(f'User is not affiliated with {institution.name},'
+                raise ValidationError(f'User is not affiliated with {institution.name},'
                                              f' it was not found in records')
 
         for institution_id in institutions_to_remove:
             try:
-                institution = Institution.objects.get(id=institution_id)
+                institution = Institution.objects.get(_id=institution_id)
                 self.remove_affiliated_institution(institution, user, save=False, log=True)
             except Institution.DoesNotExist:
-                raise UserNotAffiliatedError(f'User is not affiliated with {institution.name},'
+                raise ValidationError(f'User is not affiliated with {institution.name},'
                                              f' it was not found in records')
 
         self.save()

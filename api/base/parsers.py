@@ -59,7 +59,7 @@ class JSONAPIParser(JSONParser):
     @staticmethod
     def get_relationship(data, related_resource):
         target_type = data.get('type')
-        if not target_type:
+        if not target_type and data:
             raise JSONAPIException(
                 source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)},
                 detail=NO_TYPE_ERROR,
