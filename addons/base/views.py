@@ -197,6 +197,9 @@ def check_resource_permissions(resource, auth, action):
         return _check_node_permissions(resource, auth, required_permission, action)
     elif isinstance(resource, Preprint):
         return _check_preprint_permissions(resource, auth, required_permission)
+    elif isinstance(resource, DraftNode):
+        draft_registration = resource.registered_draft.first()
+        return _check_draft_registration_permissions(draft_registration, auth, required_permission)
     else:
         raise NotImplementedError()
 
@@ -222,6 +225,12 @@ def _check_preprint_permissions(preprint, auth, permission):
     if permission == permissions.READ:
         return preprint.can_view_files(auth)
     return preprint.can_edit(auth)
+
+
+def _check_draft_registration_permissions(draft_registration, auth, permission):
+    if permission == permissions.READ:
+        return draft_registration.can_view(auth)
+    return draft_registration.can_edit(auth)
 
 
 def _check_hierarchical_write_permissions(resource, auth):
@@ -293,9 +302,6 @@ def get_authenticated_resource(resource_id):
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
-    # Convert a DraftNode to its corresponding node if applicable.
-    resource = resource.registered_draft.first() if isinstance(resource, DraftNode) else resource
-
     if resource.deleted:
         raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been deleted.')
 
@@ -335,9 +341,6 @@ def authenticate_user_if_needed(auth, waterbutler_data, resource):
     authorization = request.headers.get('Authorization')
     if authorization and authorization.startswith('Bearer '):
         auth.user = authenticate_via_oauth_bearer_token(resource, waterbutler_data['action'])
-
-    if not auth.user:
-        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'User authentication failed.')
 
 
 @collect_auth
