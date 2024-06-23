@@ -4,7 +4,6 @@ from packaging.version import Version
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
     InvalidModelValueError,
-    RelationshipPostMakesNoChanges,
 )
 from api.base.serializers import (
     VersionedDateTimeField, HideIfRegistration, IDField,
@@ -74,9 +73,6 @@ def update_institutions(node, new_institutions, user, post=False):
         institutions=node.affiliated_institutions,
         new_institutions=new_institutions,
     )
-
-    if post and not len(add):
-        raise RelationshipPostMakesNoChanges
 
     if not post:
         for inst in remove:
