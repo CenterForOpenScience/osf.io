@@ -84,6 +84,7 @@ services:
       - /bin/bash
       - -c
       - echo "$$POSTGRES_INITDB" > /docker-entrypoint-initdb.d/commands.sh &&
+        echo "$$POSTGRES_INITDB_SQL" > /docker-entrypoint-initdb.d/commands.sql &&
         chmod +x /docker-entrypoint-initdb.d/commands.sh &&
         /docker-entrypoint.sh postgres
     ports:
@@ -91,6 +92,8 @@ services:
     environment:
       POSTGRES_DB: osf
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_INITDB_SQL: |
+        SELECT 'CREATE DATABASE gravyvalet' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gravyvalet')\gexec
       POSTGRES_INITDB: |
         sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
         sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
@@ -535,8 +538,6 @@ services:
 
   gv_requirements:
     image: quay.io/centerforopenscience/gravyvalet:develop
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
     command:
       - /bin/bash
       - -c
@@ -545,8 +546,6 @@ services:
         rm -Rf /python3.12/* &&
         cp -Rf -p /usr/local/lib/python3.12 /
     restart: 'no'
-    environment:
-      DJANGO_SETTINGS_MODULE: app.settings
     volumes:
       - gv_requirements_vol:/python3.12
 
@@ -558,8 +557,8 @@ services:
       - 8004:8004
     depends_on:
       - postgres
+      - api
     env_file:
-      - .docker-compose.env
       - .docker-compose.gv.env
     environment:
       DJANGO_SETTINGS_MODULE: app.settings
