@@ -228,7 +228,6 @@
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --rm web python3 manage.py migrate` To run `osf` migrations
     - `docker-compose run --rm gv python manage.py migrate` To run `gravyvalet(gv)` migrations
-  - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
     - `docker-compose run --rm web python3 -m scripts.populate_institutions -e test -a`
