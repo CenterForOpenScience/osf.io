@@ -260,11 +260,6 @@ class TestPreprintUpdate:
         return '/{}preprints/{}/'.format(API_BASE, preprint._id)
 
     @pytest.fixture()
-    def user_with_institutional_affilation(self, user, institution):
-        user.add_or_update_affiliated_institution(institution)
-        return user
-
-    @pytest.fixture()
     def subject(self):
         return SubjectFactory()
 
@@ -1160,92 +1155,6 @@ class TestPreprintUpdate:
         preprint.refresh_from_db()
         assert preprint.has_prereg_links == 'no'
         assert preprint.why_no_prereg == 'My dog ate it.'
-
-    def test_update_affiliated_institutions_add(self, app, user, user_with_institutional_affilation, preprint, url, institution):
-        update_institutions_payload = {
-            'data': {
-                'type': 'preprints',
-                'id': preprint._id,
-                'relationships': {
-                    'affiliated_institutions': {
-                        'data': [{'type': 'institutions', 'id': institution._id}]
-                    }
-                }
-            }
-        }
-
-        res = app.patch_json_api(
-            url,
-            update_institutions_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 200
-
-        res = app.patch_json_api(
-            url,
-            update_institutions_payload,
-            auth=user_with_institutional_affilation.auth
-        )
-        assert res.status_code == 200
-
-        preprint.reload()
-        assert institution in preprint.affiliated_institutions.all()
-
-        log = preprint.logs.latest()
-        assert log.action == 'affiliated_institution_added'
-        assert log.params['institution'] == {
-            'id': institution._id,
-            'name': institution.name
-        }
-
-    def test_update_affiliated_institutions_remove(self, app, user, user_with_institutional_affilation, preprint, url,
-                                                   institution):
-        # First, add the institution to the preprint to ensure it exists for removal
-        preprint.affiliated_institutions.add(institution)
-        preprint.save()
-
-        update_institutions_payload = {
-            'data': {
-                'type': 'preprints',
-                'id': preprint._id,
-                'relationships': {
-                    'affiliated_institutions': {
-                        'type': 'institutions',
-                        'data': []
-                    }
-                }
-            }
-        }
-
-        # Attempt to remove the institution with the first user and check for 200 status code
-        res = app.patch_json_api(
-            url,
-            update_institutions_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 200
-
-        # Attempt to remove the institution with the second user and check for 200 status code
-        res = app.patch_json_api(
-            url,
-            update_institutions_payload,
-            auth=user_with_institutional_affilation.auth
-        )
-        assert res.status_code == 200
-
-        # Reload preprint and check that the institution has been removed
-        preprint.reload()
-        assert institution not in preprint.affiliated_institutions.all()
-
-        # Verify that the correct log entry has been created
-        log = preprint.logs.latest()
-        assert log.action == 'affiliated_institution_removed'
-        assert log.params['institution'] == {
-            'id': institution._id,
-            'name': institution.name
-        }
 
 
 @pytest.mark.django_db

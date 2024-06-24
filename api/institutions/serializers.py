@@ -292,3 +292,10 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
                 'version': 'v2',
             },
         )
+
+
+class InstitutionRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'institutions'
+

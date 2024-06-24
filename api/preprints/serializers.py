@@ -35,10 +35,13 @@ from api.nodes.serializers import (
     NodeTagField,
 )
 from api.base.metrics import MetricsSerializerMixin
+from api.base.serializers import BaseAPISerializer
+from api.institutions.serializers import InstitutionRelated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
+from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
     BaseFileNode,
     Preprint,
@@ -47,8 +50,6 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-
-from osf.exceptions import PreprintStateError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -547,3 +548,41 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     links = LinksField({
         'self': 'get_self_url',
     })
+
+
+class PreprintsInstitutionsSerializer(BaseAPISerializer):
+    data = ser.ListField(child=InstitutionRelated())
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def get_self_url(self, obj):
+        return obj['self'].absolute_api_v2_url + 'institutions/'
+
+    def get_related_url(self, obj):
+        return obj['self'].absolute_api_v2_url + 'institutions/'
+
+    class Meta:
+        type_ = 'institutions'
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions.all(),
+            'self': obj,
+        }
+
+    def update(self, instance, validated_data):
+        preprint = instance['self']
+        user = self.context['request'].user
+        preprint.update_institutional_affiliation(
+            Auth(user),
+            institution_ids=[od['_id'] for od in validated_data['data']]
+        )
+        preprint.save()
+
+        return self.make_instance_obj(preprint)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        return self.update(instance, validated_data)

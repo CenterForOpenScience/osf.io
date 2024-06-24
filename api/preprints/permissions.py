@@ -54,6 +54,18 @@ class PreprintPublishedOrWrite(PreprintPublishedOrAdmin):
             return True
 
 
+class PreprintInstitutions(PreprintPublishedOrAdmin):
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        if not auth.user:
+            raise exceptions.NotAuthenticated(detail='User must has no authentication.')
+
+        if not obj['self'].has_permission(auth.user, osf_permissions.WRITE):
+            raise exceptions.PermissionDenied(detail='User must have admin or write permissions to the preprint.')
+        return True
+
+
 class ContributorDetailPermissions(PreprintPublishedOrAdmin):
     """Permissions for preprint contributor detail page."""
 

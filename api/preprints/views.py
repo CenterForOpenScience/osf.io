@@ -17,12 +17,13 @@ from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
-    JSONAPIOnetoOneRelationshipParser,
-    JSONAPIOnetoOneRelationshipParserForRegularJSON,
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
+    JSONAPIOnetoOneRelationshipParser,
+    JSONAPIOnetoOneRelationshipParserForRegularJSON
 )
-
 from api.base.utils import absolute_reverse, get_user_auth, get_object_or_error
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation
@@ -48,10 +49,14 @@ from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
     PreprintPublishedOrWrite,
     ModeratorIfNeverPublicWithdrawn,
+    PreprintFilesPermissions,
+    PreprintInstitutions
+)
+from api.nodes.permissions import (
     AdminOrPublic,
     ContributorDetailPermissions,
-    PreprintFilesPermissions,
 )
+from api.preprints.serializers import PreprintsInstitutionsSerializer
 from api.nodes.permissions import (
     ContributorOrPublic,
 )
@@ -62,8 +67,6 @@ from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
-from api.institutions.serializers import InstitutionSerializer
-from osf.models import Institution
 
 
 class PreprintMixin(NodeMixin):
@@ -620,28 +623,41 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
         return self.get_queryset_from_request()
 
 
-class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
+class PreprintInstitutionsList(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublic,
+        PreprintInstitutions,
     )
 
-    required_read_scopes = [CoreScopes.PREPRINTS_READ, CoreScopes.INSTITUTION_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    serializer_class = InstitutionSerializer
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    serializer_class = PreprintsInstitutionsSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
-    model = Institution
-    view_category = 'preprint'
-    view_name = 'preprint-institutions'
+    view_category = 'preprints'
+    view_name = 'preprint-relationships-institutions'
 
-    ordering = ('-id',)
+    def get_object(self):
+        preprint = self.get_preprint(check_object_permissions=False)
+        obj = {
+            'data': preprint.affiliated_institutions.all(),
+            'self': preprint,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
 
-    def get_resource(self):
-        return self.get_node()
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_insts = {inst._id: inst for inst in instance['data']}
+        node = instance['self']
 
-    def get_queryset(self):
-        resource = self.get_preprint()
-        return resource.affiliated_institutions.all() or []
+        for val in data:
+            if val['id'] in current_insts:
+                if not user.is_affiliated_with_institution(current_insts[val['id']]) and not node.has_permission(user, 'admin'):
+                    raise PermissionDenied
+                node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
+        node.save()
