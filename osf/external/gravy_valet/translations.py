@@ -99,6 +99,11 @@ class EphemeralNodeSettings:
         )
         self._credentials = result.get_attribute('credentials')
 
+    def create_waterbutler_log(self, *args, **kwargs):
+        pass
+
+    def save():
+        pass
 
 @dataclasses.dataclass
 class EphemeralUserSettings:
