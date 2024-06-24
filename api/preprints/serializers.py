@@ -35,10 +35,12 @@ from api.nodes.serializers import (
     NodeTagField,
 )
 from api.base.metrics import MetricsSerializerMixin
+from api.base.serializers import BaseAPISerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
+from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
     BaseFileNode,
     Preprint,
@@ -47,8 +49,6 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-
-from osf.exceptions import PreprintStateError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -189,6 +189,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view='preprints:preprint-request-list',
         related_view_kwargs={'preprint_id': '<_id>'},
     ))
+
+    affiliated_institutions = RelationshipField(
+        related_view='preprints:preprint-institutions',
+        related_view_kwargs={'preprint_id': '<_id>'},
+        self_view='preprints:preprint-institutions',
+        self_view_kwargs={'preprint_id': '<_id>'},
+        read_only=False,
+        required=False,
+        allow_null=True,
+    )
 
     links = LinksField(
         {
@@ -530,3 +540,52 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     links = LinksField({
         'self': 'get_self_url',
     })
+
+
+class PreprintsInstitutionsSerializer(BaseAPISerializer):
+    id = IDField(read_only=True, source='_id')
+    name = ser.CharField(read_only=True)
+    type = ser.SerializerMethodField(read_only=True)
+
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def get_self_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    def get_type(self, obj):
+        return 'institution'
+
+    def get_related_url(self, obj):
+        return obj.absolute_api_v2_url + 'institutions/'
+
+    class Meta:
+        type_ = 'institutions'
+
+    def update(self, preprint, validated_data):
+        user = self.context['request'].user
+        try:
+            preprint.update_institutional_affiliation(
+                Auth(user),
+                institution_ids=[od['_id'] for od in validated_data['data']],
+            )
+        except ValidationError as e:
+            raise exceptions.ValidationError(list(e)[0])
+
+        preprint.save()
+
+    def create(self, validated_data):
+        preprint = Preprint.load(self.context['view'].kwargs['preprint_id'])
+        user = self.context['request'].user
+        data = self.context['request'].data['data']
+        try:
+            preprint.update_institutional_affiliation(
+                Auth(user),
+                institution_ids=[od['id'] for od in data],
+            )
+        except ValidationError as e:
+            raise exceptions.ValidationError(list(e)[0])
+        preprint.save()
+        return preprint
