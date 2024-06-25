@@ -8,164 +8,136 @@ from osf_tests.factories import (
 )
 
 
-@pytest.fixture()
-def user():
-    return AuthUserFactory()
-
-
-@pytest.fixture()
-def admin_with_institutional_affilation(institution, preprint):
-    user = AuthUserFactory()
-    preprint.add_permission(user, 'admin')
-    user.add_or_update_affiliated_institution(institution)
-    return user
-
-
-@pytest.fixture()
-def no_auth_with_institutional_affilation(institution):
-    user = AuthUserFactory()
-    user.add_or_update_affiliated_institution(institution)
-    return user
-
-
-@pytest.fixture()
-def admin_without_institutional_affilation(institution, preprint):
-    user = AuthUserFactory()
-    preprint.add_permission(user, 'admin')
-    return user
-
-
-@pytest.fixture()
-def institution():
-    return InstitutionFactory()
-
-
-@pytest.fixture()
-def preprint():
-    return PreprintFactory()
-
-
-@pytest.fixture()
-def url(preprint):
-    return '/{}preprints/{}/institutions/'.format(API_BASE, preprint._id)
-
-
 @pytest.mark.django_db
-class TestPreprintInstitutionsList:
+class TestPrivatePreprintInstitutionsList:
 
-    def test_update_affiliated_institutions_add(self, app, user, admin_with_institutional_affilation, admin_without_institutional_affilation, preprint, url,
-                                                institution):
-        update_institutions_payload = {
-            'data': [{'type': 'institutions', 'id': institution._id}]
-        }
+    @pytest.fixture()
+    def url(self, private_preprint):
+        return f'/{API_BASE}preprints/{private_preprint._id}/institutions/'
 
-        res = app.put_json_api(
-            url,
-            update_institutions_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
-        res = app.put_json_api(
-            url,
-            update_institutions_payload,
-            auth=admin_without_institutional_affilation.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == f'User is not affiliated with {institution.name},'
-
-        res = app.put_json_api(
-            url,
-            update_institutions_payload,
-            auth=admin_with_institutional_affilation.auth
-        )
-        assert res.status_code == 201
-
-        preprint.reload()
-        assert institution in preprint.affiliated_institutions.all()
-
-        log = preprint.logs.latest()
-        assert log.action == 'affiliated_institution_added'
-        assert log.params['institution'] == {
-            'id': institution._id,
-            'name': institution.name
-        }
-
-    def test_update_affiliated_institutions_remove(self, app, user, admin_with_institutional_affilation, no_auth_with_institutional_affilation, admin_without_institutional_affilation, preprint, url,
-                                                   institution):
-
-        preprint.affiliated_institutions.add(institution)
-        preprint.save()
-
-        update_institutions_payload = {
-            'data': []
-        }
-
-        res = app.put_json_api(
-            url,
-            update_institutions_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
-
-        res = app.put_json_api(
-            url,
-            update_institutions_payload,
-            auth=no_auth_with_institutional_affilation.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
-
-        res = app.put_json_api(
-            url,
-            update_institutions_payload,
-            auth=admin_without_institutional_affilation.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 201  # you can always remove it you are an admin
-
-        res = app.put_json_api(
-            url,
-            update_institutions_payload,
-            auth=admin_with_institutional_affilation.auth
-        )
-        assert res.status_code == 201
-
-        preprint.reload()
-        assert institution not in preprint.affiliated_institutions.all()
-
-        log = preprint.logs.latest()
-        assert log.action == 'affiliated_institution_removed'
-        assert log.params['institution'] == {
-            'id': institution._id,
-            'name': institution.name
-        }
-
-    def test_preprint_institutions_list_get(self, app, user, admin_with_institutional_affilation, admin_without_institutional_affilation, preprint, url,
-                                            institution):
-        # For testing purposes
+    @pytest.fixture()
+    def private_preprint(self):
+        preprint = PreprintFactory()
         preprint.is_public = False
         preprint.save()
+        return preprint
 
+    @pytest.fixture()
+    def read_contrib(self, private_preprint):
+        user = AuthUserFactory()
+        private_preprint.add_permission(user, 'read')
+        return user
+
+    @pytest.fixture()
+    def write_contrib(self, private_preprint):
+        user = AuthUserFactory()
+        private_preprint.add_permission(user, 'write')
+        return user
+
+    @pytest.fixture()
+    def admin_contrib(self, private_preprint):
+        user = AuthUserFactory()
+        private_preprint.add_permission(user, 'admin')
+        return user
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
+
+    def test_preprint_institutions_no_auth(self, app, url):
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
+    def test_preprint_institutions_unauth(self, app, url, user, private_preprint):
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
-        res = app.get(url, auth=admin_without_institutional_affilation.auth, expect_errors=True)
+    def test_preprint_institutions_read(self, app, url, read_contrib, private_preprint, institution):
+
+        res = app.get(url, auth=read_contrib.auth)
+        assert res.status_code == 200
+        assert not res.json['data']
+
+        private_preprint.affiliated_institutions.add(institution)
+        res = app.get(url, auth=read_contrib.auth)
+        assert res.status_code == 200
+
+        assert res.json['data'][0]['id'] == institution._id
+        assert res.json['data'][0]['type'] == 'institutions'
+
+    def test_preprint_institutions_write(self, app, url, write_contrib, private_preprint, institution):
+
+        res = app.get(url, auth=write_contrib.auth)
         assert res.status_code == 200
 
         assert res.status_code == 200
         assert not res.json['data']
 
-        preprint.affiliated_institutions.add(institution)
-        res = app.get(url, auth=admin_with_institutional_affilation.auth)
+        private_preprint.affiliated_institutions.add(institution)
+        res = app.get(url, auth=write_contrib.auth)
         assert res.status_code == 200
 
-        print(res.json['data'])
         assert res.json['data'][0]['id'] == institution._id
-        assert res.json['data'][0]['type'] == 'institution'
+        assert res.json['data'][0]['type'] == 'institutions'
+
+    def test_preprint_institutions_admin(self, app, url, admin_contrib, private_preprint, institution):
+
+        res = app.get(url, auth=admin_contrib.auth)
+        assert res.status_code == 200
+
+        assert res.status_code == 200
+        assert not res.json['data']
+
+        private_preprint.affiliated_institutions.add(institution)
+        res = app.get(url, auth=admin_contrib.auth)
+        assert res.status_code == 200
+
+        assert res.json['data'][0]['id'] == institution._id
+        assert res.json['data'][0]['type'] == 'institutions'
+
+
+@pytest.mark.django_db
+class TestPublicPreprintInstitutionsList:
+
+    @pytest.fixture()
+    def url(self, public_preprint):
+        return f'/{API_BASE}preprints/{public_preprint._id}/institutions/'
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def public_preprint(self):
+        return PreprintFactory()
+
+    @pytest.fixture()
+    def read_contrib(self, public_preprint):
+        user = AuthUserFactory()
+        public_preprint.add_permission(user, 'read')
+        return user
+
+    def test_preprint_institutions_no_auth(self, app, url):
+        res = app.get(url)
+        assert res.status_code == 200
+
+    def test_preprint_institutions_unauth(self, app, url, user):
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+
+    def test_preprint_institutions_read(self, app, url, read_contrib, public_preprint, institution):
+
+        res = app.get(url, auth=read_contrib.auth)
+        assert res.status_code == 200
+        assert not res.json['data']
+
+        public_preprint.affiliated_institutions.add(institution)
+        res = app.get(url, auth=read_contrib.auth)
+        assert res.status_code == 200
+
+        assert res.json['data'][0]['id'] == institution._id
+        assert res.json['data'][0]['type'] == 'institutions'

@@ -6,7 +6,12 @@ from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDeni
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import ReviewAction, Preprint, PreprintContributor
+from osf.models import (
+    ReviewAction,
+    Preprint,
+    PreprintContributor,
+    Institution
+)
 from osf.utils.requests import check_select_for_update
 
 from api.actions.permissions import ReviewActionPermission
@@ -17,8 +22,6 @@ from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
-    JSONAPIRelationshipParser,
-    JSONAPIRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
     JSONAPIOnetoOneRelationshipParser,
@@ -53,9 +56,8 @@ from api.preprints.permissions import (
     AdminOrPublic,
     ContributorDetailPermissions,
     PreprintFilesPermissions,
-    PreprintInstitutionsPermissions,
+    PreprintInstitutionPermission,
 )
-from api.preprints.serializers import PreprintsInstitutionsSerializer
 from api.nodes.permissions import (
     ContributorOrPublic,
 )
@@ -65,6 +67,8 @@ from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
+from api.institutions.serializers import InstitutionSerializer
+
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
@@ -620,35 +624,28 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
         return self.get_queryset_from_request()
 
 
-class PreprintInstitutionsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintInstitutionsPermissions,
+        PreprintInstitutionPermission,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = PreprintsInstitutionsSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionSerializer
 
-    view_category = 'preprints'
-    view_name = 'preprint-institutions'
+    model = Institution
+    view_category = 'nodes'
+    view_name = 'node-institutions'
 
-    def get(self, request, *args, **kwargs):
-        preprint = Preprint.objects.get(guids___id=self.kwargs['preprint_id'])
-        self.check_object_permissions(request, preprint)
-        return self.list(request, *args, **kwargs)
+    ordering = ('-id',)
 
-    def put(self, request, *args, **kwargs):
-        preprint = Preprint.objects.get(guids___id=self.kwargs['preprint_id'])
-        self.check_object_permissions(request, preprint)
-        return self.create(request, *args, **kwargs)
-
-    def get_default_queryset(self):
-        return Preprint.objects.get(guids___id=self.kwargs['preprint_id']).affiliated_institutions.all()
+    def get_resource(self):
+        return self.get_preprint()
 
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        resource = self.get_resource()
+        return resource.affiliated_institutions.all() or []

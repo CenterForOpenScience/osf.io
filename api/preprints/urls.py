@@ -20,5 +20,6 @@ urlpatterns = [
     re_path(r'^(?P<preprint_id>\w+)/requests/$', views.PreprintRequestListCreate.as_view(), name=views.PreprintRequestListCreate.view_name),
     re_path(r'^(?P<preprint_id>\w+)/subjects/$', views.PreprintSubjectsList.as_view(), name=views.PreprintSubjectsList.view_name),
     re_path(r'^(?P<preprint_id>\w+)/institutions/$', views.PreprintInstitutionsList.as_view(), name=views.PreprintInstitutionsList.view_name),
+    re_path(r'^(?P<preprint_id>\w+)/relationships/institutions/$', views.PreprintInstitutionsList.as_view(), name=views.PreprintInstitutionsList.view_name),
 
 ]

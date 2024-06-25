@@ -99,3 +99,4 @@ class PreprintRequestPermission(drf_permissions.BasePermission):
                 # Requesters may edit their comment or submit their request
                 return is_requester
             return False
+
