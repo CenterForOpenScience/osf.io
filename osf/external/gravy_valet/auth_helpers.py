@@ -7,7 +7,6 @@ import urllib
 
 from django.utils import timezone
 
-from osf.models import OSFUser, AbstractNode
 from osf.utils import permissions as osf_permissions
 from website import settings
 
@@ -56,8 +55,8 @@ def _get_signed_components(
 
 
 def make_permissions_headers(
-    requesting_user: typing.Optional[OSFUser] = None,
-    requested_resource: typing.Optional[AbstractNode] = None
+    requesting_user=None,  # OSFUser | None
+    requested_resource=None,  # AbstractNode | None
 ) -> dict:
     osf_permissions_headers = {}
     if requesting_user:
