@@ -41,7 +41,7 @@ class IsPreprintFile(PreprintPublishedOrAdmin):
     
 
 class WithdrawnRegistrationPermission(permissions.BasePermission):
-    acceptable_models = (Registration, )
+    acceptable_models = (Registration,)
     REQUIRED_PERMISSIONS = {}
 
     def has_permission(self, request, view):
