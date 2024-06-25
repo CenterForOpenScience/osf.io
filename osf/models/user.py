@@ -3,6 +3,7 @@ import logging
 import re
 from future.moves.urllib.parse import urljoin, urlencode
 import uuid
+import waffle
 from copy import deepcopy
 
 from flask import Request as FlaskRequest
@@ -27,7 +28,7 @@ from django.db.models.signals import post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 
-from framework.auth import Auth, signals, utils
+from framework.auth import signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
@@ -36,6 +37,8 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from api.share.utils import update_share
+from api.base.utils import get_user_auth, Auth
+
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -59,6 +62,9 @@ from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
+from osf.utils.requests import get_request_and_user_id
+from osf import features
+from addons.base.utils import GravyValetAddonAppConfig
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -1219,6 +1225,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.update_guessed_names()
 
         return user
+
+    def get_addon(self, name, is_deleted=False):
+        request, user_id = get_request_and_user_id()
+
+        if waffle.flag_is_active(request, features.ENABLE_GV) and name not in ('osfstorage', 'wiki'):
+            user = getattr(request, 'user', None)
+            return GravyValetAddonAppConfig(self, name, user)
+        else:
+            return super().get_addon(name, is_deleted)
 
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.

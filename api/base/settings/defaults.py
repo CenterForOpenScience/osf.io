@@ -335,7 +335,9 @@ ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
 
 WAFFLE_CACHE_NAME = 'waffle_cache'
 STORAGE_USAGE_CACHE_NAME = 'storage_usage'
+LEGACY_ADDON_CACHE_NAME = 'legacy_addon'
 STORAGE_USAGE_MAX_ENTRIES = 10000000
+LEGACY_ADDON_MAX_ENTRIES = 999999999999
 
 
 CACHES = {
@@ -357,6 +359,13 @@ CACHES = {
         'LOCATION': 'osf_cache_table',
         'OPTIONS': {
             'MAX_ENTRIES': STORAGE_USAGE_MAX_ENTRIES,
+        },
+    },
+    LEGACY_ADDON_CACHE_NAME: {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'osf_cache_table',
+        'OPTIONS': {
+            'MAX_ENTRIES': LEGACY_ADDON_MAX_ENTRIES,
         },
     },
     WAFFLE_CACHE_NAME: {

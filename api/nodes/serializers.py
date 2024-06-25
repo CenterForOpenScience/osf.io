@@ -1,3 +1,4 @@
+import waffle
 from django.db import connection
 from distutils.version import StrictVersion
 
@@ -32,6 +33,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
+from osf import features
 from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, ExternalAccount, Institution,
@@ -1444,7 +1446,11 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_id(obj):
-        return '{}:{}'.format(obj.node._id, obj.provider)
+        from osf.utils.requests import get_current_request
+        if waffle.flag_is_active(get_current_request(), features.ENABLE_GV):
+            return obj.provider
+        else:
+            return f'{obj.node._id}:{obj.provider}'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

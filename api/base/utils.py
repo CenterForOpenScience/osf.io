@@ -62,9 +62,10 @@ def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the
     authenticated user attached to it.
     """
-    user = request.user
-    private_key = request.query_params.get('view_only', None)
-    if user.is_anonymous:
+    user = getattr(request, 'user', None)
+    query_params = getattr(request, 'query_params', {})
+    private_key = query_params.get('view_only', None)
+    if not user or user.is_anonymous:
         auth = Auth(None, private_key=private_key)
     else:
         auth = Auth(user, private_key=private_key)
