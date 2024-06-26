@@ -492,8 +492,9 @@ class AddonModelMixin(models.Model):
     def get_addons(self):
         request, user_id = get_request_and_user_id()
         if waffle.flag_is_active(request, features.ENABLE_GV):
-            osf_addons = (
-                self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS
+            osf_addons = filter(
+                lambda x: x is not None,
+                (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
             )
             return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id))
 
