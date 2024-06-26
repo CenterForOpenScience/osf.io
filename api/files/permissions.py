@@ -38,7 +38,7 @@ class IsPreprintFile(PreprintPublishedOrAdmin):
             return super(IsPreprintFile, self).has_object_permission(request, view, obj.target)
 
         return True
-    
+
 
 class WithdrawnRegistrationPermission(permissions.BasePermission):
     acceptable_models = (Registration,)
@@ -73,6 +73,6 @@ class WithdrawnRegistrationPermission(permissions.BasePermission):
         if required_permission:
             return target.has_permission(auth.user, required_permission)
         return True
-    
+
 class FileDetailPermission(WithdrawnRegistrationPermission, permissions.BasePermission):
     REQUIRED_PERMISSIONS = {'PATCH': 'write', 'DELETE': 'write', 'PUT': 'write'}
