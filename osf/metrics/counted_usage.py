@@ -98,8 +98,7 @@ def _fill_pageview_info(counted_usage):
     pageview_dict = pageview.to_dict()
     pageview.hour_of_day = counted_usage.timestamp.hour
     pageview.page_path = urlsplit(pageview_dict['page_url']).path.rstrip('/')
-    referer = pageview_dict.get('referer_url')
-    if referer:
+    if referer := pageview_dict.get('referer_url'):
         pageview.referer_domain = urlsplit(referer).netloc
 
 
