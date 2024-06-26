@@ -138,3 +138,18 @@ class ModeratorIfNeverPublicWithdrawn(permissions.BasePermission):
                 raise exceptions.PermissionDenied(detail='Withdrawn preprints may not be edited')
             return True
         raise exceptions.NotFound
+
+
+class PreprintInstitutionPermission(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if obj.is_public:
+            return True
+
+        auth = get_user_auth(request)
+        if not auth.user:
+            return False
+
+        if request.method in permissions.SAFE_METHODS:
+            return obj.has_permission(auth.user, 'read')
+        else:
+            return obj.has_permission(auth.user, 'write')
