@@ -10,7 +10,7 @@ from osf.models import (
     ReviewAction,
     Preprint,
     PreprintContributor,
-    Institution
+    Institution,
 )
 from osf.utils.requests import check_select_for_update
 
