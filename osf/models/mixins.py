@@ -524,9 +524,11 @@ class AddonModelMixin(models.Model):
         return self.add_addon(name, *args, **kwargs)
 
     def get_addon(self, name, is_deleted=False):
-        request, user_id = get_request_and_user_id()
-        if waffle.flag_is_active(request, features.ENABLE_GV) and name not in self.OSF_HOSTED_ADDONS:
-            return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id)
+        # Avoid test-breakages by avoiding early access to the request context
+        if name not in self.OSF_HOSTED_ADDONS:
+            request, user_id = get_request_and_user_id()
+            if waffle.flag_is_active(request, features.ENABLE_GV):
+                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id)
 
         try:
             settings_model = self._settings_model(name)

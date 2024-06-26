@@ -32,7 +32,7 @@ from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_s
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
-from framework.routing import json_renderer, proxy_url
+from framework.routing import proxy_url
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
@@ -176,49 +176,6 @@ def make_auth(user):
     return {}
 
 
-def authenticate_via_oauth_bearer_token(resource, action):
-    # TODO: Delete me as part of test cleanup
-    authorization = request.headers.get('Authorization')
-    client = cas.get_client()
-
-    try:
-        access_token = cas.parse_auth_header(authorization)
-        cas_resp = client.profile(access_token)
-    except cas.CasError as err:
-        sentry.log_exception()
-        return json_renderer(err)  # Assuming json_renderer wraps the error in a Response
-    if not cas_resp.authenticated:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-    token_user = OSFUser.load(cas_resp.user)
-    permission = _get_permission_for_action(action)
-    if permission == permissions.READ:
-        if resource.can_view_files():
-            return token_user
-        required_scope = resource.file_read_scope
-    else:
-        required_scope = resource.file_write_scope
-
-    token_scopes = cas_resp.attributes.get('accessTokenScope', [])
-    if required_scope not in oauth_scopes.normalize_scopes(token_scopes):
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-    return OSFUser.load(cas_resp.user)
-
-#def authenticate_user_if_needed(auth, waterbutler_data, resource):
-#    if auth.user:
-#        return  # User is already authenticated
-#
-#    if 'cookie' in waterbutler_data:
-#        auth.user = OSFUser.from_cookie(waterbutler_data.get('cookie'))
-#        if not auth.user:
-#            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'Invalid user cookie.')
-
-#    authorization = request.headers.get('Authorization')
-#    if authorization and authorization.startswith('Bearer '):
-#        auth.user = authenticate_via_oauth_bearer_token(resource, waterbutler_data['action'])
-
-
 @collect_auth
 def get_auth(auth, **kwargs):
     """
@@ -256,7 +213,7 @@ def get_auth(auth, **kwargs):
     file_version = file_node = None
     if provider_name == 'osfstorage':
         file_version, file_node = _get_osfstorage_file_version_and_node(
-            file_path=waterbutler_data['path'], file_version_id=waterbutler_data.get('version')
+            file_path=waterbutler_data.get('path'), file_version_id=waterbutler_data.get('version')
         )
 
     waterbutler_settings, waterbutler_credentials = _get_waterbutler_configs(
@@ -304,13 +261,14 @@ def _check_resource_permissions(resource, auth, action):
     """Check if the user has the required permission on the resource."""
     required_permission = _get_permission_for_action(action)
     _confirm_token_scope(resource, required_permission)
-    if required_permission == permissions.READ and resource.can_view_files(auth=auth):
-        return True
-    if resource.can_edit(auth):
-        return True
-    if _check_hierarchical_permissions(resource, auth, action):
-        return True
-    raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+    if required_permission == permissions.READ:
+        has_resource_permissions = resource.can_view_files(auth=auth)
+    else:
+        has_resource_permissions = resource.can_edit(auth=auth)
+
+    if not (has_resource_permissions or _check_hierarchical_permissions(resource, auth, action)):
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+    return True
 
 
 def _get_permission_for_action(action):
@@ -445,11 +403,7 @@ def _construct_payload(auth, resource, credentials, waterbutler_settings):
     jwt_data = {
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
-            'auth': {
-                'id': auth.user._id,
-                'email': f'{auth.user._id}@osf.io',
-                'name': auth.user.fullname,
-            },
+            'auth': make_auth(auth.user),
             'credentials': credentials,
             'settings': waterbutler_settings,
             'callback_url': callback_url

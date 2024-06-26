@@ -1097,110 +1097,52 @@ class TestCheckOAuth(OsfTestCase):
         super(TestCheckOAuth, self).setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
+        self.headers_patcher = mock.patch('addons.base.views.request.headers')
+        self.mock_headers = self.headers_patcher.start()
+        self.mock_headers.return_value = {'Authorization': 'Bearer oauth'}
+        self.addCleanup(mock.patch.stopall)
 
-    @mock.patch('framework.auth.cas.parse_auth_header')
+    def tearDown(self):
+        # inherited tearDown blows up if mock is running
+        self.headers_patcher.stop()
+        super().tearDown()
+
     @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_private_not_authenticated(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+    def test_user_has_permission__token_not_authenticated(self, mock_get_client):
         mock_cas_response = cas.CasResponse(authenticated=False)
         mock_get_client.return_value.profile.return_value = mock_cas_response
 
-        self.assertFalse(component.has_permission(self.user, 'write'))
         with self.assertRaises(HTTPError) as context:
-            views.authenticate_via_oauth_bearer_token(component, 'download')
+            views._check_resource_permissions(self.node, Auth(self.user), 'download')
         self.assertEqual(context.exception.code, 403)
 
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_private_no_scope_forbidden(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                            attributes={'accessTokenScope': {}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        self.assertFalse(component.has_permission(self.user, WRITE))
+    @mock.patch('addons.base.views._get_token_scopes_from_cas')
+    def test_user_has_permission__token_lacks_scope__write(self, mock_get_scopes):
+        mock_get_scopes.return_value = [self.node.file_read_scope]
+        self.assertTrue(self.node.has_permission(self.user, WRITE))
         with self.assertRaises(HTTPError) as context:
-            views.authenticate_via_oauth_bearer_token(component, 'download')
+            views._check_resource_permissions(self.node, Auth(self.user), 'upload')
         self.assertEqual(context.exception.code, 403)
 
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_public_irrelevant_scope_allowed(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(
-            creator=component_admin,
-            is_public=True,
-            parent=self.node
+    @mock.patch('addons.base.views._get_token_scopes_from_cas')
+    def test_user_has_permission__token_lacks_scope__private_read_forbidden(self, mock_get_scopes):
+        self.node.is_public = False
+        self.node.save()
+        mock_get_scopes.return_value = [self.node.file_write_scope]
+        self.assertTrue(self.node.has_permission(self.user, READ))
+        with self.assertRaises(HTTPError) as context:
+            views._check_resource_permissions(self.node, Auth(self.user), 'download')
+        self.assertEqual(context.exception.code, 403)
+
+    @mock.patch('addons.base.views._get_token_scopes_from_cas')
+    def test_user_has_permission__token_lacks_scope__public_read_allowed(self, mock_get_scopes):
+        self.node.is_public = True
+        self.node.save()
+        mock_get_scopes.return_value = []
+        self.assertTrue(self.node.has_permission(self.user, READ))
+        self.assertTrue(
+            views._check_resource_permissions(self.node, Auth(self.user), 'download')
         )
-        mock_cas_response = cas.CasResponse(
-            authenticated=True,
-            status=None,
-            user=self.user._id,
-            attributes={'accessTokenScope': {'osf.users.all_read'}}
-        )
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        self.assertFalse(component.has_permission(self.user, WRITE))
-        result = views.authenticate_via_oauth_bearer_token(component, 'download')
-        self.assertTrue(result)
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_private_irrelevant_scope_forbidden(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.users.all_read'}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        self.assertFalse(component.has_permission(self.user, WRITE))
-        with assert_raises(HTTPError) as exc_info:
-            views.authenticate_via_oauth_bearer_token(component, 'download')
-        self.assertEqual(exc_info.exception.code, 403)
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_decommissioned_scope_no_error(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {
-                                       'decommissioned.scope+write',
-                                       'osf.nodes.data_read',
-                                   }})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        self.assertFalse(component.has_permission(self.user, WRITE))
-        res = views.authenticate_via_oauth_bearer_token(component, 'download')
-        self.assertTrue(res)
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_write_scope_read_action(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data_write'}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        self.assertFalse(component.has_permission(self.user, WRITE))
-        res = views.authenticate_via_oauth_bearer_token(component, 'download')
-        self.assertTrue(res)
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_read_scope_write_action_forbidden(self, mock_get_client, mock_parse_auth_header):
-        component = ProjectFactory(creator=self.user, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data_read'}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        self.assertTrue(component.has_permission(self.user, WRITE))
-        with assert_raises(HTTPError) as exc_info:
-            views.authenticate_via_oauth_bearer_token(component, 'upload')
-        self.assertEqual(exc_info.exception.code, 403)
 
 
 def assert_urls_equal(url1, url2):
@@ -1363,8 +1305,8 @@ class TestAddonFileViews(OsfTestCase):
             auth=self.user.auth
         )
 
-        self.assertEquals(resp.status_code, 302)
-        self.assertEquals(resp.location, 'http://localhost/{}/'.format(guid._id))
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.location, 'http://localhost/{}/'.format(guid._id))
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
@@ -1372,7 +1314,7 @@ class TestAddonFileViews(OsfTestCase):
 
         resp = self.app.get('/{}/?action=download'.format(guid._id), auth=self.user.auth)
 
-        self.assertEquals(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 302)
         location = furl.furl(resp.location)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version=''))
 
@@ -1382,7 +1324,7 @@ class TestAddonFileViews(OsfTestCase):
 
         resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
 
-        self.assertEquals(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 302)
         location = furl.furl(resp.location)
         self.assertEqual(location.url, file_node.generate_waterbutler_url(format='pdf', action='download', direct=None, version=''))
 
@@ -1393,7 +1335,7 @@ class TestAddonFileViews(OsfTestCase):
 
         resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
 
-        self.assertEquals(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 302)
         location = furl.furl(resp.location)
         self.assertEqual(location.url, file_node.generate_waterbutler_url( format='pdf', action='download', direct=None, version=''))
 
@@ -1403,7 +1345,7 @@ class TestAddonFileViews(OsfTestCase):
 
         resp = self.app.get('/{}/?action=download&revision=1'.format(guid._id), auth=self.user.auth)
 
-        self.assertEquals(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 302)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
@@ -1421,9 +1363,9 @@ class TestAddonFileViews(OsfTestCase):
             self.app.get(f'/{guid._id}/?action=view', auth=self.user.auth)
 
         args, kwargs = mock_ember.call_args
-        self.assertEquals(kwargs, {})
-        self.assertEquals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
-        self.assertEquals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
+        self.assertEqual(kwargs, {})
+        self.assertEqual(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        self.assertEqual(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
     @mock.patch('website.views.stream_emberapp')
     @pytest.mark.enable_bookmark_creation
@@ -1438,9 +1380,9 @@ class TestAddonFileViews(OsfTestCase):
             self.app.get(f'/{guid._id}/', auth=self.user.auth)
 
         args, kwargs = mock_ember.call_args
-        self.assertEquals(kwargs, {})
-        self.assertEquals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
-        self.assertEquals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
+        self.assertEqual(kwargs, {})
+        self.assertEqual(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        self.assertEqual(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
     def test_download_create_guid(self):
         file_node = self.get_test_file()
@@ -1495,7 +1437,7 @@ class TestAddonFileViews(OsfTestCase):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 401)
 
     def test_nonstorage_addons_raise(self):
         resp = self.app.get(
@@ -1509,7 +1451,7 @@ class TestAddonFileViews(OsfTestCase):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     @mock.patch('website.views.stream_emberapp')
     def test_head_returns_url_and_redriect(self, mock_ember):
@@ -1518,12 +1460,12 @@ class TestAddonFileViews(OsfTestCase):
 
         with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
             resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         args, kwargs = mock_ember.call_args
-        self.assertEquals(kwargs, {})
-        self.assertEquals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
-        self.assertEquals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
+        self.assertEqual(kwargs, {})
+        self.assertEqual(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        self.assertEqual(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
 
     def test_head_returns_url_with_version_and_redirect(self):
@@ -1533,7 +1475,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.head('/{}/?revision=1&foo=bar'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
-        self.assertEquals(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 302)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version='', foo='bar'))
 
     def test_nonexistent_addons_raise(self):
@@ -1552,7 +1494,7 @@ class TestAddonFileViews(OsfTestCase):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     def test_unauth_addons_raise(self):
         path = 'cloudfiles'
@@ -1570,7 +1512,7 @@ class TestAddonFileViews(OsfTestCase):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 401)
 
     def test_resolve_folder_raise(self):
         folder = OsfStorageFolder(
@@ -1590,7 +1532,7 @@ class TestAddonFileViews(OsfTestCase):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     def test_delete_action_creates_trashed_file_node(self):
         file_node = self.get_test_file()
