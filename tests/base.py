@@ -152,12 +152,12 @@ class ApiAppTestCase(unittest.TestCase):
 class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
-#        settings.ELASTIC_INDEX = uuid.uuid1().hex
-#        settings.ELASTIC_TIMEOUT = 60
+        settings.ELASTIC_INDEX = uuid.uuid1().hex
+        settings.ELASTIC_TIMEOUT = 60
 
-#        from website.search import elastic_search
-#        elastic_search.INDEX = settings.ELASTIC_INDEX
-#        elastic_search.create_index(settings.ELASTIC_INDEX)
+        from website.search import elastic_search
+        elastic_search.INDEX = settings.ELASTIC_INDEX
+        elastic_search.create_index(settings.ELASTIC_INDEX)
 
         # NOTE: Super is called last to ensure the ES connection can be established before
         #       the responses module patches the socket.
@@ -166,8 +166,8 @@ class SearchTestCase(unittest.TestCase):
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
 
-#        from website.search import elastic_search
-#        elastic_search.delete_index(settings.ELASTIC_INDEX)
+        from website.search import elastic_search
+        elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
 
