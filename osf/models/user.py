@@ -1912,7 +1912,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def _get_addon_from_gv(self, gv_pk, requesting_user_id):
         requesting_user = OSFUser.load(requesting_user_id)
-        if requesting_user != self:
+        if requesting_user and requesting_user != self:
             raise ValueError('Cannot get user addons for a user other than self')
 
         gv_account_data = gv_requests.get_account(
@@ -1921,21 +1921,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         return gv_translations.make_ephemeral_node_settings(
             gv_account_data=gv_account_data,
-            requesting_user=requesting_user
+            requesting_user=self,
         )
 
     def _get_addons_from_gv(self, requesting_user_id):
         requesting_user = OSFUser.load(requesting_user_id)
-        if requesting_user != self:
+        if requesting_user and requesting_user != self:
             raise ValueError('Cannot get user addons for a user other than self')
 
         all_user_account_data = gv_requests.iterate_accounts_for_user(
-            requesting_user=requesting_user
+            requesting_user=self,
         )
         for account_data in all_user_account_data:
             yield gv_translations.make_ephemeral_user_settings(
                 gv_account_data=account_data,
-                requesting_user=requesting_user
+                requesting_user=self,
             )
 
     def _validate_admin_status_for_gdpr_delete(self, resource):

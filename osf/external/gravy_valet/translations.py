@@ -115,3 +115,6 @@ class EphemeralUserSettings:
     @property
     def short_name(self):
         return self.config.short_name
+
+    def can_be_merged(self):
+        return True
