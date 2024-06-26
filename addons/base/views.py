@@ -256,7 +256,7 @@ def get_auth(auth, **kwargs):
     file_version = file_node = None
     if provider_name == 'osfstorage':
         file_version, file_node = _get_osfstorage_file_version_and_node(
-            file_path=waterbutler_data['path'], file_version_id=waterbutler_data['version']
+            file_path=waterbutler_data['path'], file_version_id=waterbutler_data.get('version')
         )
 
     waterbutler_settings, waterbutler_credentials = _get_waterbutler_configs(
@@ -305,11 +305,11 @@ def _check_resource_permissions(resource, auth, action):
     required_permission = _get_permission_for_action(action)
     _confirm_token_scope(resource, required_permission)
     if required_permission == permissions.READ and resource.can_view_files(auth=auth):
-        return
+        return True
     if resource.can_edit(auth):
-        return
+        return True
     if _check_hierarchical_permissions(resource, auth, action):
-        return
+        return True
     raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
 
@@ -379,7 +379,10 @@ def _check_hierarchical_permissions(resource, auth, action):
     return False
 
 def _get_waterbutler_configs(resource, provider_name, file_version):
-    addon_settings = resource.serialize_waterbutler_settings(provider_name)
+    try:
+        addon_settings = resource.serialize_waterbutler_settings(provider_name)
+    except AttributeError:  # No addon configured on resource for provider
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested Provider unavailable')
     if file_version:
         # Override credentials and settings with values for correct storage region
         addon_credentials = file_version.region.waterbutler_credentials
