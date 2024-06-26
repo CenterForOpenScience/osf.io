@@ -446,7 +446,7 @@ class FileDetailSerializer(FileSerializer):
             restricted_fields = [
                 'checkout', 'size', 'provider', 'materialized_path', 'last_touched',
                 'date_modified', 'date_created', 'extra', 'tags', 'current_user_can_comment',
-                'current_version', 'show_as_unviewed', 'links'
+                'current_version', 'show_as_unviewed', 'links',
             ]
             for field in restricted_fields:
                 data['data']['attributes'].pop(field, None)

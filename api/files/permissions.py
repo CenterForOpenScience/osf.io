@@ -62,7 +62,7 @@ class WithdrawnRegistrationPermission(permissions.BasePermission):
         target = obj.target
         if target.is_deleted:
             raise Gone
-        if getattr(target, 'is_withdrawn', False):
+        if getattr(target, 'is_retracted', False):
             return False
 
         auth = get_user_auth(request)
@@ -73,6 +73,6 @@ class WithdrawnRegistrationPermission(permissions.BasePermission):
         if required_permission:
             return target.has_permission(auth.user, required_permission)
         return True
-
+    
 class FileDetailPermission(WithdrawnRegistrationPermission, permissions.BasePermission):
-    REQUIRED_PERMISSIONS = {'PATCH': 'write', 'DELETE': 'write'}
+    REQUIRED_PERMISSIONS = {'PATCH': 'write', 'DELETE': 'write', 'PUT': 'write'}
