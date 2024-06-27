@@ -642,6 +642,10 @@ class TestFileVersionView:
         }).save()
         return file
 
+    @pytest.fixture()
+    def file_url(self, file):
+        return '/{}files/{}/'.format(API_BASE, file._id)
+
     def test_listing(self, app, user, file):
         file.create_version(user, {
             'object': '0683m38e',
@@ -709,14 +713,44 @@ class TestFileVersionView:
         ).status_code == 405
 
     def test_retracted_registration_file(self, app, user, file_url, file):
-        file.target.is_retracted = True
-        file.target.save()
+        resource = RegistrationFactory(is_public=True)
+        retraction = resource.retract_registration(
+            user=resource.creator,
+            justification='Justification for retraction',
+            save=True,
+            moderator_initiated=False
+        )
+
+        approval_token = retraction.approval_state[resource.creator._id]['approval_token']
+        retraction.approve(user=resource.creator, token=approval_token)
+        resource.save()
+
+        resource.refresh_from_db()
+
+        file.target = resource
+        file.save()
+
         res = app.get(file_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 410
 
     def test_retracted_file_returns_410(self, app, user, file_url, file):
-        file.target.is_retracted = True
-        file.target.save()
+        resource = RegistrationFactory(is_public=True)
+        retraction = resource.retract_registration(
+            user=resource.creator,
+            justification='Justification for retraction',
+            save=True,
+            moderator_initiated=False
+        )
+
+        approval_token = retraction.approval_state[resource.creator._id]['approval_token']
+        retraction.approve(user=resource.creator, token=approval_token)
+        resource.save()
+
+        resource.refresh_from_db()
+
+        file.target = resource
+        file.save()
+
         res = app.get(file_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 410
 
