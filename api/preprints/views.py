@@ -70,7 +70,7 @@ from osf.metrics import PreprintDownload, PreprintView
 from api.institutions.serializers import InstitutionSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
-from api.preprints.serializers import PreprintsInstitutionRelationshipSerializer
+from api.preprints.serializers import PreprintsInstitutionsRelationshipSerializer
 from api.nodes.permissions import WriteOrPublicForRelationshipInstitutions
 
 
@@ -643,7 +643,7 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
 
     model = Institution
     view_category = 'preprints'
-    view_name = 'preprints-institutions'
+    view_name = 'preprint-institutions'
 
     def get_resource(self):
         return self.get_preprint()
@@ -652,16 +652,16 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_resource().affiliated_institutions.all()
 
 
-class PrprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
+class PreprintInstitutionsRelationshipList(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
     """ """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         WriteOrPublicForRelationshipInstitutions,
     )
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = PreprintsInstitutionRelationshipSerializer
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
+    serializer_class = PreprintsInstitutionsRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     view_category = 'preprints'
@@ -678,3 +678,19 @@ class PrprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         }
         self.check_object_permissions(self.request, obj)
         return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_insts = {inst._id: inst for inst in instance['data']}
+        node = instance['self']
+
+        for val in data:
+            if val['id'] in current_insts:
+                if not user.is_affiliated_with_institution(current_insts[val['id']]) and not node.has_permission(user, 'admin'):
+                    raise PermissionDenied
+                node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
+        node.save()
+
+    def create(self, *args, **kwargs):
+        return super().create(*args, **kwargs)
