@@ -28,7 +28,7 @@ from osf_tests.factories import (
     PreprintFactory,
 )
 from website import settings as website_settings
-from osf.utils.workflows import ApprovalStates
+from rest_framework.exceptions import APIException
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
@@ -722,16 +722,26 @@ class TestFileVersionView:
         assert res.status_code == 410
 
     def test_get_authenticated_resource_retracted(self):
-        resource = RegistrationFactory(is_public=True)
-        resource.retract_registration(user=resource.creator, justification='Justification for retraction')
-        resource.retraction.state = ApprovalStates.APPROVED
-        resource.retraction.save()
-        resource.save()
+            resource = RegistrationFactory(is_public=True)  # or use is_embargoed=True
 
-        with pytest.raises(HTTPError) as excinfo:
-            get_authenticated_resource(resource._id)
+            try:
+                resource.retract_registration(
+                    user=resource.creator,
+                    justification="Justification for retraction",
+                    save=True,
+                    moderator_initiated=False
+                )
+            except APIException as e:
+                print(f"Retraction failed: {e}")
 
-        assert excinfo.value.code == 410
+            resource.save()
+
+            assert resource.is_retracted is True
+
+            with pytest.raises(HTTPError) as excinfo:
+                get_authenticated_resource(resource._id)
+
+            assert excinfo.value.code == 410
 
 
 @pytest.mark.django_db
