@@ -732,7 +732,7 @@ class TestFileVersionView:
                     moderator_initiated=False
                 )
             except APIException as e:
-                print(f"Retraction failed: {e}")
+                print(f'Retraction failed: {e}')
 
             resource.save()
 
