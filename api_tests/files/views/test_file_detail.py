@@ -723,7 +723,7 @@ class TestFileVersionView:
 
     def test_get_authenticated_resource_retracted(self):
         resource = RegistrationFactory()
-        resource.retract_registration(user=resource.creator, justification="Justification for retraction")
+        resource.retract_registration(user=resource.creator, justification='Justification for retraction')
         resource.retraction.state = ApprovalStates.APPROVED
         resource.retraction.save()
         resource.save()
