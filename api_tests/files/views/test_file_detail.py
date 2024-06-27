@@ -722,26 +722,29 @@ class TestFileVersionView:
         assert res.status_code == 410
 
     def test_get_authenticated_resource_retracted(self):
-            resource = RegistrationFactory(is_public=True)  # or use is_embargoed=True
+        resource = RegistrationFactory(is_public=True)
 
-            try:
-                resource.retract_registration(
-                    user=resource.creator,
-                    justification='Justification for retraction',
-                    save=True,
-                    moderator_initiated=False
-                )
-            except APIException as e:
-                print(f'Retraction failed: {e}')
+        assert resource.is_retracted is False
 
-            resource.save()
+        retraction = resource.retract_registration(
+            user=resource.creator,
+            justification='Justification for retraction',
+            save=True,
+            moderator_initiated=False
+        )
 
-            assert resource.is_retracted is True
+        approval_token = retraction.approval_state[resource.creator._id]['approval_token']
+        retraction.approve(user=resource.creator, token=approval_token)
+        resource.save()
 
-            with pytest.raises(HTTPError) as excinfo:
-                get_authenticated_resource(resource._id)
+        resource.refresh_from_db()
 
-            assert excinfo.value.code == 410
+        assert resource.is_retracted is True
+
+        with pytest.raises(HTTPError) as excinfo:
+            get_authenticated_resource(resource._id)
+
+        assert excinfo.value.code == 410
 
 
 @pytest.mark.django_db
