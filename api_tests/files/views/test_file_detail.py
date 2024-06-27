@@ -28,7 +28,6 @@ from osf_tests.factories import (
     PreprintFactory,
 )
 from website import settings as website_settings
-from rest_framework.exceptions import APIException
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
