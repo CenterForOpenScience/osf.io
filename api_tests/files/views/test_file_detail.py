@@ -31,6 +31,9 @@ from website import settings as website_settings
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
+from addons.base.views import get_authenticated_resource
+from framework.exceptions import HTTPError
+
 # stolen from^W^Winspired by DRF
 # rest_framework.fields.DateTimeField.to_representation
 def _dt_to_iso8601(value):
@@ -704,6 +707,28 @@ class TestFileVersionView:
             '/{}files/{}/versions/1/'.format(API_BASE, file._id),
             expect_errors=True, auth=user.auth,
         ).status_code == 405
+
+    def test_retracted_registration_file(self, app, user, file_url, file):
+        file.target.is_retracted = True
+        file.target.save()
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+    def test_retracted_file_returns_410(self, app, user, file_url, file):
+        file.target.is_retracted = True
+        file.target.save()
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+    def test_get_authenticated_resource_retracted(self):
+        resource = ProjectFactory()
+        resource.is_retracted = True
+        resource.save()
+
+        with pytest.raises(HTTPError) as excinfo:
+            get_authenticated_resource(resource._id)
+
+        assert excinfo.value.code == 410
 
 
 @pytest.mark.django_db

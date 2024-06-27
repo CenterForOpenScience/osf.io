@@ -40,9 +40,9 @@ class IsPreprintFile(PreprintPublishedOrAdmin):
         return True
 
 
-class WithdrawnRegistrationPermission(permissions.BasePermission):
+class RegistrationFileDetailPermission(permissions.BasePermission):
     acceptable_models = (Registration,)
-    REQUIRED_PERMISSIONS = {}
+    REQUIRED_PERMISSIONS = {'PATCH': 'write', 'DELETE': 'write', 'PUT': 'write'}
 
     def has_permission(self, request, view):
         if request.method not in self.REQUIRED_PERMISSIONS.keys() and request.method not in permissions.SAFE_METHODS:
@@ -73,6 +73,3 @@ class WithdrawnRegistrationPermission(permissions.BasePermission):
         if required_permission:
             return target.has_permission(auth.user, required_permission)
         return True
-
-class FileDetailPermission(WithdrawnRegistrationPermission, permissions.BasePermission):
-    REQUIRED_PERMISSIONS = {'PATCH': 'write', 'DELETE': 'write', 'PUT': 'write'}
