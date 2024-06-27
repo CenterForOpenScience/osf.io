@@ -722,7 +722,7 @@ class TestFileVersionView:
         assert res.status_code == 410
 
     def test_get_authenticated_resource_retracted(self):
-        resource = RegistrationFactory()
+        resource = RegistrationFactory(is_public=True)
         resource.retract_registration(user=resource.creator, justification='Justification for retraction')
         resource.retraction.state = ApprovalStates.APPROVED
         resource.retraction.save()
