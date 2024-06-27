@@ -28,6 +28,7 @@ from osf_tests.factories import (
     PreprintFactory,
 )
 from website import settings as website_settings
+from osf.utils.workflows import ApprovalStates
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
@@ -721,8 +722,10 @@ class TestFileVersionView:
         assert res.status_code == 410
 
     def test_get_authenticated_resource_retracted(self):
-        resource = ProjectFactory()
-        resource.retract_registration()
+        resource = RegistrationFactory()
+        resource.retract_registration(user=resource.creator, justification="Justification for retraction")
+        resource.retraction.state = ApprovalStates.APPROVED
+        resource.retraction.save()
         resource.save()
 
         with pytest.raises(HTTPError) as excinfo:
