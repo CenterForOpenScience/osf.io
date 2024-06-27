@@ -297,11 +297,7 @@ class AffiliatedInstitutionMixin(models.Model):
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
-    def add_affiliated_institution(self, inst, user, save=False, log=True):
-        from .institution import Institution
-        if not isinstance(inst, Institution):
-            raise ValidationValueError(f'Institution not provided')
-
+    def add_affiliated_institution(self, inst, user, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError(f'User is not affiliated with {inst}')
 
@@ -319,13 +315,6 @@ class AffiliatedInstitutionMixin(models.Model):
                 params=params,
                 auth=Auth(user)
             )
-
-        if save:
-            self.save()
-
-            self.update_search()
-            return True
-        return False
 
     def remove_affiliated_institution(self, inst, user, save=False, log=True):
         if self.is_affiliated_with_institution(inst):
@@ -346,41 +335,6 @@ class AffiliatedInstitutionMixin(models.Model):
             self.update_search()
             return True
         return False
-
-    def update_institutional_affiliation(self, auth, institution_ids):
-        user = auth.user
-        current_institutions = set(self.affiliated_institutions.values_list('_id', flat=True))
-
-        institutions_to_add = set(institution_ids) - current_institutions
-        institutions_to_remove = current_institutions - set(institution_ids)
-
-        Institution = apps.get_model('osf.Institution')
-
-        from osf.exceptions import UserNotAffiliatedError
-
-        for institution_id in institutions_to_add:
-            try:
-                institution = Institution.objects.get(_id=institution_id)
-                self.add_affiliated_institution(institution, user, log=True)
-            except Institution.DoesNotExist:
-                raise ValidationError(f'User is not affiliated with {institution.name},'
-                                             f' it was not found in records')
-            except UserNotAffiliatedError:
-                raise ValidationError(f'User is not affiliated with {institution.name},')
-
-        for institution_id in institutions_to_remove:
-            try:
-                institution = Institution.objects.get(_id=institution_id)
-                self.remove_affiliated_institution(institution, user, log=True)
-            except Institution.DoesNotExist:
-                raise ValidationError(f'User is not affiliated with {institution.name},'
-                                             f' it was not found in records')
-            except UserNotAffiliatedError:
-                raise ValidationError(f'User is not affiliated with {institution.name},')
-
-        self.save()
-
-        self.update_search()
 
     def is_affiliated_with_institution(self, institution):
         return self.affiliated_institutions.filter(id=institution.id).exists()
