@@ -727,7 +727,7 @@ class TestFileVersionView:
             try:
                 resource.retract_registration(
                     user=resource.creator,
-                    justification="Justification for retraction",
+                    justification='Justification for retraction',
                     save=True,
                     moderator_initiated=False
                 )
