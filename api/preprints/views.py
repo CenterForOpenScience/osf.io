@@ -68,6 +68,10 @@ from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 from api.institutions.serializers import InstitutionSerializer
+from api.base.parsers import JSONAPIRelationshipParser
+from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
+from api.preprints.serializers import PreprintsInstitutionRelationshipSerializer
+from api.nodes.permissions import WriteOrPublicForRelationshipInstitutions
 
 
 class PreprintMixin(NodeMixin):
@@ -633,19 +637,44 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         PreprintInstitutionPermission,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_read_scopes = [CoreScopes.PREPRINTS_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = InstitutionSerializer
 
     model = Institution
-    view_category = 'nodes'
-    view_name = 'node-institutions'
-
-    ordering = ('-id',)
+    view_category = 'preprints'
+    view_name = 'preprints-institutions'
 
     def get_resource(self):
         return self.get_preprint()
 
     def get_queryset(self):
-        resource = self.get_resource()
-        return resource.affiliated_institutions.all() or []
+        return self.get_resource().affiliated_institutions.all()
+
+
+class PrprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
+    """ """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        WriteOrPublicForRelationshipInstitutions,
+    )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    serializer_class = PreprintsInstitutionRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'preprints'
+    view_name = 'preprint-relationships-institutions'
+
+    def get_resource(self):
+        return self.get_preprint(check_object_permissions=False)
+
+    def get_object(self):
+        preprint = self.get_resource()
+        obj = {
+            'data': preprint.affiliated_institutions.all(),
+            'self': preprint,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj

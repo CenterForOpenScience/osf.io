@@ -112,6 +112,10 @@ class TestPublicPreprintInstitutionsList:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
     def public_preprint(self):
         return PreprintFactory()
 

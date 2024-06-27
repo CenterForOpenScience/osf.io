@@ -7,6 +7,7 @@ from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
+    BaseAPISerializer,
     JSONAPISerializer,
     IDField,
     TypeField,
@@ -542,7 +543,7 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     })
 
 
-class PreprintsInstitutionsSerializer(BaseAPISerializer):
+class PreprintsInstitutionRelationshipSerializer(BaseAPISerializer):
     id = IDField(read_only=True, source='_id')
     name = ser.CharField(read_only=True)
     type = ser.SerializerMethodField(read_only=True)

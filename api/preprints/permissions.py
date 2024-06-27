@@ -54,21 +54,6 @@ class PreprintPublishedOrWrite(PreprintPublishedOrAdmin):
             return True
 
 
-class PreprintInstitutionsPermissions(permissions.BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        auth = get_user_auth(request)
-        if obj.is_public and request.method == 'GET':
-            return True
-
-        if not auth.user:
-            raise exceptions.NotAuthenticated(detail='User must has no authentication.')
-
-        if not obj.has_permission(auth.user, osf_permissions.WRITE):
-            raise exceptions.PermissionDenied(detail='User must have admin or write permissions to the preprint.')
-        return True
-
-
 class ContributorDetailPermissions(PreprintPublishedOrAdmin):
     """Permissions for preprint contributor detail page."""
 
@@ -157,7 +142,6 @@ class ModeratorIfNeverPublicWithdrawn(permissions.BasePermission):
 
 class PreprintInstitutionPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        print(obj, obj.is_public)
         if obj.is_public:
             return True
 
