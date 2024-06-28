@@ -3,7 +3,6 @@ import enum
 import dataclasses
 
 from addons.box.apps import BoxAddonAppConfig
-from osf.models import Node, OSFUser
 from . import request_helpers as gv_requests
 
 
@@ -66,8 +65,8 @@ class EphemeralNodeSettings:
     gv_id: str
 
     # These are needed in order to make further requests for credentials
-    configured_resource: Node
-    active_user: OSFUser
+    configured_resource: type  # Node
+    active_user: type  # OSFUser
 
     # retrieved from WB on-demand and cached
     _credentials: dict = None
@@ -99,6 +98,11 @@ class EphemeralNodeSettings:
         )
         self._credentials = result.get_attribute('credentials')
 
+    def create_waterbutler_log(self, *args, **kwargs):
+        pass
+
+    def save():
+        pass
 
 @dataclasses.dataclass
 class EphemeralUserSettings:
@@ -106,8 +110,11 @@ class EphemeralUserSettings:
     config: EphemeralAddonConfig
     gv_id: str
     # This is needed to support making further requests
-    active_user: OSFUser
+    active_user: type  # : OSFUser
 
     @property
     def short_name(self):
         return self.config.short_name
+
+    def can_be_merged(self):
+        return True

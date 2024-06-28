@@ -1,6 +1,9 @@
+import itertools
 import pytz
 import markupsafe
 import logging
+
+import waffle
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
@@ -32,6 +35,7 @@ from .validators import validate_title
 from .tag import Tag
 from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
+from osf import features
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import (
@@ -471,6 +475,8 @@ class AddonModelMixin(models.Model):
     settings_type = None
     ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
         config.label != 'base'], key=lambda config: config.name)
+    # These addon configurations will continue to live in the OSF for the foreseeable future
+    OSF_HOSTED_ADDONS = ['forward', 'osfstorage', 'twofactor', 'wiki']
 
     class Meta:
         abstract = True
@@ -484,6 +490,14 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
+        request, user_id = get_request_and_user_id()
+        if waffle.flag_is_active(request, features.ENABLE_GV):
+            osf_addons = filter(
+                lambda x: x is not None,
+                (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
+            )
+            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id))
+
         return [_f for _f in [
             self.get_addon(config.short_name)
             for config in self.ADDONS_AVAILABLE
@@ -511,6 +525,12 @@ class AddonModelMixin(models.Model):
         return self.add_addon(name, *args, **kwargs)
 
     def get_addon(self, name, is_deleted=False):
+        # Avoid test-breakages by avoiding early access to the request context
+        if name not in self.OSF_HOSTED_ADDONS:
+            request, user_id = get_request_and_user_id()
+            if waffle.flag_is_active(request, features.ENABLE_GV):
+                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id)
+
         try:
             settings_model = self._settings_model(name)
         except LookupError:

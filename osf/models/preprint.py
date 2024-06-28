@@ -929,6 +929,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         Since preprints don't have addons, this method has been pulled over from the
         OSFStorage addon
         """
+        if provider_name and provider_name != 'osfstorage':
+            raise ValueError('Preprints only have access to osfstorage')
         return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self._id,
             'rootId': self.root_folder._id,
@@ -945,6 +947,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         Since preprints don't have addons, this method has been pulled over from the
         OSFStorage addon
         """
+        if provider_name and provider_name != 'osfstorage':
+            raise ValueError('Preprints only have access to osfstorage')
         return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, payload):
