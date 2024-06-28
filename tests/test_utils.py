@@ -25,6 +25,7 @@ from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename, throttle_period_expired
 from api.base.utils import waterbutler_api_url_for
+from osf_tests.external.gravy_valet.gv_fakes import FakeGravyValet
 from osf.utils.functional import rapply
 from waffle.testutils import override_flag
 from website.routes import process_rules, OsfWebRenderer
@@ -569,7 +570,10 @@ class TestUserSignals:
     ):
         with mock.patch.object(settings, 'USE_CELERY', True):
             with override_flag(features.ENABLE_GV, active=True):
-                user.merge_user(old_user)
+                fake_gv = FakeGravyValet()
+                fake_gv._get_or_create_user_entry(old_user)
+                with fake_gv.run_fake():
+                    user.merge_user(old_user)
 
         mock_publish_user_status_change().__enter__().publish.assert_called_once_with(
             body={

@@ -54,6 +54,10 @@ from .tag import Tag
 from .user import OSFUser
 from .validators import validate_title, validate_doi
 from framework.auth.core import Auth
+from osf.external.gravy_valet import (
+    request_helpers as gv_requests,
+    translations as gv_translations,
+)
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
@@ -2429,6 +2433,32 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     comment='Rejected from collection via system command.',  # typically spam
                     force=True
                 )
+
+    def _get_addon_from_gv(self, gv_pk, requesting_user_id):
+        requesting_user = OSFUser.load(requesting_user_id)
+        gv_addon_data = gv_requests.get_addon(
+            gv_addon_pk=gv_pk,
+            requested_resource=self,
+            requesting_user=requesting_user,
+        )
+        return gv_translations.make_ephemeral_node_settings(
+            gv_addon_data=gv_addon_data,
+            requested_resource=self,
+            requesting_user=requesting_user
+        )
+
+    def _get_addons_from_gv(self, requesting_user_id):
+        requesting_user = OSFUser.load(requesting_user_id)
+        all_node_addon_data = gv_requests.iterate_addons_for_resource(
+            requested_resource=self,
+            requesting_user=requesting_user
+        )
+        for addon_data in all_node_addon_data:
+            yield gv_translations.make_ephemeral_node_settings(
+                gv_addon_data=addon_data,
+                requested_resource=self,
+                requesting_user=requesting_user
+            )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
