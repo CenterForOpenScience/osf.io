@@ -100,9 +100,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
         return {
             'result': {
                 'folder': {
-                    'name': path.replace('All Files', '') if path != '/' else '/ (Full {})'.format(
-                        addon_full_name
-                    ),
+                    'name': path.replace('All Files', '') if path != '/' else f'/ (Full {addon_full_name})',
                     'path': path,
                 },
                 'urls': Serializer(node_settings=node_addon).addon_serialized_urls,

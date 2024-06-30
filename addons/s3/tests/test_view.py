@@ -264,7 +264,6 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):
         error = NoCredentialsError(operation_name='create_bucket')
-        error.message = 'This should work'
         mock_make.side_effect = error
 
         url = f'/api/v1/project/{self.project._id}/s3/newbucket/'
