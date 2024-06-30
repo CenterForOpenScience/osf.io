@@ -73,7 +73,8 @@ jsonschema==4.21.1
 django-guardian==2.4.0
 
 # Admin requirements
-django-webpack-loader==3.1.0
+# django-webpack-loader==3.1.0
+git+https://github.com/felliott/django-webpack-loader@feature/old-style-peanut-butter
 django-sendgrid-v5==1.2.3 # metadata says python 3.10 not supported, but tests pass
 
 # Analytics requirements
