@@ -108,7 +108,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
 
         # Write contrib
         self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
-        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
         # Really because preprint is in initial machine state
         assert res.status_code == 200
 
@@ -229,7 +229,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
 
         # Write contrib
         self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
-        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
+        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
         # Really because preprint is in initial machine state
         assert res.status_code == 200
 

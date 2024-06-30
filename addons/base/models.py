@@ -458,32 +458,27 @@ class BaseNodeSettings(BaseAddonSettings):
         if hasattr(self, 'user_settings'):
             if self.user_settings is None:
                 return (
-                    'Because you have not configured the {addon} add-on, your authentication will not be '
-                    'transferred to the forked {category}. You may authorize and configure the {addon} add-on '
-                    'in the new fork on the settings page.'
-                ).format(
-                    addon=self.config.full_name,
-                    category=node.project_or_component,
+                    f'Because you have not configured the {self.config.full_name} '
+                    'add-on, your authentication will not be transferred to the forked '
+                    f'{node.project_or_component}. You may authorize and configure the '
+                    f'{self.config.full_name} add-on in the new fork on the settings '
+                    'page.'
                 )
 
             elif self.user_settings and self.user_settings.owner == user:
                 return (
-                    'Because you have authorized the {addon} add-on for this '
-                    '{category}, forking it will also transfer your authentication to '
-                    'the forked {category}.'
-                ).format(
-                    addon=self.config.full_name,
-                    category=node.project_or_component,
+                    f'Because you have authorized the {self.config.full_name} add-on '
+                    f'for this {node.project_or_component}, forking it will also '
+                    'transfer your authentication to the forked '
+                    f'{node.project_or_component}.'
                 )
             else:
                 return (
-                    'Because the {addon} add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication to the forked '
-                    '{category}. You may authorize and configure the {addon} add-on '
-                    'in the new fork on the settings page.'
-                ).format(
-                    addon=self.config.full_name,
-                    category=node.project_or_component,
+                    f'Because the {self.config.full_name} add-on has been authorized '
+                    'by a different user, forking it will not transfer authentication '
+                    f'to the forked {node.project_or_component}. You may authorize and '
+                    f'configure the {self.config.full_name} add-on in the new fork on '
+                    'the settings page.'
                 )
 
     def after_fork(self, node, fork, user, save=True):

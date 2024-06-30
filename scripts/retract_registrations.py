@@ -36,8 +36,7 @@ def main(dry_run=True):
                 continue
 
             logger.warning(
-                'Retraction {} approved. Retracting registration {}'
-                .format(retraction._id, parent_registration._id)
+                f'Retraction {retraction._id} approved. Retracting registration {parent_registration._id}'
             )
             if not dry_run:
                 sid = transaction.savepoint()

@@ -196,9 +196,6 @@ def process_rules(app, rules, prefix=''):
 
 ### Renderer helpers ###
 
-def render_jinja_string(tpl, data):
-    pass
-
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data, trust=True):
     """Render a mako template to a string.
@@ -235,7 +232,6 @@ def render_mako_string(tpldir, tplname, data, trust=True):
 
 
 renderer_extension_map = {
-    '.jinja': render_jinja_string,
     '.mako': render_mako_string,
 }
 

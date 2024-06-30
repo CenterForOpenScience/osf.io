@@ -143,9 +143,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             user_id = user['id'].split('-')[1]
             assert (
                 user_id in users[api_perm]
-            ), 'Permissions incorrect for {}. Should not have {} permission.'.format(
-                user_id, api_perm
-            )
+            ), f'Permissions incorrect for {user_id}. Should not have {api_perm} permission.'
 
     def test_return(
         self,
@@ -583,9 +581,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self, app, user, user_two, project_public, data_user_two, url_public
     ):
         del data_user_two['data']['attributes']['bibliographic']
-        res = app.post_json_api(
-            url_public, data_user_two, auth=user.auth, expect_errors=True
-        )
+        res = app.post_json_api(url_public, data_user_two, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == '{}-{}'.format(
             project_public._id, user_two._id
@@ -619,7 +615,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 },
             }
         }
-        res = app.post_json_api(url_private, data, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(url_private, data, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == '{}-{}'.format(
             project_private._id, user_two._id
@@ -730,7 +726,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 },
             }
         }
-        res = app.post_json_api(url_private, data, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(url_private, data, auth=user.auth)
         assert res.status_code == 201
 
         project_private.reload()
@@ -933,9 +929,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.status_code == 201
         assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
         assert res.json['data']['attributes'].get('email') is None
-        assert res.json['data']['embeds']['users']['data'][
-            'id'
-        ] in project_public.contributors.values_list('guids___id', flat=True)
+        assert (
+            res.json['data']['embeds']['users']['data']['id']
+            in project_public.contributors.values_list('guids___id', flat=True)
+        )
 
     def test_add_contributor_with_fullname_and_email_unregistered_user(
         self, app, user, project_public, url_public
@@ -953,9 +950,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.json['data']['attributes'].get('email') is None
         assert res.json['data']['attributes']['bibliographic'] is True
         assert res.json['data']['attributes']['permission'] == permissions.WRITE
-        assert res.json['data']['embeds']['users']['data'][
-            'id'
-        ] in project_public.contributors.values_list('guids___id', flat=True)
+        assert (
+            res.json['data']['embeds']['users']['data']['id']
+            in project_public.contributors.values_list('guids___id', flat=True)
+        )
 
     def test_add_contributor_with_fullname_and_email_unregistered_user_set_attributes(
         self, app, user, project_public, url_public
@@ -978,9 +976,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.json['data']['attributes'].get('email') is None
         assert res.json['data']['attributes']['bibliographic'] is False
         assert res.json['data']['attributes']['permission'] == permissions.READ
-        assert res.json['data']['embeds']['users']['data'][
-            'id'
-        ] in project_public.contributors.values_list('guids___id', flat=True)
+        assert (
+            res.json['data']['embeds']['users']['data']['id']
+            in project_public.contributors.values_list('guids___id', flat=True)
+        )
 
     def test_add_contributor_with_fullname_and_email_registered_user(
         self, app, user, project_public, url_public
@@ -1000,9 +999,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.status_code == 201
         assert res.json['data']['attributes']['unregistered_contributor'] is None
         assert res.json['data']['attributes'].get('email') is None
-        assert res.json['data']['embeds']['users']['data'][
-            'id'
-        ] in project_public.contributors.values_list('guids___id', flat=True)
+        assert (
+            res.json['data']['embeds']['users']['data']['id']
+            in project_public.contributors.values_list('guids___id', flat=True)
+        )
 
     def test_add_unregistered_contributor_already_contributor(
         self, app, user, project_public, url_public
@@ -1020,9 +1020,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         res = app.post_json_api(url_public, payload, auth=user.auth, expect_errors=True)
         project_public.reload()
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '{} is already a contributor.'.format(
-            name
-        )
+        assert res.json['errors'][0]['detail'] == f'{name} is already a contributor.'
 
     def test_add_contributor_user_is_deactivated_registered_payload(
         self, app, user, url_public
@@ -1097,10 +1095,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = app.post_json_api(url_public, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0][
-            'detail'
-        ] == '4 is not a valid contributor index for node with id {}'.format(
-            project_public._id
+        assert (
+            res.json['errors'][0]['detail']
+            == f'4 is not a valid contributor index for node with id {project_public._id}'
         )
 
     def test_add_contributor_set_index_first(
@@ -1182,10 +1179,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         res = app.post_json_api(url_public, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         # if adding unregistered contrib by guid, fullname must be supplied
-        assert res.json['errors'][0][
-            'detail'
-        ] == 'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'.format(
-            unconfirmed_user._id, project_public._id
+        assert res.json['errors'][0]['detail'] == (
+            f'Cannot add unconfirmed user {unconfirmed_user._id} to resource '
+            f'{project_public._id}. You need to provide a full_name.'
         )
 
         payload['data']['attributes']['full_name'] = 'Susan B. Anthony'

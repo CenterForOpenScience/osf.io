@@ -241,8 +241,10 @@ class AddonFileMoved(ComplexFileEvent):
             moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
                                                                  self.event_type, self.node)
             warn_message = f'{self.html_message} You are no longer tracking that file based on the settings you selected for the component.'
-            remove_message = ('{} Your subscription has been removed'
-                              ' due to insufficient permissions in the new component.').format(self.html_message)
+            remove_message = (
+                f'{self.html_message} Your subscription has been removed due to '
+                'insufficient permissions in the new component.'
+            )
         # Folder
         else:
             # Gets all the files in a folder to look for permissions conflicts
@@ -255,9 +257,11 @@ class AddonFileMoved(ComplexFileEvent):
             # For users that don't have individual file subscription but has permission on the new node
             warn_message = f'{self.html_message} You are no longer tracking that folder or files within based on the settings you selected for the component.'
             # For users without permission on the new node
-            remove_message = ('{} Your subscription has been removed for the folder,'
-                              ' or a file within,'
-                              ' due to insufficient permissions in the new component.').format(self.html_message)
+            remove_message = (
+                f'{self.html_message} Your subscription has been removed for the '
+                'folder, or a file within, due to insufficient permissions in the new '
+                'component.'
+            )
 
         # Move the document from one subscription to another because the old one isn't needed
         utils.move_subscription(rm_users, self.event_type, self.source_node, self.event_type, self.node)

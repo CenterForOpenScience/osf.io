@@ -434,8 +434,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
                 self._notify_non_authorizer(contrib, node)
 
     def add_authorizer(self, user, node, **kwargs):
-        super().add_authorizer(user, node,
-                                                            **kwargs)
+        super().add_authorizer(user, node, **kwargs)
         self.stashed_urls[user._id] = {
             'view': self._view_url(user._id, node),
             'approve': self._approval_url(user._id),

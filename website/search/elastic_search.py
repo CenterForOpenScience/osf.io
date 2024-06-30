@@ -388,11 +388,7 @@ def update_user_async(self, user_id, index=None):
 def serialize_node(node, category):
     parent_id = node.parent_id
 
-    try:
-        normalized_title = node.title
-    except TypeError:
-        normalized_title = node.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title)
+    normalized_title = unicodedata.normalize('NFKD', node.title)
     elastic_document = {
         **serialize_guid_metadata(node._id),
         'id': node._id,
@@ -441,11 +437,7 @@ def serialize_node(node, category):
     return elastic_document
 
 def serialize_preprint(preprint, category):
-    try:
-        normalized_title = preprint.title
-    except TypeError:
-        normalized_title = preprint.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title)
+    normalized_title = unicodedata.normalize('NFKD', preprint.title)
     elastic_document = {
         'id': preprint._id,
         'contributors': [
@@ -474,11 +466,7 @@ def serialize_preprint(preprint, category):
     return elastic_document
 
 def serialize_group(group, category):
-    try:
-        normalized_title = group.name
-    except TypeError:
-        normalized_title = group.name
-    normalized_title = unicodedata.normalize('NFKD', normalized_title)
+    normalized_title = unicodedata.normalize('NFKD', group.name)
     elastic_document = {
         'id': group._id,
         'members': [
@@ -698,10 +686,6 @@ def update_user(user, index=None):
     normalized_names = {}
     for key, val in names.items():
         if val is not None:
-            try:
-                val = val
-            except TypeError:
-                pass  # This is fine, will only happen in 2.x if val is already unicode
             normalized_names[key] = unicodedata.normalize('NFKD', val)
 
     user_doc = {
@@ -957,11 +941,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     exclude = exclude or []
     normalized_items = []
     for item in items:
-        try:
-            normalized_item = item
-        except TypeError:
-            normalized_item = item
-        normalized_item = unicodedata.normalize('NFKD', normalized_item)
+        normalized_item = unicodedata.normalize('NFKD', item)
         normalized_items.append(normalized_item)
     items = normalized_items
 
@@ -986,7 +966,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             n_projects_in_common = 0
 
         if user is None:
-            logger.error('Could not load user {}'.format(doc['id']))
+            logger.error(f"Could not load user {doc['id']}")
             continue
         if user.is_active:  # exclude merged, unregistered, etc.
             current_employment = None

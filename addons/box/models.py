@@ -71,7 +71,7 @@ class Provider(ExternalProvider):
         return {
             'provider_id': about['id'],
             'display_name': about['name'],
-            'profile_url': 'https://app.box.com/profile/{}'.format(about['id'])
+            'profile_url': f'https://app.box.com/profile/{about["id"]}'
         }
 
 
