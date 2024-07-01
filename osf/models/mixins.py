@@ -2121,7 +2121,7 @@ class SpamOverrideMixin(SpamMixin):
         delete the account or any info associated with it. It should not be assumed the account is spam and it should
         not be used to train spam detecting services.
         """
-        if user.is_ham:
+        if user.is_hammy:
             return False
         self.confirm_spam(save=True, train_spam_services=False)
         self.set_privacy('private', log=False, save=True)
