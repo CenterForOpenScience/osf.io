@@ -26,17 +26,17 @@ def main(dry_run=True):
     for retraction in pending_retractions:
         if should_be_retracted(retraction):
             if dry_run:
-                logger.warn('Dry run mode')
+                logger.warning('Dry run mode')
             try:
                 parent_registration = retraction.registrations.get()
             except Exception as err:
-                logger.exception('Could not find registration associated with retraction {}'.format(retraction))
-                logger.error('Skipping...'.format(retraction))
+                logger.exception(f'Could not find registration associated with retraction {retraction}')
+                logger.error(f'Skipping...')
                 sentry.log_message(str(err))
                 continue
 
-            logger.warn(
-                'Retraction {0} approved. Retracting registration {1}'
+            logger.warning(
+                'Retraction {} approved. Retracting registration {}'
                 .format(retraction._id, parent_registration._id)
             )
             if not dry_run:

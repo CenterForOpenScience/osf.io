@@ -20,7 +20,7 @@ from api.base import permissions as base_permissions
 from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationDetailSerializer, ApiOAuth2ApplicationResetSerializer
 
 
-class ApplicationMixin(object):
+class ApplicationMixin:
     """Mixin with convenience methods for retrieving the current application based on the
     current URL. By default, fetches the current application based on the client_id kwarg.
     """
@@ -47,7 +47,7 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMix
     view_category = 'applications'
     view_name = 'application-list'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer]  # Hide from web-browsable API tool
 
     ordering = ('-created',)
 
@@ -83,7 +83,7 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
     view_category = 'applications'
     view_name = 'application-detail'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer]  # Hide from web-browsable API tool
 
     def get_object(self):
         return self.get_app()
@@ -124,7 +124,7 @@ class ApplicationReset(DeprecatedView, generics.CreateAPIView, ApplicationMixin)
 
     serializer_class = ApiOAuth2ApplicationResetSerializer
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer]  # Hide from web-browsable API tool
 
     view_category = 'applications'
     view_name = 'application-reset'

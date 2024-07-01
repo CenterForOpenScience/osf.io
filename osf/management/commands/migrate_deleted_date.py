@@ -55,7 +55,7 @@ def populate_deleted(dry_run=False, page_size=1000):
             raise RuntimeError('Dry Run -- Transaction rolled back')
 
 def run_statements(statement, page_size, table):
-    logger.info('Populating deleted column in table {}'.format(table))
+    logger.info(f'Populating deleted column in table {table}')
     with connection.cursor() as cursor:
         cursor.execute(statement.format(table, table, LIMIT_CLAUSE), [page_size])
         rows = cursor.fetchall()
@@ -63,18 +63,18 @@ def run_statements(statement, page_size, table):
             cursor.execute(CHECK_POPULATED.format(table), [page_size])
             remaining_rows = cursor.fetchall()
             if not remaining_rows:
-                sentry.log_message('Deleted field in {} table is populated'.format(table))
+                sentry.log_message(f'Deleted field in {table} table is populated')
 
 def run_sql(statement, check_statement, page_size):
     table = statement.split(' ')[1]
-    logger.info('Populating deleted column in table {}'.format(table))
+    logger.info(f'Populating deleted column in table {table}')
     with connection.cursor() as cursor:
         cursor.execute(statement.format(LIMIT_CLAUSE), [page_size])
         rows = cursor.fetchall()
         if not rows:
             with connection.cursor() as cursor:
                 cursor.execute(check_statement, [page_size])
-                sentry.log_message('Deleted field in {} table is populated'.format(table))
+                sentry.log_message(f'Deleted field in {table} table is populated')
 
 class Command(BaseCommand):
     help = '''Populates new deleted field for various models. Ensure you have run migrations
@@ -96,7 +96,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
+        logger.info(f'Script started time: {script_start_time}')
         logger.debug(options)
 
         dry_run = options['dry_run']
@@ -108,5 +108,5 @@ class Command(BaseCommand):
         populate_deleted(dry_run, page_size)
 
         script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f'Run time {script_finish_time - script_start_time}')

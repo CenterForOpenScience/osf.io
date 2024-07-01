@@ -1,5 +1,4 @@
 """Views for the node settings page."""
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
 from django.utils import timezone
@@ -312,7 +311,7 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
         return {'data': data}, http_status.HTTP_400_BAD_REQUEST
 
     dataverse_host = node_addon.external_account.oauth_key
-    dataverse_url = 'http://{0}/dataverse/{1}'.format(dataverse_host, alias)
+    dataverse_url = f'http://{dataverse_host}/dataverse/{alias}'
     dataset_url = 'https://doi.org/' + doi
 
     data.update({

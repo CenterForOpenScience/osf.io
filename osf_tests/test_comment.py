@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytz
 import pytest
 import datetime
@@ -94,12 +94,12 @@ def project_with_contributor(user, contributor):
 
 @pytest.fixture()
 def comment_self_mentioned(user):
-    return 'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{}/).'.format(user._id)
+    return f'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{user._id}/).'
 
 
 @pytest.fixture()
 def comment_contributor_mentioned(contributor):
-    return 'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{}/).'.format(contributor._id)
+    return f'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{contributor._id}/).'
 
 
 @pytest.fixture()
@@ -114,7 +114,7 @@ def comment_too_long():
 
 @pytest.fixture()
 def comment_too_long_with_mention(user):
-    mention = '[@George Ant](http://localhost:5000/{}/)'.format(user._id)
+    mention = f'[@George Ant](http://localhost:5000/{user._id}/)'
     return ''.join(['c' for _ in range(settings.COMMENT_MAXLENGTH - 8)]) + mention
 
 
@@ -125,32 +125,32 @@ def comment_valid():
 
 @pytest.fixture()
 def comment_mention_valid(contributor):
-    return 'This is a comment [@User](http://localhost:5000/{}/).'.format(contributor._id)
+    return f'This is a comment [@User](http://localhost:5000/{contributor._id}/).'
 
 
 @pytest.fixture()
 def comment_mention_project_with_contributor(contributor, project_with_contributor):
-    return 'This is a comment [@User](http://localhost:5000/{}/).'.format(contributor._id)
+    return f'This is a comment [@User](http://localhost:5000/{contributor._id}/).'
 
 
 @pytest.fixture()
 def comment_mention_unreg_contributor(unreg_contributor):
-    return 'This is a comment [@Unconfirmed User](http://localhost:5000/{}/).'.format(unreg_contributor._id)
+    return f'This is a comment [@Unconfirmed User](http://localhost:5000/{unreg_contributor._id}/).'
 
 
 @pytest.fixture()
 def comment_mention_non_contributor(user_without_nodes):
-    return 'This is a comment [@User](http://localhost:5000/{}/).'.format(user_without_nodes._id)
+    return f'This is a comment [@User](http://localhost:5000/{user_without_nodes._id}/).'
 
 
 @pytest.fixture()
 def comment_mention_edited_twice(comment, node):
-    return 'This is a new comment [@User](http://localhost:5000/{}/).'.format(comment.user)
+    return f'This is a new comment [@User](http://localhost:5000/{comment.user}/).'
 
 
 @pytest.fixture()
 def comment_mentioned_with_contributors(user):
-    return 'This is a new comment [@User](http://localhost:5000/{}/).'.format(user._id)
+    return f'This is a new comment [@User](http://localhost:5000/{user._id}/).'
 
 def test_comments_have_longer_guid():
     comment = CommentFactory()
@@ -459,7 +459,7 @@ class TestCommentModel:
 
 
 # copied from tests/test_comments.py
-class FileCommentMoveRenameTestMixin(object):
+class FileCommentMoveRenameTestMixin:
     id_based_providers = ['osfstorage']
 
     @pytest.fixture()
@@ -499,7 +499,7 @@ class FileCommentMoveRenameTestMixin(object):
                             ('path', self._format_path(path, file_id)),
                             ('provider', provider),
                             ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
-                            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
+                            ('node', {'url': f'/{node._id}/', '_id': node._id, 'title': node.title}),
                             ('addon', provider)])
 
     def _create_destination_payload(self, path, node, provider, file_id, children=None):
@@ -516,7 +516,7 @@ class FileCommentMoveRenameTestMixin(object):
                             ('provider', provider),
                             ('size', 1000),
                             ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
-                            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
+                            ('node', {'url': f'/{node._id}/', '_id': node._id, 'title': node.title}),
                             ('addon', provider)])
         if children:
             destination_children = [self._create_destination_payload(child['path'], child['node'], child['provider'], file_id) for child in children]
@@ -867,7 +867,8 @@ class FileCommentMoveRenameTestMixin(object):
     )
     def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
-            return True
+            assert True
+            return
 
         project.add_addon(destination_provider, auth=Auth(user))
         project.save()
@@ -901,7 +902,8 @@ class FileCommentMoveRenameTestMixin(object):
     )
     def test_comments_move_when_folder_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
-            return True
+            assert True
+            return
 
         project.add_addon(destination_provider, auth=Auth(user))
         project.save()
@@ -944,7 +946,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     @classmethod
     def _format_path(cls, path, file_id=None):
-        super(TestOsfstorageFileCommentMoveRename, cls)._format_path(path)
+        super()._format_path(path)
         return '/{}{}'.format(file_id, ('/' if path.endswith('/') else ''))
 
     def _create_file_with_comment(self, node, path, user):
@@ -1082,7 +1084,7 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     @classmethod
     def _format_path(cls, path, file_id=None):
-        super(TestBoxFileCommentMoveRename, cls)._format_path(path)
+        super()._format_path(path)
         return '/9876543210/' if path.endswith('/') else '/1234567890'
 
 
@@ -1094,7 +1096,7 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
             target=node,
-            path='{}{}'.format(node.get_addon(self.provider).folder, path),
+            path=f'{node.get_addon(self.provider).folder}{path}',
             name=path.strip('/'),
             materialized_path=path)
         self.file.save()

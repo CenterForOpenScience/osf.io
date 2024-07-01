@@ -6,7 +6,7 @@ from api_tests.requests.mixins import PreprintRequestTestMixin
 @pytest.mark.django_db
 class TestPreprintRequestActionList(PreprintRequestTestMixin):
     def url(self, request):
-        return '/{}requests/{}/actions/'.format(API_BASE, request._id)
+        return f'/{API_BASE}requests/{request._id}/actions/'
 
     def test_nonmod_nonadmin_nonrequester_cannot_view(self, app, noncontrib, write_contrib, pre_request, post_request, none_request):
         for request in [pre_request, post_request, none_request]:

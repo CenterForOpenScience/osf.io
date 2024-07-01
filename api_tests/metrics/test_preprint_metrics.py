@@ -1,8 +1,9 @@
 import pytest
-import mock
+from unittest import mock
 from datetime import datetime
 
 from website.app import setup_django
+
 setup_django()
 
 from django.utils import timezone
@@ -13,7 +14,6 @@ from osf import features
 from api.base.settings import API_PRIVATE_BASE as API_BASE
 from osf.metrics import PreprintDownload, PreprintView
 from osf_tests.factories import AuthUserFactory, PreprintFactory, NodeFactory
-
 
 pytestmark = pytest.mark.django_db
 
@@ -98,12 +98,12 @@ class TestPreprintMetrics:
 
     @pytest.fixture
     def base_url(self):
-        return '/{}metrics/preprints/'.format(API_BASE)
+        return f'/{API_BASE}metrics/preprints/'
 
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
     def test_custom_metric_malformed_query(self, mock_execute, app, user, base_url):
-        mock_execute.side_effect = RequestError
-        post_url = '{}downloads/'.format(base_url)
+        mock_execute.side_effect = RequestError()
+        post_url = f'{base_url}downloads/'
         post_data = {
             'data': {
                 'type': 'preprint_metric',
@@ -119,7 +119,7 @@ class TestPreprintMetrics:
     @pytest.mark.es
     def test_agg_query(self, app, user, base_url):
 
-        post_url = '{}downloads/'.format(base_url)
+        post_url = f'{base_url}downloads/'
 
         payload = {
             'data': {
@@ -153,7 +153,7 @@ class TestPreprintMetrics:
         mock_return = {'good': 'job'}
         mock_execute.return_value.to_dict.return_value = mock_return
         mock_format.return_value = mock_return
-        post_url = '{}downloads/'.format(base_url)
+        post_url = f'{base_url}downloads/'
         post_data = {
             'data': {
                 'type': 'preprint_metrics',
@@ -171,9 +171,9 @@ class TestPreprintMetrics:
                                               preprint_three, metric_name, other_user, project, project_two,
                                               other_admin_user, other_non_admin_user):
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
-        url = '{}{}/'.format(base_url, metric_name)
+        url = f'{base_url}{metric_name}/'
 
-        one_preprint_url = '{}?guids={}'.format(url, preprint._id)
+        one_preprint_url = f'{url}?guids={preprint._id}'
         # test non-logged in cannot access
         res = app.get(one_preprint_url, expect_errors=True)
         assert res.status_code == 401
@@ -192,14 +192,15 @@ class TestPreprintMetrics:
 
     @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on travis.')
     @mock.patch('api.metrics.utils.timezone.now')
-    def test_preprint_with_metrics_succeeds(self, mock_timezone, app, user, base_url, preprint, other_user, preprint_no_results, metric_dates):
+    def test_preprint_with_metrics_succeeds(self, mock_timezone, app, user, base_url, preprint, other_user,
+                                            preprint_no_results, metric_dates):
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         self.add_views_and_downloads(preprint, other_user, metric_dates)
         metric_name = 'downloads'
 
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
-        url = '{}{}/'.format(base_url, metric_name)
-        one_preprint_url = '{}?guids={}'.format(url, preprint._id)
+        url = f'{base_url}{metric_name}/'
+        one_preprint_url = f'{url}?guids={preprint._id}'
 
         # base url should return all results
         res = app.get(one_preprint_url, auth=user.auth)
@@ -207,14 +208,14 @@ class TestPreprintMetrics:
         assert len(res.json['data']) == 3
 
         # starting a day later only returns 2 results
-        later_url = '{}&start_datetime=2019-01-02'.format(one_preprint_url)
+        later_url = f'{one_preprint_url}&start_datetime=2019-01-02'
         res = app.get(later_url, auth=user.auth)
         assert len(res.json['data']) == 2
         datetimes = [result.keys()[0] for result in res.json['data']]
         assert '2019-01-01T00:05:00.000Z' not in datetimes
 
         # filter between two specific datetimes
-        two_times_url = '{}&start_datetime=2019-01-02T00:00&end_datetime=2019-01-02T02:00'.format(one_preprint_url)
+        two_times_url = f'{one_preprint_url}&start_datetime=2019-01-02T00:00&end_datetime=2019-01-02T02:00'
         res = app.get(two_times_url, auth=user.auth)
         assert len(res.json['data']) == 1
         datetimes = [result.keys()[0] for result in res.json['data']]
@@ -222,7 +223,7 @@ class TestPreprintMetrics:
         assert '2019-01-01T03:05:00.000Z' not in datetimes
 
         # test two specific datetimes with minute interval
-        two_min_interval = '{}&start_datetime=2019-01-02T00:00&end_datetime=2019-01-02T02:00&interval=1m'.format(one_preprint_url)
+        two_min_interval = f'{one_preprint_url}&start_datetime=2019-01-02T00:00&end_datetime=2019-01-02T02:00&interval=1m'
         res = app.get(two_min_interval, auth=user.auth)
         assert len(res.json['data']) == 61
         first = res.json['data'][0]
@@ -233,7 +234,7 @@ class TestPreprintMetrics:
         assert last['2019-01-02T01:05:00.000Z'] == {preprint._id: 1}
 
         # make sure requesting one preprint with no results is OK
-        non_preprint_url = '{}?guids={}'.format(url, preprint_no_results._id)
+        non_preprint_url = f'{url}?guids={preprint_no_results._id}'
         res = app.get(non_preprint_url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data'] == []

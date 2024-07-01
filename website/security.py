@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Security utilities."""
 # TODO: put in website/utils/ when rubeus circular import issue is resolved
 import string

@@ -38,11 +38,11 @@ class TestUserGroupList:
 
     @pytest.fixture()
     def manager_url(self, manager):
-        return '/{}users/{}/groups/'.format(API_BASE, manager._id)
+        return f'/{API_BASE}users/{manager._id}/groups/'
 
     @pytest.fixture()
     def member_url(self, member):
-        return '/{}users/{}/groups/'.format(API_BASE, member._id)
+        return f'/{API_BASE}users/{member._id}/groups/'
 
     def test_return_manager_groups(self, app, member, manager, user, osf_group, second_osf_group, manager_url):
         with override_flag(OSF_GROUPS, active=True):

@@ -9,7 +9,7 @@ from website.security import random_string
 from framework.auth import cas
 
 from website import settings
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 
 def generate_client_secret():
@@ -27,7 +27,7 @@ class ApiOAuth2Scope(ObjectIDMixin, BaseModel):
     is_public = models.BooleanField(default=True, db_index=True)
 
     def absolute_url(self):
-        return urljoin(settings.API_DOMAIN, '/v2/scopes/{}/'.format(self.name))
+        return urljoin(settings.API_DOMAIN, f'/v2/scopes/{self.name}/')
 
 
 def generate_client_id():
@@ -95,7 +95,7 @@ class ApiOAuth2Application(ObjectIDMixin, BaseModel):
 
     @property
     def url(self):
-        return '/settings/applications/{}/'.format(self.client_id)
+        return f'/settings/applications/{self.client_id}/'
 
     @property
     def absolute_url(self):
@@ -104,7 +104,7 @@ class ApiOAuth2Application(ObjectIDMixin, BaseModel):
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        path = '/applications/{}/'.format(self.client_id)
+        path = f'/applications/{self.client_id}/'
         return api_v2_url(path)
 
     # used by django and DRF
@@ -159,7 +159,7 @@ class ApiOAuth2PersonalToken(ObjectIDMixin, BaseModel):
 
     @property
     def url(self):
-        return '/settings/tokens/{}/'.format(self._id)
+        return f'/settings/tokens/{self._id}/'
 
     @property
     def absolute_url(self):
@@ -168,7 +168,7 @@ class ApiOAuth2PersonalToken(ObjectIDMixin, BaseModel):
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        path = '/tokens/{}/'.format(self._id)
+        path = f'/tokens/{self._id}/'
         return api_v2_url(path)
 
     # used by django and DRF

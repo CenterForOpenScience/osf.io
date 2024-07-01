@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 
 from addons.base.tests import views
@@ -24,7 +23,7 @@ class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCase
     client = OneDriveClient
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super().setUp()
 
         self.mock_client_folders = mock.patch(
             'addons.onedrive.client.OneDriveClient.folders',
@@ -49,7 +48,7 @@ class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCase
         self.mock_client_folders.stop()
         self.mock_client_user.stop()
         self.mock_fetch.stop()
-        super(TestConfigViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch.object(OneDriveClient, 'folders')
     def test_folder_list_not_root(self, mock_drive_client_folders):

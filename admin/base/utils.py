@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError, PermissionDenied
 from django.urls import reverse
 from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 from osf.models.admin_log_entry import (
@@ -26,7 +26,7 @@ validate_slug = RegexValidator(
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):
     base_url = reverse(view, urlconf=urlconf, args=args, kwargs=kwargs, current_app=current_app)
     if query_kwargs:
-        return '{}?{}'.format(base_url, urlencode(query_kwargs))
+        return f'{base_url}?{urlencode(query_kwargs)}'
 
 
 def osf_staff_check(user):

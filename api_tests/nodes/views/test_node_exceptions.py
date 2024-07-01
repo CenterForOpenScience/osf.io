@@ -42,7 +42,7 @@ class TestExceptionFormatting:
 
     @pytest.fixture()
     def private_url(self, private_project):
-        return '/{}nodes/{}/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/'
 
     def test_exception_formatting(
             self, app, user, non_contrib, public_project,
@@ -52,7 +52,7 @@ class TestExceptionFormatting:
         error_blank_field = 'This field may not be blank.'
 
     #   test_creates_project_with_no_title_formatting
-        url = '/{}nodes/'.format(API_BASE)
+        url = f'/{API_BASE}nodes/'
         res = app.post_json_api(
             url, project_no_title,
             auth=user.auth, expect_errors=True)
@@ -106,7 +106,7 @@ class TestExceptionFormatting:
         assert errors[1]['detail'] == error_required_field
 
     #   test_create_node_link_no_target_formatting
-        url = '{}node_links/'.format(private_url)
+        url = f'{private_url}node_links/'
         res = app.post_json_api(url, {
             'data': {
                 'type': 'node_links',
@@ -127,7 +127,7 @@ class TestExceptionFormatting:
         assert res.json['errors'][0]['detail'] == error_blank_field
 
     #   test_node_link_already_exists
-        url = '{}node_links/'.format(private_url)
+        url = f'{private_url}node_links/'
         res = app.post_json_api(url, {
             'data': {
                 'type': 'node_links',

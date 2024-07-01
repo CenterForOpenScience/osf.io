@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility functions for the Google Drive add-on.
 """
 import os
@@ -7,8 +6,8 @@ from website.util import api_v2_url
 
 def build_googledrive_urls(item, node, path):
     return {
-        'fetch': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(node._id), params={'path': path}),
-        'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(node._id), params={'path': path, 'id': item['id']})
+        'fetch': api_v2_url(f'nodes/{node._id}/addons/googledrive/folders/', params={'path': path}),
+        'folders': api_v2_url(f'nodes/{node._id}/addons/googledrive/folders/', params={'path': path, 'id': item['id']})
     }
 
 def to_hgrid(item, node, path):

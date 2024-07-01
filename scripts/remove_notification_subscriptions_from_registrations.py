@@ -23,7 +23,7 @@ def remove_notification_subscriptions_from_registrations(dry_run=True):
             'node_id', flat=True
         )
     )
-    logger.info('{} NotificationSubscriptions will be deleted.'.format(notifications_to_delete.count()))
+    logger.info(f'{notifications_to_delete.count()} NotificationSubscriptions will be deleted.')
     logger.info('{} Registrations will be affected: {}'.format(
         registrations_affected.count(),
         list(registrations_affected.values_list('guids___id', flat=True)))

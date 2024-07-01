@@ -26,7 +26,7 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
             if not request.data:
                 raise ValidationError('Request must contain array of resource identifier objects.')
 
-        response = super(ListBulkCreateJSONAPIView, self).create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
         if 'data' not in response.data:
             response.data = {'data': response.data}
         return response
@@ -40,7 +40,7 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
         if is_bulk_request(self.request):
             kwargs['many'] = True
 
-        return super(ListBulkCreateJSONAPIView, self).get_serializer(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
 
 
 class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
@@ -57,7 +57,7 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
         if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
-        response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
+        response = super().bulk_update(request, *args, **kwargs)
         errors = {}
         if 'errors' in response.data[-1]:
             errors = response.data.pop(-1)
@@ -80,7 +80,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         requested_ids = [data['id'] for data in request_data]
         column_name = 'guids___id' if issubclass(model_cls, GuidMixin) else getattr(model_cls, 'primary_identifier_name', '_id')
-        resource_object_list = model_cls.objects.filter(Q(**{'{}__in'.format(column_name): requested_ids}))
+        resource_object_list = model_cls.objects.filter(Q(**{f'{column_name}__in': requested_ids}))
 
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
@@ -136,7 +136,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         if num_items > bulk_limit:
             raise JSONAPIException(
                 source={'pointer': '/data'},
-                detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items),
+                detail=f'Bulk operation limit is {bulk_limit}, got {num_items}.',
             )
 
         user = self.request.user
@@ -145,7 +145,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         resource_object_list = self.get_requested_resources(request=request, request_data=data)
 
         for item in data:
-            item_type = item[u'type']
+            item_type = item['type']
             if item_type != object_type:
                 raise Conflict('Type needs to match type expected at this endpoint.')
 

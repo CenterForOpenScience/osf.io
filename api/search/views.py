@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -38,7 +36,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
     )
 
     pagination_class = SearchPagination
-    filter_backends = [ElasticOSFOrderingFilter, ]
+    filter_backends = [ElasticOSFOrderingFilter]
 
     @property
     def search_fields(self):
@@ -47,13 +45,13 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         raise NotImplementedError
 
     def __init__(self):
-        super(BaseSearchView, self).__init__()
+        super().__init__()
         self.doc_type = getattr(self, 'doc_type', None)
 
     def get_parsers(self):
         if self.request.method == 'POST':
-            return (SearchParser(), )
-        return super(BaseSearchView, self).get_parsers()
+            return (SearchParser(),)
+        return super().get_parsers()
 
     def get_queryset(self, query=None):
         page = int(self.request.query_params.get('page', '1'))

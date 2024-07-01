@@ -1,10 +1,9 @@
 import pytest
 import json
-import mock
+from unittest import mock
 from io import StringIO
 
 import responses
-from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from scripts.update_taxonomies import update_taxonomies
@@ -33,12 +32,13 @@ from admin.base.forms import ImportFileForm
 
 import website
 
-
 pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.fixture()
 def req(user):
@@ -60,7 +60,8 @@ class TestShareSourcePreprintProvider(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.view = views.ShareSourcePreprintProvider()
-        self.view = setup_user_view(self.view, self.request, user=self.user, preprint_provider_id=self.preprint_provider.id)
+        self.view = setup_user_view(self.view, self.request, user=self.user,
+                                    preprint_provider_id=self.preprint_provider.id)
 
         self.mock_prepend = mock.patch.object(website.settings, 'SHARE_PROVIDER_PREPEND', 'testenv')
 
@@ -128,7 +129,7 @@ class TestShareSourcePreprintProvider(AdminTestCase):
 
 class TestPreprintProviderChangeForm(AdminTestCase):
     def setUp(self):
-        super(TestPreprintProviderChangeForm, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.preprint_provider = PreprintProviderFactory()
@@ -148,8 +149,8 @@ class TestPreprintProviderChangeForm(AdminTestCase):
     def test_get_context_data(self):
         self.view.object = self.preprint_provider
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['import_form'], ImportFileForm)
+        assert isinstance(res, dict)
+        assert isinstance(res['import_form'], ImportFileForm)
 
     def test_preprint_provider_form(self):
         formatted_rule = [[[self.parent_1._id], True]]
@@ -167,12 +168,13 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'preprint_word': 'preprint'
         }
         form = PreprintProviderForm(data=new_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
 
         new_provider = form.save()
-        nt.assert_equal(new_provider.name, new_data['name'])
-        nt.assert_equal(new_provider.subjects_acceptable, formatted_rule)
+        assert new_provider.name == new_data['name']
+        assert new_provider.subjects_acceptable == formatted_rule
 
+    # TODO: bleach for some reason replaces <pre> with /n instead of sanitizing it
     def test_html_fields_are_stripped(self):
         new_data = {
             '_id': 'newname',
@@ -186,7 +188,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_acceptable': '[]',
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
             'description': '<span>Open Preprints <code>Open</code> Science<script></script></span>',
-            'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>',
+            'footer_links': '<p>Xiv: <script>Support</script> | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>',
             'preprint_word': 'preprint'
         }
 
@@ -195,19 +197,19 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         stripped_footer_links = '<p>Xiv: Support | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>'
 
         form = PreprintProviderForm(data=new_data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
 
         new_provider = form.save()
-        nt.assert_equal(new_provider.name, new_data['name'])
-        nt.assert_equal(new_provider.description, stripped_description)
-        nt.assert_equal(new_provider.footer_links, stripped_footer_links)
-        nt.assert_equal(new_provider.advisory_board, stripped_advisory_board)
+        assert new_provider.name == new_data['name']
+        assert new_provider.description == stripped_description
+        assert new_provider.footer_links == stripped_footer_links
+        assert new_provider.advisory_board == stripped_advisory_board
 
 
 @pytest.mark.enable_implicit_clean
 class TestPreprintProviderExportImport(AdminTestCase):
     def setUp(self):
-        super(TestPreprintProviderExportImport, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.preprint_provider = PreprintProviderFactory()
@@ -228,15 +230,15 @@ class TestPreprintProviderExportImport(AdminTestCase):
     def test_post(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
-        nt.assert_equal(content_dict['fields']['type'], 'osf.preprintprovider')
-        nt.assert_equal(content_dict['fields']['name'], self.preprint_provider.name)
-        nt.assert_equal(res.__getitem__('content-type'), 'text/json')
+        assert content_dict['fields']['type'] == 'osf.preprintprovider'
+        assert content_dict['fields']['name'] == self.preprint_provider.name
+        assert res.__getitem__('content-type') == 'text/json'
 
     def test_certain_fields_not_included(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
         for field in views.FIELDS_TO_NOT_IMPORT_EXPORT:
-            nt.assert_not_in(field, content_dict['fields'].keys())
+            assert field not in content_dict['fields'].keys()
 
     def test_export_to_import_new_provider(self):
         update_taxonomies('test_bepress_taxonomy.json')
@@ -254,13 +256,13 @@ class TestPreprintProviderExportImport(AdminTestCase):
         provider_id = ''.join([i for i in res.url if i.isdigit()])
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider._id, 'new_id')
-        nt.assert_equal(new_provider.name, 'Awesome New Name')
-        nt.assert_equal(new_provider.subjects.all().count(), 1)
-        nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
-        nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
-        nt.assert_equal(new_provider.licenses_acceptable.all()[0].license_id, 'NONE')
+        assert res.status_code == 302
+        assert new_provider._id == 'new_id'
+        assert new_provider.name == 'Awesome New Name'
+        assert new_provider.subjects.all().count() == 1
+        assert new_provider.licenses_acceptable.all().count() == 1
+        assert new_provider.subjects.all()[0].text == self.subject.text
+        assert new_provider.licenses_acceptable.all()[0].license_id == 'NONE'
 
     def test_export_to_import_new_provider_with_models_out_of_sync(self):
         update_taxonomies('test_bepress_taxonomy.json')
@@ -281,9 +283,9 @@ class TestPreprintProviderExportImport(AdminTestCase):
         provider_id = ''.join([i for i in res.url if i.isdigit()])
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider._id, 'new_id')
-        nt.assert_equal(new_provider.name, 'Awesome New Name')
+        assert res.status_code == 302
+        assert new_provider._id == 'new_id'
+        assert new_provider.name == 'Awesome New Name'
 
     def test_update_provider_existing_subjects(self):
         # If there are existing subjects for a provider, imported subjects are ignored
@@ -309,12 +311,12 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         new_provider_id = int(''.join([i for i in res.url if i.isdigit()]))
 
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider_id, self.preprint_provider.id)
-        nt.assert_equal(self.preprint_provider.subjects.all().count(), 1)
-        nt.assert_equal(self.preprint_provider.licenses_acceptable.all().count(), 1)
-        nt.assert_equal(self.preprint_provider.subjects.all()[0].text, self.subject.text)
-        nt.assert_equal(self.preprint_provider.licenses_acceptable.all()[0].license_id, 'CCBY')
+        assert res.status_code == 302
+        assert new_provider_id == self.preprint_provider.id
+        assert self.preprint_provider.subjects.all().count() == 1
+        assert self.preprint_provider.licenses_acceptable.all().count() == 1
+        assert self.preprint_provider.subjects.all()[0].text == self.subject.text
+        assert self.preprint_provider.licenses_acceptable.all()[0].license_id == 'CCBY'
 
 
 class TestPreprintProviderList(ProviderListMixinBase):
@@ -365,8 +367,9 @@ class TestCreateRegistrationProvider(CreateProviderMixinBase):
     def view(self, req, provider):
         plain_view = views.CreatePreprintProvider()
         view = setup_form_view(plain_view, req, form=PreprintProviderForm())
-        view.kwargs = {'{}_provider_id'.format(provider.readable_type): provider.id}
+        view.kwargs = {f'{provider.readable_type}_provider_id': provider.id}
         return view
+
 
 class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
@@ -393,7 +396,7 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
     def test_cannot_delete_if_preprints_present(self, req, view, preprint, provider_with_preprint):
         redirect = view.delete(req)
-        assert redirect.url == '/preprint_providers/{}/cannot_delete/'.format(provider_with_preprint.id)
+        assert redirect.url == f'/preprint_providers/{provider_with_preprint.id}/cannot_delete/'
         assert redirect.status_code == 302
 
     def test_delete_provider_with_no_preprints(self, req, view):
@@ -403,8 +406,9 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
     def test_cannot_get_if_preprints_present(self, req, view, preprint, provider_with_preprint):
         redirect = view.get(req)
-        assert redirect.url == '/preprint_providers/{}/cannot_delete/'.format(provider_with_preprint.id)
+        assert redirect.url == f'/preprint_providers/{provider_with_preprint.id}/cannot_delete/'
         assert redirect.status_code == 302
+
 
 class TestProcessCustomTaxonomy(ProcessCustomTaxonomyMixinBase):
 

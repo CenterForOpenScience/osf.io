@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from addons.wiki.tests.factories import WikiFactory
@@ -25,7 +24,7 @@ def user():
 
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
-class NodeCommentsListMixin(object):
+class NodeCommentsListMixin:
 
     @pytest.fixture()
     def user_non_contrib(self):
@@ -289,7 +288,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
 
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
-class NodeCommentsCreateMixin(object):
+class NodeCommentsCreateMixin:
 
     @pytest.fixture()
     def user_read_contrib(self):
@@ -1334,7 +1333,7 @@ class TestCommentFiltering:
 
     @pytest.fixture()
     def url_base(self, project):
-        return '/{}nodes/{}/comments/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/comments/'
 
     @pytest.fixture()
     def date_created_formatted(self, comment):
@@ -1372,49 +1371,49 @@ class TestCommentFiltering:
 
     #   test_filtering_comments_created_before_date
         url = url_base + \
-            '?filter[date_created][lt]={}'.format(date_created_formatted)
+            f'?filter[date_created][lt]={date_created_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 0
 
     #   test_filtering_comments_created_on_date
         url = url_base + \
-            '?filter[date_created][eq]={}'.format(date_created_formatted)
+            f'?filter[date_created][eq]={date_created_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     #   test_filtering_comments_created_on_or_before_date
         url = url_base + \
-            '?filter[date_created][lte]={}'.format(date_created_formatted)
+            f'?filter[date_created][lte]={date_created_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     #   test_filtering_comments_created_after_date
         url = url_base + \
-            '?filter[date_created][gt]={}'.format(date_created_formatted)
+            f'?filter[date_created][gt]={date_created_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     #   test_filtering_comments_created_on_or_after_date
         url = url_base + \
-            '?filter[date_created][gte]={}'.format(date_created_formatted)
+            f'?filter[date_created][gte]={date_created_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 2
 
     #   test_filtering_comments_modified_before_date
         url = url_base + \
-            '?filter[date_modified][lt]={}'.format(date_modified_formatted)
+            f'?filter[date_modified][lt]={date_modified_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     #   test_filtering_comments_modified_on_date
         url = url_base + \
-            '?filter[date_modified][eq]={}'.format(date_modified_formatted)
+            f'?filter[date_modified][eq]={date_modified_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     #   test_filtering_comments_modified_after_date
         url = url_base + \
-            '?filter[date_modified][gt]={}'.format(date_modified_formatted)
+            f'?filter[date_modified][gt]={date_modified_formatted}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 0
 
@@ -1431,7 +1430,7 @@ class TestCommentFiltering:
         assert len(res.json['data']) == 0
 
     #   test_filtering_by_target_no_results_with_related_counts
-        url = '{}?filter[target]=fakeid&related_counts=True'.format(url_base)
+        url = f'{url_base}?filter[target]=fakeid&related_counts=True'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 0
 

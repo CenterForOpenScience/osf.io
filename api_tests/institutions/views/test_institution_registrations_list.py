@@ -1,5 +1,3 @@
-from nose.tools import *  # noqa:
-
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory,
@@ -16,7 +14,7 @@ from osf.models import Node
 
 class TestInstitutionRegistrationList(ApiTestCase):
     def setUp(self):
-        super(TestInstitutionRegistrationList, self).setUp()
+        super().setUp()
         self.institution = InstitutionFactory()
         self.registration1 = RegistrationFactory(is_public=True)
         self.registration1.affiliated_institutions.add(self.institution)
@@ -33,54 +31,54 @@ class TestInstitutionRegistrationList(ApiTestCase):
         self.registration3.affiliated_institutions.add(self.institution)
         self.registration3.save()
 
-        self.institution_node_url = '/{0}institutions/{1}/registrations/'.format(
+        self.institution_node_url = '/{}institutions/{}/registrations/'.format(
             API_BASE, self.institution._id)
 
     def test_return_all_public_nodes(self):
         res = self.app.get(self.institution_node_url)
 
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_in(self.registration1._id, ids)
-        assert_not_in(self.registration2._id, ids)
-        assert_not_in(self.registration3._id, ids)
+        assert self.registration1._id in ids
+        assert self.registration2._id not in ids
+        assert self.registration3._id not in ids
 
     def test_does_not_return_private_nodes_with_auth(self):
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
 
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_in(self.registration1._id, ids)
-        assert_not_in(self.registration2._id, ids)
-        assert_not_in(self.registration3._id, ids)
+        assert self.registration1._id in ids
+        assert self.registration2._id not in ids
+        assert self.registration3._id not in ids
 
     def test_doesnt_return_retractions_without_auth(self):
         self.registration2.is_public = True
         self.registration2.save()
         WithdrawnRegistrationFactory(registration=self.registration2, user=self.user1)
-        assert_true(self.registration2.is_retracted)
+        assert self.registration2.is_retracted
 
         res = self.app.get(self.institution_node_url)
 
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_not_in(self.registration2._id, ids)
+        assert self.registration2._id not in ids
 
     def test_doesnt_return_retractions_with_auth(self):
         WithdrawnRegistrationFactory(
             registration=self.registration2, user=self.user1)
 
-        assert_true(self.registration2.is_retracted)
+        assert self.registration2.is_retracted
 
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
 
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_not_in(self.registration2._id, ids)
+        assert self.registration2._id not in ids
 
     def test_total_biographic_contributor_in_institution_registration(self):
         user3 = AuthUserFactory()
@@ -90,17 +88,12 @@ class TestInstitutionRegistrationList(ApiTestCase):
         registration3.add_contributor(
             user3, auth=Auth(self.user1), visible=False)
         registration3.save()
-        registration3_url = '/{0}registrations/{1}/?embed=contributors'.format(
+        registration3_url = '/{}registrations/{}/?embed=contributors'.format(
             API_BASE, registration3._id)
 
         res = self.app.get(registration3_url)
-        assert_true(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
-        )
-        assert_equal(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'],
-            2
-        )
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
+        assert res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'] == 2
 
 
 class TestRegistrationListFiltering(
@@ -112,7 +105,7 @@ class TestRegistrationListFiltering(
         self.url = '/{}institutions/{}/registrations/?version=2.2&'.format(
             API_BASE, self.institution._id)
 
-        super(TestRegistrationListFiltering, self).setUp()
+        super().setUp()
 
         A_children = [
             child for child in Node.objects.get_children(

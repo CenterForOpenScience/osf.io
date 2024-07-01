@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import permissions
 
 from api.base.utils import get_user_auth
@@ -8,7 +7,7 @@ from osf.models import AbstractNode, Comment
 class CanCommentOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, Comment)), 'obj must be a Node or Comment, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, Comment)), f'obj must be a Node or Comment, got {obj}'
         auth = get_user_auth(request)
         if isinstance(obj, Comment):
             node = obj.node
@@ -24,7 +23,7 @@ class CanCommentOrPublic(permissions.BasePermission):
 class CommentDetailPermissions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, Comment), 'obj must be a Comment, got {}'.format(obj)
+        assert isinstance(obj, Comment), f'obj must be a Comment, got {obj}'
         auth = get_user_auth(request)
         comment = obj
         node = obj.node
@@ -40,7 +39,7 @@ class CommentReportsPermissions(permissions.BasePermission):
        can access the comment reports endpoint."""
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Comment, CommentReport)), 'obj must be a Comment or Comment Report, got {}'.format(obj)
+        assert isinstance(obj, (Comment, CommentReport)), f'obj must be a Comment or Comment Report, got {obj}'
         auth = get_user_auth(request)
         if isinstance(obj, Comment):
             node = obj.node

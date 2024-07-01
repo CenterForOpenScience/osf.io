@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from dataverse import Connection, Dataverse, Dataset, DataverseFile
 
@@ -14,7 +14,7 @@ class DataverseAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     Provider = DataverseProvider
 
     def set_node_settings(self, settings):
-        super(DataverseAddonTestCase, self).set_node_settings(settings)
+        super().set_node_settings(settings)
         settings.dataverse_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
         settings.dataset_doi = 'doi:12.3456/DVN/00001'
@@ -85,7 +85,7 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     type(mock_dataverse).title = mock.PropertyMock(return_value=title)
     type(mock_dataverse).is_published = mock.PropertyMock(return_value=True)
     type(mock_dataverse).alias = mock.PropertyMock(
-        return_value='ALIAS{}'.format(title[-1])
+        return_value=f'ALIAS{title[-1]}'
     )
 
     mock_dataverse.get_datasets.return_value = [
@@ -110,9 +110,9 @@ def create_mock_dataverse(title='Example Dataverse 0'):
 def create_mock_dataset(id='DVN/12345'):
     mock_dataset = mock.create_autospec(Dataset)
 
-    mock_dataset.citation = 'Example Citation for {0}'.format(id)
-    mock_dataset.title = 'Example ({0})'.format(id)
-    mock_dataset.doi = 'doi:12.3456/{0}'.format(id)
+    mock_dataset.citation = f'Example Citation for {id}'
+    mock_dataset.title = f'Example ({id})'
+    mock_dataset.doi = f'doi:12.3456/{id}'
     mock_dataset.id = '18'
     mock_dataset.get_state.return_value = 'DRAFT'
 
@@ -150,16 +150,16 @@ def create_mock_published_file(id='54321'):
 
 mock_responses = {
     'contents': {
-        u'kind': u'item',
-        u'name': u'file.txt',
-        u'ext': u'.txt',
-        u'file_id': u'54321',
-        u'urls': {u'download': u'/project/xxxxx/dataverse/file/54321/download/',
-                 u'delete': u'/api/v1/project/xxxxx/dataverse/file/54321/',
-                 u'view': u'/project/xxxxx/dataverse/file/54321/'},
-        u'permissions': {u'edit': False, u'view': True},
-        u'addon': u'dataverse',
-        u'hasPublishedFiles': True,
-        u'state': 'published',
+        'kind': 'item',
+        'name': 'file.txt',
+        'ext': '.txt',
+        'file_id': '54321',
+        'urls': {'download': '/project/xxxxx/dataverse/file/54321/download/',
+                 'delete': '/api/v1/project/xxxxx/dataverse/file/54321/',
+                 'view': '/project/xxxxx/dataverse/file/54321/'},
+        'permissions': {'edit': False, 'view': True},
+        'addon': 'dataverse',
+        'hasPublishedFiles': True,
+        'state': 'published',
     }
 }

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Permissions
 READ = 'read'
 WRITE = 'write'

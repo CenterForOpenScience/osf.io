@@ -57,7 +57,7 @@ def upload_metrics_file(file_path, params):
     with open(file_path, 'rb') as metrics_file:
         requests.put(
             url=PLOS_METRICS_BASE_FOLDER,
-            headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
+            headers={'Accept': f'application/vnd.api+json;version={DEFAULT_API_VERSION}'},
             params=params,
             data=metrics_file,
             auth=bearer_token_auth(PLOS_METRICS_OSF_TOKEN),

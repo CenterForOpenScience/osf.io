@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import logging
 
 from django.apps import apps
@@ -75,7 +73,7 @@ class OsfStorageFileNode(BaseFileNode):
     @materialized_path.setter
     def materialized_path(self, val):
         # raise Exception('Cannot set materialized path on OSFStorage as it is computed.')
-        logger.warn('Cannot set materialized path on OSFStorage because it\'s computed.')
+        logger.warning('Cannot set materialized path on OSFStorage because it\'s computed.')
 
     @classmethod
     def get(cls, _id, target):
@@ -173,7 +171,7 @@ class OsfStorageFileNode(BaseFileNode):
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         self.update_region_from_latest_version(destination_parent)
-        return super(OsfStorageFileNode, self).move_under(destination_parent, name)
+        return super().move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
         """
@@ -213,7 +211,7 @@ class OsfStorageFileNode(BaseFileNode):
                             'download': '/project/{}/files/{}/{}/?action=download'.format(target._id,
                                                                                           self.provider,
                                                                                           self._id),
-                            'view': '/project/{}/files/{}/{}'.format(target._id, self.provider, self._id)},
+                            'view': f'/project/{target._id}/files/{self.provider}/{self._id}'},
                         'path': self.materialized_path
                     },
                     auth=Auth(user),
@@ -225,7 +223,7 @@ class OsfStorageFileNode(BaseFileNode):
     def save(self):
         self._path = ''
         self._materialized_path = ''
-        return super(OsfStorageFileNode, self).save()
+        return super().save()
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
@@ -304,10 +302,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @history.setter
     def history(self, value):
-        logger.warn('Tried to set history on OsfStorageFile/Folder')
+        logger.warning('Tried to set history on OsfStorageFile/Folder')
 
     def serialize(self, include_full=None, version=None):
-        ret = super(OsfStorageFile, self).serialize()
+        ret = super().serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
 
@@ -368,8 +366,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
             target = self.target
             params = {
                 'urls': {
-                    'download': '/{}/files/osfstorage/{}/?action=download'.format(target._id, self._id),
-                    'view': '/{}/files/osfstorage/{}/'.format(target._id, self._id)},
+                    'download': f'/{target._id}/files/osfstorage/{self._id}/?action=download',
+                    'view': f'/{target._id}/files/osfstorage/{self._id}/'},
                 'path': self.materialized_path,
                 'tag': tag,
             }
@@ -383,7 +381,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 auth=auth,
             )
         else:
-            raise NotImplementedError('Cannot add a tag log to a {}'.format(self.target.__class__.__name__))
+            raise NotImplementedError(f'Cannot add a tag log to a {self.target.__class__.__name__}')
 
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
@@ -433,7 +431,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         return ret
 
     def save(self, skip_search=False, *args, **kwargs):
-        ret = super(OsfStorageFile, self).save()
+        ret = super().save()
         if not skip_search:
             self.update_search()
         return ret
@@ -489,7 +487,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     def serialize(self, include_full=False, version=None):
         # Versions just for compatibility
-        ret = super(OsfStorageFolder, self).serialize()
+        ret = super().serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
         return ret
@@ -507,14 +505,14 @@ class Region(models.Model):
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
     def __unicode__(self):
-        return '{}'.format(self.name)
+        return f'{self.name}'
 
     def get_absolute_url(self):
-        return '{}regions/{}'.format(self.absolute_api_v2_url, self._id)
+        return f'{self.absolute_api_v2_url}regions/{self._id}'
 
     @property
     def absolute_api_v2_url(self):
-        path = '/regions/{}/'.format(self._id)
+        path = f'/regions/{self._id}/'
         return api_v2_url(path)
 
     class Meta:
@@ -639,7 +637,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.owner.add_log(
-            'osf_storage_{0}'.format(action),
+            f'osf_storage_{action}',
             auth=auth,
             params=params
         )

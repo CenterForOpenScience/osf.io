@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import time
 
 from flask import has_app_context
@@ -70,7 +68,7 @@ class Mendeley(CitationsOauthProvider):
         return APISession(partial, credentials)
 
     def _verify_client_validity(self):
-        #Check if Mendeley can be accessed
+        # Check if Mendeley can be accessed
         try:
             self._client.folders.list()
         except MendeleyApiException as error:
@@ -296,7 +294,7 @@ class NodeSettings(BaseCitationsNodeSettings):
                     serialized_folders.insert(0, serialized_root_folder)
                 return serialized_folders
             except MendeleyApiException as error:
-                sentry.log_exception()
+                sentry.log_exception(error)
                 sentry.log_message('Unexpected Mendeley Error when fetching folders.')
                 raise HTTPError(error.status)
         else:

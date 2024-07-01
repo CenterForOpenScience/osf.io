@@ -169,7 +169,7 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
 

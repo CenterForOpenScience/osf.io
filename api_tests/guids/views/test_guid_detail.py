@@ -30,7 +30,7 @@ class TestGuidDetail:
 
     def test_redirects(self, app, project, registration, user):
         # test_redirect_to_node_view
-        url = '/{}guids/{}/'.format(API_BASE, project._id)
+        url = f'/{API_BASE}guids/{project._id}/'
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}nodes/{}/'.format(
             API_DOMAIN, API_BASE, project._id)
@@ -38,7 +38,7 @@ class TestGuidDetail:
         assert res.location == redirect_url
 
         # test_redirect_to_registration_view
-        url = '/{}guids/{}/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}guids/{registration._id}/'
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}registrations/{}/'.format(
             API_DOMAIN, API_BASE, registration._id)
@@ -47,7 +47,7 @@ class TestGuidDetail:
 
         # test_redirect_to_collections_view
         collection = CollectionFactory()
-        url = '/{}guids/{}/'.format(API_BASE, collection._id)
+        url = f'/{API_BASE}guids/{collection._id}/'
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}collections/{}/'.format(
             API_DOMAIN, API_BASE, collection._id)
@@ -62,7 +62,7 @@ class TestGuidDetail:
         )
         test_file.save()
         guid = test_file.get_guid(create=True)
-        url = '/{}guids/{}/'.format(API_BASE, guid._id)
+        url = f'/{API_BASE}guids/{guid._id}/'
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}files/{}/'.format(
             API_DOMAIN, API_BASE, test_file._id)
@@ -71,7 +71,7 @@ class TestGuidDetail:
 
         # test_redirect_to_comment_view
         comment = CommentFactory()
-        url = '/{}guids/{}/'.format(API_BASE, comment._id)
+        url = f'/{API_BASE}guids/{comment._id}/'
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}comments/{}/'.format(
             API_DOMAIN, API_BASE, comment._id)
@@ -130,7 +130,7 @@ class TestGuidDetail:
         url = '{}{}guids/{}/?resolve=false'.format(
             API_DOMAIN, API_BASE, project._id)
         res = app.get(url, auth=user.auth)
-        related_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
+        related_url = f'{API_DOMAIN}{API_BASE}nodes/{project._id}/'
         related = res.json['data']['relationships']['referent']['links']['related']
         assert related['href'] == related_url
         assert related['meta']['type'] == 'nodes'
@@ -140,7 +140,7 @@ class TestGuidDetail:
         url = '{}{}guids/{}/?resolve=false&embed=referent'.format(
             API_DOMAIN, API_BASE, project._id)
         res = app.get(url, auth=user.auth)
-        related_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
+        related_url = f'{API_DOMAIN}{API_BASE}nodes/{project._id}/'
         related = res.json['data']['relationships']['referent']['links']['related']
         assert related['href'] == related_url
         assert related['meta']['type'] == 'nodes'
@@ -149,9 +149,9 @@ class TestGuidDetail:
         assert referent['type'] == 'nodes'
 
     def test_resolve_registration(self, app, registration, user):
-        url = '{}{}guids/{}/?resolve=false'.format(API_DOMAIN, API_BASE, registration._id)
+        url = f'{API_DOMAIN}{API_BASE}guids/{registration._id}/?resolve=false'
         res = app.get(url, auth=user.auth)
-        related_url = '{}{}registrations/{}/'.format(API_DOMAIN, API_BASE, registration._id)
+        related_url = f'{API_DOMAIN}{API_BASE}registrations/{registration._id}/'
         referent = res.json['data']['relationships']['referent']
 
         assert referent['links']['related']['href'] == related_url

@@ -81,7 +81,7 @@ class TestOsfGathering(TestCase):
             creator=cls.user__admin,
             is_public=True,
         )
-        cls.registration.registered_date = datetime.datetime(2121, 2, 1, tzinfo=datetime.timezone.utc)
+        cls.registration.registered_date = datetime.datetime(2121, 2, 1, tzinfo=datetime.UTC)
         cls.registration.save()
         # preprint:
         cls.preprint = factories.PreprintFactory(
@@ -199,7 +199,7 @@ class TestOsfGathering(TestCase):
         factories.EmbargoFactory(
             target_item=self.registration,
             user=self.user__admin,
-            end_date=datetime.datetime(1973, 7, 3, tzinfo=datetime.timezone.utc),
+            end_date=datetime.datetime(1973, 7, 3, tzinfo=datetime.UTC),
         )
         assert_triples(osf_gathering.gather_available(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.available, Literal('1973-07-03')),
@@ -695,7 +695,7 @@ class TestOsfGathering(TestCase):
         # non-withdrawn
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), set())
         # withdrawn (but not via PreprintRequest)
-        self.preprint.date_withdrawn = datetime.datetime.now(tz=datetime.timezone.utc)
+        self.preprint.date_withdrawn = datetime.datetime.now(tz=datetime.UTC)
         self.preprint.withdrawal_justification = 'postprint unprint'
         _withdrawal_bnode = rdflib.BNode()
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
@@ -713,8 +713,8 @@ class TestOsfGathering(TestCase):
             request_type=workflows.RequestTypes.WITHDRAWAL.value,
             creator=self.user__admin,
             comment='request unprint',
-            created=datetime.datetime(2121, 2, 1, tzinfo=datetime.timezone.utc),
-            date_last_transitioned=datetime.datetime(2121, 2, 2, tzinfo=datetime.timezone.utc),
+            created=datetime.datetime(2121, 2, 1, tzinfo=datetime.UTC),
+            date_last_transitioned=datetime.datetime(2121, 2, 2, tzinfo=datetime.UTC),
         )
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
             (self.preprintfocus.iri, OSF.dateWithdrawn, Literal(str(self.preprint.date_withdrawn.date()))),

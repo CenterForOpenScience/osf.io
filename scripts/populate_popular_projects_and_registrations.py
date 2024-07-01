@@ -20,7 +20,7 @@ def update_node_links(designated_node, target_nodes, description):
     if len(target_nodes) == 0:
         logger.info('No target nodes specified - no node links will be added!')
     else:
-        logger.info('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
+        logger.info(f'Repopulating {designated_node._id} with latest {description} nodes.')
     user = designated_node.creator
     auth = Auth(user)
 
@@ -29,7 +29,7 @@ def update_node_links(designated_node, target_nodes, description):
 
     for node in target_nodes:
         designated_node.add_pointer(node, auth, save=True)
-        logger.info('Added node link {} to {}'.format(node, designated_node))
+        logger.info(f'Added node link {node} to {designated_node}')
 
 def main(dry_run=True):
     init_app(routes=False)
@@ -47,14 +47,14 @@ def main(dry_run=True):
     update_node_links(popular_links_registrations, popular_registrations, 'popular registrations')
     try:
         popular_links_node.save()
-        logger.info('Node links on {} updated.'.format(popular_links_node._id))
+        logger.info(f'Node links on {popular_links_node._id} updated.')
     except (KeyError, RuntimeError) as error:
         logger.error('Could not migrate popular nodes due to error')
         logger.exception(error)
 
     try:
         popular_links_registrations.save()
-        logger.info('Node links for registrations on {} updated.'.format(popular_links_registrations._id))
+        logger.info(f'Node links for registrations on {popular_links_registrations._id} updated.')
     except (KeyError, RuntimeError) as error:
         logger.error('Could not migrate popular nodes for registrations due to error')
         logger.exception(error)

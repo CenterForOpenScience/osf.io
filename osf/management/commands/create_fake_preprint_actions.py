@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import random
 import logging
@@ -18,7 +16,7 @@ class Command(BaseCommand):
     """Add fake Actions to every preprint that doesn't already have one"""
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             'user',
             type=str,

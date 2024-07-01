@@ -21,14 +21,14 @@ def migrate(registrations):
 
     count = 0
 
-    logger.info('Preparing to migrate {} registrations.'.format(registrations_count))
+    logger.info(f'Preparing to migrate {registrations_count} registrations.')
     for registration_id in registrations:
         count += 1
-        logger.info('{}/{} - {}'.format(count, registrations_count, registration_id))
+        logger.info(f'{count}/{registrations_count} - {registration_id}')
         registration = AbstractNode.load(registration_id)
         assert registration.type == 'osf.registration'
         update_share(registration)
-        logger.info('Registration {} was sent to SHARE.'.format(registration_id))
+        logger.info(f'Registration {registration_id} was sent to SHARE.')
 
 
 def main():

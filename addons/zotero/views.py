@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from flask import request
 
 from .provider import ZoteroCitationsProvider
@@ -47,7 +46,7 @@ class ZoteroViews(GenericCitationViews):
                     user_settings=auth.user.get_addon(addon_short_name),
                 ).serialized_node_settings
             }
-        _set_config.__name__ = '{0}_set_config'.format(addon_short_name)
+        _set_config.__name__ = f'{addon_short_name}_set_config'
         return _set_config
 
     def library_list(self):
@@ -63,7 +62,7 @@ class ZoteroViews(GenericCitationViews):
             return_count = is_truthy(request.args.get('return_count', False))
             append_personal = is_truthy(request.args.get('append_personal', True))
             return node_addon.get_folders(limit=limit, start=start, return_count=return_count, append_personal=append_personal)
-        _library_list.__name__ = '{0}_library_list'.format(addon_short_name)
+        _library_list.__name__ = f'{addon_short_name}_library_list'
         return _library_list
 
 zotero_views = ZoteroViews('zotero', ZoteroCitationsProvider)

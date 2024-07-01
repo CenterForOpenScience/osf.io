@@ -50,7 +50,7 @@ class MeetingSerializer(JSONAPISerializer):
 
     def format_submission_email(self, obj, submission_field):
         if obj.active:
-            return '{}-{}@osf.io'.format(obj.endpoint, obj.field_names.get(submission_field))
+            return f'{obj.endpoint}-{obj.field_names.get(submission_field)}@osf.io'
         return ''
 
     def get_type_one_submission_email(self, obj):

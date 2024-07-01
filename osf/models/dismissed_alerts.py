@@ -16,12 +16,12 @@ class DismissedAlert(BaseModel):
     location = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return '{}'.format(self._id)
+        return f'{self._id}'
 
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        path = '/alerts/{}/'.format(self._id)
+        path = f'/alerts/{self._id}/'
         return api_v2_url(path)
 
     # used by django and DRF

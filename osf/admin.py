@@ -1,5 +1,5 @@
 from django.contrib import admin, messages
-from django.conf.urls import url
+from django.urls import re_path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
@@ -27,7 +27,7 @@ class OSFUserAdmin(admin.ModelAdmin):
         """
         if db_field.name == 'groups':
             kwargs['queryset'] = Group.objects.exclude(Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_') | Q(name__startswith='collections_'))
-        return super(OSFUserAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_related(self, request, form, formsets, change):
         """
@@ -35,7 +35,7 @@ class OSFUserAdmin(admin.ModelAdmin):
         are removed.  Manually re-adds preprint/node groups after adding new groups in form.
         """
         groups_to_preserve = list(form.instance.groups.filter(Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_') | Q(name__startswith='collections_')))
-        super(OSFUserAdmin, self).save_related(request, form, formsets, change)
+        super().save_related(request, form, formsets, change)
         if 'groups' in form.cleaned_data:
             for group in groups_to_preserve:
                 form.instance.groups.add(group)
@@ -88,7 +88,7 @@ class NotableDomainAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         return [
-            url(
+            re_path(
                 r'^bulkadd/$',
                 self.admin_site.admin_view(self.bulk_add_view),
                 name='osf_notabledomain_bulkadd',

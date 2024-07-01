@@ -1,8 +1,10 @@
-import mock
+from unittest import mock
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from types import SimpleNamespace
 from urllib.parse import urlparse
+
+from flask import g
 
 from addons.wiki.tests.factories import WikiVersionFactory
 from osf.external.spam import tasks as spam_tasks
@@ -197,7 +199,7 @@ class TestNotableDomain:
                           f' iamNOTspam.org i-am-a-ham.io  https://stillNotspam.io'
         creator = getattr(obj, 'creator', None) or getattr(obj.node, 'creator')
         with mock.patch.object(spam_tasks.requests, 'head'):
-            request_context.g.current_session = {'auth_user_id': creator._id}
+            g.current_session = {'auth_user_id': creator._id}
             obj.save()
 
         assert NotableDomain.objects.filter(
@@ -260,7 +262,7 @@ class TestNotableDomain:
         project.save()
         wiki_version.content = '[EXTREME VIDEO] <b><a href="https://cos.io/JAkeEloit">WATCH VIDEO</a></b>'
 
-        request_context.g.current_session = {'auth_user_id': project.creator._id}
+        g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             wiki_version.save()
 
@@ -276,7 +278,7 @@ class TestNotableDomain:
         wiki_version.save()
 
         assert DomainReference.objects.count() == 0
-        request_context.g.current_session = {'auth_user_id': project.creator._id}
+        g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             project.set_privacy(permissions='public')
 
@@ -331,7 +333,7 @@ class TestNotableDomainReclassification:
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_one.reload()
@@ -349,12 +351,12 @@ class TestNotableDomainReclassification:
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_one.netloc, self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_one.netloc, self.spam_domain_two.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_two.netloc}
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_unknown_marked_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
@@ -369,7 +371,7 @@ class TestNotableDomainReclassification:
 
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
-        assert set(obj_three.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_three.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_three.reload()
@@ -387,7 +389,7 @@ class TestNotableDomainReclassification:
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_one.reload()
@@ -405,12 +407,12 @@ class TestNotableDomainReclassification:
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_one.netloc, self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_one.netloc, self.spam_domain_two.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_two.netloc}
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_ignored_makred_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
@@ -425,7 +427,7 @@ class TestNotableDomainReclassification:
 
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
-        assert set(obj_three.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_three.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_three.reload()
@@ -448,7 +450,7 @@ class TestNotableDomainReclassification:
         unknown_notable_domain.save()
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.unknown_domain.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.unknown_domain.netloc}
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_unknown_to_spam_unknown_only(self, factory, unknown_notable_domain, ignored_notable_domain):
@@ -466,7 +468,7 @@ class TestNotableDomainReclassification:
         unknown_notable_domain.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.unknown_domain.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.unknown_domain.netloc}
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_ignored_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
@@ -484,7 +486,7 @@ class TestNotableDomainReclassification:
         ignored_notable_domain.save()
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.ignored_domain.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.ignored_domain.netloc}
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_ignored_to_spam_ignored_only(self, factory, unknown_notable_domain, ignored_notable_domain):
@@ -502,4 +504,4 @@ class TestNotableDomainReclassification:
         ignored_notable_domain.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.ignored_domain.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.ignored_domain.netloc}

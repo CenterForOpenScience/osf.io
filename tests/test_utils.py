@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 import datetime
-import mock
+from unittest import mock
 import os
 import pytest
 import time
@@ -10,7 +9,6 @@ from django.dispatch import receiver
 
 
 from flask import Flask
-from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase, DbTestCase
@@ -38,34 +36,29 @@ from osf import features
 
 from kombu import Exchange
 
-try:
-    import magic  # noqa
-    LIBMAGIC_AVAILABLE = True
-except ImportError:
-    LIBMAGIC_AVAILABLE = False
-
 HERE = os.path.dirname(os.path.abspath(__file__))
+
 
 class TestTimeUtils(unittest.TestCase):
     def test_throttle_period_expired_no_timestamp(self):
         is_expired = throttle_period_expired(timestamp=None, throttle=30)
-        assert_true(is_expired)
+        assert is_expired
 
     def test_throttle_period_expired_using_datetime(self):
         timestamp = timezone.now()
         is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
-        assert_false(is_expired)
+        assert not is_expired
 
         is_expired = throttle_period_expired(timestamp=(timestamp - datetime.timedelta(seconds=31)),  throttle=30)
-        assert_true(is_expired)
+        assert is_expired
 
     def test_throttle_period_expired_using_timestamp_in_seconds(self):
         timestamp = int(time.time())
         is_expired = throttle_period_expired(timestamp=(timestamp + 29), throttle=30)
-        assert_false(is_expired)
+        assert not is_expired
 
         is_expired = throttle_period_expired(timestamp=(timestamp - 31), throttle=30)
-        assert_true(is_expired)
+        assert is_expired
 
 class TestUrlForHelpers(unittest.TestCase):
 
@@ -107,13 +100,13 @@ class TestUrlForHelpers(unittest.TestCase):
         full_url = api_v2_url('/nodes/abcd3/contributors/',
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
-        assert_equal(full_url, 'http://localhost:8000/v2/nodes/abcd3/contributors/')
+        assert full_url == 'http://localhost:8000/v2/nodes/abcd3/contributors/'
 
         # Handles URL the same way whether or not user enters a leading slash
         full_url = api_v2_url('nodes/abcd3/contributors/',
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
-        assert_equal(full_url, 'http://localhost:8000/v2/nodes/abcd3/contributors/')
+        assert full_url == 'http://localhost:8000/v2/nodes/abcd3/contributors/'
 
     def test_api_v2_url_with_params(self):
         """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
@@ -122,14 +115,14 @@ class TestUrlForHelpers(unittest.TestCase):
                               base_route='https://api.osf.io/',
                               base_prefix='v2/',
                               page_size=10)
-        assert_equal(full_url, 'https://api.osf.io/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10')
+        assert full_url == 'https://api.osf.io/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10'
 
     def test_api_v2_url_base_path(self):
         """Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end"""
         full_url = api_v2_url('',
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
-        assert_equal(full_url, 'http://localhost:8000/v2/')
+        assert full_url == 'http://localhost:8000/v2/'
 
     def test_web_url_for(self):
         with self.app.test_request_context():
@@ -138,64 +131,59 @@ class TestUrlForHelpers(unittest.TestCase):
     def test_web_url_for_guid(self):
         with self.app.test_request_context():
             # check /project/<pid>
-            assert_equal('/pid123/', web_url_for('dummy_guid_project_view', pid='pid123', _guid=True))
-            assert_equal('/project/pid123/', web_url_for('dummy_guid_project_view', pid='pid123', _guid=False))
-            assert_equal('/project/pid123/', web_url_for('dummy_guid_project_view', pid='pid123'))
+            assert '/pid123/' == web_url_for('dummy_guid_project_view', pid='pid123', _guid=True)
+            assert '/project/pid123/' == web_url_for('dummy_guid_project_view', pid='pid123', _guid=False)
+            assert '/project/pid123/' == web_url_for('dummy_guid_project_view', pid='pid123')
             # check /project/<pid>/node/<nid>
-            assert_equal('/nid321/', web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321', _guid=True))
-            assert_equal(
-                '/project/pid123/node/nid321/',
-                web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321', _guid=False))
-            assert_equal(
-                '/project/pid123/node/nid321/',
-                web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321'))
+            assert '/nid321/' == web_url_for('dummy_guid_project_view', pid='pid123',
+                                                                 nid='nid321', _guid=True)
+            assert '/project/pid123/node/nid321/' == web_url_for('dummy_guid_project_view', pid='pid123',
+                                                                 nid='nid321', _guid=False)
+            assert '/project/pid123/node/nid321/' == web_url_for('dummy_guid_project_view',
+                                                                 pid='pid123', nid='nid321')
             # check /profile/<pid>
-            assert_equal('/pro123/', web_url_for('dummy_guid_profile_view', pid='pro123', _guid=True))
-            assert_equal('/profile/pro123/', web_url_for('dummy_guid_profile_view', pid='pro123', _guid=False))
-            assert_equal('/profile/pro123/', web_url_for('dummy_guid_profile_view', pid='pro123'))
+            assert '/pro123/' == web_url_for('dummy_guid_profile_view', pid='pro123', _guid=True)
+            assert '/profile/pro123/' == web_url_for('dummy_guid_profile_view', pid='pro123', _guid=False)
+            assert '/profile/pro123/' == web_url_for('dummy_guid_profile_view', pid='pro123')
 
     def test_web_url_for_guid_regex_conditions(self):
         with self.app.test_request_context():
             # regex matches limit keys to a minimum of 5 alphanumeric characters.
             # check /project/<pid>
-            assert_not_equal('/123/', web_url_for('dummy_guid_project_view', pid='123', _guid=True))
-            assert_equal('/123456/', web_url_for('dummy_guid_project_view', pid='123456', _guid=True))
+            assert '/123/' != web_url_for('dummy_guid_project_view', pid='123', _guid=True)
+            assert '/123456/' == web_url_for('dummy_guid_project_view', pid='123456', _guid=True)
             # check /project/<pid>/node/<nid>
-            assert_not_equal('/321/', web_url_for('dummy_guid_project_view', pid='123', nid='321', _guid=True))
-            assert_equal('/654321/', web_url_for('dummy_guid_project_view', pid='123456', nid='654321', _guid=True))
+            assert '/321/' != web_url_for('dummy_guid_project_view', pid='123', nid='321', _guid=True)
+            assert '/654321/' == web_url_for('dummy_guid_project_view', pid='123456', nid='654321', _guid=True)
             # check /profile/<pid>
-            assert_not_equal('/123/', web_url_for('dummy_guid_profile_view', pid='123', _guid=True))
-            assert_equal('/123456/', web_url_for('dummy_guid_profile_view', pid='123456', _guid=True))
+            assert '/123/' != web_url_for('dummy_guid_profile_view', pid='123', _guid=True)
+            assert '/123456/' == web_url_for('dummy_guid_profile_view', pid='123456', _guid=True)
 
     def test_web_url_for_guid_case_sensitive(self):
         with self.app.test_request_context():
             # check /project/<pid>
-            assert_equal('/ABCdef/', web_url_for('dummy_guid_project_view', pid='ABCdef', _guid=True))
+            assert '/ABCdef/' == web_url_for('dummy_guid_project_view', pid='ABCdef', _guid=True)
             # check /project/<pid>/node/<nid>
-            assert_equal('/GHIjkl/', web_url_for('dummy_guid_project_view', pid='ABCdef', nid='GHIjkl', _guid=True))
+            assert '/GHIjkl/' == web_url_for('dummy_guid_project_view', pid='ABCdef', nid='GHIjkl', _guid=True)
             # check /profile/<pid>
-            assert_equal('/MNOpqr/', web_url_for('dummy_guid_profile_view', pid='MNOpqr', _guid=True))
+            assert '/MNOpqr/' == web_url_for('dummy_guid_profile_view', pid='MNOpqr', _guid=True)
 
     def test_web_url_for_guid_invalid_unicode(self):
         with self.app.test_request_context():
             # unicode id's are not supported when encoding guid url's.
             # check /project/<pid>
-            assert_not_equal('/ø∆≤µ©/', web_url_for('dummy_guid_project_view', pid='ø∆≤µ©', _guid=True))
-            assert_equal(
-                '/project/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/',
-                web_url_for('dummy_guid_project_view', pid='øˆ∆≤µˆ', _guid=True))
+            assert '/ø∆≤µ©/' != web_url_for('dummy_guid_project_view', pid='ø∆≤µ©', _guid=True)
+            assert '/project/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/' == web_url_for(
+                'dummy_guid_project_view', pid='øˆ∆≤µˆ', _guid=True)
             # check /project/<pid>/node/<nid>
-            assert_not_equal(
-                '/ø∆≤µ©/',
-                web_url_for('dummy_guid_project_view', pid='ø∆≤µ©', nid='©µ≤∆ø', _guid=True))
-            assert_equal(
-                '/project/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/node/%C2%A9%C2%B5%E2%89%A4%E2%88%86%C3%B8/',
-                web_url_for('dummy_guid_project_view', pid='øˆ∆≤µˆ', nid='©µ≤∆ø', _guid=True))
+            assert '/ø∆≤µ©/' != web_url_for('dummy_guid_project_view', pid='ø∆≤µ©', nid='©µ≤∆ø', _guid=True)
+            assert ('/project/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/node/'
+                    '%C2%A9%C2%B5%E2%89%A4%E2%88%86%C3%B8/') == web_url_for('dummy_guid_project_view',
+                                                                            pid='øˆ∆≤µˆ', nid='©µ≤∆ø', _guid=True)
             # check /profile/<pid>
-            assert_not_equal('/ø∆≤µ©/', web_url_for('dummy_guid_profile_view', pid='ø∆≤µ©', _guid=True))
-            assert_equal(
-                '/profile/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/',
-                web_url_for('dummy_guid_profile_view', pid='øˆ∆≤µˆ', _guid=True))
+            assert '/ø∆≤µ©/' != web_url_for('dummy_guid_profile_view', pid='ø∆≤µ©', _guid=True)
+            assert '/profile/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/' == web_url_for(''
+                                                     'dummy_guid_profile_view', pid='øˆ∆≤µˆ', _guid=True)
 
     def test_api_url_for_with_multiple_urls(self):
         with self.app.test_request_context():
@@ -209,43 +197,40 @@ class TestUrlForHelpers(unittest.TestCase):
 
     def test_is_json_request(self):
         with self.app.test_request_context(content_type='application/json'):
-            assert_true(is_json_request())
+            assert is_json_request()
         with self.app.test_request_context(content_type=None):
-            assert_false(is_json_request())
+            assert not is_json_request()
         with self.app.test_request_context(content_type='application/json;charset=UTF-8'):
-            assert_true(is_json_request())
+            assert is_json_request()
 
     def test_waterbutler_api_url_for(self):
         with self.app.test_request_context():
             url = waterbutler_api_url_for('fakeid', 'provider', '/path', base_url=settings.WATERBUTLER_URL)
-        assert_in('/fakeid/', url)
-        assert_in('/path', url)
-        assert_in('/providers/provider/', url)
-        assert_in(settings.WATERBUTLER_URL, url)
+        assert '/fakeid/' in url
+        assert '/path' in url
+        assert '/providers/provider/' in url
+        assert settings.WATERBUTLER_URL in url
 
         with self.app.test_request_context():
             url = waterbutler_api_url_for('fakeid', 'provider', '/path')
-        assert_in(settings.WATERBUTLER_URL, url)
+        assert settings.WATERBUTLER_URL in url
 
     def test_waterbutler_api_url_for_internal(self):
         settings.WATERBUTLER_INTERNAL_URL = 'http://1.2.3.4:7777'
         with self.app.test_request_context():
             url = waterbutler_api_url_for('fakeid', 'provider', '/path', _internal=True, base_url=settings.WATERBUTLER_INTERNAL_URL)
 
-        assert_not_in(settings.WATERBUTLER_URL, url)
-        assert_in(settings.WATERBUTLER_INTERNAL_URL, url)
-        assert_in('/fakeid/', url)
-        assert_in('/path', url)
-        assert_in('/providers/provider', url)
+        assert settings.WATERBUTLER_URL not in url
+        assert settings.WATERBUTLER_INTERNAL_URL in url
+        assert '/fakeid/' in url
+        assert '/path' in url
+        assert '/providers/provider' in url
 
 
 class TestFrameworkUtils(unittest.TestCase):
 
     def test_leading_underscores(self):
-        assert_equal(
-            '__init__.py',
-            secure_filename('__init__.py')
-        )
+        assert '__init__.py' == secure_filename('__init__.py')
 
     def test_werkzeug_cases(self):
         """Test that Werkzeug's tests still pass for our wrapped version"""
@@ -253,20 +238,11 @@ class TestFrameworkUtils(unittest.TestCase):
         # Copied from Werkzeug
         # BSD licensed - original at github.com/mitsuhiko/werkzeug,
         #                /tests/test_utils.py, line 282, commit 811b438
-        assert_equal(
-            'My_cool_movie.mov',
-            secure_filename('My cool movie.mov')
-        )
+        assert 'My_cool_movie.mov' == secure_filename('My cool movie.mov')
 
-        assert_equal(
-            'etc_passwd',
-            secure_filename('../../../etc/passwd')
-        )
+        assert 'etc_passwd' == secure_filename('../../../etc/passwd')
 
-        assert_equal(
-            'i_contain_cool_umlauts.txt',
-            secure_filename(u'i contain cool \xfcml\xe4uts.txt')
-        )
+        assert 'i_contain_cool_umlauts.txt' == secure_filename('i contain cool \xfcml\xe4uts.txt')
 
 
 class TestWebpackFilter(unittest.TestCase):
@@ -276,25 +252,29 @@ class TestWebpackFilter(unittest.TestCase):
 
     def test_resolve_asset(self):
         asset = paths.webpack_asset('assets.js', self.asset_paths, debug=False)
-        assert_equal(asset, '/static/public/js/assets.07123e.js')
+        assert asset == '/static/public/js/assets.07123e.js'
 
     def test_resolve_asset_not_found_and_not_in_debug_mode(self):
-        with assert_raises(KeyError):
+        with pytest.raises(KeyError):
             paths.webpack_asset('bundle.js', self.asset_paths, debug=False)
+
+
+def r_assert(s):
+    assert s.upper() == s, f'{s.upper()} is not equal to {s}'
 
 
 class TestWebsiteUtils(unittest.TestCase):
 
     def test_conjunct(self):
         words = []
-        assert_equal(conjunct(words), '')
+        assert conjunct(words) == ''
         words = ['a']
-        assert_equal(conjunct(words), 'a')
+        assert conjunct(words) == 'a'
         words = ['a', 'b']
-        assert_equal(conjunct(words), 'a and b')
+        assert conjunct(words) == 'a and b'
         words = ['a', 'b', 'c']
-        assert_equal(conjunct(words), 'a, b, and c')
-        assert_equal(conjunct(words, conj='or'), 'a, b, or c')
+        assert conjunct(words) == 'a, b, and c'
+        assert conjunct(words, conj='or') == 'a, b, or c'
 
     def test_rapply(self):
         inputs = {
@@ -306,12 +286,11 @@ class TestWebsiteUtils(unittest.TestCase):
             'bat': ['man']
         }
         outputs = rapply(inputs, str.upper)
-        assert_equal(outputs['foo'], 'bar'.upper())
-        assert_equal(outputs['baz']['boom'], ['kapow'.upper()])
-        assert_equal(outputs['baz']['bang'], 'bam'.upper())
-        assert_equal(outputs['bat'], ['man'.upper()])
+        assert outputs['foo'] == 'bar'.upper()
+        assert outputs['baz']['boom'] == ['kapow'.upper()]
+        assert outputs['baz']['bang'] == 'bam'.upper()
+        assert outputs['bat'] == ['man'.upper()]
 
-        r_assert = lambda s: assert_equal(s.upper(), s)
         rapply(outputs, r_assert)
 
     def test_rapply_on_list(self):
@@ -319,31 +298,31 @@ class TestWebsiteUtils(unittest.TestCase):
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:
-            assert_equal(outputs[i], i + 1)
+            assert outputs[i] == i + 1
 
     def test_rapply_on_tuple(self):
         inputs = tuple(i for i in range(5))
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:
-            assert_equal(outputs[i], i + 1)
-        assert_equal(type(outputs), tuple)
+            assert outputs[i] == i + 1
+        assert type(outputs) == tuple
 
     def test_rapply_on_set(self):
-        inputs = set(i for i in range(5))
+        inputs = {i for i in range(5)}
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:
-            assert_in(i + 1, outputs)
-        assert_true(isinstance(outputs, set))
+            assert i + 1 in outputs
+        assert isinstance(outputs, set)
 
     def test_rapply_on_str(self):
         input = 'bob'
         convert = lambda s: s.upper()
         outputs = rapply(input, convert)
 
-        assert_equal('BOB', outputs)
-        assert_true(isinstance(outputs, str))
+        assert 'BOB' == outputs
+        assert isinstance(outputs, str)
 
     def test_rapply_preserves_args_and_kwargs(self):
         def zero_if_not_check(item, check, checkFn=lambda n: n):
@@ -352,9 +331,9 @@ class TestWebsiteUtils(unittest.TestCase):
             return 0
         inputs = list(range(5))
         outputs = rapply(inputs, zero_if_not_check, True, checkFn=lambda n: n % 2)
-        assert_equal(outputs, [0, 1, 0, 3, 0])
+        assert outputs == [0, 1, 0, 3, 0]
         outputs = rapply(inputs, zero_if_not_check, False, checkFn=lambda n: n % 2)
-        assert_equal(outputs, [0, 0, 0, 0, 0])
+        assert outputs == [0, 0, 0, 0, 0]
 
 class TestProjectUtils(OsfTestCase):
 
@@ -372,9 +351,9 @@ class TestProjectUtils(OsfTestCase):
             tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations()]
-        assert_equal(len(regs), 5)
+        assert len(regs) == 5
         for i in range(4):
-            assert_true(regs[i].registered_date > regs[i + 1].registered_date)
+            assert regs[i].registered_date > regs[i + 1].registered_date
         for i in range(5):
             reg = RegistrationFactory()
             reg.is_public = True
@@ -382,7 +361,7 @@ class TestProjectUtils(OsfTestCase):
             tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations(7)]
-        assert_equal(len(regs), 7)
+        assert len(regs) == 7
 
 
 class TestProfileUtils(DbTestCase):
@@ -392,11 +371,11 @@ class TestProfileUtils(DbTestCase):
 
     def test_get_other_user_profile_image_default_size(self):
         profile_image = profile_utils.get_profile_image_url(self.user)
-        assert_true(profile_image)
+        assert profile_image
 
     def test_get_other_user_profile_image(self):
         profile_image = profile_utils.get_profile_image_url(self.user, size=25)
-        assert_true(profile_image)
+        assert profile_image
 
 
 class TestSignalUtils(unittest.TestCase):
@@ -412,7 +391,7 @@ class TestSignalUtils(unittest.TestCase):
     def test_signal(self):
         self.signal_.connect(self.listener)
         self.signal_.send()
-        assert_true(self.mock_listener.called)
+        assert self.mock_listener.called
 
 
 class TestUserUtils(unittest.TestCase):
@@ -424,7 +403,7 @@ class TestUserUtils(unittest.TestCase):
         csl_given_name = generate_csl_given_name(
             given_name=given_name, middle_names=middle_names, suffix=suffix
         )
-        assert_equal(csl_given_name, 'Cause A, Jr.')
+        assert csl_given_name == 'Cause A, Jr.'
 
     def test_generate_csl_given_name_with_given_middle(self):
         given_name = 'Cause'
@@ -432,7 +411,7 @@ class TestUserUtils(unittest.TestCase):
         csl_given_name = generate_csl_given_name(
             given_name=given_name, middle_names=middle_names
         )
-        assert_equal(csl_given_name, 'Cause A')
+        assert csl_given_name == 'Cause A'
 
     def test_generate_csl_given_name_with_given_suffix(self):
         given_name = 'Cause'
@@ -440,12 +419,12 @@ class TestUserUtils(unittest.TestCase):
         csl_given_name = generate_csl_given_name(
             given_name=given_name, suffix=suffix
         )
-        assert_equal(csl_given_name, 'Cause, Jr.')
+        assert csl_given_name == 'Cause, Jr.'
 
     def test_generate_csl_given_name_with_given(self):
         given_name = 'Cause'
         csl_given_name = generate_csl_given_name(given_name)
-        assert_equal(csl_given_name, 'Cause')
+        assert csl_given_name == 'Cause'
 
 
 @pytest.mark.django_db

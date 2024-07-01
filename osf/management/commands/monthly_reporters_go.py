@@ -36,7 +36,7 @@ def monthly_reporters_go(report_year=None, report_month=None):
         except Exception as e:
             errors[reporter_class.__name__] = str(e)
             logger.exception(e)
-            sentry.log_exception()
+            sentry.log_exception(e)
             # continue with the next reporter
     return errors
 

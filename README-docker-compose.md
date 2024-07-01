@@ -339,7 +339,7 @@ resetting docker. To back up your database, follow the following sequence of com
 
 1. Install Postgres on your local machine, outside of docker. (eg `brew install postgres`) To avoid migrations, the
   version you install must match the one used by the docker container.
-  ([as of this writing](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L53), Postgres 9.6)
+  ([as of this writing](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L53), Postgres 15)
 2. Start postgres locally. This must be on a different port than the one used by [docker postgres](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L61).
   Eg, `pg_ctl -D /usr/local/var/postgres start -o "-p 5433"`
 3. Verify that the postgres docker container is running (`docker-compose up -d postgres`)
@@ -350,8 +350,26 @@ resetting docker. To back up your database, follow the following sequence of com
 
 (shorthand: `pg_dump -U postgres -Z 9 -C --c -Fd --j 4 -h localhost --f ~/Desktop/osf_backup osf`)
 
+### Migration of Postgres from 9.6 to 15 version
+1. Dumping the database from the existing postgres 9.6 container.
+```bash
+  docker exec -i osfio-postgres-1 /bin/bash -c "pg_dump --username postgres osf" > ./dump.sql
+```
+2. Delete a persistent storage volume:
+  **WARNING: All postgres data will be destroyed.**
+  - `$ docker-compose stop -t 0 postgres`
+  - `$ docker-compose rm postgres`
+  - `$ docker volume rm osfio_postgres_data_vol`
+3. Starting a new postgres container.
+```bash
+docker-compose up -d postgres
+```
+4.  Restoring the database from the dump file into the new postgres container.
+```bash
+docker exec -i osfio-postgres-1 /bin/bash -c "psql --username postgres osf" < ./dump.sql
+```
 
-#### Restoring your database
+### Restoring your database
 To restore a local copy of your database for use inside docker, make sure to start both local and dockerized postgres
 (as shown above). For best results, start from a clean postgres container with no other data. (see below for
 instructions on dropping postgres data volumes)

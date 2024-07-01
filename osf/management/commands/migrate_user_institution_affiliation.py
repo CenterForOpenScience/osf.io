@@ -13,7 +13,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',
@@ -76,7 +76,7 @@ def migrate_user_institution_affiliation(dry_run=True):
             else:
                 logger.warning(f'\tDry Run: Affiliation not migrated for {user._id} @ {institution._id}!')
         if user_count_per_institution == 0:
-            logger.warning(f'No eligible user found')
+            logger.warning('No eligible user found')
         else:
             logger.info(f'Finished migrating affiliation for {user_count_per_institution} users '
                         f'@ <{institution.name}>, including {skipped_user_count_per_institution} skipped users')

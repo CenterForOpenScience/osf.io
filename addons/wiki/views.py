@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from rest_framework import status as http_status
 import logging
 
@@ -392,7 +390,7 @@ def project_wiki_edit(wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_compare(wname, wver, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?view&compare={0}&menu'.format(wver))
+    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + f'?view&compare={wver}&menu')
 
 
 @must_not_be_registration

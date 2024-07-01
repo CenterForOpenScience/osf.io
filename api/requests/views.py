@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound
@@ -15,7 +13,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Node, NodeRequest, PreprintRequest, Preprint
 
 
-class RequestMixin(object):
+class RequestMixin:
     serializer_class = None
     request_class = None
     request_display_name = None

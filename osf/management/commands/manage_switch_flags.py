@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import yaml
 
@@ -22,7 +21,7 @@ def manage_waffle(delete_waffle=False):
             results = Flag.objects.all().delete()
             logger.info(f'Deleting flags: {results}')
 
-        with open(settings.WAFFLE_VALUES_YAML, 'r') as stream:
+        with open(settings.WAFFLE_VALUES_YAML) as stream:
             features = yaml.safe_load(stream)
         for flag in features['flags']:
             flag.pop('flag_name')
@@ -37,7 +36,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '-delete',
             action='store_true',

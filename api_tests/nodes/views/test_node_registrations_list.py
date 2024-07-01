@@ -1,5 +1,5 @@
 import pytest
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -12,7 +12,7 @@ from osf.utils.permissions import READ
 
 
 def node_url_for(n_id):
-    return '/{}nodes/{}/'.format(API_BASE, n_id)
+    return f'/{API_BASE}nodes/{n_id}/'
 
 
 @pytest.fixture()
@@ -66,7 +66,7 @@ class TestNodeRegistrationList:
         assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(
-            url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
+            url).path == f'/{API_BASE}nodes/{public_project._id}/'
         assert res.json['data'][0]['type'] == 'registrations'
 
     #   test_return_public_registrations_logged_in
@@ -76,7 +76,7 @@ class TestNodeRegistrationList:
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(
             url
-        ).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
+        ).path == f'/{API_BASE}nodes/{public_project._id}/'
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data'][0]['type'] == 'registrations'
 
@@ -99,6 +99,6 @@ class TestNodeRegistrationList:
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(
             url
-        ).path == '/{}nodes/{}/'.format(API_BASE, private_project._id)
+        ).path == f'/{API_BASE}nodes/{private_project._id}/'
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data'][0]['type'] == 'registrations'

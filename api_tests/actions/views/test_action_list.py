@@ -10,7 +10,7 @@ from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
-class TestReviewActionCreateRoot(object):
+class TestReviewActionCreateRoot:
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
             'data': {
@@ -30,7 +30,7 @@ class TestReviewActionCreateRoot(object):
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}actions/reviews/'.format(API_BASE)
+        return f'/{API_BASE}actions/reviews/'
 
     @pytest.fixture()
     def provider(self):

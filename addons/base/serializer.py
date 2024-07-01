@@ -4,7 +4,7 @@ from framework.auth.decorators import collect_auth
 from website.util import api_url_for, web_url_for
 
 
-class AddonSerializer(object):
+class AddonSerializer:
     __metaclass__ = abc.ABCMeta
 
     # TODO take addon_node_settings, addon_user_settings
@@ -12,23 +12,28 @@ class AddonSerializer(object):
         self.node_settings = node_settings
         self.user_settings = user_settings
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def addon_short_name(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def addon_serialized_urls(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def serialized_urls(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def user_is_owner(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def credentials_owner(self):
         pass
 
@@ -80,7 +85,7 @@ class OAuthAddonSerializer(AddonSerializer):
         ret = self.addon_serialized_urls
         # Make sure developer returns set of needed urls
         for url in self.REQUIRED_URLS:
-            msg = "addon_serialized_urls must include key '{0}'".format(url)
+            msg = f"addon_serialized_urls must include key '{url}'"
             assert url in ret, msg
         ret.update({'settings': web_url_for('user_addons')})
         return ret
@@ -94,7 +99,7 @@ class OAuthAddonSerializer(AddonSerializer):
 
     @property
     def serialized_user_settings(self):
-        retval = super(OAuthAddonSerializer, self).serialized_user_settings
+        retval = super().serialized_user_settings
         retval['accounts'] = []
         if self.user_settings:
             retval['accounts'] = self.serialized_accounts
@@ -202,12 +207,12 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
 
-        ret.update(super(CitationsAddonSerializer, self).serialized_urls)
+        ret.update(super().serialized_urls)
         return ret
 
     @property
     def serialized_node_settings(self):
-        result = super(CitationsAddonSerializer, self).serialized_node_settings
+        result = super().serialized_node_settings
         result['folder'] = {
             'name': self.node_settings.fetch_folder_name
         }
@@ -225,7 +230,7 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
             'id': folder['id'],
             'urls': {
                 'fetch': self.node_settings.owner.api_url_for(
-                    '{0}_citation_list'.format(self.addon_short_name),
+                    f'{self.addon_short_name}_citation_list',
                     list_id=folder['id']
                 ),
             },
@@ -235,11 +240,11 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
     def addon_serialized_urls(self):
         node = self.node_settings.owner
         return {
-            'importAuth': node.api_url_for('{0}_import_auth'.format(self.addon_short_name)),
-            'folders': node.api_url_for('{0}_citation_list'.format(self.addon_short_name)),
-            'config': node.api_url_for('{0}_set_config'.format(self.addon_short_name)),
-            'deauthorize': node.api_url_for('{0}_deauthorize_node'.format(self.addon_short_name)),
-            'accounts': node.api_url_for('{0}_account_list'.format(self.addon_short_name)),
+            'importAuth': node.api_url_for(f'{self.addon_short_name}_import_auth'),
+            'folders': node.api_url_for(f'{self.addon_short_name}_citation_list'),
+            'config': node.api_url_for(f'{self.addon_short_name}_set_config'),
+            'deauthorize': node.api_url_for(f'{self.addon_short_name}_deauthorize_node'),
+            'accounts': node.api_url_for(f'{self.addon_short_name}_account_list'),
         }
 
     def serialize_citation(self, citation):

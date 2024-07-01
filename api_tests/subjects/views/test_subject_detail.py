@@ -30,14 +30,14 @@ class TestSubject:
 
     @pytest.fixture()
     def url_subject_list(self):
-        return '/{}subjects/'.format(API_BASE)
+        return f'/{API_BASE}subjects/'
 
     @pytest.fixture()
     def url_subject_detail(self, subject):
-        return '/{}subjects/{}/'.format(API_BASE, subject._id)
+        return f'/{API_BASE}subjects/{subject._id}/'
 
     def test_get_subject_detail(self, app, url_subject_detail, subject, subject_child_one, subject_child_two):
-        res = app.get(url_subject_detail + '?version={}&related_counts=children'.format(subjects_as_relationships_version))
+        res = app.get(url_subject_detail + f'?version={subjects_as_relationships_version}&related_counts=children')
         data = res.json['data']
         assert data['attributes']['text'] == subject.text
         assert 'children' in data['relationships']

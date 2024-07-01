@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
+        logger.info(f'Script started time: {script_start_time}')
         logger.debug(options)
 
         dry_run = options['dry_run']
@@ -63,5 +63,5 @@ class Command(BaseCommand):
         populate_branched_from(page_size, dry_run)
 
         script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f'Run time {script_finish_time - script_start_time}')

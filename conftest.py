@@ -1,4 +1,3 @@
-from __future__ import print_function
 from unittest import mock
 import logging
 import os
@@ -35,8 +34,6 @@ SILENT_LOGGERS = [
     'website.search_migration.migrate',
     'website.util.paths',
     'requests_oauthlib.oauth2_session',
-    'raven.base.Client',
-    'raven.contrib.django.client.DjangoClient',
     'transitions.core',
     'MARKDOWN',
     'elasticsearch',
@@ -125,8 +122,13 @@ def _test_speedups_disable(request, settings, _test_speedups):
         patcher.start()
 
 
+@pytest.fixture(scope='session')
+def setup_connections():
+    connections.create_connection(hosts=['http://localhost:9201'])
+
+
 @pytest.fixture(scope='function')
-def es6_client():
+def es6_client(setup_connections):
     return connections.get_connection()
 
 
@@ -193,7 +195,7 @@ def mock_datacite(registration):
 
     doi = registration.get_doi_client().build_doi(registration)
 
-    with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml'), 'r') as fp:
+    with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml')) as fp:
         base_xml = ET.fromstring(fp.read())
         base_xml.find('{http://datacite.org/schema/kernel-4}identifier').text = doi
         data = ET.tostring(base_xml)

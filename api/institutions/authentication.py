@@ -126,7 +126,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 jwe.decrypt(request.body, settings.JWE_SECRET),
                 settings.JWT_SECRET,
                 options={'verify_exp': False},
-                algorithm='HS256',
+                algorithms=['HS256'],
             )
         except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
             raise AuthenticationFailed(detail='InstitutionSsoRequestNotAuthorized')

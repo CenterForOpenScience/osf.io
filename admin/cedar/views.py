@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, UpdateView
 from django.urls import reverse
@@ -26,7 +24,7 @@ class CedarMetadataTemplateListView(PermissionRequiredMixin, ListView):
         )
         kwargs.setdefault('cedar_metadata_templates', queryset)
         kwargs.setdefault('page', page)
-        return super(CedarMetadataTemplateListView, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
 class CedarMetadataTemplateDetailView(PermissionRequiredMixin, UpdateView):
     template_name = 'cedar/detail.html'

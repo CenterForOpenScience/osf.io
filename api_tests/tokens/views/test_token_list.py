@@ -1,5 +1,5 @@
 import copy
-import mock
+from unittest import mock
 import pytest
 
 from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION
@@ -36,7 +36,7 @@ class TestTokenListScopesasRelationships:
 
     @pytest.fixture()
     def url_token_list(self):
-        return api_v2_url('tokens/?version={}'.format(SCOPES_RELATIONSHIP_VERSION), base_route='/')
+        return api_v2_url(f'tokens/?version={SCOPES_RELATIONSHIP_VERSION}', base_route='/')
 
     @pytest.fixture()
     def read_scope(self):
@@ -81,7 +81,7 @@ class TestTokenListScopesasRelationships:
             self, mock_method, app, user_one, tokens_user_one, url_token_list):
         mock_method.return_value(True)
         api_token = tokens_user_one[0]
-        url = api_v2_url('tokens/{}/'.format(api_token._id), base_route='/')
+        url = api_v2_url(f'tokens/{api_token._id}/', base_route='/')
 
         res = app.delete(url, auth=user_one.auth)
         assert res.status_code == 204
@@ -273,7 +273,7 @@ class TestTokenListScopesAsAttributes:
             self, mock_method, app, user_one, tokens_user_one, url_token_list):
         mock_method.return_value(True)
         api_token = tokens_user_one[0]
-        url = api_v2_url('tokens/{}/'.format(api_token._id), base_route='/')
+        url = api_v2_url(f'tokens/{api_token._id}/', base_route='/')
 
         res = app.delete(url, auth=user_one.auth)
         assert res.status_code == 204

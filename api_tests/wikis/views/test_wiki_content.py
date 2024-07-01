@@ -1,5 +1,3 @@
-from nose.tools import *  # noqa:
-
 from api.base.settings.defaults import API_BASE
 from addons.wiki.models import WikiPage
 from tests.base import ApiWikiTestCase
@@ -34,28 +32,28 @@ class TestWikiContentView(ApiWikiTestCase):
     def test_logged_out_user_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body.decode(), self.public_wiki.get_version().content)
+        assert res.status_code == 200
+        assert res.content_type == 'text/markdown'
+        assert res.body.decode() == self.public_wiki.get_version().content
 
     def test_logged_in_non_contributor_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body.decode(), self.public_wiki.get_version().content)
+        assert res.status_code == 200
+        assert res.content_type == 'text/markdown'
+        assert res.body.decode() == self.public_wiki.get_version().content
 
     def test_logged_in_contributor_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body.decode(), self.public_wiki.get_version().content)
+        assert res.status_code == 200
+        assert res.content_type == 'text/markdown'
+        assert res.body.decode() == self.public_wiki.get_version().content
 
     def test_logged_out_user_cannot_get_private_wiki_content(self):
         self._set_up_private_project_with_wiki_page()
         res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
 
     def test_logged_in_non_contributor_cannot_get_private_wiki_content(self):
         self._set_up_private_project_with_wiki_page()
@@ -63,14 +61,14 @@ class TestWikiContentView(ApiWikiTestCase):
             self.private_url,
             auth=self.non_contributor.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_logged_in_contributor_can_get_private_wiki_content(self):
         self._set_up_private_project_with_wiki_page()
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body.decode(), self.private_wiki.get_version().content)
+        assert res.status_code == 200
+        assert res.content_type == 'text/markdown'
+        assert res.body.decode() == self.private_wiki.get_version().content
 
     def test_user_cannot_get_withdrawn_registration_wiki_content(self):
         self._set_up_public_registration_with_wiki_page()
@@ -83,4 +81,4 @@ class TestWikiContentView(ApiWikiTestCase):
             self.public_registration_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert res.status_code == 403

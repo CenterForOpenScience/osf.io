@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from django import forms
 from django.db.models import Q
 from django.contrib.auth.models import Group
@@ -8,9 +6,9 @@ from osf.models import AdminProfile
 
 
 class LoginForm(forms.Form):
-    email = forms.CharField(label=u'Email', required=True)
+    email = forms.CharField(label='Email', required=True)
     password = forms.CharField(
-        label=u'Password',
+        label='Password',
         widget=forms.PasswordInput(render_value=False),
         required=True
     )

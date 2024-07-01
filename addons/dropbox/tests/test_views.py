@@ -3,11 +3,9 @@ from rest_framework import status as http_status
 import unittest
 
 from dropbox.exceptions import ApiError
-from nose.tools import assert_equal
 from tests.base import OsfTestCase
-from urllib3.exceptions import MaxRetryError
 
-import mock
+from unittest import mock
 import pytest
 from addons.base.tests import views as views_testing
 from addons.dropbox.tests.utils import (
@@ -34,11 +32,11 @@ class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestC
         mock.PropertyMock(return_value='http://api.foo.com')
     )
     def test_oauth_start(self):
-        super(TestAuthViews, self).test_oauth_start()
+        super().test_oauth_start()
 
     @mock.patch('addons.dropbox.models.UserSettings.revoke_remote_oauth_access', mock.PropertyMock())
     def test_delete_external_account(self):
-        super(TestAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
 
 class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -52,17 +50,17 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
 
     @mock.patch('addons.dropbox.models.Dropbox', return_value=mock_client)
     def test_folder_list(self, *args):
-        super(TestConfigViews, self).test_folder_list()
+        super().test_folder_list()
 
     @mock.patch.object(DropboxSerializer, 'credentials_are_valid', return_value=True)
     def test_import_auth(self, *args):
-        super(TestConfigViews, self).test_import_auth()
+        super().test_import_auth()
 
 
 class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
 
     def setUp(self):
-        super(TestFilebrowserViews, self).setUp()
+        super().setUp()
         self.user.add_addon('dropbox')
         self.node_settings.external_account = self.user_settings.external_accounts[0]
         self.node_settings.save()
@@ -159,7 +157,7 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
         mock_metadata.side_effect = ApiError('', mock_error, '', '')
         url = self.project.api_url_for('dropbox_folder_list', folder_id='/fake_path')
         with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+            res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 
@@ -185,14 +183,14 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         # tries to access a parent folder
         url = self.project.api_url_for('dropbox_folder_list',
             path='foo bar')
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        res = self.app.get(url, auth=self.contrib.auth)
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_restricted_config_contrib_no_addon(self):
         url = self.project.api_url_for('dropbox_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        res = self.app.put(url, json={'selected': {'path': 'foo'}},
+            auth=self.contrib.auth)
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
     def test_restricted_config_contrib_not_owner(self):
         # Contributor has dropbox auth, but is not the node authorizer
@@ -200,6 +198,6 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         self.contrib.save()
 
         url = self.project.api_url_for('dropbox_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        res = self.app.put(url, json={'selected': {'path': 'foo'}},
+            auth=self.contrib.auth)
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-import mock
+from unittest import mock
 import pytest
 import unittest
 from json import dumps
@@ -11,11 +9,10 @@ from addons.github.models import NodeSettings
 from addons.github.tests import factories
 from osf_tests.factories import ProjectFactory, UserFactory, DraftRegistrationFactory
 
-from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
-                        assert_not_equal, assert_not_in, assert_true)
 
 from github3 import GitHubError
 from github3.repos import Repository
+from github3.session import GitHubSession
 
 from tests.base import OsfTestCase, get_default_metaschema
 
@@ -24,12 +21,110 @@ from addons.base import exceptions
 from addons.github.exceptions import NotFoundError
 
 from .utils import create_mock_github
-mock_github = create_mock_github()
 
 pytestmark = pytest.mark.django_db
 
-class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
+TEST_REPO_DATA = {
+    'name': 'test',
+    'id': '12345',
+    'archive_url': 'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}',
+    'assignees_url': 'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}',
+    'blobs_url': 'https://api.github.com/repos/{user}/mock-repo/git/blobs{{/sha}}',
+    'branches_url': 'https://api.github.com/repos/{user}/mock-repo/branches{{/bra.format('
+                    'user=user)nch}}',
+    'clone_url': 'https://github.com/{user}/mock-repo.git',
+    'collaborators_url': 'https://api.github.com/repos/{user}/mock-repo/collaborators{{/collaborator}}',
+    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+    'commits_url': 'https://api.github.com/repos/{user}/mock-repo/commits{{/sha}}',
+    'compare_url': 'https://api.github.com/repos/{user}/mock-repo/compare/{{base}}...{{head}}',
+    'contents_url': 'https://api.github.com/repos/{user}/mock-repo/contents/{{+path}}',
+    'contributors_url': 'https://api.github.com/repos/{user}/mock-repo/contributors',
+    'created_at': '2013-06-30T18:29:18Z',
+    'default_branch': 'dev',
+    'description': 'Simple, Pythonic, text processing--Sentiment analysis, part-of-speech tagging, '
+                   'noun phrase extraction, translation, and more.',
+    'downloads_url': 'https://api.github.com/repos/{user}/mock-repo/downloads',
+    'events_url': 'https://api.github.com/repos/{user}/mock-repo/events',
+    'fork': False,
+    'forks': 89,
+    'forks_count': 89,
+    'forks_url': 'https://api.github.com/repos/{user}/mock-repo/forks',
+    'full_name': '{user}/mock-repo',
+    'git_commits_url': 'https://api.github.com/repos/{user}/mock-repo/git/commits{{/sha}}',
+    'git_refs_url': 'https://api.github.com/repos/{user}/mock-repo/git/refs{{/sha}}',
+    'git_tags_url': 'https://api.github.com/repos/{user}/mock-repo/git/tags{{/sha}}',
+    'git_url': 'git://github.com/{user}/mock-repo.git',
+    'has_downloads': True,
+    'has_issues': True,
+    'has_wiki': True,
+    'homepage': 'https://mock-repo.readthedocs.org/',
+    'hooks_url': 'https://api.github.com/repos/{user}/mock-repo/hooks',
+    'html_url': 'https://github.com/{user}/mock-repo',
+    'issue_comment_url': 'https://api.github.com/repos/{user}/mock-repo/issues/comments/{{number}}',
+    'issue_events_url': 'https://api.github.com/repos/{user}/mock-repo/issues/events{{/number}}',
+    'issues_url': 'https://api.github.com/repos/{user}/mock-repo/issues{{/number}}',
+    'keys_url': 'https://api.github.com/repos/{user}/mock-repo/keys{{/key_id}}',
+    'labels_url': 'https://api.github.com/repos/{user}/mock-repo/labels{{/name}}',
+    'language': 'Python',
+    'languages_url': 'https://api.github.com/repos/{user}/mock-repo/languages',
+    'master_branch': 'dev',
+    'merges_url': 'https://api.github.com/repos/{user}/mock-repo/merges',
+    'milestones_url': 'https://api.github.com/repos/{user}/mock-repo/milestones{{/number}}',
+    'mirror_url': None,
+    'network_count': 89,
+    'notifications_url': 'https://api.github.com/repos/{user}/mock-repo/notifications{{?since,all,'
+                         'participating}}',
+    'open_issues': 2,
+    'open_issues_count': 2,
+    'owner': {
+        'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
+                      '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+        'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
+        'followers_url': 'https://api.github.com/users/{user}/followers',
+        'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
+        'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+        'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+        'html_url': 'https://github.com/{user}',
+        'id': 2379650,
+        'login': 'test name',
+        'organizations_url': 'https://api.github.com/users/{user}/orgs',
+        'received_events_url': 'https://api.github.com/users/{user}/received_events',
+        'repos_url': 'https://api.github.com/users/{user}/repos',
+        'site_admin': False,
+        'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+        'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+        'type': 'User',
+        'url': 'https://api.github.com/users/{user}'
+    },
+    'private': False,
+    'pulls_url': 'https://api.github.com/repos/{user}/mock-repo/pulls{{/number}}',
+    'pushed_at': '2013-12-30T16:05:54Z',
+    'releases_url': 'https://api.github.com/repos/{user}/mock-repo/releases{{/id}}',
+    'size': 8717,
+    'ssh_url': 'git@github.com:{user}/mock-repo.git',
+    'stargazers_count': 1469,
+    'stargazers_url': 'https://api.github.com/repos/{user}/mock-repo/stargazers',
+    'statuses_url': 'https://api.github.com/repos/{user}/mock-repo/statuses/{{sha}}',
+    'subscribers_count': 86,
+    'subscribers_url': 'https://api.github.com/repos/{user}/mock-repo/subscribers',
+    'subscription_url': 'https://api.github.com/repos/{user}/mock-repo/subscription',
+    'svn_url': 'https://github.com/{user}/mock-repo',
+    'tags_url': 'https://api.github.com/repos/{user}/mock-repo/tags',
+    'teams_url': 'https://api.github.com/repos/{user}/mock-repo/teams',
+    'trees_url': 'https://api.github.com/repos/{user}/mock-repo/git/trees{{/sha}}',
+    'updated_at': '2014-01-12T21:23:50Z',
+    'url': 'https://api.github.com/repos/{user}/mock-repo',
+    'watchers': 1469,
+    'watchers_count': 1469,
+    'permissions': {'push': True},
+    'deployments_url': 'https://api.github.com/repos',
+    'archived': {},
+    'has_pages': False,
+    'has_projects': False,
+}
 
+
+class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     short_name = 'github'
     full_name = 'GitHub'
     ExternalAccountFactory = factories.GitHubAccountFactory
@@ -58,20 +153,20 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}
-        assert_equal(settings, expected)
+        assert settings == expected
 
     @mock.patch(
         'addons.github.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_complete_has_auth_not_verified(self):
-        super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+        super().test_complete_has_auth_not_verified()
 
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_to_json(self, mock_repos, mock_check_authorization):
         mock_repos.return_value = {}
-        super(TestNodeSettings, self).test_to_json()
+        super().test_to_json()
 
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
@@ -79,11 +174,11 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         mock_check_authorization.return_value = True
         mock_repos.return_value = {}
         result = self.node_settings.to_json(self.user)
-        assert_true(result['user_has_auth'])
-        assert_equal(result['github_user'], 'abc')
-        assert_true(result['is_owner'])
-        assert_true(result['valid_credentials'])
-        assert_equal(result.get('repo_names', None), [])
+        assert result['user_has_auth']
+        assert result['github_user'] == 'abc'
+        assert result['is_owner']
+        assert result['valid_credentials']
+        assert result.get('repo_names', None) == []
 
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
@@ -92,39 +187,31 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         mock_repos.return_value = {}
         not_owner = UserFactory()
         result = self.node_settings.to_json(not_owner)
-        assert_false(result['user_has_auth'])
-        assert_equal(result['github_user'], 'abc')
-        assert_false(result['is_owner'])
-        assert_true(result['valid_credentials'])
-        assert_equal(result.get('repo_names', None), None)
-
+        assert not result['user_has_auth']
+        assert result['github_user'] == 'abc'
+        assert not result['is_owner']
+        assert result['valid_credentials']
+        assert result.get('repo_names') is None
 
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders(self, mock_check_authorization, mock_repos):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
+        session = GitHubSession()
+        mock_repos.return_value = [Repository.from_json(dumps(TEST_REPO_DATA), session=session)
                                    ]
         result = self.node_settings.get_folders()
 
-        assert_equal(len(result), 1)
-        assert_equal(result[0]['id'], '12345')
-        assert_equal(result[0]['name'], 'test')
-        assert_equal(result[0]['path'], 'test name/test')
-        assert_equal(result[0]['kind'], 'repo')
-
+        assert len(result) == 1
+        assert result[0]['id'] == '12345'
+        assert result[0]['name'] == 'test'
+        assert result[0]['path'] == 'test name/test'
+        assert result[0]['kind'] == 'repo'
 
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders_not_have_auth(self, mock_repos, mock_check_authorization):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
+        session = GitHubSession()
+        mock_repos.return_value = [Repository.from_json(dumps(TEST_REPO_DATA), session=session)
                                    ]
         self.node_settings.user_settings = None
         with pytest.raises(exceptions.InvalidAuthError):
@@ -132,20 +219,18 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
 
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
-
     short_name = 'github'
     full_name = 'GitHub'
     ExternalAccountFactory = factories.GitHubAccountFactory
 
     def test_public_id(self):
-        assert_equal(self.user.external_accounts.first().display_name, self.user_settings.public_id)
+        assert self.user.external_accounts.first().display_name == self.user_settings.public_id
 
 
 class TestCallbacks(OsfTestCase):
 
     def setUp(self):
-
-        super(TestCallbacks, self).setUp()
+        super().setUp()
 
         self.project = ProjectFactory()
         self.consolidated_auth = Auth(self.project.creator)
@@ -179,129 +264,122 @@ class TestCallbacks(OsfTestCase):
         mock_repo.side_effect = NotFoundError
 
         result = self.node_settings.before_make_public(self.project)
-        assert_is(result, None)
+        assert result is None
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
+        session = GitHubSession()
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
+        mock_repo.return_value = Repository.from_json(dumps(TEST_REPO_DATA), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
         )
-        assert_false(message)
+        assert not message
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
+        session = GitHubSession()
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        mock_data = TEST_REPO_DATA.copy()
+        mock_data['private'] = True
+        mock_repo.return_value = Repository.from_json(dumps(mock_data), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
         )
-        assert_true(message)
+        assert message
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
+        session = GitHubSession()
+        mock_repo.return_value = Repository.from_json(dumps(TEST_REPO_DATA), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
         )
-        assert_true(message)
+        assert message
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        session = GitHubSession()
+        mock_data = TEST_REPO_DATA.copy()
+        mock_data['private'] = True
+        mock_repo.return_value = Repository.from_json(dumps(mock_data), session=session)
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
         )
-        assert_false(message)
+        assert not message
 
     def test_before_page_load_not_contributor(self):
         message = self.node_settings.before_page_load(self.project, UserFactory())
-        assert_false(message)
+        assert not message
 
     def test_before_page_load_not_logged_in(self):
         message = self.node_settings.before_page_load(self.project, None)
-        assert_false(message)
+        assert not message
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(
             self.project, self.project.creator
         )
-        assert_true(message)
+        assert message
 
     def test_before_remove_contributor_not_authenticator(self):
         message = self.node_settings.before_remove_contributor(
             self.project, self.non_authenticator
         )
-        assert_false(message)
+        assert not message
 
     def test_after_remove_contributor_authenticator_self(self):
         message = self.node_settings.after_remove_contributor(
             self.project, self.project.creator, self.consolidated_auth
         )
-        assert_equal(
-            self.node_settings.user_settings,
-            None
-        )
-        assert_true(message)
-        assert_not_in('You can re-authenticate', message)
+        assert self.node_settings.user_settings is None
+        assert message
+        assert 'You can re-authenticate' not in message
 
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
         message = self.node_settings.after_remove_contributor(
             self.project, self.project.creator, auth
         )
-        assert_equal(
-            self.node_settings.user_settings,
-            None
-        )
-        assert_true(message)
-        assert_in('You can re-authenticate', message)
+        assert self.node_settings.user_settings is None
+        assert message
+        assert 'You can re-authenticate' in message
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
             self.project, self.non_authenticator, self.consolidated_auth
         )
-        assert_not_equal(
-            self.node_settings.user_settings,
-            None,
-        )
+        assert self.node_settings.user_settings is not None
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
         clone = self.node_settings.after_fork(
             self.project, fork, self.project.creator,
         )
-        assert_equal(
-            self.node_settings.user_settings,
-            clone.user_settings,
-        )
+        assert self.node_settings.user_settings == clone.user_settings
 
     def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
         clone = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
-        assert_equal(
-            clone.user_settings,
-            None,
-        )
+        assert clone.user_settings is None
 
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
-        assert_true(self.node_settings.user_settings is None)
+        assert self.node_settings.user_settings is None
 
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
@@ -310,13 +388,13 @@ class TestCallbacks(OsfTestCase):
             auth=Auth(user=self.project.creator),
             draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
-        assert_false(registration.has_addon('github'))
+        assert not registration.has_addon('github')
 
 
 class TestGithubNodeSettings(unittest.TestCase):
 
     def setUp(self):
-        super(TestGithubNodeSettings, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user.add_addon('github')
         self.user_settings = self.user.get_addon('github')
@@ -335,14 +413,14 @@ class TestGithubNodeSettings(unittest.TestCase):
             self.node_settings.hook_id,
         )
         res = self.node_settings.delete_hook()
-        assert_true(res)
+        assert res
         mock_delete_hook.assert_called_with(*args)
 
     @mock.patch('addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_no_hook(self, mock_delete_hook):
         res = self.node_settings.delete_hook()
-        assert_false(res)
-        assert_false(mock_delete_hook.called)
+        assert not res
+        assert not mock_delete_hook.called
 
     @mock.patch('addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_not_found(self, mock_delete_hook):
@@ -355,7 +433,7 @@ class TestGithubNodeSettings(unittest.TestCase):
             self.node_settings.hook_id,
         )
         res = self.node_settings.delete_hook()
-        assert_false(res)
+        assert not res
         mock_delete_hook.assert_called_with(*args)
 
     @mock.patch('addons.github.api.GitHubClient.delete_hook')
@@ -369,5 +447,5 @@ class TestGithubNodeSettings(unittest.TestCase):
             self.node_settings.hook_id,
         )
         res = self.node_settings.delete_hook()
-        assert_false(res)
+        assert not res
         mock_delete_hook.assert_called_with(*args)

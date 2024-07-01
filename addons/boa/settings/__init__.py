@@ -7,4 +7,4 @@ logger = logging.getLogger(__name__)
 try:
     from addons.boa.settings.local import *  # noqa
 except ImportError:
-    logger.warn('No local.py settings file found')
+    logger.warning('No local.py settings file found')

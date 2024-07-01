@@ -7,7 +7,7 @@ from osf_tests.factories import ProjectFactory, UserFactory, RegionFactory, Comm
 from website.settings import MFR_SERVER_URL
 
 
-class MockFolder(dict, object):
+class MockFolder(dict):
 
     def __init__(self):
         self.name = 'Fake Folder'
@@ -18,7 +18,7 @@ class MockFolder(dict, object):
         self['id'] = 'Fake Key'
 
 
-class MockLibrary(dict, object):
+class MockLibrary(dict):
 
     def __init__(self):
         self.name = 'Fake Library'

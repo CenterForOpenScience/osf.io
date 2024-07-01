@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 import pytest
 
 from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
@@ -25,7 +23,7 @@ class TestConfigViews(GoogleDriveAddonTestCase, OAuthAddonConfigViewsTestCaseMix
     client = GoogleDriveClient
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super().setUp()
         self.mock_about = mock.patch.object(
             GoogleDriveClient,
             'about'
@@ -42,7 +40,7 @@ class TestConfigViews(GoogleDriveAddonTestCase, OAuthAddonConfigViewsTestCaseMix
     def tearDown(self):
         self.mock_about.stop()
         self.mock_fetch.stop()
-        super(TestConfigViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch.object(GoogleDriveClient, 'folders')
     def test_folder_list_not_root(self, mock_drive_client_folders):
@@ -53,10 +51,10 @@ class TestConfigViews(GoogleDriveAddonTestCase, OAuthAddonConfigViewsTestCaseMix
 
         url = self.project.api_url_for('googledrive_folder_list', folder_id=folderId)
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), len(sample_folder_data['items']))
+        assert res.status_code == 200
+        assert len(res.json) == len(sample_folder_data['items'])
 
     @mock.patch.object(GoogleDriveClient, 'about')
     def test_folder_list(self, mock_about):
         mock_about.return_value = {'rootFolderId': '24601'}
-        super(TestConfigViews, self).test_folder_list()
+        super().test_folder_list()

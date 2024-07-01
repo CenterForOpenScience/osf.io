@@ -1,5 +1,5 @@
-from nose import tools as nt
-import mock
+from unittest import mock
+import pytest
 
 from django.test import RequestFactory
 from django.http import Http404
@@ -15,7 +15,7 @@ from admin.common_auth.forms import UserRegistrationForm
 
 class TestRegisterUser(AdminTestCase):
     def setUp(self):
-        super(TestRegisterUser, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.data = {
             'osf_id': 'abc12',
@@ -25,9 +25,9 @@ class TestRegisterUser(AdminTestCase):
 
     def test_osf_id_invalid(self):
         form = UserRegistrationForm(data=self.data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
         view = setup_form_view(self.view, self.request, form)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.form_valid(form)
 
     @mock.patch('admin.common_auth.views.messages.success')
@@ -35,8 +35,8 @@ class TestRegisterUser(AdminTestCase):
         count = OSFUser.objects.count()
         self.data.update(osf_id=self.user._id)
         form = UserRegistrationForm(data=self.data)
-        nt.assert_true(form.is_valid())
+        assert form.is_valid()
         view = setup_form_view(self.view, self.request, form)
         view.form_valid(form)
-        nt.assert_true(mock_save.called)
-        nt.assert_equal(OSFUser.objects.count(), count + 1)
+        assert mock_save.called
+        assert OSFUser.objects.count() == count + 1

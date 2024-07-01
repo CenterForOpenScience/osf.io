@@ -1,10 +1,9 @@
 import datetime
 import json
 
-import furl
+from furl import furl
 import responses
 from django.utils import timezone
-from nose.tools import *  # noqa:
 
 from framework.auth.core import Auth
 
@@ -52,15 +51,15 @@ def prepare_mock_wb_response(
     wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=view_only, base_url=node.osfstorage_region.waterbutler_url)
 
     default_file = {
-        u'contentType': None,
-        u'extra': {u'downloads': 0, u'version': 1},
-        u'kind': u'file',
-        u'modified': None,
-        u'name': u'NewFile',
-        u'path': u'/NewFile',
-        u'provider': provider,
-        u'size': None,
-        u'materialized': '/',
+        'contentType': None,
+        'extra': {'downloads': 0, 'version': 1},
+        'kind': 'file',
+        'modified': None,
+        'name': 'NewFile',
+        'path': '/NewFile',
+        'provider': provider,
+        'size': None,
+        'materialized': '/',
     }
 
     if len(files):
@@ -79,7 +78,7 @@ def prepare_mock_wb_response(
         responses.Response(
             method,
             wb_url,
-            json={u'data': jsonapi_data},
+            json={'data': jsonapi_data},
             status=status_code,
             content_type='application/json'
         )
@@ -89,7 +88,7 @@ def prepare_mock_wb_response(
 class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeFilesList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.private_url = '/{}nodes/{}/files/'.format(
@@ -98,7 +97,7 @@ class TestNodeFilesList(ApiTestCase):
         self.user_two = AuthUserFactory()
 
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
-        self.public_url = '/{}nodes/{}/files/'.format(API_BASE, self.public_project._id)
+        self.public_url = f'/{API_BASE}nodes/{self.public_project._id}/files/'
 
     def add_github(self):
         user_auth = Auth(self.user)
@@ -130,97 +129,88 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.json['data'][0]['attributes']['provider'],
-            'osfstorage'
-        )
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+        assert res.content_type == 'application/vnd.api+json'
 
     def test_returns_public_files_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(
-            res.json['data'][0]['attributes']['provider'],
-            'osfstorage'
-        )
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
 
     def test_returns_storage_addons_link(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_in('storage_addons', res.json['data'][0]['links'])
+        assert 'storage_addons' in res.json['data'][0]['links']
 
     def test_returns_file_data(self):
         fobj = self.project.get_addon(
             'osfstorage').get_root().append_file('NewFile')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/{}'.format(self.private_url, fobj._id), auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(isinstance(res.json['data'], dict))
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['kind'], 'file')
-        assert_equal(res.json['data']['attributes']['name'], 'NewFile')
+            f'{self.private_url}osfstorage/{fobj._id}', auth=self.user.auth)
+        assert res.status_code == 200
+        assert isinstance(res.json['data'], dict)
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['kind'] == 'file'
+        assert res.json['data']['attributes']['name'] == 'NewFile'
 
     def test_returns_osfstorage_folder_version_two(self):
         fobj = self.project.get_addon(
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/'.format(self.private_url), auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+            f'{self.private_url}osfstorage/', auth=self.user.auth)
+        assert res.status_code == 200
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
         fobj = self.project.get_addon(
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/?version=2.2'.format(self.private_url), auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+            f'{self.private_url}osfstorage/?version=2.2', auth=self.user.auth)
+        assert res.status_code == 200
 
     def test_list_returns_folder_data(self):
         fobj = self.project.get_addon(
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/'.format(self.private_url, fobj._id), auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFolder')
+            f'{self.private_url}osfstorage/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['attributes']['name'] == 'NewFolder'
 
     def test_returns_folder_data(self):
         fobj = self.project.get_addon(
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/{}/'.format(self.private_url, fobj._id), auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 0)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+            f'{self.private_url}osfstorage/{fobj._id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        assert res.content_type == 'application/vnd.api+json'
 
     def test_returns_private_files_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
 
     def test_returns_private_files_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(
-            res.json['data'][0]['attributes']['provider'],
-            'osfstorage'
-        )
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
 
     def test_returns_private_files_logged_in_non_contributor(self):
         res = self.app.get(
             self.private_url,
             auth=self.user_two.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
     def test_returns_private_files_logged_in_osf_group_member(self):
         group_mem = AuthUserFactory()
@@ -230,16 +220,13 @@ class TestNodeFilesList(ApiTestCase):
             self.private_url,
             auth=group_mem.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_returns_addon_folders(self):
         user_auth = Auth(self.user)
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(
-            res.json['data'][0]['attributes']['provider'],
-            'osfstorage'
-        )
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
 
         self.project.add_addon('github', auth=user_auth)
         addon = self.project.get_addon('github')
@@ -260,9 +247,9 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         data = res.json['data']
         providers = [item['attributes']['provider'] for item in data]
-        assert_equal(len(data), 2)
-        assert_in('github', providers)
-        assert_in('osfstorage', providers)
+        assert len(data) == 2
+        assert 'github' in providers
+        assert 'osfstorage' in providers
 
     @responses.activate
     def test_vol_node_files_list(self):
@@ -274,33 +261,33 @@ class TestNodeFilesList(ApiTestCase):
             API_BASE, self.project._id, vol.key)
         res = self.app.get(url, auth=self.user_two.auth)
         wb_request = responses.calls[-1].request
-        url = furl.furl(wb_request.url)
+        url = furl(wb_request.url)
 
-        assert_equal(url.query, 'meta=True&view_only={}'.format(str(vol.key)))
-        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
-        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
-        assert_in(vol.key, res.json['data'][0]['links']['info'])
-        assert_in(vol.key, res.json['data'][0]['links']['move'])
-        assert_in(vol.key, res.json['data'][0]['links']['upload'])
-        assert_in(vol.key, res.json['data'][0]['links']['download'])
-        assert_in(vol.key, res.json['data'][0]['links']['delete'])
+        assert url.query == f'meta=True&view_only={str(vol.key)}'
+        assert res.json['data'][0]['attributes']['name'] == 'NewFile'
+        assert res.json['data'][0]['attributes']['provider'] == 'github'
+        assert vol.key in res.json['data'][0]['links']['info']
+        assert vol.key in res.json['data'][0]['links']['move']
+        assert vol.key in res.json['data'][0]['links']['upload']
+        assert vol.key in res.json['data'][0]['links']['download']
+        assert vol.key in res.json['data'][0]['links']['delete']
 
     @responses.activate
     def test_returns_node_files_list(self):
         self._prepare_mock_wb_response(
             provider='github', files=[{'name': 'NewFile'}])
         self.add_github()
-        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
 
         # test create
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
-        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
+        assert res.json['data'][0]['attributes']['name'] == 'NewFile'
+        assert res.json['data'][0]['attributes']['provider'] == 'github'
 
         # test get
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
-        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
+        assert res.json['data'][0]['attributes']['name'] == 'NewFile'
+        assert res.json['data'][0]['attributes']['provider'] == 'github'
 
     @responses.activate
     def test_returns_folder_metadata_not_children(self):
@@ -312,13 +299,13 @@ class TestNodeFilesList(ApiTestCase):
         folder.save()
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], path='/Folder/')
         self.add_github()
-        url = '/{}nodes/{}/files/github/Folder/'.format(API_BASE, self.project._id)
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/Folder/'
         res = self.app.get(url, params={'info': ''}, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['kind'], 'folder')
-        assert_equal(res.json['data'][0]['attributes']['name'], 'Folder')
-        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['kind'] == 'folder'
+        assert res.json['data'][0]['attributes']['name'] == 'Folder'
+        assert res.json['data'][0]['attributes']['provider'] == 'github'
 
     @responses.activate
     def test_returns_node_file(self):
@@ -332,14 +319,14 @@ class TestNodeFilesList(ApiTestCase):
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
         # test create
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], 'NewFile')
-        assert_equal(res.json['data']['attributes']['provider'], 'github')
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == 'NewFile'
+        assert res.json['data']['attributes']['provider'] == 'github'
 
         # test get
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], 'NewFile')
-        assert_equal(res.json['data']['attributes']['provider'], 'github')
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == 'NewFile'
+        assert res.json['data']['attributes']['provider'] == 'github'
 
     @responses.activate
     def test_notfound_node_file_returns_folder(self):
@@ -353,7 +340,7 @@ class TestNodeFilesList(ApiTestCase):
             expect_errors=True,
             headers={'COOKIE': 'foo=bar;'}  # Webtests doesnt support cookies?
         )
-        assert_equal(res.status_code, 404)
+        assert res.status_code == 404
 
     @responses.activate
     def test_notfound_node_folder_returns_file(self):
@@ -361,25 +348,25 @@ class TestNodeFilesList(ApiTestCase):
             provider='github', files=[{'name': 'NewFile'}],
             folder=False, path='/')
 
-        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
         res = self.app.get(
             url, auth=self.user.auth,
             expect_errors=True,
             headers={'COOKIE': 'foo=bar;'}  # Webtests doesnt support cookies?
         )
-        assert_equal(res.status_code, 404)
+        assert res.status_code == 404
 
     @responses.activate
     def test_waterbutler_server_error_returns_503(self):
         self._prepare_mock_wb_response(status_code=500)
         self.add_github()
-        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
         res = self.app.get(
             url, auth=self.user.auth,
             expect_errors=True,
             headers={'COOKIE': 'foo=bar;'}  # Webtests doesnt support cookies?
         )
-        assert_equal(res.status_code, 503)
+        assert res.status_code == 503
 
     @responses.activate
     def test_waterbutler_invalid_data_returns_503(self):
@@ -393,18 +380,18 @@ class TestNodeFilesList(ApiTestCase):
                 status=400
             )
         )
-        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 503)
+        assert res.status_code == 503
 
     @responses.activate
     def test_handles_unauthenticated_waterbutler_request(self):
         self._prepare_mock_wb_response(status_code=401)
         self.add_github()
-        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
     @responses.activate
     def test_handles_notfound_waterbutler_request(self):
@@ -414,19 +401,17 @@ class TestNodeFilesList(ApiTestCase):
         url = '/{}nodes/{}/files/{}/'.format(API_BASE,
                                              self.project._id, invalid_provider)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_in('detail', res.json['errors'][0])
+        assert res.status_code == 404
+        assert 'detail' in res.json['errors'][0]
 
     def test_handles_request_to_provider_not_configured_on_project(self):
         provider = 'box'
         url = '/{}nodes/{}/files/{}/'.format(
             API_BASE, self.project._id, provider)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_false(self.project.get_addon(provider))
-        assert_equal(res.status_code, 404)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'The {} provider is not configured for this project.'.format(provider))
+        assert not self.project.get_addon(provider)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == f'The {provider} provider is not configured for this project.'
 
     @responses.activate
     def test_handles_bad_waterbutler_request(self):
@@ -440,21 +425,21 @@ class TestNodeFilesList(ApiTestCase):
             )
         )
         self.add_github()
-        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 503)
-        assert_in('detail', res.json['errors'][0])
+        assert res.status_code == 503
+        assert 'detail' in res.json['errors'][0]
 
     def test_files_list_contains_relationships_object(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         assert 'relationships' in res.json['data'][0]
 
 
 class TestNodeFilesListFiltering(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeFilesListFiltering, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         # Prep HTTP mocks
@@ -493,15 +478,15 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
         # test create
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)  # filters out 'abc'
-        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1  # filters out 'abc'
+        assert res.json['data'][0]['attributes']['name'] == 'xyz'
 
         # test get
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)  # filters out 'abc'
-        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1  # filters out 'abc'
+        assert res.json['data'][0]['attributes']['name'] == 'xyz'
 
     @responses.activate
     def test_node_files_filter_by_name_case_insensitive(self):
@@ -511,17 +496,17 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
         # test create
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # filters out 'abc', but finds 'xyz'
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['name'] == 'xyz'
 
         # test get
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # filters out 'abc', but finds 'xyz'
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['name'] == 'xyz'
 
     @responses.activate
     def test_node_files_are_filterable_by_path(self):
@@ -531,15 +516,15 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
         # test create
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
-        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1  # filters out 'xyz'
+        assert res.json['data'][0]['attributes']['name'] == 'abc'
 
         # test get
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
-        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1  # filters out 'xyz'
+        assert res.json['data'][0]['attributes']['name'] == 'abc'
 
     @responses.activate
     def test_node_files_are_filterable_by_kind(self):
@@ -549,15 +534,15 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
         # test create
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
-        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1  # filters out 'xyz'
+        assert res.json['data'][0]['attributes']['name'] == 'abc'
 
         # test get
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
-        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1  # filters out 'xyz'
+        assert res.json['data'][0]['attributes']['name'] == 'abc'
 
     @responses.activate
     def test_node_files_external_provider_can_filter_by_last_touched(self):
@@ -567,13 +552,13 @@ class TestNodeFilesListFiltering(ApiTestCase):
             API_BASE, self.project._id, yesterday_stamp.isoformat())
         # test create
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
 
         # test get
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
 
     def test_node_files_osfstorage_cannot_filter_by_last_touched(self):
         yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
@@ -584,18 +569,18 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
         # test create
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 1)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
 
         # test get
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 1)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
 
 
 class TestNodeFilesListPagination(ApiTestCase):
     def setUp(self):
-        super(TestNodeFilesListPagination, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
 
@@ -697,7 +682,7 @@ class TestNodeFilesListPagination(ApiTestCase):
 class TestNodeStorageProviderDetail(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeStorageProviderDetail, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.public_project = ProjectFactory(is_public=True)
         self.private_project = ProjectFactory(creator=self.user)
@@ -708,31 +693,25 @@ class TestNodeStorageProviderDetail(ApiTestCase):
 
     def test_can_view_if_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.json['data']['id'],
-            '{}:osfstorage'.format(self.private_project._id)
-        )
-        assert_equal(
-            res.json['data']['relationships']['target']['links']['related']['href'],
+        assert res.status_code == 200
+        assert res.json['data']['id'] == f'{self.private_project._id}:osfstorage'
+        assert (
+            res.json['data']['relationships']['target']['links']['related']['href'] ==
             f'{settings.API_DOMAIN}v2/nodes/{self.private_project._id}/'
         )
 
     def test_can_view_if_public(self):
         res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.json['data']['id'],
-            '{}:osfstorage'.format(self.public_project._id)
-        )
-        assert_equal(
-            res.json['data']['relationships']['target']['links']['related']['href'],
+        assert res.status_code == 200
+        assert res.json['data']['id'] == f'{self.public_project._id}:osfstorage'
+        assert (
+            res.json['data']['relationships']['target']['links']['related']['href'] ==
             f'{settings.API_DOMAIN}v2/nodes/{self.public_project._id}/'
         )
 
     def test_cannot_view_if_private(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
 
 
 class TestShowAsUnviewed(ApiTestCase):

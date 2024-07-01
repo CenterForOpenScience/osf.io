@@ -39,10 +39,10 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     view_category = 'tokens'
     view_name = 'token-list'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer]  # Hide from web-browsable API tool
 
     ordering = ('-id',)
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     def get_default_queryset(self):
         return ApiOAuth2PersonalToken.objects.filter(owner=self.request.user, is_active=True)
@@ -76,8 +76,8 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     view_category = 'tokens'
     view_name = 'token-detail'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer]  # Hide from web-browsable API tool
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -122,7 +122,7 @@ class TokenScopesList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'tokens'
     view_name = 'token-scopes-list'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer]  # Hide from web-browsable API tool
 
     def get_default_queryset(self):
         try:

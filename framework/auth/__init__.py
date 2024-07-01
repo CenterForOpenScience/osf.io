@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import uuid
 
 from django.utils import timezone
@@ -104,7 +103,7 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
         user.update_guessed_names()
         user.save()
     else:
-        raise DuplicateEmailError('OSFUser {0!r} already exists'.format(username))
+        raise DuplicateEmailError(f'OSFUser {username!r} already exists')
     return user
 
 

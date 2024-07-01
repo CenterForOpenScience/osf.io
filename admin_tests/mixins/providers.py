@@ -14,11 +14,11 @@ pytestmark = pytest.mark.django_db
 class ProviderListMixinBase:
 
     @pytest.fixture()
-    def provider_factory():
+    def provider_factory(self):
         raise NotImplementedError
 
     @pytest.fixture()
-    def provider_class():
+    def provider_class(self):
         raise NotImplementedError
 
     @pytest.fixture()
@@ -53,14 +53,14 @@ class ProviderListMixinBase:
         else:
             assert len(res[f'{provider_one.readable_type}_providers']) == 2
 
-        assert isinstance(res['{}_providers'.format(provider_one.readable_type)][0], provider_class)
+        assert isinstance(res[f'{provider_one.readable_type}_providers'][0], provider_class)
 
 
 @pytest.mark.urls('admin.base.urls')
 class ProcessCustomTaxonomyMixinBase:
 
     @pytest.fixture()
-    def provider_factory():
+    def provider_factory(self):
         raise NotImplementedError
 
     @pytest.fixture()
@@ -119,7 +119,7 @@ class ProcessCustomTaxonomyMixinBase:
         view.post(req)
 
         actual_provider_subjects = set(provider.subjects.all().values_list('text', flat=True))
-        expected_subjects = set([subject_one.text, subject_two.text, subject_three_a.text, 'Changed Subject Name'])
+        expected_subjects = {subject_one.text, subject_two.text, subject_three_a.text, 'Changed Subject Name'}
 
         assert actual_provider_subjects == expected_subjects
         assert provider.subjects.get(text='Changed Subject Name').parent.text == subject_two.text
@@ -156,8 +156,8 @@ class ProviderDisplayMixinBase:
     def test_context_data(self, view, provider, provider_class, form_class):
         res = view.get_context_data()
         assert isinstance(res, dict)
-        assert isinstance(res['{}_provider'.format(provider.readable_type)], dict)
-        assert res['{}_provider'.format(provider.readable_type)]['name'] == provider.name
+        assert isinstance(res[f'{provider.readable_type}_provider'], dict)
+        assert res[f'{provider.readable_type}_provider']['name'] == provider.name
 
         assert isinstance(res['form'], form_class)
         assert isinstance(res['import_form'], ImportFileForm)

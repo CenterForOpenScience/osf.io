@@ -3,6 +3,7 @@ from addons.base.apps import BaseAddonAppConfig
 
 class MendeleyAddonConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.mendeley'
     label = 'addons_mendeley'
     full_name = 'Mendeley'

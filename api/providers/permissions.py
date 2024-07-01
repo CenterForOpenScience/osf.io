@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from guardian.shortcuts import get_perms
 from rest_framework import permissions as drf_permissions
 

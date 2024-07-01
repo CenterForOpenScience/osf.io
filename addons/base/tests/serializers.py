@@ -1,23 +1,25 @@
 import abc
 
-import mock
+from unittest import mock
+import pytest
+
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_false, assert_in,
-                        assert_is_not_none, assert_raises, assert_true)
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 from tests.utils import mock_auth
 from website.util import web_url_for
 
 
-class AddonSerializerTestSuiteMixin(object):
+class AddonSerializerTestSuiteMixin:
 
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def Serializer(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ExternalAccountFactory(self):
         pass
 
@@ -29,30 +31,27 @@ class AddonSerializerTestSuiteMixin(object):
     def set_node_settings(self, user_settings):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def required_settings(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def required_settings_authorized(self):
         pass
 
     def setUp(self):
-        super(AddonSerializerTestSuiteMixin, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.set_user_settings(self.user)
-        assert_is_not_none(
-            getattr(self, 'user_settings'),
-            "'set_user_settings' should set the 'user_settings' attribute of the instance to an instance of \
+        assert getattr(self, 'user_settings') is not None, "'set_user_settings' should set the 'user_settings' attribute of the instance to an instance of \
              the appropriate user settings model."
-        )
+
         self.set_node_settings(self.user_settings)
-        assert_is_not_none(
-            getattr(self, 'node_settings'),
-            "'set_node_settings' should set the 'user_settings' attribute of the instance to an instance of \
+        assert getattr(self, 'node_settings') is not None, "'set_node_settings' should set the 'user_settings' attribute of the instance to an instance of \
             the appropriate node settings model."
-        )
 
         self.ser = self.Serializer(
             user_settings=self.user_settings,
@@ -63,15 +62,15 @@ class AddonSerializerTestSuiteMixin(object):
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=False):
             serialized = self.ser.serialized_node_settings
         for setting in self.required_settings:
-            assert_in(setting, serialized)
+            assert setting in serialized
 
     def test_serialized_node_settings_authorized(self):
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=True):
             serialized = self.ser.serialized_node_settings
         for setting in self.required_settings:
-            assert_in(setting, serialized)
+            assert setting in serialized
         for setting in self.required_settings_authorized:
-            assert_in(setting, serialized)
+            assert setting in serialized
 
 
 class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
@@ -88,38 +87,38 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
 
     def test_credentials_owner(self):
         owner = self.ser.credentials_owner
-        assert_equal(owner._id, self.user_settings.owner._id)
+        assert owner._id == self.user_settings.owner._id
 
     def test_user_is_owner_no_user_settings(self):
         ser = self.Serializer(node_settings=self.node_settings)
-        assert_false(ser.user_is_owner)
+        assert not ser.user_is_owner
 
     def test_user_is_owner_no_node_settings(self):
         ser = self.Serializer(user_settings=self.user_settings)
-        assert_false(ser.user_is_owner)
+        assert not ser.user_is_owner
 
     def test_user_is_owner_node_not_authorized_user_has_no_accounts(self):
         self.user.external_accounts.clear()
-        assert_false(self.user_settings.external_accounts.count())
-        assert_false(self.ser.user_is_owner)
+        assert not self.user_settings.external_accounts.count()
+        assert not self.ser.user_is_owner
 
     def test_user_is_owner_node_not_authorized_user_has_accounts(self):
-        assert_true(self.user_settings.external_accounts.count())
-        assert_true(self.ser.user_is_owner)
+        assert self.user_settings.external_accounts.count()
+        assert self.ser.user_is_owner
 
     def test_user_is_owner_node_authorized_user_is_not_owner(self):
         self.node_settings.external_account = self.ExternalAccountFactory()
         with mock.patch('addons.base.models.BaseOAuthUserSettings.verify_oauth_access',
                 return_value=True):
             self.user.external_accounts.clear()
-            assert_false(self.ser.user_is_owner)
+            assert not self.ser.user_is_owner
 
     def test_user_is_owner_node_authorized_user_is_owner(self):
-        assert_true(self.ser.user_is_owner)
+        assert self.ser.user_is_owner
 
     def test_serialized_urls_checks_required(self):
         with mock.patch.object(self.ser, 'REQUIRED_URLS', ('foobar', )):
-            with assert_raises(AssertionError):
+            with pytest.raises(AssertionError):
                 self.ser.serialized_urls
 
     def test_serialized_acccounts(self):
@@ -129,8 +128,8 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
         with mock.patch.object(type(self.ser), 'serialize_account') as mock_serialize_account:
             mock_serialize_account.return_value = {}
             serialized = self.ser.serialized_accounts
-        assert_equal(len(serialized), self.user.external_accounts.count())
-        assert_equal(mock_serialize_account.call_count, len(serialized))
+        assert len(serialized) == self.user.external_accounts.count()
+        assert mock_serialize_account.call_count == len(serialized)
 
     def test_serialize_acccount(self):
         ea = self.ExternalAccountFactory()
@@ -143,22 +142,22 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
             'profile_url': ea.profile_url,
             'nodes': [],
         }
-        assert_equal(self.ser.serialize_account(ea), expected)
+        assert self.ser.serialize_account(ea) == expected
 
     def test_serialized_user_settings(self):
         with mock.patch.object(self.Serializer, 'serialized_accounts', return_value=[]):
             serialized = self.ser.serialized_user_settings
-        assert_in('accounts', serialized)
+        assert 'accounts' in serialized
 
     def test_serialize_granted_node(self):
         with mock_auth(self.user):
             serialized = self.ser.serialize_granted_node(self.node, auth=Auth(self.user))
         for key in ('id', 'title', 'urls'):
-            assert_in(key, serialized)
-        assert_equal(self.node._id, serialized['id'])
-        assert_equal(self.node.title, serialized['title'])
-        assert_in('view', serialized['urls'])
-        assert_equal(serialized['urls']['view'], self.node.url)
+            assert key in serialized
+        assert self.node._id == serialized['id']
+        assert self.node.title == serialized['title']
+        assert 'view' in serialized['urls']
+        assert serialized['urls']['view'] == self.node.url
 
 
 class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
@@ -166,7 +165,8 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
     required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
     required_settings_authorized = ('ownerName', )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client(self):
         """Provide a mocked version of this provider's client (i.e. the client should not make
         acutal API calls).
@@ -181,27 +181,27 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=False):
             serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
         for key in self.required_settings:
-            assert_in(key, serialized)
+            assert key in serialized
 
     def test_serialize_settings_authorized(self):
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=True):
             serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
         for key in self.required_settings:
-            assert_in(key, serialized)
-        assert_in('owner', serialized['urls'])
-        assert_equal(serialized['urls']['owner'], web_url_for(
+            assert key in serialized
+        assert 'owner' in serialized['urls']
+        assert serialized['urls']['owner'] == web_url_for(
             'profile_view_id',
             uid=self.user_settings.owner._id
-        ))
-        assert_in('ownerName', serialized)
-        assert_equal(serialized['ownerName'], self.user_settings.owner.fullname)
-        assert_in('folder', serialized)
+        )
+        assert 'ownerName' in serialized
+        assert serialized['ownerName'] == self.user_settings.owner.fullname
+        assert 'folder' in serialized
 
     def test_serialize_settings_authorized_no_folder(self):
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=True):
             serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
-        assert_in('folder', serialized)
-        assert_equal(serialized['folder'], {'name': None, 'path': None})
+        assert 'folder' in serialized
+        assert serialized['folder'] == {'name': None, 'path': None}
 
     def test_serialize_settings_authorized_folder_is_set(self):
         self.set_provider_id('foo')
@@ -209,26 +209,27 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
             with mock.patch.object(self.ser, 'serialized_folder') as mock_serialized_folder:
                 mock_serialized_folder.return_value = {}
                 serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
-        assert_in('folder', serialized)
-        assert_true(mock_serialized_folder.called)
+        assert 'folder' in serialized
+        assert mock_serialized_folder.called
 
 
 class CitationAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
     required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
     required_settings_authorized = ('ownerName', )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder(self):
         pass
 
     def test_serialize_folder(self):
         serialized_folder = self.ser.serialize_folder(self.folder)
-        assert_equal(serialized_folder['id'], self.folder['id'])
-        assert_equal(serialized_folder['name'], self.folder.name)
-        assert_equal(serialized_folder['kind'], 'folder')
+        assert serialized_folder['id'] == self.folder['id']
+        assert serialized_folder['name'] == self.folder.name
+        assert serialized_folder['kind'] == 'folder'
 
     def test_serialize_citation(self):
         serialized_citation = self.ser.serialize_citation(self.folder)
-        assert_equal(serialized_citation['csl'], self.folder)
-        assert_equal(serialized_citation['id'], self.folder['id'])
-        assert_equal(serialized_citation['kind'], 'file')
+        assert serialized_citation['csl'] == self.folder
+        assert serialized_citation['id'] == self.folder['id']
+        assert serialized_citation['kind'] == 'file'

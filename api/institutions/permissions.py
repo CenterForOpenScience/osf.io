@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import permissions
 
 from api.base.utils import get_user_auth

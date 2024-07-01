@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 
 from django.db import DataError
@@ -16,7 +15,7 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
 class TestApiOAuth2Application(OsfTestCase):
     def setUp(self):
-        super(TestApiOAuth2Application, self).setUp()
+        super().setUp()
         self.api_app = ApiOAuth2ApplicationFactory()
 
     @pytest.mark.skip('Owner should not be nullable after migration')

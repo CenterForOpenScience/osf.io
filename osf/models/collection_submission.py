@@ -1,4 +1,3 @@
-from past.builtins import basestring
 import logging
 
 from django.db import models
@@ -359,18 +358,18 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     @cached_property
     def _id(self):
-        return '{}-{}'.format(self.guid._id, self.collection._id)
+        return f'{self.guid._id}-{self.collection._id}'
 
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
             collection_submission_id, collection_id = data.split('-')
         except ValueError:
-            raise ValueError('Invalid CollectionSubmission object <_id {}>'.format(data))
+            raise ValueError(f'Invalid CollectionSubmission object <_id {data}>')
         else:
             if collection_submission_id and collection_id:
                 try:
-                    if isinstance(data, basestring):
+                    if isinstance(data, str):
                         return (cls.objects.get(guid___id=collection_submission_id, collection__guids___id=collection_id) if not select_for_update
                                 else cls.objects.filter(guid___id=collection_submission_id, collection__guids___id=collection_id).select_for_update().get())
                 except cls.DoesNotExist:
@@ -379,7 +378,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/collections/{}/collection_submissions/{}/'.format(self.collection._id, self.guid._id)
+        path = f'/collections/{self.collection._id}/collection_submissions/{self.guid._id}/'
         return api_v2_url(path)
 
     def update_index(self):
@@ -398,7 +397,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             logger.exception(e)
 
     def save(self, *args, **kwargs):
-        ret = super(CollectionSubmission, self).save(*args, **kwargs)
+        ret = super().save(*args, **kwargs)
         self.update_index()
         return ret
 

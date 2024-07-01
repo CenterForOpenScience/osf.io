@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import io
 import os
 import csv
@@ -66,7 +65,7 @@ def analyze_failed_registration_nodes():
                 succeeded_registrations_after_failed.append(other_reg._id)
 
         can_be_reset = fa.verify(broken_registration)
-        logger.info('Found broken registration {}'.format(broken_registration._id))
+        logger.info(f'Found broken registration {broken_registration._id}')
         failed_registration_info.append(
             {
                 'registration': broken_registration._id,
@@ -91,7 +90,7 @@ def main():
                     'logs_on_original_after_registration_date',
                     'has_addons', 'addon_list', 'succeeded_registrations_after_failed', 'can_be_reset',
                     'registered_from_public']
-        filename = 'stuck_registrations_{}.csv'.format(timezone.now().isoformat())
+        filename = f'stuck_registrations_{timezone.now().isoformat()}.csv'
 
         output = io.StringIO()
         dict_writer = csv.DictWriter(output, fieldnames)
@@ -107,7 +106,7 @@ def main():
             can_change_preferences=False,
         )
 
-    logger.info('{n} broken registrations found'.format(n=len(broken_registrations)))
+    logger.info(f'{len(broken_registrations)} broken registrations found')
     logger.info('Finished.')
 
 

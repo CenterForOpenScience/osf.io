@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from tests.base import OsfTestCase
@@ -18,11 +18,11 @@ class TestBoaSerializer(BoaAddonTestCaseBaseMixin, StorageAddonSerializerTestSui
         self.mock_credentials = mock.patch('addons.boa.serializer.BoaSerializer.credentials_are_valid')
         self.mock_credentials.return_value = True
         self.mock_credentials.start()
-        super(TestBoaSerializer, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_credentials.stop()
-        super(TestBoaSerializer, self).tearDown()
+        super().tearDown()
 
     def test_serialize_settings_authorized_folder_is_set(self):
         self.set_provider_id(pid='foo')

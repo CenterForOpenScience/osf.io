@@ -65,7 +65,7 @@ def autoload_filenode(must_be=None, default_root=False):
             if must_be and file_node.kind != must_be:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                     'message_short': 'incorrect type',
-                    'message_long': 'FileNode must be of type {} not {}'.format(must_be, file_node.kind)
+                    'message_long': f'FileNode must be of type {must_be} not {file_node.kind}'
                 })
 
             kwargs['file_node'] = file_node

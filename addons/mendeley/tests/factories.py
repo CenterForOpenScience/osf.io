@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.utils import timezone
 from factory import SubFactory, Sequence
 
@@ -12,9 +11,9 @@ from addons.mendeley import models
 
 class MendeleyAccountFactory(ExternalAccountFactory):
     provider = 'mendeley'
-    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
-    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
+    provider_id = Sequence(lambda n: f'id-{n}')
+    oauth_key = Sequence(lambda n: f'key-{n}')
+    oauth_secret = Sequence(lambda n: f'secret-{n}')
     expires_at = timezone.now() + relativedelta(days=1)
 
 

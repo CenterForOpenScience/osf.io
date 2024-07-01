@@ -16,7 +16,7 @@ class GitHubSerializer(StorageAddonSerializer):
     def serialized_folder(self, node_settings):
         return {
             'path': node_settings.repo,
-            'name': '{0} / {1}'.format(node_settings.user, node_settings.repo),
+            'name': f'{node_settings.user} / {node_settings.repo}',
         }
 
     @property

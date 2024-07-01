@@ -39,7 +39,7 @@ class BannerSerializer(JSONAPISerializer):
 
     def add_license(self, banner, text):
         if banner.license and not banner.license.lower() == 'none':
-            return text + ' Image copyright {}.'.format(banner.license)
+            return text + f' Image copyright {banner.license}.'
         return text
 
     # Only the current banner's URL is surfaced through the API

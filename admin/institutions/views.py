@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import json
 
 from django.contrib import messages
@@ -37,7 +35,7 @@ class InstitutionList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('institutions', query_set)
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
-        return super(InstitutionList, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
 
 class InstitutionDisplay(PermissionRequiredMixin, DetailView):
@@ -110,7 +108,7 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        return super(InstitutionChangeForm, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('institutions:detail', kwargs={'institution_id': self.kwargs.get('institution_id')})
@@ -124,10 +122,10 @@ class InstitutionExport(PermissionRequiredMixin, View):
         institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
         data = serializers.serialize('json', [institution])
 
-        filename = '{}_export.json'.format(institution.name)
+        filename = f'{institution.name}_export.json'
 
         response = HttpResponse(data, content_type='text/json')
-        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
 
@@ -141,7 +139,7 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        return super(CreateInstitution, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
 
 class InstitutionNodeList(PermissionRequiredMixin, ListView):
@@ -164,7 +162,7 @@ class InstitutionNodeList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('institution', Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id']))
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
-        return super(InstitutionNodeList, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
 
 class DeleteInstitution(PermissionRequiredMixin, DeleteView):
@@ -177,13 +175,13 @@ class DeleteInstitution(PermissionRequiredMixin, DeleteView):
         institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
         if institution.nodes.count() > 0:
             return redirect('institutions:cannot_delete', institution_id=institution.pk)
-        return super(DeleteInstitution, self).delete(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
         if institution.nodes.count() > 0:
             return redirect('institutions:cannot_delete', institution_id=institution.pk)
-        return super(DeleteInstitution, self).get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
@@ -226,7 +224,7 @@ class CannotDeleteInstitution(TemplateView):
     template_name = 'institutions/cannot_delete.html'
 
     def get_context_data(self, **kwargs):
-        context = super(CannotDeleteInstitution, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['institution'] = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
         return context
 
@@ -238,12 +236,12 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
     form_class = InstitutionalMetricsAdminRegisterForm
 
     def get_form_kwargs(self):
-        kwargs = super(InstitutionalMetricsAdminRegister, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['institution_id'] = self.kwargs['institution_id']
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super(InstitutionalMetricsAdminRegister, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['institution_name'] = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id']).name
         return context
 
@@ -255,16 +253,16 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
         target_institution = Institution.objects.filter(id=institution_id).first()
 
         if not osf_user:
-            raise Http404('OSF user with id "{}" not found. Please double check.'.format(user_id))
+            raise Http404(f'OSF user with id "{user_id}" not found. Please double check.')
 
-        group = Group.objects.filter(name__startswith='institution_{}'.format(target_institution._id)).first()
+        group = Group.objects.filter(name__startswith=f'institution_{target_institution._id}').first()
 
         group.user_set.add(osf_user)
         group.save()
 
         osf_user.save()
-        messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
-        return super(InstitutionalMetricsAdminRegister, self).form_valid(form)
+        messages.success(self.request, f'Permissions update successful for OSF User {osf_user.username}!')
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('institutions:register_metrics_admin', kwargs={'institution_id': self.kwargs['institution_id']})

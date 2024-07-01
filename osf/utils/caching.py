@@ -9,7 +9,6 @@ NOTE: Properties will *not* be cached if they return `None`. Use
 `django.utils.functional.cached_property` for properties that
 can return `None` and do not need a setter.
 """
-from __future__ import unicode_literals
 
 from functools import wraps
 
@@ -31,7 +30,7 @@ class _CachedProperty(property):
         if callable(fdel):
             fdel = self._wrap_fdel(fdel)
         # Create the property.
-        super(_CachedProperty, self).__init__(fget, fset, fdel, doc)
+        super().__init__(fget, fset, fdel, doc)
 
     def _wrap_fget(self, fget):
         @wraps(fget)

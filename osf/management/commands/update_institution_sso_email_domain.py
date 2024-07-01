@@ -26,7 +26,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             'institution_id',
             type=str,
@@ -62,7 +62,7 @@ class Command(BaseCommand):
         # Verify the institution
         institution = Institution.load(institution_id)
         if not institution:
-            message = 'Error: invalid institution ID [{}]'.format(institution_id)
+            message = f'Error: invalid institution ID [{institution_id}]'
             logger.error(message)
             sentry.log_message(message)
             return
@@ -126,9 +126,9 @@ def update_email_domain(user, src_domain, dst_domain, dry_run=True):
     for email in emails_to_add:
         try:
             validate_email(email)
-        except (ValidationError, BlockedEmailError):
+        except (ValidationError, BlockedEmailError) as e:
             logger.error(f'Email validation failed when adding [{email}] to user [{user._id}]!')
-            sentry.log_exception()
+            sentry.log_exception(e)
             user_result.get(UpdateResult.ERRORED.name).append(email)
             continue
         duplicate_user = get_user(email=email)
@@ -136,9 +136,9 @@ def update_email_domain(user, src_domain, dst_domain, dry_run=True):
             try:
                 if not dry_run:
                     user.emails.create(address=email)
-            except Exception:
+            except Exception as e:
                 logger.error(f'An unexpected error occurred when adding email [{email}] to user [{user._id}]!')
-                sentry.log_exception()
+                sentry.log_exception(e)
                 user_result.get(UpdateResult.ERRORED.name).append(email)
             else:
                 logger.info(f'Successfully added email [{email}] to user [{user._id}]!')

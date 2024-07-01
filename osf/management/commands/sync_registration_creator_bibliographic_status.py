@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 A management command to sync the bibliographic status of specified registration creators
 
@@ -24,7 +22,7 @@ def sync_registration_creator_bibliographic_status(registration_guid):
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--registrations',
             nargs='+',

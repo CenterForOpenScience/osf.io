@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from addons.base import generic_views
 from addons.figshare.serializer import FigshareSerializer
 

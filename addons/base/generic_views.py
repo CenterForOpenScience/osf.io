@@ -39,7 +39,7 @@ def import_auth(addon_short_name, Serializer):
             'result': Serializer().serialize_settings(node_addon, auth.user),
             'message': 'Successfully imported credentials from profile.',
         }
-    _import_auth.__name__ = '{0}_import_auth'.format(addon_short_name)
+    _import_auth.__name__ = f'{addon_short_name}_import_auth'
     return _import_auth
 
 
@@ -49,7 +49,7 @@ def account_list(addon_short_name, Serializer):
         user_settings = auth.user.get_addon(addon_short_name)
         serializer = Serializer(user_settings=user_settings)
         return serializer.serialized_user_settings
-    _account_list.__name__ = '{0}_account_list'.format(addon_short_name)
+    _account_list.__name__ = f'{addon_short_name}_account_list'
     return _account_list
 
 
@@ -64,7 +64,7 @@ def folder_list(addon_short_name, addon_full_name, get_folders):
 
         folder_id = request.args.get('folderId')
         return get_folders(node_addon, folder_id)
-    _folder_list.__name__ = '{0}_folder_list'.format(addon_short_name)
+    _folder_list.__name__ = f'{addon_short_name}_folder_list'
     return _folder_list
 
 
@@ -81,7 +81,7 @@ def get_config(addon_short_name, Serializer):
                 auth.user
             )
         }
-    _get_config.__name__ = '{0}_get_config'.format(addon_short_name)
+    _get_config.__name__ = f'{addon_short_name}_get_config'
     return _get_config
 
 
@@ -100,16 +100,14 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
         return {
             'result': {
                 'folder': {
-                    'name': path.replace('All Files', '') if path != '/' else '/ (Full {0})'.format(
-                        addon_full_name
-                    ),
+                    'name': path.replace('All Files', '') if path != '/' else f'/ (Full {addon_full_name})',
                     'path': path,
                 },
                 'urls': Serializer(node_settings=node_addon).addon_serialized_urls,
             },
             'message': 'Successfully updated settings.',
         }
-    _set_config.__name__ = '{0}_set_config'.format(addon_short_name)
+    _set_config.__name__ = f'{addon_short_name}_set_config'
     return _set_config
 
 
@@ -120,5 +118,5 @@ def deauthorize_node(addon_short_name):
     def _deauthorize_node(auth, node_addon, **kwargs):
         node_addon.deauthorize(auth=auth)
         node_addon.save()
-    _deauthorize_node.__name__ = '{0}_deauthorize_node'.format(addon_short_name)
+    _deauthorize_node.__name__ = f'{addon_short_name}_deauthorize_node'
     return _deauthorize_node

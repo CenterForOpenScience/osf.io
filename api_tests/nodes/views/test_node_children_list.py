@@ -44,7 +44,7 @@ class TestNodeChildrenList:
 
     @pytest.fixture()
     def private_project_url(self, private_project):
-        return '/{}nodes/{}/children/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/children/'
 
     @pytest.fixture()
     def public_project(self, user):
@@ -56,7 +56,7 @@ class TestNodeChildrenList:
 
     @pytest.fixture()
     def public_project_url(self, user, public_project):
-        return '/{}nodes/{}/children/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/children/'
 
     @pytest.fixture()
     def view_only_link(self, private_project):
@@ -187,7 +187,7 @@ class TestNodeChildrenList:
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == child._id
 
-        project_url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, public_project._id)
+        project_url = f'/{API_BASE}nodes/{public_project._id}/?related_counts=children'
         res = app.get(project_url, auth=user.auth)
         assert res.status_code == 200
         # Verifying related_counts match direct children count (grandchildren not included, pointers not included)
@@ -202,12 +202,12 @@ class TestNodeChildrenList:
         NodeFactory(parent=child, creator=user_2, is_public=False)
 
         # child has one component. `user` can view due to implict admin perms
-        component_url = '/{}nodes/{}/children/'.format(API_BASE, child._id, auth=user.auth)
+        component_url = f'/{API_BASE}nodes/{child._id}/children/'
         res = app.get(component_url, auth=user.auth)
 
         assert len(res.json['data']) == 1
 
-        project_url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, child._id)
+        project_url = f'/{API_BASE}nodes/{child._id}/?related_counts=children'
 
         res = app.get(project_url, auth=user.auth)
         assert res.status_code == 200
@@ -217,7 +217,7 @@ class TestNodeChildrenList:
     def test_child_counts_permissions(self, app, user, public_project):
         NodeFactory(parent=public_project, creator=user)
 
-        url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, public_project._id)
+        url = f'/{API_BASE}nodes/{public_project._id}/?related_counts=children'
         user_two = AuthUserFactory()
 
         # Unauthorized
@@ -242,7 +242,7 @@ class TestNodeChildrenList:
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
 
         # view only link is not attached to components
-        view_only_link_url = '{}?view_only={}'.format(private_project_url, view_only_link.key)
+        view_only_link_url = f'{private_project_url}?view_only={view_only_link.key}'
         res = app.get(view_only_link_url)
         ids = [node['id'] for node in res.json['data']]
         assert res.status_code == 200
@@ -310,7 +310,7 @@ class TestNodeChildCreate:
 
     @pytest.fixture()
     def url(self, project):
-        return '/{}nodes/{}/children/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/children/'
 
     @pytest.fixture()
     def child(self):
@@ -476,7 +476,7 @@ class TestNodeChildCreate:
         }, auth=user.auth)
         child_id = res.json['data']['id']
         assert res.status_code == 201
-        url = '/{}nodes/{}/'.format(API_BASE, child_id)
+        url = f'/{API_BASE}nodes/{child_id}/'
 
         res = app.get(url, auth=user.auth)
         assert res.json['data']['attributes']['title'] == strip_html(title)
@@ -492,7 +492,7 @@ class TestNodeChildCreate:
 
     def test_cannot_create_child_on_a_registration(self, app, user, project):
         registration = RegistrationFactory(project=project, creator=user)
-        url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}nodes/{registration._id}/children/'
         res = app.post_json_api(url, {
             'data': {
                 'type': 'nodes',
@@ -516,7 +516,7 @@ class TestNodeChildrenBulkCreate:
 
     @pytest.fixture()
     def url(self, project):
-        return '/{}nodes/{}/children/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/children/'
 
     @pytest.fixture()
     def child_one(self):
@@ -670,7 +670,7 @@ class TestNodeChildrenBulkCreate:
         }, auth=user.auth, bulk=True)
         child_id = res.json['data'][0]['id']
         assert res.status_code == 201
-        url = '/{}nodes/{}/'.format(API_BASE, child_id)
+        url = f'/{API_BASE}nodes/{child_id}/'
 
         res = app.get(url, auth=user.auth)
         assert res.json['data']['attributes']['title'] == strip_html(title)
@@ -687,7 +687,7 @@ class TestNodeChildrenBulkCreate:
     def test_cannot_bulk_create_children_on_a_registration(
             self, app, user, project, child_two):
         registration = RegistrationFactory(project=project, creator=user)
-        url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}nodes/{registration._id}/children/'
         res = app.post_json_api(url, {
             'data': [child_two, {
                 'type': 'nodes',

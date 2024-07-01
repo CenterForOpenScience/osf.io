@@ -13,7 +13,7 @@ def populate_registration_provider_notification_subscriptions():
             provider_admins = provider.get_group('admin').user_set.all()
             provider_moderators = provider.get_group('moderator').user_set.all()
         except Group.DoesNotExist:
-            logger.warn('Unable to find groups for provider "{}", assuming there are no subscriptions to create.'.format(provider._id))
+            logger.warning(f'Unable to find groups for provider "{provider._id}", assuming there are no subscriptions to create.')
             continue
 
         for subscription in provider.DEFAULT_SUBSCRIPTIONS:

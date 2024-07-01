@@ -28,7 +28,7 @@ def _validate_reports(value, *args, **kwargs):
             )
 
 
-class SpamStatus(object):
+class SpamStatus:
     UNKNOWN = None
     FLAGGED = 1
     SPAM = 2

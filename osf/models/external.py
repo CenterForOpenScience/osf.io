@@ -8,9 +8,9 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 from flask import request
-from oauthlib.oauth2 import (AccessDeniedError, InvalidGrantError,
-    TokenExpiredError, MissingTokenError)
+from oauthlib.oauth2 import AccessDeniedError, InvalidGrantError, TokenExpiredError, MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
+from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
@@ -21,7 +21,6 @@ from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.settings import ADDONS_OAUTH_NO_REDIRECT
 from website.util import web_url_for
-from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ OAUTH1 = 1
 OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
+
 
 class ExternalAccount(ObjectIDMixin, BaseModel):
     """An account on an external service.
@@ -88,16 +88,16 @@ class ExternalAccount(ObjectIDMixin, BaseModel):
         ]
 
 
-class ExternalProviderMeta(abc.ABCMeta):
+class ExternalProviderMeta(type):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
 
     def __init__(cls, name, bases, dct):
-        super(ExternalProviderMeta, cls).__init__(name, bases, dct)
+        super().__init__(name, bases, dct)
         if not isinstance(cls.short_name, abc.abstractproperty):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
+class ExternalProvider(metaclass=ExternalProviderMeta):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
@@ -119,7 +119,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
     expiry_time = 0  # If/When the refresh token expires (seconds). 0 indicates a non-expiring refresh token
 
     def __init__(self, account=None):
-        super(ExternalProvider, self).__init__()
+        super().__init__()
 
         # provide an unauthenticated session by default
         self.account = account
@@ -130,7 +130,8 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             status=self.account.provider_id if self.account else 'anonymous'
         )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def auth_url_base(self):
         """The base URL to begin the OAuth dance"""
         pass
@@ -196,29 +197,34 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         current_session.save()
         return url
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def callback_url(self):
         """The provider URL to exchange the code for a token"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client_id(self):
         """OAuth Client ID. a/k/a: Application ID"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client_secret(self):
         """OAuth Client Secret. a/k/a: Application Secret, Application Key"""
         pass
 
     default_scopes = list()
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self):
         """Human-readable name of the service. e.g.: ORCiD, GitHub"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def short_name(self):
         """Name of the service to be used internally. e.g.: orcid, github"""
         pass
@@ -278,10 +284,11 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
                     redirect_uri=redirect_uri,
                 ).fetch_token(
                     self.callback_url,
+                    include_client_id=True,
                     client_secret=self.client_secret,
                     code=request.args.get('code'),
                 )
-            except (MissingTokenError, RequestsHTTPError):
+            except (MissingTokenError, RequestsHTTPError, CustomOAuth2Error):
                 raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
@@ -473,7 +480,8 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
 
-class BasicAuthProviderMixin(object):
+
+class BasicAuthProviderMixin:
     """
         Providers utilizing BasicAuth can utilize this class to implement the
         storage providers framework by subclassing this mixin. This provides
@@ -483,7 +491,7 @@ class BasicAuthProviderMixin(object):
     """
 
     def __init__(self, account=None, host=None, username=None, password=None):
-        super(BasicAuthProviderMixin, self).__init__()
+        super().__init__()
         if account:
             self.account = account
         elif not account and host and password and username:
@@ -491,7 +499,7 @@ class BasicAuthProviderMixin(object):
                 display_name=username,
                 oauth_key=password,
                 oauth_secret=host,
-                provider_id='{}:{}'.format(host, username),
+                provider_id=f'{host}:{username}',
                 profile_url=host,
                 provider=self.short_name,
                 provider_name=self.name

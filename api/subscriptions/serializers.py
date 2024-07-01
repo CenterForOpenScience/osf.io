@@ -28,7 +28,7 @@ class FrequencyField(ser.Field):
         notification_type = NOTIFICATION_TYPES.get(frequency)
         if notification_type:
             return {'notification_type': notification_type}
-        raise ValidationError('Invalid frequency "{}"'.format(frequency))
+        raise ValidationError(f'Invalid frequency "{frequency}"')
 
 class SubscriptionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([

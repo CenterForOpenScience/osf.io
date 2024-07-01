@@ -94,7 +94,7 @@ def migrate_source_tags(tags):
     for tag_name in tags:
         tag, created = Tag.all_tags.get_or_create(name=tag_name[0], system=True)
         if created:
-            logger.info('Tag with name {} created'.format(tag_name[0]))
+            logger.info(f'Tag with name {tag_name[0]} created')
         tag.name = tag_name[1]
         try:
             with transaction.atomic():
@@ -113,7 +113,7 @@ def add_tags(tags):
     for tag_name in tags:
         tag, created = Tag.all_tags.get_or_create(name=tag_name, system=True)
         if not created:
-            logger.info('System tag {} already exists, skipping.'.format(tag_name))
+            logger.info(f'System tag {tag_name} already exists, skipping.')
         else:
             tag.save()
             logger.info('Added tag ' + tag.name)

@@ -7,7 +7,7 @@ from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestM
 class TestNodeRequestDetail(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):
-        return '/{}requests/{}/'.format(API_BASE, node_request._id)
+        return f'/{API_BASE}requests/{node_request._id}/'
 
     def test_admin_can_view_request(self, app, url, admin):
         res = app.get(url, auth=admin.auth)
@@ -30,7 +30,7 @@ class TestNodeRequestDetail(NodeRequestTestMixin):
 @pytest.mark.django_db
 class TestPreprintRequestDetail(PreprintRequestTestMixin):
     def url(self, request):
-        return '/{}requests/{}/'.format(API_BASE, request._id)
+        return f'/{API_BASE}requests/{request._id}/'
 
     def test_admin_can_view_request(self, app, admin, pre_request, post_request, none_request):
         for request in [pre_request, post_request, none_request]:

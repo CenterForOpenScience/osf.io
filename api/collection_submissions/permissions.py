@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from api.base.utils import get_user_auth
 from osf.models import CollectionSubmission
 from osf.utils.permissions import READ

@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-
-from django.conf.urls import re_path
+from django.urls import re_path
 
 from admin.subjects import views
 

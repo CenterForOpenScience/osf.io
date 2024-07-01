@@ -9,4 +9,4 @@ def example_task(ctx, echo_this):
     :param echo_this str:
     :return:
     """
-    ctx.run('echo {}'.format(echo_this))
+    ctx.run(f'echo {echo_this}')

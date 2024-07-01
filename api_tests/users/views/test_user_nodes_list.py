@@ -101,19 +101,19 @@ class TestUserNodes:
             folder, deleted_folder, registration):
 
         #   test_authorized_in_gets_200
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_anonymous_gets_200
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/'
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_projects_logged_in
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/'
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -128,7 +128,7 @@ class TestUserNodes:
         assert registration._id not in ids
 
     #   test_get_projects_not_logged_in
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/'
         res = app.get(url)
         node_json = res.json['data']
 
@@ -142,7 +142,7 @@ class TestUserNodes:
         assert registration._id not in ids
 
     #   test_get_projects_logged_in_as_different_user
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_two._id)
+        url = f'/{API_BASE}users/{user_two._id}/nodes/'
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -155,7 +155,7 @@ class TestUserNodes:
         assert deleted_project_user_one._id not in ids
         assert registration._id not in ids
 
-        url = '/{}users/{}/nodes/?sort=-title'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/?sort=-title'
         res = app.get(url, auth=user_one.auth)
 
         node_json = res.json['data']
@@ -165,7 +165,7 @@ class TestUserNodes:
         assert public_project_user_one._id == ids[0]
         assert private_project_user_one._id == ids[1]
 
-        url = '/{}users/{}/nodes/?sort=title'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/?sort=title'
         res = app.get(url, auth=user_one.auth)
 
         node_json = res.json['data']
@@ -177,7 +177,7 @@ class TestUserNodes:
 
     # test_osf_group_member_node_shows_up_in_user_nodes
         group_mem = AuthUserFactory()
-        url = '/{}users/{}/nodes/'.format(API_BASE, group_mem._id)
+        url = f'/{API_BASE}users/{group_mem._id}/nodes/'
         res = app.get(url, auth=group_mem.auth)
         assert len(res.json['data']) == 0
 
@@ -226,7 +226,7 @@ class TestUserNodesPreprintsFiltering:
 
     @pytest.fixture()
     def url_base(self):
-        return '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
+        return f'/{API_BASE}users/me/nodes/?filter[preprint]='
 
     def test_filter_false(
             self, app, user, abandoned_preprint_node, abandoned_preprint, valid_preprint, valid_preprint_node,
@@ -234,7 +234,7 @@ class TestUserNodesPreprintsFiltering:
         expected_ids = [
             abandoned_preprint_node._id,
             no_preprints_node._id]
-        res = app.get('{}false'.format(url_base), auth=user.auth)
+        res = app.get(f'{url_base}false', auth=user.auth)
         actual_ids = [n['id'] for n in res.json['data']]
 
         assert set(expected_ids) == set(actual_ids)
@@ -243,7 +243,7 @@ class TestUserNodesPreprintsFiltering:
             self, app, user, valid_preprint_node, abandoned_preprint_node, abandoned_preprint,
             valid_preprint, url_base):
         expected_ids = [valid_preprint_node._id]
-        res = app.get('{}true'.format(url_base), auth=user.auth)
+        res = app.get(f'{url_base}true', auth=user.auth)
         actual_ids = [n['id'] for n in res.json['data']]
 
         assert set(expected_ids) == set(actual_ids)
@@ -254,14 +254,14 @@ class TestNodeListFiltering(NodesListFilteringMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}users/me/nodes/?'.format(API_BASE)
+        return f'/{API_BASE}users/me/nodes/?'
 
 @pytest.mark.django_db
 class TestNodeListDateFiltering(NodesListDateFilteringMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}users/me/nodes/?'.format(API_BASE)
+        return f'/{API_BASE}users/me/nodes/?'
 
 @pytest.mark.django_db
 class TestNodeListPermissionFiltering:
@@ -298,26 +298,26 @@ class TestNodeListPermissionFiltering:
 
     @pytest.fixture()
     def url(self):
-        return '/{}users/me/nodes/?filter[current_user_permissions]='.format(API_BASE)
+        return f'/{API_BASE}users/me/nodes/?filter[current_user_permissions]='
 
     def test_current_user_permissions_filter(self, app, url, contrib, no_perm_node, read_node, write_node, admin_node):
         # test filter read
-        res = app.get('{}read'.format(url), auth=contrib.auth)
+        res = app.get(f'{url}read', auth=contrib.auth)
         assert len(res.json['data']) == 3
-        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {read_node._id, write_node._id, admin_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter write
-        res = app.get('{}write'.format(url), auth=contrib.auth)
+        res = app.get(f'{url}write', auth=contrib.auth)
         assert len(res.json['data']) == 2
-        assert set([admin_node._id, write_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {admin_node._id, write_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter admin
-        res = app.get('{}admin'.format(url), auth=contrib.auth)
+        res = app.get(f'{url}admin', auth=contrib.auth)
         assert len(res.json['data']) == 1
         assert [admin_node._id] == [node['id'] for node in res.json['data']]
 
         # test filter null
-        res = app.get('{}null'.format(url), auth=contrib.auth, expect_errors=True)
+        res = app.get(f'{url}null', auth=contrib.auth, expect_errors=True)
         assert res.status_code == 400
 
         user2 = AuthUserFactory()
@@ -327,73 +327,73 @@ class TestNodeListPermissionFiltering:
         admin_node.add_osf_group(osf_group, permissions.ADMIN)
 
         # test filter group member read
-        res = app.get('{}read'.format(url), auth=user2.auth)
+        res = app.get(f'{url}read', auth=user2.auth)
         assert len(res.json['data']) == 3
-        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {read_node._id, write_node._id, admin_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter group member write
-        res = app.get('{}write'.format(url), auth=user2.auth)
+        res = app.get(f'{url}write', auth=user2.auth)
         assert len(res.json['data']) == 2
-        assert set([admin_node._id, write_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {admin_node._id, write_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter group member admin
-        res = app.get('{}admin'.format(url), auth=user2.auth)
+        res = app.get(f'{url}admin', auth=user2.auth)
         assert len(res.json['data']) == 1
         assert [admin_node._id] == [node['id'] for node in res.json['data']]
 
     def test_filter_my_current_user_permissions_to_other_users_nodes(self, app, contrib, no_perm_node, read_node, write_node, admin_node):
-        url = '/{}users/{}/nodes/?filter[current_user_permissions]='.format(API_BASE, contrib._id)
+        url = f'/{API_BASE}users/{contrib._id}/nodes/?filter[current_user_permissions]='
 
         me = AuthUserFactory()
 
         # test filter read
-        res = app.get('{}read'.format(url), auth=me.auth)
+        res = app.get(f'{url}read', auth=me.auth)
         assert len(res.json['data']) == 0
 
         read_node.add_contributor(me, permissions.READ)
         read_node.save()
-        res = app.get('{}read'.format(url), auth=me.auth)
+        res = app.get(f'{url}read', auth=me.auth)
         assert len(res.json['data']) == 1
-        assert set([read_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {read_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter write
-        res = app.get('{}write'.format(url), auth=me.auth)
+        res = app.get(f'{url}write', auth=me.auth)
         assert len(res.json['data']) == 0
         write_node.add_contributor(me, permissions.WRITE)
         write_node.save()
-        res = app.get('{}write'.format(url), auth=me.auth)
+        res = app.get(f'{url}write', auth=me.auth)
         assert len(res.json['data']) == 1
-        assert set([write_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {write_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter admin
-        res = app.get('{}admin'.format(url), auth=me.auth)
+        res = app.get(f'{url}admin', auth=me.auth)
         assert len(res.json['data']) == 0
 
-        res = app.get('{}admin'.format(url), auth=me.auth)
+        res = app.get(f'{url}admin', auth=me.auth)
         admin_node.add_contributor(me, permissions.ADMIN)
         admin_node.save()
-        res = app.get('{}admin'.format(url), auth=me.auth)
+        res = app.get(f'{url}admin', auth=me.auth)
         assert len(res.json['data']) == 1
-        assert set([admin_node._id]) == set([node['id'] for node in res.json['data']])
-        res = app.get('{}read'.format(url), auth=me.auth)
+        assert {admin_node._id} == {node['id'] for node in res.json['data']}
+        res = app.get(f'{url}read', auth=me.auth)
         assert len(res.json['data']) == 3
-        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {read_node._id, write_node._id, admin_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter nonauthenticated_user v2.11
         read_node.is_public = True
         read_node.save()
-        res = app.get('{}read&version=2.11'.format(url))
+        res = app.get(f'{url}read&version=2.11')
         assert len(res.json['data']) == 0
 
         # test filter nonauthenticated_user v2.2
-        res = app.get('{}read&version=2.2'.format(url))
+        res = app.get(f'{url}read&version=2.2')
         assert len(res.json['data']) == 1
-        assert set([read_node._id]) == set([node['id'] for node in res.json['data']])
+        assert {read_node._id} == {node['id'] for node in res.json['data']}
 
         # test filter nonauthenticated_user v2.2
-        res = app.get('{}write&version=2.2'.format(url))
+        res = app.get(f'{url}write&version=2.2')
         assert len(res.json['data']) == 0
 
         # test filter nonauthenticated_user v2.2
-        res = app.get('{}admin&version=2.2'.format(url))
+        res = app.get(f'{url}admin&version=2.2')
         assert len(res.json['data']) == 0

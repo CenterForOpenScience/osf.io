@@ -1,8 +1,10 @@
 import logging
 
+from corsheaders.signals import check_request_enabled
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
 
+from api.base.middleware_cors_signal import cors_allow_institution_domains
 from osf.migrations import (
     add_registration_schemas,
     create_cache_table,
@@ -24,8 +26,9 @@ class AppConfig(BaseAppConfig):
     managed = True
 
     def ready(self):
-        super(AppConfig, self).ready()
+        super().ready()
 
+        check_request_enabled.connect(cors_allow_institution_domains)
         post_migrate.connect(
             add_registration_schemas,
             dispatch_uid='osf.apps.add_registration_schemas'

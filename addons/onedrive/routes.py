@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """OneDrive addon routes."""
 from framework.routing import Rule, json_renderer
 

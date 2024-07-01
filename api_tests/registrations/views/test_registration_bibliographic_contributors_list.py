@@ -26,4 +26,4 @@ class TestRegistrationBibliographicContributors(TestNodeBibliographicContributor
 
     @pytest.fixture()
     def url(self, project):
-        return '/{}registrations/{}/bibliographic_contributors/'.format(API_BASE, project._id)
+        return f'/{API_BASE}registrations/{project._id}/bibliographic_contributors/'

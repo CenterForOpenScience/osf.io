@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
 
@@ -52,7 +51,7 @@ class TestClaimUser:
 
     @pytest.fixture()
     def url(self):
-        return '/{}users/{{}}/claim/'.format(API_BASE)
+        return f'/{API_BASE}users/{{}}/claim/'
 
     def payload(self, **kwargs):
         payload = {

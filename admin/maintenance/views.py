@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import pytz
 import datetime
 
@@ -35,7 +33,7 @@ class MaintenanceDisplay(PermissionRequiredMixin, TemplateView):
         maintenance = MaintenanceState.objects.first()
         kwargs['form'] = MaintenanceForm()
         kwargs['current_alert'] = model_to_dict(maintenance) if maintenance else None
-        return super(MaintenanceDisplay, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
         data = request.POST

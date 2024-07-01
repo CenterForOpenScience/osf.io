@@ -32,13 +32,13 @@ class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
         self.object = form.save(commit=False)
         self.object._creator = self.request.user
         self.object.save()
-        return super(CreateRegistrationProvider, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
         kwargs['show_taxonomies'] = True
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
-        return super(CreateRegistrationProvider, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
 
 class RegistrationProviderList(PermissionRequiredMixin, ListView):
@@ -96,7 +96,7 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
         licenses_acceptable = list(registration_provider.licenses_acceptable.values_list('name', flat=True))
         licenses_html = '<ul>'
         for license in licenses_acceptable:
-            licenses_html += '<li>{}</li>'.format(license)
+            licenses_html += f'<li>{license}</li>'
         licenses_html += '</ul>'
         registration_provider_attributes['licenses_acceptable'] = licenses_html
 
@@ -110,24 +110,24 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
             if parent.id in subject_ids:
                 mapped_text = ''
                 if parent.bepress_subject and parent.text != parent.bepress_subject.text:
-                    mapped_text = ' (mapped from {})'.format(parent.bepress_subject.text)
+                    mapped_text = f' (mapped from {parent.bepress_subject.text})'
                 hash_id = abs(hash(parent.text))
-                subject_html = subject_html + '<li data-id={}>{}'.format(hash_id, parent.text) + mapped_text + '</li>'
-                child_html = '<ul class="three-cols" data-id={}>'.format(hash_id)
+                subject_html = subject_html + f'<li data-id={hash_id}>{parent.text}' + mapped_text + '</li>'
+                child_html = f'<ul class="three-cols" data-id={hash_id}>'
                 for child in parent.children.all():
                     grandchild_html = ''
                     if child.id in subject_ids:
                         child_mapped_text = ''
                         if child.bepress_subject and child.text != child.bepress_subject.text:
-                            child_mapped_text = ' (mapped from {})'.format(child.bepress_subject.text)
-                        child_html = child_html + '<li>{}'.format(child.text) + child_mapped_text + '</li>'
+                            child_mapped_text = f' (mapped from {child.bepress_subject.text})'
+                        child_html = child_html + f'<li>{child.text}' + child_mapped_text + '</li>'
                         grandchild_html = '<ul>'
                         for grandchild in child.children.all():
                             if grandchild.id in subject_ids:
                                 grandchild_mapped_text = ''
                                 if grandchild.bepress_subject and grandchild.text != grandchild.bepress_subject.text:
-                                    grandchild_mapped_text = ' (mapped from {})'.format(grandchild.bepress_subject.text)
-                                grandchild_html = grandchild_html + '<li>{}'.format(grandchild.text) + grandchild_mapped_text + '</li>'
+                                    grandchild_mapped_text = f' (mapped from {grandchild.bepress_subject.text})'
+                                grandchild_html = grandchild_html + f'<li>{grandchild.text}' + grandchild_mapped_text + '</li>'
                         grandchild_html += '</ul>'
                     child_html += grandchild_html
 
@@ -159,7 +159,7 @@ class RegistrationProviderChangeForm(PermissionRequiredMixin, UpdateView):
     form_class = RegistrationProviderForm
 
     def form_invalid(self, form):
-        super(RegistrationProviderChangeForm, self).form_invalid(form)
+        super().form_invalid(form)
         err_message = ''
         for item in form.errors.values():
             err_message = err_message + item + '\n'
@@ -167,7 +167,7 @@ class RegistrationProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        return super(RegistrationProviderChangeForm, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
     def get_object(self, queryset=None):
         provider_id = self.kwargs.get('registration_provider_id')
@@ -188,13 +188,13 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
         provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         if provider.registrations.count() > 0:
             return redirect('registration_providers:cannot_delete', registration_provider_id=provider.pk)
-        return super(DeleteRegistrationProvider, self).delete(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         if provider.registrations.count() > 0:
             return redirect('registration_providers:cannot_delete', registration_provider_id=provider.pk)
-        return super(DeleteRegistrationProvider, self).get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         return RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
@@ -209,14 +209,14 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
             kwargs['has_collected_submissions'] = False
             kwargs['collected_submission_count'] = 0
         kwargs['provider_id'] = registration_provider.id
-        return super(DeleteRegistrationProvider, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
 
 class CannotDeleteProvider(TemplateView):
     template_name = 'registration_providers/cannot_delete.html'
 
     def get_context_data(self, **kwargs):
-        context = super(CannotDeleteProvider, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['provider'] = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         return context
 
@@ -235,9 +235,9 @@ class ExportRegistrationProvider(PermissionRequiredMixin, View):
         cleaned_fields['default_license'] = registration_provider.default_license.license_id if registration_provider.default_license else ''
         cleaned_fields['subjects'] = self.serialize_subjects(registration_provider)
         cleaned_data['fields'] = cleaned_fields
-        filename = '{}_export.json'.format(registration_provider.name)
+        filename = f'{registration_provider.name}_export.json'
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
-        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
     def serialize_subjects(self, provider):
@@ -274,7 +274,8 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             provider = RegistrationProvider.objects.get(id=provider_form.cleaned_data['provider_id'])
             try:
                 taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
-                if request.is_ajax():
+                # Replacement as is_ajax has been removed
+                if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
                     # An ajax request is for validation only, so run that validation!
                     try:
                         response_data = validate_input(
@@ -285,7 +286,7 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
 
                         if response_data:
                             added_subjects = [subject.text for subject in response_data]
-                            response_data = {'message': 'Custom taxonomy validated with added subjects: {}'.format(added_subjects), 'feedback_type': 'success'}
+                            response_data = {'message': f'Custom taxonomy validated with added subjects: {added_subjects}', 'feedback_type': 'success'}
                     except (RuntimeError, AssertionError) as script_feedback:
                         response_data = {'message': script_feedback.message, 'feedback_type': 'error'}
                     if not response_data:

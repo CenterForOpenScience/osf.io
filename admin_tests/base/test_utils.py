@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa: F403
 import datetime as datetime
 import pytest
 
@@ -30,7 +29,7 @@ pytestmark = pytest.mark.django_db
 class TestSubjectRules(AdminTestCase):
 
     def setUp(self):
-        super(TestSubjectRules, self).setUp()
+        super().setUp()
 
         self.parent_one = SubjectFactory()  # 0
         self.parent_two = SubjectFactory()  # 1
@@ -121,7 +120,7 @@ class TestSubjectRules(AdminTestCase):
 
 class TestNodeChanges(AdminTestCase):
     def setUp(self):
-        super(TestNodeChanges, self).setUp()
+        super().setUp()
         self.registration = RegistrationFactory(is_public=True)
         self.user = UserFactory()
         self.user.is_staff = True
@@ -135,40 +134,41 @@ class TestNodeChanges(AdminTestCase):
 
     def test_change_embargo_date(self):
 
-        assert_false(self.registration.embargo)
-        assert_true(self.registration.is_public)
-        assert_true(Embargo.objects.count() == 0)
+        assert not self.registration.embargo
+        assert self.registration.is_public
+        assert Embargo.objects.count() == 0
 
         # Note: Date comparisons accept a difference up to a day because embargoes start at midnight
 
         # Create an embargo from a registration with none
         change_embargo_date(self.registration, self.user, self.date_valid)
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid, delta=datetime.timedelta(days=1))
-        assert_true(Embargo.objects.count() == 1)
+        delta = datetime.timedelta(days=1)
+        assert abs(self.registration.embargo.end_date - self.date_valid) <= delta
+        assert Embargo.objects.count() == 1
 
         # Make sure once embargo is set, registration is made private
         self.registration.reload()
-        assert_false(self.registration.is_public)
+        assert not self.registration.is_public
 
         # Update an embargo end date
         change_embargo_date(self.registration, self.user, self.date_valid2)
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
-        assert_true(Embargo.objects.count() == 1)
+        assert abs(self.registration.embargo.end_date - self.date_valid2) <= delta
+        assert Embargo.objects.count() == 1
 
         # Test invalid dates
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             change_embargo_date(self.registration, self.user, self.date_too_late)
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             change_embargo_date(self.registration, self.user, self.date_too_soon)
 
         # Test that checks user has permission
-        with assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             change_embargo_date(self.registration, UserFactory(), self.date_valid)
 
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
-        assert_true(Embargo.objects.count() == 1)
+        assert abs(self.registration.embargo.end_date - self.date_valid2) <= delta
+        assert Embargo.objects.count() == 1
 
-        assert_false(self.registration.is_public)
+        assert not self.registration.is_public
 
 
 site = AdminSite()
@@ -181,7 +181,7 @@ class TestGroupCollectionsPreprints:
 
     @pytest.fixture()
     def admin_url(self, user):
-        return '/admin/osf/osfuser/{}/change/'.format(user.id)
+        return f'/admin/osf/osfuser/{user.id}/change/'
 
     @pytest.fixture()
     def preprint(self, user):
@@ -213,9 +213,9 @@ class TestGroupCollectionsPreprints:
         queryset = formfield.queryset
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group not in queryset)
+        assert (collections_group not in queryset)
 
-        assert(preprint.get_group('admin') not in queryset)
+        assert (preprint.get_group('admin') not in queryset)
 
     @pytest.mark.enable_bookmark_creation
     def test_admin_app_save_related_collections(self, post_request, osf_user_admin, user, preprint):
@@ -238,7 +238,7 @@ class TestGroupCollectionsPreprints:
             else:
                 data_dict[field] = '{}'
         post_form = form(data_dict, instance=user)
-        assert(post_form.is_valid())
+        assert (post_form.is_valid())
         post_form.save(commit=False)
         qdict = QueryDict('', mutable=True)
         qdict.update(data_dict)
@@ -246,6 +246,6 @@ class TestGroupCollectionsPreprints:
         osf_user_admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group in user.groups.all())
+        assert (collections_group in user.groups.all())
 
-        assert(preprint.get_group('admin') in user.groups.all())
+        assert (preprint.get_group('admin') in user.groups.all())

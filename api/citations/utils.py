@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import re
 from rest_framework import status as http_status
@@ -48,7 +46,7 @@ def render_citation(node, style='apa'):
     """Given a node, return a citation"""
     reformat_styles = ['apa', 'chicago-author-date', 'modern-language-association']
     csl = node.csl
-    data = [csl, ]
+    data = [csl]
 
     bib_source = CiteProcJSON(data)
 
@@ -64,7 +62,7 @@ def render_citation(node, style='apa'):
             parent_path = os.path.join(CITATION_STYLES_PATH, parent_style)
             bib_style = CitationStylesStyle(parent_path, validate=False)
         else:
-            raise ValueError('Unable to find a dependent or independent parent style related to {}.csl'.format(style))
+            raise ValueError(f'Unable to find a dependent or independent parent style related to {style}.csl')
 
     bibliography = CitationStylesBibliography(bib_style, bib_source, formatter.plain)
 

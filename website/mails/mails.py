@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """OSF mailing utilities.
 
 Email templates go in website/templates/emails
@@ -43,7 +42,7 @@ DISABLED_MAILS = [
     'welcome_osf4i'
 ]
 
-class Mail(object):
+class Mail:
     """An email object.
 
     :param str tpl_prefix: The template name prefix.
@@ -106,7 +105,7 @@ def send_mail(
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
-    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
+    logger.debug(f'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}')
 
     kwargs = dict(
         from_addr=from_addr,
@@ -193,8 +192,8 @@ CONFIRM_EMAIL_AGU_CONFERENCE_2023 = Mail(
     subject='OSF Account Verification, from the American Geophysical Union Conference'
 )
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
-    'confirm_preprints_{}'.format(name),
-    subject='OSF Account Verification, {}'.format(provider)
+    f'confirm_preprints_{name}',
+    subject=f'OSF Account Verification, {provider}'
 )
 CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
     'confirm_registries_osf',
@@ -202,7 +201,7 @@ CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
 )
 CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
     'confirm_moderation',
-    subject='OSF Account Verification, {}'.format(provider.name)
+    subject=f'OSF Account Verification, {provider.name}'
 )
 
 # Merge account, add or remove email confirmation emails.
@@ -250,7 +249,7 @@ INVITE_OSF_PREPRINT = Mail(
 )
 INVITE_PREPRINT = lambda provider: Mail(
     'invite_preprints',
-    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
+    subject=f'You have been added as a contributor to {get_english_article(provider.name)} {provider.name} {provider.preprint_word}.'
 )
 INVITE_DRAFT_REGISTRATION = Mail(
     'invite_draft_registration',
@@ -278,7 +277,7 @@ CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
 )
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
-    subject='You have been added as a moderator for {}'.format(provider.name)
+    subject=f'You have been added as a moderator for {provider.name}'
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',

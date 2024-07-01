@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
@@ -41,7 +40,7 @@ def project(admin_contrib, write_contrib, read_contrib):
 
 @pytest.fixture()
 def url(project):
-    return '/{}nodes/{}/settings/'.format(API_BASE, project._id)
+    return f'/{API_BASE}nodes/{project._id}/settings/'
 
 
 @pytest.mark.django_db

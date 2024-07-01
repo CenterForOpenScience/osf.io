@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from flask import request
 
 from website.project.decorators import must_have_addon, must_be_addon_authorizer

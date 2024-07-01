@@ -5,4 +5,4 @@ class IsAuthenticatedOrReadOnlyForSearch(IsAuthenticatedOrReadOnly):
         from api.search.views import BaseSearchView
         if not isinstance(view, BaseSearchView):
             return False
-        return request.method == 'POST' or super(IsAuthenticatedOrReadOnlyForSearch, self).has_permission(request, view)
+        return request.method == 'POST' or super().has_permission(request, view)

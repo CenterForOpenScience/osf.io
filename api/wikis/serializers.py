@@ -63,7 +63,7 @@ class WikiSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def get_path(self, obj):
-        return '/{}'.format(obj._id)
+        return f'/{obj._id}'
 
     def get_kind(self, obj):
         return 'file'
@@ -136,7 +136,7 @@ class NodeWikiSerializer(WikiSerializer):
             raise NotFound(detail='The wiki for this node has been disabled.')
 
         if WikiPage.objects.get_for_node(node, name):
-            raise Conflict("A wiki page with the name '{}' already exists.".format(name))
+            raise Conflict(f"A wiki page with the name '{name}' already exists.")
 
         try:
             wiki_page = WikiPage.objects.create_for_node(node, name, content, auth)

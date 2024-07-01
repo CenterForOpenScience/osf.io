@@ -87,7 +87,7 @@ from osf.models import (
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 
-class UserMixin(object):
+class UserMixin:
     """Mixin with convenience methods for retrieving the current user based on the
     current URL. By default, fetches the user based on the user_id kwarg.
     """
@@ -184,7 +184,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     def get_serializer_class(self):
         if self.request.auth:
@@ -347,7 +347,7 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
     serializer_class = GroupSerializer
     view_category = 'users'
     view_name = 'user-groups'
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     @require_flag(OSF_GROUPS)
     def get_default_queryset(self):
@@ -428,7 +428,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-institutions'
 
-    ordering = ('-pk', )
+    ordering = ('-pk',)
 
     def get_default_odm_query(self):
         return None
@@ -465,7 +465,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
             user=current_user,
             model_cls=Registration,
             revision_state=registration_annotations.REVISION_STATE,
-            **resource_annotations.make_open_practice_badge_annotations()
+            **resource_annotations.make_open_practice_badge_annotations(),
         )
         # OSF group members not copied to registration.  Only registration contributors need to be checked here.
         return qs.filter(contributor__user__id=user.id)
@@ -513,7 +513,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     required_write_scopes = [CoreScopes.USERS_WRITE]
 
     serializer_class = UserInstitutionsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'users'
     view_name = 'user-institutions-relationship'
@@ -702,7 +702,7 @@ class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
-    throttle_classes = (SendEmailDeactivationThrottle, )
+    throttle_classes = (SendEmailDeactivationThrottle,)
 
     view_category = 'users'
     view_name = 'user_settings'
@@ -907,7 +907,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
         return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary, is_merge=is_merge)
 
     def get(self, request, *args, **kwargs):
-        response = super(UserEmailsDetail, self).get(request, *args, **kwargs)
+        response = super().get(request, *args, **kwargs)
         if is_truthy(self.request.query_params.get('resend_confirmation')):
             user = self.get_user()
             email_id = kwargs.get('email_id')

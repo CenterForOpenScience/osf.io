@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytz
 import pytest
 import itsdangerous
@@ -23,7 +23,7 @@ SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 class TestUserLastLoginDate(OsfTestCase):
 
     def setUp(self):
-        super(TestUserLastLoginDate, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
 

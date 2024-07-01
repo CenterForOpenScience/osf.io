@@ -10,7 +10,7 @@ from api.base.views import JSONAPIBaseView
 from api.brands.serializers import BrandSerializer
 
 
-class BrandMixin(object):
+class BrandMixin:
     """Mixin with convenience method get_brand
     """
 
@@ -49,7 +49,7 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
     view_category = 'brands'
     view_name = 'brand-list'
 
-    ordering = ('name', )
+    ordering = ('name',)
 
     # overrides ListAPIView
     def get_queryset(self):

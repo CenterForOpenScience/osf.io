@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
@@ -32,7 +29,7 @@ class NodeRequestPermission(drf_permissions.BasePermission):
             node = obj
             trigger = DefaultTriggers.SUBMIT.value if request.method not in drf_permissions.SAFE_METHODS else None
         else:
-            raise ValueError('Not a request-related model: {}'.format(obj))
+            raise ValueError(f'Not a request-related model: {obj}')
 
         if not node.access_requests_enabled:
             return False
@@ -78,7 +75,7 @@ class PreprintRequestPermission(drf_permissions.BasePermission):
             preprint = obj
             trigger = DefaultTriggers.SUBMIT.value if request.method not in drf_permissions.SAFE_METHODS else None
         else:
-            raise ValueError('Not a request-related model: {}'.format(obj))
+            raise ValueError(f'Not a request-related model: {obj}')
 
         is_requester = target is not None and target.creator == auth.user or trigger == DefaultTriggers.SUBMIT.value
         is_preprint_admin = preprint.has_permission(auth.user, osf_permissions.ADMIN)

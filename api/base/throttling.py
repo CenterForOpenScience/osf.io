@@ -12,7 +12,7 @@ class BaseThrottle(SimpleRateThrottle):
     def get_ident(self, request):
         if request.META.get('HTTP_X_THROTTLE_TOKEN'):
             return request.META['HTTP_X_THROTTLE_TOKEN']
-        return super(BaseThrottle, self).get_ident(request)
+        return super().get_ident(request)
 
     def allow_request(self, request, view):
         """
@@ -52,7 +52,7 @@ class NonCookieAuthThrottle(BaseThrottle, AnonRateThrottle):
         if bool(request.COOKIES):
             return True
 
-        return super(NonCookieAuthThrottle, self).allow_request(request, view)
+        return super().allow_request(request, view)
 
 
 class AddContributorThrottle(BaseThrottle, UserRateThrottle):
@@ -66,7 +66,7 @@ class AddContributorThrottle(BaseThrottle, UserRateThrottle):
         if request.method == 'POST' and request.query_params.get('send_email') == 'false':
             return True
 
-        return super(AddContributorThrottle, self).allow_request(request, view)
+        return super().allow_request(request, view)
 
 
 class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
@@ -80,7 +80,7 @@ class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
         if not request.query_params.get('create_guid'):
             return True
 
-        return super(CreateGuidThrottle, self).allow_request(request, view)
+        return super().allow_request(request, view)
 
 
 class RootAnonThrottle(AnonRateThrottle):
@@ -106,7 +106,7 @@ class SendEmailThrottle(BaseThrottle, UserRateThrottle):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        return super(SendEmailThrottle, self).allow_request(request, view)
+        return super().allow_request(request, view)
 
 
 class SendEmailDeactivationThrottle(SendEmailThrottle):
@@ -118,7 +118,7 @@ class SendEmailDeactivationThrottle(SendEmailThrottle):
         if not request.data.get('deactivation_requested'):
             return True
 
-        return super(SendEmailDeactivationThrottle, self).allow_request(request, view)
+        return super().allow_request(request, view)
 
 
 class BurstRateThrottle(NonCookieAuthThrottle, UserRateThrottle):

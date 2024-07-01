@@ -42,7 +42,7 @@ def osf_group(manager, member, old_name):
 
 @pytest.fixture()
 def url(osf_group):
-    return '/{}groups/{}/members/'.format(API_BASE, osf_group._id)
+    return f'/{API_BASE}groups/{osf_group._id}/members/'
 
 
 @pytest.mark.django_db
@@ -76,8 +76,8 @@ class TestGroupMembersList:
             data = res.json['data']
             assert len(data) == 2
             member_ids = [mem['id'] for mem in data]
-            assert '{}-{}'.format(osf_group._id, manager._id) in member_ids
-            assert '{}-{}'.format(osf_group._id, member._id) in member_ids
+            assert f'{osf_group._id}-{manager._id}' in member_ids
+            assert f'{osf_group._id}-{member._id}' in member_ids
 
 
 @pytest.mark.django_db
@@ -90,7 +90,7 @@ class TestOSFGroupMembersFilter:
             data = res.json['data']
             assert len(data) == 1
             member_ids = [mem['id'] for mem in data]
-            assert '{}-{}'.format(osf_group._id, member._id) in member_ids
+            assert f'{osf_group._id}-{member._id}' in member_ids
 
             # test filter managers
             url_filter = url + '?filter[role]=manager'
@@ -98,7 +98,7 @@ class TestOSFGroupMembersFilter:
             data = res.json['data']
             assert len(data) == 1
             member_ids = [mem['id'] for mem in data]
-            assert '{}-{}'.format(osf_group._id, manager._id) in member_ids
+            assert f'{osf_group._id}-{manager._id}' in member_ids
 
             # test invalid role
             url_filter = url + '?filter[role]=bad_role'
@@ -107,20 +107,20 @@ class TestOSFGroupMembersFilter:
             assert res.json['errors'][0]['detail'] == "Value \'bad_role\' is not valid."
 
             # test filter fullname
-            url_filter = url + '?filter[full_name]={}'.format(manager.fullname)
+            url_filter = url + f'?filter[full_name]={manager.fullname}'
             res = app.get(url_filter)
             data = res.json['data']
             assert len(data) == 1
             member_ids = [mem['id'] for mem in data]
-            assert '{}-{}'.format(osf_group._id, manager._id) in member_ids
+            assert f'{osf_group._id}-{manager._id}' in member_ids
 
             # test filter fullname
-            url_filter = url + '?filter[full_name]={}'.format(member.fullname)
+            url_filter = url + f'?filter[full_name]={member.fullname}'
             res = app.get(url_filter)
             data = res.json['data']
             assert len(data) == 1
             member_ids = [mem['id'] for mem in data]
-            assert '{}-{}'.format(osf_group._id, member._id) in member_ids
+            assert f'{osf_group._id}-{member._id}' in member_ids
 
             # test invalid filter
             url_filter = url + '?filter[created]=2018-02-01'
@@ -165,7 +165,7 @@ class TestOSFGroupMembersCreate:
             assert data['attributes']['role'] == MANAGER
             assert data['attributes']['full_name'] == user3.fullname
             assert data['attributes']['unregistered_member'] is None
-            assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
+            assert data['id'] == f'{osf_group._id}-{user3._id}'
             assert user3._id in data['relationships']['users']['links']['related']['href']
             assert osf_group.has_permission(user3, MANAGE) is True
 
@@ -178,8 +178,8 @@ class TestOSFGroupMembersCreate:
             assert data['attributes']['role'] == MEMBER
             assert data['attributes']['full_name'] == user3.fullname
             assert data['attributes']['unregistered_member'] is None
-            assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
-            assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
+            assert data['id'] == f'{osf_group._id}-{user3._id}'
+            assert data['id'] == f'{osf_group._id}-{user3._id}'
             assert user3._id in data['relationships']['users']['links']['related']['href']
             assert osf_group.has_permission(user3, MANAGE) is False
             assert osf_group.has_permission(user3, MEMBER) is True
@@ -349,12 +349,12 @@ class TestOSFGroupMembersBulkCreate:
             assert res.status_code == 201
             ids = [user_data['id'] for user_data in res.json['data']]
             roles = [user_data['attributes']['role'] for user_data in res.json['data']]
-            assert '{}-{}'.format(osf_group._id, user._id) in ids
-            assert '{}-{}'.format(osf_group._id, unreg_user._id) in ids
+            assert f'{osf_group._id}-{user._id}' in ids
+            assert f'{osf_group._id}-{unreg_user._id}' in ids
             assert roles[0] == MEMBER
             assert roles[1] == MEMBER
             unregistered_names = [user_data['attributes']['unregistered_member'] for user_data in res.json['data']]
-            assert set(['Crazy 8s', None]) == set(unregistered_names)
+            assert {'Crazy 8s', None} == set(unregistered_names)
 
             assert osf_group.has_permission(user, MANAGE) is False
             assert osf_group.has_permission(user, MEMBER) is True
@@ -440,8 +440,8 @@ class TestOSFGroupMembersBulkCreate:
             assert res.status_code == 201
             assert len(res.json['data']) == 2
             ids = [user_data['id'] for user_data in res.json['data']]
-            assert '{}-{}'.format(osf_group._id, user._id) in ids
-            assert '{}-{}'.format(osf_group._id, user3._id) in ids
+            assert f'{osf_group._id}-{user._id}' in ids
+            assert f'{osf_group._id}-{user3._id}' in ids
             assert osf_group.is_member(user3) is True
             assert osf_group.is_member(user) is True
             assert osf_group.is_manager(user3) is False
@@ -449,7 +449,7 @@ class TestOSFGroupMembersBulkCreate:
 
 def build_bulk_update_payload(group_id, user_id, role):
     return {
-        'id': '{}-{}'.format(group_id, user_id),
+        'id': f'{group_id}-{user_id}',
         'type': 'group-members',
         'attributes': {
             'role': role
@@ -481,7 +481,7 @@ class TestOSFGroupMembersBulkUpdate:
             assert res.status_code == 200
             assert res.json['data'][0]['attributes']['role'] == MANAGER
             assert res.json['data'][0]['attributes']['full_name'] == member.fullname
-            assert res.json['data'][0]['id'] == '{}-{}'.format(osf_group._id, member._id)
+            assert res.json['data'][0]['id'] == f'{osf_group._id}-{member._id}'
 
             payload = build_bulk_update_payload(osf_group._id, member._id, MEMBER)
             bulk_payload = {'data': [payload]}
@@ -489,7 +489,7 @@ class TestOSFGroupMembersBulkUpdate:
             assert res.status_code == 200
             assert res.json['data'][0]['attributes']['role'] == MEMBER
             assert res.json['data'][0]['attributes']['full_name'] == member.fullname
-            assert res.json['data'][0]['id'] == '{}-{}'.format(osf_group._id, member._id)
+            assert res.json['data'][0]['id'] == f'{osf_group._id}-{member._id}'
 
     def test_bulk_update_errors(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):
@@ -546,7 +546,7 @@ class TestOSFGroupMembersBulkUpdate:
 
 def create_bulk_delete_payload(group_id, user_id):
     return {
-        'id': '{}-{}'.format(group_id, user_id),
+        'id': f'{group_id}-{user_id}',
         'type': 'group-members'
     }
 
@@ -585,7 +585,7 @@ class TestOSFGroupMembersBulkDelete:
             bulk_payload = {'data': [user_payload, member_payload]}
             res = app.delete_json_api(url, bulk_payload, auth=user.auth, bulk=True, expect_errors=True)
             assert res.status_code == 404
-            assert res.json['errors'][0]['detail'] == '{} cannot be found in this OSFGroup'.format(member._id)
+            assert res.json['errors'][0]['detail'] == f'{member._id} cannot be found in this OSFGroup'
 
             # test bulk delete manager (not last one)
             osf_group.make_manager(user)
@@ -610,7 +610,7 @@ class TestOSFGroupMembersBulkDelete:
             invalid_payload = create_bulk_delete_payload(osf_group._id, user._id)
             res = app.delete_json_api(url, {'data': [invalid_payload]}, auth=manager.auth, expect_errors=True, bulk=True)
             assert res.status_code == 404
-            assert res.json['errors'][0]['detail'] == '{} cannot be found in this OSFGroup'.format(user._id)
+            assert res.json['errors'][0]['detail'] == f'{user._id} cannot be found in this OSFGroup'
 
             # test user is last manager
             invalid_payload = create_bulk_delete_payload(osf_group._id, manager._id)

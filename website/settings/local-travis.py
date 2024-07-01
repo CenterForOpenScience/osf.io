@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''Example settings/local.py file.
 These settings override what's in website/settings/defaults.py
 
@@ -107,3 +106,4 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 SHARE_ENABLED = False
 DATACITE_ENABLED = False
 IA_ARCHIVE_ENABLED = False
+USE_COLOR = False

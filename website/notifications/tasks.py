@@ -6,7 +6,7 @@ import itertools
 from django.db import connection
 
 from framework.celery_tasks import app as celery_app
-from framework.sentry import log_exception
+from framework.sentry import log_message
 from osf.models import (
     OSFUser,
     AbstractNode,
@@ -40,7 +40,7 @@ def _send_global_and_node_emails(send_type):
     for group in grouped_emails:
         user = OSFUser.load(group['user_id'])
         if not user:
-            log_exception()
+            log_message(f"User with id={group['user_id']} not found")
             continue
         info = group['info']
         notification_ids = [message['_id'] for message in info]

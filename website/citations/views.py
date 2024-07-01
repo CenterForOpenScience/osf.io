@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from flask import request
 from django.db.models import Q
 
@@ -33,7 +32,7 @@ def node_citation(**kwargs):
 
 ## Generics ##
 
-class GenericCitationViews(object):
+class GenericCitationViews:
     """
     Generic class for citation view functions.
     Citation addons must instantiate a GenericCitationViews
@@ -71,7 +70,7 @@ class GenericCitationViews(object):
             """ List addon accounts associated with the currently logged-in user
             """
             return Provider().user_accounts(auth.user)
-        _account_list.__name__ = '{0}_account_list'.format(addon_short_name)
+        _account_list.__name__ = f'{addon_short_name}_account_list'
         return _account_list
 
     def get_config(self):
@@ -93,7 +92,7 @@ class GenericCitationViews(object):
             ).serialized_node_settings
             result['validCredentials'] = provider.check_credentials(node_addon)
             return {'result': result}
-        _get_config.__name__ = '{0}_get_config'.format(addon_short_name)
+        _get_config.__name__ = f'{addon_short_name}_get_config'
         return _get_config
 
     def set_config(self):
@@ -126,7 +125,7 @@ class GenericCitationViews(object):
                     user_settings=auth.user.get_addon(addon_short_name),
                 ).serialized_node_settings
             }
-        _set_config.__name__ = '{0}_set_config'.format(addon_short_name)
+        _set_config.__name__ = f'{addon_short_name}_set_config'
         return _set_config
 
     def import_auth(self):
@@ -144,7 +143,7 @@ class GenericCitationViews(object):
             provider = Provider()
             external_account_id = request.get_json().get('external_account_id')
             return provider.add_user_auth(node_addon, auth.user, external_account_id)
-        _import_auth.__name__ = '{0}_import_auth'.format(addon_short_name)
+        _import_auth.__name__ = f'{addon_short_name}_import_auth'
         return _import_auth
 
     def deauthorize_node(self):
@@ -159,7 +158,7 @@ class GenericCitationViews(object):
             """
             provider = Provider()
             return provider.remove_user_auth(node_addon, auth.user)
-        _deauthorize_node.__name__ = '{0}_deauthorize_node'.format(addon_short_name)
+        _deauthorize_node.__name__ = f'{addon_short_name}_deauthorize_node'
         return _deauthorize_node
 
     def widget(self):
@@ -172,7 +171,7 @@ class GenericCitationViews(object):
             """ Collects and serializes settting needed to build the widget
             """
             return Provider().widget(node_addon)
-        _widget.__name__ = '{0}_widget'.format(addon_short_name)
+        _widget.__name__ = f'{addon_short_name}_widget'
         return _widget
 
     def citation_list(self):
@@ -186,5 +185,5 @@ class GenericCitationViews(object):
             """
             show = request.args.get('view', 'all')
             return Provider().citation_list(node_addon, auth.user, list_id, show)
-        _citation_list.__name__ = '{0}_citation_list'.format(addon_short_name)
+        _citation_list.__name__ = f'{addon_short_name}_citation_list'
         return _citation_list

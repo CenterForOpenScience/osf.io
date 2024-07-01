@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Custom exceptions for the framework."""
 import copy
 from rest_framework import status as http_status
@@ -50,7 +49,7 @@ class HTTPError(FrameworkError):
 
     def __init__(self, code, message=None, redirect_url=None, data=None):
 
-        super(HTTPError, self).__init__(message)
+        super().__init__(message)
 
         self.code = code
         self.redirect_url = redirect_url
@@ -83,7 +82,7 @@ class HTTPError(FrameworkError):
         elif self.code == http_status.HTTP_401_UNAUTHORIZED:
             data = {
                 'message_short': 'Unauthorized',
-                'message_long': 'You must <a href="/login/?next={}">log in</a> to access this resource.'.format(request.url),
+                'message_long': f'You must <a href="/login/?next={request.url}">log in</a> to access this resource.',
             }
         else:
             data['message_short'] = 'Unable to resolve'
@@ -110,4 +109,4 @@ class TemplateHTTPError(HTTPError):
 
     def __init__(self, code, message=None, redirect_url=None, data=None, template=None):
         self.template = template
-        super(TemplateHTTPError, self).__init__(code, message, redirect_url, data)
+        super().__init__(code, message, redirect_url, data)

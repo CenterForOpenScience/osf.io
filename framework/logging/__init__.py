@@ -1,18 +1,11 @@
-import logging
-import logging.config
-
-try:
-    import colorlog
-    use_color = True
-except ImportError:
-    use_color = False
-
+import colorlog
+from logging import Formatter, StreamHandler, getLogger
 from website import settings
 
-handler = logging.StreamHandler()
+handler = StreamHandler()
 
-if settings.DEBUG_MODE and use_color:
-    log_colors = colorlog.default_log_colors
+if settings.DEBUG_MODE and settings.USE_COLOR:
+    log_colors = colorlog.default_log_colors.copy()
     log_colors['DEBUG'] = 'cyan'
 
     formatter = colorlog.ColoredFormatter(
@@ -21,12 +14,12 @@ if settings.DEBUG_MODE and use_color:
         log_colors=log_colors,
     )
 else:
-    formatter = logging.Formatter(
+    formatter = Formatter(
         '[%(name)s]  %(levelname)s: %(message)s',
     )
 
 handler.setFormatter(formatter)
 
-logger = logging.getLogger()
+logger = getLogger()
 logger.addHandler(handler)
 logger.setLevel(settings.LOG_LEVEL)

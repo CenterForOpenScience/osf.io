@@ -1,4 +1,4 @@
-import furl
+from furl import furl
 from django import http
 from rest_framework.exceptions import NotFound
 from rest_framework import permissions as drf_permissions
@@ -58,13 +58,13 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get(self, request, **kwargs):
         if not self.should_resolve(self.request):
-            return super(GuidDetail, self).get(request, **kwargs)
+            return super().get(request, **kwargs)
 
         url = self.get_redirect_url(**kwargs)
         if url:
             query_params = getattr(request, 'query_params', request.GET)
             if query_params:
-                url = furl.furl(url).add(query_params=self.request.query_params).url
+                url = furl(url).add(query_params=self.request.query_params).url
             return http.HttpResponseRedirect(url)
         raise NotFound
 

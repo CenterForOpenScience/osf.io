@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE
@@ -55,20 +55,20 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
     def test_provider_filter_equals_returns_multiple(
             self, app, user, provider_one, preprint_one,
             preprint_two, preprint_three, provider_url):
-        expected = set(
-            [preprint_one._id, preprint_two._id, preprint_three._id])
+        expected = {
+            preprint_one._id, preprint_two._id, preprint_three._id}
         res = app.get(
             '{}{}'.format(
                 provider_url,
                 provider_one._id),
             auth=user.auth)
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     def test_reviews_state_counts(
             self, app, user, provider_one, preprint_one,
             preprint_two, preprint_three, url):
-        url = '{}meta[reviews_state_counts]=true'.format(url)
+        url = f'{url}meta[reviews_state_counts]=true'
         preprint_one.machine_state = 'pending'
         preprint_one.save()
         preprint_two.machine_state = 'pending'
@@ -227,7 +227,7 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
 

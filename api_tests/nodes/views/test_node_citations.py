@@ -151,16 +151,16 @@ class NodeCitationsMixin:
 class TestNodeCitations(NodeCitationsMixin):
     @pytest.fixture()
     def public_url(self, public_project):
-        return '/{}nodes/{}/citation/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/citation/'
 
     @pytest.fixture()
     def private_url(self, private_project):
-        return '/{}nodes/{}/citation/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/citation/'
 
 class TestNodeCitationsStyle(NodeCitationsMixin):
     @pytest.fixture()
     def public_url(self, public_project):
-        return '/{}nodes/{}/citation/apa/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/citation/apa/'
 
     @pytest.fixture()
     def private_url(self, private_project):
@@ -173,7 +173,7 @@ class TestCustomCitations:
 
     @pytest.fixture()
     def private_url(self, private_project):
-        return '/{}nodes/{}/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/'
 
     def test_custom_citation(self, app, admin_contributor, private_project, private_url, custom_citation_payload):
 

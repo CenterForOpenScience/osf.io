@@ -55,15 +55,15 @@ def public_project(write_contrib, read_contrib):
 
 @pytest.fixture()
 def public_url(public_project):
-    return '/{}nodes/{}/groups/'.format(API_BASE, public_project._id)
+    return f'/{API_BASE}nodes/{public_project._id}/groups/'
 
 @pytest.fixture()
 def private_url(private_project):
-    return '/{}nodes/{}/groups/'.format(API_BASE, private_project._id)
+    return f'/{API_BASE}nodes/{private_project._id}/groups/'
 
 @pytest.fixture()
 def public_detail_url(public_url, osf_group):
-    return '{}{}/'.format(public_url, osf_group._id)
+    return f'{public_url}{osf_group._id}/'
 
 @pytest.fixture()
 def make_node_group_payload():
@@ -86,7 +86,7 @@ class TestNodeGroupsList:
     @pytest.fixture()
     def make_group_id(self):
         def contrib_id(node, group):
-            return '{}-{}'.format(node._id, group._id)
+            return f'{node._id}-{group._id}'
         return contrib_id
 
     def test_return(self, app, non_contrib, osf_group, member, manager, public_project, private_project, public_url, private_url, make_group_id):
@@ -282,7 +282,7 @@ class TestNodeGroupDetail:
             # res for group not attached to node raised permissions error
             res = app.get(public_detail_url, expect_errors=True)
             assert res.status_code == 404
-            assert res.json['errors'][0]['detail'] == 'Group {} does not have permissions to node {}.'.format(osf_group._id, public_project._id)
+            assert res.json['errors'][0]['detail'] == f'Group {osf_group._id} does not have permissions to node {public_project._id}.'
 
             public_project.add_osf_group(osf_group, permissions.WRITE)
 
@@ -398,7 +398,7 @@ class TestNodeGroupDelete:
             public_project.add_contributor(manager, permissions=permissions.ADMIN)
             payload = {
                 'data': [
-                    {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, osf_group._id)}
+                    {'type': 'node-groups', 'id': f'{public_project._id}-{osf_group._id}'}
                 ]
             }
             # group has not been added to the node
@@ -441,10 +441,10 @@ class TestNodeGroupDelete:
             # test member with write cannot remove group
             second_payload = {
                 'data': [
-                    {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, second_group._id)}
+                    {'type': 'node-groups', 'id': f'{public_project._id}-{second_group._id}'}
                 ]
             }
-            second_url = '/{}nodes/{}/groups/{}/'.format(API_BASE, public_project._id, second_group._id)
+            second_url = f'/{API_BASE}nodes/{public_project._id}/groups/{second_group._id}/'
             res = app.delete_json_api(second_url, second_payload, auth=member.auth, expect_errors=True)
             assert res.status_code == 403
 

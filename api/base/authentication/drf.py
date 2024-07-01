@@ -2,7 +2,7 @@ import itsdangerous
 from importlib import import_module
 
 from django.middleware.csrf import get_token
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 import waffle
 from rest_framework import authentication
@@ -140,7 +140,8 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         Same implementation as django-rest-framework's SessionAuthentication.
         Enforce CSRF validation for session based authentication.
         """
-        reason = CSRFCheck().process_view(request, None, (), {})
+        # crutch let CSRFCheck process this view, but generally middleware shouldn't be used this way
+        reason = CSRFCheck(lambda _: _).process_view(request, None, (), {})
         if reason:
             # CSRF failed, bail with explicit error message
             raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)
@@ -165,7 +166,7 @@ class OSFBasicAuthentication(BasicAuthentication):
         :return: a tuple of the user and error messages
         """
 
-        user_auth_tuple = super(OSFBasicAuthentication, self).authenticate(request)
+        user_auth_tuple = super().authenticate(request)
         if user_auth_tuple is not None:
             self.authenticate_twofactor_credentials(user_auth_tuple[0], request)
         return user_auth_tuple
@@ -217,7 +218,7 @@ class OSFBasicAuthentication(BasicAuthentication):
         """
         Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
         """
-        return 'Documentation realm="{}"'.format(self.www_authenticate_realm)
+        return f'Documentation realm="{self.www_authenticate_realm}"'
 
 
 class OSFCASAuthentication(authentication.BaseAuthentication):

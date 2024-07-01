@@ -48,7 +48,7 @@ def reindex_and_alias(old_indices: list, dry_run: bool = False):
     :return: None
     """
     if dry_run:
-        logger.info(f'[DRY RUN] THIS IS A DRY RUN.')
+        logger.info('[DRY RUN] THIS IS A DRY RUN.')
     client = connections.get_connection()
     new_indices = increment_index_versions(client, old_indices)
 
@@ -69,7 +69,7 @@ def reindex_and_alias(old_indices: list, dry_run: bool = False):
         }
         logger.info(f'Created reindexing {old_index} to {new_index}')
         client.reindex(body, params={'wait_for_completion': 'true'})
-        logger.info(f'Reindexing complete')
+        logger.info('Reindexing complete')
         old_index_name = list(client.indices.get(old_index).keys())[0]  # in case we've already aliased this index
 
         if old_index_name == old_index:  # True if not aliased
@@ -84,7 +84,7 @@ def reindex_and_alias(old_indices: list, dry_run: bool = False):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--indices',
             type=str,

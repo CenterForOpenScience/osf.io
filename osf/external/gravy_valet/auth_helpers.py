@@ -2,7 +2,6 @@ import base64
 import hashlib
 import hmac
 import re
-import typing
 import urllib
 
 from django.utils import timezone
@@ -30,8 +29,8 @@ def _sign_message(message: str, hmac_key: str = None) -> str:
 
 
 def _get_signed_components(
-    request_url: str, request_method: str, body: typing.Union[str, bytes], **additional_headers
-) -> typing.Tuple[typing.List[str], typing.Dict[str, str]]:
+    request_url: str, request_method: str, body: str | bytes, **additional_headers
+) -> tuple[list[str], dict[str, str]]:
     parsed_url = urllib.parse.urlparse(request_url)
     if isinstance(body, str):
         body = body.encode()
@@ -56,8 +55,8 @@ def _get_signed_components(
 
 
 def make_permissions_headers(
-    requesting_user: typing.Optional[OSFUser] = None,
-    requested_resource: typing.Optional[AbstractNode] = None
+    requesting_user: OSFUser | None = None,
+    requested_resource: AbstractNode | None = None
 ) -> dict:
     osf_permissions_headers = {}
     if requesting_user:
@@ -76,9 +75,9 @@ def make_permissions_headers(
 def make_gravy_valet_hmac_headers(
     request_url: str,
     request_method: str,
-    body: typing.Union[str, bytes] = '',
-    hmac_key: typing.Optional[str] = None,
-    additional_headers: typing.Optional[dict] = None,
+    body: str | bytes = '',
+    hmac_key: str | None = None,
+    additional_headers: dict | None = None,
 ) -> dict:
 
     additional_headers = additional_headers or {}
@@ -99,7 +98,7 @@ def make_gravy_valet_hmac_headers(
     )
 
 
-def _reconstruct_string_to_sign_from_request(request, signed_headers: typing.List[str]) -> str:
+def _reconstruct_string_to_sign_from_request(request, signed_headers: list[str]) -> str:
     parsed_url = urllib.parse.urlparse(request.url)
     signed_segments = [request.method, parsed_url.path]
     if parsed_url.query:
@@ -110,7 +109,7 @@ def _reconstruct_string_to_sign_from_request(request, signed_headers: typing.Lis
     return '\n'.join(segment for segment in signed_segments if segment)
 
 
-def validate_signed_headers(request, hmac_key: typing.Optional[str] = None):
+def validate_signed_headers(request, hmac_key: str | None = None):
     match = _AUTH_HEADER_REGEX.match(request.headers.get('Authorization', ''))
     if not match:
         raise ValueError(

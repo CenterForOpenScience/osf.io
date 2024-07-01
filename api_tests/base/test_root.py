@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 import itsdangerous
-import mock
-from nose.tools import *  # noqa:
+from unittest import mock
 import unittest
 from django.utils import timezone
 from importlib import import_module
@@ -22,53 +20,45 @@ from osf.utils.permissions import ADMIN
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
+
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
-        super(TestWelcomeToApi, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
-        self.url = '/{}'.format(API_BASE)
+        self.url = f'/{API_BASE}'
 
     def tearDown(self):
         self.app.reset()
-        super(TestWelcomeToApi, self).tearDown()
+        super().tearDown()
 
     def test_returns_200_for_logged_out_user(self):
         res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['meta']['current_user'], None)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['meta']['current_user'] is None
 
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(
-            res.json['meta']['current_user']['data']['attributes']['given_name'],
-            self.user.given_name
-        )
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['meta']['current_user']['data']['attributes']['given_name'] == self.user.given_name
 
     def test_current_user_accepted_tos(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(
-            res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'],
-            False
-        )
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] is False
         self.user.accepted_terms_of_service = timezone.now()
         self.user.save()
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(
-            res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'],
-            True
-        )
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] is True
 
     def test_returns_302_redirect_for_base_url(self):
         res = self.app.get('/')
-        assert_equal(res.status_code, 302)
-        assert_equal(res.location, '/v2/')
+        assert res.status_code == 302
+        assert res.location == '/v2/'
 
     def test_cookie_has_admin(self):
         session = SessionStore()
@@ -78,13 +68,13 @@ class TestWelcomeToApi(ApiTestCase):
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
         res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta'][ADMIN], True)
+        assert res.status_code == 200
+        assert res.json['meta'][ADMIN] is True
 
     def test_basic_auth_does_not_have_admin(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_not_in(ADMIN, res.json['meta'].keys())
+        assert res.status_code == 200
+        assert ADMIN not in res.json['meta'].keys()
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
@@ -115,12 +105,12 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(
             self.url,
             headers={
-                'Authorization': 'Bearer {}'.format(token.token_id)
+                'Authorization': f'Bearer {token.token_id}'
             }
         )
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta'][ADMIN], True)
+        assert res.status_code == 200
+        assert res.json['meta'][ADMIN] is True
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_non_admin_scoped_token_does_not_have_admin(self, mock_auth):
@@ -146,9 +136,9 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(
             self.url,
             headers={
-                'Authorization': 'Bearer {}'.format(token.token_id)
+                'Authorization': f'Bearer {token.token_id}'
             }
         )
 
-        assert_equal(res.status_code, 200)
-        assert_not_in(ADMIN, res.json['meta'].keys())
+        assert res.status_code == 200
+        assert ADMIN not in res.json['meta'].keys()

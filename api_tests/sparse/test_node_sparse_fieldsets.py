@@ -51,7 +51,7 @@ class TestNodeSparseFieldsList:
         assert node_json['attributes'] == {}
         assert set(list(node_json.keys())) == {'links', 'type', 'id', 'attributes', 'relationships'}
         assert node_json['relationships']['children']['links']['related']['href'].endswith(
-            '/{}nodes/{}/children/'.format(API_BASE, public_project._id))
+            f'/{API_BASE}nodes/{public_project._id}/children/')
 
     #   test_returns_expected_nodes
         res = app.get(url + 'title')
@@ -133,7 +133,7 @@ class TestNodeSparseFieldsDetail:
 
         #   test_embed_sparse_same_type
         child = ProjectFactory(parent=node, is_public=True, creator=user)
-        res_url = '{}?embed=children&fields[nodes]=title,children'.format(url)
+        res_url = f'{url}?embed=children&fields[nodes]=title,children'
         res = app.get(res_url)
         node_json = res.json['data']
 
@@ -179,7 +179,7 @@ class TestNodeSparseFieldsDetail:
         assert list(node_json['embeds']['contributors']['data'][0]['attributes'].keys()) == ['bibliographic']
 
     def test_update_with_sparse_fields(self, app, user, node, url):
-        res_url = '{}?fields[nodes]='.format(url)
+        res_url = f'{url}?fields[nodes]='
         old_title = node.title
         payload = {'data': {
             'id': node._id,
@@ -242,7 +242,7 @@ class TestSparseViewOnlyLinks:
 
     @pytest.fixture()
     def private_node_one_url(self, private_node_one):
-        return '/{}nodes/{}/'.format(API_BASE, private_node_one._id)
+        return f'/{API_BASE}nodes/{private_node_one._id}/'
 
     def test_sparse_fields_with_anonymous_link(
             self, app, private_node_one_url, private_node_one_anonymous_link):

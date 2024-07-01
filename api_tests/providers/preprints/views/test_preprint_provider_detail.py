@@ -15,7 +15,7 @@ class TestPreprintProviderExistsForDeprecatedEndpoint(ProviderExistsMixin):
 
     @pytest.fixture()
     def fake_url(self):
-        return '/{}preprint_providers/fake/'.format(API_BASE)
+        return f'/{API_BASE}preprint_providers/fake/'
 
     @pytest.fixture()
     def provider_url(self, provider):
@@ -29,15 +29,15 @@ class TestPreprintProviderExistsForDeprecatedEndpoint(ProviderExistsMixin):
 
     @pytest.fixture()
     def provider_list_url(self, provider):
-        return '/{}preprint_providers/{}/preprints/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}preprint_providers/{provider._id}/preprints/'
 
     @pytest.fixture()
     def provider_list_url_fake(self, fake_url):
-        return '{}preprints/'.format(fake_url)
+        return f'{fake_url}preprints/'
 
     @pytest.mark.skipif('2.8' not in REST_FRAMEWORK['ALLOWED_VERSIONS'], reason='New API version required to test full deprecation')
     def test_version_deprecation(self, app, provider_url):
-        res = app.get('{}?version=2.8'.format(provider_url), expect_errors=True)
+        res = app.get(f'{provider_url}?version=2.8', expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'This route has been deprecated. It was last available in version 2.7'
 
@@ -47,7 +47,7 @@ class TestPreprintProviderExists(ProviderExistsMixin):
 
     @pytest.fixture()
     def fake_url(self):
-        return '/{}providers/preprints/fake/'.format(API_BASE)
+        return f'/{API_BASE}providers/preprints/fake/'
 
     @pytest.fixture()
     def provider_url(self, provider):
@@ -61,11 +61,11 @@ class TestPreprintProviderExists(ProviderExistsMixin):
 
     @pytest.fixture()
     def provider_list_url(self, provider):
-        return '/{}providers/preprints/{}/preprints/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/preprints/{provider._id}/preprints/'
 
     @pytest.fixture()
     def provider_list_url_fake(self, fake_url):
-        return '{}preprints/'.format(fake_url)
+        return f'{fake_url}preprints/'
 
 
 @pytest.mark.django_db

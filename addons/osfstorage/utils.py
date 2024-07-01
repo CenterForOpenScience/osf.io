@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 from rest_framework import status as http_status
 import logging
@@ -100,11 +97,7 @@ def get_filename(version_idx, file_version, file_record):
     if version_idx == len(file_record.versions):
         return file_record.name
     name, ext = os.path.splitext(file_record.name)
-    return u'{name}-{date}{ext}'.format(
-        name=name,
-        date=file_version.created.isoformat(),
-        ext=ext,
-    )
+    return f'{name}-{file_version.created.isoformat()}{ext}'
 
 
 def validate_location(value):
@@ -121,7 +114,7 @@ def must_be(_type):
         @functools.wraps(func)
         def wrapped(self, *args, **kwargs):
             if not self.kind == _type:
-                raise ValueError('This instance is not a {}'.format(_type))
+                raise ValueError(f'This instance is not a {_type}')
             return func(self, *args, **kwargs)
         return wrapped
     return _must_be

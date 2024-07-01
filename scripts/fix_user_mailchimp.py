@@ -32,10 +32,10 @@ def main():
             if settings.MAILCHIMP_GENERAL_LIST not in user.mailchimp_mailing_lists:
                 if not dry:
                     subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
-                    logger.info('User {} has been subscribed to OSF general mailing list'.format(user._id))
+                    logger.info(f'User {user._id} has been subscribed to OSF general mailing list')
                 count += 1
 
-        logger.info('{} users have been subscribed to OSF general mailing list'.format(count))
+        logger.info(f'{count} users have been subscribed to OSF general mailing list')
 
         if dry:
             raise Exception('Abort Transaction - Dry Run')

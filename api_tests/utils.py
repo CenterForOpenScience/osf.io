@@ -1,6 +1,6 @@
 from blinker import ANY
 from enum import Enum
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from contextlib import contextmanager
 from addons.osfstorage import settings as osfstorage_settings
 

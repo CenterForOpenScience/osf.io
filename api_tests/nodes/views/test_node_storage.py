@@ -41,11 +41,11 @@ class TestNodeStorage:
 
     @pytest.fixture()
     def url(self, project):
-        return '/{}nodes/{}/storage/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/storage/'
 
     @pytest.fixture()
     def embed_url(self, project):
-        return '/{}nodes/{}/?embed=storage'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/?embed=storage'
 
     def test_node_storage_permissions(self, app, url, project,
             write_contributor, read_contributor, non_contributor):

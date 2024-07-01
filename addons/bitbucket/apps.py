@@ -54,7 +54,7 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
         'fetch': node_settings.owner.api_url + 'bitbucket/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'bitbucket/hgrid/root/',
         'zip': node_settings.owner.api_url + 'bitbucket/zipball/' + (ref or ''),
-        'repo': 'https://bitbucket.com/{0}/{1}/branch/'.format(node_settings.user, node_settings.repo)
+        'repo': f'https://bitbucket.com/{node_settings.user}/{node_settings.repo}/branch/'
     }
 
     branch_names = [each['name'] for each in branches]
@@ -80,6 +80,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(
 
 class BitbucketAddonConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.bitbucket'
     label = 'addons_bitbucket'
     full_name = 'Bitbucket'

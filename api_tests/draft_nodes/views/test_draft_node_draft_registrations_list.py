@@ -36,8 +36,7 @@ class TestDraftNodeDraftRegistrationsList:
     @pytest.fixture()
     def url_draft_node_draft_registrations(self, draft_node):
         # Specifies version to test functionality when using DraftRegistrationLegacySerializer
-        return '/{}draft_nodes/{}/draft_registrations/'.format(
-            API_BASE, draft_node._id)
+        return f'/{API_BASE}draft_nodes/{draft_node._id}/draft_registrations/'
 
     def test_draft_node_draft_registration_list(
             self, app, user, user_write_contrib, draft_registration, draft_node, url_draft_node_draft_registrations):
@@ -60,7 +59,7 @@ class TestDraftNodeDraftRegistrationsList:
     def test_draft_node_draft_registration_relationship(
             self, app, user, draft_registration, draft_node):
 
-        url = '/{}draft_nodes/{}/'.format(API_BASE, draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{draft_node._id}/'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
 

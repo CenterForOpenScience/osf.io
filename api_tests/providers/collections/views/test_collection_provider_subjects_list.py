@@ -16,11 +16,11 @@ class TestProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return '/{}providers/collections/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
+        return f'/{API_BASE}providers/collections/{provider_1._id}/taxonomies/?page[size]=15&'
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return '/{}providers/collections/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
+        return f'/{API_BASE}providers/collections/{provider_2._id}/taxonomies/?page[size]=15&'
 
 
 class TestProviderHighlightedTaxonomies(ProviderHighlightedSubjectsMixin):
@@ -28,7 +28,7 @@ class TestProviderHighlightedTaxonomies(ProviderHighlightedSubjectsMixin):
 
     @pytest.fixture()
     def url(self, provider):
-        return '/{}providers/collections/{}/taxonomies/highlighted/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/collections/{provider._id}/taxonomies/highlighted/'
 
 
 class TestCustomTaxonomy(ProviderCustomTaxonomyMixin):
@@ -44,11 +44,11 @@ class TestProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return '/{}providers/collections/{}/subjects/?page[size]=15&'.format(API_BASE, provider_1._id)
+        return f'/{API_BASE}providers/collections/{provider_1._id}/subjects/?page[size]=15&'
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return '/{}providers/collections/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)
+        return f'/{API_BASE}providers/collections/{provider_2._id}/subjects/?page[size]=15&'
 
 
 class TestProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
@@ -56,7 +56,7 @@ class TestProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
 
     @pytest.fixture()
     def url(self, provider):
-        return '/{}providers/collections/{}/subjects/highlighted/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/collections/{provider._id}/subjects/highlighted/'
 
 
 class TestCustomSubjects(ProviderCustomSubjectMixin):

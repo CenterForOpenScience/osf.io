@@ -7,7 +7,7 @@ from osf.external.cedar.exceptions import CedarClientRequestError, CedarClientRe
 from website import settings
 
 
-class CedarClient(object):
+class CedarClient:
 
     host = settings.CEDAR_API_HOST
     api_key = settings.CEDAR_API_KEY

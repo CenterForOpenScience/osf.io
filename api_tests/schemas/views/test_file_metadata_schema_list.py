@@ -13,7 +13,7 @@ class TestFileMetadataSchemaList:
     def test_schema_list_crud(self, app):
 
         user = AuthUserFactory()
-        url = '/{}schemas/files/'.format(API_BASE)
+        url = f'/{API_BASE}schemas/files/'
 
         # test_authenticated_user_can_view_schemas
         res = app.get(url, auth=user.auth)

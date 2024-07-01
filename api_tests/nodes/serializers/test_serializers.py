@@ -1,6 +1,6 @@
 from dateutil.parser import parse as parse_date
 import pytest
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer
@@ -63,7 +63,7 @@ class TestNodeSerializer:
         assert 'forked_from' not in relationships
         parent_link = relationships['parent']['links']['related']['href']
         assert urlparse(
-            parent_link).path == '/{}nodes/{}/'.format(API_BASE, parent._id)
+            parent_link).path == f'/{API_BASE}nodes/{parent._id}/'
 
     #   test_fork_serialization
         node = NodeFactory(creator=user)
@@ -76,7 +76,7 @@ class TestNodeSerializer:
         relationships = data['relationships']
         forked_from = relationships['forked_from']['links']['related']['href']
         assert urlparse(
-            forked_from).path == '/{}nodes/{}/'.format(API_BASE, node._id)
+            forked_from).path == f'/{API_BASE}nodes/{node._id}/'
 
     #   test_template_serialization
         node = NodeFactory(creator=user)
@@ -89,7 +89,7 @@ class TestNodeSerializer:
         relationships = data['relationships']
         templated_from = relationships['template_node']['links']['related']['href']
         assert urlparse(
-            templated_from).path == '/{}nodes/{}/'.format(API_BASE, node._id)
+            templated_from).path == f'/{API_BASE}nodes/{node._id}/'
 
 
 @pytest.mark.django_db
@@ -130,10 +130,10 @@ class TestSparseNodeSerializer:
         assert 'registrations' not in relationships
         assert 'forked_from' not in relationships
         parent_link = relationships['parent']['links']['related']['href']
-        assert urlparse(parent_link).path == '/{}sparse/nodes/{}/'.format(API_BASE, parent._id)
+        assert urlparse(parent_link).path == f'/{API_BASE}sparse/nodes/{parent._id}/'
         assert 'sparse' not in relationships['detail']['links']['related']['href']
         sparse_children_path = urlparse(relationships['children']['links']['related']['href']).path
-        assert sparse_children_path == '/{}sparse/nodes/{}/children/'.format(API_BASE, node._id)
+        assert sparse_children_path == f'/{API_BASE}sparse/nodes/{node._id}/children/'
 
 
 @pytest.mark.django_db
@@ -180,12 +180,12 @@ class TestNodeRegistrationSerializer:
         assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']
         assert urlparse(
-            registered_by).path == '/{}users/{}/'.format(API_BASE, user._id)
+            registered_by).path == f'/{API_BASE}users/{user._id}/'
         assert 'registered_from' in relationships
         registered_from = relationships['registered_from']['links']['related']['href']
         assert urlparse(registered_from).path == '/{}nodes/{}/'.format(
             API_BASE, registration.registered_from._id)
-        api_registrations_url = '/{}registrations/'.format(API_BASE)
+        api_registrations_url = f'/{API_BASE}registrations/'
         for relationship in relationship_urls:
             if relationship in should_not_relate_to_registrations:
                 assert api_registrations_url not in relationship_urls[relationship]

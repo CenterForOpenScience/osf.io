@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from django.views.generic import ListView, TemplateView, View
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
