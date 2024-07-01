@@ -299,12 +299,12 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
         auth = get_user_auth(request)
-        node = obj['self']
+        resource = obj['self']
 
         if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
+            return resource.is_public or resource.can_view(auth)
         else:
-            return node.has_permission(auth.user, osf_permissions.WRITE)
+            return resource.has_permission(auth.user, osf_permissions.WRITE)
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):

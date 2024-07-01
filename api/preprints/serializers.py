@@ -7,6 +7,7 @@ from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
+    BaseAPISerializer,
     JSONAPISerializer,
     IDField,
     TypeField,
@@ -20,6 +21,7 @@ from api.base.serializers import (
     WaterbutlerLink,
     HideIfPreprint,
     LinkedNodesRelationshipSerializer,
+    JSONAPIRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
@@ -33,12 +35,14 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
+    update_institutions,
+
 )
 from api.base.metrics import MetricsSerializerMixin
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
     BaseFileNode,
     Preprint,
@@ -47,8 +51,6 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-
-from osf.exceptions import PreprintStateError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -189,6 +191,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view='preprints:preprint-request-list',
         related_view_kwargs={'preprint_id': '<_id>'},
     ))
+
+    affiliated_institutions = RelationshipField(
+        related_view='preprints:preprint-institutions',
+        related_view_kwargs={'preprint_id': '<_id>'},
+        self_view='preprints:preprint-institutions',
+        self_view_kwargs={'preprint_id': '<_id>'},
+        read_only=False,
+        required=False,
+        allow_null=True,
+    )
 
     links = LinksField(
         {
@@ -530,3 +542,51 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     links = LinksField({
         'self': 'get_self_url',
     })
+
+
+class InstitutionRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+
+    class Meta:
+        type_ = 'institutions'
+
+
+class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
+    data = ser.ListField(child=InstitutionRelated())
+
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def get_self_url(self, obj):
+        return obj['self'].absolute_api_v2_url
+
+    def get_related_url(self, obj):
+        return f"{obj['self'].absolute_api_v2_url}institutions/"
+
+    class Meta:
+        type_ = 'institutions'
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions.all(),
+            'self': obj,
+        }
+
+    def update(self, instance, validated_data):
+        preprint = instance['self']
+        user = self.context['request'].user
+        update_institutions(preprint, validated_data['data'], user)
+        preprint.save()
+
+        return self.make_instance_obj(preprint)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        user = self.context['request'].user
+        preprint = instance['self']
+        update_institutions(preprint, validated_data['data'], user, post=True)
+        preprint.save()
+
+        return self.make_instance_obj(preprint)
