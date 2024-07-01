@@ -62,7 +62,7 @@ class EphemeralNodeSettings:
     '''Minimalist dataclass for storing/translating the actually used properties of NodeSettings.'''
     config: EphemeralAddonConfig
     folder_id: str
-    gv_id: str
+    gv_data: gv_requests.JSONAPIResultEntry
 
     # These are needed in order to make further requests for credentials
     configured_resource: type  # Node
@@ -92,7 +92,7 @@ class EphemeralNodeSettings:
 
     def _fetch_wb_config(self):
         result = gv_requests.get_waterbutler_config(
-            gv_addon_pk=self.gv_id,
+            gv_addon_pk=self.gv_data.resource_id,
             requested_resource=self.configured_resource,
             requesting_user=self.active_user
         )
@@ -101,8 +101,15 @@ class EphemeralNodeSettings:
     def create_waterbutler_log(self, *args, **kwargs):
         pass
 
-    def save():
+    def save(self):
         pass
+
+    def configured(self):
+        return self.gv_data.get_included_attribute(
+            include_path=['base_account'],
+            attribute_name='credentials_available'
+        )
+
 
 @dataclasses.dataclass
 class EphemeralUserSettings:

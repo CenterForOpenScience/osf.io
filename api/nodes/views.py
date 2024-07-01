@@ -1506,12 +1506,14 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     ordering = ('-id',)
 
-    def get_provider_item(self, storage_addon):
+    def get_provider_item(self, storage_addon, node=None):
+        node = node or self.get_node()
         return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
 
     def get_queryset(self):
+        node = self.get_node()
         return [
-            self.get_provider_item(addon)
+            self.get_provider_item(addon, node=node)
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
