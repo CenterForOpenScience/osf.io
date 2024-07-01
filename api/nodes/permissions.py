@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import permissions
 from rest_framework import exceptions
 
@@ -72,7 +71,7 @@ class IsAdminContributor(permissions.BasePermission):
     admin contributor to make changes.  Admin group membership
     is not sufficient.
     """
-    acceptable_models = (AbstractNode, DraftRegistration,)
+    acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -95,7 +94,7 @@ class EditIfPublic(permissions.BasePermission):
 
 
 class IsAdmin(permissions.BasePermission):
-    acceptable_models = (AbstractNode, PrivateLink,)
+    acceptable_models = (AbstractNode, PrivateLink)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -121,7 +120,7 @@ class AdminDeletePermissions(permissions.BasePermission):
 
 class IsContributorOrGroupMember(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)
+        assert isinstance(obj, AbstractNode), f'obj must be an Node, got {obj}'
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_contributor_or_group_member(auth.user)
@@ -131,7 +130,7 @@ class IsContributorOrGroupMember(permissions.BasePermission):
 
 class AdminOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration,)
+    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict) and 'self' in obj:
@@ -147,7 +146,7 @@ class AdminOrPublic(permissions.BasePermission):
 
 class AdminContributorOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, DraftRegistration,)
+    acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         """
@@ -187,7 +186,7 @@ class ReadOnlyIfWithdrawn(permissions.BasePermission):
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
-    acceptable_models = (AbstractNode, OSFUser, Contributor,)
+    acceptable_models = (AbstractNode, OSFUser, Contributor)
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
@@ -210,7 +209,7 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
     """Permissions for node group detail - involving who can update the relationship
     between a node and an OSF Group."""
 
-    acceptable_models = (OSFGroup, AbstractNode,)
+    acceptable_models = (OSFGroup, AbstractNode)
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
@@ -231,7 +230,7 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, NodeRelation,)
+    acceptable_models = (AbstractNode, NodeRelation)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -284,7 +283,7 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
         node_link = NodeRelation.load(request.parser_context['kwargs']['node_link_id'])
         node = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         auth = get_user_auth(request)
-        if request.method == 'DELETE'and node.is_registration:
+        if request.method == 'DELETE' and node.is_registration:
             raise exceptions.MethodNotAllowed(method=request.method)
         if node.is_collection or node.is_registration:
             raise exceptions.NotFound
@@ -337,7 +336,7 @@ class WriteAdmin(permissions.BasePermission):
 class ShowIfVersion(permissions.BasePermission):
 
     def __init__(self, min_version, max_version, deprecated_message):
-        super(ShowIfVersion, self).__init__()
+        super().__init__()
         self.min_version = min_version
         self.max_version = max_version
         self.deprecated_message = deprecated_message
@@ -354,4 +353,4 @@ class NodeLinksShowIfVersion(ShowIfVersion):
         min_version = '2.0'
         max_version = '2.0'
         deprecated_message = 'This feature is deprecated as of version 2.1'
-        super(NodeLinksShowIfVersion, self).__init__(min_version, max_version, deprecated_message)
+        super().__init__(min_version, max_version, deprecated_message)

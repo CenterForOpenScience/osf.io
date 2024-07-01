@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import requests
 
 from django.db import transaction
@@ -13,7 +12,7 @@ from website.settings import (
 )
 
 
-class ChronosSerializer(object):
+class ChronosSerializer:
 
     @classmethod
     def serialize_manuscript(cls, journal_id, preprint, status=ChronosSubmissionStatus.DRAFT.value):
@@ -87,15 +86,15 @@ class ChronosSerializer(object):
         username = user.given_name if user.given_name and user.family_name else user.fullname
         if not bool(user.given_name) and not bool(user.family_name):
             raise ValueError(
-                'Cannot submit because user {} requires a given and family name be set in your OSF profile.'.format(username)
+                f'Cannot submit because user {username} requires a given and family name be set in your OSF profile.'
             )
         if not bool(user.given_name):
             raise ValueError(
-                'Cannot submit because user {} requires a given name be set in your OSF profile.'.format(username)
+                f'Cannot submit because user {username} requires a given name be set in your OSF profile.'
             )
         if not bool(user.family_name):
             raise ValueError(
-                'Cannot submit because user {} requires a family name be set in your OSF profile.'.format(username)
+                f'Cannot submit because user {username} requires a family name be set in your OSF profile.'
             )
 
         return {
@@ -161,7 +160,7 @@ class ChronosSerializer(object):
             'MANUSCRIPT_FILE_CATEGORY': 'Publication Files',
         }
 
-class ChronosClient(object):
+class ChronosClient:
 
     def __init__(self, username=None, password=None, api_key=None, host=None):
         username = username or CHRONOS_USERNAME
@@ -199,7 +198,7 @@ class ChronosClient(object):
     def submit_manuscript(self, journal, preprint, submitter):
         submission_qs = ChronosSubmission.objects.filter(preprint=preprint)
         if submission_qs.filter(journal=journal).exists():
-            raise ValueError('This preprint already has an existing submission to {!r}.'.format(str(journal.title)))
+            raise ValueError(f'This preprint already has an existing submission to {str(journal.title)!r}.')
 
         # 1 = draft, 2 = submitted, 3 = accepted, 4 = published
         # Disallow submission if the current preprint has submissions that are submitted, accepted or publishes
@@ -261,7 +260,7 @@ class ChronosClient(object):
         return submission
 
 
-class ChronosRestClient(object):
+class ChronosRestClient:
 
     def __init__(self, username, password, api_key, host='https://sandbox.api.chronos-oa.com'):
         self._auth_key = None
@@ -283,7 +282,7 @@ class ChronosRestClient(object):
         return self._do_request('POST', '/partners/manuscript', json=body).json()
 
     def get_manuscript(self, manuscript_id):
-        return self._do_request('GET', '/partners/manuscript/{}'.format(manuscript_id)).json()
+        return self._do_request('GET', f'/partners/manuscript/{manuscript_id}').json()
 
     def get_journals_by_publisher(self, publisher):
         raise NotImplementedError
@@ -294,7 +293,7 @@ class ChronosRestClient(object):
     def _refresh_auth_key(self):
         if not self._auth_key:
             resp = self._session.post(
-                '{}/partners/login'.format(self._host),
+                f'{self._host}/partners/login',
                 json={
                     'password': self._password,
                     'username': self._username,
@@ -312,7 +311,7 @@ class ChronosRestClient(object):
 
         resp = self._session.request(
             method,
-            '{}{}'.format(self._host, path),
+            f'{self._host}{path}',
             json=json,
             headers={
                 'api_key': self._api_key,

@@ -21,13 +21,13 @@ def migrate(dry_run):
     registrations_count = registrations.count()
     count = 0
 
-    logger.info('Preparing to migrate {} registrations.'.format(registrations_count))
+    logger.info(f'Preparing to migrate {registrations_count} registrations.')
     for registration in registrations.iterator():
         count += 1
-        logger.info('{}/{} - {}'.format(count, registrations_count, registration._id))
+        logger.info(f'{count}/{registrations_count} - {registration._id}')
         if not dry_run:
             update_share(registration)
-        logger.info('Registration {} was sent to SHARE.'.format(registration._id))
+        logger.info(f'Registration {registration._id} was sent to SHARE.')
 
 
 def main():

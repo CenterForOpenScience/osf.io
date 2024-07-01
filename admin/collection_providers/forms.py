@@ -1,8 +1,8 @@
-import bleach
 import json
 
 from django import forms
 
+from framework.utils import sanitize_html
 from osf.models import CollectionProvider, CollectionSubmission
 from admin.base.utils import get_nodelicense_choices, get_defaultlicense_choices, validate_slug
 
@@ -36,29 +36,29 @@ class CollectionProviderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         nodelicense_choices = get_nodelicense_choices()
         defaultlicense_choices = get_defaultlicense_choices()
-        super(CollectionProviderForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['licenses_acceptable'].choices = nodelicense_choices
         self.fields['default_license'].choices = defaultlicense_choices
 
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):
-            return u''
-        return bleach.clean(
+            return ''
+        return sanitize_html(
             self.data.get('description'),
-            tags=['a', 'br', 'em', 'p', 'span', 'strong'],
+            tags={'a', 'br', 'em', 'p', 'span', 'strong'},
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align', 'color'],
+            styles={'text-align', 'vertical-align', 'color'},
             strip=True
         )
 
     def clean_footer_links(self, *args, **kwargs):
         if not self.data.get('footer_links'):
-            return u''
-        return bleach.clean(
+            return ''
+        return sanitize_html(
             self.data.get('footer_links'),
-            tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
+            tags={'a', 'br', 'div', 'em', 'p', 'span', 'strong'},
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align', 'color'],
+            styles={'text-align', 'vertical-align', 'color'},
             strip=True
         )
 
@@ -69,15 +69,15 @@ class CollectionProviderForm(forms.ModelForm):
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
-            type_choices_old = set([c.strip(' ') for c in collection_provider.primary_collection.collected_type_choices])
-            type_choices_new = set([c.strip(' ') for c in json.loads(self.data.get('collected_type_choices'))])
+            type_choices_old = {c.strip(' ') for c in collection_provider.primary_collection.collected_type_choices}
+            type_choices_new = {c.strip(' ') for c in json.loads(self.data.get('collected_type_choices'))}
             type_choices_added = type_choices_new - type_choices_old
             type_choices_removed = type_choices_old - type_choices_new
             for item in type_choices_removed:
                 if CollectionSubmission.objects.filter(collection=collection_provider.primary_collection,
                                                         collected_type=item).exists():
                     raise forms.ValidationError(
-                        'Cannot delete "{}" because it is used as metadata on objects.'.format(item)
+                        f'Cannot delete "{item}" because it is used as metadata on objects.'
                     )
         else:
             # if this is creating a CollectionProvider
@@ -99,15 +99,15 @@ class CollectionProviderForm(forms.ModelForm):
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
-            status_choices_old = set([c.strip(' ') for c in collection_provider.primary_collection.status_choices])
-            status_choices_new = set([c.strip(' ') for c in json.loads(self.data.get('status_choices'))])
+            status_choices_old = {c.strip(' ') for c in collection_provider.primary_collection.status_choices}
+            status_choices_new = {c.strip(' ') for c in json.loads(self.data.get('status_choices'))}
             status_choices_added = status_choices_new - status_choices_old
             status_choices_removed = status_choices_old - status_choices_new
             for item in status_choices_removed:
                 if CollectionSubmission.objects.filter(collection=collection_provider.primary_collection,
                                                         status=item).exists():
                     raise forms.ValidationError(
-                        'Cannot delete "{}" because it is used as metadata on objects.'.format(item)
+                        f'Cannot delete "{item}" because it is used as metadata on objects.'
                     )
         else:
             # if this is creating a CollectionProvider
@@ -129,15 +129,15 @@ class CollectionProviderForm(forms.ModelForm):
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
-            volume_choices_old = set([c.strip(' ') for c in collection_provider.primary_collection.volume_choices])
-            volume_choices_new = set([c.strip(' ') for c in json.loads(self.data.get('volume_choices'))])
+            volume_choices_old = {c.strip(' ') for c in collection_provider.primary_collection.volume_choices}
+            volume_choices_new = {c.strip(' ') for c in json.loads(self.data.get('volume_choices'))}
             volume_choices_added = volume_choices_new - volume_choices_old
             volume_choices_removed = volume_choices_old - volume_choices_new
             for item in volume_choices_removed:
                 if CollectionSubmission.objects.filter(collection=collection_provider.primary_collection,
                                                         volume=item).exists():
                     raise forms.ValidationError(
-                        'Cannot delete "{}" because it is used as metadata on objects.'.format(item)
+                        f'Cannot delete "{item}" because it is used as metadata on objects.'
                     )
         else:
             # if this is creating a CollectionProvider
@@ -159,15 +159,15 @@ class CollectionProviderForm(forms.ModelForm):
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
-            issue_choices_old = set([c.strip(' ') for c in collection_provider.primary_collection.issue_choices])
-            issue_choices_new = set([c.strip(' ') for c in json.loads(self.data.get('issue_choices'))])
+            issue_choices_old = {c.strip(' ') for c in collection_provider.primary_collection.issue_choices}
+            issue_choices_new = {c.strip(' ') for c in json.loads(self.data.get('issue_choices'))}
             issue_choices_added = issue_choices_new - issue_choices_old
             issue_choices_removed = issue_choices_old - issue_choices_new
             for item in issue_choices_removed:
                 if CollectionSubmission.objects.filter(collection=collection_provider.primary_collection,
                                                         issue=item).exists():
                     raise forms.ValidationError(
-                        'Cannot delete "{}" because it is used as metadata on objects.'.format(item)
+                        f'Cannot delete "{item}" because it is used as metadata on objects.'
                     )
         else:
             # if this is creating a CollectionProvider
@@ -189,15 +189,15 @@ class CollectionProviderForm(forms.ModelForm):
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
-            program_area_choices_old = set([c.strip(' ') for c in collection_provider.primary_collection.program_area_choices])
-            program_area_choices_new = set([c.strip(' ') for c in json.loads(self.data.get('program_area_choices'))])
+            program_area_choices_old = {c.strip(' ') for c in collection_provider.primary_collection.program_area_choices}
+            program_area_choices_new = {c.strip(' ') for c in json.loads(self.data.get('program_area_choices'))}
             program_area_choices_added = program_area_choices_new - program_area_choices_old
             program_area_choices_removed = program_area_choices_old - program_area_choices_new
             for item in program_area_choices_removed:
                 if CollectionSubmission.objects.filter(collection=collection_provider.primary_collection,
                                                         program_area=item).exists():
                     raise forms.ValidationError(
-                        'Cannot delete "{}" because it is used as metadata on objects.'.format(item)
+                        f'Cannot delete "{item}" because it is used as metadata on objects.'
                     )
         else:
             # if this is creating a CollectionProvider

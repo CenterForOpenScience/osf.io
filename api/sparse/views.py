@@ -18,7 +18,7 @@ from api.registrations.views import (
 from api.users.views import UserNodes, UserRegistrations
 
 
-class BaseSparseMixin(object):
+class BaseSparseMixin:
     view_category = 'sparse'
     serializer_class = None
 

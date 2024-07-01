@@ -13,4 +13,4 @@ class TestCollectionProviderList(ProviderListViewTestBaseMixin):
 
     @pytest.fixture()
     def url(self, request):
-        return '/{}providers/collections/'.format(API_BASE)
+        return f'/{API_BASE}providers/collections/'

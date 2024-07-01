@@ -36,7 +36,7 @@ class TestRawMetrics:
 
     @pytest.fixture
     def base_url(self):
-        return '/{}metrics/raw/'.format(API_BASE)
+        return f'/{API_BASE}metrics/raw/'
 
     def test_delete(self, app, user, base_url):
         res = app.delete_json_api(base_url, auth=user.auth, expect_errors=True)
@@ -59,7 +59,7 @@ class TestRawMetrics:
             '_primary_term': 1
         }
 
-        put_url = '{}customer/_doc/1'.format(base_url)
+        put_url = f'{base_url}customer/_doc/1'
         put_data = {
             'name': 'John Doe'
         }
@@ -67,7 +67,7 @@ class TestRawMetrics:
         assert res.json == put_return
 
     def test_put_no_perms(self, app, other_user, base_url):
-        put_url = '{}customer/_doc/1'.format(base_url)
+        put_url = f'{base_url}customer/_doc/1'
         put_data = {
             'name': 'John Doe'
         }
@@ -91,7 +91,7 @@ class TestRawMetrics:
             '_primary_term': 1
         }
 
-        post_url = '{}customer/_doc/1'.format(base_url)
+        post_url = f'{base_url}customer/_doc/1'
         post_data = {
             'name': 'Jane Doe'
         }
@@ -99,7 +99,7 @@ class TestRawMetrics:
         assert res.json == post_return
 
     def test_post_no_perms(self, app, other_user, base_url):
-        post_url = '{}customer/_doc/1'.format(base_url)
+        post_url = f'{base_url}customer/_doc/1'
         post_data = {
             'name': 'John Doe'
         }
@@ -123,7 +123,7 @@ class TestRawMetrics:
             '_primary_term': 1
         }
 
-        post_url = '{}customer/_doc/1'.format(base_url)
+        post_url = f'{base_url}customer/_doc/1'
         post_data = {
             'name': 'Beyonce'
         }
@@ -132,13 +132,13 @@ class TestRawMetrics:
 
         time.sleep(3)
 
-        get_url = '{}_search?q=*'.format(base_url)
+        get_url = f'{base_url}_search?q=*'
         res = app.get(get_url, auth=user.auth)
 
         assert res.json['hits']['total'] == 1
         assert res.json['hits']['hits'][0]['_source']['name'] == 'Beyonce'
 
-        get_url = '{}customer/_doc/1/'.format(base_url)
+        get_url = f'{base_url}customer/_doc/1/'
         res = app.get(get_url, auth=user.auth)
 
         assert res.json['_source']['name'] == 'Beyonce'

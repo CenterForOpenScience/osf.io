@@ -28,7 +28,7 @@ class TestDraftNodeDetail:
         draft_node = draft_reg.branched_from
 
         # Unauthenticated
-        url = '/{}draft_nodes/{}/'.format(API_BASE, draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{draft_node._id}/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
@@ -50,13 +50,13 @@ class TestDraftNodeDetail:
 
         # assert cannot access node through this endpoint
         project = ProjectFactory(creator=user)
-        url = '/{}draft_nodes/{}/'.format(API_BASE, project._id)
+        url = f'/{API_BASE}draft_nodes/{project._id}/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
         # cannot access draft node after it's been registered (it's now a node!)
         draft_reg.title = 'test user generated title.'
         draft_reg.register(Auth(user))
-        url = '/{}draft_nodes/{}/'.format(API_BASE, draft_node._id)
+        url = f'/{API_BASE}draft_nodes/{draft_node._id}/'
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 404

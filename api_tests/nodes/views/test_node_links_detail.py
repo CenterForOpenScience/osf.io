@@ -15,7 +15,7 @@ from tests.utils import assert_latest_log
 
 
 def node_url_for(n_id):
-    return '/{}nodes/{}/'.format(API_BASE, n_id)
+    return f'/{API_BASE}nodes/{n_id}/'
 
 
 @pytest.fixture()
@@ -123,7 +123,7 @@ class TestNodeLinkDetail:
         assert public_url in url
 
     #   test_node_links_bad_version
-        url = '{}?version=2.1'.format(public_url)
+        url = f'{public_url}?version=2.1'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'This feature is deprecated as of version 2.1'
@@ -337,7 +337,7 @@ class TestDeleteNodeLink:
         project = ProjectFactory(creator=user)
         # The node link belongs to a different project
         res = app.delete(
-            '/{}nodes/{}/node_links/{}/'.format(API_BASE, project._id, public_pointer._id),
+            f'/{API_BASE}nodes/{project._id}/node_links/{public_pointer._id}/',
             auth=user.auth,
             expect_errors=True
         )

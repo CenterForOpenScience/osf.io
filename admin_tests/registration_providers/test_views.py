@@ -1,6 +1,6 @@
 import json
 import pytest
-import mock
+from unittest import mock
 
 from django.test import RequestFactory
 

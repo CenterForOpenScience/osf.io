@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 from django.utils import timezone
-from future.moves.urllib.parse import urlparse
-import mock
-from nose.tools import *  # noqa:
+from urllib.parse import urlparse
+from unittest import mock
 import pytest
 from rest_framework import exceptions
 
@@ -76,15 +74,15 @@ class TestNodeDetail:
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/'
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/'
 
     @pytest.fixture()
     def url_component_public(self, component_public):
-        return '/{}nodes/{}/'.format(API_BASE, component_public._id)
+        return f'/{API_BASE}nodes/{component_public._id}/'
 
     @pytest.fixture()
     def permissions_read(self):
@@ -162,7 +160,7 @@ class TestNodeDetail:
         assert project_private.has_permission(user_two, permissions.WRITE) is True
 
     #   test_draft_node_not_returned_under_node_detail_endpoint
-        draft_node_url = '/{}nodes/{}/'.format(API_BASE, draft_node._id)
+        draft_node_url = f'/{API_BASE}nodes/{draft_node._id}/'
         res = app.get(draft_node_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -177,9 +175,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_equals(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_write)
+        assert res.json['data']['attributes']['current_user_permissions'] == permissions_write
 
     def test_top_level_project_has_no_parent(self, app, url_public):
         res = app.get(url_public)
@@ -204,45 +200,45 @@ class TestNodeDetail:
         #   test_node_has_children_link
         res = app.get(url_public)
         url = res.json['data']['relationships']['children']['links']['related']['href']
-        expected_url = '{}children/'.format(url_public)
+        expected_url = f'{url_public}children/'
         assert urlparse(url).path == expected_url
 
     #   test_node_has_contributors_link
         url = res.json['data']['relationships']['contributors']['links']['related']['href']
-        expected_url = '{}contributors/'.format(url_public)
+        expected_url = f'{url_public}contributors/'
         assert urlparse(url).path == expected_url
 
     #   test_node_has_node_links_link
         url = res.json['data']['relationships']['node_links']['links']['related']['href']
-        expected_url = '{}node_links/'.format(url_public)
+        expected_url = f'{url_public}node_links/'
         assert urlparse(url).path == expected_url
 
     #   test_node_has_registrations_link
         url = res.json['data']['relationships']['registrations']['links']['related']['href']
-        expected_url = '{}registrations/'.format(url_public)
+        expected_url = f'{url_public}registrations/'
         assert urlparse(url).path == expected_url
 
     #   test_node_has_files_link
         url = res.json['data']['relationships']['files']['links']['related']['href']
-        expected_url = '{}files/'.format(url_public)
+        expected_url = f'{url_public}files/'
         assert urlparse(url).path == expected_url
 
     #   test_node_has_affiliated_institutions_link_and_it_doesn't_serialize_to_none
         assert project_public.affiliated_institutions.count() == 0
         related_url = res.json['data']['relationships']['affiliated_institutions']['links']['related']['href']
-        expected_url = '{}institutions/'.format(url_public)
+        expected_url = f'{url_public}institutions/'
         assert urlparse(related_url).path == expected_url
         self_url = res.json['data']['relationships']['affiliated_institutions']['links']['self']['href']
-        expected_url = '{}relationships/institutions/'.format(url_public)
+        expected_url = f'{url_public}relationships/institutions/'
         assert urlparse(self_url).path == expected_url
 
     #   test_node_has_subjects_links_for_later_versions
-        res = app.get(url_public + '?version={}'.format(subjects_as_relationships_version))
+        res = app.get(url_public + f'?version={subjects_as_relationships_version}')
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
-        expected_url = '{}subjects/'.format(url_public)
+        expected_url = f'{url_public}subjects/'
         assert urlparse(related_url).path == expected_url
         self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
-        expected_url = '{}relationships/subjects/'.format(url_public)
+        expected_url = f'{url_public}relationships/subjects/'
         assert urlparse(self_url).path == expected_url
 
     def test_node_has_comments_link(
@@ -284,21 +280,21 @@ class TestNodeDetail:
             user=contributor,
             page='node')
         res = app.get(
-            '{}?related_counts=True'.format(url_public),
+            f'{url_public}?related_counts=True',
             auth=user.auth)
         unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         unread_comments_node = unread['node']
         assert unread_comments_node == 1
 
     def test_node_has_correct_wiki_page_count(self, user, app, url_private, project_private):
-        res = app.get('{}?related_counts=True'.format(url_private), auth=user.auth)
+        res = app.get(f'{url_private}?related_counts=True', auth=user.auth)
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 0
 
         with mock.patch('osf.models.AbstractNode.update_search'):
             wiki_page = WikiFactory(node=project_private, user=user)
             WikiVersionFactory(wiki_page=wiki_page)
 
-        res = app.get('{}?related_counts=True'.format(url_private), auth=user.auth)
+        res = app.get(f'{url_private}?related_counts=True', auth=user.auth)
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
 
     def test_node_properties(self, app, url_public):
@@ -311,7 +307,7 @@ class TestNodeDetail:
     def test_requesting_folder_returns_error(self, app, user):
         folder = CollectionFactory(creator=user)
         res = app.get(
-            '/{}nodes/{}/'.format(API_BASE, folder._id),
+            f'/{API_BASE}nodes/{folder._id}/',
             auth=user.auth,
             expect_errors=True
         )
@@ -329,7 +325,7 @@ class TestNodeDetail:
     def test_cannot_return_folder_at_node_detail_endpoint(self, app, user):
         folder = CollectionFactory(creator=user)
         res = app.get(
-            '/{}nodes/{}/'.format(API_BASE, folder._id),
+            f'/{API_BASE}nodes/{folder._id}/',
             auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -338,7 +334,7 @@ class TestNodeDetail:
         res = app.get(url)
         assert res.status_code == 200
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
-        assert '{}identifiers/'.format(url_public) in link
+        assert f'{url_public}identifiers/' in link
 
     def test_node_shows_wiki_relationship_based_on_disabled_status_and_version(self, app, user, project_public, url_public):
         url = url_public + '?version=latest'
@@ -561,7 +557,7 @@ class TestNodeDetail:
 
         # make sure 'read' is there for implicit read contributors
         comp = NodeFactory(parent=project_public, is_public=True)
-        comp_url = '/{}nodes/{}/?version=2.11'.format(API_BASE, comp._id)
+        comp_url = f'/{API_BASE}nodes/{comp._id}/?version=2.11'
         res = app.get(comp_url, auth=user.auth)
         assert project_public.has_permission(user, permissions.ADMIN)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
@@ -605,7 +601,7 @@ class TestNodeDetail:
 
         # make sure 'read' is there for implicit read group members
         comp = NodeFactory(parent=project_public, is_public=True)
-        comp_url = '/{}nodes/{}/?version=2.11'.format(API_BASE, comp._id)
+        comp_url = f'/{API_BASE}nodes/{comp._id}/?version=2.11'
         res = app.get(comp_url, auth=group_member.auth)
         assert project_public.has_permission(user, permissions.ADMIN)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
@@ -721,11 +717,11 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/'
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/'
 
     @pytest.fixture()
     def url_fake(self):
@@ -1131,7 +1127,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             project=project_public, creator=user)
         original_title = registration.title
         original_description = registration.description
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}nodes/{registration._id}/'
         res = app.put_json_api(url, {
             'data': {
                 'id': registration._id,
@@ -1541,7 +1537,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Return a 400 because component must be deleted before deleting the
         # parent
         res = app.delete_json_api(
-            '/{}nodes/{}/'.format(API_BASE, project._id),
+            f'/{API_BASE}nodes/{project._id}/',
             auth=user.auth,
             expect_errors=True
         )
@@ -1558,7 +1554,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         grandchild = NodeFactory(parent=child, creator=user)
         # Versions 2.12 and greater delete all the nodes in the hierarchy
         res = app.delete_json_api(
-            '/{}nodes/{}/?version=2.12'.format(API_BASE, project._id),
+            f'/{API_BASE}nodes/{project._id}/?version=2.12',
             auth=user.auth,
             expect_errors=True
         )
@@ -1576,7 +1572,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         child = NodeFactory(parent=project, creator=user_two)
         # Versions 2.12 and greater delete all the nodes in the hierarchy
         res = app.delete_json_api(
-            '/{}nodes/{}/?version=2.12'.format(API_BASE, project._id),
+            f'/{API_BASE}nodes/{project._id}/?version=2.12',
             auth=user.auth,
             expect_errors=True
         )
@@ -1590,7 +1586,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_delete_bookmark_collection_returns_error(self, app, user):
         bookmark_collection = find_bookmark_collection(user)
         res = app.delete_json_api(
-            '/{}nodes/{}/'.format(API_BASE, bookmark_collection._id),
+            f'/{API_BASE}nodes/{bookmark_collection._id}/',
             auth=user.auth,
             expect_errors=True
         )
@@ -1672,11 +1668,11 @@ class TestReturnDeletedNode:
 
     @pytest.fixture()
     def url_project_public_deleted(self, project_public_deleted):
-        return '/{}nodes/{}/'.format(API_BASE, project_public_deleted._id)
+        return f'/{API_BASE}nodes/{project_public_deleted._id}/'
 
     @pytest.fixture()
     def url_project_private_deleted(self, project_private_deleted):
-        return '/{}nodes/{}/'.format(API_BASE, project_private_deleted._id)
+        return f'/{API_BASE}nodes/{project_private_deleted._id}/'
 
     def test_return_deleted_node(
             self, app, user, title_new, project_public_deleted,
@@ -1785,11 +1781,11 @@ class TestNodeTags:
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/'
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/'
 
     @pytest.fixture()
     def payload_public(self, project_public):
@@ -1980,7 +1976,7 @@ class TestNodeTags:
             assert len(res.json['data']['attributes']['tags']) == 0
 
     def test_tags_post_object_instead_of_list(self, user, app):
-        url = '/{}nodes/'.format(API_BASE)
+        url = f'/{API_BASE}nodes/'
         payload = {'data': {
             'type': 'nodes',
             'attributes': {
@@ -2076,11 +2072,11 @@ class TestNodeLicense:
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/'
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/'
 
     def test_node_has(
             self, app, user, node_license, project_public,
@@ -2114,7 +2110,7 @@ class TestNodeLicense:
             self, app, user, node_license, project_public):
         node = NodeFactory(parent=project_public, creator=user)
         node.save()
-        node_url = '/{}nodes/{}/'.format(API_BASE, node._id)
+        node_url = f'/{API_BASE}nodes/{node._id}/'
         res = app.get(node_url, auth=user.auth)
         assert not node.node_license
         assert project_public.node_license.year == \
@@ -2169,7 +2165,7 @@ class TestNodeUpdateLicense:
 
     @pytest.fixture()
     def url_node(self, node):
-        return '/{}nodes/{}/'.format(API_BASE, node._id)
+        return f'/{API_BASE}nodes/{node._id}/'
 
     @pytest.fixture()
     def make_payload(self):

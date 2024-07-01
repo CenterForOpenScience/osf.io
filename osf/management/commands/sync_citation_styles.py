@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import io
 import logging
 import os
@@ -107,7 +106,7 @@ def sync_citation_styles(dry_run=False):
                             CitationStyle.objects.update_or_create(**fields)
                             break
                         else:
-                            logger.debug('Unable to load parent_style object: parent {}, dependent style {}'.format(parent_style_id, style_id))
+                            logger.debug(f'Unable to load parent_style object: parent {parent_style_id}, dependent style {style_id}')
                 else:
                     fields = {
                         '_id': style_id,

@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 import os
-from future.moves.urllib.parse import unquote
+from urllib.parse import unquote
 import logging
 
 from django.db import models
@@ -175,7 +174,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'kind': 'folder',
                 'name': '/ (Full OneDrive)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/onedrive/folders/'.format(self.owner._id),
+                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/onedrive/folders/',
                                           params={'id': DEFAULT_ROOT_ID}),
                 }
             }]
@@ -195,7 +194,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': item['name'],
                 'path': item['name'],
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/onedrive/folders/'.format(self.owner._id),
+                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/onedrive/folders/',
                                           params={'id': item['id']}),
                 }
             }
@@ -251,7 +250,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
-            'onedrive_{0}'.format(action),
+            f'onedrive_{action}',
             auth=auth,
             params={
                 'path': metadata['materialized'],
@@ -286,7 +285,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.save()
 
     def set_auth(self, external_account, user, **kwargs):
-        super(NodeSettings, self).set_auth(external_account, user, **kwargs)
+        super().set_auth(external_account, user, **kwargs)
 
         client = OneDriveClient(self.fetch_access_token())
         user_info = client.user_info()

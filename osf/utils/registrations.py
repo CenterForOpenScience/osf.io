@@ -1,8 +1,7 @@
-from past.builtins import basestring
 import copy
 import re
 
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from osf.exceptions import SchemaBlockConversionError
 from website import settings
@@ -127,7 +126,7 @@ def build_file_ref(file):
     if view_url:
         url_match = FILE_VIEW_URL_REGEX.search(view_url)
         if not url_match:
-            raise SchemaBlockConversionError('Unexpected file viewUrl: {}'.format(view_url))
+            raise SchemaBlockConversionError(f'Unexpected file viewUrl: {view_url}')
         groupdict = url_match.groupdict()
         file_id = groupdict['file_id']
         node_id = groupdict['node_id']
@@ -138,7 +137,7 @@ def build_file_ref(file):
         node_id = file.get('nodeId')
 
     if not (file_id and node_id):
-        raise SchemaBlockConversionError('Could not find file and node ids in file info: {}'.format(file))
+        raise SchemaBlockConversionError(f'Could not find file and node ids in file info: {file}')
 
     file_name = file.get('selectedFileName')
     if file_data and not file_name:
@@ -182,7 +181,7 @@ def get_value_or_extra(nested_response, block_type, key, keys):
     """
     keyed_value = nested_response.get(key, '')
     # No guarantee that the key exists in the dictionary
-    if isinstance(keyed_value, basestring):
+    if isinstance(keyed_value, str):
         return keyed_value
 
     # If we are on the most deeply nested key (no more keys left in array),
@@ -219,7 +218,7 @@ def get_nested_answer(nested_response, block_type, keys):
     else:
         # Once we've drilled down through the entire dictionary, our nested_response
         # should be an array or a string
-        if not isinstance(nested_response, (list, basestring)):
+        if not isinstance(nested_response, (list, str)):
             raise SchemaBlockConversionError('Unexpected value type (expected list or string)', nested_response)
         return nested_response
 

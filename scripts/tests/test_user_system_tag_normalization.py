@@ -26,14 +26,14 @@ class TestUserSystemTagNormalization:
     @pytest.fixture()
     def prereg_challenge_user_created_before_cutoff(self):
         user = UserFactory()
-        user.date_registered = pytz.utc.localize(datetime(1998, 12, 01, 04, 48))
+        user.date_registered = pytz.utc.localize(datetime(1998, 12, 1, 4, 48))
         user.save()
         return user
 
     @pytest.fixture()
     def prereg_challenge_user_created_after_cutoff(self):
         user = UserFactory()
-        user.date_registered = pytz.utc.localize(datetime(2019, 12, 01, 04, 48))
+        user.date_registered = pytz.utc.localize(datetime(2019, 12, 1, 4, 48))
         user.save()
         return user
 

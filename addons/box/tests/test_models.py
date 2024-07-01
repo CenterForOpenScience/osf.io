@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import unittest
 
 import pytest
@@ -28,11 +28,11 @@ class TestBoxNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCas
             return_value=('12235', '/Foo')
         )
         self.mock_data.start()
-        super(TestBoxNodeSettings, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_data.stop()
-        super(TestBoxNodeSettings, self).tearDown()
+        super().tearDown()
 
     def test_folder_defaults_to_none(self):
         node_settings = NodeSettings(user_settings=self.user_settings, owner=factories.ProjectFactory())
@@ -42,11 +42,11 @@ class TestBoxNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCas
     @mock.patch('addons.box.models.Provider.refresh_oauth_key')
     def test_serialize_credentials(self, mock_refresh):
         mock_refresh.return_value = True
-        super(TestBoxNodeSettings, self).test_serialize_credentials()
+        super().test_serialize_credentials()
 
     @mock.patch('addons.box.models.UserSettings.revoke_remote_oauth_access', mock.PropertyMock())
     def test_complete_has_auth_not_verified(self):
-        super(TestBoxNodeSettings, self).test_complete_has_auth_not_verified()
+        super().test_complete_has_auth_not_verified()
 
 
 class TestBoxUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):

@@ -1,4 +1,3 @@
-import six
 from collections import OrderedDict
 from django.urls import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
@@ -153,7 +152,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                 self.page = paginator.page(page_number)
             except InvalidPage as exc:
                 msg = self.invalid_page_message.format(
-                    page_number=page_number, message=six.text_type(exc),
+                    page_number=page_number, message=str(exc),
                 )
                 raise NotFound(msg)
 
@@ -165,7 +164,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             return list(self.page)
 
         else:
-            return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)
+            return super().paginate_queryset(queryset, request, view=None)
 
 
 class MaxSizePagination(JSONAPIPagination):
@@ -184,7 +183,7 @@ class CommentPagination(JSONAPIPagination):
     def get_paginated_response(self, data):
         """Add number of unread comments to links.meta when viewing list of comments filtered by
         a target node, file or wiki page."""
-        response = super(CommentPagination, self).get_paginated_response(data)
+        response = super().get_paginated_response(data)
         response_dict = response.data
         kwargs = self.request.parser_context['kwargs'].copy()
 
@@ -217,7 +216,7 @@ class NodeContributorPagination(JSONAPIPagination):
 
     def get_paginated_response(self, data):
         """ Add number of bibliographic contributors to links.meta"""
-        response = super(NodeContributorPagination, self).get_paginated_response(data)
+        response = super().get_paginated_response(data)
         response_dict = response.data
         kwargs = self.request.parser_context['kwargs'].copy()
         node = self.get_resource(kwargs)
@@ -246,7 +245,7 @@ class DraftRegistrationContributorPagination(NodeContributorPagination):
 class SearchPaginator(DjangoPaginator):
 
     def __init__(self, object_list, per_page):
-        super(SearchPaginator, self).__init__(object_list, per_page)
+        super().__init__(object_list, per_page)
 
     def search_type_to_model(self, obj_id, obj_type):
         model = DOC_TYPE_TO_MODEL[obj_type]
@@ -270,7 +269,7 @@ class SearchPaginator(DjangoPaginator):
 class SearchModelPaginator(SearchPaginator):
 
     def __init__(self, object_list, per_page, model):
-        super(SearchModelPaginator, self).__init__(object_list, per_page)
+        super().__init__(object_list, per_page)
         self.model = model
 
     def page(self, number):
@@ -286,7 +285,7 @@ class SearchModelPaginator(SearchPaginator):
 class SearchPagination(JSONAPIPagination):
 
     def __init__(self):
-        super(SearchPagination, self).__init__()
+        super().__init__()
         self.paginator = None
 
     def paginate_queryset(self, queryset, request, view=None):
@@ -312,7 +311,7 @@ class SearchPagination(JSONAPIPagination):
             self.page = self.paginator.page(page_number)
         except InvalidPage as exc:
             msg = self.invalid_page_message.format(
-                page_number=page_number, message=six.text_type(exc),
+                page_number=page_number, message=str(exc),
             )
             raise NotFound(msg)
 
@@ -324,7 +323,7 @@ class SearchPagination(JSONAPIPagination):
         return list(self.page)
 
     def get_search_field_url(self, field, query):
-        view_name = 'search:search-{}'.format(field)
+        view_name = f'search:search-{field}'
         return absolute_reverse(
             view_name,
             query_kwargs={
@@ -354,7 +353,7 @@ class SearchPagination(JSONAPIPagination):
 
     def get_response_dict(self, data, url):
         if isinstance(self.paginator, SearchModelPaginator):
-            return super(SearchPagination, self).get_response_dict(data, url)
+            return super().get_response_dict(data, url)
         else:
             query = self.request.query_params.get('q', '*')
             return OrderedDict([
@@ -388,7 +387,7 @@ class SearchPagination(JSONAPIPagination):
 
     def get_response_dict_deprecated(self, data, url):
         if isinstance(self.paginator, SearchModelPaginator):
-            return super(SearchPagination, self).get_response_dict_deprecated(data, url)
+            return super().get_response_dict_deprecated(data, url)
         else:
             query = self.request.query_params.get('q', '*')
             return OrderedDict([

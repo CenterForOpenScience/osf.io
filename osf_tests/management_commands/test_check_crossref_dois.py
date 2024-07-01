@@ -1,6 +1,5 @@
-# encoding: utf-8
 import os
-import mock
+from unittest import mock
 import pytest
 import json
 from datetime import timedelta
@@ -48,7 +47,7 @@ class TestCheckCrossrefDOIs:
         responses.add(
             responses.Response(
                 responses.GET,
-                url='{}works?filter=doi:{}'.format(settings.CROSSREF_JSON_API_URL, doi),
+                url=f'{settings.CROSSREF_JSON_API_URL}works?filter=doi:{doi}',
                 json=crossref_response,
                 status=200
             )

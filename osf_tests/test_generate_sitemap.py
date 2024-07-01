@@ -1,11 +1,11 @@
 import os
 
 import pytest
-import mock
+from unittest import mock
 import shutil
 import tempfile
 import xml
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from django.utils import timezone
 
 from scripts import generate_sitemap
@@ -128,11 +128,11 @@ class TestGenerateSitemap:
             project_preprint_osf.url,
             project_preprint_other.url,
             registration_active.url,
-            '/preprints/{}/{}'.format(provider_osf._id, preprint_osf._id),
-            '/preprints/{}/{}'.format(provider_other._id, preprint_other._id),
-            '/preprints/{}/{}'.format(provider_osf._id, preprint_withdrawn._id),
-            '/{}/download/?format=pdf'.format(preprint_osf._id),
-            '/{}/download/?format=pdf'.format(preprint_other._id)
+            f'/preprints/{provider_osf._id}/{preprint_osf._id}',
+            f'/preprints/{provider_other._id}/{preprint_other._id}',
+            f'/preprints/{provider_osf._id}/{preprint_withdrawn._id}',
+            f'/{preprint_osf._id}/download/?format=pdf',
+            f'/{preprint_other._id}/download/?format=pdf'
         ])
         urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
 

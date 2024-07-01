@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Serializer tests for the GitLab addon."""
-import mock
+from unittest import mock
 import pytest
 
 from tests.base import OsfTestCase
@@ -25,14 +24,14 @@ class TestGitLabSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
     ## Overrides ##
 
     def setUp(self):
-        super(TestGitLabSerializer, self).setUp()
+        super().setUp()
         self.mock_api_user = mock.patch('addons.gitlab.api.GitLabClient.user')
         self.mock_api_user.return_value = mock.Mock()
         self.mock_api_user.start()
 
     def tearDown(self):
         self.mock_api_user.stop()
-        super(TestGitLabSerializer, self).tearDown()
+        super().tearDown()
 
     def test_serialize_acccount(self):
         ea = self.ExternalAccountFactory()

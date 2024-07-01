@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.s3.tests.factories import S3AccountFactory
 from addons.s3.provider import S3Provider

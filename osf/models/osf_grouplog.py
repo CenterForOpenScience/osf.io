@@ -41,7 +41,7 @@ class OSFGroupLog(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/logs/{}/'.format(self._id)
+        path = f'/logs/{self._id}/'
         return api_v2_url(path)
 
     def get_absolute_url(self):

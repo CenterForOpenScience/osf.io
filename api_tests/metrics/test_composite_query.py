@@ -26,7 +26,7 @@ def user():
 
 @pytest.fixture
 def base_url():
-    return '/{}metrics/preprints/'.format(API_BASE)
+    return f'/{API_BASE}metrics/preprints/'
 
 
 @pytest.mark.es
@@ -34,7 +34,7 @@ def base_url():
 class TestElasticSearch:
 
     def test_elasticsearch_agg_query(self, app, user, base_url, preprint):
-        post_url = '{}downloads/'.format(base_url)
+        post_url = f'{base_url}downloads/'
 
         payload = {
             'data': {

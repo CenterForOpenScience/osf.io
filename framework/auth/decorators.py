@@ -1,16 +1,13 @@
-# -*- coding: utf-8 -*-
-
-import time
+from time import time
 from rest_framework import status as http_status
-import functools
-
+from functools import wraps
 from flask import request
 
 from framework.auth import cas
 from framework.auth import signing
 from framework.flask import redirect
 from framework.exceptions import HTTPError
-from .core import Auth
+from framework.auth.core import Auth
 from website import settings
 
 
@@ -20,7 +17,7 @@ def block_bing_preview(func):
     This decorator is a temporary fix to prevent BingPreview from pre-fetching confirmation links.
     """
 
-    @functools.wraps(func)
+    @wraps(func)
     def wrapped(*args, **kwargs):
         user_agent = request.headers.get('User-Agent')
         if user_agent and ('BingPreview' in user_agent or 'MSIE 9.0' in user_agent):
@@ -35,7 +32,7 @@ def block_bing_preview(func):
 
 def collect_auth(func):
 
-    @functools.wraps(func)
+    @wraps(func)
     def wrapped(*args, **kwargs):
         kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
         return func(*args, **kwargs)
@@ -45,7 +42,7 @@ def collect_auth(func):
 
 def must_be_confirmed(func):
 
-    @functools.wraps(func)
+    @wraps(func)
     def wrapped(*args, **kwargs):
         from osf.models import OSFUser
 
@@ -69,7 +66,7 @@ def must_be_logged_in(func):
     user.
 
     """
-    @functools.wraps(func)
+    @wraps(func)
     def wrapped(*args, **kwargs):
         kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
         if kwargs['auth'].logged_in:
@@ -82,7 +79,7 @@ def must_be_logged_in(func):
 # TODO Can remove after Waterbutler is sending requests to V2 endpoints.
 # This decorator has been adapted for use in an APIv2 parser - HMACSignedParser
 def must_be_signed(func):
-    @functools.wraps(func)
+    @wraps(func)
     def wrapped(*args, **kwargs):
         if request.method in ('GET', 'DELETE'):
             data = request.args
@@ -102,7 +99,7 @@ def must_be_signed(func):
         if not signing.default_signer.verify_payload(sig, payload):
             raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
-        if time.time() > exp_time:
+        if time() > exp_time:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Expired',
                 'message_long': 'Signature has expired.'

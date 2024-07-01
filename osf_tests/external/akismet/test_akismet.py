@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import responses
 from urllib.parse import parse_qs
@@ -57,7 +57,7 @@ class TestUserSpamAkismet:
         user.save()
         with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                rsps.add(responses.POST, f'https://none.rest.akismet.com/1.1/comment-check', status=200, body='true')
+                rsps.add(responses.POST, 'https://none.rest.akismet.com/1.1/comment-check', status=200, body='true')
                 user.do_check_spam(
                     author=user.fullname,
                     author_email=user.username,

@@ -9,7 +9,7 @@ class TestScopeDetail:
 
     def test_scope_detail(self, app):
         scope = ApiOAuth2ScopeFactory()
-        url_scope = '/{}scopes/{}/'.format(API_BASE, scope.name)
+        url_scope = f'/{API_BASE}scopes/{scope.name}/'
         res_scope = app.get(url_scope)
         data_scope = res_scope.json['data']
 
@@ -37,7 +37,7 @@ class TestScopeDetail:
         scope.is_public = False
         scope.save()
         # Private scope, Unauthenticated
-        url_scope = '/{}scopes/{}/'.format(API_BASE, scope.name)
+        url_scope = f'/{API_BASE}scopes/{scope.name}/'
         res = app.get(url_scope, expect_errors=True)
         assert res.status_code == 401
 

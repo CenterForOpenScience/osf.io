@@ -21,7 +21,7 @@ class TestPreprintSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def url(self, resource):
-        return '/{}preprints/{}/subjects/'.format(API_BASE, resource._id)
+        return f'/{API_BASE}preprints/{resource._id}/subjects/'
 
     def test_get_resource_subjects_permissions(self, app, user_write_contrib,
             user_read_contrib, user_non_contrib, resource, url):

@@ -42,20 +42,20 @@ WHITE_LIST_PATH = os.path.join(os.path.dirname(__file__), 'usage_whitelist.json'
 
 
 try:
-    with open(WHITE_LIST_PATH, 'r') as fobj:
+    with open(WHITE_LIST_PATH) as fobj:
         WHITE_LIST = set(json.load(fobj))  # Cast to set for constant time look ups
-    logger.info('Loaded whitelist.json from {}'.format(WHITE_LIST_PATH))
-except IOError:
+    logger.info(f'Loaded whitelist.json from {WHITE_LIST_PATH}')
+except OSError:
     WHITE_LIST = set()
     logger.warning('No whitelist found')
 
 
 def add_to_white_list(gtg):
     gtg = set(gtg).difference(WHITE_LIST)
-    logger.info('Adding {} to whitelist'.format(gtg))
+    logger.info(f'Adding {gtg} to whitelist')
     with open(WHITE_LIST_PATH, 'w') as fobj:
         json.dump(list(WHITE_LIST.union(gtg)), fobj)  # Sets are not JSON serializable
-    logger.info('Whitelist updated to {}'.format(WHITE_LIST))
+    logger.info(f'Whitelist updated to {WHITE_LIST}')
 
 
 def get_usage(node):
@@ -103,7 +103,7 @@ def main(send_email=False):
 
     for model, collection, limit in ((OSFUser, users, USER_LIMIT), (AbstractNode, projects, PROJECT_LIMIT)):
         for item, (used, deleted) in filter(functools.partial(limit_filter, limit), collection.items()):
-            line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(model.load(item), limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
+            line = f'{model.load(item)!r} has exceeded the limit {limit / GBs:.2f}GBs ({limit}b) with {used / GBs:.2f}GBs ({used}b) used and {deleted / GBs:.2f}GBs ({deleted}b) deleted.'
             logger.info(line)
             lines.append(line)
 
@@ -112,8 +112,8 @@ def main(send_email=False):
             logger.info('Sending email...')
             mails.send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit', can_change_preferences=False,)
         else:
-            logger.info('send_email is False, not sending email'.format(len(lines)))
-        logger.info('{} offending project(s) and user(s) found'.format(len(lines)))
+            logger.info(f'send_email is False, not sending email')
+        logger.info(f'{len(lines)} offending project(s) and user(s) found')
     else:
         logger.info('No offending projects or users found')
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
 
 import argparse
 import logging
 import sys
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 
 import django
 from django.db import transaction
@@ -22,8 +21,8 @@ logging.basicConfig(level=logging.INFO)
 ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', 'local']
 
 # TODO: Store only the Entity IDs in OSF DB and move the URL building process to CAS
-SHIBBOLETH_SP_LOGIN = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
-SHIBBOLETH_SP_LOGOUT = '{}/Shibboleth.sso/Logout?return={{}}'.format(settings.CAS_SERVER_URL)
+SHIBBOLETH_SP_LOGIN = f'{settings.CAS_SERVER_URL}/Shibboleth.sso/Login?entityID={{}}'
+SHIBBOLETH_SP_LOGOUT = f'{settings.CAS_SERVER_URL}/Shibboleth.sso/Logout?return={{}}'
 
 # Using optional args instead of positional ones to explicitly set them
 parser = argparse.ArgumentParser()
@@ -43,13 +42,13 @@ def update_or_create(inst_data):
         for key, val in inst_data.items():
             setattr(inst, key, val)
         inst.save()
-        print('Updated {}'.format(inst.name))
+        print(f'Updated {inst.name}')
         update_institution(inst)
         return inst, False
     else:
         inst = Institution(**inst_data)
         inst.save()
-        print('Added new institution: {}'.format(inst._id))
+        print(f'Added new institution: {inst._id}')
         update_institution(inst)
         return inst, True
 
@@ -66,7 +65,7 @@ def main(default_args=False):
     update_all = args.all
 
     if not server_env or server_env not in ENVS:
-        logger.error('A valid environment must be specified: {}'.format(ENVS))
+        logger.error(f'A valid environment must be specified: {ENVS}')
         sys.exit(1)
     institutions = INSTITUTIONS[server_env]
 
@@ -78,7 +77,7 @@ def main(default_args=False):
         institutions_to_update = institutions
     else:
         institutions_to_update = [inst for inst in institutions if inst['_id'] in update_ids]
-        diff_list = list(set(update_ids) - set([inst['_id'] for inst in institutions_to_update]))
+        diff_list = list(set(update_ids) - {inst['_id'] for inst in institutions_to_update})
         if diff_list:
             logger.error('One or more institution ID(s) provided via -i or --ids do not match any '
                          'existing records: {}.'.format(diff_list))
@@ -88,7 +87,7 @@ def main(default_args=False):
         for inst_data in institutions_to_update:
             update_or_create(inst_data)
         for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in institutions]):
-            logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
+            logger.warning(f'Extra Institution : {extra_inst._id} - {extra_inst.name}')
 
 
 INSTITUTIONS = {

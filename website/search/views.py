@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 import functools
 from rest_framework import status as http_status
 import logging
 import time
 
-import bleach
 from django.db.models import Q
 from flask import request
 
@@ -12,6 +10,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
+from framework.utils import sanitize_html
 from website import language
 from osf import features
 from osf.models import OSFUser, AbstractNode
@@ -43,9 +42,9 @@ def handle_search_errors(func):
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
                                  + language.SUPPORT_LINK),
             })
-        except exceptions.SearchException:
+        except exceptions.SearchException as e:
             # Interim fix for issue where ES fails with 500 in some settings- ensure exception is still logged until it can be better debugged. See OSF-4538
-            sentry.log_exception()
+            sentry.log_exception(e)
             sentry.log_message('Elasticsearch returned an unexpected error response')
             # TODO: Add a test; may need to mock out the error response due to inability to reproduce error code locally
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
@@ -178,7 +177,7 @@ def process_project_search_results(results, **kwargs):
         authors_html = ''
         for author in authors['contributors']:
             a = OSFUser.load(author['user_id'])
-            authors_html += '<a href="%s">%s</a>' % (a.url, a.fullname)
+            authors_html += f'<a href="{a.url}">{a.fullname}</a>'
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
 
@@ -199,8 +198,8 @@ def search_contributor(auth):
     nid = request.args.get('excludeNode')
     exclude = AbstractNode.load(nid).contributors if nid else []
     # TODO: Determine whether bleach is appropriate for ES payload. Also, inconsistent with website.sanitize.util.strip_html
-    query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
-    page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
-    size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
+    query = sanitize_html(request.args.get('query', ''), tags=set(), strip=True)
+    page = int(sanitize_html(request.args.get('page', '0'), tags=set(), strip=True))
+    size = int(sanitize_html(request.args.get('size', '5'), tags=set(), strip=True))
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)

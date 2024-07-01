@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import json
 import logging
@@ -144,7 +143,7 @@ def update_provider_auth_groups(verbosity=0):
             for obj in subclass.objects.all():
                 obj.update_group_permissions()
                 if verbosity > 0:
-                    logger.info('Updated perms for {} {}'.format(obj.type, obj._id))
+                    logger.info(f'Updated perms for {obj.type} {obj._id}')
         except ProgrammingError:
             logger.info('Schema change for AbstractProvider detected, passing.')
             transaction.savepoint_rollback(savepoint_id)

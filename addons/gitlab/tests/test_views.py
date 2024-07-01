@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
+from github3.session import GitHubSession
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 import datetime
 import pytest
 import unittest
 from json import dumps
 
-from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, DraftRegistrationFactory
 
@@ -35,7 +34,7 @@ class TestGitLabAuthViews(GitLabAddonTestCase, OAuthAddonAuthViewsTestCaseMixin,
         mock.PropertyMock()
     )
     def test_delete_external_account(self):
-        super(TestGitLabAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
     def test_oauth_start(self):
         pass
@@ -52,14 +51,14 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     ## Overrides ##
 
     def setUp(self):
-        super(TestGitLabConfigViews, self).setUp()
+        super().setUp()
         self.mock_api_user = mock.patch('addons.gitlab.api.GitLabClient.user')
         self.mock_api_user.return_value = mock.Mock()
         self.mock_api_user.start()
 
     def tearDown(self):
         self.mock_api_user.stop()
-        super(TestGitLabConfigViews, self).tearDown()
+        super().tearDown()
 
     def test_folder_list(self):
         # GH only lists root folder (repos), this test is superfluous
@@ -70,18 +69,15 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     def test_set_config(self, mock_repo, mock_add_hook):
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
-        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.post_json(url, {
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
+        res = self.app.post(url, json={
             'gitlab_user': 'octocat',
             'gitlab_repo': 'repo_name',
             'gitlab_repo_id': '123',
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert res.status_code == http_status.HTTP_200_OK
         self.project.reload()
-        assert_equal(
-            self.project.logs.latest().action,
-            '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
-        )
+        assert self.project.logs.latest().action == f'{self.ADDON_SHORT_NAME}_repo_linked'
         mock_add_hook.assert_called_once_with(save=False)
 
 
@@ -90,7 +86,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
 class TestCRUD(OsfTestCase):
 
     def setUp(self):
-        super(TestCRUD, self).setUp()
+        super().setUp()
         self.gitlab = create_mock_gitlab(user='fred', private=False)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -108,7 +104,7 @@ class TestCRUD(OsfTestCase):
 class TestGitLabViews(OsfTestCase):
 
     def setUp(self):
-        super(TestGitLabViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
@@ -153,15 +149,9 @@ class TestGitLabViews(OsfTestCase):
         mock_repo.return_value = gitlab_mock.repo
         mock_branches.return_value = gitlab_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings)
-        assert_equal(
-            branch,
-            gitlab_mock.repo.default_branch
-        )
-        assert_equal(sha, branches[0].commit['id'])  # Get refs for default branch
-        assert_equal(
-            branches,
-            gitlab_mock.branches.return_value
-        )
+        assert branch == gitlab_mock.repo.default_branch
+        assert sha == branches[0].commit['id']  # Get refs for default branch
+        assert branches == gitlab_mock.branches.return_value
 
     @mock.patch('addons.gitlab.api.GitLabClient.branches')
     @mock.patch('addons.gitlab.api.GitLabClient.repo')
@@ -170,27 +160,24 @@ class TestGitLabViews(OsfTestCase):
         mock_repo.return_value = gitlab_mock.repo.return_value
         mock_branches.return_value = gitlab_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings, 'master')
-        assert_equal(branch, 'master')
-        assert_equal(sha, branches[0].commit['id'])
-        assert_equal(
-            branches,
-            gitlab_mock.branches.return_value
-        )
+        assert branch == 'master'
+        assert sha == branches[0].commit['id']
+        assert branches == gitlab_mock.branches.return_value
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(len(res.json['prompts']), 1)
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
+        assert len(res.json['prompts']) == 1
 
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
     def test_before_register(self, mock_has_auth):
         mock_has_auth.return_value = True
         url = self.project.api_url + 'beforeregister/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_true('GitLab' in res.json['prompts'][1])
+        res = self.app.get(url, auth=self.user.auth,follow_redirects=True)
+        assert 'GitLab' in res.json['prompts'][1]
 
     def test_get_refs_sha_no_branch(self):
-        with assert_raises(HTTPError):
+        with pytest.raises(HTTPError):
             utils.get_refs(self.node_settings, sha='12345')
 
     # Tests for _check_permissions
@@ -213,7 +200,7 @@ class TestGitLabViews(OsfTestCase):
         non_authenticated_user = UserFactory()
         non_authenticated_auth = Auth(user=non_authenticated_user)
         branch = 'master'
-        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch, repo=mock_repository))
+        assert not check_permissions(self.node_settings, non_authenticated_auth, connection, branch, repo=mock_repository)
 
     # make a repository that doesn't allow push access for this user;
     # make sure check_permissions returns false
@@ -232,7 +219,7 @@ class TestGitLabViews(OsfTestCase):
             },
         })
         mock_repo.attributes.return_value = mock_repository
-        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
+        assert not check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository)
 
     # make a branch with a different commit than the commit being passed into check_permissions
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
@@ -254,7 +241,7 @@ class TestGitLabViews(OsfTestCase):
         mock_repo.attributes.return_value = mock_repository
         connection.branches.return_value = mock_branch
         sha = '12345'
-        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha, repo=mock_repository))
+        assert not check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha, repo=mock_repository)
 
     # make sure permissions are not granted for editing a registration
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
@@ -273,28 +260,28 @@ class TestGitLabViews(OsfTestCase):
         mock_repo.attributes.return_value = mock_repository
         with mock.patch('osf.models.node.AbstractNode.is_registration', new_callable=mock.PropertyMock) as mock_is_reg:
             mock_is_reg.return_value = True
-            assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master', repo=mock_repository))
+            assert not check_permissions(self.node_settings, self.consolidated_auth, connection, 'master', repo=mock_repository)
 
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='gitlab')
         expected_urls = {
-            'view': '{0}?branch={1}'.format(url, sha),
-            'download': '{0}?action=download&branch={1}'.format(url, sha)
+            'view': f'{url}?branch={sha}',
+            'download': f'{url}?action=download&branch={sha}'
         }
 
-        assert_equal(urls['view'], expected_urls['view'])
-        assert_equal(urls['download'], expected_urls['download'])
+        assert urls['view'] == expected_urls['view']
+        assert urls['download'] == expected_urls['download']
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     @mock.patch('addons.gitlab.api.GitLabClient.repo')
     def test_hook_callback_add_file_not_thro_osf(self, mock_repo, mock_verify):
         gitlab_mock = self.gitlab
         gitlab_mock.repo = mock_repo
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'test': True,
                 'commits': [{
                     'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
@@ -310,9 +297,10 @@ class TestGitLabViews(OsfTestCase):
                 }]
             },
             content_type='application/json',
-        ).maybe_follow()
+            follow_redirects=True
+        )
         self.project.reload()
-        assert_equal(self.project.logs.latest().action, 'gitlab_file_added')
+        assert self.project.logs.latest().action == 'gitlab_file_added'
         urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
@@ -323,11 +311,11 @@ class TestGitLabViews(OsfTestCase):
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
                  'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                               'distinct': True,
                               'message': ' foo',
@@ -337,9 +325,9 @@ class TestGitLabViews(OsfTestCase):
                               'committer': {'name': 'Testor', 'email': 'test@osf.io',
                                             'username': 'tester'},
                               'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
-        assert_equal(self.project.logs.latest().action, 'gitlab_file_updated')
+        assert self.project.logs.latest().action == 'gitlab_file_updated'
         urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
@@ -350,11 +338,11 @@ class TestGitLabViews(OsfTestCase):
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
         timestamp = str(datetime.datetime.utcnow())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'foo',
@@ -363,18 +351,18 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed': ['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
-        assert_equal(self.project.logs.latest().action, 'gitlab_file_removed')
+        assert self.project.logs.latest().action == 'gitlab_file_removed'
         urls = self.project.logs.latest().params['urls']
-        assert_equal(urls, {})
+        assert urls == {}
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
-        self.app.post_json(
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Added via the Open Science Framework',
@@ -383,16 +371,16 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': ['PRJWN3TV'], 'removed':[], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
-        assert_not_equal(self.project.logs.latest().action, 'gitlab_file_added')
+        assert self.project.logs.latest().action != 'gitlab_file_added'
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
-        self.app.post_json(
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Updated via the Open Science Framework',
@@ -401,16 +389,16 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
-        assert_not_equal(self.project.logs.latest().action, 'gitlab_file_updated')
+        assert self.project.logs.latest().action != 'gitlab_file_updated'
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
-        self.app.post_json(
+        url = f'/api/v1/project/{self.project._id}/gitlab/hook/'
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Deleted via the Open Science Framework',
@@ -419,16 +407,16 @@ class TestGitLabViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
-        assert_not_equal(self.project.logs.latest().action, 'gitlab_file_removed')
+        assert self.project.logs.latest().action != 'gitlab_file_removed'
 
 
 class TestRegistrationsWithGitLab(OsfTestCase):
 
     def setUp(self):
 
-        super(TestRegistrationsWithGitLab, self).setUp()
+        super().setUp()
         self.project = ProjectFactory.build()
         self.project.save()
         self.consolidated_auth = Auth(user=self.project.creator)
@@ -443,11 +431,53 @@ class TestRegistrationsWithGitLab(OsfTestCase):
         self.node_settings.save()
 
 
+USER = 'octo-cat'
+REPO_AUTHOR = {
+    'name': USER,
+    'email': 'njqpw@osf.io',
+    'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
+                  '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+    'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
+    'followers_url': 'https://api.github.com/users/{user}/followers',
+    'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
+    'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+    'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+    'html_url': 'https://github.com/{user}',
+    'id': 2379650,
+    'login': '{user}',
+    'organizations_url': 'https://api.github.com/users/{user}/orgs',
+    'received_events_url': 'https://api.github.com/users/{user}/received_events',
+    'repos_url': 'https://api.github.com/users/{user}/repos',
+    'site_admin': False,
+    'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+    'subscriptions_url': 'https://api.github.com/users/{'
+                         'user}/subscriptions',
+    'type': 'User',
+    'url': 'https://api.github.com/users/{user}'
+}
+REPO_COMMIT = {
+    'ETag': '',
+    'Last-Modified': '',
+    'url': '',
+    'author': REPO_AUTHOR,
+    'committer': {'name': '{user}', 'email': '{user}@osf.io',
+                  'username': 'tester'},
+    'message': 'Fixed error',
+    'tree': {'url': 'https://docs.github.com/en/rest/git/trees',
+             'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
+}
+REPO_PARENTS = [
+    '12345',
+    'https://api.example.com/entities/67890',
+    'another-entity-id'
+]
+
+
 class TestGitLabSettings(OsfTestCase):
 
     def setUp(self):
 
-        super(TestGitLabSettings, self).setUp()
+        super().setUp()
         self.gitlab = create_mock_gitlab(user='fred', private=False)
         self.project = ProjectFactory()
         self.auth = self.project.creator.auth
@@ -470,22 +500,22 @@ class TestGitLabSettings(OsfTestCase):
         mock_repo.return_value = gitlab_mock.repo.return_value
 
         url = self.project.api_url + 'gitlab/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': 'queen',
                 'gitlab_repo': 'night at the opera',
                 'gitlab_repo_id': 'abc',
             },
             auth=self.auth
-        ).maybe_follow()
+        , follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
 
-        assert_equal(self.node_settings.user, 'queen')
-        assert_equal(self.node_settings.repo, 'night at the opera')
-        assert_equal(self.project.logs.latest().action, 'gitlab_repo_linked')
+        assert self.node_settings.user == 'queen'
+        assert self.node_settings.repo == 'night at the opera'
+        assert self.project.logs.latest().action == 'gitlab_repo_linked'
         mock_add_hook.assert_called_once_with(save=False)
 
     @mock.patch('addons.gitlab.models.NodeSettings.add_hook')
@@ -497,21 +527,21 @@ class TestGitLabSettings(OsfTestCase):
         log_count = self.project.logs.count()
 
         url = self.project.api_url + 'gitlab/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': self.node_settings.user,
                 'gitlab_repo': self.node_settings.repo,
                 'gitlab_repo_id': self.node_settings.repo_id,
             },
             auth=self.auth
-        ).maybe_follow()
+        , follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
 
-        assert_equal(self.project.logs.count(), log_count)
-        assert_false(mock_add_hook.called)
+        assert self.project.logs.count() == log_count
+        assert not mock_add_hook.called
 
     @mock.patch('addons.gitlab.api.GitLabClient.repo')
     def test_link_repo_non_existent(self, mock_repo):
@@ -519,71 +549,99 @@ class TestGitLabSettings(OsfTestCase):
         mock_repo.return_value = None
 
         url = self.project.api_url + 'gitlab/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': 'queen',
                 'gitlab_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            follow_redirects=True
+        )
 
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
 
     @mock.patch('addons.gitlab.api.GitLabClient.branches')
     def test_link_repo_registration(self, mock_branches):
-
+        session = GitHubSession()
         mock_branches.return_value = [
             Branch.from_json(dumps({
                 'name': 'master',
                 'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            })),
+                    'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'url': f'https://api.github.com/repos/{USER}/mock-repo/commits'
+                           f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'author': REPO_AUTHOR,
+                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+                    'commit': REPO_COMMIT,
+                    'committer': REPO_AUTHOR,
+                    'html_url': 'https://github.com/{user}',
+                    'parents': REPO_PARENTS,
+
+                }, '_links': [{
+                    'rel': 'self',
+                    'href': 'https://api.example.com/entities/12345'
+                }],
+                'protected': True,
+                'protection': 'public',
+                'protection_url': 'https://api.example.com/docs/protection',
+                'name': 'no-bundle'}), session=session),
             Branch.from_json(dumps({
                 'name': 'develop',
                 'commit': {
-                    'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
-                    'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
-                }
-            }))
+                    'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'url': f'https://api.github.com/repos/{USER}/mock-repo/commits'
+                           f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'author': REPO_AUTHOR,
+                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+                    'commit': REPO_COMMIT,
+                    'committer': REPO_AUTHOR,
+                    'html_url': 'https://github.com/{user}',
+                    'parents': REPO_PARENTS,
+
+                }, '_links': [{
+                    'rel': 'self',
+                    'href': 'https://api.example.com/entities/12345'
+                }],
+                'protected': True,
+                'protection': 'public',
+                'protection_url': 'https://api.example.com/docs/protection',
+                'name': 'no-bundle'}), session=session)
         ]
 
         registration = self.project.register_node(
             schema=get_default_metaschema(),
             auth=self.consolidated_auth,
-             draft_registration=DraftRegistrationFactory(branched_from=self.project)
+            draft_registration=DraftRegistrationFactory(branched_from=self.project)
         )
 
         url = registration.api_url + 'gitlab/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'gitlab_user': 'queen',
                 'gitlab_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            follow_redirects=True
+        )
 
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
 
     @mock.patch('addons.gitlab.models.NodeSettings.delete_hook')
     def test_deauthorize(self, mock_delete_hook):
 
         url = self.project.api_url + 'gitlab/user_auth/'
 
-        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.app.delete(url, auth=self.auth, follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()
-        assert_equal(self.node_settings.user, None)
-        assert_equal(self.node_settings.repo, None)
-        assert_equal(self.node_settings.user_settings, None)
+        assert self.node_settings.user is None
+        assert self.node_settings.repo is None
+        assert self.node_settings.user_settings is None
 
-        assert_equal(self.project.logs.latest().action, 'gitlab_node_deauthorized')
+        assert self.project.logs.latest().action == 'gitlab_node_deauthorized'
 
 
 if __name__ == '__main__':

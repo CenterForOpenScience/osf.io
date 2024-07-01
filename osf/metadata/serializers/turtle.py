@@ -10,4 +10,4 @@ class TurtleMetadataSerializer(_base.MetadataSerializer):
 
     def serialize(self) -> str:
         self.basket.pls_gather(osfmap_for_type(self.basket.focus.rdftype))
-        return self.basket.gathered_metadata.serialize(format='turtle').decode()
+        return self.basket.gathered_metadata.serialize(format='turtle')

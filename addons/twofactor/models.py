@@ -1,28 +1,32 @@
+import secrets
 from base64 import b32encode
-from binascii import unhexlify
-from random import SystemRandom
+from datetime import datetime, timedelta
+from typing import Final
 
 from addons.base.models import BaseUserSettings
 from django.db import models
-from oath import accept_totp
+from pyotp import TOTP
+
+
+TOKEN_LENGTH: Final[int] = 30
+DRIFT_PERIOD: Final[int] = 30
 
 
 class UserSettings(BaseUserSettings):
     totp_secret = models.TextField(null=True, blank=True)  # hexadecimal
-    totp_drift = models.IntegerField()
+    totp_drift = models.IntegerField(default=1)
     is_confirmed = models.BooleanField(default=False)
 
     @property
-    def totp_secret_b32(self):
-        return b32encode(unhexlify(self.totp_secret)).decode()
+    def totp_secret_b32(self) -> str:
+        return b32encode(self.totp_secret.encode()).decode()
 
     @property
-    def otpauth_url(self):
-        return 'otpauth://totp/OSF:{}?secret={}'.format(self.owner.username,
-                                                        self.totp_secret_b32)
+    def otpauth_url(self) -> str:
+        return f'otpauth://totp/OSF:{self.owner.username}?secret={self.totp_secret_b32}'
 
     def to_json(self, user):
-        rv = super(UserSettings, self).to_json(user)
+        rv = super().to_json(user)
         rv.update({
             'is_enabled': True,
             'is_confirmed': self.is_confirmed,
@@ -35,42 +39,31 @@ class UserSettings(BaseUserSettings):
     # Utility methods #
     ###################
 
-    def verify_code(self, code):
-        accepted, drift = accept_totp(key=self.totp_secret,
-                                      response=str(code),
-                                      drift=self.totp_drift)
+    def verify_code(self, code: int | str) -> bool:
+        client = TOTP(self.totp_secret_b32)
+        accepted = client.verify(
+            otp=str(code),
+            for_time=datetime.now() + timedelta(seconds=self.totp_drift * DRIFT_PERIOD),
+            valid_window=1
+        )
         if accepted:
-            self.totp_drift = drift
+            self.totp_drift += 1
             return True
+        self.totp_drift = 0
         return False
 
     #############
     # Callbacks #
     #############
 
-    def on_add(self):
-        super(UserSettings, self).on_add()
-        self.totp_secret = _generate_seed()
+    def on_add(self) -> None:
+        super().on_add()
+        self.totp_secret = secrets.token_urlsafe(TOKEN_LENGTH)
         self.totp_drift = 0
         self.is_confirmed = False
 
-    def on_delete(self):
-        super(UserSettings, self).on_delete()
+    def on_delete(self) -> None:
+        super().on_delete()
         self.totp_secret = None
         self.totp_drift = 0
         self.is_confirmed = False
-
-
-def _generate_seed():
-    """Generate a new random seed
-
-    The length of the returned string will be a multiple of two, and
-    stripped of type specifier "0x" that `hex()` prepends.
-
-    :return str: A random, padded hex value
-    """
-    x = SystemRandom().randint(0, 32 ** 16 - 1)
-    h = hex(x).strip('L')[2:]
-    if len(h) % 2:
-        h = '0' + h
-    return h

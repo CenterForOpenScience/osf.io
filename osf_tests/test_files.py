@@ -1,7 +1,6 @@
 import pytest
 
 from django.contrib.contenttypes.models import ContentType
-from nose.tools import assert_raises
 
 from addons.osfstorage.models import NodeSettings
 from addons.osfstorage import settings as osfstorage_settings
@@ -107,7 +106,7 @@ def test_file_purged(project, create_test_file):
     assert version.purged is None
 
     # False attempt
-    with assert_raises(AttributeError):
+    with pytest.raises(AttributeError):
         freed = test_file._purge(client=mock_client)
 
     version.refresh_from_db()

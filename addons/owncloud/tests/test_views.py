@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from rest_framework import status as http_status
 
@@ -21,7 +21,7 @@ class TestAuthViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonAuthViewsTestCaseM
 class TestConfigViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super().setUp()
         self.mock_owncloud_login = mock.patch('owncloud.Client.login')
         self.mock_owncloud_logout = mock.patch('owncloud.Client.logout')
         self.mock_owncloud_login.start()
@@ -30,12 +30,12 @@ class TestConfigViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonConfigViewsTestC
     def tearDown(self):
         self.mock_owncloud_logout.stop()
         self.mock_owncloud_login.stop()
-        super(TestConfigViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch('addons.owncloud.models.NodeSettings.get_folders')
     def test_folder_list(self, mock_get_folders):
         mock_get_folders.return_value = ['/Documents/', '/Pictures/', '/Videos/']
-        super(TestConfigViews, self).test_folder_list()
+        super().test_folder_list()
 
     def test_get_config(self):
         """Lacking coverage for non-oauth add-ons and thus replaced by:
@@ -51,7 +51,7 @@ class TestConfigViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonConfigViewsTestC
         assert self.node_settings.external_account is not None
         assert serialized['validCredentials'] is True
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json
@@ -63,7 +63,7 @@ class TestConfigViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonConfigViewsTestC
         assert self.node_settings.external_account is None
         assert serialized['validCredentials'] is False
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json

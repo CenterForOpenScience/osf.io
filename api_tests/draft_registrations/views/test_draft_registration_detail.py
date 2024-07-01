@@ -324,7 +324,7 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         assert attributes['category'] == category
         assert attributes['node_license']['year'] == year
         assert attributes['node_license']['copyright_holders'] == copyright_holders
-        assert set(attributes['tags']) == set(['oak', 'tree'])
+        assert set(attributes['tags']) == {'oak', 'tree'}
         assert attributes['registration_metadata'] == {
             'datacompletion': {
                 'value': 'No, data collection has not begun'
@@ -343,16 +343,16 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         subjects = draft_registration.subjects.values_list('id', flat=True)
         assert len(subjects) == 1
         assert subjects[0] == subject.id
-        assert 'draft_registrations/{}/subjects'.format(draft_registration._id) in relationships['subjects']['links']['related']['href']
-        assert 'draft_registrations/{}/relationships/subjects'.format(draft_registration._id) in relationships['subjects']['links']['self']['href']
+        assert f'draft_registrations/{draft_registration._id}/subjects' in relationships['subjects']['links']['related']['href']
+        assert f'draft_registrations/{draft_registration._id}/relationships/subjects' in relationships['subjects']['links']['self']['href']
 
         affiliated_institutions = draft_registration.affiliated_institutions.values_list('id', flat=True)
         assert len(affiliated_institutions) == 1
         assert affiliated_institutions[0] == institution_one.id
-        assert 'draft_registrations/{}/institutions'.format(draft_registration._id) in relationships['affiliated_institutions']['links']['related']['href']
-        assert 'draft_registrations/{}/relationships/institutions'.format(draft_registration._id) in relationships['affiliated_institutions']['links']['self']['href']
+        assert f'draft_registrations/{draft_registration._id}/institutions' in relationships['affiliated_institutions']['links']['related']['href']
+        assert f'draft_registrations/{draft_registration._id}/relationships/institutions' in relationships['affiliated_institutions']['links']['self']['href']
 
-        assert 'draft_registrations/{}/contributors'.format(draft_registration._id) in relationships['contributors']['links']['related']['href']
+        assert f'draft_registrations/{draft_registration._id}/contributors' in relationships['contributors']['links']['related']['href']
 
     def test_update_upload(self, app, url_draft_registration_open_ended, draft_registration_open_ended, upload_payload, user):
         res = app.patch_json_api(

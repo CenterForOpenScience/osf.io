@@ -10,7 +10,7 @@ from osf.metadata.serializers import get_metadata_serializer
 class SerializedMetadataFile(typing.NamedTuple):
     mediatype: str
     filename: str
-    serialized_metadata: typing.Union[str, bytes]
+    serialized_metadata: str | bytes
 
 
 def pls_gather_metadata_as_dict(osf_item, format_key, serializer_config=None):

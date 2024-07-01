@@ -17,7 +17,7 @@ class BoaProvider(BasicAuthProviderMixin):
     def __init__(self, account=None, host=None, username=None, password=None):
         if username:
             username = username.lower()
-        super(BoaProvider, self).__init__(account=account, host=host, username=username, password=password)
+        super().__init__(account=account, host=host, username=username, password=password)
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
@@ -32,7 +32,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = BoaSerializer
 
     def to_json(self, user):
-        ret = super(UserSettings, self).to_json(user)
+        ret = super().to_json(user)
         ret['hosts'] = DEFAULT_HOSTS
         return ret
 

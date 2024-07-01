@@ -27,7 +27,7 @@ class TestTokenScopes:
 
     @pytest.fixture()
     def url_token_scopes_list(self, token_user_one):
-        return api_v2_url('tokens/{}/scopes/?version={}'.format(token_user_one._id, SCOPES_RELATIONSHIP_VERSION), base_route='/')
+        return api_v2_url(f'tokens/{token_user_one._id}/scopes/?version={SCOPES_RELATIONSHIP_VERSION}', base_route='/')
 
     @pytest.fixture()
     def read_scope(self):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
@@ -25,7 +24,7 @@ class GoogleDriveClient(BaseClient):
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'authorization': 'Bearer {}'.format(self.access_token)}
+            return {'authorization': f'Bearer {self.access_token}'}
         return {}
 
     def about(self):
@@ -38,7 +37,7 @@ class GoogleDriveClient(BaseClient):
 
     def folders(self, folder_id='root'):
         query = ' and '.join([
-            "'{0}' in parents".format(folder_id),
+            f"'{folder_id}' in parents",
             'trashed = false',
             "mimeType = 'application/vnd.google-apps.folder'",
         ])

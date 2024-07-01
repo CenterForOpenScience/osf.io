@@ -65,7 +65,7 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
     @pytest.fixture()
     def make_request(self, app):
         def request(node_id=None, auth=None, expect_errors=False):
-            url = '/{}nodes/{}/linked_registrations/'.format(API_BASE, node_id)
+            url = f'/{API_BASE}nodes/{node_id}/linked_registrations/'
             if auth:
                 return app.get(url, auth=auth, expect_errors=expect_errors)
             return app.get(url, expect_errors=expect_errors)
@@ -137,7 +137,7 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
             if version:
-                url = '{}?version={}'.format(url, version)
+                url = f'{url}?version={version}'
             if auth:
                 return app.get(url, auth=auth, expect_errors=expect_errors)
             return app.get(url, expect_errors=expect_errors)
@@ -226,7 +226,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
             if version:
-                url = '{}?version={}'.format(url, version)
+                url = f'{url}?version={version}'
             if auth:
                 return app.post_json_api(
                     url,
@@ -354,7 +354,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         data = make_payload(registration_id=child_reg._id)
         res = app.post_json_api(url, data, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Target Node \'{}\' is already a child of \'{}\'.'.format(child_reg._id, node_private._id)
+        assert res.json['errors'][0]['detail'] == f'Target Node \'{child_reg._id}\' is already a child of \'{node_private._id}\'.'
 
     #   test_cannot_create_link_registration_to_itself
         res = make_request(
@@ -364,7 +364,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
             expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Cannot link node \'{}\' to itself.'.format(node_private._id)
+        assert res.json['errors'][0]['detail'] == f'Cannot link node \'{node_private._id}\' to itself.'
 
     def test_create_linked_registrations_relationship_registration_already_in_linked_registrations_returns_no_content(
             self, make_request, registration, node_private, user_admin_contrib):
@@ -442,7 +442,7 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
             if version:
-                url = '{}?version={}'.format(url, version)
+                url = f'{url}?version={version}'
             if auth:
                 return app.put_json_api(
                     url,
@@ -547,7 +547,7 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
         data = make_payload(registration_id=child_reg._id)
         res = app.put_json_api(url, data, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Target Node \'{}\' is already a child of \'{}\'.'.format(child_reg._id, node_private._id)
+        assert res.json['errors'][0]['detail'] == f'Target Node \'{child_reg._id}\' is already a child of \'{node_private._id}\'.'
 
     #   test_cannot_update_link_registration_to_itself
         res = make_request(
@@ -557,7 +557,7 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
             expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Cannot link node \'{}\' to itself.'.format(node_private._id)
+        assert res.json['errors'][0]['detail'] == f'Cannot link node \'{node_private._id}\' to itself.'
 
 @pytest.mark.django_db
 class TestNodeLinkedRegistrationsRelationshipDelete(
@@ -580,7 +580,7 @@ class TestNodeLinkedRegistrationsRelationshipDelete(
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
             if version:
-                url = '{}?version={}'.format(url, version)
+                url = f'{url}?version={version}'
             if auth:
                 return app.delete_json_api(
                     url,

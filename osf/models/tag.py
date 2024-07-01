@@ -8,7 +8,7 @@ class TagManager(models.Manager):
     """
 
     def get_queryset(self):
-        return super(TagManager, self).get_queryset().filter(system=False)
+        return super().get_queryset().filter(system=False)
 
 class Tag(BaseModel):
     name = models.CharField(db_index=True, max_length=1024)
@@ -19,8 +19,8 @@ class Tag(BaseModel):
 
     def __unicode__(self):
         if self.system:
-            return 'System Tag: {}'.format(self.name)
-        return u'{}'.format(self.name)
+            return f'System Tag: {self.name}'
+        return f'{self.name}'
 
     def _natural_key(self):
         return hash(self.name + str(self.system))

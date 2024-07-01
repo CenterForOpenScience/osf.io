@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -15,10 +15,10 @@ from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def url(self):
-        return '/{}actions/reviews/'.format(API_BASE)
+        return f'/{API_BASE}actions/reviews/'
 
     def get_expected_actions(self, all_actions, allowed_providers):
-        provider_ids = set([p.id for p in allowed_providers])
+        provider_ids = {p.id for p in allowed_providers}
         return [a for a in all_actions if a.target.provider_id in provider_ids]
 
     @pytest.fixture()
@@ -39,7 +39,7 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
 
 
 @pytest.mark.django_db
-class TestReviewActionCreateRelated(object):
+class TestReviewActionCreateRelated:
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
             'data': {
@@ -59,7 +59,7 @@ class TestReviewActionCreateRelated(object):
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/review_actions/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/review_actions/'
 
     @pytest.fixture()
     def provider(self):

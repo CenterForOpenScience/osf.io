@@ -14,7 +14,7 @@ class ChangePasswordError(AuthError):
     """
     def __init__(self, message):
         self.messages = message if isinstance(message, (list, tuple)) else [message]
-        super(ChangePasswordError, self).__init__(message)
+        super().__init__(message)
 
 
 class DuplicateEmailError(AuthError):
@@ -45,7 +45,7 @@ class MergeConfirmedRequiredError(EmailConfirmTokenError):
     """Raised if a merge is possible, but requires user confirmation"""
 
     def __init__(self, message, user, user_to_merge, *args, **kwargs):
-        super(MergeConfirmedRequiredError, self).__init__(message, *args, **kwargs)
+        super().__init__(message, *args, **kwargs)
         self.user_to_merge = user_to_merge
         self.user = user
 

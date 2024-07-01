@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 from rest_framework import status as http_status
 
@@ -174,14 +173,11 @@ def update_user(auth):
         ############
 
         # get the first email that is set to primary and has an address
-        primary_email = next(
-            (
-                each for each in data['emails']
+        primary_email = next(each for each in data['emails']
                 # email is primary
                 if each.get('primary') and each.get('confirmed')
                 # an address is specified (can't trust those sneaky users!)
                 and each.get('address')
-            )
         )
 
         if primary_email:
@@ -402,7 +398,7 @@ def oauth_application_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http_status.HTTP_410_GONE)
 
-    app_detail_url = api_v2_url('applications/{}/'.format(client_id))  # Send request to this URL
+    app_detail_url = api_v2_url(f'applications/{client_id}/')  # Send request to this URL
     return {'app_list_url': '',
             'app_detail_url': app_detail_url}
 
@@ -440,7 +436,7 @@ def personal_access_token_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http_status.HTTP_410_GONE)
 
-    token_detail_url = api_v2_url('tokens/{}/'.format(_id))  # Send request to this URL
+    token_detail_url = api_v2_url(f'tokens/{_id}/')  # Send request to this URL
     return {'token_list_url': '',
             'token_detail_url': token_detail_url,
             'scope_options': get_available_scopes()}
@@ -580,8 +576,8 @@ def sync_data_from_mailchimp(**kwargs):
 
         try:
             user = OSFUser.objects.get(username=username)
-        except OSFUser.DoesNotExist:
-            sentry.log_exception()
+        except OSFUser.DoesNotExist as e:
+            sentry.log_exception(e)
             sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))

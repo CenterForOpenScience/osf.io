@@ -343,7 +343,7 @@ div[data-growl="container"] {
   50% {
     background-color: lightgreen;
   }
-  100 {
+  100% {
     background-color: #079907;
   }
 }

@@ -7,7 +7,7 @@ class ReadOnlyOrCurrentUser(permissions.BasePermission):
     and allow non-safe actions if so.
     """
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, OSFUser), 'obj must be a User, got {}'.format(obj)
+        assert isinstance(obj, OSFUser), f'obj must be a User, got {obj}'
         request_user = request.user
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -20,7 +20,7 @@ class CurrentUser(permissions.BasePermission):
 
     def has_permission(self, request, view):
         requested_user = view.get_user()
-        assert isinstance(requested_user, OSFUser), 'obj must be a User, got {}'.format(requested_user)
+        assert isinstance(requested_user, OSFUser), f'obj must be a User, got {requested_user}'
         return requested_user == request.user
 
 class ReadOnlyOrCurrentUserRelationship(permissions.BasePermission):
@@ -41,9 +41,9 @@ class ClaimUserPermission(permissions.BasePermission):
     """
     def has_permission(self, request, view):
         claimed_user = view.get_user(check_permissions=False)
-        assert isinstance(claimed_user, OSFUser), 'obj must be a User, got {}'.format(claimed_user)
+        assert isinstance(claimed_user, OSFUser), f'obj must be a User, got {claimed_user}'
         return not claimed_user.is_registered
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, OSFUser), 'obj must be a User, got {}'.format(obj)
+        assert isinstance(obj, OSFUser), f'obj must be a User, got {obj}'
         return not obj.is_registered

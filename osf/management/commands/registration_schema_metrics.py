@@ -92,8 +92,8 @@ def bearer_token_auth(token):
 
 
 def upload_to_storage(file_path, upload_url, params):
-    logger.debug('Uploading {} to {}'.format(file_path, upload_url))
-    with open(file_path, 'r') as summary_file:
+    logger.debug(f'Uploading {file_path} to {upload_url}')
+    with open(file_path) as summary_file:
         requests.put(
             url=upload_url,
             params=params,
@@ -111,12 +111,12 @@ def encode_row(row):
 
 
 def write_raw_data(cursor, filename):
-    file_path = '{}{}'.format(TEMP_FOLDER, filename)
+    file_path = f'{TEMP_FOLDER}{filename}'
     params = {
         'kind': 'file',
         'name': filename,
     }
-    logger.debug('Writing to {}'.format(file_path))
+    logger.debug(f'Writing to {file_path}')
     with open(file_path, 'w') as new_file:
         writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
         writer.writerow(list(VALUES))
@@ -155,7 +155,7 @@ class Command(BaseCommand):
     # Management command handler
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
+        logger.info(f'Script started time: {script_start_time}')
         logger.debug(options)
 
         dry_run = options['dry_run']
@@ -166,5 +166,5 @@ class Command(BaseCommand):
         gather_metrics(dry_run=dry_run)
 
         script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f'Run time {script_finish_time - script_start_time}')

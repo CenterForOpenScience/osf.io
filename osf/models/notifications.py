@@ -56,7 +56,7 @@ class NotificationSubscription(BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/subscriptions/{}/'.format(self._id)
+        path = f'/subscriptions/{self._id}/'
         return api_v2_url(path)
 
     def add_user_to_subscription(self, user, notification_type, save=True):

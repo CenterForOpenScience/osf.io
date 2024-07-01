@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from osf_tests.factories import AuthUserFactory
@@ -30,7 +29,7 @@ class TestUserIdentitiesList:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}users/{}/settings/identities/'.format(API_BASE, user._id)
+        return f'/{API_BASE}users/{user._id}/settings/identities/'
 
     def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
@@ -62,11 +61,11 @@ class TestUserIdentitiesDetail:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}users/{}/settings/identities/ORCID/'.format(API_BASE, user._id)
+        return f'/{API_BASE}users/{user._id}/settings/identities/ORCID/'
 
     @pytest.fixture()
     def bad_url(self, user):
-        return '/{}users/{}/settings/identities/404-CID/'.format(API_BASE, user._id)
+        return f'/{API_BASE}users/{user._id}/settings/identities/404-CID/'
 
     def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
@@ -75,7 +74,7 @@ class TestUserIdentitiesDetail:
         assert res.json['data']['attributes']['status'] == 'VERIFIED'
         assert res.json['data']['attributes']['external_id'] == '0000-0001-9143-4653'
         assert res.json['data']['type'] == 'external-identities'
-        assert '/v2/users/{}/settings/identities/ORCID/'.format(user._id) in res.json['data']['links']['self']
+        assert f'/v2/users/{user._id}/settings/identities/ORCID/' in res.json['data']['links']['self']
 
     def test_delete_204(self, app, user, url):
         res = app.delete(url, auth=user.auth)

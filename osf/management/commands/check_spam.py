@@ -22,7 +22,7 @@ def check_spam(guid, flag=False):
     """
     node = guid.referent
     referent_type = 'preprint' if isinstance(node, Preprint) else 'node'
-    logger.info('Checking {} {}...'.format(referent_type, node._id))
+    logger.info(f'Checking {referent_type} {node._id}...')
 
     # Pass saved fields so that all relevant fields get sent to Akismet
     saved_fields = {'is_public', } if referent_type == 'node' else {'is_published', }
@@ -41,15 +41,15 @@ def check_spam(guid, flag=False):
         request_headers=request_headers,
         update=flag
     )
-    logger.info('{} {} spam? {}'.format(referent_type, node._id, is_spam))
+    logger.info(f'{referent_type} {node._id} spam? {is_spam}')
     if is_spam and flag:
-        logger.info('Flagged {} {} as spam...'.format(referent_type, node._id))
+        logger.info(f'Flagged {referent_type} {node._id} as spam...')
         node.save()
 
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--flag',
             action='store_true',

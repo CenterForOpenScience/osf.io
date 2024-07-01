@@ -12,7 +12,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 
 @pytest.mark.django_db
-class NodeRequestTestMixin(object):
+class NodeRequestTestMixin:
 
     @pytest.fixture()
     def admin(self):
@@ -64,7 +64,7 @@ class NodeRequestTestMixin(object):
         return second_admin
 
 @pytest.mark.django_db
-class PreprintRequestTestMixin(object):
+class PreprintRequestTestMixin:
 
     @pytest.fixture()
     def admin(self):

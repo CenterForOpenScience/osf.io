@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from guardian.shortcuts import get_perms
 from rest_framework import permissions
 

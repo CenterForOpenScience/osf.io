@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from enum import unique
 
 from osf.utils.workflows import ChoiceEnum, DefaultStates

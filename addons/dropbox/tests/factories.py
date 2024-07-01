@@ -25,5 +25,5 @@ class DropboxNodeSettingsFactory(DjangoModelFactory):
 
 class DropboxAccountFactory(ExternalAccountFactory):
     provider = 'dropbox'
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
+    provider_id = factory.Sequence(lambda n: f'id-{n}')
+    oauth_key = factory.Sequence(lambda n: f'key-{n}')

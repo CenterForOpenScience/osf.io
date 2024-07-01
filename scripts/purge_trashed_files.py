@@ -4,7 +4,6 @@ from website.app import setup_django
 setup_django()
 
 import argparse
-from datetime import timedelta
 from django.template.defaultfilters import filesizeformat
 from django.utils import timezone
 from google.cloud.storage.client import Client
@@ -25,7 +24,7 @@ def purge_trash(n):
         try:
             total_bytes += tf._purge(client=client)
         except Exception as e:
-            log_exception()
+            log_exception(e)
             logger.error(f'Encountered Error handling {tf.id}')
     return total_bytes
 

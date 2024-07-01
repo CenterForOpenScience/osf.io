@@ -7,9 +7,9 @@ from api.base.settings.defaults import API_BASE
 class TestAddonsList:
 
     def test_filter_by_category(self, app):
-        url = '/{}addons/'.format(API_BASE)
-        url_storage = '{}?filter[categories]=storage'.format(url)
-        url_citations = '{}?filter[categories]=citations'.format(url)
+        url = f'/{API_BASE}addons/'
+        url_storage = f'{url}?filter[categories]=storage'
+        url_citations = f'{url}?filter[categories]=citations'
 
         data_storage = app.get(url_storage).json['data']
         data_citations = app.get(url_citations).json['data']

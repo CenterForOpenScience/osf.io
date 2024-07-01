@@ -81,8 +81,8 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     if not dry_run:
         try:
             upload.save()
-        except ValidationError:
-            sentry.log_exception()
+        except ValidationError as e:
+            sentry.log_exception(e)
             message = 'Bulk upload preparation failure: failed to create the job'
             return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
         upload.reload()
@@ -153,9 +153,9 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     try:
         logger.info(f'Bulk creating [{len(bulk_upload_rows)}] registration rows ...')
         created_objects = RegistrationBulkUploadRow.objects.bulk_create(bulk_upload_rows)
-    except (ValueError, IntegrityError):
+    except (ValueError, IntegrityError) as e:
         upload.delete()
-        sentry.log_exception()
+        sentry.log_exception(e)
         message = 'Bulk upload preparation failure: failed to create the rows.'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     logger.info(f'[{len(created_objects)}] rows successfully prepared.')
@@ -163,9 +163,9 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     upload.state = JobState.INITIALIZED
     try:
         upload.save()
-    except ValidationError:
+    except ValidationError as e:
         upload.delete()
-        sentry.log_exception()
+        sentry.log_exception(e)
         message = 'Bulk upload preparation failure: job state update failed'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     logger.info(
@@ -197,9 +197,9 @@ def bulk_create_registrations(upload_id, dry_run=True):
 
     try:
         upload = RegistrationBulkUploadJob.objects.get(id=upload_id)
-    except RegistrationBulkUploadJob.DoesNotExist:
+    except RegistrationBulkUploadJob.DoesNotExist as e:
         # This error should not happen since this task is only called by `monitor_registration_bulk_upload_jobs`
-        sentry.log_exception()
+        sentry.log_exception(e)
         message = f'Registration bulk upload job not found: [id={upload_id}]'
         return handle_internal_error(initiator=None, provider=None, message=message, dry_run=dry_run)
 
@@ -236,7 +236,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
         except RegistrationBulkCreationRowError as e:
             logger.error(e.long_message)
             logger.error(e.error)
-            sentry.log_exception()
+            sentry.log_exception(e)
             if auto_approval and e.approval_failure:
                 approval_error_list.append(e.short_message)
             else:
@@ -254,7 +254,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
                     f'an unexpected exception: [row="{row.id}", error="{repr(e)}"]'
             logger.error(error)
             sentry.log_message(error)
-            sentry.log_exception()
+            sentry.log_exception(e)
             draft_error_list.append(f'Title: N/A, External ID: N/A, Row Hash: {row.row_hash}, Error: Unexpected')
             if not dry_run:
                 if row.draft_registration:

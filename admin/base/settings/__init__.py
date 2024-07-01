@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Consolidates settings from defaults.py and local.py.
 
 ::

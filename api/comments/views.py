@@ -24,7 +24,7 @@ from osf.models import AbstractNode, Comment, BaseFileNode
 from addons.wiki.models import WikiPage
 
 
-class CommentMixin(object):
+class CommentMixin:
     """Mixin with convenience methods for retrieving the current comment  based on the
     current URL. By default, fetches the comment based on the comment_id kwarg.
     """

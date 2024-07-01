@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 """Unit tests for website.app."""
 
 import framework
 
 from flask import Flask
-from nose.tools import *  # noqa (PEP8 asserts)
 from website import settings
 from website.app import attach_handlers
 
@@ -44,6 +42,6 @@ def test_attach_handlers():
     }
 
     # Check that necessary handlers are attached and correctly ordered
-    assert_equal(set(before_funcs), assert_before_funcs)
-    assert_equal(set(after_funcs), assert_after_funcs)
-    assert_equal(set(teardown_funcs), assert_teardown_funcs)
+    assert set(before_funcs) == assert_before_funcs
+    assert set(after_funcs) == assert_after_funcs
+    assert set(teardown_funcs) == assert_teardown_funcs

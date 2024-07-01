@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Migration script for Search-enabled Models."""
-from __future__ import absolute_import
 from math import ceil
 import functools
 import logging
@@ -27,6 +25,7 @@ from website.search.search import update_institution, bulk_update_collection_sub
 
 logger = logging.getLogger(__name__)
 
+
 def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.
 
@@ -50,7 +49,7 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
         page += 1
         page_end += increment
         if page <= total_pages:
-            logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
+            logger.info(f'Updating page {page_end / increment} / {total_pages}')
         else:
             # An extra page is included to cover the edge case where:
             #       max_id == (total_pages * increment) - 1
@@ -70,7 +69,7 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     return total_objs
 
 def migrate_nodes(index, delete, increment=10000):
-    logger.info('Migrating nodes to index: {}'.format(index))
+    logger.info(f'Migrating nodes to index: {index}')
     max_nid = AbstractNode.objects.last().id
     total_nodes = sql_migrate(
         index,
@@ -78,7 +77,7 @@ def migrate_nodes(index, delete, increment=10000):
         max_nid,
         increment,
         spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
-    logger.info('{} nodes migrated'.format(total_nodes))
+    logger.info(f'{total_nodes} nodes migrated')
     if delete:
         logger.info('Preparing to delete old node documents')
         max_nid = AbstractNode.objects.last().id
@@ -89,38 +88,38 @@ def migrate_nodes(index, delete, increment=10000):
             increment,
             es_args={'raise_on_error': False},  # ignore 404s
             spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
-        logger.info('{} nodes marked deleted'.format(total_nodes))
+        logger.info(f'{total_nodes} nodes marked deleted')
 
 def migrate_preprints(index, delete):
-    logger.info('Migrating preprints to index: {}'.format(index))
+    logger.info(f'Migrating preprints to index: {index}')
     preprints = Preprint.objects.all()
     increment = 100
     paginator = Paginator(preprints, increment)
     for page_number in paginator.page_range:
-        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        logger.info(f'Updating page {page_number} / {paginator.num_pages}')
         Preprint.bulk_update_search(paginator.page(page_number).object_list, index=index)
 
 def migrate_preprint_files(index, delete):
-    logger.info('Migrating preprint files to index: {}'.format(index))
+    logger.info(f'Migrating preprint files to index: {index}')
     valid_preprints = Preprint.objects.all()
     valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints)
     paginator = Paginator(valid_preprint_files, 500)
     serialize = functools.partial(search.update_file, index=index)
     for page_number in paginator.page_range:
-        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        logger.info(f'Updating page {page_number} / {paginator.num_pages}')
         search.bulk_update_nodes(serialize, paginator.page(page_number).object_list, index=index, category='file')
 
 def migrate_groups(index, delete):
-    logger.info('Migrating groups to index: {}'.format(index))
+    logger.info(f'Migrating groups to index: {index}')
     groups = OSFGroup.objects.all()
     increment = 100
     paginator = Paginator(groups, increment)
     for page_number in paginator.page_range:
-        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        logger.info(f'Updating page {page_number} / {paginator.num_pages}')
         OSFGroup.bulk_update_search(paginator.page(page_number).object_list, index=index)
 
 def migrate_files(index, delete, increment=10000):
-    logger.info('Migrating files to index: {}'.format(index))
+    logger.info(f'Migrating files to index: {index}')
     max_fid = BaseFileNode.objects.last().id
     total_files = sql_migrate(
         index,
@@ -128,7 +127,7 @@ def migrate_files(index, delete, increment=10000):
         max_fid,
         increment,
         spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
-    logger.info('{} files migrated'.format(total_files))
+    logger.info(f'{total_files} files migrated')
     if delete:
         logger.info('Preparing to delete old file documents')
         max_fid = BaseFileNode.objects.last().id
@@ -139,17 +138,17 @@ def migrate_files(index, delete, increment=10000):
             increment,
             es_args={'raise_on_error': False},  # ignore 404s
             spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
-        logger.info('{} files marked deleted'.format(total_files))
+        logger.info(f'{total_files} files marked deleted')
 
 def migrate_users(index, delete, increment=10000):
-    logger.info('Migrating users to index: {}'.format(index))
+    logger.info(f'Migrating users to index: {index}')
     max_uid = OSFUser.objects.last().id
     total_users = sql_migrate(
         index,
         JSON_UPDATE_USERS_SQL,
         max_uid,
         increment)
-    logger.info('{} users migrated'.format(total_users))
+    logger.info(f'{total_users} users migrated')
     if delete:
         logger.info('Preparing to delete old user documents')
         max_uid = OSFUser.objects.last().id
@@ -159,7 +158,7 @@ def migrate_users(index, delete, increment=10000):
             max_uid,
             increment,
             es_args={'raise_on_error': False})  # ignore 404s
-        logger.info('{} users marked deleted'.format(total_users))
+        logger.info(f'{total_users} users marked deleted')
 
 def migrate_collected_metadata(index, delete):
     collection_submissions = CollectionSubmission.objects.filter(
@@ -184,7 +183,7 @@ def migrate_collected_metadata(index, delete):
     bulk_update_collection_submission(None, actions=actions, op='delete', index=index)
 
     bulk_update_collection_submissions(collection_submissions, index=index)
-    logger.info('{} collection submissions migrated'.format(collection_submissions.count()))
+    logger.info(f'{collection_submissions.count()} collection submissions migrated')
 
 def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
@@ -232,40 +231,40 @@ def set_up_index(idx):
 
     if not alias or not alias.keys() or idx in alias.keys():
         # Deal with empty indices or the first migration
-        index = '{}_v1'.format(idx)
+        index = f'{idx}_v1'
         search.create_index(index=index)
-        logger.info('Reindexing {0} to {1}_v1'.format(idx, idx))
+        logger.info(f'Reindexing {idx} to {idx}_v1')
         helpers.reindex(es_client(), idx, index)
-        logger.info('Deleting {} index'.format(idx))
+        logger.info(f'Deleting {idx} index')
         es_client().indices.delete(index=idx)
         es_client().indices.put_alias(index=index, name=idx)
     else:
         # Increment version
         version = int(list(alias.keys())[0].split('_v')[1]) + 1
-        logger.info('Incrementing index version to {}'.format(version))
-        index = '{0}_v{1}'.format(idx, version)
+        logger.info(f'Incrementing index version to {version}')
+        index = f'{idx}_v{version}'
         search.create_index(index=index)
-        logger.info('{} index created'.format(index))
+        logger.info(f'{index} index created')
     return index
 
 
 def set_up_alias(old_index, index):
     alias = es_client().indices.get_aliases(index=old_index)
     if alias:
-        logger.info('Removing old aliases to {}'.format(old_index))
+        logger.info(f'Removing old aliases to {old_index}')
         es_client().indices.delete_alias(index=old_index, name='_all', ignore=404)
-    logger.info('Creating new alias from {0} to {1}'.format(old_index, index))
+    logger.info(f'Creating new alias from {old_index} to {index}')
     es_client().indices.put_alias(index=index, name=old_index)
 
 
 def remove_old_index(index):
     old_version = int(index.split('_v')[1]) - 1
     if old_version < 1:
-        logger.info('No index before {} to delete'.format(index))
+        logger.info(f'No index before {index} to delete')
         pass
     else:
         old_index = index.split('_v')[0] + '_v' + str(old_version)
-        logger.info('Deleting {}'.format(old_index))
+        logger.info(f'Deleting {old_index}')
         es_client().indices.delete(index=old_index, ignore=404)
 
 

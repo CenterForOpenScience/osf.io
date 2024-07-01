@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import markdown
 from django.utils import timezone
 from flask import request
@@ -106,7 +104,7 @@ def update_comment_node(root_target_id, source_node, destination_node):
 
 
 def render_email_markdown(content):
-    return markdown.markdown(content, extensions=['mdx_del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code'])
+    return markdown.markdown(content, extensions=['markdown_del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code'])
 
 
 @comment_added.connect

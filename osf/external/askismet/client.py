@@ -4,7 +4,7 @@ from website import settings
 from osf.external.askismet.exceptions import AkismetClientError
 
 
-class AkismetClient(object):
+class AkismetClient:
 
     NAME = 'akismet'
     API_PROTOCOL = 'https://'

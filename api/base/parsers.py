@@ -1,9 +1,8 @@
 import json
-import jsonschema
 import codecs
 import time
 import collections
-
+from jsonschema import validate, ValidationError, Draft7Validator
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated
@@ -42,8 +41,8 @@ class JSONSchemaParser(JSONParser):
         json_schema = parser_context['json_schema']
 
         try:
-            jsonschema.validate(json_payload, json_schema)
-        except jsonschema.exceptions.ValidationError as exc:
+            validate(json_payload, json_schema, cls=Draft7Validator)
+        except ValidationError as exc:
             raise ParseError(exc)
 
         return json_payload
@@ -61,7 +60,7 @@ class JSONAPIParser(JSONParser):
         target_type = data.get('type')
         if not target_type:
             raise JSONAPIException(
-                source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)},
+                source={'pointer': f'data/relationships/{related_resource}/data/type'},
                 detail=NO_TYPE_ERROR,
             )
 
@@ -85,7 +84,7 @@ class JSONAPIParser(JSONParser):
         data = relationships[related_resource].get('data')
 
         if not data:
-            raise JSONAPIException(source={'pointer': 'data/relationships/{}/data'.format(related_resource)}, detail=NO_DATA_ERROR)
+            raise JSONAPIException(source={'pointer': f'data/relationships/{related_resource}/data'}, detail=NO_DATA_ERROR)
 
         if isinstance(data, list):
             return [self.get_relationship(item, related_resource) for item in data]
@@ -147,7 +146,7 @@ class JSONAPIParser(JSONParser):
         """
         Parses the incoming bytestream as JSON and returns the resulting data.
         """
-        result = super(JSONAPIParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
+        result = super().parse(stream, media_type=media_type, parser_context=parser_context)
 
         if not isinstance(result, dict):
             raise ParseError()
@@ -164,7 +163,7 @@ class JSONAPIParser(JSONParser):
                 return data_collection
 
             else:
-                if not isinstance(data, collections.Mapping):
+                if not isinstance(data, collections.abc.Mapping):
                     raise ParseError('Expected a dictionary of items.')
                 return self.flatten_data(data, parser_context, is_list=False)
 
@@ -199,7 +198,7 @@ class JSONAPIRelationshipParser(JSONParser):
     media_type = 'application/vnd.api+json'
 
     def parse(self, stream, media_type=None, parser_context=None):
-        res = super(JSONAPIRelationshipParser, self).parse(stream, media_type, parser_context)
+        res = super().parse(stream, media_type, parser_context)
 
         if not isinstance(res, dict):
             raise ParseError('Request body must be dictionary')
@@ -211,10 +210,10 @@ class JSONAPIRelationshipParser(JSONParser):
             for i, datum in enumerate(data):
 
                 if datum.get('id') is None:
-                    raise JSONAPIException(source={'pointer': '/data/{}/id'.format(str(i))}, detail=NO_ID_ERROR)
+                    raise JSONAPIException(source={'pointer': f'/data/{str(i)}/id'}, detail=NO_ID_ERROR)
 
                 if datum.get('type') is None:
-                    raise JSONAPIException(source={'pointer': '/data/{}/type'.format(str(i))}, detail=NO_TYPE_ERROR)
+                    raise JSONAPIException(source={'pointer': f'/data/{str(i)}/type'}, detail=NO_TYPE_ERROR)
 
             return {'data': data}
 
@@ -235,7 +234,7 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
     media_type = 'application/vnd.api+json'
 
     def parse(self, stream, media_type=None, parser_context=None):
-        res = super(JSONAPIOnetoOneRelationshipParser, self).parse(stream, media_type, parser_context)
+        res = super().parse(stream, media_type, parser_context)
 
         if not isinstance(res, dict):
             raise ParseError('Request body must be dictionary')
@@ -292,7 +291,7 @@ class HMACSignedParser(JSONParser):
         """
         Parses the incoming bytestream as JSON. Validates the 'signature' in the payload then returns the resulting data.
         """
-        data = super(HMACSignedParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
+        data = super().parse(stream, media_type=media_type, parser_context=parser_context)
 
         try:
             sig = data['signature']
@@ -316,7 +315,7 @@ class SearchParser(JSONAPIParser):
             view = parser_context['view']
         except KeyError:
             raise ImproperlyConfigured('SearchParser requires "view" context.')
-        data = super(SearchParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
+        data = super().parse(stream, media_type=media_type, parser_context=parser_context)
         if not data:
             raise JSONAPIException(detail='Invalid Payload')
 

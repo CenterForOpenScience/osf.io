@@ -267,7 +267,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
 
-        response_ids = set(entry['id'] for entry in data)
+        response_ids = {entry['id'] for entry in data}
         assert response_ids == {open_data._id}
 
     def test_filtering__has_code(
@@ -279,7 +279,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
 
-        response_ids = set(entry['id'] for entry in data)
+        response_ids = {entry['id'] for entry in data}
         assert response_ids == {open_code._id}
 
     def test_filtering__has_materials(
@@ -291,7 +291,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
 
-        response_ids = set(entry['id'] for entry in data)
+        response_ids = {entry['id'] for entry in data}
         assert response_ids == {open_materials._id}
 
     def test_filtering__has_papers(
@@ -303,7 +303,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
 
-        response_ids = set(entry['id'] for entry in data)
+        response_ids = {entry['id'] for entry in data}
         assert response_ids == {open_papers._id}
 
     def test_filtering__has_supplements(
@@ -315,5 +315,5 @@ class TestRegistrationListOpenPracticeAnnotations:
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
 
-        response_ids = set(entry['id'] for entry in data)
+        response_ids = {entry['id'] for entry in data}
         assert response_ids == {open_supplements._id}

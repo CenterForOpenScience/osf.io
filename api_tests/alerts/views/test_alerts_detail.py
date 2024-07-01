@@ -15,7 +15,7 @@ class TestDismissedAlertDetail:
         user = AuthUserFactory()
         alert_id = 'adblock'
         alert_location = 'jc3vf/settings/'
-        url_alerts_detail = '/{}alerts/{}/'.format(API_BASE, alert_id)
+        url_alerts_detail = f'/{API_BASE}alerts/{alert_id}/'
 
         DismissedAlertFactory(
             user=user,

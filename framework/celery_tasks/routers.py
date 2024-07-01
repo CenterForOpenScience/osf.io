@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from website.settings import CeleryConfig
 
 
@@ -19,7 +18,7 @@ def match_by_module(task_path):
     return CeleryConfig.task_default_queue
 
 
-class CeleryRouter(object):
+class CeleryRouter:
     def route_for_task(self, task, args=None, kwargs=None):
         """ Handles routing of celery tasks.
         See http://docs.celeryproject.org/en/latest/userguide/routing.html#routers

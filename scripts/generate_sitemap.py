@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Generate a sitemap for osf.io"""
 import boto3
 import datetime
 import gzip
 import os
 import shutil
-from future.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 import xml
 
 import django
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-class Sitemap(object):
+class Sitemap:
     def __init__(self):
         self.sitemap_count = 0
         self.errors = 0
@@ -35,7 +34,7 @@ class Sitemap(object):
         if not settings.SITEMAP_TO_S3:
             self.sitemap_dir = os.path.join(settings.STATIC_FOLDER, 'sitemaps')
             if not os.path.exists(self.sitemap_dir):
-                print('Creating sitemap directory at `{}`'.format(self.sitemap_dir))
+                print(f'Creating sitemap directory at `{self.sitemap_dir}`')
                 os.makedirs(self.sitemap_dir)
         else:
             self.sitemap_dir = tempfile.mkdtemp()
@@ -82,11 +81,11 @@ class Sitemap(object):
 
     def write_doc(self):
         """Writes and gzips each sitemap xml file"""
-        file_name = 'sitemap_{}.xml'.format(str(self.sitemap_count))
+        file_name = f'sitemap_{str(self.sitemap_count)}.xml'
         file_path = os.path.join(self.sitemap_dir, file_name)
         zip_file_name = file_name + '.gz'
         zip_file_path = file_path + '.gz'
-        print('Writing and gzipping `{}`: url_count = {}'.format(file_path, str(self.url_count)))
+        print(f'Writing and gzipping `{file_path}`: url_count = {str(self.url_count)}')
 
         xml_str = self.doc.toprettyxml(indent='  ', encoding='utf-8')
         with open(file_path, 'wb') as f:
@@ -103,7 +102,7 @@ class Sitemap(object):
     def ship_to_s3(self, name, path):
         data = open(path, 'rb')
         try:
-            self.s3.Bucket(settings.SITEMAP_AWS_BUCKET).put_object(Key='sitemaps/{}'.format(name), Body=data)
+            self.s3.Bucket(settings.SITEMAP_AWS_BUCKET).put_object(Key=f'sitemaps/{name}', Body=data)
         except Exception as e:
             logger.info('Error sending data to s3 via boto3')
             logger.exception(e)
@@ -123,7 +122,7 @@ class Sitemap(object):
 
             loc = doc.createElement('loc')
             sitemap.appendChild(loc)
-            loc_text = self.doc.createTextNode(urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml'.format(str(f))))
+            loc_text = self.doc.createTextNode(urljoin(settings.DOMAIN, f'sitemaps/sitemap_{str(f)}.xml'))
             loc.appendChild(loc_text)
 
             datemod = doc.createElement('lastmod')
@@ -144,11 +143,11 @@ class Sitemap(object):
         if not self.errors:
             script_utils.add_file_logger(logger, __file__)
         self.errors += 1
-        logger.info('Error on {}, {}:'.format(obj, obj_id))
+        logger.info(f'Error on {obj}, {obj_id}:')
         logger.exception(error)
 
         if self.errors <= 10:
-            sentry.log_message('Sitemap Error: {}'.format(error))
+            sentry.log_message(f'Sitemap Error: {error}')
 
         if self.errors == 1000:
             sentry.log_message('ERROR: generate_sitemap stopped execution after reaching 1000 errors. See logs for details.')
@@ -174,7 +173,7 @@ class Sitemap(object):
         for obj in objs:
             try:
                 config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urljoin(settings.DOMAIN, '/{}/'.format(obj))
+                config['loc'] = urljoin(settings.DOMAIN, f'/{obj}/')
                 self.add_url(config)
             except Exception as e:
                 self.log_errors('USER', obj, e)
@@ -245,11 +244,11 @@ class Sitemap(object):
         # Sitemap indexable limit check
         if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90:  # 10% of urls remaining
             sentry.log_message('WARNING: Max sitemaps nearly reached.')
-        print('Total url_count = {}'.format((self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count))
-        print('Total sitemap_count = {}'.format(str(self.sitemap_count)))
+        print(f'Total url_count = {(self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count}')
+        print(f'Total sitemap_count = {str(self.sitemap_count)}')
         if self.errors:
             sentry.log_message('WARNING: Generate sitemap encountered errors. See logs for details.')
-            print('Total errors = {}'.format(str(self.errors)))
+            print(f'Total errors = {str(self.errors)}')
         else:
             print('No errors')
 

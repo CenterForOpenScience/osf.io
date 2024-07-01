@@ -33,10 +33,11 @@ jobs:
   addons:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
-
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -49,37 +50,21 @@ jobs:
           - 5432:5432
     steps:
     - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_addons -n 1
+      run: poetry run python3 -m invoke test-travis-addons -n 1 --junit
+    - name: Upload report
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
 
   website:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
-
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -92,37 +77,21 @@ jobs:
           - 5432:5432
     steps:
     - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_website -n 1
+      run: poetry run python3 -m invoke test-travis-website -n 1 --junit
+    - name: Upload report
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
 
   api1_and_js:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
-
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -135,40 +104,23 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
-      - id: cache-objects
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache
-          key: reqs_${{ hashFiles('**/requirements.txt') }}
-          restore-keys: reqs_
-      - uses: ./.github/actions/build-es
-        with:
-          ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-      - uses: ./.github/actions/build-es6
-        with:
-          ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-      - name: Install lxml
-        run: |
-          sudo apt update
-          sudo apt-get install libxml2-dev libxslt-dev python-dev
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
-        run: |
-          invoke assets --dev
+        run: poetry run python3 -m invoke assets --dev
       - name: Run test
-        run: invoke test_travis_api1_and_js -n 1
+        run: poetry run python3 -m invoke test-travis-api1-and-js -n 1 --junit
+      - name: Upload report
+        if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+        uses: ./.github/actions/gen-report
 
   api2:
     runs-on: ubuntu-20.04
     needs: build-cache
+    permissions:
+      checks: write
     services:
       postgres:
         image: postgres
-
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -181,32 +133,17 @@ jobs:
           - 5432:5432
     steps:
     - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_api2 -n 1
+      run: poetry run python3 -m invoke test-travis-api2 -n 1 --junit
+    - name: Upload report
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
 
   api3_and_osf:
     runs-on: ubuntu-20.04
+    permissions:
+      checks: write
     needs: build-cache
     services:
       postgres:
@@ -224,27 +161,9 @@ jobs:
           - 5432:5432
     steps:
     - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_api3_and_osf -n 1
-
+      run: poetry run python3 -m invoke test-travis-api3-and-osf -n 1 --junit
+    - name: Upload report
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report

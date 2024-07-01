@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import datetime as dt
 import json
 import logging
@@ -51,7 +49,7 @@ class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
             return dict(type='encoded_time', value=o.isoformat())
         elif isinstance(o, Decimal):
             return dict(type='encoded_decimal', value=str(o))
-        return super(DateTimeAwareJSONEncoder, self).default(o)
+        return super().default(o)
 
 
 def decode_datetime_objects(nested_value):
@@ -79,15 +77,15 @@ def decode_datetime_objects(nested_value):
 class DateTimeAwareJSONField(JSONField):
 
     def __init__(self, verbose_name=None, name=None, encoder=DateTimeAwareJSONEncoder, **kwargs):
-        super(DateTimeAwareJSONField, self).__init__(verbose_name, name, encoder, **kwargs)
+        super().__init__(verbose_name, name, encoder, **kwargs)
 
     def formfield(self, **kwargs):
         defaults = {'form_class': DateTimeAwareJSONFormField}
         defaults.update(kwargs)
-        return super(DateTimeAwareJSONField, self).formfield(**defaults)
+        return super().formfield(**defaults)
 
     def from_db_value(self, value, expression, connection):
-        value = super(DateTimeAwareJSONField, self).from_db_value(value, None, None)
+        value = super().from_db_value(value, None, None)
         return decode_datetime_objects(value)
 
     def get_prep_lookup(self, lookup_type, value):
@@ -99,7 +97,7 @@ class DateTimeAwareJSONField(JSONField):
 class DateTimeAwareJSONFormField(JSONFormField):
 
     def to_python(self, value):
-        value = super(DateTimeAwareJSONFormField, self).to_python(value)
+        value = super().to_python(value)
         try:
             return decode_datetime_objects(value)
         except TypeError:

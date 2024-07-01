@@ -10,7 +10,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class TestRegistrationFilesList(object):
+class TestRegistrationFilesList:
 
     @pytest.fixture(autouse=True)
     def setUp(self):

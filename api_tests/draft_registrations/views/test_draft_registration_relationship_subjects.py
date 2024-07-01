@@ -20,7 +20,7 @@ class TestDraftRegistrationRelationshipSubjects(SubjectsRelationshipMixin):
 
     @pytest.fixture()
     def url(self, resource):
-        return '/{}draft_registrations/{}/relationships/subjects/'.format(API_BASE, resource._id)
+        return f'/{API_BASE}draft_registrations/{resource._id}/relationships/subjects/'
 
     # Overwrites SubjectsRelationshipMixin
     def test_update_subjects_relationship_permissions(self, app, user_write_contrib,

@@ -33,12 +33,12 @@ class TestDraftRegistrationInstitutionList(TestNodeInstitutionList):
     @pytest.fixture()
     def node_one_url(self, node_one):
         # Overrides TestNodeInstitutionList
-        return '/{}draft_registrations/{}/institutions/'.format(API_BASE, node_one._id)
+        return f'/{API_BASE}draft_registrations/{node_one._id}/institutions/'
 
     @pytest.fixture()
     def node_two_url(self, node_two):
         # Overrides TestNodeInstitutionList
-        return '/{}draft_registrations/{}/institutions/'.format(API_BASE, node_two._id)
+        return f'/{API_BASE}draft_registrations/{node_two._id}/institutions/'
 
     # Overrides TestNodeInstitutionList
     def test_node_institution_detail(

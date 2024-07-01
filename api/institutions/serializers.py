@@ -224,7 +224,7 @@ class UniqueDeptIDField(CompoundIDField):
     def to_representation(self, value):
         resource_id = self._get_resource_id()
         related_id = super(CompoundIDField, self).to_representation(value).replace(' ', '-')
-        return '{}-{}'.format(resource_id, related_id)
+        return f'{resource_id}-{related_id}'
 
 
 class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):

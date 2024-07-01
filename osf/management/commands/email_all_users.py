@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 # This is a management command, rather than a migration script, for two primary reasons:
 #   1. It makes no changes to database structure (e.g. AlterField), only database content.
 #   2. It takes a long time to run and the site doesn't need to be down that long.
 
-from __future__ import unicode_literals
 import logging
 
 
@@ -50,9 +48,9 @@ def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSE
                 mail=template,
                 fullname=user.fullname,
             )
-        except Exception:
+        except Exception as e:
             logger.error(f'Exception encountered sending email to {user.id}')
-            sentry.log_exception()
+            sentry.log_exception(e)
             continue
         else:
             total_sent += 1
@@ -65,7 +63,7 @@ class Command(BaseCommand):
     Add subscription to all active users for given notification type.
     """
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

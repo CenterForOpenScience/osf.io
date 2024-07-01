@@ -36,7 +36,7 @@ class TestWaffleList:
 
     @pytest.fixture()
     def url(self):
-        return '/{}_waffle/'.format(API_BASE)
+        return f'/{API_BASE}_waffle/'
 
     @pytest.fixture()
     def flag_url(self, url):

@@ -8,7 +8,7 @@ from osf_tests.factories import NodeFactory, AuthUserFactory
 class TestNodeAnalyticsQuery:
     @pytest.fixture
     def mock_search(self):
-        with mock.patch('elasticsearch.Elasticsearch.search', autospec=True) as mock_search:
+        with mock.patch('elasticsearch6.Elasticsearch.search', autospec=True) as mock_search:
             yield mock_search
 
     @pytest.mark.parametrize('timespan', ['week', 'fortnight', 'month'])

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Basic Event handling for events that need subscriptions"""
 
 from django.utils import timezone
@@ -17,7 +16,7 @@ def register(event_type):
     return decorator
 
 
-class Event(object):
+class Event:
     """Base event class for notification.
 
     - abstract methods set methods that should be defined by subclasses.

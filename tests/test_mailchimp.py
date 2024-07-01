@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 from hashlib import md5
-import mock
+from unittest import mock
 import pytest
 from mailchimp3.mailchimpclient import MailChimpError
-from nose.tools import *  # noqa; PEP8 asserts
 
 from framework.celery_tasks import handlers
 from osf_tests.factories import UserFactory
@@ -16,7 +14,7 @@ from website.settings import MAILCHIMP_GENERAL_LIST, MAILCHIMP_LIST_MAP
 class TestMailChimpHelpers(OsfTestCase):
 
     def setUp(self, *args, **kwargs):
-        super(TestMailChimpHelpers, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
         with self.context:
             handlers.celery_before_request()
 
@@ -28,7 +26,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.get.return_value = {'id': list_id, 'name': 'foo'}
         list_name = mailchimp_utils.get_list_name_from_id(list_id)
         mock_client.lists.get.assert_called_with(list_id=list_id)
-        assert_equal(list_name, 'foo')
+        assert list_name == 'foo'
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_subscribe_called(self, mock_get_mailchimp_api):
@@ -53,7 +51,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
         handlers.celery_teardown_request()
         user.reload()
-        assert_false(user.mailchimp_mailing_lists[list_name])
+        assert not user.mailchimp_mailing_lists[list_name]
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):

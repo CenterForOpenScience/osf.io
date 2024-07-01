@@ -1,10 +1,9 @@
-import mock
+from unittest import mock
 import pytest
-import furl
+from furl import furl
 import pytz
 import datetime
-from future.moves.urllib.parse import urlparse
-from nose.tools import *  # noqa:
+from urllib.parse import urlparse
 
 from addons.wiki.models import WikiPage
 from addons.wiki.tests.factories import (
@@ -118,16 +117,16 @@ class WikiCRUDTestCase:
 
     @pytest.fixture()
     def url_wiki_public(self, wiki_public):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_public._id)
+        return f'/{API_BASE}wikis/{wiki_public._id}/'
 
     @pytest.fixture()
     def url_wiki_home(self, project_public):
         wiki_home = project_public.wikis.get(page_name='home')
-        return '/{}wikis/{}/'.format(API_BASE, wiki_home._id)
+        return f'/{API_BASE}wikis/{wiki_home._id}/'
 
     @pytest.fixture()
     def url_wiki_private(self, wiki_private):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_private._id)
+        return f'/{API_BASE}wikis/{wiki_private._id}/'
 
     @pytest.fixture()
     def url_wiki_publicly_editable(self, wiki_publicly_editable):
@@ -136,11 +135,11 @@ class WikiCRUDTestCase:
 
     @pytest.fixture()
     def url_registration_wiki_public(self, wiki_registration_public):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_registration_public._id)
+        return f'/{API_BASE}wikis/{wiki_registration_public._id}/'
 
     @pytest.fixture()
     def url_registration_wiki_private(self, wiki_registration_private):
-        return '/{}wikis/{}/'.format(API_BASE, wiki_registration_private._id)
+        return f'/{API_BASE}wikis/{wiki_registration_private._id}/'
 
 
 class TestWikiDetailView(ApiWikiTestCase):
@@ -152,7 +151,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         with mock.patch('osf.models.AbstractNode.update_search'):
             self.public_wiki_page = WikiFactory(node=self.public_project, user=self.user)
             self.public_wiki = WikiVersionFactory(wiki_page=self.public_wiki_page, user=self.user)
-        self.public_url = '/{}wikis/{}/'.format(API_BASE, self.public_wiki_page._id)
+        self.public_url = f'/{API_BASE}wikis/{self.public_wiki_page._id}/'
         return self.public_wiki_page
 
     def _set_up_private_project_with_wiki_page(self):
@@ -183,27 +182,26 @@ class TestWikiDetailView(ApiWikiTestCase):
     def test_public_node_logged_out_user_can_view_wiki(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.public_wiki_page._id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.public_wiki_page._id
 
     def test_public_node_logged_in_non_contributor_can_view_wiki(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.public_wiki_page._id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.public_wiki_page._id
 
     def test_public_node_logged_in_contributor_can_view_wiki(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.public_wiki_page._id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.public_wiki_page._id
 
     def test_private_node_logged_out_user_cannot_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
         res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'],
-                     'Authentication credentials were not provided.')
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
 
     def test_private_node_logged_in_non_contributor_cannot_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
@@ -211,48 +209,44 @@ class TestWikiDetailView(ApiWikiTestCase):
             self.private_url,
             auth=self.non_contributor.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'You do not have permission to perform this action.')
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_private_node_logged_in_contributor_can_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.private_wiki._id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.private_wiki._id
 
     def test_private_node_user_with_anonymous_link_can_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(
-            self.private_url).add(
-            query_params={
-                'view_only': private_link.key}).url
+        url = furl(self.private_url).add(
+            query_params={'view_only': private_link.key}
+        ).url
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.private_wiki._id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.private_wiki._id
 
     def test_private_node_user_with_view_only_link_can_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
         private_link = PrivateLinkFactory(anonymous=False)
         private_link.nodes.add(self.private_project)
         private_link.save()
-        url = furl.furl(
-            self.private_url).add(
-            query_params={
-                'view_only': private_link.key}).url
+        url = furl(self.private_url).add(
+            query_params={'view_only': private_link.key}
+        ).url
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.private_wiki._id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.private_wiki._id
 
     def test_public_registration_logged_out_user_cannot_view_wiki(self):
         self._set_up_public_registration_with_wiki_page()
         res = self.app.get(self.public_registration_url, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.public_registration_wiki_id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.public_registration_wiki_id
 
     def test_public_registration_logged_in_non_contributor_cannot_view_wiki(
             self):
@@ -261,14 +255,14 @@ class TestWikiDetailView(ApiWikiTestCase):
             self.public_registration_url,
             auth=self.non_contributor.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.public_registration_wiki_id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.public_registration_wiki_id
 
     def test_public_registration_contributor_can_view_wiki(self):
         self._set_up_public_registration_with_wiki_page()
         res = self.app.get(self.public_registration_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.public_registration_wiki_id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.public_registration_wiki_id
 
     def test_user_cannot_view_withdrawn_registration_wikis(self):
         self._set_up_public_registration_with_wiki_page()
@@ -283,17 +277,14 @@ class TestWikiDetailView(ApiWikiTestCase):
             self.public_registration_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'You do not have permission to perform this action.')
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_private_registration_logged_out_user_cannot_view_wiki(self):
         self._set_up_private_registration_with_wiki_page()
         res = self.app.get(self.private_registration_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'],
-                     'Authentication credentials were not provided.')
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
 
     def test_private_registration_logged_in_non_contributor_cannot_view_wiki(
             self):
@@ -302,37 +293,35 @@ class TestWikiDetailView(ApiWikiTestCase):
             self.private_registration_url,
             auth=self.non_contributor.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'You do not have permission to perform this action.')
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_private_registration_contributor_can_view_wiki(self):
         self._set_up_private_registration_with_wiki_page()
         res = self.app.get(self.private_registration_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.private_registration_wiki_id)
+        assert res.status_code == 200
+        assert res.json['data']['id'] == self.private_registration_wiki_id
 
     def test_wiki_has_user_link(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['user']['links']['related']['href']
-        expected_url = '/{}users/{}/'.format(API_BASE, self.user._id)
-        assert_equal(res.status_code, 200)
-        assert_equal(urlparse(url).path, expected_url)
+        expected_url = f'/{API_BASE}users/{self.user._id}/'
+        assert res.status_code == 200
+        assert urlparse(url).path == expected_url
 
     def test_wiki_has_node_link(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['node']['links']['related']['href']
-        expected_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
-        assert_equal(res.status_code, 200)
-        assert_equal(urlparse(url).path, expected_url)
+        expected_url = f'/{API_BASE}nodes/{self.public_project._id}/'
+        assert res.status_code == 200
+        assert urlparse(url).path == expected_url
 
     def test_wiki_has_comments_link(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         url = res.json['data']['relationships']['comments']['links']['related']['href']
         CommentFactory(
             node=self.public_project,
@@ -340,37 +329,37 @@ class TestWikiDetailView(ApiWikiTestCase):
                 self.public_wiki_page._id),
             user=self.user)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['type'], 'comments')
+        assert res.status_code == 200
+        assert res.json['data'][0]['type'] == 'comments'
 
     def test_only_project_contrib_can_comment_on_closed_project(self):
         self._set_up_public_project_with_wiki_page(
             project_options={'comment_level': 'private'})
         res = self.app.get(self.public_url, auth=self.user.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
-        assert_equal(res.status_code, 200)
-        assert_equal(can_comment, True)
+        assert res.status_code == 200
+        assert can_comment
 
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
-        assert_equal(res.status_code, 200)
-        assert_equal(can_comment, False)
+        assert res.status_code == 200
+        assert not can_comment
 
     def test_any_loggedin_user_can_comment_on_open_project(self):
         self._set_up_public_project_with_wiki_page(
             project_options={'comment_level': 'public'})
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
-        assert_equal(res.status_code, 200)
-        assert_equal(can_comment, True)
+        assert res.status_code == 200
+        assert can_comment
 
     def test_non_logged_in_user_cant_comment(self):
         self._set_up_public_project_with_wiki_page(
             project_options={'comment_level': 'public'})
         res = self.app.get(self.public_url)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
-        assert_equal(res.status_code, 200)
-        assert_equal(can_comment, False)
+        assert res.status_code == 200
+        assert not can_comment
 
     def test_wiki_has_download_link(self):
         self._set_up_public_project_with_wiki_page()
@@ -378,25 +367,25 @@ class TestWikiDetailView(ApiWikiTestCase):
         url = res.json['data']['links']['download']
         expected_url = '/{}wikis/{}/content/'.format(
             API_BASE, self.public_wiki_page._id)
-        assert_equal(res.status_code, 200)
-        assert_in(expected_url, url)
+        assert res.status_code == 200
+        assert expected_url in url
 
     def test_wiki_invalid_id_not_found(self):
         url = '/{}wikis/{}/'.format(API_BASE, 'abcde')
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert res.status_code == 404
 
     def test_deleted_wiki_not_returned(self):
         self._set_up_public_project_with_wiki_page()
         url = '/{}wikis/{}/'.format(
             API_BASE, self.public_wiki_page._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         self.public_wiki_page.deleted = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         self.public_wiki_page.save()
 
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        assert res.status_code == 410
 
     def test_public_node_wiki_relationship_links(self):
         self._set_up_public_project_with_wiki_page()
@@ -405,12 +394,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.public_project._id)
         expected_comments_relationship_url = '{}nodes/{}/comments/'.format(
             API_BASE, self.public_project._id)
-        assert_in(
-            expected_nodes_relationship_url,
-            res.json['data']['relationships']['node']['links']['related']['href'])
-        assert_in(
-            expected_comments_relationship_url,
-            res.json['data']['relationships']['comments']['links']['related']['href'])
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+            expected_comments_relationship_url in
+            res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_private_node_wiki_relationship_links(self):
         self._set_up_private_project_with_wiki_page()
@@ -419,12 +407,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.private_project._id)
         expected_comments_relationship_url = '{}nodes/{}/comments/'.format(
             API_BASE, self.private_project._id)
-        assert_in(
-            expected_nodes_relationship_url,
-            res.json['data']['relationships']['node']['links']['related']['href'])
-        assert_in(
-            expected_comments_relationship_url,
-            res.json['data']['relationships']['comments']['links']['related']['href'])
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+            expected_comments_relationship_url in
+            res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_public_registration_wiki_relationship_links(self):
         self._set_up_public_registration_with_wiki_page()
@@ -433,12 +420,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.public_registration._id)
         expected_comments_relationship_url = '{}registrations/{}/comments/'.format(
             API_BASE, self.public_registration._id)
-        assert_in(
-            expected_nodes_relationship_url,
-            res.json['data']['relationships']['node']['links']['related']['href'])
-        assert_in(
-            expected_comments_relationship_url,
-            res.json['data']['relationships']['comments']['links']['related']['href'])
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+            expected_comments_relationship_url in
+            res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_private_registration_wiki_relationship_links(self):
         self._set_up_private_registration_with_wiki_page()
@@ -447,12 +433,11 @@ class TestWikiDetailView(ApiWikiTestCase):
             API_BASE, self.private_registration._id)
         expected_comments_relationship_url = '{}registrations/{}/comments/'.format(
             API_BASE, self.private_registration._id)
-        assert_in(
-            expected_nodes_relationship_url,
-            res.json['data']['relationships']['node']['links']['related']['href'])
-        assert_in(
-            expected_comments_relationship_url,
-            res.json['data']['relationships']['comments']['links']['related']['href'])
+        assert expected_nodes_relationship_url in res.json['data']['relationships']['node']['links']['related']['href']
+        assert (
+            expected_comments_relationship_url in
+            res.json['data']['relationships']['comments']['links']['related']['href']
+        )
 
     def test_do_not_return_disabled_wiki(self):
         self._set_up_public_project_with_wiki_page()

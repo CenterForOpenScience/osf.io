@@ -33,7 +33,7 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
                 except (KeyError, AttributeError, ValueError) as error:
                     logger.info(error)
                 if not item.referrer.spam_data.get('domains') and not item.referrer.spam_data.get('who_flagged'):
-                        item.referrer.unspam(save=False)
+                    item.referrer.unspam(save=False)
             item.save()
             item.referrer.save()
 

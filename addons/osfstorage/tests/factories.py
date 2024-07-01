@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 from django.apps import apps
 from django.utils import timezone
 from factory import SubFactory, post_generation, Sequence

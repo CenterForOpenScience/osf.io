@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.db.models import Q, QuerySet
@@ -36,15 +35,15 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         )
 
     def __unicode__(self):
-        return '{} with id {}'.format(self.text, self.id)
+        return f'{self.text} with id {self.id}'
 
     @property
     def absolute_api_v2_url(self):
-        return api_v2_url('taxonomies/{}/'.format(self._id))
+        return api_v2_url(f'taxonomies/{self._id}/')
 
     @property
     def absolute_api_v2_subject_url(self):
-        return api_v2_url('subjects/{}/'.format(self._id))
+        return api_v2_url(f'subjects/{self._id}/')
 
     @property
     def child_count(self):
@@ -88,9 +87,9 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         saved_fields = self.get_dirty_fields() or []
         if 'text' in saved_fields and self.pk and (self.preprints.exists() or self.abstractnodes.exists()):
             raise ValidationError('Cannot edit a used Subject')
-        return super(Subject, self).save()
+        return super().save()
 
     def delete(self, *args, **kwargs):
         if self.preprints.exists() or self.abstractnodes.exists():
             raise ValidationError('Cannot delete a used Subject')
-        return super(Subject, self).delete()
+        return super().delete()

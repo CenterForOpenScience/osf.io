@@ -113,7 +113,7 @@ class TestNodeRelationshipNodeLinks:
         assert res.json['data'][0]['type'] == 'linked_nodes'
 
         #   get_relationship_linked_nodes_2_13
-        res = app.get('{}?version=2.13'.format(url), auth=user.auth)
+        res = app.get(f'{url}?version=2.13', auth=user.auth)
 
         assert res.status_code == 200
         assert linking_node.linked_nodes_self_url in res.json['links']['self']
@@ -123,7 +123,7 @@ class TestNodeRelationshipNodeLinks:
 
     #   get_linked_nodes_related_counts
         res = app.get(
-            '/{}registrations/{}/?related_counts=linked_nodes'.format(API_BASE, linking_node._id),
+            f'/{API_BASE}registrations/{linking_node._id}/?related_counts=linked_nodes',
             auth=user.auth
         )
 
@@ -443,7 +443,7 @@ class TestNodeLinkedNodes:
             project=new_linking_node, creator=user)
 
         res = app.get(
-            '/{}registrations/{}/linked_nodes/'.format(API_BASE, new_linking_registration._id),
+            f'/{API_BASE}registrations/{new_linking_registration._id}/linked_nodes/',
             auth=user.auth
         )
 
@@ -462,7 +462,7 @@ class TestNodeLinkedNodes:
             public_node.remove_contributor(user, auth=auth)
 
         res = app.get(
-            '/{}registrations/{}/linked_nodes/'.format(API_BASE, new_linking_registration._id),
+            f'/{API_BASE}registrations/{new_linking_registration._id}/linked_nodes/',
             auth=user.auth
         )
         nodes_returned = [

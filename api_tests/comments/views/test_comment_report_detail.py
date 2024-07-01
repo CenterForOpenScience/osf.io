@@ -1,5 +1,5 @@
 from django.utils import timezone
-import mock
+from unittest import mock
 import pytest
 
 from addons.wiki.tests.factories import WikiFactory
@@ -14,7 +14,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class ReportDetailViewMixin(object):
+class ReportDetailViewMixin:
 
     @pytest.fixture()
     def user(self):

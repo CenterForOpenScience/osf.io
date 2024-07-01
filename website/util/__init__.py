@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-
 import logging
 import re
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.utils.http import urlencode
 from flask import request, url_for
@@ -34,9 +32,9 @@ def conjunct(words, conj='and'):
     elif num_words == 1:
         return words[0]
     elif num_words == 2:
-        return ' {0} '.format(conj).join(words)
+        return f' {conj} '.join(words)
     elif num_words > 2:
-        return ', '.join(words[:-1]) + ', {0} {1}'.format(conj, words[-1])
+        return ', '.join(words[:-1]) + f', {conj} {words[-1]}'
 
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
@@ -56,7 +54,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, 
     """
     renderer = 'XMLRenderer' if _xml else 'JSONRenderer'
 
-    url = url_for('{0}__{1}'.format(renderer, view_name), *args, **kwargs)
+    url = url_for(f'{renderer}__{view_name}', *args, **kwargs)
 
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
@@ -85,7 +83,7 @@ def api_v2_url(path_str,
     x = urljoin(base_route, urljoin(base_prefix, path_str.lstrip('/')))
 
     if params or kwargs:
-        x = '{}?{}'.format(x, urlencode(dict(params, **kwargs)))
+        x = f'{x}?{urlencode(dict(params, **kwargs))}'
 
     return x
 
@@ -96,7 +94,7 @@ def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args,
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
     based on whether the app is in debug mode.
     """
-    url = url_for('OsfWebRenderer__{0}'.format(view_name), *args, **kwargs)
+    url = url_for(f'OsfWebRenderer__{view_name}', *args, **kwargs)
     if _guid:
         url = _get_guid_url_for(url)
 

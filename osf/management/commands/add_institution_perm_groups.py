@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 
 from django.core.management.base import BaseCommand
@@ -17,4 +16,4 @@ class Command(BaseCommand):
         institutions = Institution.objects.all()
         for institution in institutions:
             institution.update_group_permissions()
-            logger.info('Added perms to {}.'.format(institution.name))
+            logger.info(f'Added perms to {institution.name}.')

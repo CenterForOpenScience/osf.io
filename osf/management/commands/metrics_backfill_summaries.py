@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 def main(source, which, dry_run=False, resume_from=None):
     if which not in SUMMARIES:
-        logger.info('No such summary, {}, exiting.'.format(which))
+        logger.info(f'No such summary, {which}, exiting.')
         return
 
     if not source:
@@ -56,13 +56,13 @@ def main(source, which, dry_run=False, resume_from=None):
                 continue
 
             something_wonderful = summary_meta['mapper'](row)
-            logger.info('{}: transformed:({})'.format(count, something_wonderful))
+            logger.info(f'{count}: transformed:({something_wonderful})')
             if not dry_run:
                 summary_meta['class'].record(**something_wonderful)
 
     logger.info('All done!')
     if which == 'preprint_summary':
-        logger.error('Unrecognized provider names: ({})'.format(bogus_preprints))
+        logger.error(f'Unrecognized provider names: ({bogus_preprints})')
 
 
 def _map_download_count(row):
@@ -330,7 +330,7 @@ def _map_preprint_summary(row):
     elif provider_name in preprint_long_names:
         provider_key = preprint_name_map[provider_name]
     else:
-        logger.error('Unrecognized preprint provider name: ({})'.format(provider_name))
+        logger.error(f'Unrecognized preprint provider name: ({provider_name})')
         if provider_name not in bogus_preprints:
             bogus_preprints[provider_name] = 0
         bogus_preprints[provider_name] += 1
@@ -405,7 +405,7 @@ def _dt_to_date(dt):
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--source',
             type=str,

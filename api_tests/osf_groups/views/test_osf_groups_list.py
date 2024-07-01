@@ -32,7 +32,7 @@ class TestGroupList:
 
     @pytest.fixture()
     def url(self):
-        return '/{}groups/'.format(API_BASE)
+        return f'/{API_BASE}groups/'
 
     def test_return(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):
@@ -99,7 +99,7 @@ class TestGroupList:
 class TestOSFGroupCreate:
     @pytest.fixture()
     def url(self):
-        return '/{}groups/'.format(API_BASE)
+        return f'/{API_BASE}groups/'
 
     @pytest.fixture()
     def simple_payload(self):

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from collections import namedtuple
 
 from framework.sessions import get_session

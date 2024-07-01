@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
-import mock
-from nose.tools import *  # noqa: F403
+from unittest import mock
 import unittest
+
+import pytest
 
 from framework.auth import Auth
 from osf.models import AbstractNode, NodeLog
@@ -13,7 +13,7 @@ from tests import utils as test_utils
 class TestUtilsTests(OsfTestCase):
 
     def setUp(self):
-        super(TestUtilsTests, self).setUp()
+        super().setUp()
 
         self.node = ProjectFactory()
         self.user = self.node.creator
@@ -31,7 +31,7 @@ class TestUtilsTests(OsfTestCase):
         def dont_add_log(self):
             pass
         wrapped = test_utils.assert_logs(NodeLog.UPDATED_FIELDS, 'node')(dont_add_log)
-        assert_raises(AssertionError, lambda: wrapped(self))
+        pytest.raises(AssertionError, lambda: wrapped(self))
 
     def test_assert_logs_stacked(self):
 
@@ -59,4 +59,4 @@ class TestUtilsTests(OsfTestCase):
         def add_log(self):
             self.node.add_log(NodeLog.UPDATED_FIELDS, {}, auth=self.auth)
         wrapped = test_utils.assert_not_logs(NodeLog.UPDATED_FIELDS, 'node')(add_log)
-        assert_raises(AssertionError, lambda: wrapped(self))
+        pytest.raises(AssertionError, lambda: wrapped(self))

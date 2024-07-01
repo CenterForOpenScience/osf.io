@@ -34,7 +34,7 @@ class TestRegistrationRelationshipInstitutions(TestNodeRelationshipInstitutions)
     @pytest.fixture()
     def node_institutions_url(self, node):
         # Overrides TestNodeRelationshipInstitutions
-        return '/{0}registrations/{1}/relationships/institutions/'.format(
+        return '/{}registrations/{}/relationships/institutions/'.format(
             API_BASE, node._id)
 
     @pytest.fixture()

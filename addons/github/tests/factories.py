@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import factory
 from factory.django import DjangoModelFactory
 from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
@@ -8,8 +7,8 @@ from addons.github.models import NodeSettings, UserSettings
 
 class GitHubAccountFactory(ExternalAccountFactory):
     provider = 'github'
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
+    provider_id = factory.Sequence(lambda n: f'id-{n}')
+    oauth_key = factory.Sequence(lambda n: f'key-{n}')
     display_name = 'abc'
 
 

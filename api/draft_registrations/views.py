@@ -223,7 +223,7 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
         try:
             return draft_registration.draftregistrationcontributor_set.get(user=user)
         except DraftRegistrationContributor.DoesNotExist:
-            raise exceptions.NotFound('{} cannot be found in the list of contributors.'.format(user))
+            raise exceptions.NotFound(f'{user} cannot be found in the list of contributors.')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

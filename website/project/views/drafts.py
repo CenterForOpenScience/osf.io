@@ -80,13 +80,13 @@ def validate_embargo_end_date(end_date_string, node):
     if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': 'Invalid embargo end date',
-            'message_long': 'Embargo end date for this submission must be at least {0} days in the future.'.format(settings.DRAFT_REGISTRATION_APPROVAL_PERIOD)
+            'message_long': f'Embargo end date for this submission must be at least {settings.DRAFT_REGISTRATION_APPROVAL_PERIOD} days in the future.'
         })
     elif not node._is_embargo_date_valid(end_date):
         max_end_date = today + settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': 'Invalid embargo end date',
-            'message_long': 'Embargo end date must on or before {0}.'.format(max_end_date.isoformat())
+            'message_long': f'Embargo end date must on or before {max_end_date.isoformat()}.'
         })
 
 def validate_registration_choice(registration_choice):

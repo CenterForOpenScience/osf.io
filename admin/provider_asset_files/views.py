@@ -43,7 +43,7 @@ class ProviderAssetFileList(PermissionRequiredMixin, ListView):
         }
         return rv
 
-class AssetFileMixin(object):
+class AssetFileMixin:
     def get_object(self, queryset=None):
         return ProviderAssetFile.objects.get(id=self.kwargs.get('asset_id'))
 

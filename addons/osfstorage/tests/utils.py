@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory
@@ -11,13 +10,13 @@ from framework.auth import Auth
 
 
 identity = lambda value: value
-class Delta(object):
+class Delta:
     def __init__(self, getter, checker=None):
         self.getter = getter
         self.checker = checker or identity
 
 
-class AssertDeltas(object):
+class AssertDeltas:
 
     def __init__(self, *deltas):
         self.deltas = deltas
@@ -35,7 +34,7 @@ class AssertDeltas(object):
 class StorageTestCase(OsfTestCase):
 
     def setUp(self):
-        super(StorageTestCase, self).setUp()
+        super().setUp()
 
         self.project = ProjectFactory()
         self.node = self.project

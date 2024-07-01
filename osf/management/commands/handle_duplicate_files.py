@@ -184,12 +184,12 @@ def inspect_duplicates(file_summary):
 
         if not safe_to_remove:
             error_counter += 1
-            logger.info('Contact admins to resolve: target: {}, name: {}'.format(target._id, name))
+            logger.info(f'Contact admins to resolve: target: {target._id}, name: {name}')
 
-    logger.info('{}/{} errors to manually resolve.'.format(error_counter, len(file_summary)))
+    logger.info(f'{error_counter}/{len(file_summary)} errors to manually resolve.')
     logger.info('Files that can be deleted without issue:')
     for entry in to_remove:
-        logger.info('{}'.format(entry))
+        logger.info(f'{entry}')
     return to_remove
 
 def remove_duplicates(duplicate_array, file_type):
@@ -207,7 +207,7 @@ def remove_duplicates(duplicate_array, file_type):
             guid.save()
 
         to_remove.delete()
-    logger.info('Duplicates removed of type {}'.format(file_type))
+    logger.info(f'Duplicates removed of type {file_type}')
 
 
 class Command(BaseCommand):
@@ -239,7 +239,7 @@ class Command(BaseCommand):
     # Management command handler
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
+        logger.info(f'Script started time: {script_start_time}')
         dry_run = options['dry_run']
         file_type = options['file_type']
 
@@ -259,7 +259,7 @@ class Command(BaseCommand):
         for file_type in file_types:
             type_start_time = datetime.datetime.now()
             with connection.cursor() as cursor:
-                logger.info('Examining duplicates for {}'.format(file_type))
+                logger.info(f'Examining duplicates for {file_type}')
                 cursor.execute(FETCH_DUPLICATES_BY_FILETYPE, [file_type])
                 duplicate_files = cursor.fetchall()
 
@@ -268,8 +268,8 @@ class Command(BaseCommand):
                 with transaction.atomic():
                     remove_duplicates(to_remove, file_type)
             type_finish_time = datetime.datetime.now()
-            logger.info('{} run time {}'.format(file_type, type_finish_time - type_start_time))
+            logger.info(f'{file_type} run time {type_finish_time - type_start_time}')
 
         script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f'Run time {script_finish_time - script_start_time}')

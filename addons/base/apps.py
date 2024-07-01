@@ -45,7 +45,7 @@ def generic_root_folder(addon_short_name):
             private_key=kwargs.get('view_only', None),
         )
         return [root]
-    _root_folder.__name__ = '{0}_root_folder'.format(addon_short_name)
+    _root_folder.__name__ = f'{addon_short_name}_root_folder'
     return _root_folder
 
 
@@ -74,7 +74,7 @@ class BaseAddonAppConfig(AppConfig):
     categories = []
 
     def __init__(self, *args, **kwargs):
-        ret = super(BaseAddonAppConfig, self).__init__(*args, **kwargs).__init__()
+        ret = super().__init__(*args, **kwargs).__init__()
         # Build template lookup
         paths = [settings.TEMPLATES_PATH]
         if self.user_settings_template:
@@ -82,13 +82,11 @@ class BaseAddonAppConfig(AppConfig):
         if self.node_settings_template:
             paths.append(os.path.dirname(self.node_settings_template))
         template_dirs = list(
-            set(
-                [
-                    path
-                    for path in paths
-                    if os.path.exists(path)
-                ]
-            )
+            {
+                path
+                for path in paths
+                if os.path.exists(path)
+            }
         )
         if template_dirs:
             self.template_lookup = TemplateLookup(

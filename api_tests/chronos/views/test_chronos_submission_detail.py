@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from osf_tests.factories import AuthUserFactory, ChronosJournalFactory, ChronosSubmissionFactory, PreprintFactory
@@ -40,7 +40,7 @@ class TestChronosSubmissionDetail:
 
     @pytest.fixture()
     def url(self, preprint, submission):
-        return '/_/chronos/{}/submissions/{}/'.format(preprint._id, submission.publication_id)
+        return f'/_/chronos/{preprint._id}/submissions/{submission.publication_id}/'
 
     def update_payload(self, submission, **attrs):
         return {
@@ -80,9 +80,9 @@ class TestChronosSubmissionDetail:
         assert res.status_code == 200
 
         # Reverse lookups is weird with non-uniform versioning schemes, ensure correctness
-        assert '/v2/users/{}/'.format(submission.submitter._id) in res.json['data']['relationships']['submitter']['links']['related']['href']
-        assert '/v2/preprints/{}/'.format(submission.preprint._id) in res.json['data']['relationships']['preprint']['links']['related']['href']
-        assert '/_/chronos/journals/{}/'.format(submission.journal.journal_id, submission.publication_id) in res.json['data']['relationships']['journal']['links']['related']['href']
+        assert f'/v2/users/{submission.submitter._id}/' in res.json['data']['relationships']['submitter']['links']['related']['href']
+        assert f'/v2/preprints/{submission.preprint._id}/' in res.json['data']['relationships']['preprint']['links']['related']['href']
+        assert f'/_/chronos/journals/{submission.journal.journal_id}/' in res.json['data']['relationships']['journal']['links']['related']['href']
 
         res = app.get(url, auth=preprint_contributor.auth)
         assert res.status_code == 200

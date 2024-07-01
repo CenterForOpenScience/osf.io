@@ -19,7 +19,7 @@ class EmbeddedRequest(Request):
         self.parents = parents or {Node: {}, OSFUser: {}}
         self.version = request.version
 
-        super(EmbeddedRequest, self).__init__(
+        super().__init__(
             request._request, parsers, authenticators,
             negotiator, parser_context,
         )

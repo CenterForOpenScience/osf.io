@@ -18,7 +18,7 @@ class ResourcesPermission:
     Note: SchemaResponses for deleted parent resources should appear to be deleted,
     while access should be denied to SchemaResponses on withdrawn parent resources.
     '''
-    acceptable_models = (Registration, )
+    acceptable_models = (Registration,)
     REQUIRED_PERMISSIONS = {}
 
     def has_permission(self, request, view):

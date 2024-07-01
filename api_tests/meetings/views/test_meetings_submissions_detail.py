@@ -16,7 +16,7 @@ class TestMeetingSubmissionsDetail:
 
     @pytest.fixture()
     def base_url(self, meeting):
-        return '/_/meetings/{}/submissions/'.format(meeting.endpoint)
+        return f'/_/meetings/{meeting.endpoint}/submissions/'
 
     @pytest.fixture()
     def user(self):
@@ -57,7 +57,7 @@ class TestMeetingSubmissionsDetail:
 
     def mock_download(self, project, file, download_count):
         pc, _ = PageCounter.objects.get_or_create(
-            _id='download:{}:{}'.format(project._id, file._id),
+            _id=f'download:{project._id}:{file._id}',
             resource=project.guids.first(),
             action='download',
             file=file
@@ -70,7 +70,7 @@ class TestMeetingSubmissionsDetail:
             meeting_one_private_submission, random_project, meeting_submission_no_category, file):
 
         # test_get_poster_submission
-        url = '{}{}/'.format(base_url, meeting_one_submission._id)
+        url = f'{base_url}{meeting_one_submission._id}/'
         res = app.get(url)
         assert res.status_code == 200
         data = res.json['data']
@@ -81,22 +81,22 @@ class TestMeetingSubmissionsDetail:
         assert data['attributes']['download_count'] == 10
         assert 'date_created' in data['attributes']
         assert data['attributes']['meeting_category'] == 'poster'
-        assert '/_/meetings/{}/submissions/{}'.format(meeting.endpoint, meeting_one_submission._id) in data['links']['self']
+        assert f'/_/meetings/{meeting.endpoint}/submissions/{meeting_one_submission._id}' in data['links']['self']
         assert data['relationships']['author']['data']['id'] == user._id
         assert file._id in data['links']['download']
 
         # test_get_private_submission
-        url = '{}{}/'.format(base_url, meeting_one_private_submission._id)
+        url = f'{base_url}{meeting_one_private_submission._id}/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
         # Restricting even logged in contributor from viewing private submission
-        url = '{}{}/'.format(base_url, meeting_one_private_submission._id)
+        url = f'{base_url}{meeting_one_private_submission._id}/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_get_random_project_not_affiliated_with_meeting
-        url = '{}{}/'.format(base_url, random_project._id)
+        url = f'{base_url}{random_project._id}/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'This is not a submission to OSF 2019.'
@@ -107,7 +107,7 @@ class TestMeetingSubmissionsDetail:
         assert res.status_code == 404
 
         # test_get_meeting_submission_with_no_category
-        url = '{}{}/'.format(base_url, meeting_submission_no_category._id)
+        url = f'{base_url}{meeting_submission_no_category._id}/'
         res = app.get(url)
         assert res.status_code == 200
         # Second submission type given by default if none exists (following legacy logic)

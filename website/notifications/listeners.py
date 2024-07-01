@@ -14,21 +14,21 @@ def subscribe_creator(node):
         subscribe_user_to_notifications(node, node.creator)
     except InvalidSubscriptionError as err:
         user = node.creator._id if node.creator else 'None'
-        logger.warn('Skipping subscription of user {} to node {}'.format(user, node._id))
-        logger.warn('Reason: {}'.format(str(err)))
+        logger.warning(f'Skipping subscription of user {user} to node {node._id}')
+        logger.warning(f'Reason: {str(err)}')
 
 @contributor_added.connect
 def subscribe_contributor(node, contributor, auth=None, *args, **kwargs):
     try:
         subscribe_user_to_notifications(node, contributor)
     except InvalidSubscriptionError as err:
-        logger.warn('Skipping subscription of user {} to node {}'.format(contributor, node._id))
-        logger.warn('Reason: {}'.format(str(err)))
+        logger.warning(f'Skipping subscription of user {contributor} to node {node._id}')
+        logger.warning(f'Reason: {str(err)}')
 
 @user_confirmed.connect
 def subscribe_confirmed_user(user):
     try:
         subscribe_user_to_global_notifications(user)
     except InvalidSubscriptionError as err:
-        logger.warn('Skipping subscription of user {} to global subscriptions'.format(user))
-        logger.warn('Reason: {}'.format(str(err)))
+        logger.warning(f'Skipping subscription of user {user} to global subscriptions')
+        logger.warning(f'Reason: {str(err)}')

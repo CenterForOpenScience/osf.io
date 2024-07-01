@@ -45,7 +45,7 @@ class TestInstitutionNodeList:
 
     @pytest.fixture()
     def institution_node_url(self, institution):
-        return '/{0}institutions/{1}/nodes/'.format(API_BASE, institution._id)
+        return f'/{API_BASE}institutions/{institution._id}/nodes/'
 
     def test_return_all_public_nodes(
             self, app, public_node,
@@ -119,7 +119,7 @@ class TestInstitutionNodeList:
         component = NodeFactory(parent=public_node, is_public=True)
         component.affiliated_institutions.add(institution)
         component.save()
-        url = '{}?version=2.2'.format(institution_node_url)
+        url = f'{institution_node_url}?version=2.2'
         res = app.get(url, auth=user.auth)
         affiliated_node_ids = [node['id'] for node in res.json['data']]
         assert res.status_code == 200
@@ -133,7 +133,7 @@ class TestInstitutionNodeList:
         component = NodeFactory(parent=node, is_public=True)
         component.affiliated_institutions.add(institution)
         component.save()
-        url = '{}?version=2.2'.format(institution_node_url)
+        url = f'{institution_node_url}?version=2.2'
         res = app.get(url, auth=user.auth)
         affiliated_node_ids = [item['id'] for item in res.json['data']]
         assert res.status_code == 200
@@ -255,7 +255,7 @@ class TestNodeListDateFiltering(NodesListDateFilteringMixin):
 
     @pytest.fixture()
     def url(self, institution):
-        return '/{}institutions/{}/nodes/?'.format(API_BASE, institution._id)
+        return f'/{API_BASE}institutions/{institution._id}/nodes/?'
 
     @pytest.fixture()
     def node_may(self, user, institution):

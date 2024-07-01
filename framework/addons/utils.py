@@ -20,7 +20,7 @@ CAPABILITY_SET = [
 
 def read_capabilities(filename):
 
-    data_file = open(filename, 'r')
+    data_file = open(filename)
     data = load_json(data_file)
 
     addons = data['addons']

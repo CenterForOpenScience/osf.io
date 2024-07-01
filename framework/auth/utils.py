@@ -85,7 +85,7 @@ def validate_email(email):
 
 
 def impute_names(name):
-    human = HumanName(name)
+    human = HumanName(name, encoding='UTF-8')
     return {
         'given': human.first,
         'middle': human.middle,
@@ -95,7 +95,7 @@ def impute_names(name):
 
 
 def impute_names_model(name):
-    human = HumanName(name)
+    human = HumanName(name, encoding='UTF-8')
     return {
         'given_name': human.first,
         'middle_names': human.middle,
@@ -121,7 +121,7 @@ def privacy_info_handle(info, anonymous, name=False):
 def ensure_external_identity_uniqueness(provider, identity, user=None):
     from osf.models import OSFUser
     users_with_identity = OSFUser.objects.filter(
-        **{'external_identity__{}__{}__isnull'.format(provider, identity): False}
+        **{f'external_identity__{provider}__{identity}__isnull': False}
     )
     for existing_user in users_with_identity:
         if user and user._id == existing_user._id:
@@ -167,5 +167,5 @@ def generate_csl_given_name(given_name, middle_names='', suffix=''):
         parts.extend(each[0] for each in re.split(r'\s+', middle_names))
     given = ' '.join(parts)
     if suffix:
-        given = '%s, %s' % (given, suffix)
+        given = f'{given}, {suffix}'
     return given

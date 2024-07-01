@@ -1,30 +1,27 @@
-# -*- coding: utf-8 -*-
-
-# TODO: Most of the forms are no longer used, need clean up
-
-from wtforms import ValidationError
+from wtforms.widgets import CheckboxInput
+from website import language
+from wtforms import (
+    Form,
+    PasswordField,
+    BooleanField,
+    HiddenField,
+    StringField,
+    validators,
+    ValidationError
+)
 
 from framework import auth
 from framework.forms import (
-    Form,
     NoHtmlCharacters,
-    PasswordField,
-    TextField,
-    HiddenField,
-    validators,
     BootstrapTextInput,
     BootstrapPasswordInput,
     stripped,
     lowerstripped,
-    BooleanField,
-    CheckboxInput
 )
-from website import language
-
-
 ##### Custom validators #####
 
-class UniqueEmail(object):
+
+class UniqueEmail:
     """Ensure that an email is not already in the database."""
     def __init__(self, message=None, allow_unregistered=True):
         self.message = message
@@ -40,7 +37,7 @@ class UniqueEmail(object):
         return True
 
 
-class EmailExists(object):
+class EmailExists:
     """Ensure that an email is in the database."""
     def __init__(self, message=None):
         self.message = message
@@ -54,17 +51,17 @@ class EmailExists(object):
 
 
 # The order fields are defined determines their order on the page.
-name_field = TextField(
+name_field = StringField(
     'Full Name',
     [
-        validators.Required(message=u'Full name is required'),
+        validators.DataRequired(message='Full name is required'),
         NoHtmlCharacters(),
     ],
     filters=[stripped],
     widget=BootstrapTextInput(),
 )
 
-name_field_not_required = TextField(
+name_field_not_required = StringField(
     'Full Name',
     [
         NoHtmlCharacters(),
@@ -73,31 +70,31 @@ name_field_not_required = TextField(
     widget=BootstrapTextInput(),
 )
 
-email_field = TextField('Email Address',
+email_field = StringField('Email Address',
     [
-        validators.Required(message=u'Email address is required'),
-        validators.Length(min=6, message=u'Email address is too short'),
-        validators.Length(max=120, message=u'Email address is too long'),
-        validators.Email(message=u'Email address is invalid'),
+        validators.DataRequired(message='Email address is required'),
+        validators.Length(min=6, message='Email address is too short'),
+        validators.Length(max=120, message='Email address is too long'),
+        validators.Email(message='Email address is invalid'),
         NoHtmlCharacters(),
     ],
     filters=[lowerstripped],
     widget=BootstrapTextInput())
 
 
-unique_email_field = TextField('Email Address',
+unique_email_field = StringField('Email Address',
     [
-        validators.Required(message=u'Email address is required'),
-        validators.Length(min=6, message=u'Email address is too short'),
-        validators.Length(max=120, message=u'Email address is too long'),
-        validators.Email(message=u'Email address is invalid'),
+        validators.DataRequired(message='Email address is required'),
+        validators.Length(min=6, message='Email address is too short'),
+        validators.Length(max=120, message='Email address is too long'),
+        validators.Email(message='Email address is invalid'),
         NoHtmlCharacters(),
         UniqueEmail(),
     ],
     filters=[lowerstripped],
     widget=BootstrapTextInput())
 
-confirm_email_field = TextField(
+confirm_email_field = StringField(
     'Verify Email Address',
     [
         validators.EqualTo(
@@ -110,10 +107,10 @@ confirm_email_field = TextField(
 
 password_field = PasswordField('Password',
     [
-        validators.Required(message=u'Password is required'),
-        validators.Length(min=8, message=u'Password is too short. '
+        validators.DataRequired(message='Password is required'),
+        validators.Length(min=8, message='Password is too short. '
             'Password should be at least 8 characters.'),
-        validators.Length(max=255, message=u'Password is too long. '
+        validators.Length(max=255, message='Password is too long. '
             'Password should be at most 255 characters.'),
     ],
     filters=[stripped],
@@ -133,10 +130,10 @@ confirm_password_field = PasswordField(
 class ResetPasswordForm(Form):
     password = PasswordField('New Password',
         [
-            validators.Required(message=u'Password is required'),
-            validators.Length(min=8, message=u'Password is too short. '
+            validators.DataRequired(message='Password is required'),
+            validators.Length(min=8, message='Password is too short. '
                 'Password should be at least 8 characters.'),
-            validators.Length(max=255, message=u'Password is too long. '
+            validators.Length(max=255, message='Password is too long. '
                 'Password should be at most 255 characters.'),
         ],
         filters=[stripped],
@@ -157,7 +154,7 @@ class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
     accepted_terms_of_service = BooleanField(
         [
-            validators.Required(message=u'This field is required'),
+            validators.DataRequired(message='This field is required'),
         ]
     )
 
@@ -172,7 +169,7 @@ class ResendConfirmationForm(Form):
     email = email_field
     accepted_terms_of_service = BooleanField(
         [
-            validators.Required(message=u'This field is required'),
+            validators.DataRequired(message='This field is required'),
         ],
         widget=CheckboxInput()
     )

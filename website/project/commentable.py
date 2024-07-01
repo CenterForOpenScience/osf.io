@@ -1,4 +1,4 @@
-class Commentable(object):
+class Commentable:
     """Abstract class that defines the interface for models that have comments attached to them."""
 
     @property

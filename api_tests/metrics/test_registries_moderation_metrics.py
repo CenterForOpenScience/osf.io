@@ -68,7 +68,7 @@ class TestRegistrationModerationMetricsView:
 
     @pytest.fixture
     def base_url(self):
-        return f'/_/metrics/registries_moderation/transitions/'
+        return '/_/metrics/registries_moderation/transitions/'
 
     @pytest.mark.es
     def test_registries_moderation_view(self, app, user, base_url, registration):

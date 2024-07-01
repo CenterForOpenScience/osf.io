@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import *  # noqa:
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
@@ -61,7 +60,7 @@ class TestNodeList:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture()
     def preprint(self, public_project, user):
@@ -171,14 +170,14 @@ class TestNodeList:
             assert project_json['embeds']['root']['data']['id'] == project.root._id
 
     def test_node_list_sorting(self, app, url):
-        res = app.get('{}?sort=-created'.format(url))
+        res = app.get(f'{url}?sort=-created')
         assert res.status_code == 200
 
-        res = app.get('{}?sort=title'.format(url))
+        res = app.get(f'{url}?sort=title')
         assert res.status_code == 200
 
     def test_node_list_embed_region(self, app, url, public_project):
-        res = app.get('{}?embed=region'.format(url))
+        res = app.get(f'{url}?embed=region')
         assert res.status_code == 200
         assert res.json['data'][0]['embeds']['region']['data']['id'] == DEFAULT_REGION_ID
 
@@ -405,7 +404,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     def test_filtering(
             self, app, user_one, public_project_one,
@@ -486,7 +485,7 @@ class TestNodeFiltering:
         assert user_one_private_project.description in descriptions
 
         #   test_filtering_on_preprint
-        filter_url = '{}?filter[preprint]=true'.format(url)
+        filter_url = f'{url}?filter[preprint]=true'
         res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -499,7 +498,7 @@ class TestNodeFiltering:
         assert public_project_three._id not in ids
 
         #   test_filtering_out_preprint
-        filter_url = '{}?filter[preprint]=false'.format(url)
+        filter_url = f'{url}?filter[preprint]=false'
         res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -514,7 +513,7 @@ class TestNodeFiltering:
     def test_filtering_by_category(self, app, user_one):
         project_one = ProjectFactory(creator=user_one, category='hypothesis')
         project_two = ProjectFactory(creator=user_one, category='procedure')
-        url = '/{}nodes/?filter[category]=hypothesis'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[category]=hypothesis'
         res = app.get(url, auth=user_one.auth)
 
         node_json = res.json['data']
@@ -527,7 +526,7 @@ class TestNodeFiltering:
         public_project = ProjectFactory(creator=user_one, is_public=True)
         private_project = ProjectFactory(creator=user_one, is_public=False)
 
-        url = '/{}nodes/?filter[public]=false'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[public]=false'
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -538,7 +537,7 @@ class TestNodeFiltering:
         assert public_project._id not in ids
         assert private_project._id in ids
 
-        url = '/{}nodes/?filter[public]=true'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[public]=true'
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -580,7 +579,7 @@ class TestNodeFiltering:
     def test_filtering_tags(
             self, app, public_project_one, public_project_two,
             tag_one, tag_two):
-        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag_one)
+        url = f'/{API_BASE}nodes/?filter[tags]={tag_one}'
 
         res = app.get(url, auth=public_project_one.creator.auth)
         node_json = res.json['data']
@@ -604,7 +603,7 @@ class TestNodeFiltering:
         project_no_tag = ProjectFactory(
             title='Project No Tags', is_public=True)
 
-        url = '/{}nodes/?filter[tags]=null'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[tags]=null'
 
         res = app.get(url, auth=project_no_tag.creator.auth)
         node_json = res.json['data']
@@ -792,7 +791,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_get_one_project_with_exact_filter_logged_in
-        url = '/{}nodes/?filter[title]=Project%20One'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[title]=Project%20One'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -807,7 +806,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_get_one_project_with_exact_filter_not_logged_in
-        url = '/{}nodes/?filter[title]=Project%20One'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[title]=Project%20One'
 
         res = app.get(url)
         node_json = res.json['data']
@@ -822,7 +821,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_get_some_projects_with_substring_logged_in
-        url = '/{}nodes/?filter[title]=Two'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[title]=Two'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -837,7 +836,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_get_some_projects_with_substring_not_logged_in
-        url = '/{}nodes/?filter[title]=Two'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[title]=Two'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -852,7 +851,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_get_only_public_or_my_projects_with_filter_logged_in
-        url = '/{}nodes/?filter[title]=Project'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[title]=Project'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -867,7 +866,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_get_only_public_projects_with_filter_not_logged_in
-        url = '/{}nodes/?filter[title]=Project'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[title]=Project'
 
         res = app.get(url)
         node_json = res.json['data']
@@ -882,7 +881,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_alternate_filtering_field_logged_in
-        url = '/{}nodes/?filter[description]=One%20or%20Two'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[description]=One%20or%20Two'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -897,7 +896,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_alternate_filtering_field_not_logged_in
-        url = '/{}nodes/?filter[description]=reason'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[description]=reason'
 
         res = app.get(url)
         node_json = res.json['data']
@@ -911,7 +910,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     def test_incorrect_filtering_field_not_logged_in(self, app):
-        url = '/{}nodes/?filter[notafield]=bogus'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[notafield]=bogus'
 
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
@@ -932,7 +931,7 @@ class TestNodeFiltering:
             title='How one intern changed thousands of lines within a codebase',
             is_public=True)
 
-        url = '/{}nodes/?filter[root]={}'.format(API_BASE, root._id)
+        url = f'/{API_BASE}nodes/?filter[root]={root._id}'
 
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
@@ -948,7 +947,7 @@ class TestNodeFiltering:
         child_one = NodeFactory(parent=parent_one, is_public=True)
         child_two = NodeFactory(parent=parent_one, is_public=True)
 
-        url = '/{}nodes/?filter[parent]={}'.format(API_BASE, parent_one._id)
+        url = f'/{API_BASE}nodes/?filter[parent]={parent_one._id}'
         res = app.get(url)
         assert res.status_code == 200
 
@@ -968,7 +967,7 @@ class TestNodeFiltering:
         child_two = ProjectFactory(parent=root, is_public=True)
         grandchild = ProjectFactory(parent=child_one, is_public=True)
 
-        url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[parent]=null'
 
         res = app.get(url, auth=new_user.auth)
         assert res.status_code == 200
@@ -993,7 +992,7 @@ class TestNodeFiltering:
         unpublished.save()
         assert not unpublished.is_published
 
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=true'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1025,7 +1024,7 @@ class TestNodeFiltering:
         unpublished.save()
         assert not unpublished.is_published
 
-        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=false'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1057,7 +1056,7 @@ class TestNodeFiltering:
         private.is_public = False
         private.save()
 
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=true'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1089,7 +1088,7 @@ class TestNodeFiltering:
         private.is_public = False
         private.save()
 
-        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=false'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1121,7 +1120,7 @@ class TestNodeFiltering:
         abandoned.machine_state = DefaultStates.INITIAL.value
         abandoned.save()
 
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=true'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1153,7 +1152,7 @@ class TestNodeFiltering:
         abandoned.machine_state = DefaultStates.INITIAL.value
         abandoned.save()
 
-        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=false'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1185,7 +1184,7 @@ class TestNodeFiltering:
         deleted.deleted = timezone.now()
         deleted.save()
 
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=true'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1217,7 +1216,7 @@ class TestNodeFiltering:
         deleted.deleted = timezone.now()
         deleted.save()
 
-        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=false'
         # Unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
@@ -1243,7 +1242,7 @@ class TestNodeFiltering:
             self, app, public_project_one, public_project_two,
             public_project_three, user_one):
 
-        url = '/{}nodes/?filter[title,description]=One'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[title,description]=One'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -1278,7 +1277,7 @@ class TestNodeFiltering:
         preprint_two.ever_public = True
         preprint_two.save()
 
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=true'
         # Unauthenticated can only see withdrawn preprints that have been public
         expected = [project_two._id]
         res = app.get(url)
@@ -1329,7 +1328,7 @@ class TestNodeFiltering:
         preprint_two.ever_public = True
         preprint_two.save()
 
-        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        url = f'/{API_BASE}nodes/?filter[preprint]=false'
         # Unauthenticated can only see withdrawn preprints that have been public
         expected = [project_one._id]
         res = app.get(url)
@@ -1370,7 +1369,7 @@ class TestNodeSubjectFiltering(SubjectsFilterMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
 
 @pytest.mark.django_db
@@ -1393,7 +1392,7 @@ class TestNodeCreate:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture()
     def title(self):
@@ -1413,7 +1412,7 @@ class TestNodeCreate:
 
     @pytest.fixture()
     def url_with_region_query_param(self, region, url):
-        return url + '?region={}'.format(region._id)
+        return url + f'?region={region._id}'
 
     @pytest.fixture()
     def public_project(self, title, description, category, institution_one):
@@ -1491,7 +1490,7 @@ class TestNodeCreate:
         assert res.json['data']['attributes']['description'] == public_project['data']['attributes']['description']
         assert res.json['data']['attributes']['category'] == public_project['data']['attributes']['category']
         assert res.json['data']['relationships']['affiliated_institutions']['links']['self']['href'] == \
-            '{}relationships/institutions/'.format(self_link)
+            f'{self_link}relationships/institutions/'
         assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
         project = AbstractNode.load(pid)
@@ -1600,7 +1599,7 @@ class TestNodeCreate:
         project_id = res.json['data']['id']
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
-        url = '/{}nodes/{}/'.format(API_BASE, project_id)
+        url = f'/{API_BASE}nodes/{project_id}/'
 
         project = AbstractNode.load(project_id)
         assert project.logs.latest().action == NodeLog.PROJECT_CREATED
@@ -1669,7 +1668,7 @@ class TestNodeCreate:
 
     def test_create_component_with_tags(self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
-        url = '/{}nodes/{}/children/'.format(API_BASE, parent_project._id)
+        url = f'/{API_BASE}nodes/{parent_project._id}/children/'
         component_data = {
             'data': {
                 'type': 'nodes',
@@ -1724,8 +1723,8 @@ class TestNodeCreate:
         assert len(
             new_component.contributors
         ) == len(parent_project.contributors)
-        expected_perms = set([permissions.READ, permissions.ADMIN])
-        actual_perms = set([contributor.permission for contributor in new_component.contributor_set.all()])
+        expected_perms = {permissions.READ, permissions.ADMIN}
+        actual_perms = {contributor.permission for contributor in new_component.contributor_set.all()}
         assert actual_perms == expected_perms
 
     def test_create_component_inherit_contributors_with_blocked_email(
@@ -1833,11 +1832,11 @@ class TestNodeCreate:
             self, app, user_one, region, private_project, url):
         bad_region_id = 'bad-region-1'
         res = app.post_json_api(
-            url + '?region={}'.format(bad_region_id), private_project,
+            url + f'?region={bad_region_id}', private_project,
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Region {} is invalid.'.format(bad_region_id)
+        assert res.json['errors'][0]['detail'] == f'Region {bad_region_id} is invalid.'
 
     def test_create_project_errors(
             self, app, user_one, title, description, category, url):
@@ -1923,7 +1922,7 @@ class TestNodeLicenseOnCreate:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture()
     def license_name(self):
@@ -2062,7 +2061,7 @@ class TestNodeBulkCreate:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture()
     def title(self):
@@ -2364,7 +2363,7 @@ class TestNodeBulkUpdate:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture()
     def private_project_one(self, user, title, description, category):
@@ -2838,7 +2837,7 @@ class TestNodeBulkPartialUpdate:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture()
     def private_project_one(self, user, title, description, category):
@@ -3243,7 +3242,7 @@ class TestNodeBulkUpdateSkipUneditable:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/?skip_uneditable=True'.format(API_BASE)
+        return f'/{API_BASE}nodes/?skip_uneditable=True'
 
     def test_bulk_update_skips(
             self, app, user_one,
@@ -3254,7 +3253,7 @@ class TestNodeBulkUpdateSkipUneditable:
             title, public_payload):
 
         #   test_skip_uneditable_bulk_update_query_param_required
-        nodes_url = '/{}nodes/'.format(API_BASE)
+        nodes_url = f'/{API_BASE}nodes/'
         res = app.put_json_api(
             nodes_url, public_payload,
             auth=user_one.auth,
@@ -3290,7 +3289,7 @@ class TestNodeBulkUpdateSkipUneditable:
         assert user_two_public_project_two.title == title
 
     #   test_skip_uneditable_bulk_partial_update_query_param_required
-        url = '/{}nodes/'.format(API_BASE)
+        url = f'/{API_BASE}nodes/'
         res = app.patch_json_api(
             url, public_payload,
             auth=user_one.auth,
@@ -3430,19 +3429,19 @@ class TestNodeBulkDelete:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     @pytest.fixture()
     def public_project_one_url(self, public_project_one):
-        return '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
+        return f'/{API_BASE}nodes/{public_project_one._id}/'
 
     @pytest.fixture()
     def public_project_two_url(self, public_project_two):
-        return '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
+        return f'/{API_BASE}nodes/{public_project_two._id}/'
 
     @pytest.fixture()
     def user_one_private_project_url(self, user_one_private_project):
-        return '/{}nodes/{}/'.format(API_BASE, user_one_private_project._id)
+        return f'/{API_BASE}nodes/{user_one_private_project._id}/'
 
     @pytest.fixture()
     def public_payload(self, public_project_one, public_project_two):
@@ -3482,7 +3481,7 @@ class TestNodeBulkDelete:
 
     @pytest.fixture()
     def private_query_params(self, user_one_private_project):
-        return 'id={}'.format(user_one_private_project._id)
+        return f'id={user_one_private_project._id}'
 
     def test_bulk_delete_errors(
             self, app, user_one, public_project_one,
@@ -3491,21 +3490,21 @@ class TestNodeBulkDelete:
             type_query_param, public_query_params, url):
 
         #   test_bulk_delete_with_query_params_and_payload
-        res_url = '{}?{}&{}'.format(url, type_query_param, public_query_params)
+        res_url = f'{url}?{type_query_param}&{public_query_params}'
         res = app.delete_json_api(
             res_url, public_payload,
             auth=user_one.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 409
-        assert res.json['errors'][0]['detail'] == u'A bulk DELETE can only have a body or query parameters, not both.'
+        assert res.json['errors'][0]['detail'] == 'A bulk DELETE can only have a body or query parameters, not both.'
 
     #   test_bulk_delete_with_query_params_no_type
-        res_url = '{}?{}'.format(url, public_query_params)
+        res_url = f'{url}?{public_query_params}'
         res = app.delete_json_api(
             res_url, auth=user_one.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == u'Type query parameter is also required for a bulk DELETE using query parameters.'
+        assert res.json['errors'][0]['detail'] == 'Type query parameter is also required for a bulk DELETE using query parameters.'
 
     #   test_bulk_delete_with_query_params_wrong_type
         res_url = '{}?{}&{}'.format(
@@ -3514,7 +3513,7 @@ class TestNodeBulkDelete:
             res_url, auth=user_one.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 409
-        assert res.json['errors'][0]['detail'] == u'Type needs to match type expected at this endpoint.'
+        assert res.json['errors'][0]['detail'] == 'Type needs to match type expected at this endpoint.'
 
     #   test_bulk_delete_nodes_blank_request
         res = app.delete_json_api(
@@ -3597,7 +3596,7 @@ class TestNodeBulkDelete:
     def test_bulk_delete_with_query_params(
             self, app, user_one, url,
             type_query_param, public_query_params):
-        url = '{}?{}&{}'.format(url, type_query_param, public_query_params)
+        url = f'{url}?{type_query_param}&{public_query_params}'
         res = app.delete_json_api(url, auth=user_one.auth, bulk=True)
         assert res.status_code == 204
 
@@ -3726,7 +3725,7 @@ class TestNodeBulkDelete:
         res = app.get(user_one_private_project_url, auth=user_one.auth)
         assert res.status_code == 200
 
-        url = '/{}nodes/{}/'.format(API_BASE, user_two_private_project._id)
+        url = f'/{API_BASE}nodes/{user_two_private_project._id}/'
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
 
@@ -3923,7 +3922,7 @@ class TestNodeBulkDeleteSkipUneditable:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/?skip_uneditable=True'.format(API_BASE)
+        return f'/{API_BASE}nodes/?skip_uneditable=True'
 
     def test_skip_uneditable_bulk_delete(
             self, app, user_one,
@@ -3938,7 +3937,7 @@ class TestNodeBulkDeleteSkipUneditable:
             [public_project_three._id, public_project_four._id]
         )
 
-        res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
+        res = app.get(f'/{API_BASE}nodes/', auth=user_one.auth)
         assert_equals(
             [res.json['data'][0]['id'], res.json['data'][1]['id']],
             [public_project_three._id, public_project_four._id]
@@ -3946,13 +3945,13 @@ class TestNodeBulkDeleteSkipUneditable:
 
     def test_skip_uneditable_bulk_delete_query_param_required(
             self, app, user_one, payload):
-        url = '/{}nodes/'.format(API_BASE)
+        url = f'/{API_BASE}nodes/'
         res = app.delete_json_api(
             url, payload, auth=user_one.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 403
 
-        res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
+        res = app.get(f'/{API_BASE}nodes/', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 4
 
@@ -4071,7 +4070,7 @@ class TestNodeListPagination:
 
     @pytest.fixture()
     def url(self, users):
-        return '/{}nodes/'.format(API_BASE)
+        return f'/{API_BASE}nodes/'
 
     def test_default_pagination_size(self, app, users, projects, url):
         res = app.get(url, auth=Auth(users[0]))
@@ -4082,7 +4081,7 @@ class TestNodeListPagination:
         assert res.json['links']['meta']['per_page'] == 10
 
     def test_max_page_size_enforced(self, app, users, projects, url):
-        res_url = '{}?page[size]={}'.format(url, MAX_PAGE_SIZE + 1)
+        res_url = f'{url}?page[size]={MAX_PAGE_SIZE + 1}'
         res = app.get(res_url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
         for project in projects:
@@ -4119,7 +4118,7 @@ class TestNodeListFiltering(NodesListFilteringMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/?'.format(API_BASE)
+        return f'/{API_BASE}nodes/?'
 
 
 @pytest.mark.django_db
@@ -4127,4 +4126,4 @@ class TestNodeListDateFiltering(NodesListDateFilteringMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/?'.format(API_BASE)
+        return f'/{API_BASE}nodes/?'

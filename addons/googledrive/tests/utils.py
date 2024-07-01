@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.googledrive.models import GoogleDriveProvider
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory
@@ -11,7 +9,7 @@ class GoogleDriveAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     Provider = GoogleDriveProvider
 
     def set_node_settings(self, settings):
-        super(GoogleDriveAddonTestCase, self).set_node_settings(settings)
+        super().set_node_settings(settings)
         settings.folder_id = '1234567890'
         settings.folder_path = 'Drive/Camera Uploads'
         settings.external_account = self.external_account
@@ -377,7 +375,7 @@ mock_folders = {
            'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeU9OSWQtaUNwbFE',
            'alternateLink': 'https://docs.google.com/folderview?id=0B8IkoNBph4qJeU9OSWQtaUNwbFE&usp=drivesdk',
            'iconLink': 'https://ssl.gstatic.com/docs/doclist/images/icon_11_collection_list.png',
-           'title': u'Новая папка',  # Google drive actually sends back in unicode, this will work without the u".."
+           'title': 'Новая папка',  # Google drive actually sends back in unicode, this will work without the u".."
            'mimeType': 'application/vnd.google-apps.folder',
            'labels': {
             'starred': False,

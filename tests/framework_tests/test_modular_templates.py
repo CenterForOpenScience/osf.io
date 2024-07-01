@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''Unit tests for the modular template system.
 
 These require a test db because they use Session objects.
@@ -29,7 +28,7 @@ TEMPLATES_PATH = os.path.join(HERE, 'templates')
 
 class RendererTestCase(AppTestCase):
     def setUp(self):
-        super(RendererTestCase, self).setUp()
+        super().setUp()
         self.r = Renderer()
 
     def test_redirect(self):
@@ -56,7 +55,7 @@ class RendererTestCase(AppTestCase):
 class JSONRendererTestCase(RendererTestCase):
 
     def setUp(self):
-        super(JSONRendererTestCase, self).setUp()
+        super().setUp()
         self.r = JSONRenderer()
 
     def test_redirect(self):
@@ -102,7 +101,7 @@ class JSONRendererTestCase(RendererTestCase):
 class WebRendererTestCase(OsfTestCase):
 
     def setUp(self):
-        super(WebRendererTestCase, self).setUp()
+        super().setUp()
 
         # Use OsfRenderer so that global vars are included
         self.r = OsfWebRenderer(
@@ -118,7 +117,7 @@ class WebRendererTestCase(OsfTestCase):
         Note that this behavior is inconsistent with that of raising an
         ``HTTPError`` in a view function, which serves the same purpose.
         """
-        self.app.app.preprocess_request()
+        self.app.application.preprocess_request()
 
         resp = self.r(
             ({},  # data
@@ -140,7 +139,7 @@ class WebRendererTestCase(OsfTestCase):
         which the 0th element must be the rendered template, including the dict
         as part of the context.
         """
-        self.app.app.preprocess_request()
+        self.app.application.preprocess_request()
 
         input_dict = {'foo': 'bar'}
 
@@ -164,7 +163,7 @@ class WebRendererTestCase(OsfTestCase):
         which yields the appropriate error message text.
         """
 
-        self.app.app.preprocess_request()
+        self.app.application.preprocess_request()
 
         err = HTTPError(http_status.HTTP_404_NOT_FOUND)
 
@@ -210,7 +209,7 @@ class JSONRendererEncoderTestCase(unittest.TestCase):
 
     def test_encode_custom_class(self):
 
-        class TestClass(object):
+        class TestClass:
             def to_json(self):
                 return '<JSON representation>'
 

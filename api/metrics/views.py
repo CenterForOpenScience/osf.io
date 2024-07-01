@@ -325,10 +325,12 @@ class RecentReportList(JSONAPIBaseView):
             report_class = VIEWABLE_REPORTS[report_name]
         except KeyError:
             return Response(
-                {'errors': [{
-                    'title': 'unknown report name',
-                    'detail': f'unknown report: "{report_name}"',
-                }]},
+                {
+                    'errors': [{
+                        'title': 'unknown report name',
+                        'detail': f'unknown report: "{report_name}"',
+                    }],
+                },
                 status=404,
             )
         is_daily = issubclass(report_class, reports.DailyReport)
@@ -573,7 +575,7 @@ class UserVisitsQuery(JSONAPIBaseView):
                     period = m.group(2)
                     days_back = int(period_count) * self.DAYS_PER_PERIOD[period]
                 else:
-                    raise Exception('Unsupported timeframe format: "{}"'.format(timeframe))
+                    raise Exception(f'Unsupported timeframe format: "{timeframe}"')
                 report_date = {'gte': f'now/d-{days_back}d'}
         elif request.GET.get('timeframeStart'):
             tsStart = request.GET.get('timeframeStart')
@@ -654,6 +656,6 @@ class MetricsOpenapiView(GenericAPIView):
             _openapi_json,
             json_dumps_params={'indent': 2},
             headers={
-                'Cache-Control': f'immutable, public, max-age={60*60*24*7}',  # pls cache for a week
+                'Cache-Control': f'immutable, public, max-age={60 * 60 * 24 * 7}',  # pls cache for a week
             },
         )

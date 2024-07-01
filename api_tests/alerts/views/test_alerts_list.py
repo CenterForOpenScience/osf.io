@@ -7,7 +7,7 @@ from osf_tests.factories import (
     DismissedAlertFactory,
 )
 
-url_alerts_list = '/{}alerts/'.format(API_BASE)
+url_alerts_list = f'/{API_BASE}alerts/'
 
 @pytest.fixture()
 def user_one():
@@ -25,8 +25,8 @@ class TestDismissedAlertList:
         for i in range(3):
             DismissedAlertFactory(
                 user=user_one,
-                location='solar/eclipse{}/'.format(i),
-                _id='solarEclipse{}'.format(i))
+                location=f'solar/eclipse{i}/',
+                _id=f'solarEclipse{i}')
 
     def test_dismissed_alerts_list(self, app, user_one, user_two):
 
@@ -55,7 +55,7 @@ class TestDismissedAlertList:
         assert res.json['links']['meta']['total'] == len(res.json['data'])
 
         # test_alerts_list_id_filter
-        url = '{}?filter[id]={}'.format(url_alerts_list, alert_id)
+        url = f'{url_alerts_list}?filter[id]={alert_id}'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert len(res.json['data']) == 1
@@ -64,7 +64,7 @@ class TestDismissedAlertList:
         assert res_data['id'] == alert_id
 
         # test_alerts_list_location_filter
-        url = '{}?filter[location]={}'.format(url_alerts_list, alert_location)
+        url = f'{url_alerts_list}?filter[location]={alert_location}'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert len(res.json['data']) == 1

@@ -14,7 +14,7 @@ from framework.celery_tasks import app
 
 class NotificationsDict(dict):
     def __init__(self):
-        super(NotificationsDict, self).__init__()
+        super().__init__()
         self.update(messages=[], children=collections.defaultdict(NotificationsDict))
 
     def add_message(self, keys, messages):
@@ -47,7 +47,7 @@ def find_subscription_type(subscription):
 
 def to_subscription_key(uid, event):
     """Build the Subscription primary key for the given guid and event"""
-    return u'{}_{}'.format(uid, event)
+    return f'{uid}_{event}'
 
 
 def from_subscription_key(key):
@@ -73,7 +73,7 @@ def remove_contributor_from_subscriptions(node, user):
 
     # If user still has permissions through being a contributor or group member, or has
     # admin perms on a parent, don't remove their subscription
-    if not(node.is_contributor_or_group_member(user)) and user._id not in node.admin_contributor_or_group_member_ids:
+    if not (node.is_contributor_or_group_member(user)) and user._id not in node.admin_contributor_or_group_member_ids:
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(user)
@@ -268,7 +268,7 @@ def format_data(user, nodes):
 
     user_subscriptions = get_all_user_subscriptions(user)
     for node in nodes:
-        assert node, '{} is not a valid Node.'.format(node._id)
+        assert node, f'{node._id} is not a valid Node.'
 
         can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, READ)
@@ -483,7 +483,7 @@ def subscribe_user_to_notifications(node, user):
             # If no subscription for component and creator is the user, do not create subscription
             # If no subscription exists for the component, this means that it should adopt its
             # parent's settings
-            if not(node and node.parent_node and not subscription and node.creator == user):
+            if not (node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
                     subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
                     # Need to save here in order to access m2m fields

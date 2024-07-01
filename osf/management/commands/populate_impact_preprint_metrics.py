@@ -70,7 +70,7 @@ def populate_preprint_metrics(preprints, dates, avg_counts, group_counts=False):
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--preprints',
             nargs='*',

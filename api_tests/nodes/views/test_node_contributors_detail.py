@@ -224,7 +224,7 @@ class TestNodeContributorOrdering:
 
     @pytest.fixture()
     def url_contrib_base(self, project):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/contributors/'
 
     @pytest.fixture()
     def url_creator(self, user, project):
@@ -266,9 +266,9 @@ class TestNodeContributorOrdering:
             self, app, user, contribs, project, contrib_user_id, url_contrib_base):
         with assert_latest_log(NodeLog.CONTRIB_REORDERED, project):
             contributor_to_move = contribs[0]._id
-            contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+            contributor_id = f'{project._id}-{contributor_to_move}'
             former_second_contributor = contribs[1]
-            url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+            url = f'{url_contrib_base}{contributor_to_move}/'
             data = {
                 'data': {
                     'id': contributor_id,
@@ -292,9 +292,9 @@ class TestNodeContributorOrdering:
             self, app, user, contribs, project,
             contrib_user_id, url_contrib_base):
         contributor_to_move = contribs[1]._id
-        contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+        contributor_id = f'{project._id}-{contributor_to_move}'
         former_first_contributor = contribs[0]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -319,9 +319,9 @@ class TestNodeContributorOrdering:
             contrib_user_id, last_position,
             url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+        contributor_id = f'{project._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -347,10 +347,10 @@ class TestNodeContributorOrdering:
             contrib_user_id, last_position,
             url_contrib_base):
         contributor_to_move = contribs[last_position]._id
-        contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+        contributor_id = f'{project._id}-{contributor_to_move}'
         former_second_to_last_contributor = contribs[last_position - 1]
 
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -376,10 +376,10 @@ class TestNodeContributorOrdering:
             contrib_user_id, last_position,
             url_contrib_base):
         contributor_to_move = contribs[last_position - 1]._id
-        contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+        contributor_id = f'{project._id}-{contributor_to_move}'
         former_last_contributor = contribs[last_position]
 
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -404,9 +404,9 @@ class TestNodeContributorOrdering:
     def test_move_top_contributor_down_to_second_to_last_position_with_negative_numbers(
             self, app, user, contribs, project, contrib_user_id, last_position, url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+        contributor_id = f'{project._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -430,9 +430,9 @@ class TestNodeContributorOrdering:
     def test_write_contributor_fails_to_move_top_contributor_down_one(
             self, app, user, contribs, project, contrib_user_id, url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+        contributor_id = f'{project._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -458,9 +458,9 @@ class TestNodeContributorOrdering:
     def test_non_authenticated_fails_to_move_top_contributor_down_one(
             self, app, user, contribs, project, contrib_user_id, url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+        contributor_id = f'{project._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -547,7 +547,7 @@ class TestNodeContributorUpdate:
         assert res.status_code == 409
 
     #   test_change_contributor_no_type
-        contrib_id = '{}-{}'.format(project._id, contrib._id)
+        contrib_id = f'{project._id}-{contrib._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -581,7 +581,7 @@ class TestNodeContributorUpdate:
         assert res.status_code == 409
 
     #   test_invalid_change_inputs_contributor
-        contrib_id = '{}-{}'.format(project._id, contrib._id)
+        contrib_id = f'{project._id}-{contrib._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -671,7 +671,7 @@ class TestNodeContributorUpdate:
 
     def test_change_admin_self_without_other_admin(
             self, app, user, project, url_creator):
-        contrib_id = '{}-{}'.format(project._id, user._id)
+        contrib_id = f'{project._id}-{user._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -711,7 +711,7 @@ class TestNodeContributorUpdate:
 
     def test_change_contributor_correct_id(
             self, app, user, contrib, project, url_contrib):
-        contrib_id = '{}-{}'.format(project._id, contrib._id)
+        contrib_id = f'{project._id}-{contrib._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -733,7 +733,7 @@ class TestNodeContributorUpdate:
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         project.add_osf_group(group, permissions.ADMIN)
-        contrib_id = '{}-{}'.format(project._id, contrib._id)
+        contrib_id = f'{project._id}-{contrib._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -753,7 +753,7 @@ class TestNodeContributorUpdate:
     def test_remove_all_bibliographic_statuses_contributors(
             self, app, user, contrib, project, url_creator):
         project.set_visible(contrib, False, save=True)
-        contrib_id = '{}-{}'.format(project._id, user._id)
+        contrib_id = f'{project._id}-{user._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -774,7 +774,7 @@ class TestNodeContributorUpdate:
 
     def test_change_contributor_permissions(
             self, app, user, contrib, project, url_contrib):
-        contrib_id = '{}-{}'.format(project._id, contrib._id)
+        contrib_id = f'{project._id}-{contrib._id}'
 
         with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
             data = {
@@ -837,7 +837,7 @@ class TestNodeContributorUpdate:
 
     def test_change_contributor_bibliographic(
             self, app, user, contrib, project, url_contrib):
-        contrib_id = '{}-{}'.format(project._id, contrib._id)
+        contrib_id = f'{project._id}-{contrib._id}'
         with assert_latest_log(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, project):
             data = {
                 'data': {
@@ -877,7 +877,7 @@ class TestNodeContributorUpdate:
     def test_change_contributor_permission_and_bibliographic(
             self, app, user, contrib, project, url_contrib):
         with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project, 1), assert_latest_log(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, project):
-            contrib_id = '{}-{}'.format(project._id, contrib._id)
+            contrib_id = f'{project._id}-{contrib._id}'
             data = {
                 'data': {
                     'id': contrib_id,
@@ -902,7 +902,7 @@ class TestNodeContributorUpdate:
     def test_not_change_contributor(
             self, app, user, contrib, project, url_contrib):
         with assert_latest_log_not(NodeLog.PERMISSIONS_UPDATED, project):
-            contrib_id = '{}-{}'.format(project._id, contrib._id)
+            contrib_id = f'{project._id}-{contrib._id}'
             data = {
                 'data': {
                     'id': contrib_id,
@@ -928,7 +928,7 @@ class TestNodeContributorUpdate:
             self, app, user, contrib, project, url_creator):
         with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
             project.add_permission(contrib, permissions.ADMIN, save=True)
-            contrib_id = '{}-{}'.format(project._id, user._id)
+            contrib_id = f'{project._id}-{user._id}'
             data = {
                 'data': {
                     'id': contrib_id,
@@ -977,7 +977,7 @@ class TestNodeContributorPartialUpdate:
             API_BASE, self.project._id, self.user_two._id)
 
     def test_patch_bibliographic_only(self, app, user, project, url_creator):
-        creator_id = '{}-{}'.format(project._id, user._id)
+        creator_id = f'{project._id}-{user._id}'
         data = {
             'data': {
                 'id': creator_id,
@@ -1003,7 +1003,7 @@ class TestNodeContributorPartialUpdate:
             save=True)
         url_read_contrib = '/{}nodes/{}/contributors/{}/'.format(
             API_BASE, project._id, user_read_contrib._id)
-        contributor_id = '{}-{}'.format(project._id, user_read_contrib._id)
+        contributor_id = f'{project._id}-{user_read_contrib._id}'
         data = {
             'data': {
                 'id': contributor_id,

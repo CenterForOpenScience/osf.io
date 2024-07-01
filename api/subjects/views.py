@@ -13,7 +13,7 @@ from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class SubjectMixin(object):
+class SubjectMixin:
     """Mixin with convenience methods for retrieving the current subject based on the
     current URL. By default, fetches the current subject based on the subject_id kwarg.
     """
@@ -77,7 +77,7 @@ class SubjectRelationshipBaseView(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
 
     """
     serializer_class = SubjectsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_resource(self, check_object_permissions=True):
         raise NotImplementedError()
@@ -105,7 +105,7 @@ class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'subjects'
     view_name = 'subject-list'
 
-    ordering = ('is_other', '-id',)
+    ordering = ('is_other', '-id')
 
     def get_default_queryset(self):
         return optimize_subject_query(

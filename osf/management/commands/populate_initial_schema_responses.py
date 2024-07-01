@@ -80,7 +80,7 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

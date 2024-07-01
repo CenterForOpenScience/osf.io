@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 import os
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.db import models
 import markupsafe
@@ -43,15 +42,15 @@ class GitLabFile(GitLabFileNode, File):
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
         revision = revision or ref or branch
-        return super(GitLabFile, self).touch(auth_header, revision=revision, **kwargs)
+        return super().touch(auth_header, revision=revision, **kwargs)
 
-class GitLabProvider(object):
+class GitLabProvider:
     name = 'GitLab'
     short_name = 'gitlab'
     serializer = GitLabSerializer
 
     def __init__(self, account=None):
-        super(GitLabProvider, self).__init__()  # this does exactly nothing...
+        super().__init__()  # this does exactly nothing...
         # provide an unauthenticated session by default
         self.account = account
 
@@ -85,7 +84,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def folder_name(self):
         if self.complete:
-            return '{}/{}'.format(self.user, self.repo)
+            return f'{self.user}/{self.repo}'
         return None
 
     @property
@@ -136,7 +135,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.clear_auth()
 
     def delete(self, save=False):
-        super(NodeSettings, self).delete(save=False)
+        super().delete(save=False)
         self.deauthorize(log=False)
         if save:
             self.save()
@@ -144,7 +143,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def repo_url(self):
         if self.repo:
-            return 'https://{0}/{1}'.format(self.external_account.display_name, self.repo)
+            return f'https://{self.external_account.display_name}/{self.repo}'
 
     @property
     def short_url(self):
@@ -158,7 +157,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def to_json(self, user):
 
-        ret = super(NodeSettings, self).to_json(user)
+        ret = super().to_json(user)
         user_settings = user.get_addon('gitlab')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
@@ -184,7 +183,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'gitlab_user': self.user or '',
                 'gitlab_repo': self.repo or '',
                 'gitlab_repo_id': self.repo_id if self.repo_id is not None else '0',
-                'gitlab_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
+                'gitlab_repo_full_name': f'{self.user} / {self.repo}' if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
@@ -224,12 +223,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         else:
             sha = metadata['extra']['fileSha']
             urls = {
-                'view': '{0}?branch={1}'.format(url, sha),
-                'download': '{0}?action=download&branch={1}'.format(url, sha)
+                'view': f'{url}?branch={sha}',
+                'download': f'{url}?action=download&branch={sha}'
             }
 
         self.owner.add_log(
-            'gitlab_{0}'.format(action),
+            f'gitlab_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,
@@ -237,7 +236,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'path': path,
                 'urls': urls,
                 'gitlab': {
-                    'host': 'https://{0}'.format(self.external_account.display_name),
+                    'host': f'https://{self.external_account.display_name}',
                     'user': self.user,
                     'repo': self.repo,
                     'sha': sha,
@@ -318,7 +317,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         """
         try:
-            message = (super(NodeSettings, self).before_remove_contributor_message(node, removed) +
+            message = (super().before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
                 url=node.api_url + 'gitlab/tarball/'
@@ -344,8 +343,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.user_settings = None
             self.save()
             message = (
-                u'Because the GitLab add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
+                'Because the GitLab add-on for {category} "{title}" was authenticated '
+                'by {user}, authentication information has been deleted.'
             ).format(
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
@@ -355,7 +354,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    ' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -368,7 +367,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
         """
-        clone = super(NodeSettings, self).after_fork(
+        clone = super().after_fork(
             node, fork, user, save=False
         )
 

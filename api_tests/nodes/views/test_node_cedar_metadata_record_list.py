@@ -12,7 +12,7 @@ class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
 
         resp = app.get(f'/v2/nodes/{node_pub._id}/cedar_metadata_records/')
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 1
         assert cedar_record_for_node_pub._id in data_set
         assert cedar_draft_record_for_node_pub._id not in data_set
@@ -21,7 +21,7 @@ class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
 
         resp = app.get(f'/v2/nodes/{node_pub._id}/cedar_metadata_records/', auth=user_alt.auth)
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 1
         assert cedar_record_for_node_pub._id in data_set
         assert cedar_draft_record_for_node_pub._id not in data_set
@@ -33,7 +33,7 @@ class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
         node_pub.save()
         resp = app.get(f'/v2/nodes/{node_pub._id}/cedar_metadata_records/', auth=read.auth)
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 1
         assert cedar_record_for_node_pub._id in data_set
         assert cedar_draft_record_for_node_pub._id not in data_set
@@ -45,7 +45,7 @@ class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
         node_pub.save()
         resp = app.get(f'/v2/nodes/{node_pub._id}/cedar_metadata_records/', auth=write.auth)
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 2
         assert cedar_record_for_node_pub._id in data_set
         assert cedar_draft_record_for_node_pub._id in data_set
@@ -57,7 +57,7 @@ class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
         node_pub.save()
         resp = app.get(f'/v2/nodes/{node_pub._id}/cedar_metadata_records/', auth=admin.auth)
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 2
         assert cedar_record_for_node_pub._id in data_set
         assert cedar_draft_record_for_node_pub._id in data_set
@@ -83,7 +83,7 @@ class TestNodeCedarMetadataRecordListPrivateProject(TesNodeCedarMetadataRecord):
         node.save()
         resp = app.get(f'/v2/nodes/{node._id}/cedar_metadata_records/', auth=read.auth)
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 1
         assert cedar_record_for_node._id in data_set
         assert cedar_draft_record_for_node._id not in data_set
@@ -95,7 +95,7 @@ class TestNodeCedarMetadataRecordListPrivateProject(TesNodeCedarMetadataRecord):
         node.save()
         resp = app.get(f'/v2/nodes/{node._id}/cedar_metadata_records/', auth=write.auth)
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 2
         assert cedar_record_for_node._id in data_set
         assert cedar_draft_record_for_node._id in data_set
@@ -107,7 +107,7 @@ class TestNodeCedarMetadataRecordListPrivateProject(TesNodeCedarMetadataRecord):
         node.save()
         resp = app.get(f'/v2/nodes/{node._id}/cedar_metadata_records/', auth=admin.auth)
         assert resp.status_code == 200
-        data_set = set([datum['id'] for datum in resp.json['data']])
+        data_set = {datum['id'] for datum in resp.json['data']}
         assert len(data_set) == 2
         assert cedar_record_for_node._id in data_set
         assert cedar_draft_record_for_node._id in data_set

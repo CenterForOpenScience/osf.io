@@ -1,5 +1,4 @@
 """Views for the node settings page."""
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 import logging
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import string
 import random
 
@@ -12,7 +11,7 @@ from osf.utils.fields import EncryptedTextField, SENSITIVE_DATA_KEY, ensure_byte
 from .factories import ExternalAccountFactory
 
 @pytest.mark.django_db
-class TestEncryptedExternalAccountFields(object):
+class TestEncryptedExternalAccountFields:
     def setup_class(self):
         self.magic_string = ''.join(random.choice(string.hexdigits) for _ in range(25))
 
@@ -26,7 +25,7 @@ class TestEncryptedExternalAccountFields(object):
         ea.reload()
 
         for field_name, value in self.encrypted_field_dict.items():
-                assert self.encrypted_field_dict[field_name] == getattr(ea, field_name)
+            assert self.encrypted_field_dict[field_name] == getattr(ea, field_name)
 
     def test_database_is_encrypted(self):
         eaf = ExternalAccountFactory(**self.encrypted_field_dict)
@@ -60,13 +59,13 @@ class TestEncryptedTextField:
         assert isinstance(my_str, bytes)
 
     def test_ensure_bytes_encodes_no_unicode_in_string_type_unicode(self):
-        my_value = u'hello'
+        my_value = 'hello'
         assert isinstance(my_value, str)
         my_str = ensure_bytes(my_value)
         assert isinstance(my_str, bytes)
 
     def test_ensure_bytes_encodes_unicode_in_string_type_unicode(self):
-        my_value = u'hellü'
+        my_value = 'hellü'
         assert isinstance(my_value, str)
         my_str = ensure_bytes(my_value)
         assert isinstance(my_str, bytes)
@@ -98,7 +97,7 @@ class TestEncryptedTextField:
         assert my_value_decrypted == ensure_bytes(my_value).decode()
 
     def test_encrypt_and_decrypt_no_unicode_in_string_type_unicode(self, field):
-        my_value = u'hello'
+        my_value = 'hello'
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         assert isinstance(my_value_encrypted, str)
@@ -108,7 +107,7 @@ class TestEncryptedTextField:
         assert my_value_decrypted == str(my_value)
 
     def test_encrypt_and_decrypt_unicode_in_string_type_unicode(self, field):
-        my_value = u'hellü'
+        my_value = 'hellü'
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         assert isinstance(my_value_encrypted, str)
@@ -116,7 +115,7 @@ class TestEncryptedTextField:
         my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)
         assert my_value_decrypted == ensure_bytes(my_value).decode()
 
-        my_value = u'찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol'
+        my_value = '찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol'
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)

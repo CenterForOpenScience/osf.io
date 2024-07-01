@@ -276,7 +276,7 @@ class TestPreprintContributorOrdering:
 
     @pytest.fixture()
     def url_contrib_base(self, preprint):
-        return '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/contributors/'
 
     @pytest.fixture()
     def url_creator(self, user, preprint):
@@ -319,9 +319,9 @@ class TestPreprintContributorOrdering:
             self, app, user, contribs, preprint, contrib_user_id, url_contrib_base):
         with assert_latest_log(PreprintLog.CONTRIB_REORDERED, preprint):
             contributor_to_move = contribs[0]._id
-            contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+            contributor_id = f'{preprint._id}-{contributor_to_move}'
             former_second_contributor = contribs[1]
-            url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+            url = f'{url_contrib_base}{contributor_to_move}/'
             data = {
                 'data': {
                     'id': contributor_id,
@@ -335,7 +335,7 @@ class TestPreprintContributorOrdering:
             assert res_patch.status_code == 200
             preprint.reload()
             res = app.get(
-                '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id), auth=user.auth)
+                f'/{API_BASE}preprints/{preprint._id}/contributors/', auth=user.auth)
             assert res.status_code == 200
             contributor_list = res.json['data']
             assert contrib_user_id(contributor_list[1]) == contributor_to_move
@@ -346,9 +346,9 @@ class TestPreprintContributorOrdering:
             self, app, user, contribs, preprint,
             contrib_user_id, url_contrib_base):
         contributor_to_move = contribs[1]._id
-        contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+        contributor_id = f'{preprint._id}-{contributor_to_move}'
         former_first_contributor = contribs[0]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -374,9 +374,9 @@ class TestPreprintContributorOrdering:
             contrib_user_id, last_position,
             url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+        contributor_id = f'{preprint._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -403,10 +403,10 @@ class TestPreprintContributorOrdering:
             contrib_user_id, last_position,
             url_contrib_base):
         contributor_to_move = contribs[last_position]._id
-        contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+        contributor_id = f'{preprint._id}-{contributor_to_move}'
         former_second_to_last_contributor = contribs[last_position - 1]
 
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -433,10 +433,10 @@ class TestPreprintContributorOrdering:
             contrib_user_id, last_position,
             url_contrib_base):
         contributor_to_move = contribs[last_position - 1]._id
-        contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+        contributor_id = f'{preprint._id}-{contributor_to_move}'
         former_last_contributor = contribs[last_position]
 
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -462,9 +462,9 @@ class TestPreprintContributorOrdering:
     def test_move_top_contributor_down_to_second_to_last_position_with_negative_numbers(
             self, app, user, contribs, preprint, contrib_user_id, last_position, url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+        contributor_id = f'{preprint._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -489,9 +489,9 @@ class TestPreprintContributorOrdering:
     def test_write_contributor_fails_to_move_top_contributor_down_one(
             self, app, user, contribs, preprint, contrib_user_id, url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+        contributor_id = f'{preprint._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -518,9 +518,9 @@ class TestPreprintContributorOrdering:
     def test_non_authenticated_fails_to_move_top_contributor_down_one(
             self, app, user, contribs, preprint, contrib_user_id, url_contrib_base):
         contributor_to_move = contribs[0]._id
-        contributor_id = '{}-{}'.format(preprint._id, contributor_to_move)
+        contributor_id = f'{preprint._id}-{contributor_to_move}'
         former_second_contributor = contribs[1]
-        url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+        url = f'{url_contrib_base}{contributor_to_move}/'
         data = {
             'data': {
                 'id': contributor_id,
@@ -608,7 +608,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 409
 
     #   test_change_contributor_no_type
-        contrib_id = '{}-{}'.format(preprint._id, contrib._id)
+        contrib_id = f'{preprint._id}-{contrib._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -642,7 +642,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 409
 
     #   test_invalid_change_inputs_contributor
-        contrib_id = '{}-{}'.format(preprint._id, contrib._id)
+        contrib_id = f'{preprint._id}-{contrib._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -702,7 +702,7 @@ class TestPreprintContributorUpdate:
 
     def test_change_admin_self_without_other_admin(
             self, app, user, preprint, url_creator):
-        contrib_id = '{}-{}'.format(preprint._id, user._id)
+        contrib_id = f'{preprint._id}-{user._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -741,7 +741,7 @@ class TestPreprintContributorUpdate:
 
     def test_change_contributor_correct_id(
             self, app, user, contrib, preprint, url_contrib):
-        contrib_id = '{}-{}'.format(preprint._id, contrib._id)
+        contrib_id = f'{preprint._id}-{contrib._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -761,7 +761,7 @@ class TestPreprintContributorUpdate:
     def test_remove_all_bibliographic_statuses_contributors(
             self, app, user, contrib, preprint, url_creator):
         preprint.set_visible(contrib, False, save=True)
-        contrib_id = '{}-{}'.format(preprint._id, user._id)
+        contrib_id = f'{preprint._id}-{user._id}'
         data = {
             'data': {
                 'id': contrib_id,
@@ -782,7 +782,7 @@ class TestPreprintContributorUpdate:
 
     def test_change_contributor_permissions(
             self, app, user, contrib, preprint, url_contrib):
-        contrib_id = '{}-{}'.format(preprint._id, contrib._id)
+        contrib_id = f'{preprint._id}-{contrib._id}'
 
         with assert_latest_log(PreprintLog.PERMISSIONS_UPDATED, preprint):
             data = {
@@ -843,7 +843,7 @@ class TestPreprintContributorUpdate:
 
     def test_change_contributor_bibliographic(
             self, app, user, contrib, preprint, url_contrib):
-        contrib_id = '{}-{}'.format(preprint._id, contrib._id)
+        contrib_id = f'{preprint._id}-{contrib._id}'
         with assert_latest_log(PreprintLog.MADE_CONTRIBUTOR_INVISIBLE, preprint):
             data = {
                 'data': {
@@ -883,7 +883,7 @@ class TestPreprintContributorUpdate:
     def test_change_contributor_permission_and_bibliographic(
             self, app, user, contrib, preprint, url_contrib):
         with assert_latest_log(PreprintLog.PERMISSIONS_UPDATED, preprint, 1), assert_latest_log(PreprintLog.MADE_CONTRIBUTOR_INVISIBLE, preprint):
-            contrib_id = '{}-{}'.format(preprint._id, contrib._id)
+            contrib_id = f'{preprint._id}-{contrib._id}'
             data = {
                 'data': {
                     'id': contrib_id,
@@ -908,7 +908,7 @@ class TestPreprintContributorUpdate:
     def test_not_change_contributor(
             self, app, user, contrib, preprint, url_contrib):
         with assert_latest_log_not(PreprintLog.PERMISSIONS_UPDATED, preprint):
-            contrib_id = '{}-{}'.format(preprint._id, contrib._id)
+            contrib_id = f'{preprint._id}-{contrib._id}'
             data = {
                 'data': {
                     'id': contrib_id,
@@ -933,7 +933,7 @@ class TestPreprintContributorUpdate:
             self, app, user, contrib, preprint, url_creator):
         with assert_latest_log(PreprintLog.PERMISSIONS_UPDATED, preprint):
             preprint.add_permission(contrib, permissions.ADMIN, save=True)
-            contrib_id = '{}-{}'.format(preprint._id, user._id)
+            contrib_id = f'{preprint._id}-{user._id}'
             data = {
                 'data': {
                     'id': contrib_id,
@@ -981,7 +981,7 @@ class TestPreprintContributorPartialUpdate:
             API_BASE, self.preprint._id, self.user_two._id)
 
     def test_patch_bibliographic_only(self, app, user, preprint, url_creator):
-        creator_id = '{}-{}'.format(preprint._id, user._id)
+        creator_id = f'{preprint._id}-{user._id}'
         data = {
             'data': {
                 'id': creator_id,
@@ -1006,7 +1006,7 @@ class TestPreprintContributorPartialUpdate:
             save=True)
         url_read_contrib = '/{}preprints/{}/contributors/{}/'.format(
             API_BASE, preprint._id, user_read_contrib._id)
-        contributor_id = '{}-{}'.format(preprint._id, user_read_contrib._id)
+        contributor_id = f'{preprint._id}-{user_read_contrib._id}'
         data = {
             'data': {
                 'id': contributor_id,

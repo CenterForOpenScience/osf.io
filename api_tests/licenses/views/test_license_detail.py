@@ -9,7 +9,7 @@ class TestLicenseDetail:
 
     def test_license_detail(self, app):
         license_node = NodeLicense.objects.first()
-        url_license = '/{}licenses/{}/'.format(API_BASE, license_node._id)
+        url_license = f'/{API_BASE}licenses/{license_node._id}/'
         res_license = app.get(url_license)
         data_license = res_license.json['data']
 

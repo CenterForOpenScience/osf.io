@@ -8,6 +8,7 @@ TEMPLATE_PATH = os.path.join(HERE, 'templates')
 
 class BoaAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.boa'
     label = 'addons_boa'
     full_name = 'Boa'

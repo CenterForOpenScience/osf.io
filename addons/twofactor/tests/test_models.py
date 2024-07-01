@@ -1,10 +1,8 @@
 import unittest
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
+from urllib.parse import urlparse, urljoin, parse_qs
 
 import pytest
 from addons.twofactor.tests.utils import _valid_code
-from nose.tools import (assert_equal, assert_false, assert_is_none,
-                        assert_is_not_none, assert_true)
 from osf_tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -12,16 +10,16 @@ pytestmark = pytest.mark.django_db
 
 class TestCallbacks(unittest.TestCase):
     def setUp(self):
-        super(TestCallbacks, self).setUp()
+        super().setUp()
 
         self.user = UserFactory()
         self.user.add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
 
     def test_add_to_user(self):
-        assert_equal(self.user_settings.totp_drift, 0)
-        assert_is_not_none(self.user_settings.totp_secret)
-        assert_false(self.user_settings.is_confirmed)
+        assert self.user_settings.totp_drift == 0
+        assert self.user_settings.totp_secret is not None
+        assert not self.user_settings.is_confirmed
 
     def test_remove_from_unconfirmed_user(self):
         # drift defaults to 0. Change it so we can test it was changed back.
@@ -31,9 +29,9 @@ class TestCallbacks(unittest.TestCase):
         self.user.delete_addon('twofactor')
         self.user_settings.reload()
 
-        assert_equal(self.user_settings.totp_drift, 0)
-        assert_is_none(self.user_settings.totp_secret)
-        assert_false(self.user_settings.is_confirmed)
+        assert self.user_settings.totp_drift == 0
+        assert self.user_settings.totp_secret is None
+        assert not self.user_settings.is_confirmed
 
     def test_remove_from_confirmed_user(self):
         # drift defaults to 0. Change it so we can test it was changed back.
@@ -44,17 +42,17 @@ class TestCallbacks(unittest.TestCase):
         self.user.delete_addon('twofactor')
         self.user_settings.reload()
 
-        assert_equal(self.user_settings.totp_drift, 0)
-        assert_is_none(self.user_settings.totp_secret)
-        assert_false(self.user_settings.is_confirmed)
+        assert self.user_settings.totp_drift == 0
+        assert self.user_settings.totp_secret is None
+        assert not self.user_settings.is_confirmed
 
 
 class TestUserSettingsModel(unittest.TestCase):
     TOTP_SECRET = 'b8f85986068f8079aa9d'
-    TOTP_SECRET_B32 = 'XD4FTBQGR6AHTKU5'
+    TOTP_SECRET_B32 = 'MI4GMOBVHE4DMMBWHBTDQMBXHFQWCOLE'
 
     def setUp(self):
-        super(TestUserSettingsModel, self).setUp()
+        super().setUp()
 
         self.user = UserFactory()
         self.user.add_addon('twofactor')
@@ -64,29 +62,26 @@ class TestUserSettingsModel(unittest.TestCase):
         self.user_settings.save()
 
     def tearDown(self):
-        super(TestUserSettingsModel, self).tearDown()
+        super().tearDown()
         self.user.__class__.delete(self.user)
 
     def test_b32(self):
-        assert_equal(self.user_settings.totp_secret_b32, self.TOTP_SECRET_B32)
+        assert self.user_settings.totp_secret_b32 == self.TOTP_SECRET_B32
 
     def test_otpauth_url(self):
         url = urlparse(self.user_settings.otpauth_url)
 
-        assert_equal(url.scheme, 'otpauth')
-        assert_equal(url.netloc, 'totp')
-        assert_equal(url.path, '/OSF:{}'.format(self.user.username))
-        assert_equal(
-            parse_qs(url.query),
+        assert url.scheme == 'otpauth'
+        assert url.netloc == 'totp'
+        assert url.path == f'/OSF:{self.user.username}'
+        assert parse_qs(url.query) == \
             {'secret': [self.TOTP_SECRET_B32]}
-        )
 
     def test_json(self):
         # url = 'otpauth://totp/OSF:{}?secret=' + self.TOTP_SECRET_B32
 
         settings = self.user_settings.to_json(user=None)
-        assert_equal(
-            settings,
+        assert settings == \
             {
                 'is_enabled': True,
                 'addon_full_name': 'Two-factor Authentication',
@@ -97,35 +92,26 @@ class TestUserSettingsModel(unittest.TestCase):
                 'secret': self.TOTP_SECRET_B32,
                 'has_auth': False,
             }
-        )
 
     def test_verify_valid_code(self):
-        assert_true(
-            self.user_settings.verify_code(_valid_code(self.TOTP_SECRET))
-        )
+        assert self.user_settings.verify_code(_valid_code(self.TOTP_SECRET))
 
     def test_verify_valid_core_drift(self):
         # use a code from 30 seconds in the future
-        assert_true(
-            self.user_settings.verify_code(
+        assert self.user_settings.verify_code(
                 _valid_code(self.TOTP_SECRET, drift=1)
             )
-        )
 
         # make sure drift is updated.
-        assert_equal(self.user_settings.totp_drift, 1)
+        assert self.user_settings.totp_drift == 1
 
         # use a code from 60 seconds in the future
-        assert_true(
-            self.user_settings.verify_code(
+        assert self.user_settings.verify_code(
                 _valid_code(self.TOTP_SECRET, drift=2)
             )
-        )
 
         # make sure drift is updated.
-        assert_equal(self.user_settings.totp_drift, 2)
+        assert self.user_settings.totp_drift == 2
 
         # use the current code (which is now 2 periods away from the drift)
-        assert_false(
-            self.user_settings.verify_code(_valid_code(self.TOTP_SECRET))
-        )
+        assert not self.user_settings.verify_code(_valid_code(self.TOTP_SECRET))

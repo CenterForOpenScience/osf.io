@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from framework.routing import Rule, json_renderer
 
 from addons.owncloud import views

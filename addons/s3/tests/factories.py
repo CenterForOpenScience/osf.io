@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Factories for the S3 addon."""
 import factory
 from factory.django import DjangoModelFactory
@@ -11,9 +10,9 @@ from addons.s3.models import (
 
 class S3AccountFactory(ExternalAccountFactory):
     provider = 's3'
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
-    oauth_secret = factory.Sequence(lambda n: 'secret-{0}'.format(n))
+    provider_id = factory.Sequence(lambda n: f'id-{n}')
+    oauth_key = factory.Sequence(lambda n: f'key-{n}')
+    oauth_secret = factory.Sequence(lambda n: f'secret-{n}')
     display_name = 'S3 Fake User'
 
 

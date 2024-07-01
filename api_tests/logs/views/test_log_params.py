@@ -16,7 +16,7 @@ class TestLogContributors(LogsTestCase):
 
     def test_contributor_added_log_has_contributor_info_in_params(
             self, app, node_private, contributor_log_private, url_logs, user_one):
-        url = '{}{}/'.format(url_logs, contributor_log_private._id)
+        url = f'{url_logs}{contributor_log_private._id}/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         params = res.json['data']['attributes']['params']
@@ -40,7 +40,7 @@ class TestLogContributors(LogsTestCase):
             auth=Auth(user_one), save=True
         )
         relevant_log = project.logs.latest()
-        url = '/{}logs/{}/'.format(API_BASE, relevant_log._id)
+        url = f'/{API_BASE}logs/{relevant_log._id}/'
         res = app.get(url, auth=user_one.auth)
 
         assert res.status_code == 200
@@ -64,7 +64,7 @@ class TestLogContributors(LogsTestCase):
         private_link.nodes.add(node_private)
         private_link.save()
 
-        url = '{}{}/'.format(url_logs, contributor_log_private._id)
+        url = f'{url_logs}{contributor_log_private._id}/'
 
         res = app.get(url, {'view_only': private_link.key}, expect_errors=True)
         assert res.status_code == 200

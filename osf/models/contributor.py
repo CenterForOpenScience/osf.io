@@ -33,7 +33,7 @@ class Contributor(AbstractBaseContributor):
 
     @property
     def _id(self):
-        return '{}-{}'.format(self.node._id, self.user._id)
+        return f'{self.node._id}-{self.user._id}'
 
     class Meta:
         unique_together = ('user', 'node')
@@ -47,7 +47,7 @@ class PreprintContributor(AbstractBaseContributor):
 
     @property
     def _id(self):
-        return '{}-{}'.format(self.preprint._id, self.user._id)
+        return f'{self.preprint._id}-{self.user._id}'
 
     @property
     def permission(self):
@@ -76,7 +76,7 @@ class DraftRegistrationContributor(AbstractBaseContributor):
 
     @property
     def _id(self):
-        return '{}-{}'.format(self.draft_registration._id, self.user._id)
+        return f'{self.draft_registration._id}-{self.user._id}'
 
     class Meta:
         unique_together = ('user', 'draft_registration')

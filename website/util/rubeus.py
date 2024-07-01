@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
@@ -34,8 +33,8 @@ DEFAULT_PERMISSIONS = {
 
 def default_urls(node_api, short_name):
     return {
-        'fetch': u'{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
-        'upload': u'{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
+        'fetch': f'{node_api}{short_name}/hgrid/',
+        'upload': f'{node_api}{short_name}/',
     }
 
 
@@ -74,7 +73,7 @@ def build_addon_root(node_settings, name, permissions=None,
 
     permissions = permissions or DEFAULT_PERMISSIONS
     if name and not check_private_key_for_anonymized_link(private_key):
-        name = u'{0}: {1}'.format(node_settings.config.full_name, name)
+        name = f'{node_settings.config.full_name}: {name}'
     else:
         name = node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
@@ -139,7 +138,7 @@ def build_addon_button(text, action, title=''):
         'action': action,
     }
     if title:
-        button['attributes'] = 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title)
+        button['attributes'] = f'title="{title}" data-toggle="tooltip" data-placement="right" '
     return button
 
 
@@ -150,7 +149,7 @@ def sort_by_name(hgrid_data):
     return return_value
 
 
-class NodeFileCollector(object):
+class NodeFileCollector:
 
     """A utility class for creating rubeus formatted node data"""
     def __init__(self, node, auth, **kwargs):
@@ -266,10 +265,10 @@ class NodeFileCollector(object):
                         getattr(
                             e,
                             'data',
-                            'Unexpected error when fetching file contents for {0}.'.format(addon.config.full_name)
+                            f'Unexpected error when fetching file contents for {addon.config.full_name}.'
                         )
                     )
-                    sentry.log_exception()
+                    sentry.log_exception(e)
                     return_value.append({
                         KIND: FOLDER,
                         'unavailable': True,
@@ -277,7 +276,7 @@ class NodeFileCollector(object):
                         'provider': addon.config.short_name,
                         'addonFullname': addon.config.full_name,
                         'permissions': {'view': False, 'edit': False},
-                        'name': '{} is currently unavailable'.format(addon.config.full_name),
+                        'name': f'{addon.config.full_name} is currently unavailable',
                     })
                     continue
                 return_value.extend(sort_by_name(temp) or [])

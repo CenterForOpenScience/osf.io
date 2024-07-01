@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Factory boy factories for the Forward addon."""
 
 from factory import SubFactory
