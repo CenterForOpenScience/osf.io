@@ -843,7 +843,10 @@ msgstr ""
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:129
 #: admin/templates/institutions/user_list_by_institute.html:181
-msgid "Value must be an integer number greater than or equal 1"
+msgid "Value must be an integer number greater than or equal 0"
+msgstr ""
+
+msgid "Please enter Each user Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr ""
 
 #: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:134
@@ -987,6 +990,9 @@ msgstr ""
 
 #: admin/templates/institutions/institution_list.html:11
 #: admin/templates/institutions/institution_list.html:14
+msgid "List of Institutions using NII storage"
+msgstr ""
+
 #: admin/templates/institutions/list.html:11
 #: admin/templates/institutions/list.html:14
 #: admin/templates/rdm_keymanagement/institutions.html:11
@@ -999,6 +1005,9 @@ msgid "List of Institutions"
 msgstr ""
 
 #: admin/templates/institutions/institution_list.html:23
+msgid "Recalculate quota for all institutions"
+msgstr ""
+
 #: admin/templates/institutions/statistical_status_default_storage_user.html:12
 msgid "Recalculate quota"
 msgstr ""
@@ -1090,6 +1099,10 @@ msgstr "Fullname"
 # msgstr ""
 #: admin/templates/institutions/user_list_by_institute.html:175
 msgid "Each user Quota for NII Storage (GB)"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:181
+msgid "Please enter Each user Quota for NII Storage (GB) within 0~2147483647."
 msgstr ""
 
 #: admin/templates/institutions/user_list_by_institute.html:193
@@ -3715,6 +3728,14 @@ msgid "Cannot abort this export process"
 msgstr ""
 
 msgid "Cannot be restored because export data does not exist"
+msgstr ""
+
+#: admin/templates/users/user.html:310
+msgid "Please enter Quota for NII Storage (GB) within 0~2147483647."
+msgstr ""
+
+#: admin/templates/users/user_details.html:62
+msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr ""
 
 msgid "User Identification Information"

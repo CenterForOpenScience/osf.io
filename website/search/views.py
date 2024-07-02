@@ -347,7 +347,7 @@ def process_project_search_results(results, **kwargs):
     return ret
 
 
-@collect_auth
+@must_be_logged_in
 def search_contributor(auth):
     user = auth.user if auth else None
     nid = request.args.get('excludeNode')

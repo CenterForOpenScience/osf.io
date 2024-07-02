@@ -456,10 +456,8 @@ class TestOAuthScopedAccess(ApiTestCase):
             'users/{}/'.format(self.user2._id),
             base_route='/', base_prefix='v2/'
         )
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        assert_equal(res.status_code, 200)
-        assert_not_in('email', res.json['data']['attributes'])
-        assert_not_in(self.user2.username, res.json)
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 @pytest.mark.django_db

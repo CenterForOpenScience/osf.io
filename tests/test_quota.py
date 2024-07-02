@@ -1429,6 +1429,44 @@ class TestUpdateUserUsedQuota(OsfTestCase):
         user_quota = user_quota[0]
         assert_equal(user_quota.used, 500)
 
+    @mock.patch('website.util.quota.used_quota')
+    def test_update_user_used_quota_method_for_recalculate_quota_process__nii_default_storage(self, mock_used):
+        mock_used.return_value = 500
+        quota.update_user_used_quota(
+            user=self.user,
+            storage_type=UserQuota.NII_STORAGE,
+            is_recalculating_quota=True,
+        )
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user,
+            storage_type=UserQuota.NII_STORAGE,
+        ).all()
+
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota.first()
+        assert_equal(user_quota.used, 500)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_update_user_used_quota_method_for_recalculate_quota_process__nii_custom_storage(self, mock_used):
+        mock_used.return_value = 500
+        UserQuota.objects.create(user=self.user, storage_type=UserQuota.CUSTOM_STORAGE, max_quota=300,
+                                 used=100)
+        quota.update_user_used_quota(
+            user=self.user,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            is_recalculating_quota=True,
+        )
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+        ).all()
+
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota.first()
+        assert_equal(user_quota.used, 1000)
+
 
 class TestQuotaApiWaterbutler(OsfTestCase):
     def setUp(self):
