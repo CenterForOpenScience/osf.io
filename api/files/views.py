@@ -30,6 +30,7 @@ from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer
 from api.files.serializers import FileVersionSerializer
 from osf.utils.permissions import ADMIN
+from api.files.permissions import RegistrationFileDetailPermission
 
 
 class FileMixin(object):
@@ -57,6 +58,9 @@ class FileMixin(object):
             if obj.target.creator.is_disabled:
                 raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
 
+        if getattr(obj.target, 'is_retracted', False):
+            raise Gone(detail='The requested file is no longer available.')
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -72,6 +76,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'target'),
+        RegistrationFileDetailPermission,
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
