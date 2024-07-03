@@ -1572,7 +1572,7 @@ class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeM
 
     def get_object(self):
         node = self.get_node()
-        return NodeStorageProvider(node, node.get_addon(self.kwargs['provider']))
+        return NodeStorageProvider(node, provider_settings=node.get_addon(self.kwargs['provider']))
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
