@@ -1,4 +1,7 @@
 import re
+import typing
+
+import dataclasses
 
 from distutils.version import StrictVersion
 from django.apps import apps
@@ -1470,22 +1473,51 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
             raise HTTP_CODE_MAP.get(exc.code, exc)
 
 
-class NodeStorageProvider(object):
+@dataclasses.dataclass
+class NodeStorageProvider:
 
-    def __init__(self, node, provider_name, storage_addon=None):
-        self.path = '/'
-        self.node = node
-        self.kind = 'folder'
-        self.name = provider_name
-        self.provider = provider_name
-        self.node_id = node._id
-        self.pk = node._id
-        self.id = node.id
-        self.root_folder = storage_addon.root_node if storage_addon else None
+    resource: typing.Any
+    provider_name: str = None
+    provider_settings: typing.Any = None  # NodeSettings or EphemeralSettings
+    path: str = '/'
+    kind: str = 'folder'
+
+    @property
+    def node(self):
+        return self.resource
 
     @property
     def target(self):
-        return self.node
+        return self.resource
+
+    @property
+    def provider(self):
+        return self.provider_name or self.provider_settings.short_name
+
+    @property
+    def name(self):
+        if self.provider_settings:
+            return self.provider_settings.display_name
+        return self.provider_name
+
+    @property
+    def node_id(self):
+        return self.resource._id
+
+    @property
+    def pk(self):
+        return self.resource._id
+
+    @property
+    def id(self):
+        return self.resource.id
+
+    @property
+    def root_folder(self):
+        if self.provider_settings:
+            return self.provider_settings.root_node
+        return None
+
 
 class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).
@@ -1508,17 +1540,18 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     def get_provider_item(self, storage_addon, node=None):
         node = node or self.get_node()
-        return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
+        return NodeStorageProvider(resource=node, provider_settings=storage_addon)
 
     def get_queryset(self):
         node = self.get_node()
         return [
             self.get_provider_item(addon, node=node)
             for addon
-            in self.get_node().get_addons()
+            in node.get_addons()
             if addon.config.has_hgrid_files
             and addon.configured
         ]
+
 
 class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_read).
@@ -1538,7 +1571,8 @@ class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeM
     view_name = 'node-storage-provider-detail'
 
     def get_object(self):
-        return NodeStorageProvider(self.get_node(), self.kwargs['provider'])
+        node = self.get_node()
+        return NodeStorageProvider(node, node.get_addon(self.kwargs['provider']))
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):

@@ -377,6 +377,10 @@ class BaseNodeSettings(BaseAddonSettings):
         """Whether the node has added credentials for this addon."""
         return False
 
+    @property
+    def display_name(self):
+        return self.short_name
+
     def to_json(self, user):
         ret = super(BaseNodeSettings, self).to_json(user)
         ret.update({
