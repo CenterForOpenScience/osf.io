@@ -1,6 +1,7 @@
 import pytz
 import markupsafe
 import logging
+import waffle
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
@@ -30,6 +31,7 @@ from .subject import Subject
 from .spam import SpamMixin, SpamStatus
 from .validators import validate_title
 from .tag import Tag
+from osf import features
 from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField

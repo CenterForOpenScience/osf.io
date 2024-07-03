@@ -1,7 +1,9 @@
+import waffle
 from builtins import str
 
 from collections import defaultdict
 from distutils.version import StrictVersion
+from framework.auth import Auth
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
@@ -40,11 +42,12 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ExcludeWithdrawals
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
+from osf import features
 from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
 from waffle import sample_is_active
-
+from addons.base.utils import GravyValetAddonAppConfig
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -626,14 +629,28 @@ class WaterButlerMixin(object):
         """
         node = self.get_node(check_object_permissions=False)
         content_type = ContentType.objects.get_for_model(node)
+        from addons.base.utils import GravyValetAddonAppConfig
 
         objs_to_create = defaultdict(lambda: [])
         file_objs = []
 
+        provider_short_name = files_list[0]['provider']
+
+        if waffle.flag_is_active(self.request, features.ENABLE_GV):
+            user = getattr(self.request, 'user', None)
+            gv_config = GravyValetAddonAppConfig(
+                resource=self,
+                config_id=provider_short_name,
+                auth=user,
+            )
+            provider_short_name = gv_config.addon_name
+
+
         for item in files_list:
             attrs = item['attributes']
+
             base_class = BaseFileNode.resolve_class(
-                attrs['provider'],
+                provider_short_name,
                 BaseFileNode.FOLDER if attrs['kind'] == 'folder'
                 else BaseFileNode.FILE,
             )
@@ -660,6 +677,10 @@ class WaterButlerMixin(object):
             else:
                 file_objs.append(file_obj)
 
+            # TODO: Improve robustness
+            if waffle.flag_is_active(self.request, features.ENABLE_GV):
+                file_obj.provider = gv_config.legacy_app_config.config_id
+
             file_obj.update(None, attrs, user=self.request.user, save=False)
 
         bulk_update(file_objs)
@@ -674,8 +695,17 @@ class WaterButlerMixin(object):
     def get_file_node_from_wb_resp(self, item):
         """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
         attrs = item['attributes']
+        if waffle.flag_is_active(self.request, features.ENABLE_GV):
+            provider_determinent = GravyValetAddonAppConfig(
+                self,
+                attrs['provider'],
+                get_user_auth(self.request),
+            ).legacy_app_config.short_name
+        else:
+            provider_determinent = attrs['provider']
+
         file_node = BaseFileNode.resolve_class(
-            attrs['provider'],
+            provider_determinent,
             BaseFileNode.FOLDER if attrs['kind'] == 'folder'
             else BaseFileNode.FILE,
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])

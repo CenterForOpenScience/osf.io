@@ -1,6 +1,11 @@
+import requests
 import markupsafe
 from os.path import basename
 from website.settings import MFR_SERVER_URL
+
+
+from api.caching import settings as cache_settings
+from api.caching.utils import legacy_addon_cache
 
 from website import settings
 
@@ -54,3 +59,77 @@ def format_last_known_metadata(auth, node, file, error_type):
         ]
         return ''.join(parts)
     return msg
+
+
+class GravyValetAddonAppConfig:
+
+    @staticmethod
+    def get_configured_storage_addons_data(config_id, user):
+        from osf.external.gravy_valet import auth_helpers as gv_auth
+        url = settings.GV_NODE_ADDON_ENDPOINT.format(config_id=config_id)
+
+        auth_headers = gv_auth.make_gravy_valet_hmac_headers(
+            request_url=url,
+            request_method='GET',
+            requesting_user=user,
+        )
+
+        resp = requests.get(url, headers=auth_headers)
+        resp.raise_for_status()
+        return resp.json()
+
+    @staticmethod
+    def get_authorized_storage_account(config_id, user):
+        from osf.external.gravy_valet import auth_helpers as gv_auth
+        url = settings.GV_USER_ADDON_ENDPOINT.format(config_id=config_id)
+        auth_headers = gv_auth.make_gravy_valet_hmac_headers(
+            request_url=url,
+            request_method='GET',
+            requesting_user=user,
+        )
+
+        resp = requests.get(url, headers=auth_headers)
+        resp.raise_for_status()
+        return resp.json()
+
+    def cache_config_id_translation(self):
+        """
+        Cache what legacy addon name corresponds to which config ids.
+        """
+
+        key = cache_settings.LEGACY_ADDON_KEY.format(target_id=self.config_id)
+        legacy_addon_cache.set(key, self.addon_name, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+
+    def __init__(self, resource, config_id, user):
+        self.resource = resource
+        self.user = user
+        self.FOLDER_SELECTED = self.legacy_app_config.FOLDER_SELECTED
+        self.NODE_AUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
+        self.NODE_DEAUTHORIZED = self.legacy_app_config.NODE_DEAUTHORIZED
+        self.actions = self.legacy_app_config.actions
+
+        from osf.models import OSFUser, AbstractNode
+        if isinstance(resource, AbstractNode):
+            self.gv_data = self.get_configured_storage_addons_data(config_id, user)
+        elif isinstance(resource, OSFUser):
+            self.gv_data = self.get_authorized_storage_account(config_id, user)
+        else:
+            raise NotImplementedError()
+
+        # TODO: Names in GV must be exact matches?
+        self.addon_name = self.gv_data['data']['embeds']['external_storage_service']['attributes']['name']
+        self.cache_config_id_translation()
+        self.legacy_app_config = settings.ADDONS_AVAILABLE_DICT[self.addon_name]
+
+
+    @property
+    def config(self):
+        return self.legacy_app_config
+
+    @property
+    def configured(self):
+        return True
+
+    @property
+    def config_id(self):
+        return self.gv_data.config_id

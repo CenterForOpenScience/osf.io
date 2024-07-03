@@ -3,6 +3,7 @@ import functools
 import itertools
 import logging
 import re
+import waffle
 from future.moves.urllib.parse import urljoin
 import warnings
 from rest_framework import status as http_status
@@ -54,6 +55,7 @@ from .tag import Tag
 from .user import OSFUser
 from .validators import validate_title, validate_doi
 from framework.auth.core import Auth
+from osf import features
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
@@ -79,11 +81,12 @@ from osf.utils.permissions import (
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.base.utils import get_user_auth
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
 from api.share.utils import update_share
-
+from addons.base.utils import GravyValetAddonAppConfig
 
 logger = logging.getLogger(__name__)
 
@@ -2429,6 +2432,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     comment='Rejected from collection via system command.',  # typically spam
                     force=True
                 )
+
+    def get_addon(self, name, is_deleted=False):
+        request, user_id = get_request_and_user_id()
+
+        if waffle.flag_is_active(request, features.ENABLE_GV) and name not in ('osfstorage', 'wiki'):
+            user = getattr(request, 'user', None)
+            return GravyValetAddonAppConfig(self, name, user)
+        else:
+            return super().get_addon(name, is_deleted)
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
