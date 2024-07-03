@@ -171,7 +171,7 @@ class SearchTestCase(unittest.TestCase):
 
 
 
-class OsfTestCase(DbTestCase, AppTestCase):#, SearchTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -179,7 +179,7 @@ class OsfTestCase(DbTestCase, AppTestCase):#, SearchTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase):#, SearchTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
