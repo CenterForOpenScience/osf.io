@@ -64,8 +64,8 @@ enabled_providers_forinstitutions_list = [
 ]
 
 enabled_providers_list = [
-    's3', 'box', 'googledrive', 'osfstorage',
-    'nextcloud', 'swift', 'owncloud', 's3compat',
+    's3', 'osfstorage',
+    'swift', 's3compat',
 ]
 enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
@@ -613,6 +613,7 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
             'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3',
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -645,6 +646,7 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
             'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3compat',
+            'type': Region.INSTITUTIONS,
         }
     }
 
@@ -678,6 +680,7 @@ def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_k
             },
             'bucket': bucket,
             'provider': 's3compatb3',
+            'type': Region.INSTITUTIONS,
         }
     }
 
@@ -706,6 +709,7 @@ def save_box_credentials(user, storage_name, folder_id):
             'bucket': '',
             'folder': folder_id,
             'provider': 'box',
+            'type': Region.INSTITUTIONS,
         }
     }
     region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
@@ -735,6 +739,7 @@ def save_googledrive_credentials(user, storage_name, folder_id):
                 'id': folder_id
             },
             'provider': 'googledrive',
+            'type': Region.INSTITUTIONS,
         }
     }
     region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
@@ -768,7 +773,8 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
             'bucket': '',
             'folder': '/{}/'.format(folder.strip('/')),
             'verify_ssl': False,
-            'provider': provider
+            'provider': provider,
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -812,6 +818,7 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
             'folder': '',
             'container': container,
             'provider': 'swift',
+            'type': Region.INSTITUTIONS,
         }
 
     }
@@ -847,7 +854,8 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
             'bucket': '',
             'folder': '/{}/'.format(folder.strip('/')),
             'verify_ssl': True,
-            'provider': provider
+            'provider': provider,
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -883,7 +891,8 @@ def wd_info_for_institutions(provider_name, server_side_encryption=False):
     wb_settings = {
         'disabled': True,  # used in rubeus.py
         'storage': {
-            'provider': provider_name
+            'provider': provider_name,
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -986,7 +995,7 @@ def save_s3compatinstitutions_credentials(institution, storage_name, host_url, a
         username=access_key, password=secret_key, separator=separator)
 
     return save_basic_storage_institutions_credentials_common(
-        institution, storage_name, bucket, provider_name, provider, separator, server_side_encryption)
+        institution, storage_name, bucket, provider_name, provider, separator, server_side_encryption=server_side_encryption)
 
 def save_ociinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')

@@ -21,9 +21,9 @@ urlpatterns = [
     url(r'^(?P<institution_id>[0-9]+)/register/$', views.InstitutionalMetricsAdminRegister.as_view(), name='register_metrics_admin'),
     url(r'^(?P<institution_id>[0-9]+)/update_quota/$', views.UpdateQuotaUserListByInstitutionID.as_view(), name='update_quota_institution_user_list'),
     url(r'^(?P<institution_id>[0-9]+)/tsvexport/$', views.ExportFileTSV.as_view(), name='tsvexport'),
-    url(r'^user_list_by_institution_id/(?P<institution_id>[0-9]+)/.*$', views.UserListByInstitutionID.as_view(), name='institution_user_list'),
+    url(r'^user_list_by_institution_id/(?P<institution_id>[0-9]+)/$', views.UserListByInstitutionID.as_view(), name='institution_user_list'),
     url(r'^statistical_status_default_storage/$', views.StatisticalStatusDefaultStorage.as_view(), name='statistical_status_default_storage'),
     url(r'^recalculate_quota/$', views.RecalculateQuota.as_view(), name='recalculate_quota'),
-    url(r'^recalculate_quota_of_users_in_institution/$',
-        views.RecalculateQuotaOfUsersInInstitution.as_view(), name='recalculate_quota_of_users_in_institution'),
+    url(r'^(?P<institution_id>[0-9]+)/recalculate_quota/$',
+        views.RecalculateQuota.as_view(), name='recalculate_quota_of_users_in_institution'),
 ]

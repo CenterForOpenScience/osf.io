@@ -177,13 +177,22 @@
                 <input type="number" name="maxQuota"
                        id="storageLimit" class="form-control flex-item"
                        style="width:70px; max-width: 115px; margin-left: 2px;"
-                       min="1" required="" value="100"
-                       oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
-                       oninput="setCustomValidity('')"
+                       min="0" max="2147483647" required="" value="100"
+                       oninvalid="this.setCustomValidity('{% trans 'Please enter Each user Quota for NII Storage (GB) within 0~2147483647.' %}')"
+                       oninput="validateMaxQuotaInput()"
+                       onKeyDown="preventDotInput(event)"
                 />
                 <button type="submit"
                         style="margin-left: 2px; flex-grow: 0;"
                         class="btn btn-primary next-btn flex-item">{% trans 'Apply' %}</button>
+            </div>
+        </form>
+    </div>
+    <div class="flex-item" style="flex-grow: 0; margin-left: 2em;">
+        <form method="post" action={% url 'institutions:recalculate_quota_of_users_in_institution' institution_id=institution_id %}>
+            <div>
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary pull-right">{% trans "Recalculate quota" %}</button>
             </div>
         </form>
     </div>
@@ -267,5 +276,19 @@
         !id_name && $id_name.val('').focus();
 
         return !!id_guid || (!!id_name && id_name.length <= 255) || !!id_email;
+    }
+    function validateMaxQuotaInput() {
+        let $max_quota = $('#storageLimit');
+        let max_quota = $max_quota.val();
+        if (!(/^[0-9]+$/.test(max_quota))) {
+            $max_quota.get(0).setCustomValidity('{% trans 'Please enter Each user Quota for NII Storage (GB) within 0~2147483647.' %}');
+        } else {
+            $max_quota.get(0).setCustomValidity('');
+        }
+    }
+    function preventDotInput(e) {
+        if (e.key !== undefined && e.key === '.') {
+            e.preventDefault();
+        }
     }
 </script>

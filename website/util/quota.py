@@ -12,6 +12,7 @@ from osf.models import (
     ProjectStorageType
 )
 from django.utils import timezone
+from osf.utils.requests import check_select_for_update
 
 
 PROVIDERS = ['s3', 's3compat']
@@ -49,14 +50,38 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
     return db_sum['filesize_sum'] if db_sum['filesize_sum'] is not None else 0
 
 
-def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE):
-    used = used_quota(user._id, storage_type)
+def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE, is_recalculating_quota=False):
+    """Update user's used quota
+
+    - If the function is called in recalculate quota process and storage_type parameter is 2 (for NII Storage),
+      update used quota for storage_type = 2 with total file size from projects with storage_type = 1 and 2
+    - Otherwise, update used quota for specified storage_type with total file size from projects with that storage_type
+
+    :param user: user to be updated used quota
+    :param storage_type: storage type
+    :param is_recalculating_quota: a boolean to know whether the function is used in recalculate quota process or not
+    """
+    if is_recalculating_quota and storage_type == UserQuota.CUSTOM_STORAGE:
+        # If the function is called in recalculate quota process and storage_type parameter is 2 (for NII Storage),
+        # get total file size of projects with storage_type 1 and 2
+        used_quota_for_nii_default_storage = used_quota(user._id, UserQuota.NII_STORAGE)
+        used_quota_for_nii_custom_storage = used_quota(user._id, UserQuota.CUSTOM_STORAGE)
+        used = used_quota_for_nii_default_storage + used_quota_for_nii_custom_storage
+    else:
+        # Get total file size of projects with specified storage_type
+        used = used_quota(user._id, storage_type)
 
     try:
-        user_quota = UserQuota.objects.get(
-            user=user,
-            storage_type=storage_type,
-        )
+        if check_select_for_update():
+            user_quota = UserQuota.objects.filter(
+                user=user,
+                storage_type=storage_type,
+            ).select_for_update().get()
+        else:
+            user_quota = UserQuota.objects.get(
+                user=user,
+                storage_type=storage_type,
+            )
         user_quota.used = used
         user_quota.save()
     except UserQuota.DoesNotExist:
@@ -215,10 +240,16 @@ def file_added(target, payload, file_node, storage_type):
     if file_size < 0:
         return
     try:
-        user_quota = UserQuota.objects.get(
-            user=target.creator,
-            storage_type=storage_type
-        )
+        if check_select_for_update():
+            user_quota = UserQuota.objects.filter(
+                user=target.creator,
+                storage_type=storage_type
+            ).select_for_update().get()
+        else:
+            user_quota = UserQuota.objects.get(
+                user=target.creator,
+                storage_type=storage_type
+            )
         user_quota.used += file_size
         user_quota.save()
     except UserQuota.DoesNotExist:
@@ -232,10 +263,16 @@ def file_added(target, payload, file_node, storage_type):
     FileInfo.objects.create(file=file_node, file_size=file_size)
 
 def node_removed(target, user, payload, file_node, storage_type):
-    user_quota = UserQuota.objects.filter(
-        user=target.creator,
-        storage_type=storage_type
-    ).first()
+    if check_select_for_update():
+        user_quota = UserQuota.objects.filter(
+            user=target.creator,
+            storage_type=storage_type
+        ).select_for_update().first()
+    else:
+        user_quota = UserQuota.objects.filter(
+            user=target.creator,
+            storage_type=storage_type
+        ).first()
     if user_quota is not None:
         if 'osf.trashed' not in file_node.type:
             logging.error('FileNode is not trashed, cannot update used quota!')
@@ -243,13 +280,19 @@ def node_removed(target, user, payload, file_node, storage_type):
 
         for removed_file in get_node_file_list(file_node):
             try:
-                file_info = FileInfo.objects.get(file=removed_file)
+                if check_select_for_update():
+                    file_info = FileInfo.objects.filter(file=removed_file).select_for_update().get()
+                else:
+                    file_info = FileInfo.objects.get(file=removed_file)
             except FileInfo.DoesNotExist:
                 logging.error('FileInfo not found, cannot update used quota!')
                 continue
 
-            file_size = min(file_info.file_size, user_quota.used)
-            user_quota.used -= file_size
+            user_quota.used -= file_info.file_size
+            if user_quota.used < 0:
+                user_quota.used = 0
+            file_info.file_size = 0
+            file_info.save()
         user_quota.save()
 
 def file_modified(target, user, payload, file_node, storage_type):
@@ -257,14 +300,24 @@ def file_modified(target, user, payload, file_node, storage_type):
     if file_size < 0:
         return
 
-    user_quota, _ = UserQuota.objects.get_or_create(
-        user=target.creator,
-        storage_type=storage_type,
-        defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
-    )
+    if check_select_for_update():
+        user_quota, _ = UserQuota.objects.select_for_update().get_or_create(
+            user=target.creator,
+            storage_type=storage_type,
+            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+        )
+    else:
+        user_quota, _ = UserQuota.objects.get_or_create(
+            user=target.creator,
+            storage_type=storage_type,
+            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+        )
 
     try:
-        file_info = FileInfo.objects.get(file=file_node)
+        if check_select_for_update():
+            file_info = FileInfo.objects.filter(file=file_node).select_for_update().get()
+        else:
+            file_info = FileInfo.objects.get(file=file_node)
     except FileInfo.DoesNotExist:
         file_info = FileInfo(file=file_node, file_size=0)
 
