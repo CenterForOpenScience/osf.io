@@ -21,6 +21,7 @@ from api.base.serializers import (
     WaterbutlerLink,
     HideIfPreprint,
     LinkedNodesRelationshipSerializer,
+    JSONAPIRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
@@ -34,12 +35,14 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
+    update_institutions,
+
 )
 from api.base.metrics import MetricsSerializerMixin
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
     BaseFileNode,
     Preprint,
@@ -48,8 +51,6 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-
-from osf.exceptions import PreprintStateError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -533,10 +534,15 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     })
 
 
-class PreprintsInstitutionsSerializer(BaseAPISerializer):
-    id = IDField(read_only=True, source='_id')
-    name = ser.CharField(read_only=True)
-    type = ser.SerializerMethodField(read_only=True)
+class InstitutionRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+
+    class Meta:
+        type_ = 'institutions'
+
+
+class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
+    data = ser.ListField(child=InstitutionRelated())
 
     links = LinksField({
         'self': 'get_self_url',
@@ -544,13 +550,33 @@ class PreprintsInstitutionsSerializer(BaseAPISerializer):
     })
 
     def get_self_url(self, obj):
-        return obj.absolute_api_v2_url
-
-    def get_type(self, obj):
-        return 'institution'
+        return obj['self'].absolute_api_v2_url
 
     def get_related_url(self, obj):
-        return obj.absolute_api_v2_url + 'institutions/'
+        return f"{obj['self'].absolute_api_v2_url}institutions/"
 
     class Meta:
         type_ = 'institutions'
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions.all(),
+            'self': obj,
+        }
+
+    def update(self, instance, validated_data):
+        preprint = instance['self']
+        user = self.context['request'].user
+        update_institutions(preprint, validated_data['data'], user)
+        preprint.save()
+
+        return self.make_instance_obj(preprint)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        user = self.context['request'].user
+        preprint = instance['self']
+        update_institutions(preprint, validated_data['data'], user, post=True)
+        preprint.save()
+
+        return self.make_instance_obj(preprint)
