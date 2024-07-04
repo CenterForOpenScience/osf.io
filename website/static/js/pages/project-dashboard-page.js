@@ -33,7 +33,8 @@ var currentUserRequestState = ctx.currentUserRequestState;
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
-var datepicker = require('js/rdmDatepicker');
+var datetimepicker = require('js/rdmDatetimepicker');
+var moment = require('moment');
 require('js/rdmSelect2');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
@@ -139,9 +140,10 @@ var commonDropdownSuggestOptions = {
 };
 
 var initDropdownSuggestAllUsers = function (placeholder) {
+    var query = { 'page[size]': 100 };
     var options = {
         ajax: {
-	    url: $osf.apiV2Url('/users/'),
+	    url: $osf.apiV2Url('/users/', {query: query}),
 	    dataType: 'json',
 	    data: function (term, page) {
 		return {
@@ -402,6 +404,28 @@ var updateUserKeysForRecentActivity = function (LogSearchName, updateLog, urlFil
     }
 };
 
+var _buildDownloadLogUrl = function(node, totalLogs) {
+    // Create download log url
+    var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
+    var query = { 'embed' : 'user' , 'page[size]' : totalLogs, 'action': 'download' };
+    var LogSearchUserKeys = $('#LogSearchUserKeys').val();
+    if (LogSearchUserKeys.length > 0) {
+        // LogSearchUserKeys may have comma separator. Example: 1,23,456
+        query['filter[user][eq]'] = LogSearchUserKeys;
+    }
+    var LogFilterKeyS = $('#LogSearchS').val();
+    var startDate = moment(LogFilterKeyS, LogFeed.DATETIME_FORMAT).utc();
+    if (LogFilterKeyS.length > 5 && startDate.isValid()) {
+        query['filter[date][gte]'] = startDate.format(LogFeed.DATETIME_T_FORMAT);
+    }
+    var LogFilterKeyE = $('#LogSearchE').val();
+    var endDate = moment(LogFilterKeyE, LogFeed.DATETIME_FORMAT).utc();
+    if (LogFilterKeyE.length > 5 && endDate.isValid()) {
+        query['filter[date][lte]'] = endDate.format(LogFeed.DATETIME_T_FORMAT);
+    }
+    return $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', {query: query});
+};
+
 $(document).ready(function () {
     // Allows dropdown elements to persist after being clicked
     // Used for the "Share" button in the more actions menu
@@ -444,32 +468,32 @@ $(document).ready(function () {
         ArrangeLogDownload = function (d){
             var i, NodeLogs=[], x={};
             for (i in d.data){
-                x={'date': new Date(d.data[i].attributes.date + 'Z').toLocaleString(),
-                   'user': d.data[i].embeds.user.data.attributes.full_name,
-                   'project_id': d.data[i].attributes.params.params_node.id,
-                   'project_title': d.data[i].attributes.params.params_node.title,
-                   'action':  d.data[i].attributes.action,
+                x={'date': new Date(d.data[i].date).toLocaleString(),
+                   'user': d.data[i].user,
+                   'project_id': d.data[i].project_id,
+                   'project_title': d.data[i].project_title,
+                   'action':  d.data[i].action,
                    };
-                if (typeof d.data[i].attributes.params.contributors[0] !== 'undefined' && d.data[i].attributes.params.contributors[0] !== null) {
-                    x.targetUserFullId = d.data[i].attributes.params.contributors[0].id;
-                    x.targetUserFullName = d.data[i].attributes.params.contributors[0].full_name;
+                if (d.data[i].targetUserFullId != null && d.data[i].targetUserFullName != null) {
+                    x.targetUserFullId = d.data[i].targetUserFullId;
+                    x.targetUserFullName = d.data[i].targetUserFullName;
                 }
-                if (d.data[i].attributes.action.includes('checked')){
-                    x.item = d.data[i].attributes.params.kind;
-                    x.path = d.data[i].attributes.params.path;
+                if (d.data[i].action.includes('checked')){
+                    x.item = d.data[i].item;
+                    x.path = d.data[i].path;
                 }
-                if (d.data[i].attributes.action.includes('osf_storage')){
-                    x.path = d.data[i].attributes.params.path;
+                if (d.data[i].action.includes('osf_storage')){
+                    x.path = d.data[i].path;
                 }
-                if (d.data[i].attributes.action.includes('addon')){
-                    x.addon = d.data[i].attributes.params.addon;
+                if (d.data[i].action.includes('addon')){
+                    x.addon = d.data[i].addon;
                 }
-                if (d.data[i].attributes.action.includes('tag')){
-                    x.tag = d.data[i].attributes.params.tag;
+                if (d.data[i].action.includes('tag')){
+                    x.tag = d.data[i].tag;
                 }
-                if (d.data[i].attributes.action.includes('wiki')){
-                    x.version = d.data[i].attributes.params.version;
-                    x.page = d.data[i].attributes.params.page;
+                if (d.data[i].action.includes('wiki')){
+                    x.version = d.data[i].version;
+                    x.page = d.data[i].page;
                 }
                 NodeLogs = NodeLogs.concat(x);
             }
@@ -481,24 +505,32 @@ $(document).ready(function () {
             })[0].click();
         };
         $('#DownloadLog').on('click', function(){
-            var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
-            var query = { 'embed' : 'user'};
-            var urlMain = $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/',{query: query});
-            var urlNodeLogs = urlMain + '&page[size]=1';
+            // Download Log button click event
+            var downloadLogButton = $('#DownloadLog');
+            downloadLogButton.addClass('disabled');
+            downloadLogButton.text(_('Downloading'));
+            var totalLogs = parseInt($('#totalLogs').val(), 10);
+            if (!totalLogs) {
+                downloadLogButton.text(_('Download'));
+                return;
+            }
+            var urlNodeLogs = _buildDownloadLogUrl(node, totalLogs);
             var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
             promise.then(function (data) {
-                var pageSize = Math.ceil((Number(data.links.meta.total))/(Number(data.links.meta.per_page)));
-                if ( pageSize >= 2){
-                    urlNodeLogs =  urlMain + '&page[size]=' + pageSize.toString();
-                    promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
-                    promise.then(function(data){
-                        new ArrangeLogDownload(data);
-                    });
-                }else{
-                    new ArrangeLogDownload(data);
+                var newTotalLogs = parseInt($('#totalLogs').val(), 10);
+                if (!!newTotalLogs) {
+                    downloadLogButton.removeClass('disabled');
                 }
+                downloadLogButton.text(_('Download'));
+                new ArrangeLogDownload(data);
             }, function(xhr, textStatus, error) {
+                var newTotalLogs = parseInt($('#totalLogs').val(), 10);
+                if (!!newTotalLogs) {
+                    downloadLogButton.removeClass('disabled');
+                }
+                downloadLogButton.text(_('Download'));
                 Raven.captureMessage('Error retrieving DownloadLog', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+                $osf.growl(_('Error'), _('Download failed.'));
             });
         });
 
@@ -786,17 +818,46 @@ $(document).ready(function () {
     var logSearchChange = function (selector) {
         var old = logSearchChangeOldDict[selector];
         var val = $(selector).val();
+        if (!old) {
+            // If old's value is null or undefined, assume the current value is empty string
+            old = '';
+        }
         if (old !== val) {
             RefreshLog();
         }
         logSearchChangeOldDict[selector] = val;
     };
-    var initDatepicker = function (selector) {
-        var _event = function () {
-            logSearchChange(selector);
+    var initDatetimepicker = function (selector) {
+        if (!!window.chrome) {
+            // If browser is using Chromium, add specified css class
+            $(selector).addClass('search-datetime-input');
+        }
+        $(selector).on('keydown', function(e) {
+            var key = e.which;
+            if (key === 13) {  // Enter Key
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        });
+        var onCloseDatetimePicker = function(currentTime, inputSelector) {
+            var datetimeInput = moment(inputSelector.val(), LogFeed.DATETIME_FORMAT);
+            if (inputSelector.val() === '' || datetimeInput.isValid()) {
+                // If input is empty or a valid date, trigger log search change event
+                logSearchChange(selector);
+            }
         };
-        datepicker.mount(selector, null).on('hide', _event);
+        datetimepicker.mount(selector).datetimepicker({onClose: onCloseDatetimePicker});
+        // Event after initialize datetimepicker
+        var todayButtonSelector = selector + '+.xdsoft_datetimepicker .xdsoft_today_button';
+        $(todayButtonSelector).off('dblclick');
+        $(todayButtonSelector).on('click', function(e) {
+            var currentDate = moment($(selector).datetimepicker('getValue'));
+            if (currentDate.isValid()) {
+                $(selector).val(currentDate.format(LogFeed.DATETIME_FORMAT));
+            }
+        });
     };
-    initDatepicker('#LogSearchS');
-    initDatepicker('#LogSearchE');
+    initDatetimepicker('#LogSearchS');
+    initDatetimepicker('#LogSearchE');
 });

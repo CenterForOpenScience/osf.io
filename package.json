@@ -38,6 +38,7 @@
     "js-md5": "^0.4.1",
     "json-loader": "0.5.3",
     "jstimezonedetect": "^1.0.6",
+    "jquery-datetimepicker": "2.5.21",
     "keen-analysis": "^1.1.0",
     "keen-dataviz": "^1.0.2",
     "keen-tracking": "1.0.3",

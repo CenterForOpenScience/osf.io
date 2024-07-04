@@ -1,12 +1,13 @@
 import mock
 import pytest
+import time
 
 from dateutil.parser import parse as parse_date
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from framework.auth.core import Auth
-from osf.models import ProjectStorageType
+from osf.models import ProjectStorageType, QuickFilesNode
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -340,6 +341,38 @@ class TestNodeLogFiltering(TestNodeLogList):
         assert len(res.json['data']) == 1
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'project_created'
 
+    def test_filter_end_date(self, app, user, public_project, pointer):
+        public_project.add_pointer(pointer, auth=Auth(user), save=True)
+        assert public_project.logs.latest().action == 'pointer_created'
+        assert public_project.logs.count() == 2
+
+        pointer_added_log = public_project.logs.get(action='pointer_created')
+        date_pointer_added = pointer_added_log.date.strftime('%Y-%m-%dT%H:%M')
+
+        url = '/{}nodes/{}/logs/?filter[date][lte]={}'.format(
+            API_BASE, public_project._id, date_pointer_added)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'pointer_created'
+
+    def test_filter_end_date_unsupported_format(self, app, user, public_project, pointer):
+        # make sure project created and pointer created logs are not in the same second
+        time.sleep(1)
+        public_project.add_pointer(pointer, auth=Auth(user), save=True)
+        assert public_project.logs.latest().action == 'pointer_created'
+        assert public_project.logs.count() == 2
+
+        pointer_added_log = public_project.logs.get(action='pointer_created')
+        date_pointer_added = pointer_added_log.date.strftime('%Y-%m-%d %H:%M:%S')
+
+        url = '/{}nodes/{}/logs/?filter[date][lte]={}'.format(
+            API_BASE, public_project._id, date_pointer_added)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'project_created'
+
 
 @pytest.mark.django_db
 class TestLogStorageName(ApiTestCase):
@@ -448,3 +481,167 @@ class TestLogStorageName(ApiTestCase):
         log = res.json['data'][0]['attributes']
         assert log['action'] == 'osf_storage_folder_created'
         assert log['params']['storage_name'] == 'Kitten Storage'
+
+
+@pytest.mark.django_db
+class TestNodeLogDownload(TestNodeLogList):
+    @pytest.fixture()
+    def download_url(self, public_project):
+        return '/{}nodes/{}/logs/?action=download'.format(
+            API_BASE, public_project._id)
+
+    def test_download__include_embed_user_query_param(self, app, user, public_project):
+        QuickFilesNode.objects.get_or_create(
+            title='title',
+            creator=user
+        )
+        public_url = '/{}nodes/{}/logs/?embed=user&action=download'.format(
+            API_BASE, public_project._id)
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        assert_datetime_equal(
+            parse_date(
+                res.json['data'][API_LATEST]['date']),
+            public_project.logs.first().date)
+        assert res.json['data'][API_LATEST]['user'] == user.fullname
+        assert res.json['data'][API_LATEST]['project_id'] == public_project._id
+        assert res.json['data'][API_LATEST]['project_title'] == public_project.title
+        assert res.json['data'][API_LATEST]['action'] == public_project.logs.first().action
+
+    def test_download__limited_by_page_size(self, app, user, user_auth, private_project):
+        private_project.add_tag('tag', auth=user_auth)
+        download_url = '/{}nodes/{}/logs/?page[size]=1&action=download'.format(
+            API_BASE, private_project._id)
+        res = app.get(download_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert_datetime_equal(
+            parse_date(
+                res.json['data'][API_LATEST]['date']),
+            private_project.logs.first().date)
+        assert res.json['data'][API_LATEST]['project_id'] == private_project._id
+        assert res.json['data'][API_LATEST]['project_title'] == private_project.title
+        assert res.json['data'][API_LATEST]['action'] == private_project.logs.last().action
+
+    def test_download__params_include_contributors(self, app, user, contrib, user_auth, public_project, download_url):
+        # Add contributor
+        public_project.add_contributor(contrib, auth=user_auth)
+        assert public_project.logs.latest().action == 'contributor_added'
+        # Remove contributor
+        with disconnected_from_listeners(contributor_removed):
+            public_project.remove_contributor(contrib, auth=user_auth)
+        assert public_project.logs.latest().action == 'contributor_removed'
+        res = app.get(download_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        # Assert the latest log
+        assert res.json['data'][API_LATEST]['action'] == 'contributor_removed'
+        assert res.json['data'][API_LATEST]['targetUserFullId'] == contrib._id
+        assert res.json['data'][API_LATEST]['targetUserFullName'] == contrib.fullname
+        # Assert the second log
+        assert res.json['data'][1]['action'] == 'contributor_added'
+        assert res.json['data'][1]['targetUserFullId'] == contrib._id
+        assert res.json['data'][1]['targetUserFullName'] == contrib.fullname
+
+    def test_download__action_include_checked(self, app, user, user_auth, public_project, download_url):
+        public_project.add_log(
+            'checked_out',
+            auth=Auth(user),
+            params={
+                'kind': 'file',
+                'node': public_project._id,
+                'path': 'test_file',
+                'urls': {
+                    'view': 'www.fake.org',
+                    'download': 'www.fake.com',
+                },
+                'project': public_project._id
+            }
+        )
+        res = app.get(download_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        assert res.json['data'][API_LATEST]['action'] == 'checked_out'
+        assert res.json['data'][API_LATEST]['item'] == 'file'
+        assert res.json['data'][API_LATEST]['path'] == 'test_file'
+
+    def test_download__action_include_osf_storage(self, app, user, user_auth, public_project, download_url):
+        public_project.add_log(
+            'osf_storage_folder_created',
+            auth=Auth(user),
+            params={
+                'node': public_project._id,
+                'path': 'test_folder',
+                'urls': {'url1': 'www.fake.org', 'url2': 'www.fake.com'},
+                'source': {
+                    'materialized': 'test_folder',
+                    'addon': 'osfstorage',
+                    'node': {
+                        '_id': public_project._id,
+                        'url': 'index.html',
+                        'title': 'Hello World',
+                    }
+                }
+            },
+        )
+        res = app.get(download_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        assert res.json['data'][API_LATEST]['action'] == 'osf_storage_folder_created'
+        assert res.json['data'][API_LATEST]['path'] == 'test_folder'
+
+    def test_download__action_include_addon(self, app, user, user_auth, public_project, download_url):
+        # Add GitHub addon
+        public_project.add_addon('github', auth=user_auth)
+        assert public_project.logs.latest().action == 'addon_added'
+        # Remove GitHub addon
+        old_log_length = len(list(public_project.logs.all()))
+        public_project.delete_addon('github', auth=user_auth)
+        assert public_project.logs.latest().action == 'addon_removed'
+        assert (public_project.logs.count() - 1) == old_log_length
+        res = app.get(download_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        # Assert the latest log
+        assert res.json['data'][API_LATEST]['action'] == 'addon_removed'
+        assert res.json['data'][API_LATEST]['addon'] == 'GitHub'
+        # Assert the second log
+        assert res.json['data'][1]['action'] == 'addon_added'
+        assert res.json['data'][1]['addon'] == 'GitHub'
+
+    def test_download__action_include_tag(self, app, user, user_auth, public_project, download_url):
+        # Add tag
+        public_project.add_tag('Rheisen', auth=user_auth)
+        assert public_project.logs.latest().action == 'tag_added'
+        # Remove tag
+        public_project.remove_tag('Rheisen', auth=user_auth)
+        assert public_project.logs.latest().action == 'tag_removed'
+        res = app.get(download_url, auth=user)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        # Assert the latest log
+        assert res.json['data'][API_LATEST]['action'] == 'tag_removed'
+        assert res.json['data'][API_LATEST]['tag'] == 'Rheisen'
+        # Assert the second log
+        assert res.json['data'][1]['action'] == 'tag_added'
+        assert res.json['data'][1]['tag'] == 'Rheisen'
+
+    def test_download__action_include_wiki(self, app, user, user_auth, public_project, download_url):
+        public_project.add_log(
+            'wiki_updated',
+            auth=Auth(user),
+            params={
+                'project': public_project.parent_id,
+                'node': public_project._primary_key,
+                'page': 'foo',
+                'page_id': 'test_guid',
+                'version': 1,
+            }
+        )
+        res = app.get(download_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        assert res.json['data'][API_LATEST]['action'] == 'wiki_updated'
+        assert res.json['data'][API_LATEST]['version'] == '1'
+        assert res.json['data'][API_LATEST]['page'] == 'foo'
