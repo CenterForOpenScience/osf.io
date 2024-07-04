@@ -804,8 +804,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             orphan_files_names = [file_data['file_name'] for file_data in orphan_files]
             raise exceptions.ValidationError(
                 'All files attached to this form must be registered to complete the process. '
-                'The following file(s) are attached, but are not part of a component being'
-                ' registered: {}'.format(', '.join(orphan_files_names)),
+                'The following file(s) are attached, but are not part of a component being '
+                f'registered: {", ".join(orphan_files_names)}',
             )
 
         try:

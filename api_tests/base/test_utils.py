@@ -91,10 +91,12 @@ class TestFlaskDjangoIntegration:
             assert False, 'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.'
         except RuntimeError as e:
             assert str(e) == exception_message, (
-                'push_status_message() should have re-raised the ' 'original RuntimeError with the original message.'
+                'push_status_message() should have re-raised the '
+                'original RuntimeError with the original message.'
             )
 
         except BaseException:
             assert False, (
-                'Unexpected Exception from push_status_message when called ' 'from the v2 API with type "error"'
+                'Unexpected Exception from push_status_message when called '
+                'from the v2 API with type "error"'
             )

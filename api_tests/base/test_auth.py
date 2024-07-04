@@ -1,6 +1,7 @@
 """
 Tests related to authenticating API requests
 """
+import json
 from unittest import mock
 
 import pytest
@@ -413,7 +414,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert res.status_code == 200
         assert 'email' not in res.json['data']['attributes']
-        assert self.user.username not in res.json
+        assert self.user.username not in json.dumps(res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_email_scope_cannot_read_other_email(self, mock_user_info):
@@ -427,7 +428,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert res.status_code == 200
         assert 'email' not in res.json['data']['attributes']
-        assert self.user2.username not in res.json
+        assert self.user2.username not in json.dumps(res.json)
 
 
 @pytest.mark.django_db

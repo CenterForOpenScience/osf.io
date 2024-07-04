@@ -260,6 +260,8 @@ class TestFilterMixin(ApiTestCase):
         for key, field_name in fields.items():
             self.assertIn(field_name['string_field']['value'], ('foo', 'bar'))
         """
+        pass
+
     def test_convert_value_bool(self):
         value = 'true'
         field = FakeSerializer._declared_fields['bool_field']
