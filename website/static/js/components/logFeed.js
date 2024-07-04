@@ -7,12 +7,17 @@ var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
+var sprintf = require('agh.sprintf').sprintf;
+var moment = require('moment');
+var _ = require('js/rdmGettext')._;
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 var LOG_PAGE_SIZE_LIMITED = 3;
 var LOG_PAGE_SIZE = 6;
 var PROFILE_IMAGE_SIZE = 16;
+var DATETIME_FORMAT = 'YYYY-MM-DD HH:mm';
+var DATETIME_T_FORMAT = 'YYYY-MM-DDTHH:mm';
 
 var _buildLogUrl = function(node, page, limitLogs) {
     var logPage = page || 1;
@@ -29,12 +34,14 @@ var _buildLogUrl = function(node, page, limitLogs) {
         query['filter[user][eq]'] = LogSearchUserKeys;
     }
     var LogFilterKeyS = $('#LogSearchS').val();
-    if (LogFilterKeyS.length > 5) {
-        query['filter[date][gte]'] = LogFilterKeyS;
+    var startDate = moment(LogFilterKeyS, DATETIME_FORMAT).utc();
+    if (LogFilterKeyS.length > 5 && startDate.isValid()) {
+        query['filter[date][gte]'] = startDate.format(DATETIME_T_FORMAT);
     }
     var LogFilterKeyE = $('#LogSearchE').val();
-    if (LogFilterKeyE.length > 5) {
-        query['filter[date][lte]'] = LogFilterKeyE+'T23:59';
+    var endDate = moment(LogFilterKeyE, DATETIME_FORMAT).utc();
+    if (LogFilterKeyE.length > 5 && endDate.isValid()) {
+        query['filter[date][lte]'] = endDate.format(DATETIME_T_FORMAT);
     }
     return $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: query});
 };
@@ -75,6 +82,13 @@ var LogFeed = {
                 var page = params.page || 1;
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
+                if (!!result.data && result.data.length > 0) {
+                    $('#DownloadLog').removeClass('disabled');
+                } else {
+                    $('#DownloadLog').addClass('disabled');
+                }
+                $('#downloadHeader').text(sprintf(_('Download as file for %1$s logs'), result.links.meta.total));
+                $('#totalLogs').val(result.links.meta.total);
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
@@ -82,11 +96,16 @@ var LogFeed = {
                 function(result) {
                     _processResults(result);
                     self.logRequestPending(false);
+                    m.redraw();
                     return promise;
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
                     self.logRequestPending(false);
                     Raven.captureMessage('Error retrieving logs', {extra: {url: url, textStatus: textStatus, error: error}});
+                    $('#DownloadLog').addClass('disabled');
+                    $('#downloadHeader').text(sprintf(_('Download as file for %1$s logs'), 0));
+                    $('#totalLogs').val(0);
+                    m.redraw();
                 }
             );
         };
@@ -253,5 +272,7 @@ var LogFeed = {
 };
 
 module.exports = {
-    LogFeed: LogFeed
+    LogFeed: LogFeed,
+    DATETIME_FORMAT: DATETIME_FORMAT,
+    DATETIME_T_FORMAT: DATETIME_T_FORMAT
 };

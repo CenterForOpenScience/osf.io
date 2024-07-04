@@ -11,7 +11,7 @@ from rest_framework.utils.urls import (
     replace_query_param, remove_query_param,
 )
 from api.base.serializers import is_anonymized
-from api.base.settings import MAX_PAGE_SIZE
+from api.base.settings import MAX_PAGE_SIZE, NODE_LOG_DOWNLOAD_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
 from osf.models import AbstractNode, Comment, Preprint, Guid, DraftRegistration
@@ -178,6 +178,27 @@ class NoMaxPageSizePagination(JSONAPIPagination):
 
 class IncreasedPageSizePagination(JSONAPIPagination):
     max_page_size = 1000
+
+
+class NodeLogDownloadPagination(JSONAPIPagination):
+    """ Custom pagination class for node log download """
+    max_page_size = NODE_LOG_DOWNLOAD_PAGE_SIZE
+
+    def paginate_queryset(self, queryset, request, view=None):
+        """ Custom pagination of queryset for download node log function. """
+        try:
+            # Try to get integer value from request page size param
+            request_page_size = int(request.query_params[self.page_size_query_param])
+            # Compare between queryset number of item and page[size] value from request
+            count = queryset.count()
+            if 0 < request_page_size < count:
+                # If the queryset has more items than page[size], set queryset offset to (count - page[size]) items
+                queryset = queryset[count - request_page_size:]
+        except (KeyError, ValueError):
+            # Cannot get integer value from request page size param, do nothing
+            pass
+        return super(NodeLogDownloadPagination, self).paginate_queryset(queryset, request, view)
+
 
 class CommentPagination(JSONAPIPagination):
 
