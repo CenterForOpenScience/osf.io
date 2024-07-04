@@ -1276,10 +1276,14 @@ version = "3.1.0"
 description = "Transparently use webpack with django"
 optional = false
 python-versions = "*"
-files = [
-    {file = "django-webpack-loader-3.1.0.tar.gz", hash = "sha256:b06b83ca819ed4bbb858ab57b8d8cb67a25c4a57ed822dedd4e9fee4c097afd5"},
-    {file = "django_webpack_loader-3.1.0-py2.py3-none-any.whl", hash = "sha256:5c35f8ad9ce0d0360b120abd9a6da6f043a6ff97a4ae7d0fa246d64af012983f"},
-]
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/felliott/django-webpack-loader.git"
+reference = "af8438c2da909ec9f2188a6c07c9d2caad0f7e93"
+resolved_reference = "af8438c2da909ec9f2188a6c07c9d2caad0f7e93"
 
 [[package]]
 name = "djangorestframework"
@@ -5003,4 +5007,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "babac6b824ae5ff45519a15ff2d28f607860470ea7d9daaa0ca145686dce0c73"
+content-hash = "1d667a3902c377c5acdbe545489230634d358a389e0aa8dc5add637f52d73549"
