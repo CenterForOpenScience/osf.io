@@ -7,7 +7,6 @@ from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
-    BaseAPISerializer,
     JSONAPISerializer,
     IDField,
     TypeField,

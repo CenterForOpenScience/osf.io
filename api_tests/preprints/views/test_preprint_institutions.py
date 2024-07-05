@@ -6,6 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
 )
+from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
@@ -33,19 +34,19 @@ class TestPrivatePreprintInstitutionsList:
     @pytest.fixture()
     def read_contrib(self, private_preprint):
         user = AuthUserFactory()
-        private_preprint.add_permission(user, 'read')
+        private_preprint.add_permission(user, osf_permissions.READ)
         return user
 
     @pytest.fixture()
     def write_contrib(self, private_preprint):
         user = AuthUserFactory()
-        private_preprint.add_permission(user, 'write')
+        private_preprint.add_permission(user, osf_permissions.WRITE)
         return user
 
     @pytest.fixture()
     def admin_contrib(self, private_preprint):
         user = AuthUserFactory()
-        private_preprint.add_permission(user, 'admin')
+        private_preprint.add_permission(user, osf_permissions.ADMIN)
         return user
 
     @pytest.fixture()
@@ -132,7 +133,7 @@ class TestPublicPreprintInstitutionsList:
     @pytest.fixture()
     def read_contrib(self, public_preprint):
         user = AuthUserFactory()
-        public_preprint.add_permission(user, 'read')
+        public_preprint.add_permission(user, osf_permissions.READ)
         return user
 
     def test_preprint_institutions_no_auth(self, app, url):
