@@ -140,16 +140,16 @@ class ModeratorIfNeverPublicWithdrawn(permissions.BasePermission):
         raise exceptions.NotFound
 
 
-class PreprintInstitutionPermission(permissions.BasePermission):
+class PreprintInstitutionPermissionList(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
+        if request.method not in permissions.SAFE_METHODS:
+            raise exceptions.MethodNotAllowed(method=request.method)
+
         if obj.is_public:
             return True
 
         auth = get_user_auth(request)
         if not auth.user:
             return False
-
-        if request.method in permissions.SAFE_METHODS:
-            return obj.has_permission(auth.user, 'read')
         else:
-            return obj.has_permission(auth.user, 'write')
+            return obj.has_permission(auth.user, osf_permissions.READ)

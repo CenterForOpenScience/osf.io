@@ -55,7 +55,7 @@ from api.preprints.permissions import (
     AdminOrPublic,
     ContributorDetailPermissions,
     PreprintFilesPermissions,
-    PreprintInstitutionPermission,
+    PreprintInstitutionPermissionList,
 )
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -629,7 +629,7 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintInstitutionPermission,
+        PreprintInstitutionPermissionList,
     )
 
     required_read_scopes = [CoreScopes.PREPRINTS_READ, CoreScopes.INSTITUTION_READ]
