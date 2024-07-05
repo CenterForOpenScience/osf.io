@@ -25,7 +25,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
 
     def node_scale(self, node):
         # node may be None if previous node's parent is deleted
-        if node is None or node.parent_id not in self.node_ids:
+        if node is None or not self.node_ids.filter(guids___id=node.parent_id).exists():
             return -40
         else:
             offset = 20 if node.parent_node is not None else 0

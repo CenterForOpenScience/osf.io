@@ -10,10 +10,13 @@ from django.utils import timezone
 from django.db import transaction
 django.setup()
 
+# init_app must be called before sentry is imported
+from website.app import init_app
+init_app(routes=False)
+
 from framework import sentry
 from framework.celery_tasks import app as celery_app
 
-from website.app import init_app
 from website import settings
 from osf.models import Embargo, Registration, NodeLog
 
@@ -102,7 +105,6 @@ def should_be_embargoed(embargo):
 
 @celery_app.task(name='scripts.embargo_registrations')
 def run_main(dry_run=True):
-    init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)

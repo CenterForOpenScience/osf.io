@@ -39,6 +39,16 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     program_area = models.CharField(blank=True, max_length=127)
     school_type = models.CharField(blank=True, max_length=127)
     study_design = models.CharField(blank=True, max_length=127)
+    disease = models.CharField(
+        help_text='This field was added for use by Inflammatory Bowel Disease Genetics Consortium',
+        blank=True,
+        max_length=127
+    )
+    data_type = models.CharField(
+        help_text='This field was added for use by Inflammatory Bowel Disease Genetics Consortium',
+        blank=True,
+        max_length=127
+    )
     machine_state = models.IntegerField(
         choices=CollectionSubmissionStates.int_field_choices(),
         default=CollectionSubmissionStates.IN_PROGRESS,

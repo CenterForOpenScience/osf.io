@@ -43,6 +43,10 @@
       - https://docs.docker.com/engine/installation/linux/linux-postinstall/#specify-dns-servers-for-docker
     - Configure docker to start at boot for Ubuntu 15.04 onwards
       `sudo systemctl enable docker`
+      `sudo systemctl start docker` required only for the first time
+    - Grant local user privileges to interact with docker (system restart required)
+      `sudo groupadd docker` may be not needed
+      `sudo usermod -aG docker $USER`
 
     - In order to run OSF Preprints, raise fs.inotify.max_user_watches from default value
       `echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf`
@@ -134,7 +138,7 @@
 
 1. Application Environment
 
-  - `$ docker-compose up requirements mfr_requirements wb_requirements`
+  - `$ docker-compose up requirements mfr_requirements wb_requirements gv_requirements`
 
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
@@ -154,7 +158,7 @@
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Start the OSF Web, API Server, and Preprints (Detached)
-  - `$ docker-compose up -d worker web api admin preprints ember_osf_web`
+  - `$ docker-compose up -d worker web api admin preprints ember_osf_web gv`
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -163,7 +167,7 @@
 - Once the requirements have all been installed, you can start the OSF in the background with
 
   ```bash
-  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints ember_osf_web
+  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints ember_osf_web gv
   ```
 
 - To view the logs for a given container:
@@ -176,7 +180,7 @@
 
 - Start all containers
   ```bash
-  alias dcsa="docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch6 web api admin preprints"
+  alias dcsa="docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch6 web api admin preprints gv"
   ```
 
 - Shut down all containers
@@ -197,7 +201,7 @@
 
 - Download requirements (Whenever the requirements change or first-time set-up)
   ```bash
-  alias dcreq="docker-compose up requirements mfr_requirements wb_requirements"
+  alias dcreq="docker-compose up requirements mfr_requirements wb_requirements gv_requirements"
   ```
 
 - Restart the containers
@@ -222,13 +226,16 @@
     - _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
-    - `docker-compose run --rm web python3 manage.py migrate`
+    - `docker-compose run --rm web python3 manage.py migrate` To run `osf` migrations
+    - `docker-compose run --rm gv python manage.py migrate` To run `gravyvalet(gv)` migrations
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
     - `docker-compose run --rm web python3 -m scripts.populate_institutions -e test -a`
 - Populate preprint, registration, and collection providers:
   - After resetting your database or with a new install, the required providers and subjects will be created automatically **when you run migrations.** To create more:
     - `docker-compose run --rm web python3 manage.py populate_fake_providers`
+    - _NOTE: In case, you encounter error with missing data, when running the `'populate_fake_providers'` command. Fix this with 'update_taxonomies' command:_
+      - `docker-compose run --rm web python3 -m scripts.update_taxonomies`
 - Populate citation styles
   - Needed for api v2 citation style rendering.
     - `docker-compose run --rm web python3 -m scripts.parse_citation_styles`
@@ -338,7 +345,8 @@ resetting docker. To back up your database, follow the following sequence of com
 3. Verify that the postgres docker container is running (`docker-compose up -d postgres`)
 4. Tell your local (non-docker) version of postgres to connect to (and back up) data from the instance in docker
   (defaults to port 5432):
-  `pg_dump --username postgres --compress 9 --create --clean --format d --jobs 4 --host localhost --file ~/Desktop/osf_backup osf`
+  `pg_dump --username postgres --compress 9 --create --clean --format d --jobs 4 --host localhost --file ~/Desktop/osf_backup osf` for osf
+5. The same can be done for `grayvalet`, just replace `osf` with `gravyvalet` (this applies for all following commands related to backups)
 
 (shorthand: `pg_dump -U postgres -Z 9 -C --c -Fd --j 4 -h localhost --f ~/Desktop/osf_backup osf`)
 
@@ -379,8 +387,8 @@ $ git stash pop # unstash changes
 $ docker image prune
 # Pull latest images
 $ docker-compose pull
-
-$ docker-compose up requirements mfr_requirements wb_requirements
+# It is recommended to run requirements only for services that require update, not to wear off local SSD more than needed
+$ docker-compose up requirements mfr_requirements wb_requirements gv_requirements
 # Run db migrations
 $ docker-compose run --rm web python3 manage.py migrate
 ```

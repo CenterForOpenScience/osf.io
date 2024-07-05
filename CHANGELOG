@@ -2,6 +2,28 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+24.01.0 (2024-04-30)
+====================
+- Initial Addons Service work, Waffled
+- Improve default `description` for Google Dataset Discovery
+- Improve Embargo visibility for moderators
+- Bug fix: PreprintProvider highlighted subjects
+- Bug fix: PreprintProvider `advisory_board` styling
+
+24.01.0 (2024-02-26)
+====================
+- Support CEDAR Embeddable Editor
+- Support Datacite Schema 4.5
+- Expose Node-Subject relationship in API
+- Bug fix: Docker build
+- Bug fix: File navigation
+- Bug fix: Funder Metadata
+
+23.16.0 (2023-11-10)
+====================
+- Boa Addon
+- Remove default title of "Untitled" from Drafts
+
 23.15.0 (2023-10-10)
 ====================
 - Update routing for Institutions, Preprints Discover pages

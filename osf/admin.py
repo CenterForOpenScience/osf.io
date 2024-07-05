@@ -7,6 +7,7 @@ from django.db.models import Q, Count
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
+from osf.external.spam.tasks import reclassify_domain_references
 from osf.models import OSFUser, Node, NotableDomain, NodeLicense
 from osf.models.notable_domain import DomainReference
 
@@ -50,10 +51,39 @@ class NotableDomainAdmin(admin.ModelAdmin):
     list_display = ('domain', 'note', 'number_of_references')
     list_filter = ('note',)
     search_fields = ('domain',)
+    actions = ['make_ignored', 'make_excluded']
 
     @admin.display(ordering='number_of_references')
     def number_of_references(self, obj):
         return obj.number_of_references
+
+    @admin.action(description='Mark selected as IGNORED')
+    def make_ignored(self, request, queryset):
+        signatures = []
+        target_note = 3  # IGNORED
+        for obj in queryset:
+            signatures.append({
+                'notable_domain_id': obj.pk,
+                'current_note': target_note,
+                'previous_note': obj.note
+            })
+        queryset.update(note=target_note)
+        for sig in signatures:
+            reclassify_domain_references.apply_async(kwargs=sig)
+
+    @admin.action(description='Mark selected as EXCLUDED')
+    def make_excluded(self, request, queryset):
+        signatures = []
+        target_note = 0  # EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
+        for obj in queryset:
+            signatures.append({
+                'notable_domain_id': obj.pk,
+                'current_note': target_note,
+                'previous_note': obj.note
+            })
+        queryset.update(note=target_note)
+        for sig in signatures:
+            reclassify_domain_references.apply_async(kwargs=sig)
 
     def get_urls(self):
         urls = super().get_urls()

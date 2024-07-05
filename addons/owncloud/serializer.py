@@ -17,6 +17,8 @@ class OwnCloudSerializer(StorageAddonSerializer):
     def credentials_are_valid(self, user_settings, client=None):
         node = self.node_settings
         external_account = node.external_account
+        if external_account is None:
+            return False
         provider = self.node_settings.oauth_provider(external_account)
 
         try:

@@ -26,16 +26,15 @@ RUN apk add --no-cache --virtual .run-deps \
     libevent \
     && yarn global add bower
 
-RUN apk add curl
-RUN curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o get-pip.py
-RUN python3 get-pip.py --force-reinstall pip==21.0
-RUN apk del curl
+RUN python3 -m ensurepip && \
+    pip3 install --upgrade pip==21.0
 
 WORKDIR /code
 
 COPY ./requirements.txt ./
 COPY ./requirements/ ./requirements/
 COPY ./addons/bitbucket/requirements.txt ./addons/bitbucket/
+COPY ./addons/boa/requirements.txt ./addons/boa/
 COPY ./addons/box/requirements.txt ./addons/box/
 #COPY ./addons/citations/requirements.txt ./addons/citations/
 COPY ./addons/dataverse/requirements.txt ./addons/dataverse/
@@ -116,6 +115,7 @@ COPY ./admin/webpack* ./admin/
 COPY ./admin/static/ ./admin/static/
 ## Addons
 COPY ./addons/bitbucket/static/ ./addons/bitbucket/static/
+COPY ./addons/boa/static/ ./addons/boa/static/
 COPY ./addons/box/static/ ./addons/box/static/
 COPY ./addons/citations/static/ ./addons/citations/static/
 COPY ./addons/dataverse/static/ ./addons/dataverse/static/

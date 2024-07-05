@@ -203,35 +203,33 @@ class Sitemap(object):
         objs = (Preprint.objects.can_view()
                     .select_related('node', 'provider', 'primary_file'))
         progress.start(objs.count() * 2, 'PREP: ')
-        osf = PreprintProvider.objects.get(_id='osf')
         for obj in objs:
             try:
                 preprint_date = obj.modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
-                preprint_url = obj.url
-                provider = obj.provider
-                domain = provider.domain if (provider.domain_redirect_enabled and provider.domain) else settings.DOMAIN
-                if provider == osf:
-                    preprint_url = '/preprints/{}/'.format(obj._id)
-                config['loc'] = urljoin(domain, preprint_url)
+                preprint_url = os.path.join('preprints', obj.provider._id, obj._id)
+                config['loc'] = urljoin(settings.DOMAIN, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
                 # Preprint file urls
-                try:
-                    file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
-                    file_config['loc'] = urljoin(
-                        obj.provider.domain or settings.DOMAIN,
-                        os.path.join(
-                            obj._id,
-                            'download',
-                            '?format=pdf'
+                if not obj.is_retracted:
+                    # Withdrawn preprints may be viewed but not downloaded
+                    try:
+                        file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
+                        file_config['loc'] = urljoin(
+                            settings.DOMAIN,
+                            os.path.join(
+                                obj._id,
+                                'download',
+                                '?format=pdf'
+                            )
                         )
-                    )
-                    file_config['lastmod'] = preprint_date
-                    self.add_url(file_config)
-                except Exception as e:
-                    self.log_errors(obj.primary_file, obj.primary_file._id, e)
+                        file_config['lastmod'] = preprint_date
+                        self.add_url(file_config)
+                    except Exception as e:
+                        self.log_errors(obj.primary_file, obj.primary_file._id, e)
+
             except Exception as e:
                 self.log_errors(obj, obj._id, e)
             progress.increment(2)

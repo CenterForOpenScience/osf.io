@@ -15,12 +15,12 @@
         "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
     dcterms:modified "2123-05-04" ;
     dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
-    dcterms:subject <http://localhost:8000/v2/subjects/subjwibb/>,
-        <http://localhost:8000/v2/subjects/subjwibbb/>,
-        <http://localhost:8000/v2/subjects/subjwobb/>,
-        <http://localhost:8000/v2/subjects/subjwobbb/> ;
+    dcterms:subject <http://localhost:8000/v2/subjects/subjwibb>,
+        <http://localhost:8000/v2/subjects/subjwibbb>,
+        <http://localhost:8000/v2/subjects/subjwobb>,
+        <http://localhost:8000/v2/subjects/subjwobbb> ;
     dcterms:title "this is a preprint title!" ;
-    dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Preprint> ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#Preprint> ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
     dcat:accessService <http://localhost:5000> ;
     osf:hostingInstitution <https://cos.io/> ;
@@ -50,11 +50,11 @@
     dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
 
-<http://localhost:8000/v2/subjects/subjwobb/> a skos:Concept ;
-    skos:broader <http://localhost:8000/v2/subjects/subjwibb/> ;
+<http://localhost:8000/v2/subjects/subjwobb> a skos:Concept ;
+    skos:broader <http://localhost:8000/v2/subjects/subjwibb> ;
     skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
     skos:prefLabel "wobble" ;
-    skos:related <http://localhost:8000/v2/subjects/subjwobbb/> .
+    skos:related <http://localhost:8000/v2/subjects/subjwobbb> .
 
 <https://cos.io/> a dcterms:Agent,
         foaf:Organization ;
@@ -65,7 +65,7 @@
 
 <https://doi.org/11.111/something-or-other> dcterms:identifier "https://doi.org/11.111/something-or-other" .
 
-<https://schema.datacite.org/meta/kernel-4.4/#Preprint> rdfs:label "Preprint"@en .
+<https://schema.datacite.org/meta/kernel-4/#Preprint> rdfs:label "Preprint"@en .
 
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;
@@ -75,20 +75,20 @@
 <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> a skos:ConceptScheme ;
     dcterms:title "preprovi" .
 
-<http://localhost:8000/v2/subjects/subjwibb/> a skos:Concept ;
+<http://localhost:8000/v2/subjects/subjwibb> a skos:Concept ;
     skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
     skos:prefLabel "wibble" ;
-    skos:related <http://localhost:8000/v2/subjects/subjwibbb/> .
+    skos:related <http://localhost:8000/v2/subjects/subjwibbb> .
 
-<http://localhost:8000/v2/subjects/subjwobbb/> a skos:Concept ;
-    skos:broader <http://localhost:8000/v2/subjects/subjwibbb/> ;
+<http://localhost:8000/v2/subjects/subjwobbb> a skos:Concept ;
+    skos:broader <http://localhost:8000/v2/subjects/subjwibbb> ;
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
     skos:prefLabel "wobbble" .
 
 <https://bepress.com/reference_guide_dc/disciplines/> a skos:ConceptScheme ;
     dcterms:title "bepress Digital Commons Three-Tiered Taxonomy" .
 
-<http://localhost:8000/v2/subjects/subjwibbb/> a skos:Concept ;
+<http://localhost:8000/v2/subjects/subjwibbb> a skos:Concept ;
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
     skos:prefLabel "wibbble" .
 

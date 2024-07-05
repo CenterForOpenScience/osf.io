@@ -122,6 +122,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
+    advertise_on_discover_page = models.BooleanField(default=True, help_text='Indicates if the provider should be advertised on the discovery page.')
     advisory_board = models.TextField(default='', blank=True)
     description = models.TextField(default='', blank=True)
     domain = models.URLField(blank=True, default='', max_length=200)
@@ -181,9 +182,9 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     @property
     def highlighted_subjects(self):
         if self.has_highlighted_subjects:
-            return self.subjects.filter(highlighted=True).order_by('text')[:10]
+            return self.subjects.filter(highlighted=True).order_by('text')
         else:
-            return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
+            return sorted(self.top_level_subjects, key=lambda s: s.text)
 
     @property
     def top_level_subjects(self):
@@ -405,17 +406,6 @@ class PreprintProvider(AbstractProvider):
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
             return rules_to_subjects(self.subjects_acceptable)
-
-    @property
-    def has_highlighted_subjects(self):
-        return self.subjects.filter(highlighted=True).exists()
-
-    @property
-    def highlighted_subjects(self):
-        if self.has_highlighted_subjects:
-            return self.subjects.filter(highlighted=True).order_by('text')[:10]
-        else:
-            return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
 
     @property
     def top_level_subjects(self):

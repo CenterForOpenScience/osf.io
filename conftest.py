@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 
 from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
+from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
 
 
@@ -89,8 +90,8 @@ _MOCKS = {
         'mark': 'enable_search',
         'replacement': mock.MagicMock()
     },
-    'website.search.elastic_search': {
-        'mark': 'enable_search',
+    'osf.external.messages.celery_publishers._publish_user_status_change': {
+        'mark': 'enable_account_status_messaging',
         'replacement': mock.MagicMock()
     }
 }
@@ -277,6 +278,12 @@ def mock_celery():
     with mock.patch.object(website_settings, 'USE_CELERY', True):
         with mock.patch('osf.external.internet_archive.tasks.enqueue_postcommit_task') as mock_celery:
             yield mock_celery
+
+
+@pytest.fixture
+def mock_spam_head_request():
+    with mock.patch.object(spam_tasks.requests, 'head') as mock_spam_head_request:
+        yield mock_spam_head_request
 
 
 def rolledback_transaction(loglabel):

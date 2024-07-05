@@ -1,6 +1,6 @@
 import pytz
 import json
-from unicodedata import normalize
+from website.archiver.utils import normalize_unicode_filenames
 
 from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
@@ -398,6 +398,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    cedar_metadata_records = RelationshipField(
+        related_view='registrations:registration-cedar-metadata-records-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -440,8 +445,8 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_embargo_end_date(self, obj):
-        if obj.embargo_end_date:
-            return obj.embargo_end_date
+        if obj.root.embargo:
+            return obj.root.embargo.end_date if obj.root.embargo.end_date else None
         return None
 
     def get_registration_supplement(self, obj):
@@ -768,11 +773,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             return False
 
         # Confirm that the file has the expected name
-        normalized_file_names = [
-            normalize('NFD', file_metadata['file_name']),
-            normalize('NFC', file_metadata['file_name']),
-        ]
-        if attached_file.name not in normalized_file_names:
+        normalized_file_name = normalize_unicode_filenames(file_metadata['file_name'])
+        if attached_file.name not in normalized_file_name:
             return False
 
         # Confirm that the file belongs to a node being registered

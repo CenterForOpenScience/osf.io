@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- this file retrieved on 2023-04-18 from https://schema.datacite.org/meta/kernel-4.4/include/datacite-contributorType-v4.xsd -->
+<!-- this file retrieved on 2024-02-02 from https://schema.datacite.org/meta/kernel-4.5/include/datacite-contributorType-v4.xsd -->
 <!-- Version 1.0 - Created 2011-01-13 - FZ, TIB, Germany
    2013-05 v3.0: Addition of ID to simpleType element, added values "ResearchGroup" & "Other"
    2014-08-20 v3.1: Addition of value "DataCurator"
@@ -10,27 +10,27 @@
       <xs:documentation>The type of contributor of the resource.</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
-      <xs:enumeration value="ContactPerson"/>
-      <xs:enumeration value="DataCollector"/>
-      <xs:enumeration value="DataCurator"/>
-      <xs:enumeration value="DataManager"/>
-      <xs:enumeration value="Distributor"/>
-      <xs:enumeration value="Editor"/>
-      <xs:enumeration value="HostingInstitution"/>
-      <xs:enumeration value="Other"/>
-      <xs:enumeration value="Producer"/>
-      <xs:enumeration value="ProjectLeader"/>
-      <xs:enumeration value="ProjectManager"/>
-      <xs:enumeration value="ProjectMember"/>
-      <xs:enumeration value="RegistrationAgency"/>
-      <xs:enumeration value="RegistrationAuthority"/>
-      <xs:enumeration value="RelatedPerson"/>
-      <xs:enumeration value="ResearchGroup"/>
-      <xs:enumeration value="RightsHolder"/>
-      <xs:enumeration value="Researcher"/>
-      <xs:enumeration value="Sponsor"/>
-      <xs:enumeration value="Supervisor"/>
-      <xs:enumeration value="WorkPackageLeader"/>
+      <xs:enumeration value="ContactPerson" />
+      <xs:enumeration value="DataCollector" />
+      <xs:enumeration value="DataCurator" />
+      <xs:enumeration value="DataManager" />
+      <xs:enumeration value="Distributor" />
+      <xs:enumeration value="Editor" />
+      <xs:enumeration value="HostingInstitution" />
+      <xs:enumeration value="Other" />
+      <xs:enumeration value="Producer" />
+      <xs:enumeration value="ProjectLeader" />
+      <xs:enumeration value="ProjectManager" />
+      <xs:enumeration value="ProjectMember" />
+      <xs:enumeration value="RegistrationAgency" />
+      <xs:enumeration value="RegistrationAuthority" />
+      <xs:enumeration value="RelatedPerson" />
+      <xs:enumeration value="ResearchGroup" />
+      <xs:enumeration value="RightsHolder" />
+      <xs:enumeration value="Researcher" />
+      <xs:enumeration value="Sponsor" />
+      <xs:enumeration value="Supervisor" />
+      <xs:enumeration value="WorkPackageLeader" />
     </xs:restriction>
   </xs:simpleType>
 </xs:schema>

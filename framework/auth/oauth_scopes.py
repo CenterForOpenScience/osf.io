@@ -160,6 +160,9 @@ class CoreScopes(object):
 
     WAFFLE_READ = 'waffle_read'
 
+    CEDAR_METADATA_RECORD_READ = 'cedar_metadata_record_read'
+    CEDAR_METADATA_RECORD_WRITE = 'cedar_metadata_record_write'
+
     NULL = 'null'
 
     # NOTE: Use with extreme caution.
@@ -316,6 +319,7 @@ class ComposedScopes(object):
                 + PREPRINT_ALL_READ\
                 + GROUP_READ\
                 + (
+                    CoreScopes.CEDAR_METADATA_RECORD_READ,
                     CoreScopes.MEETINGS_READ,
                     CoreScopes.INSTITUTION_READ,
                     CoreScopes.SEARCH,
@@ -336,6 +340,7 @@ class ComposedScopes(object):
                  + PREPRINT_ALL_WRITE\
                  + GROUP_WRITE\
                  + (
+                     CoreScopes.CEDAR_METADATA_RECORD_WRITE,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION
                  )

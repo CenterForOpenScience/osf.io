@@ -15,6 +15,8 @@ class CollectionProviderForm(forms.ModelForm):
     program_area_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     school_type_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     study_design_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
+    data_type_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
+    disease_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     _id = forms.SlugField(
         required=True,
         help_text='URL Slug',
@@ -45,7 +47,7 @@ class CollectionProviderForm(forms.ModelForm):
             self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles=['text-align', 'vertical-align', 'color'],
             strip=True
         )
 
@@ -56,7 +58,7 @@ class CollectionProviderForm(forms.ModelForm):
             self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles=['text-align', 'vertical-align', 'color'],
             strip=True
         )
 
@@ -265,6 +267,66 @@ class CollectionProviderForm(forms.ModelForm):
             added_choices = set()
             removed_choices = set()
             choices = self.data.get('study_design_choices')
+            if choices:
+                added_choices = json.loads(choices)
+        return {'added': added_choices, 'removed': removed_choices}
+
+    def clean_disease_choices(self):
+        if not self.data.get('disease_choices'):
+            return {'added': [], 'removed': []}
+
+        collection_provider = self.instance
+        primary_collection = collection_provider.primary_collection
+        if primary_collection:  # Modifying an existing CollectionProvider
+            old_choices = {c.strip(' ') for c in primary_collection.disease_choices}
+            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('disease_choices'))}
+            added_choices = updated_choices - old_choices
+            removed_choices = old_choices - updated_choices
+
+            active_removed_choices = set(
+                primary_collection.collectionsubmission_set.filter(
+                    disease__in=removed_choices
+                ).values_list('disease', flat=True)
+            )
+            if active_removed_choices:
+                raise forms.ValidationError(
+                    'Cannot remove the following choices for "disease", as they are '
+                    f'currently in use: {active_removed_choices}'
+                )
+        else:  # Creating a new CollectionProvider
+            added_choices = set()
+            removed_choices = set()
+            choices = self.data.get('disease_choices')
+            if choices:
+                added_choices = json.loads(choices)
+        return {'added': added_choices, 'removed': removed_choices}
+
+    def clean_data_type_choices(self):
+        if not self.data.get('data_type_choices'):
+            return {'added': [], 'removed': []}
+
+        collection_provider = self.instance
+        primary_collection = collection_provider.primary_collection
+        if primary_collection:  # Modifying an existing CollectionProvider
+            old_choices = {c.strip(' ') for c in primary_collection.data_type_choices}
+            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('data_type_choices'))}
+            added_choices = updated_choices - old_choices
+            removed_choices = old_choices - updated_choices
+
+            active_removed_choices = set(
+                primary_collection.collectionsubmission_set.filter(
+                    data_type__in=removed_choices
+                ).values_list('data_type', flat=True)
+            )
+            if active_removed_choices:
+                raise forms.ValidationError(
+                    'Cannot remove the following choices for "data_type", as they are '
+                    f'currently in use: {active_removed_choices}'
+                )
+        else:  # Creating a new CollectionProvider
+            added_choices = set()
+            removed_choices = set()
+            choices = self.data.get('data_type_choices')
             if choices:
                 added_choices = json.loads(choices)
         return {'added': added_choices, 'removed': removed_choices}

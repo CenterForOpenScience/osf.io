@@ -23,6 +23,7 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 #WATERBUTLER_URL = 'http://localhost:7777'
 #WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
+#GRAVYVALET_URL = 'https://localhost:8004'
 
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
@@ -74,6 +75,11 @@ SESSION_COOKIE_SECURE = SECURE_MODE
 SESSION_COOKIE_SAMESITE = 'Lax'
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
+
+# CEDAR API configs
+CEDAR_API_HOST = ''
+CEDAR_API_KEY = ''
+CEDAR_HOME_FOLDER_ID = ''
 
 class CeleryConfig(defaults.CeleryConfig):
     """

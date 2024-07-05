@@ -12,13 +12,19 @@ from django.utils import timezone
 import pytz
 import itsdangerous
 from importlib import import_module
+import pytest_socket
 
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.conf import settings as django_conf_settings
 
 from website import settings, mails
-from website.preprints.tasks import on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
+from website.preprints.tasks import (
+    on_preprint_updated,
+    update_or_create_preprint_identifiers,
+    update_or_enqueue_on_preprint_updated,
+    should_update_preprint_identifiers
+)
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from framework.auth import signing
@@ -1924,6 +1930,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory()
+        self.private_preprint = PreprintFactory(is_published=False, creator=self.user)
         thesis_provider = PreprintProviderFactory(share_publish_type='Thesis')
         self.thesis = PreprintFactory(provider=thesis_provider)
 
@@ -1969,6 +1976,20 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         )
         assert 'title' in updated_task.kwargs['saved_fields']
         assert 'contributors' in  updated_task.kwargs['saved_fields']
+
+    def test_update_or_enqueue_on_preprint_doi_created(self):
+        assert not should_update_preprint_identifiers(self.private_preprint, {})
+        assert not self.private_preprint.identifiers.all()
+
+        with mock.patch.object(settings, 'CROSSREF_URL', 'https://test.crossref.org/servlet/deposit'):
+            with mock.patch.object(settings, 'CROSSREF_USERNAME', 'TestCrossrefUsername'):
+                with mock.patch.object(settings, 'CROSSREF_PASSWORD', 'TestCrossrefPassword'):
+                    # This exception proved it tried to contact Crossref, testing the mailgun route is elsewhere, so no
+                    # mocking when the DOI is confirmed.
+                    with pytest.raises(pytest_socket.SocketConnectBlockedError):
+                        self.private_preprint.set_published(True, self.auth, save=True)
+
+        assert should_update_preprint_identifiers(self.private_preprint, {})
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):
@@ -2067,52 +2088,40 @@ class TestCheckPreprintAuth(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_access(self.preprint, Auth(user=self.user), 'upload', None)
+        res = views.check_resource_permissions(self.preprint, Auth(user=self.user), 'upload')
         assert_true(res)
 
     def test_not_has_permission_read_published(self):
-        res = views.check_access(self.preprint, Auth(), 'download', None)
+        res = views.check_resource_permissions(self.preprint, Auth(), 'download')
         assert_true(res)
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(user=user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user=user2), 'download'))
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(), 'download', None)
-        assert_equal(exc_info.exception.code, 401)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(), 'download'))
 
     def test_check_access_withdrawn_preprint_file(self):
         self.preprint.date_withdrawn = timezone.now()
         self.preprint.save()
         # Unauthenticated
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(), 'download', None)
-        assert_equal(exc_info.exception.code, 401)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(), 'download'))
 
         # Noncontributor
         user2 = AuthUserFactory()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user2), 'download'))
 
         # Read contributor
         self.preprint.add_contributor(user2, READ, save=True)
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(user2), 'download'))
 
         # Admin contributor
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.preprint, Auth(self.user), 'download', None)
-        assert_equal(exc_info.exception.code, 403)
+        assert_false(views.check_resource_permissions(self.preprint, Auth(self.user), 'download'))
 
 
 

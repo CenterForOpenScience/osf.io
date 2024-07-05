@@ -77,6 +77,7 @@ from osf.models import (
     QuickFilesNode,
     NotableDomain
 )
+from osf.external.spam import tasks as spam_tasks
 
 from tests.base import (
     assert_is_redirect,
@@ -1140,15 +1141,20 @@ class TestUserProfile(OsfTestCase):
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
-        self.app.put_json(
-            url,
-            payload,
-            auth=self.user.auth,
-        )
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            resp = self.app.put_json(
+                url,
+                payload,
+                auth=self.user.auth,
+            )
+
         self.user.reload()
         for key, value in payload.items():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
+
+        assert NotableDomain.objects.all()
+        assert NotableDomain.objects.get(domain='frozen.pizza.com')
 
     # Regression test for help-desk ticket
     def test_making_email_primary_is_not_case_sensitive(self):
@@ -1185,7 +1191,8 @@ class TestUserProfile(OsfTestCase):
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
         self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
             url,
@@ -1200,12 +1207,14 @@ class TestUserProfile(OsfTestCase):
         user2 = AuthUserFactory()
         self.user.social['twitter'] = 'howtopizza'
         self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
-        res = self.app.get(
-            url,
-            auth=user2.auth,
-        )
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            res = self.app.get(
+                url,
+                auth=user2.auth,
+            )
         assert_equal(res.json.get('twitter'), 'howtopizza')
         assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
@@ -4092,7 +4101,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert_in('/login?service=', res.location)
         assert_in('new=true', res.location)
 
-        assert_equal(mock_welcome.call_count, 1)
+        assert_equal(mock_welcome.call_count, 0)
 
         self.user.reload()
         assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
@@ -4126,7 +4135,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
 
-        assert_equal(mock_confirm.call_count, 1)
+        assert_equal(mock_confirm.call_count, 0)
 
         self.user.reload()
         dupe_user.reload()
@@ -5018,28 +5027,22 @@ class TestResolveGuid(OsfTestCase):
     def setUp(self):
         super(TestResolveGuid, self).setUp()
 
-    def test_preprint_provider_without_domain(self):
+    @mock.patch('website.views.use_ember_app')
+    def test_preprint_provider_without_domain(self, mock_use_ember_app):
         provider = PreprintProviderFactory(domain='')
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.request.path,
-            '/{}/'.format(preprint._id)
-        )
+        mock_use_ember_app.assert_called_with()
 
-    def test_preprint_provider_with_domain_without_redirect(self):
+    @mock.patch('website.views.use_ember_app')
+    def test_preprint_provider_with_domain_without_redirect(self, mock_use_ember_app):
         domain = 'https://test.com/'
         provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.request.path,
-            '/{}/'.format(preprint._id)
-        )
+        mock_use_ember_app.assert_called_with()
 
     def test_preprint_provider_with_domain_with_redirect(self):
         domain = 'https://test.com/'
@@ -5062,16 +5065,13 @@ class TestResolveGuid(OsfTestCase):
 
 
 
-    def test_preprint_provider_with_osf_domain(self):
+    @mock.patch('website.views.use_ember_app')
+    def test_preprint_provider_with_osf_domain(self, mock_use_ember_app):
         provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.request.path,
-            '/{}/'.format(preprint._id)
-        )
+        mock_use_ember_app.assert_called_with()
 
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):

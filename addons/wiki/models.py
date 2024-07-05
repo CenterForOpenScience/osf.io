@@ -203,11 +203,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         )
 
     def _get_spam_content(self, node):
-        content = []
-        content.append(self.raw_text(node))
-        if not content:
-            return None
-        return ' '.join(content)
+        return self.content or None
 
     def clone_version(self, wiki_page, user):
         """Clone a node wiki page.

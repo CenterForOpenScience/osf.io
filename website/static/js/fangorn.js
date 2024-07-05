@@ -85,8 +85,6 @@ var OPERATIONS = {
     }
 };
 
-// Cross browser key codes for the Command key
-var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
 
@@ -1345,6 +1343,121 @@ function doCheckout(item, checkout, showError) {
     });
 }
 
+/**
+ * Submit to Boa in Action Column
+ * @param event DOM event object for click
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} col Information pertinent to that column where this upload event is run from
+ * @private
+ */
+function _submitToBoaEvent (event, item, col) {
+    var tb = this;
+    var selectedDataset = '';
+    function updateDataset(dataset) {
+        selectedDataset = dataset;
+        if (dataset === '') {
+            $('#boaNoDatasetWarning').css({display: 'block'});
+        }
+        else {
+            $('#boaNoDatasetWarning').css({display: 'none'});
+        }
+    }
+    function cancelSubmitToBoa() {
+        tb.modal.dismiss();
+    }
+    function runSubmitToBoa(item, dataset) {
+        if (dataset === '') {
+            $('#boaNoDatasetWarning').css({display: 'block'});
+            return;
+        }
+        $('#boaNoDatasetWarning').css({display: 'none'});
+        $osf.postJSON(
+            item.data.nodeApiUrl + 'boa/submit-job/',
+            {
+                data: item.data,
+                parent: item.parent().data,
+                dataset: dataset,
+            }
+        ).done(function(xhr) {
+            $osf.growl(
+                'Success',
+                'File submitted to Boa. You will be notified by email when the job is done.',
+                'success'
+            );
+            tb.modal.dismiss();
+        }).fail(function(xhr) {
+            $osf.growl(
+                'Error',
+                'Unable to submit the file to Boa. Please try again later. ' +
+                'Contact <a href="mailto:support@osf.io">support@osf.io</a> if the problem persists.'
+            );
+            tb.modal.dismiss();
+        });
+        return;
+    }
+
+    var datasets = [
+        '2022 Jan/Java',
+        '2022 Feb/Python',
+        '2021 Method Chains',
+        '2021 Aug/Python',
+        '2021 Aug/Kotlin (small)',
+        '2021 Aug/Kotlin',
+        '2021 Jan/ML-Verse',
+        '2020 August/Python-DS',
+        '2019 October/GitHub (small)',
+        '2019 October/GitHub (medium)',
+        '2019 October/GitHub',
+        '2015 September/GitHub',
+        '2013 September/SF (small)',
+        '2013 September/SF (medium)',
+        '2013 September/SF',
+        '2013 May/SF',
+        '2013 February/SF',
+        '2012 July/SF',
+    ];
+
+    var datasetInstr = m('p', 'Please select a dataset to run the query against:');
+    var datasetSelect = m('div', [
+        m(
+            'select.form-control',
+            {
+                onchange: function(ev){
+                    updateDataset(ev.target.value);
+                }
+            },
+            [
+                m('option.text-muted', {value: '', disabled: true, selected: true}, 'Select a dataset'),
+                datasets.map(function(dataset) {
+                    var args = {value: dataset};
+                    return m('option', args, dataset);
+                })
+            ]
+        )
+    ]);
+
+    var postscript = m('p', 'Are you sure you want to submit "' + item.data.name + '" to Boa?');
+    var noDatasetWarning = m(
+        'p.text-danger',
+        {id: 'boaNoDatasetWarning', style: {display: 'none'}},
+        'You must select a dataset.'
+    );
+    var interactSpiel = m('div', [datasetInstr, datasetSelect, postscript, noDatasetWarning]);
+    var mithrilButtonsSingle = m('div', [
+        m('span.btn.btn-default', { onclick : function() { cancelSubmitToBoa(); } }, 'Cancel'),
+        m('span.btn.btn-info', { onclick : function() { runSubmitToBoa(item, selectedDataset); } }, 'Submit')
+    ]);
+
+    // This is already being checked before this step but will keep this edit permission check
+    if (item.data.permissions.edit) {
+        tb.modal.update(
+            interactSpiel,
+            mithrilButtonsSingle,
+            m('h3.break-word.modal-title', 'Submit file to Boa?')
+        );
+    }
+
+}
 
 /**
  * Resolves lazy load url for fetching children
@@ -1458,12 +1571,7 @@ function gotoFileEvent (item, toUrl) {
             }
         }
     }
-
-    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(fileurl, '_blank');
-    } else {
-        window.open(fileurl, '_self');
-    }
+    window.open(fileurl, '_blank');
 }
 
 /**
@@ -2073,6 +2181,25 @@ var FGItemButtons = {
                     }, 'Rename')
                 );
             }
+
+            // submit to boa: item must be boa file, provider must be osfstorage, user must be admin or write
+            if (
+                (item.data.name.match(/\.boa$/i)) &&
+                (item.data.provider && item.data.provider === 'osfstorage') &&
+                (item.data.permissions && item.data.permissions.edit) &&
+                (window.contextVars.node.activeAddons.includes('boa'))
+            ) {
+                rowButtons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _submitToBoaEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-pencil',
+                        className: 'text-info'
+                    }, 'Submit to Boa')
+                );
+            }
+
             return m('span', rowButtons);
         }
     }
@@ -3063,6 +3190,7 @@ Fangorn.ButtonEvents = {
     _removeEvent : _removeEvent,
     createFolder : _createFolder,
     _gotoFileEvent : gotoFileEvent,
+    _submitToBoaEvent: _submitToBoaEvent,
 };
 
 Fangorn.DefaultColumns = {

@@ -1,25 +1,15 @@
-# -*- coding: utf-8 -*-
-from nose.tools import assert_in, assert_equal
 import mock
 import pytest
-
 from rest_framework import status as http_status
 
-from addons.base.tests.views import (
-    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
-)
-from addons.owncloud.models import OwnCloudProvider
+from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
+from addons.owncloud.tests.utils import OwnCloudBasicAuthAddonTestCase
 from tests.base import OsfTestCase
-from addons.owncloud.serializer import OwnCloudSerializer
-from addons.owncloud.tests.utils import OwnCloudAddonTestCase
 
 pytestmark = pytest.mark.django_db
 
-class TestAuthViews(OAuthAddonAuthViewsTestCaseMixin, OwnCloudAddonTestCase, OsfTestCase):
 
-    @property
-    def Provider(self):
-        return OwnCloudProvider
+class TestAuthViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
 
     def test_oauth_start(self):
         pass
@@ -28,39 +18,53 @@ class TestAuthViews(OAuthAddonAuthViewsTestCaseMixin, OwnCloudAddonTestCase, Osf
         pass
 
 
-class TestConfigViews(OwnCloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
-    Serializer = OwnCloudSerializer
-    client = OwnCloudProvider
-
-    @property
-    def folder(self):
-        return {'name': '/Documents/', 'path': '/Documents/'}
+class TestConfigViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
 
     def setUp(self):
         super(TestConfigViews, self).setUp()
-        self.mock_ser_api = mock.patch('owncloud.Client.login')
-        self.mock_ser_api.start()
-        self.set_node_settings(self.node_settings)
+        self.mock_owncloud_login = mock.patch('owncloud.Client.login')
+        self.mock_owncloud_logout = mock.patch('owncloud.Client.logout')
+        self.mock_owncloud_login.start()
+        self.mock_owncloud_logout.start()
 
     def tearDown(self):
-        self.mock_ser_api.stop()
+        self.mock_owncloud_logout.stop()
+        self.mock_owncloud_login.stop()
         super(TestConfigViews, self).tearDown()
 
     @mock.patch('addons.owncloud.models.NodeSettings.get_folders')
-    def test_folder_list(self, mock_connection):
-        #test_get_datasets
-        mock_connection.return_value = ['/Documents/', '/Pictures/', '/Videos/']
-
+    def test_folder_list(self, mock_get_folders):
+        mock_get_folders.return_value = ['/Documents/', '/Pictures/', '/Videos/']
         super(TestConfigViews, self).test_folder_list()
 
     def test_get_config(self):
-        url = self.project.api_url_for(
-            '{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        """Lacking coverage for non-oauth add-ons and thus replaced by:
+            * ``test_get_config_with_external_account()``
+            * ``test_get_config_without_external_account()``
+        """
+        pass
+
+    def test_get_config_with_external_account(self):
+
+        self.node_settings.set_auth(self.external_account, self.user)
+        serialized = self.Serializer().serialize_settings(self.node_settings, self.user)
+        assert self.node_settings.external_account is not None
+        assert serialized['validCredentials'] is True
+
+        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
-        assert_in('result', res.json)
-        serialized = self.Serializer().serialize_settings(
-            self.node_settings,
-            self.user,
-        )
-        assert_equal(serialized, res.json['result'])
+        assert res.status_code == http_status.HTTP_200_OK
+        assert 'result' in res.json
+        assert serialized == res.json['result']
+
+    def test_get_config_without_external_account(self):
+
+        serialized = self.Serializer().serialize_settings(self.node_settings, self.user)
+        assert self.node_settings.external_account is None
+        assert serialized['validCredentials'] is False
+
+        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user.auth)
+        assert res.status_code == http_status.HTTP_200_OK
+        assert 'result' in res.json
+        assert serialized == res.json['result']

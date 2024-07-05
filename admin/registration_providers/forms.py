@@ -59,7 +59,7 @@ class RegistrationProviderForm(forms.ModelForm):
             self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles=['text-align', 'vertical-align', 'color'],
             strip=True
         )
 
@@ -70,7 +70,7 @@ class RegistrationProviderForm(forms.ModelForm):
             self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles=['text-align', 'vertical-align', 'color'],
             strip=True
         )
 

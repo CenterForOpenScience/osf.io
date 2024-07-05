@@ -203,8 +203,10 @@ class NodeFileCollector(object):
             for descendant in self.find_readable_descendants(bnode, visited=visited):
                 yield descendant
 
-    def _serialize_node(self, node, parent=None, grid_root=None, children=None):
+    def _serialize_node(self, node, parent=None, grid_root=None, children=None,
+                        active_addons=None):
         children = children or []
+        active_addons = active_addons or []
         is_pointer = parent and node.is_linked_node
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
 
@@ -230,6 +232,7 @@ class NodeFileCollector(object):
                 'fetch': None,
             },
             'children': children,
+            'activeAddons': active_addons,
             'isPointer': is_pointer,
             'isSmartFolder': False,
             'nodeType': 'component' if parent else 'project',
@@ -238,24 +241,28 @@ class NodeFileCollector(object):
 
     def _get_nodes(self, node, grid_root=None):
         data = []
+        active_addons = []
         if node.can_view(auth=self.auth):
-            serialized_addons = self._collect_addons(node)
+            serialized_addons, active_addons = self._collect_addons(node)
             serialized_children = [
                 self._serialize_node(child, parent=node, grid_root=grid_root)
                 for child in self.find_readable_descendants(node, visited=[])
             ]
             data = serialized_addons + serialized_children
-        return self._serialize_node(node, children=data)
+        return self._serialize_node(node, children=data, active_addons=active_addons)
 
     def _collect_addons(self, node):
-        rv = []
+        return_value = []
+        active_addons = []
         for addon in node.get_addons():
+            if addon.has_auth:
+                active_addons.append(addon.config.short_name)
             if addon.config.has_hgrid_files:
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 try:
                     temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
                 except Exception as e:
-                    logger.warn(
+                    logger.warning(
                         getattr(
                             e,
                             'data',
@@ -263,7 +270,7 @@ class NodeFileCollector(object):
                         )
                     )
                     sentry.log_exception()
-                    rv.append({
+                    return_value.append({
                         KIND: FOLDER,
                         'unavailable': True,
                         'iconUrl': addon.config.icon_url,
@@ -273,8 +280,8 @@ class NodeFileCollector(object):
                         'name': '{} is currently unavailable'.format(addon.config.full_name),
                     })
                     continue
-                rv.extend(sort_by_name(temp) or [])
-        return rv
+                return_value.extend(sort_by_name(temp) or [])
+        return return_value, active_addons
 
 
 # TODO: these might belong in addons module

@@ -320,6 +320,7 @@ def node_setting(auth, node, **kwargs):
 @must_not_be_registration
 @must_be_logged_in
 @must_have_permission(WRITE)
+@ember_flag_is_active(features.ENABLE_GV)
 def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
@@ -332,7 +333,7 @@ def node_addons(auth, node, **kwargs):
     ret['addon_settings'] = [addon for addon in addon_settings]
 
     # Addons can have multiple categories, but we only want a set of unique ones being used.
-    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+    ret['addon_categories'] = sorted(set([item for addon in addon_settings for item in addon['categories']]))
 
     # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
@@ -911,6 +912,8 @@ def serialize_collections(collection_submissions, auth):
         'node_id': collection_submission.guid._id,
         'study_design': collection_submission.study_design,
         'program_area': collection_submission.program_area,
+        'disease': collection_submission.disease,
+        'data_type': collection_submission.data_type,
         'state': collection_submission.state.db_name,
         'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'is_public': collection_submission.collection.is_public,

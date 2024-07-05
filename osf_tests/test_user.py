@@ -17,7 +17,7 @@ import pytz
 from importlib import import_module
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
-from framework.auth.signals import user_merged
+from framework.auth.signals import user_account_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.celery_tasks import handlers
@@ -37,6 +37,8 @@ from osf.models import (
     NotableDomain,
     PreprintContributor,
     DraftRegistrationContributor,
+    DraftRegistration,
+    DraftNode,
     UserSessionMap,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
@@ -66,12 +68,15 @@ from .factories import (
     UnregUserFactory,
     UserFactory,
     RegistrationFactory,
-    PreprintFactory
+    PreprintFactory,
+    DraftNodeFactory
 )
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
+
+from osf.external.spam import tasks as spam_tasks
 
 
 pytestmark = pytest.mark.django_db
@@ -1502,7 +1507,7 @@ class TestMergingUsers:
 
         with capture_signals() as mock_signals:
             merge_dupe()
-            assert mock_signals.signals_sent() == set([user_merged])
+            assert mock_signals.signals_sent() == set([user_account_merged])
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
@@ -2188,11 +2193,13 @@ class TestUserValidation(OsfTestCase):
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)
 
+        previous_number_of_domains = NotableDomain.objects.all().count()
         fails_at_end = False
         for should_pass in data['testsPositive']:
             try:
                 self.user.social = {'profileWebsites': [should_pass]}
-                self.user.save()
+                with mock.patch.object(spam_tasks.requests, 'head'):
+                    self.user.save()
                 assert self.user.social['profileWebsites'] == [should_pass]
             except ValidationError:
                 fails_at_end = True
@@ -2202,16 +2209,26 @@ class TestUserValidation(OsfTestCase):
             self.user.social = {'profileWebsites': [should_fail]}
             try:
                 with pytest.raises(ValidationError):
-                    self.user.save()
+                    with mock.patch.object(spam_tasks.requests, 'head'):
+                        self.user.save()
             except AssertionError:
                 fails_at_end = True
                 print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
         if fails_at_end:
             raise
 
+        # Not all domains that are permissable are possible to use as spam,
+        # some are correctly not extracted and not kept in notable domain so spot
+        # check some, not all, because not all `testsPositive` urls should be in
+        # NotableDomains
+        assert NotableDomain.objects.all().count() == previous_number_of_domains + 12
+        assert NotableDomain.objects.get(domain='definitelyawebsite.com')
+        assert NotableDomain.objects.get(domain='a.b-c.de')
+
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social['profileWebsites'] == ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']
 
     def test_validate_social_profile_websites_invalid(self):
@@ -2230,7 +2247,8 @@ class TestUserValidation(OsfTestCase):
 
     def test_profile_website_unchanged(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links['profileWebsites'] == ['http://cos.io/']
         assert len(self.user.social_links) == 1
 
@@ -2241,7 +2259,8 @@ class TestUserValidation(OsfTestCase):
             'github': ['CenterForOpenScience'],
             'scholar': 'ztt_j28AAAAJ'
         }
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/'],
             'twitter': 'http://twitter.com/OSFramework',
@@ -2255,7 +2274,8 @@ class TestUserValidation(OsfTestCase):
             'twitter': ['OSFramework'],
             'github': ['CenterForOpenScience']
         }
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'http://twitter.com/OSFramework',
@@ -2388,6 +2408,12 @@ class TestUserGdprDelete:
         return registration
 
     @pytest.fixture()
+    def registration_with_draft_node(self, user, registration):
+        registration.branched_from = DraftNodeFactory(creator=user)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
     def project(self, user):
         project = ProjectFactory(creator=user)
         project.save()
@@ -2433,10 +2459,41 @@ class TestUserGdprDelete:
         user.gdpr_delete()
         assert user.nodes.exclude(is_deleted=True).count() == 0
 
+    def test_can_gdpr_delete_personal_registrations(self, user, registration_with_draft_node):
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+
+        registration_with_draft_node.remove_node(Auth(user))
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+        user.gdpr_delete()
+
+        # DraftNodes soft-deleted, DraftRegistions hard-deleted
+        assert user.nodes.exclude(is_deleted=True).count() == 0
+        assert DraftRegistration.objects.all().count() == 0
+
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 
         user.gdpr_delete()
         assert user.nodes.all().count() == 0
+
+    def test_can_gdpr_delete_shared_draft_registration_with_multiple_admins(self, user, registration):
+        other_admin = AuthUserFactory()
+        draft_registrations = user.draft_registrations.get()
+        draft_registrations.add_contributor(other_admin, permissions='admin')
+        assert draft_registrations.contributors.all().count() == 2
+        registration.delete_registration_tree(save=True)
+
+        user.gdpr_delete()
+        assert draft_registrations.contributors.get() == other_admin
+        assert user.nodes.filter(deleted__isnull=True).count() == 0
 
     def test_cant_gdpr_delete_registrations(self, user, registration):
 
@@ -2457,8 +2514,8 @@ class TestUserGdprDelete:
         with pytest.raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
-        assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
-                                         ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+        assert exc_info.value.args[0] == 'You cannot delete Node {} because it would' \
+                                         ' be a Node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
 
     def test_cant_gdpr_delete_osf_group_if_only_manager(self, user):
         group = OSFGroupFactory(name='My Group', creator=user)

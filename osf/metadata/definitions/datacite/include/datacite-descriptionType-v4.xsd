@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- this file retrieved on 2024-02-02 from https://schema.datacite.org/meta/kernel-4.5/include/datacite-descriptionType-v4.xsd -->
 <!-- Version 1.0 - Created 2011-01-13 - FZ, TIB, Germany
      2013-05 v3.0: Addition of ID to simpleType element, addition of value "Methods"
      2015-02-12 v4.0: Addition of value "TechnicalInfo"-->
@@ -8,12 +9,12 @@
       <xs:documentation>The type of the description.</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
-      <xs:enumeration value="Abstract"/>
-      <xs:enumeration value="Methods"/>
-      <xs:enumeration value="SeriesInformation"/>
-      <xs:enumeration value="TableOfContents"/>
-      <xs:enumeration value="TechnicalInfo"/>
-      <xs:enumeration value="Other"/>
+      <xs:enumeration value="Abstract" />
+      <xs:enumeration value="Methods" />
+      <xs:enumeration value="SeriesInformation" />
+      <xs:enumeration value="TableOfContents" />
+      <xs:enumeration value="TechnicalInfo" />
+      <xs:enumeration value="Other" />
     </xs:restriction>
   </xs:simpleType>
 </xs:schema>

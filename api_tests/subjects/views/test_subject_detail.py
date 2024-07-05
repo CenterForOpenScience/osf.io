@@ -44,6 +44,7 @@ class TestSubject:
         assert 'parent' in data['relationships']
         assert data['relationships']['parent']['data'] is None
         assert data['relationships']['children']['links']['related']['meta']['count'] == 2
+        assert data['links']['iri'] == subject.get_semantic_iri()
 
         # Follow children link
         children_link = data['relationships']['children']['links']['related']['href']
