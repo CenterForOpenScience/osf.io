@@ -10,7 +10,6 @@ from osf.models import (
     ReviewAction,
     Preprint,
     PreprintContributor,
-    Institution,
 )
 from osf.utils.requests import check_select_for_update
 
@@ -41,7 +40,7 @@ from api.preprints.serializers import (
     PreprintStorageProviderSerializer,
     PreprintNodeRelationshipSerializer,
     PreprintContributorsCreateSerializer,
-    PreprintsInstitutionsRelationshipSerializer
+    PreprintsInstitutionsRelationshipSerializer,
 )
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import (
@@ -58,7 +57,6 @@ from api.preprints.permissions import (
     AdminOrPublic,
     ContributorDetailPermissions,
     PreprintFilesPermissions,
-    PreprintInstitutionPermission,
 )
 from api.nodes.permissions import ContributorOrPublic
 from api.base.permissions import WriteOrPublicForRelationshipInstitutions
@@ -68,7 +66,6 @@ from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
-from api.institutions.serializers import InstitutionSerializer
 
 
 class PreprintMixin(NodeMixin):
@@ -623,32 +620,6 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
 
     def get_queryset(self):
         return self.get_queryset_from_request()
-
-
-class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_institutions_list).
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        PreprintInstitutionPermission,
-    )
-
-    required_read_scopes = [CoreScopes.PREPRINTS_READ, CoreScopes.INSTITUTION_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    serializer_class = InstitutionSerializer
-
-    model = Institution
-    view_category = 'preprints'
-    view_name = 'preprints-institutions'
-
-    ordering = ('-id',)
-
-    def get_resource(self):
-        return self.get_preprint()
-
-    def get_queryset(self):
-        return self.get_resource().affiliated_institutions.all()
 
 
 class PreprintInstitutionsRelationshipList(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
