@@ -141,6 +141,18 @@ class ModeratorIfNeverPublicWithdrawn(permissions.BasePermission):
 
 
 class PreprintInstitutionPermissionList(permissions.BasePermission):
+    """
+    Custom permission class for checking access to a list of institutions
+    associated with a preprint.
+
+    Permissions:
+    - Allows safe methods (GET, HEAD, OPTIONS) for public preprints.
+    - For private preprints, checks if the user has read permissions.
+
+    Methods:
+    - has_object_permission: Raises MethodNotAllowed for non-safe methods and
+      checks if the user has the necessary permissions to access private preprints.
+    """
     def has_object_permission(self, request, view, obj):
         if request.method not in permissions.SAFE_METHODS:
             raise exceptions.MethodNotAllowed(method=request.method)
