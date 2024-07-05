@@ -30,7 +30,6 @@ from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer
 from api.files.serializers import FileVersionSerializer
 from osf.utils.permissions import ADMIN
-from api.files.permissions import RegistrationFileDetailPermission
 
 
 class FileMixin(object):
@@ -76,7 +75,6 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'target'),
-        RegistrationFileDetailPermission,
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]

@@ -721,10 +721,8 @@ class TestFileVersionView:
             moderator_initiated=False
         )
 
-        approval_token = retraction.approval_state[resource.creator._id]['approval_token']
-        retraction.approve(user=resource.creator, token=approval_token)
+        retraction.accept()
         resource.save()
-
         resource.refresh_from_db()
 
         file.target = resource
@@ -742,10 +740,8 @@ class TestFileVersionView:
             moderator_initiated=False
         )
 
-        approval_token = retraction.approval_state[resource.creator._id]['approval_token']
-        retraction.approve(user=resource.creator, token=approval_token)
+        retraction.accept()
         resource.save()
-
         resource.refresh_from_db()
 
         file.target = resource
@@ -766,10 +762,8 @@ class TestFileVersionView:
             moderator_initiated=False
         )
 
-        approval_token = retraction.approval_state[resource.creator._id]['approval_token']
-        retraction.approve(user=resource.creator, token=approval_token)
+        retraction.accept()
         resource.save()
-
         resource.refresh_from_db()
 
         assert resource.is_retracted is True

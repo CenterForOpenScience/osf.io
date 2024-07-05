@@ -38,38 +38,3 @@ class IsPreprintFile(PreprintPublishedOrAdmin):
             return super(IsPreprintFile, self).has_object_permission(request, view, obj.target)
 
         return True
-
-
-class RegistrationFileDetailPermission(permissions.BasePermission):
-    acceptable_models = (Registration,)
-    REQUIRED_PERMISSIONS = {'PATCH': 'write', 'DELETE': 'write', 'PUT': 'write'}
-
-    def has_permission(self, request, view):
-        if request.method not in self.REQUIRED_PERMISSIONS.keys() and request.method not in permissions.SAFE_METHODS:
-            raise exceptions.MethodNotAllowed(request.method)
-
-        obj = view.get_object()
-        return self.has_object_permission(request, view, obj)
-
-    def has_object_permission(self, request, view, obj):
-        if request.method not in ['GET', *self.REQUIRED_PERMISSIONS.keys()]:
-            raise exceptions.MethodNotAllowed(request.method)
-        assert isinstance(obj, BaseFileNode), 'obj must be a BaseFileNode, got {}'.format(obj)
-        if not isinstance(obj.target, self.acceptable_models):
-            return True
-        assert_resource_type(obj.target, self.acceptable_models)
-
-        target = obj.target
-        if target.is_deleted:
-            raise Gone
-        if getattr(target, 'is_retracted', False):
-            return False
-
-        auth = get_user_auth(request)
-        if request.method in permissions.SAFE_METHODS:
-            return target.is_public or target.can_view(auth)
-
-        required_permission = self.REQUIRED_PERMISSIONS.get(request.method)
-        if required_permission:
-            return target.has_permission(auth.user, required_permission)
-        return True
