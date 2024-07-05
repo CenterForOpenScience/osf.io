@@ -16,6 +16,10 @@ class TestPrivatePreprintInstitutionsList:
         return f'/{API_BASE}preprints/{private_preprint._id}/institutions/'
 
     @pytest.fixture()
+    def invalid_url(self):
+        return f'/{API_BASE}preprints/invalid_id/institutions/'
+
+    @pytest.fixture()
     def user(self):
         return AuthUserFactory()
 
@@ -74,7 +78,6 @@ class TestPrivatePreprintInstitutionsList:
         res = app.get(url, auth=write_contrib.auth)
         assert res.status_code == 200
 
-        assert res.status_code == 200
         assert not res.json['data']
 
         private_preprint.affiliated_institutions.add(institution)
@@ -89,7 +92,6 @@ class TestPrivatePreprintInstitutionsList:
         res = app.get(url, auth=admin_contrib.auth)
         assert res.status_code == 200
 
-        assert res.status_code == 200
         assert not res.json['data']
 
         private_preprint.affiliated_institutions.add(institution)
@@ -99,6 +101,10 @@ class TestPrivatePreprintInstitutionsList:
         assert res.json['data'][0]['id'] == institution._id
         assert res.json['data'][0]['type'] == 'institutions'
 
+    def test_invalid_preprint_id(self, app, invalid_url):
+        res = app.get(invalid_url, expect_errors=True)
+        assert res.status_code == 404
+
 
 @pytest.mark.django_db
 class TestPublicPreprintInstitutionsList:
@@ -106,6 +112,10 @@ class TestPublicPreprintInstitutionsList:
     @pytest.fixture()
     def url(self, public_preprint):
         return f'/{API_BASE}preprints/{public_preprint._id}/institutions/'
+
+    @pytest.fixture()
+    def invalid_url(self):
+        return f'/{API_BASE}preprints/invalid_id/institutions/'
 
     @pytest.fixture()
     def user(self):
@@ -145,3 +155,7 @@ class TestPublicPreprintInstitutionsList:
 
         assert res.json['data'][0]['id'] == institution._id
         assert res.json['data'][0]['type'] == 'institutions'
+
+    def test_invalid_preprint_id(self, app, invalid_url):
+        res = app.get(invalid_url, expect_errors=True)
+        assert res.status_code == 404
