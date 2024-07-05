@@ -7,7 +7,6 @@ from api.base.exceptions import (
 )
 from api.base.serializers import (
     VersionedDateTimeField, HideIfRegistration, IDField,
-    JSONAPIRelationshipSerializer,
     JSONAPISerializer, LinksField,
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
@@ -1467,13 +1466,10 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
             },
         )
 
-class InstitutionRelated(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='_id', required=False, allow_null=True)
-    class Meta:
-        type_ = 'institutions'
-
 
 class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
+    from api.institutions.serializers import InstitutionRelated  # Avoid circular import
+
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({
         'self': 'get_self_url',

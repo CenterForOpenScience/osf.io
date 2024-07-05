@@ -172,4 +172,3 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
             return resource.is_public or resource.can_view(auth)
         else:
             return resource.has_permission(auth.user, osf_permissions.WRITE)
-

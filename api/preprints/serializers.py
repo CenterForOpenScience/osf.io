@@ -21,7 +21,6 @@ from api.base.serializers import (
     WaterbutlerLink,
     HideIfPreprint,
     LinkedNodesRelationshipSerializer,
-    JSONAPIRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
@@ -534,14 +533,8 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     })
 
 
-class InstitutionRelated(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='_id', required=False, allow_null=True)
-
-    class Meta:
-        type_ = 'institutions'
-
-
 class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
+    from api.institutions.serializers import InstitutionRelated  # Avoid circular import
     data = ser.ListField(child=InstitutionRelated())
 
     links = LinksField({
