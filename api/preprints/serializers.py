@@ -531,26 +531,3 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     links = LinksField({
         'self': 'get_self_url',
     })
-
-
-class PreprintsInstitutionsSerializer(BaseAPISerializer):
-    id = IDField(read_only=True, source='_id')
-    name = ser.CharField(read_only=True)
-    type = ser.SerializerMethodField(read_only=True)
-
-    links = LinksField({
-        'self': 'get_self_url',
-        'html': 'get_related_url',
-    })
-
-    def get_self_url(self, obj):
-        return obj.absolute_api_v2_url
-
-    def get_type(self, obj):
-        return 'institution'
-
-    def get_related_url(self, obj):
-        return obj.absolute_api_v2_url + 'institutions/'
-
-    class Meta:
-        type_ = 'institutions'
