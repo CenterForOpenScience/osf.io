@@ -158,10 +158,12 @@ class TestOsfGathering(TestCase):
             (_datacite_book_ref, rdflib.RDFS.label, Literal('Book', lang='en')),
         })
         # focus: registration
+        _datacite_studyregistration_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#StudyRegistration')
         assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
+            (self.registrationfocus.iri, DCTERMS.type, _datacite_studyregistration_ref),
+            (_datacite_studyregistration_ref, rdflib.RDFS.label, Literal('StudyRegistration', lang='en')),
         })
         self.registrationfocus.guid_metadata_record.resource_type_general = 'StudyRegistration'
-        _datacite_studyregistration_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#StudyRegistration')
         assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.type, _datacite_studyregistration_ref),
             (_datacite_studyregistration_ref, rdflib.RDFS.label, Literal('StudyRegistration', lang='en')),
