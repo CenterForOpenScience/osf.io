@@ -651,7 +651,7 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_resource().affiliated_institutions.all()
 
 
-class PreprintInstitutionsRelationshipList(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
+class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
     """ """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

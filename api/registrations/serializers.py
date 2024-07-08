@@ -19,7 +19,6 @@ from api.nodes.serializers import (
     NodeStorageProviderSerializer,
     NodeLicenseRelationshipField,
     NodeLinksSerializer,
-    update_institutions,
     NodeLicenseSerializer,
     NodeContributorsSerializer,
     RegistrationProviderRelationshipField,
@@ -31,12 +30,13 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
     HideIfWithdrawalOrWikiDisabled,
 )
+from api.institutions.utils import update_institutions
+
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
 from osf.models import Node
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
-
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
