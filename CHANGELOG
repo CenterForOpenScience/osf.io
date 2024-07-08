@@ -4,6 +4,10 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
 24.03.0 (2024-07-08)
 ====================
+- Preprints into Ember OSF Web, Phase 2 Backend Release
+
+24.03.0 (2024-07-08)
+====================
 - Allow AbstractProviders to specify Discover page presence
 - Update get_auth
 - Expand Addons Service support functionality, waffled
