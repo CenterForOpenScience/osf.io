@@ -7,7 +7,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraf
 from api.base.settings.defaults import API_BASE
 
 from osf.migrations import ensure_invisible_and_inactive_schema
-from osf.models import DraftRegistration, NodeLicense, RegistrationProvider
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
@@ -15,7 +15,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
     DraftRegistrationFactory,
-    RegistrationSchema,
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
