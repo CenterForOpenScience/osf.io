@@ -37,6 +37,7 @@ from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from website.ember_osf_web.decorators import ember_flag_is_active
 from osf import features
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 # from osf.models import PreprintProvider
 
 
@@ -871,6 +872,13 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         can_change_preferences=False,
         logo=logo if logo else settings.OSF_LOGO
     )
+
+    enqueue_postcommit_task(send_confirmation_email_task, (user.id, email), {})
+
+def send_confirmation_email_task(user_id, email):
+    from framework.auth import get_user
+    user = get_user(user_id)
+    send_confirm_email(user, email=email)
 
 
 def register_user(**kwargs):

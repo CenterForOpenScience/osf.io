@@ -34,13 +34,6 @@ from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 from api.base.versioning import get_kebab_snake_case_field
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-
-
-def send_confirmation_email_task(user_id, email):
-    from framework.auth import get_user
-    user = get_user(user_id)
-    send_confirm_email(user, email=email)
 
 
 class SocialField(ser.DictField):
@@ -603,7 +596,7 @@ class UserEmailsSerializer(JSONAPISerializer):
             token = user.add_unconfirmed_email(address)
             user.save()
             if CONFIRM_REGISTRATIONS_BY_EMAIL:
-                enqueue_postcommit_task(send_confirmation_email_task, user.id, address)
+                send_confirm_email(user, email=address)
                 user.email_last_sent = timezone.now()
                 user.save()
         except ValidationError as e:
