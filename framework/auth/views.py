@@ -873,7 +873,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         logo=logo if logo else settings.OSF_LOGO
     )
 
-    enqueue_postcommit_task(send_confirmation_email_task, (user.id, email), {})
+    enqueue_postcommit_task(send_confirmation_email_task, args=(user.id, email), kwargs={})
 
 def send_confirmation_email_task(user_id, email):
     from framework.auth import get_user
