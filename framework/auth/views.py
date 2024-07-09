@@ -801,6 +801,11 @@ def unconfirmed_email_add(auth=None):
         'removed_email': json_body['address']
     }, 200
 
+def send_confirmation_email_task(args):
+    user_id, email = args
+    from framework.auth import get_user
+    user = get_user(user_id)
+    send_confirm_email(user, email=email)
 
 def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
     """
@@ -874,11 +879,6 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     )
 
     enqueue_postcommit_task(send_confirmation_email_task, args=(user.id, email), kwargs={})
-
-def send_confirmation_email_task(user_id, email):
-    from framework.auth import get_user
-    user = get_user(user_id)
-    send_confirm_email(user, email=email)
 
 
 def register_user(**kwargs):
