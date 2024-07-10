@@ -247,9 +247,11 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
         forms.push_errors_to_status(form.errors)
     else:
         email = form.email.data
-        status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to '
-                          'reset the OSF password has been sent to {0}. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support. ').format(email)
+        status_message = (
+            f'If there is an OSF account associated with {email}, an email with instructions on how to '
+            f'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
+            'you should have, please contact OSF Support. '
+        )
         kind = 'success'
         # check if the user exists
         user_obj = get_user(email=email)
@@ -980,9 +982,11 @@ def resend_confirmation_post(auth):
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
-        status_message = ('If there is an OSF account associated with this unconfirmed email address {}, '
-                          'a confirmation email has been resent to it. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support.').format(clean_email)
+        status_message = (
+            f'If there is an OSF account associated with this unconfirmed email address {clean_email}, '
+            'a confirmation email has been resent to it. If you do not receive an email and believe '
+            'you should have, please contact OSF Support.'
+        )
         kind = 'success'
         if user:
             if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):

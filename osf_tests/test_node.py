@@ -2905,9 +2905,7 @@ class TestPointerMethods:
         node2 = NodeFactory(creator=user)
         node.add_pointer(node2, auth=auth)
         assert node2 in node.linked_nodes.all()
-        assert (
-            node.logs.latest().action == NodeLog.POINTER_CREATED
-        )
+        assert node.logs.latest().action == NodeLog.POINTER_CREATED
         assert (
             node.logs.latest().params == {
                 'parent_node': node.parent_id,
@@ -3075,20 +3073,13 @@ class TestForkNode:
         assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
-        assert (
-            list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
-        )
+        assert list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
 
         # Test that subjects were copied correctly
-        assert (
-            list(original.subjects.all()) == list(fork.subjects.all())
-        )
+        assert list(original.subjects.all()) == list(fork.subjects.all())
 
         # Test that add-ons were copied correctly
-        assert (
-            original.get_addon_names() ==
-            fork.get_addon_names()
-        )
+        assert original.get_addon_names() == fork.get_addon_names()
         assert (
             [addon.config.short_name for addon in original.get_addons()] ==
             [addon.config.short_name for addon in fork.get_addons()]
@@ -3468,9 +3459,7 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)  # another subcomponent
 
-        assert (
-            node.has_permission_on_children(non_admin_user, permissions.READ)
-        ) is True
+        assert node.has_permission_on_children(non_admin_user, permissions.READ)
 
     def test_check_user_has_permission_excludes_deleted_components(self):
         non_admin_user = UserFactory()
@@ -3485,9 +3474,7 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)
 
-        assert (
-            node.has_permission_on_children(non_admin_user, permissions.READ)
-        ) is False
+        assert not node.has_permission_on_children(non_admin_user, permissions.READ)
 
     def test_check_user_does_not_have_permission_on_private_node_child(self):
         non_admin_user = UserFactory()
@@ -3497,9 +3484,7 @@ class TestHasPermissionOnChildren:
         node = NodeFactory(parent=parent, category='project')
         NodeFactory(parent=node)
 
-        assert (
-            node.has_permission_on_children(non_admin_user, permissions.READ)
-        ) is False
+        assert not node.has_permission_on_children(non_admin_user, permissions.READ)
 
     def test_check_user_child_node_permissions_false_if_no_children(self):
         non_admin_user = UserFactory()
@@ -3508,18 +3493,14 @@ class TestHasPermissionOnChildren:
         parent.save()
         node = NodeFactory(parent=parent, category='project')
 
-        assert (
-            node.has_permission_on_children(non_admin_user, permissions.READ)
-        ) is False
+        assert not node.has_permission_on_children(non_admin_user, permissions.READ)
 
     def test_check_admin_has_permissions_on_private_component(self):
         parent = ProjectFactory()
         node = NodeFactory(parent=parent, category='project')
         NodeFactory(parent=node)
 
-        assert (
-            node.has_permission_on_children(parent.creator, permissions.READ)
-        ) is True
+        assert node.has_permission_on_children(parent.creator, permissions.READ)
 
     def test_check_user_private_node_child_permissions_excludes_pointers(self):
         user = UserFactory()
@@ -3528,9 +3509,7 @@ class TestHasPermissionOnChildren:
         parent.add_pointer(pointed, Auth(parent.creator))
         parent.save()
 
-        assert (
-            parent.has_permission_on_children(user, permissions.READ)
-        ) is False
+        assert not parent.has_permission_on_children(user, permissions.READ)
 
 
 # copied from test/test_citations.py#CitationsNodeTestCase

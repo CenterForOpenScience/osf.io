@@ -653,17 +653,15 @@ class NodeLinkMixin(models.Model):
 
     def check_node_link(self, child_node, parent_node):
         if child_node._id == parent_node._id:
-            raise ValueError(
-                f'Cannot link node \'{child_node._id}\' to itself.'
-            )
+            raise ValueError(f"Cannot link node '{child_node._id}' to itself.")
         existant_relation = NodeRelation.objects.filter(parent=parent_node, child=child_node).first()
         if existant_relation and existant_relation.is_node_link:
             raise ValueError(
-                f'Target Node \'{child_node._id}\' already pointed to by \'{parent_node._id}\'.'
+                f"Target Node '{child_node._id}' already pointed to by '{parent_node._id}'."
             )
         elif existant_relation and not existant_relation.is_node_link:
             raise ValueError(
-                f'Target Node \'{child_node._id}\' is already a child of \'{parent_node._id}\'.'
+                f"Target Node '{child_node._id}' is already a child of '{parent_node._id}'."
             )
 
     def rm_node_link(self, node_relation, auth):

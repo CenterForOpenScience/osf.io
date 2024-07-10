@@ -505,7 +505,7 @@ class TestOSFUser:
         random_string.return_value = 'abcde'
         u = UnconfirmedUserFactory()
         assert (u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard') ==
-                '{}confirm/external/{}/{}/?destination={}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
+               f'{settings.DOMAIN}confirm/external/{u._id}/abcde/?destination=dashboard')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -564,7 +564,7 @@ class TestOSFUser:
         u.add_unconfirmed_email('foo@bar.com')
         assert (
             u.get_confirmation_url('foo@bar.com') ==
-            '{}confirm/{}/{}/'.format(settings.DOMAIN, u._id, 'abcde')
+            f'{settings.DOMAIN}confirm/{u._id}/abcde/'
         )
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
@@ -591,7 +591,7 @@ class TestOSFUser:
         random_string.return_value = '54321'
 
         url = u.get_confirmation_url('foo@bar.com', force=True)
-        expected = '{}confirm/{}/{}/'.format(settings.DOMAIN, u._id, '54321')
+        expected = f'{settings.DOMAIN}confirm/{u._id}/54321/'
         assert url == expected
 
     def test_confirm_primary_email(self):
@@ -685,18 +685,12 @@ class TestOSFUser:
     def test_format_surname(self):
         user = UserFactory(fullname='Duane Johnson')
         summary = user.get_summary(formatter='surname')
-        assert (
-            summary['user_display_name'] ==
-            'Johnson'
-        )
+        assert summary['user_display_name'] == 'Johnson'
 
     def test_format_surname_one_name(self):
         user = UserFactory(fullname='Rock')
         summary = user.get_summary(formatter='surname')
-        assert (
-            summary['user_display_name'] ==
-            'Rock'
-        )
+        assert summary['user_display_name'] == 'Rock'
 
     def test_url(self, user):
         assert user.url == f'/{user._id}/'
@@ -741,9 +735,7 @@ class TestOSFUser:
         assert size is None
 
     def test_activity_points(self, user):
-        assert (
-            user.get_activity_points() == get_total_activity_count(user._primary_key)
-        )
+        assert user.get_activity_points() == get_total_activity_count(user._primary_key)
 
     def test_contributed_property(self):
         user = UserFactory()
@@ -905,9 +897,7 @@ class TestCookieMethods:
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
-        assert (
-            UserSessionMap.objects.filter(user=user).count() == 0
-        )
+        assert UserSessionMap.objects.filter(user=user).count() == 0
 
         cookie = user.get_or_create_cookie(super_secret_key)
 

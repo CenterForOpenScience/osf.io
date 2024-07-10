@@ -72,10 +72,7 @@ def get_default_mailing_lists():
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
-    'initials': lambda user: '{surname}, {initial}.'.format(
-        surname=user.family_name,
-        initial=user.given_name_initial,
-    ),
+    'initials': lambda user: f'{user.family_name}, {user.given_name_initial}.',
 }
 
 

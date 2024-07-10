@@ -72,15 +72,13 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     err_message = None
     if not sanction:
         err_code = HTTPStatus.BAD_REQUEST
-        err_message = 'There is no {} associated with this token.'.format(
-            markupsafe.escape(Model.DISPLAY_NAME))
+        err_message = f'There is no {markupsafe.escape(Model.DISPLAY_NAME)} associated with this token.'
     elif sanction.is_approved:
         # Simply strip query params and redirect if already approved
         return redirect(request.base_url)
     elif sanction.is_rejected:
         err_code = HTTPStatus.GONE if kind in ['registration', 'embargo'] else HTTPStatus.BAD_REQUEST
-        err_message = 'This registration {} has been rejected.'.format(
-            markupsafe.escape(sanction.DISPLAY_NAME))
+        err_message = f'This registration {markupsafe.escape(sanction.DISPLAY_NAME)} has been rejected.'
     if err_code:
         raise HTTPError(err_code.value, data=dict(
             message_long=err_message

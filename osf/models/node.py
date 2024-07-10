@@ -1385,8 +1385,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         cannot_edit_or_admin_parent = not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user)
         if cannot_edit_or_admin_parent or not_contributor_or_admin_parent:
             raise PermissionsError(
-                'User {} does not have permission '
-                'to register this node'.format(auth.user._id)
+                f'User {auth.user._id} does not have permission to register this node'
             )
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
@@ -2203,7 +2202,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if (not auth or isinstance(auth.user, AnonymousUser)) or (
                 len(hierarchy) != (Node.objects.get_nodes_for_user(auth.user, ADMIN_NODE, hierarchy)).count()):
             raise PermissionsError(
-                '{!r} does not have permission to modify this {}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
+                f'{auth.user!r} does not have permission to modify this '
+                f'{self.category or "node"}, or a component in its hierarchy.'
             )
 
         # After delete callback

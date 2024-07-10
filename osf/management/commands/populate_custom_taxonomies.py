@@ -121,7 +121,10 @@ def do_create_subjects(custom_provider, includes, excludes, copy=False, add_miss
             create_subjects_recursive(custom_provider, root_text, excludes)
 
 def map_custom_subject(custom_provider, name, parent, mapping):
-    logger.info('Attempting to create subject {} on {} from {} with {}'.format(name, custom_provider._id, mapping, f'parent {parent}' if parent else 'no parent'))
+    logger.info(
+        f'Attempting to create subject {name} on {custom_provider._id} from {mapping} with '
+        (f'parent {parent}' if parent else 'no parent')
+    )
 
     if parent:
         parent_subject = Subject.objects.filter(provider=custom_provider, text=parent).first()

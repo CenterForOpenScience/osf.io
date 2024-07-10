@@ -1547,13 +1547,13 @@ class TestSearchFiles(OsfTestCase):
         file_guid = file_.get_guid(create=True)
         file_.save()
         find = query_file('Timber.mp3')['results']
-        assert find[0]['guid_url'] == '/' + file_guid._id + '/'
+        assert find[0]['guid_url'] == f'/{file_guid._id}/'
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
         create_file_version(file_, self.user)
         path = file_.path
-        deep_url = '/' + file_.target._id + '/files/osfstorage' + path + '/'
+        deep_url = f'/{file_.target._id}/files/osfstorage{path}/'
         find = query_file('Timber.mp3')['results']
         assert file_.path != ''
         assert file_.path == path
