@@ -7,6 +7,8 @@ volumes:
     external: false
   postgres_data_vol:
     external: false
+  gv_requirements_vol:
+    external: false
   mongo_data_vol:
     external: false
   elasticsearch_data_vol:
@@ -83,6 +85,8 @@ services:
     environment:
       POSTGRES_DB: osf
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_INITDB_SQL: |
+        SELECT 'CREATE DATABASE gravyvalet' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gravyvalet')\gexec
       POSTGRES_INITDB: |
         sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
         sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
@@ -519,6 +523,41 @@ services:
       - ember_osf_web_dist_vol:/ember_osf_web
       - preprints_dist_vol:/preprints
       - reviews_dist_vol:/reviews
+    stdin_open: true
+
+
+  ######
+  # GV #
+  ######
+
+  gv_requirements:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    command:
+      - /bin/bash
+      - -c
+      - pip install -r requirements/dev-requirements.txt &&
+        (python3 -m compileall /usr/local/lib/python3.12 || true) &&
+        rm -Rf /python3.12/* &&
+        cp -Rf -p /usr/local/lib/python3.12 /
+    restart: 'no'
+    volumes:
+      - gv_requirements_vol:/python3.12
+
+  gv:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    command: python manage.py runserver 0.0.0.0:8004
+    restart: unless-stopped
+    ports:
+      - 8004:8004
+    depends_on:
+      - postgres
+      - api
+    env_file:
+      - .docker-compose.gv.env
+    environment:
+      DJANGO_SETTINGS_MODULE: app.settings
+    volumes:
+      - gv_requirements_vol:/usr/local/lib/python3.12
     stdin_open: true
 
   pigeon:

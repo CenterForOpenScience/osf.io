@@ -454,7 +454,7 @@ class CeleryConfig:
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.collections.tasks',
-        'website.identifier.tasks',
+        'website.identifiers.tasks',
         'website.preprints.tasks',
         'website.project.tasks',
     }
@@ -515,6 +515,7 @@ class CeleryConfig:
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
+        'website.identifiers.tasks',
         'website.search.search',
         'website.project.tasks',
         'scripts.populate_new_and_noteworthy_projects',

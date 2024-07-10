@@ -151,6 +151,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     is_published = models.BooleanField(default=False, db_index=True)
     date_published = NonNaiveDateTimeField(null=True, blank=True)
     original_publication_date = NonNaiveDateTimeField(null=True, blank=True)
+    custom_publication_citation = models.TextField(null=True, blank=True)
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 

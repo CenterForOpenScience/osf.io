@@ -111,6 +111,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
+    custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -237,6 +238,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         # Overrides TaxonomizableSerializerMixin
         return {'preprint_id': '<_id>'}
 
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'preprints:preprint-relationships-subjects'
+
     def get_preprint_url(self, obj):
         return absolute_reverse(
             'preprints:preprint-detail', kwargs={
@@ -347,6 +353,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
+            save_preprint = True
+
+        if 'custom_publication_citation' in validated_data:
+            preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
             save_preprint = True
 
         if 'has_coi' in validated_data:
