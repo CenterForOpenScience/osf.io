@@ -782,7 +782,7 @@ def serialize_social_addons(user):
     return ret
 
 
-@collect_auth
+@must_be_logged_in
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     ret = target.social
@@ -852,14 +852,14 @@ def serialize_contents(field, func, auth, uid=None):
     return ret
 
 
-@collect_auth
+@must_be_logged_in
 def serialize_jobs(auth, uid=None, **kwargs):
     ret = serialize_contents('jobs', serialize_job, auth, uid)
     append_editable(ret, auth, uid)
     return ret
 
 
-@collect_auth
+@must_be_logged_in
 def serialize_schools(auth, uid=None, **kwargs):
     ret = serialize_contents('schools', serialize_school, auth, uid)
     append_editable(ret, auth, uid)
