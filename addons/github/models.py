@@ -172,9 +172,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def repo_url(self):
         if self.user and self.repo:
-            return 'https://github.com/{}/{}/'.format(
-                self.user, self.repo
-            )
+            return f'https://github.com/{self.user}/{self.repo}/'
 
     @property
     def short_url(self):

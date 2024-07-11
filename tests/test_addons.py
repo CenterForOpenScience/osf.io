@@ -1016,8 +1016,7 @@ class TestCheckAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_resource_permissions(self.node, Auth(user=self.user), 'upload')
-        assert res
+        assert views.check_resource_permissions(self.node, Auth(user=self.user), 'upload')
 
     def test_not_has_permission_read_public(self):
         self.node.is_public = True
@@ -1033,7 +1032,7 @@ class TestCheckAuth(OsfTestCase):
         assert not views.check_resource_permissions(self.node, Auth(user=user2), 'download')
 
     def test_not_has_permission_not_logged_in(self):
-       assert not views.check_resource_permissions(self.node, Auth(), 'download')
+        assert not views.check_resource_permissions(self.node, Auth(), 'download')
 
     def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
@@ -1042,8 +1041,7 @@ class TestCheckAuth(OsfTestCase):
 
         component_registration = registration._nodes.first()
         assert not component_registration.has_permission(self.user, WRITE)
-        res = views.check_resource_permissions(component_registration, Auth(user=self.user), 'upload')
-        assert res
+        assert views.check_resource_permissions(component_registration, Auth(user=self.user), 'upload')
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
         component_admin = AuthUserFactory()
@@ -1052,8 +1050,7 @@ class TestCheckAuth(OsfTestCase):
         component_registration = RegistrationFactory(project=component, creator=component_admin)
 
         assert not component_registration.has_permission(self.user, READ)
-        res = views.check_resource_permissions(component_registration, Auth(user=self.user), 'metadata')
-        assert res
+        assert views.check_resource_permissions(component_registration, Auth(user=self.user), 'metadata')
 
     def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
         component_admin = AuthUserFactory()
@@ -1067,8 +1064,7 @@ class TestCheckAuth(OsfTestCase):
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
 
         assert not component.has_permission(self.user, WRITE)
-        res = views.check_resource_permissions(component, Auth(user=self.user), 'copyfrom')
-        assert res
+        assert views.check_resource_permissions(component, Auth(user=self.user), 'copyfrom')
 
 
 class TestCheckOAuth(OsfTestCase):
@@ -1105,7 +1101,6 @@ class TestCheckOAuth(OsfTestCase):
              views.authenticate_via_oauth_bearer_token(component, 'download')
         assert exc_info.value.code == 403
 
-
     @mock.patch('framework.auth.cas.parse_auth_header')
     @mock.patch('framework.auth.cas.get_client')
     def test_has_permission_public_irrelevant_scope_allowed(self, mock_get_client, mock_parse_auth_header):
@@ -1124,8 +1119,7 @@ class TestCheckOAuth(OsfTestCase):
         mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
-        result = views.authenticate_via_oauth_bearer_token(component, 'download')
-        assert result
+        assert views.authenticate_via_oauth_bearer_token(component, 'download')
 
     @mock.patch('framework.auth.cas.parse_auth_header')
     @mock.patch('framework.auth.cas.get_client')
@@ -1154,9 +1148,7 @@ class TestCheckOAuth(OsfTestCase):
         mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
-        res = views.authenticate_via_oauth_bearer_token(component, 'download')
-        assert res
-
+        assert views.authenticate_via_oauth_bearer_token(component, 'download')
 
     @mock.patch('framework.auth.cas.parse_auth_header')
     @mock.patch('framework.auth.cas.get_client')
@@ -1168,9 +1160,7 @@ class TestCheckOAuth(OsfTestCase):
         mock_get_client.return_value.profile.return_value = mock_cas_response
 
         assert not component.has_permission(self.user, WRITE)
-        res = views.authenticate_via_oauth_bearer_token(component, 'download')
-        assert res
-
+        assert views.authenticate_via_oauth_bearer_token(component, 'download')
 
     @mock.patch('framework.auth.cas.parse_auth_header')
     @mock.patch('framework.auth.cas.get_client')
@@ -1734,10 +1724,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_download_file_version_redirect(self):
-        url = '/{}/osffiles/{}/version/3/download/'.format(
-            self.project._id,
-            self.path,
-        )
+        url = f'/{self.project._id}/osffiles/{self.path}/version/3/download/'
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 301
         expected_url = self.project.web_url_for(
@@ -1762,10 +1749,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_api_download_file_version_redirect(self):
-        url = '/api/v1/project/{}/osffiles/{}/version/3/'.format(
-            self.project._id,
-            self.path,
-        )
+        url = f'/api/v1/project/{self.project._id}/osffiles/{self.path}/version/3/'
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 301
         expected_url = self.project.web_url_for(
@@ -1778,10 +1762,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_no_provider_name(self):
-        url = '/{}/files/{}'.format(
-            self.project._id,
-            self.path,
-        )
+        url = f'/{self.project._id}/files/{self.path}'
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 301
         expected_url = self.project.web_url_for(
@@ -1794,10 +1775,7 @@ class TestLegacyViews(OsfTestCase):
 
     @pytest.mark.enable_bookmark_creation
     def test_action_as_param(self):
-        url = '/{}/osfstorage/files/{}/?action=download'.format(
-            self.project._id,
-            self.path,
-        )
+        url = f'/{self.project._id}/osfstorage/files/{self.path}/?action=download'
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 301
         expected_url = self.project.web_url_for(
@@ -1809,10 +1787,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_other_addon_redirect(self):
-        url = '/project/{}/mycooladdon/files/{}/'.format(
-            self.project._id,
-            self.path,
-        )
+        url = f'/project/{self.project._id}/mycooladdon/files/{self.path}/'
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 301
         expected_url = self.project.web_url_for(
@@ -1824,10 +1799,7 @@ class TestLegacyViews(OsfTestCase):
         assert_urls_equal(res.location, expected_url)
 
     def test_other_addon_redirect_download(self):
-        url = '/project/{}/mycooladdon/files/{}/download/'.format(
-            self.project._id,
-            self.path,
-        )
+        url = f'/project/{self.project._id}/mycooladdon/files/{self.path}/download/'
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 301
         expected_url = self.project.web_url_for(

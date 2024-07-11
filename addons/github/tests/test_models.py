@@ -373,7 +373,7 @@ class TestCallbacks(OsfTestCase):
         clone = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
-        assert clone.user_settings == None
+        assert clone.user_settings is None
 
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))

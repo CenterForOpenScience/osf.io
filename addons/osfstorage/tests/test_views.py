@@ -1516,7 +1516,7 @@ class TestFileViews(StorageTestCase):
             )
         )
 
-        download_url = base_url.format(file.get_guid(create=True)._id)
+        download_url = base_url.format(file.get_guid()._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
             'Authorization': f'Bearer {token.token_id}'

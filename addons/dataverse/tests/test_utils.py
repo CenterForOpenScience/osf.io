@@ -28,7 +28,7 @@ class TestUtils(DataverseAddonTestCase):
     def test_mock_dataverse(self):
         mock_dv = create_mock_dataverse('Example 1')
         assert mock_dv.title == 'Example 1'
-        assert mock_dv.is_published is True
+        assert mock_dv.is_published
         assert mock_dv.alias == 'ALIAS1'
         assert len(mock_dv.get_datasets()) == 3
         assert isinstance(mock_dv.get_datasets()[0], Dataset)
@@ -44,12 +44,12 @@ class TestUtils(DataverseAddonTestCase):
         assert mock_dataset.doi == doi
         assert mock_dataset.get_state() == 'DRAFT'
         assert len(mock_dataset.get_files()) == 1
-        assert mock_dataset.get_files()[0].is_published is False
-        assert mock_dataset.get_files(published=True)[0].is_published is True
-        assert mock_dataset.get_file('name.txt').is_published is False
-        assert mock_dataset.get_file('name.txt', published=True).is_published is True
-        assert mock_dataset.get_file_by_id('123').is_published is False
-        assert mock_dataset.get_file_by_id('123', published=True).is_published is True
+        assert not mock_dataset.get_files()[0].is_published
+        assert mock_dataset.get_files(published=True)[0].is_published
+        assert not mock_dataset.get_file('name.txt').is_published
+        assert mock_dataset.get_file('name.txt', published=True).is_published
+        assert not mock_dataset.get_file_by_id('123').is_published
+        assert mock_dataset.get_file_by_id('123', published=True).is_published
 
     def test_mock_dvn_file(self):
         fid = '65432'

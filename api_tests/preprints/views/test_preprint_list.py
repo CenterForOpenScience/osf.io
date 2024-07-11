@@ -103,7 +103,7 @@ class TestPreprintCreateWithoutNode:
         }
 
     def test_create_preprint_logged_in(self, app, user_one, url, preprint_payload):
-        res = app.post_json_api(url, preprint_payload, auth=user_one.auth, expect_errors=True)
+        res = app.post_json_api(url, preprint_payload, auth=user_one.auth)
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['title'] == preprint_payload['data']['attributes']['title']
@@ -112,7 +112,7 @@ class TestPreprintCreateWithoutNode:
 
     def test_create_preprint_does_not_create_a_node(self, app, user_one, provider, url, preprint_payload):
         # Assume that if a supplemental node is being created, will be a separate POST to nodes?
-        res = app.post_json_api(url, preprint_payload, auth=user_one.auth, expect_errors=True)
+        res = app.post_json_api(url, preprint_payload, auth=user_one.auth)
 
         assert res.status_code == 201
         preprint = Preprint.load(res.json['data']['id'])
@@ -382,7 +382,7 @@ class TestPreprintCreate(ApiTestCase):
     def test_write_user_on_supplemental_node(self):
         assert self.other_user in self.public_project.contributors
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id)
-        res = self.app.post_json_api(self.url, public_project_payload, auth=self.other_user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.other_user.auth)
         # Users can create a preprint with a supplemental node that they have write perms to
         assert res.status_code == 201
 
@@ -408,7 +408,7 @@ class TestPreprintCreate(ApiTestCase):
     def test_already_has_supplemental_node_on_another_preprint(self):
         preprint = PreprintFactory(creator=self.user, project=self.public_project)
         already_preprint_payload = build_preprint_create_payload(preprint.node._id, preprint.provider._id)
-        res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.user.auth)
         # One preprint per provider per node constraint has been lifted
         assert res.status_code == 201
 
@@ -417,7 +417,7 @@ class TestPreprintCreate(ApiTestCase):
 
         preprint = PreprintFactory(creator=self.user, project=self.public_project)
         already_preprint_payload = build_preprint_create_payload(preprint.node._id, preprint.provider._id)
-        res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.other_user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.other_user.auth)
 
         assert res.status_code == 201
 
@@ -444,7 +444,7 @@ class TestPreprintCreate(ApiTestCase):
                 'subjects': [[SubjectFactory()._id]],
             },
         )
-        res = self.app.post_json_api(self.url, no_file_payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, no_file_payload, auth=self.user.auth)
 
         assert res.status_code == 201
         preprint = Preprint.load(res.json['data']['id'])
@@ -475,7 +475,7 @@ class TestPreprintCreate(ApiTestCase):
     def test_file_not_osfstorage(self):
         public_project_payload = build_preprint_create_payload(provider_id=self.provider._id)
 
-        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
 
         preprint = Preprint.load(res.json['data']['id'])
         assert res.status_code == 201
@@ -556,7 +556,7 @@ class TestPreprintCreate(ApiTestCase):
             self.public_project._id,
             self.provider._id,
         )
-        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
         assert res.status_code == 201
         preprint = Preprint.load(res.json['data']['id'])
         res = self.publish_preprint(preprint, self.user, expect_errors=True)

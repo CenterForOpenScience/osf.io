@@ -660,7 +660,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.retraction.reload()
         assert self.registration.is_retracted
         assert not self.registration.is_pending_retraction
-        assert res.status_code ==  http_status.HTTP_302_FOUND
+        assert res.status_code == http_status.HTTP_302_FOUND
 
     # node_registration_retraction_disapprove_tests
     def test_GET_disapprove_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):

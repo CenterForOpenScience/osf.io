@@ -226,8 +226,7 @@ class TestCallbacks(OsfTestCase):
         message = self.node_settings.after_remove_contributor(
             self.project, self.project.creator, self.consolidated_auth
         )
-        assert self.node_settings.user_settings == \
-            None
+        assert self.node_settings.user_settings is None
         assert message
         assert 'You can re-authenticate' not in message
 
@@ -236,8 +235,7 @@ class TestCallbacks(OsfTestCase):
         message = self.node_settings.after_remove_contributor(
             self.project, self.project.creator, auth
         )
-        assert self.node_settings.user_settings == \
-            None
+        assert self.node_settings.user_settings is None
         assert message
         assert 'You can re-authenticate' in message
 
@@ -245,24 +243,21 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.after_remove_contributor(
             self.project, self.non_authenticator, self.consolidated_auth
         )
-        assert self.node_settings.user_settings != \
-            None
+        assert self.node_settings.user_settings is not None
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
         clone = self.node_settings.after_fork(
             self.project, fork, self.project.creator,
         )
-        assert self.node_settings.user_settings == \
-            clone.user_settings
+        assert self.node_settings.user_settings == clone.user_settings
 
     def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
         clone = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
-        assert clone.user_settings == \
-            None
+        assert clone.user_settings is None
 
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))

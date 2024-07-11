@@ -1,7 +1,6 @@
 from github3.session import GitHubSession
 from rest_framework import status as http_status
 import unittest
-from website.search import elastic_search
 from django.utils import timezone
 from github3.repos.branch import Branch
 from json import dumps

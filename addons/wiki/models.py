@@ -420,11 +420,7 @@ class WikiPage(GuidMixin, BaseModel):
         if key == 'home':
             raise PageCannotRenameError('Cannot rename wiki home page')
         if (existing_wiki_page and not existing_wiki_page.deleted and key != new_key) or new_key == 'home':
-            raise PageConflictError(
-                'Page already exists with name {}'.format(
-                    new_name,
-                )
-            )
+            raise PageConflictError(f'Page already exists with name {new_name}')
 
         # rename the page first in case we hit a validation exception.
         old_name = self.page_name

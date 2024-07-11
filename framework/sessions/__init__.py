@@ -147,7 +147,7 @@ def create_session(response, data=None):
         user_session[key] = value
     user_session.save()
     if response is not None:
-        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key).decode()
+        cookie_value = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key))
         response.set_cookie(
             settings.COOKIE_NAME,
             value=cookie_value,

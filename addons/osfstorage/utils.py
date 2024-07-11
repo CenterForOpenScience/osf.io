@@ -97,11 +97,7 @@ def get_filename(version_idx, file_version, file_record):
     if version_idx == len(file_record.versions):
         return file_record.name
     name, ext = os.path.splitext(file_record.name)
-    return '{name}-{date}{ext}'.format(
-        name=name,
-        date=file_version.created.isoformat(),
-        ext=ext,
-    )
+    return f'{name}-{file_version.created.isoformat()}{ext}'
 
 
 def validate_location(value):

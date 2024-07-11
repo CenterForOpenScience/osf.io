@@ -299,17 +299,17 @@ class RegistrationResponsesValidator:
                 question_title = properties.get(question_id).get('description') or question_id
                 if e.relative_schema_path[0] == 'required':
                     raise ValidationError(
-                        f'For your registration the \'{question_title}\' field is required'
+                        f"For your registration the '{question_title}' field is required"
                     )
                 elif 'enum' in properties.get(question_id):
                     raise ValidationError(
-                        'For your registration, your response to the \'{}\' field is invalid, your response must be one of the provided options.'.format(
-                            question_title,
-                        ),
+                        'For your registration, your response to the '
+                        f"'{question_title}' field is invalid, your response must be "
+                        'one of the provided options.'
                     )
                 else:
                     raise ValidationError(
-                        f'For your registration, your response to the \'{question_title}\' field is invalid. {e.message}',
+                        f"For your registration, your response to the '{question_title}' field is invalid. {e.message}"
                     )
             raise ValidationError(e.message)
         except SchemaError as e:

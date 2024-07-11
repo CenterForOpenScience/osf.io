@@ -44,9 +44,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {}'.format(
-                node_settings.bucket
-            ),
+            'name': f'Amazon S3: {node_settings.bucket}',
             'kind': 'folder',
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
@@ -136,9 +134,7 @@ class TestRubeus(OsfTestCase):
             private_key=private_link.key
         )
 
-        assert result['name'] == 'Amazon S3: {}'.format(
-            self.node_settings.bucket
-        )
+        assert result['name'] == f'Amazon S3: {self.node_settings.bucket}'
 
     def test_hgrid_dummy_fail(self):
         node_settings = self.node_settings
@@ -149,9 +145,7 @@ class TestRubeus(OsfTestCase):
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {}'.format(
-                node_settings.bucket
-            ),
+            'name': f'Amazon S3: {node_settings.bucket}',
             'kind': 'folder',
             'permissions': {
                 'view': node.can_view(user),
@@ -186,9 +180,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {}'.format(
-                node_settings.bucket
-            ),
+            'name': f'Amazon S3: {node_settings.bucket}',
             'kind': 'folder',
             'permissions': {
                 'view': node.can_view(user),

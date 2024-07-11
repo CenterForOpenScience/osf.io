@@ -38,6 +38,8 @@ def error_handler(task_id, task_name):
     result = app.AsyncResult(task_id)
     excep = result.get(propagate=False)
     # log detailed error mesage in error log
-    logger.error('#####FAILURE LOG BEGIN#####\n'
-                 'Task {} raised exception: {}\n{}\n'
-                 '#####FAILURE LOG STOP#####'.format(task_name, excep, result.traceback))
+    logger.error(
+        '#####FAILURE LOG BEGIN#####\n'
+        f'Task {task_name} raised exception: {excep}\n{result.traceback}\n'
+        '#####FAILURE LOG STOP#####'
+    )

@@ -38,7 +38,7 @@ class TestAuthViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         assert last_log.action == 'dataverse_node_deauthorized'
         log_params = last_log.params
         assert log_params['node'] == self.project._primary_key
-        assert log_params['project'] == None
+        assert log_params['project'] is None
 
     def test_user_config_get(self):
         url = api_url_for('dataverse_user_config_get')

@@ -340,10 +340,7 @@ def generate_metadata(file_trees, selected_files, node_index):
         ('q_' + selected_file['name']): {
             'extra': [{
                 'sha256': sha256,
-                'viewUrl': '/project/{}/files/osfstorage{}'.format(
-                    node_index[sha256],
-                    selected_file['path']
-                ),
+                'viewUrl': f"/project/{node_index[sha256]}/files/osfstorage{selected_file['path']}",
                 'selectedFileName': selected_file['name'],
                 'nodeId': node_index[sha256]
             }]
@@ -581,10 +578,7 @@ class TestArchiverTasks(ArchiverTestCase):
             qid: {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
-                        node._id,
-                        fake_file['path']
-                    ),
+                    'viewUrl': f"/project/{node._id}/files/osfstorage{fake_file['path']}",
                     'selectedFileName': fake_file_name,
                     'nodeId': node._id
                 }]
@@ -650,10 +644,7 @@ class TestArchiverTasks(ArchiverTestCase):
             ('q_' + fake_file['name']): {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
-                        node._id,
-                        fake_file['path']
-                    ),
+                    'viewUrl': f"/project/{node._id}/files/osfstorage{fake_file['path']}",
                     'selectedFileName': fake_file['name'],
                     'nodeId': node._id
                 }]
@@ -679,10 +670,7 @@ class TestArchiverTasks(ArchiverTestCase):
             ('q_' + fake_file['name']): {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
-                        node._id,
-                        fake_file['path']
-                    ),
+                    'viewUrl': f"/project/{node._id}/files/osfstorage{fake_file['path']}",
                     'selectedFileName': fake_file['name'],
                     'nodeId': node._id
                 }]
@@ -710,10 +698,7 @@ class TestArchiverTasks(ArchiverTestCase):
             ('q_' + selected['name']): {
                 'extra': [{
                     'sha256': selected['extra']['hashes']['sha256'],
-                    'viewUrl': '/project/{}/files/osfstorage{}'.format(
-                        child._id,
-                        selected['path']
-                    ),
+                    'viewUrl': f"/project/{child._id}/files/osfstorage{selected['path']}",
                     'selectedFileName': selected['name'],
                     'nodeId': child._id
                 }]
@@ -1236,7 +1221,7 @@ class TestArchiveJobModel(OsfTestCase):
         job = ArchiveJob.objects.create(src_node=proj, dst_node=reg, initiator=proj.creator)
         job.set_targets()
         osfstorage = job.get_target('osfstorage')
-        assert not (not osfstorage)
+        assert osfstorage
         none = job.get_target('fake')
         assert not none
 
