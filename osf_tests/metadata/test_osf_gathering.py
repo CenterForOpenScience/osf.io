@@ -709,7 +709,7 @@ class TestOsfGathering(TestCase):
         # withdrawn via PreprintRequest
         _withdrawal_request = factories.PreprintRequestFactory(
             target=self.preprint,
-            machine_state=workflows.ReviewStates.ACCEPTED.value,
+            machine_state=workflows.PreprintStates.ACCEPTED.value,
             request_type=workflows.RequestTypes.WITHDRAWAL.value,
             creator=self.user__admin,
             comment='request unprint',

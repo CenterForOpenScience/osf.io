@@ -35,7 +35,7 @@ from .validators import validate_subject_hierarchy, validate_email, expand_subje
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import (
-    ReviewsMachine,
+    PreprintStateMachine,
     NodeRequestMachine,
     PreprintRequestMachine,
 )
@@ -45,8 +45,8 @@ from osf.utils.registrations import flatten_registration_metadata, expand_regist
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
+    PreprintTriggers,
 )
 
 from osf.utils.requests import get_request_and_user_id
@@ -874,14 +874,14 @@ class PreprintRequestableMixin(MachineableMixin):
 class ReviewableMixin(MachineableMixin):
     """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
-    TriggersClass = ReviewTriggers
+    TriggersClass = PreprintTriggers
 
-    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
+    machine_state = models.CharField(max_length=15, db_index=True, choices=PreprintStates.choices(), default=PreprintStates.INITIAL.value)
 
     class Meta:
         abstract = True
 
-    MachineClass = ReviewsMachine
+    MachineClass = PreprintStateMachine
 
     @property
     def in_public_reviews_state(self):
@@ -960,7 +960,7 @@ class ReviewProviderMixin(GuardianMixin):
     """
 
     REVIEWABLE_RELATION_NAME = None
-    REVIEW_STATES = ReviewStates
+    REVIEW_STATES = PreprintStates
     STATE_FIELD_NAME = 'machine_state'
 
     groups = REVIEW_GROUPS

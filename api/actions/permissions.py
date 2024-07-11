@@ -7,16 +7,16 @@ from api.base.utils import get_user_auth
 from osf.models import CollectionSubmissionAction
 from osf.models.action import BaseAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
-from osf.utils.workflows import ReviewTriggers
+from osf.utils.workflows import PreprintTriggers
 from osf.utils import permissions as osf_permissions
 
 # Required permission to perform each action. `None` means no permissions required.
 TRIGGER_PERMISSIONS = {
-    ReviewTriggers.SUBMIT.value: None,
-    ReviewTriggers.ACCEPT.value: 'accept_submissions',
-    ReviewTriggers.REJECT.value: 'reject_submissions',
-    ReviewTriggers.WITHDRAW.value: 'withdraw_submissions',
-    ReviewTriggers.EDIT_COMMENT.value: 'edit_review_comments',
+    PreprintTriggers.SUBMIT.value: None,
+    PreprintTriggers.ACCEPT.value: 'accept_submissions',
+    PreprintTriggers.REJECT.value: 'reject_submissions',
+    PreprintTriggers.WITHDRAW.value: 'withdraw_submissions',
+    PreprintTriggers.EDIT_COMMENT.value: 'edit_review_comments',
 }
 
 

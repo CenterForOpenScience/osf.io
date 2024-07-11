@@ -29,7 +29,7 @@ from .contributor import PreprintContributor
 from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
 from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.workflows import DefaultStates, ReviewStates
+from osf.utils.workflows import DefaultStates, PreprintStates
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
@@ -581,7 +581,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.set_privacy('public', log=False, save=False)
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.machine_state = ReviewStates.ACCEPTED.value
+            self.machine_state = PreprintStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
             # This preprint will have a tombstone page when it's withdrawn.

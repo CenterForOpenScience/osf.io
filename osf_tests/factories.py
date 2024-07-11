@@ -955,7 +955,7 @@ class ArchiveJobFactory(DjangoModelFactory):
 
 class ReviewActionFactory(DjangoModelFactory):
     class Meta:
-        model = models.ReviewAction
+        model = models.PreprintAction
 
     trigger = FuzzyChoice(choices=DefaultTriggers.values())
     comment = factory.Faker('text')

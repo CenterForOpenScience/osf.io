@@ -7,7 +7,7 @@ from rest_framework import permissions
 from rest_framework.exceptions import NotFound, PermissionDenied
 
 from api.actions.permissions import ReviewActionPermission
-from api.actions.serializers import NodeRequestActionSerializer, ReviewActionSerializer, PreprintRequestActionSerializer
+from api.actions.serializers import NodeRequestActionSerializer, PreprintActionSerializer, PreprintRequestActionSerializer
 from api.base.exceptions import Conflict
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
@@ -22,7 +22,7 @@ from api.requests.permissions import NodeRequestPermission, PreprintRequestPermi
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import (
     PreprintProvider,
-    ReviewAction,
+    PreprintAction,
     NodeRequestAction,
     PreprintRequestAction,
     BaseAction,
@@ -31,7 +31,7 @@ from osf.models import (
 
 
 def get_review_actions_queryset():
-    return ReviewAction.objects.prefetch_related(
+    return PreprintAction.objects.prefetch_related(
         'creator__guids',
         'target__guids',
         'target__provider',
@@ -78,13 +78,13 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    serializer_class = ReviewActionSerializer
+    serializer_class = PreprintActionSerializer
     view_category = 'actions'
     view_name = 'action-detail'
 
     def get_serializer_class(self):
         # Not allowed to view NodeRequestActions yet, making extra logic unnecessary
-        return ReviewActionSerializer
+        return PreprintActionSerializer
 
     def get_object(self):
         action = None
@@ -162,8 +162,8 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
-    serializer_class = ReviewActionSerializer
-    model_class = ReviewAction
+    serializer_class = PreprintActionSerializer
+    model_class = PreprintAction
 
     ordering = ('-created',)
     view_category = 'actions'

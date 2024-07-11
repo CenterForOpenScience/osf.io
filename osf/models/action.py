@@ -8,8 +8,8 @@ from osf.utils.workflows import (
     ApprovalStates,
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
+    PreprintTriggers,
     RegistrationModerationTriggers,
     RegistrationModerationStates,
     SchemaResponseTriggers,
@@ -40,12 +40,12 @@ class BaseAction(ObjectIDMixin, BaseModel):
         raise NotImplementedError()
 
 
-class ReviewAction(BaseAction):
+class PreprintAction(BaseAction):
     target = models.ForeignKey('Preprint', related_name='actions', on_delete=models.CASCADE)
 
-    trigger = models.CharField(max_length=31, choices=ReviewTriggers.choices())
-    from_state = models.CharField(max_length=31, choices=ReviewStates.choices())
-    to_state = models.CharField(max_length=31, choices=ReviewStates.choices())
+    trigger = models.CharField(max_length=31, choices=PreprintTriggers.choices())
+    from_state = models.CharField(max_length=31, choices=PreprintStates.choices())
+    to_state = models.CharField(max_length=31, choices=PreprintStates.choices())
 
 
 class NodeRequestAction(BaseAction):

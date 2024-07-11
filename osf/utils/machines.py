@@ -6,16 +6,16 @@ from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
-from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
+from osf.models.action import PreprintAction, NodeRequestAction, PreprintRequestAction
 
 from osf.utils import permissions
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
+    PreprintStates,
     ApprovalStates,
     DEFAULT_TRANSITIONS,
-    REVIEWABLE_TRANSITIONS,
+    PREPRINT_STATE_TRANSITIONS,
     APPROVAL_TRANSITIONS,
     CollectionSubmissionStates,
     COLLECTION_SUBMISSION_TRANSITIONS,
@@ -98,16 +98,15 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class ReviewsMachine(BaseMachine):
-    ActionClass = ReviewAction
-    States = ReviewStates
-    Transitions = REVIEWABLE_TRANSITIONS
+class PreprintStateMachine(BaseMachine):
+    ActionClass = PreprintAction
+    States = PreprintStates
+    Transitions = PREPRINT_STATE_TRANSITIONS
 
-    def save_changes(self, ev):
-        now = self.action.created if self.action is not None else timezone.now()
+    def validate_transitions(self, ev):
         should_publish = self.machineable.in_public_reviews_state
         if self.machineable.is_retracted:
-            pass  # Do not alter published state
+            raise ValueError('Do not alter published state.')
         elif should_publish and not self.machineable.is_published:
             if not (self.machineable.primary_file and self.machineable.primary_file.target == self.machineable):
                 raise ValueError('Preprint is not a valid preprint; cannot publish.')
@@ -115,11 +114,20 @@ class ReviewsMachine(BaseMachine):
                 raise ValueError('Preprint provider not specified; cannot publish.')
             if not self.machineable.subjects.exists():
                 raise ValueError('Preprint must have at least one subject to be published.')
+
+    def save_changes(self, ev):
+        should_publish = self.machineable.in_public_reviews_state
+        now = self.action.created if self.action is not None else timezone.now()
+
+        if self.machineable.is_retracted:
+            pass
+        elif should_publish and not self.machineable.is_published:
             self.machineable.date_published = now
             self.machineable.is_published = True
             self.machineable.ever_public = True
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
+
         self.machineable.save()
 
     def resubmission_allowed(self, ev):

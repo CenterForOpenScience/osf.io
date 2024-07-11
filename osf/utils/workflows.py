@@ -220,14 +220,14 @@ DEFAULT_TRIGGERS = [
     ('REJECT', 'reject'),
     ('EDIT_COMMENT', 'edit_comment'),
 ]
-REVIEW_STATES = DEFAULT_STATES + [
+PREPRINT_STATES = DEFAULT_STATES + [
     ('WITHDRAWN', 'withdrawn'),
 ]
-REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
+PREPRINT_TRIGGERS = DEFAULT_TRIGGERS + [
     ('WITHDRAW', 'withdraw')
 ]
 
-REGISTRATION_STATES = REVIEW_STATES + [
+REGISTRATION_STATES = PREPRINT_STATES + [
     ('EMBARGO', 'embargo'),
     ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
     ('PENDING_WITHDRAW_REQUEST', 'pending_withdraw_request'),
@@ -235,10 +235,10 @@ REGISTRATION_STATES = REVIEW_STATES + [
 ]
 
 DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
-ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
+PreprintStates = ChoiceEnum('PreprintStates', PREPRINT_STATES)
 RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
 DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
-ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
+PreprintTriggers = ChoiceEnum('PreprintTriggers', PREPRINT_TRIGGERS)
 
 CHRONOS_STATUS_STATES = [
     ('DRAFT', 1),
@@ -285,14 +285,53 @@ DEFAULT_TRANSITIONS = [
     },
 ]
 
-REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
+
+PREPRINT_STATE_TRANSITIONS = [
     {
-        'trigger': ReviewTriggers.WITHDRAW.value,
-        'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
-        'dest': ReviewStates.WITHDRAWN.value,
+        'trigger': PreprintTriggers.SUBMIT.value,
+        'source': [PreprintStates.INITIAL.value],
+        'dest': PreprintStates.PENDING.value,
+        'before': ['validate_transitions'],
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
+    },
+    {
+        'trigger': PreprintTriggers.SUBMIT.value,
+        'source': [PreprintStates.PENDING.value, PreprintStates.REJECTED.value],
+        'conditions': 'resubmission_allowed',
+        'dest': PreprintStates.PENDING.value,
+        'before': ['_validate_transitions'],
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
+    },
+    {
+        'trigger': PreprintTriggers.ACCEPT.value,
+        'source': [PreprintStates.PENDING.value, DefaultStates.REJECTED.value],
+        'dest': PreprintStates.ACCEPTED.value,
+        'before': ['validate_transitions'],
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
+    },
+    {
+        'trigger': PreprintTriggers.REJECT.value,
+        'source': [PreprintStates.PENDING.value, DefaultStates.ACCEPTED.value],
+        'dest': PreprintStates.REJECTED.value,
+        'before': ['validate_transitions'],
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
+    },
+    {
+        'trigger': PreprintTriggers.EDIT_COMMENT.value,
+        'source': [PreprintStates.PENDING.value, PreprintStates.REJECTED.value, PreprintStates.ACCEPTED.value],
+        'dest': '=',
+        'before': ['validate_transitions'],
+        'after': ['save_action', 'save_changes', 'notify_edit_comment'],
+    },
+    {
+        'trigger': PreprintTriggers.WITHDRAW.value,
+        'source': [PreprintStates.PENDING.value, PreprintStates.ACCEPTED.value],
+        'dest': PreprintStates.WITHDRAWN.value,
+        'before': ['validate_transitions'],
         'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
     }
 ]
+
 
 APPROVAL_TRANSITIONS = [
     {

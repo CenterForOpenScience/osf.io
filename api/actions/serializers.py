@@ -31,8 +31,8 @@ from osf.models import (
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
+    PreprintTriggers,
     RegistrationModerationTriggers,
     SchemaResponseTriggers,
 )
@@ -167,7 +167,7 @@ class BaseActionSerializer(JSONAPISerializer):
         type_ = 'actions'
         abstract = True
 
-class ReviewActionSerializer(BaseActionSerializer):
+class PreprintActionSerializer(BaseActionSerializer):
     class Meta:
         type_ = 'review-actions'
 
@@ -183,9 +183,9 @@ class ReviewActionSerializer(BaseActionSerializer):
     ])
 
     comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
-    trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
-    from_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
+    trigger = ser.ChoiceField(choices=PreprintTriggers.choices())
+    from_state = ser.ChoiceField(choices=PreprintStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=PreprintStates.choices(), read_only=True)
 
     provider = RelationshipField(
         read_only=True,
@@ -212,8 +212,8 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
-        if trigger != ReviewTriggers.WITHDRAW.value:
-            return super(ReviewActionSerializer, self).create(validated_data)
+        if trigger != PreprintTriggers.WITHDRAW.value:
+            return super().create(validated_data)
         user = validated_data.pop('user')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')

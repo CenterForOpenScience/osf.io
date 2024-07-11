@@ -436,7 +436,7 @@ def gather_preprint_withdrawal(focus):
     _preprint = focus.dbmodel
     yield (OSF.dateWithdrawn, _preprint.date_withdrawn)
     _withdrawal_request = _preprint.requests.filter(
-        machine_state=osfworkflows.ReviewStates.ACCEPTED.value,
+        machine_state=osfworkflows.PreprintStates.ACCEPTED.value,
         request_type=osfworkflows.RequestTypes.WITHDRAWAL.value,
     ).last()
     if _withdrawal_request:
