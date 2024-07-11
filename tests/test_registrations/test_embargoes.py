@@ -1077,10 +1077,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.invalid_embargo_date_payload = json.dumps({
             'data': {
                 'attributes': {
-                    'lift_embargo': 'Thu, 01 {month} {year} 05:00:00 GMT'.format(
-                        month=current_month,
-                        year=str(int(current_year) - 1)
-                    ),
+                    'lift_embargo': f'Thu, 01 {current_month} {str(int(current_year) - 1)} 05:00:00 GMT',
                     'registration_choice': 'embargo',
                 },
                 'type': 'registrations',

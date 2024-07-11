@@ -57,10 +57,7 @@ def update_taxonomies(filename):
             ))
             subject, _ = Subject.objects.get_or_create(text=text, provider=bepress_provider)
             if parent and not subject.parent:
-                logger.info('Adding parent "{}":{} to Subject "{}":{}'.format(
-                    parent.text, parent._id,
-                    subject.text, subject._id
-                ))
+                logger.info(f'Adding parent "{parent.text}":{parent._id} to Subject "{subject.text}":{subject._id}')
                 subject.parent = parent
                 subject.save()
 

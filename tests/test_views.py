@@ -690,7 +690,7 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         # Assert the contributor id was invalid
         assert res.status_code == 400
-        assert res.json['message_long'], 'Contributor not found.'
+        assert res.json['message_long'] == 'Contributor not found.'
         assert 'badid' not in self.project.contributors
 
     def test_project_remove_self_only_admin(self):
@@ -2072,7 +2072,6 @@ class TestAddingContributorViews(OsfTestCase):
             published_preprints=[]
 
         )
-        #assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
         assert contributor.contributor_added_email_records[project._id]['last_sent'] == approx(int(time.time()), rel=1)
 
     @mock.patch('website.mails.send_mail')
@@ -2225,8 +2224,7 @@ class TestUserInviteViews(OsfTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
-        self.invite_url = '/api/v1/project/{}/invite_contributor/'.format(
-            self.project._primary_key)
+        self.invite_url = f'/api/v1/project/{self.project._primary_key}/invite_contributor/'
 
     def test_invite_contributor_post_if_not_in_db(self):
         name, email = fake.name(), fake_email()
@@ -2432,19 +2430,11 @@ class TestClaimViews(OsfTestCase):
 
         # claim link for the now registered email is accessed while not logged in
         token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
-        claim_url = '/user/{uid}/{pid}/claim/?token={token}'.format(
-            uid=unregistered_user._id,
-            pid=self.project._id,
-            token=token
-        )
+        claim_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/?token={token}'
         res = self.app.get(claim_url)
 
         # should redirect to 'claim_user_registered' view
-        claim_registered_url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
-            uid=unregistered_user._id,
-            pid=self.project._id,
-            token=token
-        )
+        claim_registered_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/verify/{token}/'
         assert res.status_code == 302
         assert claim_registered_url in res.headers.get('Location')
 
@@ -2482,19 +2472,11 @@ class TestClaimViews(OsfTestCase):
 
         # claim link for the now registered email is accessed while not logged in
         token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
-        claim_url = '/user/{uid}/{pid}/claim/?token={token}'.format(
-            uid=unregistered_user._id,
-            pid=self.project._id,
-            token=token
-        )
+        claim_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/?token={token}'
         res = self.app.get(claim_url)
 
         # should redirect to 'claim_user_registered' view
-        claim_registered_url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
-            uid=unregistered_user._id,
-            pid=self.project._id,
-            token=token
-        )
+        claim_registered_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/verify/{token}/'
         assert res.status_code == 302
         assert claim_registered_url in res.headers.get('Location')
 
@@ -2523,11 +2505,7 @@ class TestClaimViews(OsfTestCase):
             'pk': self.user._primary_key,
             'claimerId': reg_user._primary_key
         }
-        url = '/api/v1/user/{uid}/{pid}/claim/email/'.format(
-            uid=self.user._primary_key,
-            pid=self.project._primary_key,
-        )
-
+        url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
         res = self.app.post(url, json=payload)
 
         # mail was sent
@@ -2627,11 +2605,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
         # TODO: check in qa url encoding
         token = self.user.get_unclaimed_record(self.project._primary_key)['token']
-        url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
-            uid=self.user._id,
-            pid=self.project._id,
-            token=token
-        )
+        url = f'/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
         # logged out user gets redirected to cas login
         res1 = self.app.get(url)
         assert res1.status_code == 302
@@ -2791,8 +2765,7 @@ class TestClaimViews(OsfTestCase):
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
         email = fake_email()  # email that is different from the one the referrer gave
-        url = '/api/v1/user/{}/{}/claim/email/'.format(self.user._primary_key,
-                                                         self.project._primary_key)
+        url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
         self.app.post(url, json={'value': email, 'pk': self.user._primary_key} )
         assert send_mail.called
         assert send_mail.call_count == 2
@@ -5043,7 +5016,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
         )
         res = self.app.get(
             reset_password_get_url,
-                        headers={
+            headers={
                 'User-Agent': self.user_agent,
             }
         )

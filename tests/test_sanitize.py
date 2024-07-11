@@ -8,8 +8,8 @@ from osf.utils import sanitize
 class TestSanitize(unittest.TestCase):
 
     def test_strip_html(self):
-        assert sanitize.strip_html('<foo>bar</foo>') =='bar'
-        assert sanitize.strip_html(b'<foo>bar</foo>') =='bar'
+        assert sanitize.strip_html('<foo>bar</foo>') == 'bar'
+        assert sanitize.strip_html(b'<foo>bar</foo>') == 'bar'
 
     def test_strip_html_on_non_strings_returns_original_value(self):
         assert sanitize.strip_html(True)

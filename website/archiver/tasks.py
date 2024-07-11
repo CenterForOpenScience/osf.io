@@ -160,7 +160,7 @@ def make_copy_request(job_pk, url, data):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    logger.info('Sending copy request for addon: {} on node: {}'.format(data['provider'], dst._id))
+    logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
     res = requests.post(url, data=json.dumps(data))
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)

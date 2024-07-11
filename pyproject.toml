@@ -33,7 +33,7 @@ furl = "2.1.3"
 elasticsearch2 = "2.5.1"
 elasticsearch = "6.8.2" # max version to support elasticsearch6
 elasticsearch-dsl = "6.4.0" # max version to support elasticsearch6
-elastic-transport = "8.13.0" # hopefully, this won't break things, more thorough is needed
+elastic-transport = "8.13.0"
 google-api-python-client = "2.123.0"
 google-auth = "2.29.0"
 Babel = "2.14.0"
@@ -67,7 +67,6 @@ django-celery-beat = "2.6.0"
 django-celery-results = "2.5.1"
 pyjwe = "1.0.0"
 # Required by pyjwe and ndg-httpsclient
-# Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
 cryptography = "42.0.5"
 #rpds-py==0.18.0
 jsonschema = "4.21.1"
@@ -107,7 +106,7 @@ pytest-xdist = "3.5.0"
 pytest-django = "4.8.0"
 python-coveralls = "2.9.3" # do we need it?
 pytest-testmon = "2.1.0"
-pytest-asyncio = "0.23.5"  # The last version that supports Python 3.6 and pytest 5.0
+pytest-asyncio = "0.23.5"
 pytest-html = "4.1.1"
 factory-boy = "3.3.0"
 webtest-plus = "1.0.0"

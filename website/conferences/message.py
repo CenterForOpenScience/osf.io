@@ -143,9 +143,7 @@ class ConferenceMessage:
             # NOTE: test.osf.io has DEV_MODE = False
             if not data['test'] or (data['test'] and data['test'].rstrip('-') != 'test'):
                 raise ConferenceError(
-                    'Mismatch between `DEV_MODE` and recipient {}'.format(
-                        self.form['recipient']
-                    )
+                    f"Mismatch between `DEV_MODE` and recipient {self.form['recipient']}"
                 )
         return data
 

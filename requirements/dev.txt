@@ -9,7 +9,7 @@ pytest-xdist==3.5.0
 pytest-django==4.8.0
 python-coveralls==2.9.3 # do we need it?
 pytest-testmon==2.1.0
-pytest-asyncio==0.23.5  # The last version that supports Python 3.6 and pytest 5.0
+pytest-asyncio==0.23.5
 pytest-html==4.1.1
 factory-boy==3.3.0
 webtest-plus==1.0.0

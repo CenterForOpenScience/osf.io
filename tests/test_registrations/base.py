@@ -57,10 +57,7 @@ class RegistrationsTestBase(OsfTestCase):
             },
         }
         self.invalid_embargo_date_payload = copy.deepcopy(self.embargo_payload)
-        self.invalid_embargo_date_payload['data']['attributes']['lift_embargo'] = 'Thu, 01 {month} {year} 05:00:00 GMT'.format(
-            month=current_month,
-            year=str(int(current_year) - 1)
-        )
+        self.invalid_embargo_date_payload['data']['attributes']['lift_embargo'] = f'Thu, 01 {current_month} {str(int(current_year) - 1)} 05:00:00 GMT'
 
         self.immediate_payload = {
             'data': {

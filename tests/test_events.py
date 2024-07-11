@@ -172,8 +172,8 @@ class TestFileUpdated(OsfTestCase):
 
     def test_info_formed_correct(self):
         assert f'{wb_path}_file_updated' == self.event.event_type
-        assert 'updated file "<b>{}</b>".'.format(materialized.lstrip('/')) == self.event.html_message
-        assert 'updated file "{}".'.format(materialized.lstrip('/')) == self.event.text_message
+        assert f'updated file "<b>{materialized.lstrip("/")}</b>".' == self.event.html_message
+        assert f'updated file "{materialized.lstrip("/")}".' == self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_updated(self, mock_notify):
@@ -199,8 +199,8 @@ class TestFileAdded(NotificationTestCase):
 
     def test_info_formed_correct(self):
         assert f'{wb_path}_file_updated' == self.event.event_type
-        assert 'added file "<b>{}</b>".'.format(materialized.lstrip('/')) == self.event.html_message
-        assert 'added file "{}".'.format(materialized.lstrip('/')) == self.event.text_message
+        assert 'added file "<b>{materialized.lstrip("/")}</b>".' == self.event.html_message
+        assert 'added file "{materialized.lstrip("/")}".' == self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
@@ -228,14 +228,14 @@ class TestFileRemoved(NotificationTestCase):
 
     def test_info_formed_correct_file(self):
         assert 'file_updated' == self.event.event_type
-        assert 'removed file "<b>{}</b>".'.format(materialized.lstrip('/')) == self.event.html_message
-        assert 'removed file "{}".'.format(materialized.lstrip('/')) == self.event.text_message
+        assert 'removed file "<b>{materialized.lstrip("/")}</b>".' == self.event.html_message
+        assert 'removed file "{materialized.lstrip("/")}".' == self.event.text_message
 
     def test_info_formed_correct_folder(self):
         assert 'file_updated' == self.event.event_type
         self.event.payload['metadata']['materialized'] += '/'
-        assert 'removed folder "<b>{}/</b>".'.format(materialized.lstrip('/')) == self.event.html_message
-        assert 'removed folder "{}/".'.format(materialized.lstrip('/')) == self.event.text_message
+        assert 'removed folder "<b>{materialized.lstrip("/")}/</b>".' == self.event.html_message
+        assert 'removed folder "{materialized.lstrip("/")}/".' == self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_removed(self, mock_notify):
