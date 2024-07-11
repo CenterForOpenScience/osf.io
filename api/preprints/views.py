@@ -651,7 +651,7 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_resource().affiliated_institutions.all()
 
 
-class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
+class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     """ """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -690,3 +690,5 @@ class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateD
                     raise PermissionDenied
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
         node.save()
+
+    def patch(self):

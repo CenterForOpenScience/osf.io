@@ -178,21 +178,7 @@ class TestPreprintInstitutionsRelationship:
             auth=admin_with_institutional_affilation.auth,
             expect_errors=True
         )
-        assert res.status_code == 403  # Adding affilations you don't have
-
-        add_institutions_payload = {
-            'data': [{'type': 'institutions', 'id': institution._id}],
-        }
-
-        res = app.post_json_api(
-            url,
-            add_institutions_payload,
-            auth=admin_with_institutional_affilation.auth
-        )
-        assert res.status_code == 201
-
-        preprint.reload()
-        assert preprint.affiliated_institutions.all()[0] == institution
+        assert res.status_code == 405
 
     def test_delete_affiliated_institution(self, app, user, admin_with_institutional_affilation, admin_without_institutional_affilation, preprint, url,
                                            institution):
@@ -203,32 +189,40 @@ class TestPreprintInstitutionsRelationship:
         res = app.delete_json_api(
             url,
             {'data': [{'type': 'institutions', 'id': institution._id}]},
-            auth=admin_with_institutional_affilation.auth
+            auth=admin_with_institutional_affilation.auth,
+            expect_errors=True
         )
-        assert res.status_code == 204
+        assert res.status_code == 405
 
-        preprint.reload()
-        assert institution not in preprint.affiliated_institutions.all()
-
-    def test_complex_institutional_affiliations(self, app, user, admin_with_institutional_affilation, admin_without_institutional_affilation, preprint, url,
+    def test_add_multiple_institutions_affiliations(self, app, admin_with_institutional_affilation, admin_without_institutional_affilation, preprint, url,
                                                 institutions):
-        # Add multiple institutions
+
+        admin_with_institutional_affilation.add_or_update_affiliated_institution(institutions[0])
+        admin_with_institutional_affilation.add_or_update_affiliated_institution(institutions[1])
+        admin_with_institutional_affilation.add_or_update_affiliated_institution(institutions[2])
+        admin_with_institutional_affilation.save()
         add_institutions_payload = {
             'data': [{'type': 'institutions', 'id': institution._id} for institution in institutions]
         }
 
-        res = app.post_json_api(
+        assert preprint.affiliated_institutions.all().count() == 0
+        res = app.put_json_api(
             url,
             add_institutions_payload,
             auth=admin_with_institutional_affilation.auth,
-            expect_errors=True
         )
-        assert res.status_code == 403  # Adding affilations you don't have
+        print(res.json)
+        assert False
+        assert res.status_code == 200
+        assert preprint.affiliated_institutions.all().count() == 3
 
         preprint.reload()
-        assert len(preprint.affiliated_institutions.all()) == 0
 
-        # add one institution
+
+    def test_remove_only_institutions_affiliations_that_user_has(self, app, user, admin_with_institutional_affilation,
+                                                        admin_without_institutional_affilation, preprint, url,
+                                                        institutions):
+
         remove_institution_payload = {
             'data': [{'type': 'institutions', 'id': institutions[0]._id}]
         }
@@ -242,13 +236,3 @@ class TestPreprintInstitutionsRelationship:
 
         preprint.reload()
         assert len(preprint.affiliated_institutions.all()) == 1
-        assert len(preprint.affiliated_institutions.all()) == 1
-
-        # Check user affiliations
-        other_user = AuthUserFactory()
-        other_user.add_or_update_affiliated_institution(institutions[1])
-        other_user.add_or_update_affiliated_institution(institutions[2])
-
-        res = app.get(url, auth=other_user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 2
