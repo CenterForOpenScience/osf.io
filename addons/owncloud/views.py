@@ -48,7 +48,7 @@ def owncloud_add_user_account(auth, **kwargs):
     # Ensure that ownCloud uses https
     host_url = request.json.get('host')
     host = furl(
-        host=host_url.rstrip('/'),
+        host=host_url.rstrip('/').replace('https://', '').replace('http://', ''),
         scheme='https',
     )
 
