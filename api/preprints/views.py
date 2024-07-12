@@ -678,17 +678,5 @@ class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateA
         self.check_object_permissions(self.request, obj)
         return obj
 
-    def perform_destroy(self, instance):
-        data = self.request.data['data']
-        user = self.request.user
-        current_insts = {inst._id: inst for inst in instance['data']}
-        node = instance['self']
-
-        for val in data:
-            if val['id'] in current_insts:
-                if not user.is_affiliated_with_institution(current_insts[val['id']]) and not node.has_permission(user, 'admin'):
-                    raise PermissionDenied
-                node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
-        node.save()
-
-    def patch(self):
+    def patch(self, *args, **kwargs):
+        raise MethodNotAllowed(self.request.method)

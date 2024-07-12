@@ -34,10 +34,9 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
-    update_institutions,
-
 )
 from api.base.metrics import MetricsSerializerMixin
+from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
@@ -560,7 +559,7 @@ class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
     def update(self, instance, validated_data):
         preprint = instance['self']
         user = self.context['request'].user
-        update_institutions(preprint, validated_data['data'], user)
+        update_institutions_if_user_associated(preprint, validated_data['data'], user)
         preprint.save()
 
         return self.make_instance_obj(preprint)
@@ -569,7 +568,7 @@ class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
         instance = self.context['view'].get_object()
         user = self.context['request'].user
         preprint = instance['self']
-        update_institutions(preprint, validated_data['data'], user, post=True)
+        update_institutions_if_user_associated(preprint, validated_data['data'], user, post=True)
         preprint.save()
 
         return self.make_instance_obj(preprint)
