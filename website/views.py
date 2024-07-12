@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import furl
-import waffle
 import itertools
 from rest_framework import status as http_status
 import logging
@@ -35,7 +34,7 @@ from website.project.model import has_anonymous_link
 from osf.utils import permissions
 from osf.metadata.tools import pls_gather_metadata_file
 
-from api.waffle.utils import storage_i18n_flag_active
+from api.waffle.utils import storage_i18n_flag_active, flag_is_active
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -336,25 +335,25 @@ def resolve_guid(guid, suffix=None):
             return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
         return use_ember_app()
 
-    elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+    elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         return use_ember_app()
 
-    elif isinstance(resource, Registration) and clean_suffix and clean_suffix.startswith('metadata') and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+    elif isinstance(resource, Registration) and clean_suffix and clean_suffix.startswith('metadata') and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         return use_ember_app()
 
-    elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
+    elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return use_ember_app()
 
-    elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+    elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and flag_is_active(request, features.EMBER_PROJECT_FILES):
         return use_ember_app()
 
     elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('metadata'):
         return use_ember_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
-        if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if isinstance(resource.target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             return use_ember_app()
-        if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        if isinstance(resource.target, Node) and flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             return use_ember_app()
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.

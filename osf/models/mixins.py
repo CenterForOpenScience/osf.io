@@ -3,8 +3,6 @@ import pytz
 import markupsafe
 import logging
 
-import waffle
-
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -14,6 +12,7 @@ from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
 from api.providers.workflows import Workflows, PUBLIC_STATES
+from api.waffle.utils import flag_is_active
 from framework import status
 from framework.auth import Auth
 from framework.auth.core import get_user
@@ -491,7 +490,7 @@ class AddonModelMixin(models.Model):
 
     def get_addons(self):
         request, user_id = get_request_and_user_id()
-        if waffle.flag_is_active(request, features.ENABLE_GV):
+        if flag_is_active(request, features.ENABLE_GV):
             osf_addons = filter(
                 lambda x: x is not None,
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
@@ -528,7 +527,7 @@ class AddonModelMixin(models.Model):
         # Avoid test-breakages by avoiding early access to the request context
         if name not in self.OSF_HOSTED_ADDONS:
             request, user_id = get_request_and_user_id()
-            if waffle.flag_is_active(request, features.ENABLE_GV):
+            if flag_is_active(request, features.ENABLE_GV):
                 return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id)
 
         try:

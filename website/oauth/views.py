@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import status as http_status
-import waffle
 import requests
 from urllib.parse import (
     urlencode,
@@ -11,6 +10,7 @@ from urllib.parse import (
 
 from flask import redirect, request
 
+from api.waffle.utils import flag_is_active
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from osf.models import ExternalAccount
@@ -50,7 +50,7 @@ def oauth_connect(service_name, auth):
 
 @must_be_logged_in
 def oauth_callback(service_name, auth):
-    if waffle.flag_is_active(request, features.ENABLE_GV):
+    if flag_is_active(request, features.ENABLE_GV):
         _forward_to_addon_service()
         return {}
 

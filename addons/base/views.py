@@ -24,6 +24,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import enqueue_update_analytics
 
+from api.waffle.utils import flag_is_active
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
@@ -869,10 +870,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     # There's no download action redirect to the Ember front-end file view and create guid.
     if action != 'download':
-        if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        if isinstance(target, Node) and flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
-        if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if isinstance(target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
 

@@ -1,5 +1,6 @@
-import waffle
 from kombu import Exchange
+
+from api.waffle.utils import flag_is_active
 from framework.celery_tasks import app as celery_app
 from website import settings
 from osf import features
@@ -36,7 +37,7 @@ def publish_merged_user(user):
 
 
 def _publish_user_status_change(body: dict):
-    if settings.USE_CELERY and waffle.flag_is_active(get_current_request(), features.ENABLE_GV):
+    if settings.USE_CELERY and flag_is_active(get_current_request(), features.ENABLE_GV):
         with celery_app.producer_pool.acquire() as producer:
             producer.publish(
                 body=body,
