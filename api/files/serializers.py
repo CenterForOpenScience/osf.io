@@ -441,6 +441,7 @@ class FileDetailSerializer(FileSerializer):
         guid = Guid.load(view.kwargs['file_id'])
         if guid:
             data['data']['id'] = guid._id
+
         return data
 
 
