@@ -153,6 +153,7 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
+    Preprint,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -1481,11 +1482,17 @@ class NodeStorageProvider:
         self.node_id = node._id
         self.pk = node._id
         self.id = node.id
-        self.root_folder = storage_addon.root_node if storage_addon else None
+        self.root_folder = self._get_root_folder(storage_addon)
 
     @property
     def target(self):
         return self.node
+
+    def _get_root_folder(self, storage_addon):
+        if isinstance(self.target, Preprint):
+            return self.target.root_folder
+        else:
+            return storage_addon.root_node if storage_addon else None
 
 class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).

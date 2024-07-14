@@ -206,7 +206,7 @@ def check_resource_permissions(resource, auth, action):
 
 def _check_registration_permissions(registration, auth, permission, action):
     if permission == permissions.READ:
-        return registration.registered_from.can_view(auth)
+        return registration.can_view(auth) or registration.registered_from.can_view(auth)
     if action in ('copyfrom', 'upload'):
         return _check_hierarchical_write_permissions(resource=registration, auth=auth)
     return registration.can_edit(auth)
@@ -241,6 +241,19 @@ def _check_hierarchical_write_permissions(resource, auth):
         permissions_resource = permissions_resource.parent_node
     return False
 
+def _download_is_from_mfr(waterbutler_data):
+    metrics_data = waterbutler_data['metrics']
+    uri = metrics_data['uri']
+    is_render_uri = furl(uri or '').query.params.get('mode') == 'render'
+    return (
+        # This header is sent for download requests that
+        # originate from MFR, e.g. for the code pygments renderer
+        request.headers.get('X-Cos-Mfr-Render-Request', None) or
+        # Need to check the URI in order to account
+        # for renderers that send XHRs from the
+        # rendered content, e.g. PDFs
+        is_render_uri
+    )
 
 def make_auth(user):
     if user is not None:
@@ -412,7 +425,7 @@ def get_auth(auth, **kwargs):
         # Trigger any file-specific signals based on the action taken (e.g., file viewed, downloaded)
         if action == 'render':
             file_signals.file_viewed.send(auth=auth, fileversion=fileversion, file_node=file_node)
-        elif action == 'download':
+        elif action == 'download' and not _download_is_from_mfr(waterbutler_data):
             file_signals.file_downloaded.send(auth=auth, fileversion=fileversion, file_node=file_node)
 
     # Construct the response payload including the JWT
