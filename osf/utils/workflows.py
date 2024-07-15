@@ -207,7 +207,6 @@ class ChoiceEnum(Enum):
         '''
         return self.value
 
-
 DEFAULT_STATES = [
     ('INITIAL', 'initial'),
     ('PENDING', 'pending'),
@@ -250,8 +249,8 @@ REGISTRATION_STATES = [
     ('PENDING_WITHDRAW', 'pending_withdraw'),
 ]
 
-DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
 ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
+DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
 RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
 DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
 ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
@@ -301,13 +300,44 @@ DEFAULT_TRANSITIONS = [
     },
 ]
 
-REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
+REVIEWABLE_TRANSITIONS = [
     {
         'trigger': ReviewTriggers.WITHDRAW.value,
         'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
         'dest': ReviewStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
-    }
+    },
+    {
+        'trigger': DefaultTriggers.SUBMIT.value,
+        'source': [DefaultStates.INITIAL.value],
+        'dest': DefaultStates.PENDING.value,
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
+    },
+    {
+        'trigger': DefaultTriggers.SUBMIT.value,
+        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
+        'conditions': 'resubmission_allowed',
+        'dest': DefaultStates.PENDING.value,
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
+    },
+    {
+        'trigger': DefaultTriggers.ACCEPT.value,
+        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
+        'dest': DefaultStates.ACCEPTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
+    },
+    {
+        'trigger': DefaultTriggers.REJECT.value,
+        'source': [DefaultStates.PENDING.value, DefaultStates.ACCEPTED.value],
+        'dest': DefaultStates.REJECTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
+    },
+    {
+        'trigger': DefaultTriggers.EDIT_COMMENT.value,
+        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value, DefaultStates.ACCEPTED.value],
+        'dest': '=',
+        'after': ['save_action', 'save_changes', 'notify_edit_comment'],
+    },
 ]
 
 APPROVAL_TRANSITIONS = [
