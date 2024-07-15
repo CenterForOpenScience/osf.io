@@ -35,7 +35,7 @@ from .validators import validate_subject_hierarchy, validate_email, expand_subje
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import (
-    ReviewsMachine,
+    PreprintStateMachine,
     NodeRequestMachine,
     PreprintRequestMachine,
 )
@@ -45,8 +45,8 @@ from osf.utils.registrations import flatten_registration_metadata, expand_regist
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
+    PreprintStateTriggers,
 )
 
 from osf.utils.requests import get_request_and_user_id
@@ -810,7 +810,6 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             kwargs: Additional parameters required by the transition.
         """
-        from osf.utils.machines import ReviewsMachine
         machine = self.MachineClass(self, 'machine_state')
         transition = getattr(machine, transition_name)(user=user, **kwargs)
 
@@ -855,16 +854,16 @@ class PreprintRequestableMixin(MachineableMixin):
     MachineClass = PreprintRequestMachine
 
 
-class ReviewableMixin(MachineableMixin):
+class PreprintStateMachineMixin(MachineableMixin):
     """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
-    TriggersClass = ReviewTriggers
-    MachineClass = ReviewsMachine
+    TriggersClass = PreprintStateTriggers
+    MachineClass = PreprintStateMachine
     machine_state = models.CharField(
         max_length=15,
         db_index=True,
-        choices=ReviewStates.char_field_choices(),
-        default=ReviewStates.INITIAL.db_name
+        choices=PreprintStates.char_field_choices(),
+        default=PreprintStates.INITIAL.db_name
     )
 
     class Meta:
@@ -941,7 +940,7 @@ class ReviewProviderMixin(GuardianMixin):
     """
 
     REVIEWABLE_RELATION_NAME = None
-    REVIEW_STATES = ReviewStates
+    REVIEW_STATES = PreprintStates
     STATE_FIELD_NAME = 'machine_state'
 
     groups = REVIEW_GROUPS
@@ -987,7 +986,7 @@ class ReviewProviderMixin(GuardianMixin):
             target__deleted__isnull=True,
         )
         qs = qs.values('machine_state').annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in DefaultStates}
+        counts = {state.db_name: 0 for state in DefaultStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 

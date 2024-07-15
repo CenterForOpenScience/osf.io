@@ -31,8 +31,8 @@ from osf.models import (
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
+    PreprintStateTriggers,
     RegistrationModerationTriggers,
     SchemaResponseTriggers,
 )
@@ -110,7 +110,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
 
-    trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
+    trigger = ser.ChoiceField(choices=DefaultTriggers.char_field_choices())
 
     comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
@@ -147,7 +147,7 @@ class BaseActionSerializer(JSONAPISerializer):
         comment = validated_data.get('comment', '')
         permissions = validated_data.get('permissions', '')
         visible = validated_data.get('visible', '')
-
+        print('cdsds', comment, trigger, DefaultTriggers.EDIT_COMMENT.db_name)
         try:
             if trigger == DefaultTriggers.ACCEPT.db_name:
                 return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
@@ -183,9 +183,9 @@ class ReviewActionSerializer(BaseActionSerializer):
     ])
 
     comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
-    trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
-    from_state = ser.ChoiceField(choices=ReviewStates.char_field_choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=ReviewStates.char_field_choices(), read_only=True)
+    trigger = ser.ChoiceField(choices=PreprintStateTriggers.char_field_choices())
+    from_state = ser.ChoiceField(choices=PreprintStates.char_field_choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=PreprintStates.char_field_choices(), read_only=True)
 
     provider = RelationshipField(
         read_only=True,
@@ -212,7 +212,7 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
-        if trigger != ReviewTriggers.WITHDRAW.db_name:
+        if trigger != PreprintStateTriggers.WITHDRAW.db_name:
             return super(ReviewActionSerializer, self).create(validated_data)
         user = validated_data.pop('user')
         target = validated_data.pop('target')

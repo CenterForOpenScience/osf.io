@@ -401,7 +401,7 @@ class TestPreprintIdentifierList:
 
     def test_preprint_identifier_list_permissions_abandoned(
             self, app, user, data_preprint_identifier, preprint, url_preprint_identifier):
-        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.machine_state = DefaultStates.INITIAL.db_name
         preprint.save()
 
         # test_unpublished_preprint_identifier_unauthenticated

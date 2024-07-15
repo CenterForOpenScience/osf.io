@@ -207,21 +207,37 @@ class ChoiceEnum(Enum):
         '''
         return self.value
 
-DEFAULT_TRIGGERS = [
-    ('SUBMIT', 'submit'),
-    ('ACCEPT', 'accept'),
-    ('REJECT', 'reject'),
-    ('EDIT_COMMENT', 'edit_comment'),
-]
+class DefaultStates(ModerationEnum):
+    '''The states of a CollectionSubmission object.'''
+
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
 
 
-REVIEW_TRIGGERS = [
-    ('SUBMIT', 'submit'),
-    ('ACCEPT', 'accept'),
-    ('REJECT', 'reject'),
-    ('EDIT_COMMENT', 'edit_comment'),
-    ('WITHDRAW', 'withdraw')
-]
+class PreprintStates(ModerationEnum):
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+    WITHDRAWN = 4
+
+
+class PreprintStateTriggers(ModerationEnum):
+    SUBMIT = 0
+    ACCEPT = 1
+    REJECT = 2
+    EDIT_COMMENT = 3
+    WITHDRAW = 4
+
+
+class DefaultTriggers(ModerationEnum):
+    SUBMIT = 0
+    ACCEPT = 1
+    REJECT = 2
+    EDIT_COMMENT = 3
+
 
 REGISTRATION_STATES = [
     ('INITIAL', 'initial'),
@@ -236,26 +252,7 @@ REGISTRATION_STATES = [
 ]
 
 
-class DefaultStates(ModerationEnum):
-    '''The states of a CollectionSubmission object.'''
-
-    INITIAL = 0
-    PENDING = 1
-    ACCEPTED = 2
-    REJECTED = 3
-
-
-class ReviewStates(ModerationEnum):
-    INITIAL = 0
-    PENDING = 1
-    ACCEPTED = 2
-    REJECTED = 3
-    WITHDRAWN = 4
-
-
 RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
-DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
-ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
 
 CHRONOS_STATUS_STATES = [
     ('DRAFT', 1),
@@ -302,42 +299,42 @@ DEFAULT_TRANSITIONS = [
     },
 ]
 
-REVIEWABLE_TRANSITIONS = [
+PREPRINT_STATE_TRANSITIONS = [
     {
         'trigger': 'submit',
-        'source': [DefaultStates.INITIAL.db_name],
-        'dest': DefaultStates.PENDING.db_name,
+        'source': [PreprintStates.INITIAL.db_name],
+        'dest': PreprintStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
     },
     {
         'trigger': 'submit',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
+        'source': [PreprintStates.PENDING.db_name, PreprintStates.REJECTED.db_name],
         'conditions': 'resubmission_allowed',
-        'dest': DefaultStates.PENDING.db_name,
+        'dest': PreprintStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
     },
     {
         'trigger': 'accept',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
-        'dest': DefaultStates.ACCEPTED.db_name,
+        'source': [PreprintStates.PENDING.db_name, PreprintStates.REJECTED.db_name],
+        'dest': PreprintStates.ACCEPTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
         'trigger': 'reject',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.ACCEPTED.db_name],
-        'dest': DefaultStates.REJECTED.db_name,
+        'source': [PreprintStates.PENDING.db_name, PreprintStates.ACCEPTED.db_name],
+        'dest': PreprintStates.REJECTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
         'trigger': 'edit_comment',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name, DefaultStates.ACCEPTED.db_name],
+        'source': [PreprintStates.PENDING.db_name, PreprintStates.REJECTED.db_name, PreprintStates.ACCEPTED.db_name],
         'dest': '=',
         'after': ['save_action', 'save_changes', 'notify_edit_comment'],
     },
     {
-        'trigger': 'withdrawn',
-        'source': [ReviewStates.PENDING.db_name, ReviewStates.ACCEPTED.db_name],
-        'dest': ReviewStates.WITHDRAWN.db_name,
+        'trigger': 'withdraw',
+        'source': [PreprintStates.PENDING.db_name, PreprintStates.ACCEPTED.db_name],
+        'dest': PreprintStates.WITHDRAWN.db_name,
         'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
     },
 

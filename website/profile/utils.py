@@ -200,6 +200,6 @@ def serialize_access_requests(node):
             'id': access_request._id
         } for access_request in node.requests.filter(
             request_type=workflows.RequestTypes.ACCESS.value,
-            machine_state=workflows.DefaultStates.PENDING.value
+            machine_state=workflows.DefaultStates.PENDING.db_name
         ).select_related('creator')
     ]

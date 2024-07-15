@@ -1936,7 +1936,7 @@ class TestReviewsPreprintDetailPermissions:
             provider=reviews_provider,
             subjects=[[subject._id]],
             is_published=False,
-            machine_state=DefaultStates.PENDING.value)
+            machine_state=DefaultStates.PENDING.db_name)
         preprint.add_contributor(write_contrib, permissions=WRITE)
         preprint.save()
         return preprint
@@ -1950,7 +1950,7 @@ class TestReviewsPreprintDetailPermissions:
             provider=reviews_provider,
             subjects=[[subject._id]],
             is_published=False,
-            machine_state=DefaultStates.INITIAL.value)
+            machine_state=DefaultStates.INITIAL.db_name)
 
     @pytest.fixture()
     def private_reviews_preprint(
@@ -1962,7 +1962,7 @@ class TestReviewsPreprintDetailPermissions:
             subjects=[[subject._id]],
             is_published=False,
             is_public=False,
-            machine_state=DefaultStates.PENDING.value)
+            machine_state=DefaultStates.PENDING.db_name)
         preprint.add_contributor(write_contrib, permissions=WRITE)
         return preprint
 

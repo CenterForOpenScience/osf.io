@@ -221,7 +221,7 @@ class TestUserNodesPreprintsFiltering:
     def abandoned_preprint(self, abandoned_preprint_node):
         preprint = PreprintFactory(project=abandoned_preprint_node,
             is_published=False)
-        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.machine_state = DefaultStates.INITIAL.db_name
         return preprint
 
     @pytest.fixture()

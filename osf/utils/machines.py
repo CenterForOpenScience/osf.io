@@ -12,10 +12,10 @@ from osf.utils import permissions
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
+    PreprintStates,
     ApprovalStates,
     DEFAULT_TRANSITIONS,
-    REVIEWABLE_TRANSITIONS,
+    PREPRINT_STATE_TRANSITIONS,
     APPROVAL_TRANSITIONS,
     CollectionSubmissionStates,
     COLLECTION_SUBMISSION_TRANSITIONS,
@@ -98,10 +98,10 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class ReviewsMachine(BaseMachine):
+class PreprintStateMachine(BaseMachine):
     ActionClass = ReviewAction
-    States = ReviewStates
-    Transitions = REVIEWABLE_TRANSITIONS
+    States = PreprintStates
+    Transitions = PREPRINT_STATE_TRANSITIONS
 
     def save_changes(self, ev):
         now = self.action.created if self.action is not None else timezone.now()
@@ -192,11 +192,11 @@ class NodeRequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles contributorship changes and state transitions
         """
-        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.db_name and self.action is not None:
             self.machineable.comment = self.action.comment
         self.machineable.save()
 
-        if ev.event.name == DefaultTriggers.ACCEPT.value:
+        if ev.event.name == DefaultTriggers.ACCEPT.db_name:
             if not self.machineable.target.is_contributor(self.machineable.creator):
                 contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
                 self.machineable.target.add_contributor(
@@ -235,7 +235,7 @@ class NodeRequestMachine(BaseMachine):
     def notify_accept_reject(self, ev):
         """ Notify requester that admins have approved/denied
         """
-        if ev.event.name == DefaultTriggers.REJECT.value:
+        if ev.event.name == DefaultTriggers.REJECT.db_name:
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
@@ -265,14 +265,16 @@ class PreprintRequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles preprint status changes and state transitions
         """
-        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+        print('ev.event.name', ev.event.name)
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.db_name and self.action is not None:
             self.machineable.comment = self.action.comment
-        elif ev.event.name == DefaultTriggers.SUBMIT.value:
+        elif ev.event.name == DefaultTriggers.SUBMIT.db_name:
             # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
             if self.auto_approval_allowed():
                 self.machineable.run_accept(user=self.machineable.creator, comment=self.machineable.comment, auto=True)
-        elif ev.event.name == DefaultTriggers.ACCEPT.value:
+        elif ev.event.name == DefaultTriggers.ACCEPT.db_name:
             # If moderator accepts the withdrawal request
+            print('withdraw', self.machineable.target)
             self.machineable.target.run_withdraw(user=self.action.creator, comment=self.action.comment)
         self.machineable.save()
 
@@ -286,7 +288,7 @@ class PreprintRequestMachine(BaseMachine):
             reviews_signals.email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
-        if ev.event.name == DefaultTriggers.REJECT.value:
+        if ev.event.name == DefaultTriggers.REJECT.db_name:
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,

@@ -890,7 +890,7 @@ class TestPreprintFileView:
         assert res.status_code == 410
 
     def test_abandoned_preprint_file(self, app, file_url, preprint, user, other_user):
-        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.machine_state = DefaultStates.INITIAL.db_name
         preprint.save()
 
         # Unauthenticated

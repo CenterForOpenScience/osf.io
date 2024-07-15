@@ -897,7 +897,7 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                subjects=[[subject._id]],
                                project=project_public,
                                is_published=False,
-                               machine_state=DefaultStates.PENDING.value)
+                               machine_state=DefaultStates.PENDING.db_name)
         preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
@@ -972,7 +972,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                subjects=[[subject._id]],
                                project=project_public,
                                is_published=False,
-                               machine_state=DefaultStates.INITIAL.value)
+                               machine_state=DefaultStates.INITIAL.db_name)
         preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
@@ -1139,7 +1139,7 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
                                subjects=[[subject._id]],
                                project=project_public,
                                is_published=False,
-                               machine_state=DefaultStates.INITIAL.value)
+                               machine_state=DefaultStates.INITIAL.db_name)
         preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 
@@ -1224,7 +1224,7 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
                                subjects=[[subject._id]],
                                project=project_public,
                                is_published=False,
-                               machine_state=DefaultStates.PENDING.value)
+                               machine_state=DefaultStates.PENDING.db_name)
         preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 

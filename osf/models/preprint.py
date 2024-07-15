@@ -26,10 +26,10 @@ from .user import OSFUser
 from .provider import PreprintProvider
 from .preprintlog import PreprintLog
 from .contributor import PreprintContributor
-from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
+from .mixins import PreprintStateMachineMixin, Taggable, Loggable, GuardianMixin
 from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.workflows import DefaultStates, ReviewStates
+from osf.utils.workflows import DefaultStates, PreprintStates
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
@@ -69,7 +69,7 @@ class PreprintManager(models.Manager):
         is_public=True,
         deleted__isnull=True,
         primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) \
+        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.db_name) \
         & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
     def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
@@ -79,7 +79,7 @@ class PreprintManager(models.Manager):
             admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
             reviews_user_query = Q(is_public=True, provider__in=moderator_for)
             if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.db_name) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
                 query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (self.no_user_query | admin_user_query | reviews_user_query)
@@ -100,7 +100,7 @@ class PreprintManager(models.Manager):
                 user=user,
                 allow_contribs=allow_contribs,
                 public_only=public_only,
-            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.db_name)
         )
         # The auth subquery currently results in duplicates returned
         # https://openscience.atlassian.net/browse/OSF-9058
@@ -108,8 +108,8 @@ class PreprintManager(models.Manager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
-        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, PreprintStateMachineMixin, BaseModel, TitleMixin, DescriptionMixin,
+               Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
@@ -581,7 +581,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.set_privacy('public', log=False, save=False)
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.machine_state = ReviewStates.ACCEPTED.db_name
+            self.machine_state = PreprintStates.ACCEPTED.db_name
             self.date_last_transitioned = self.date_published
 
             # This preprint will have a tombstone page when it's withdrawn.

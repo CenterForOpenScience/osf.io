@@ -180,7 +180,7 @@ def get_preprints_to_export(user):
     return Preprint.objects.filter(
         Q(preprintcontributor__user_id=user.id) &
         Q(deleted__isnull=True) &
-        ~Q(machine_state=DefaultStates.INITIAL.value)
+        ~Q(machine_state=DefaultStates.INITIAL.db_name)
     )
 
 

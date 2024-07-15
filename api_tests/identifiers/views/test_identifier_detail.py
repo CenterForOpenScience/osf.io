@@ -219,7 +219,7 @@ class TestIdentifierDetail:
             self, app, preprint, user, identifier_preprint, noncontrib
     ):
         url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
-        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.machine_state = DefaultStates.INITIAL.db_name
         preprint.save()
 
         # test_abandoned_preprint_identifier_unauthenticated

@@ -232,7 +232,7 @@ class TestPreprintContributorDetail:
 
     def test_preprint_contributor_abandoned(
             self, app, user, preprint_published, url_published):
-        preprint_published.machine_state = DefaultStates.INITIAL.value
+        preprint_published.machine_state = DefaultStates.INITIAL.db_name
         preprint_published.save()
 
         # Unauthenticated

@@ -26,7 +26,7 @@ class IsPreprintFile(PreprintPublishedOrAdmin):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, BaseFileNode), 'obj must be a BaseFileNode, got {}'.format(obj)
         if (hasattr(obj.target, 'primary_file') and obj.target.primary_file == obj):
-            if request.method == 'DELETE' and obj.target.machine_state != DefaultStates.INITIAL.value:
+            if request.method == 'DELETE' and obj.target.machine_state != DefaultStates.INITIAL.db_name:
                 return False
 
             if obj.target.is_retracted and request.method in permissions.SAFE_METHODS:

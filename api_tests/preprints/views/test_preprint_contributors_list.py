@@ -224,7 +224,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
     def test_return_preprint_contributors_abandoned_preprint(
             self, app, user, user_two, preprint_published, url_published):
-        preprint_published.machine_state = DefaultStates.INITIAL.value
+        preprint_published.machine_state = DefaultStates.INITIAL.db_name
         preprint_published.save()
 
         # test_abandoned_preprint_contributors_logged_out

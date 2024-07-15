@@ -4521,12 +4521,12 @@ class TestNodeProperties:
         assert project.has_linked_published_preprints is True
 
         # Abandoned preprint is False
-        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.machine_state = DefaultStates.INITIAL.db_name
         preprint.save()
         assert project.has_linked_published_preprints is False
 
         # Unpublished preprint is False
-        preprint.machine_state = DefaultStates.ACCEPTED.value
+        preprint.machine_state = DefaultStates.ACCEPTED.db_name
         preprint.is_published = False
         preprint.save()
         assert project.has_linked_published_preprints is False

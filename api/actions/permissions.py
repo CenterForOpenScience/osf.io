@@ -6,17 +6,17 @@ from rest_framework import permissions as drf_permissions
 from api.base.utils import get_user_auth
 from osf.models import CollectionSubmissionAction
 from osf.models.action import BaseAction
-from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
-from osf.utils.workflows import ReviewTriggers
+from osf.models.mixins import PreprintStateMachineMixin, ReviewProviderMixin
+from osf.utils.workflows import PreprintStateTriggers
 from osf.utils import permissions as osf_permissions
 
 # Required permission to perform each action. `None` means no permissions required.
 TRIGGER_PERMISSIONS = {
-    ReviewTriggers.SUBMIT.value: None,
-    ReviewTriggers.ACCEPT.value: 'accept_submissions',
-    ReviewTriggers.REJECT.value: 'reject_submissions',
-    ReviewTriggers.WITHDRAW.value: 'withdraw_submissions',
-    ReviewTriggers.EDIT_COMMENT.value: 'edit_review_comments',
+    PreprintStateTriggers.SUBMIT.db_name: None,
+    PreprintStateTriggers.ACCEPT.db_name: 'accept_submissions',
+    PreprintStateTriggers.REJECT.db_name: 'reject_submissions',
+    PreprintStateTriggers.WITHDRAW.db_name: 'withdraw_submissions',
+    PreprintStateTriggers.EDIT_COMMENT.db_name: 'edit_review_comments',
 }
 
 
@@ -30,7 +30,7 @@ class ReviewActionPermission(drf_permissions.BasePermission):
         if isinstance(obj, tuple(BaseAction.__subclasses__())):
             target = obj.target
             provider = target.provider
-        elif isinstance(obj, ReviewableMixin):
+        elif isinstance(obj, PreprintStateMachineMixin):
             target = obj
             provider = target.provider
         elif isinstance(obj, ReviewProviderMixin):

@@ -2353,7 +2353,7 @@ class TestWithdrawnPreprint:
                         creator=user,
                         target=target,
                         request_type=RequestTypes.WITHDRAWAL.value,
-                        machine_state=DefaultStates.INITIAL.value)
+                        machine_state=DefaultStates.INITIAL.db_name)
             request.run_submit(user)
             return request
         return withdrawal_request

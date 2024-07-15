@@ -171,7 +171,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(admin)
         return request
@@ -182,7 +182,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=post_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(admin)
         return request
@@ -193,7 +193,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=none_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(admin)
         return request
@@ -204,7 +204,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=auto_withdrawable_pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(admin)
         return request
@@ -215,7 +215,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(requester)
         return request
@@ -226,7 +226,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=post_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(requester)
         return request
@@ -237,7 +237,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=none_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(requester)
         return request
@@ -248,7 +248,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=auto_withdrawable_pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         request.run_submit(requester)
         return request

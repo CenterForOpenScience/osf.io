@@ -1118,7 +1118,7 @@ class TestNodeFiltering:
             project=ProjectFactory(creator=user_one)
         )
         abandoned.node.add_contributor(user_two, save=True)
-        abandoned.machine_state = DefaultStates.INITIAL.value
+        abandoned.machine_state = DefaultStates.INITIAL.db_name
         abandoned.save()
 
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
@@ -1150,7 +1150,7 @@ class TestNodeFiltering:
             project=ProjectFactory(creator=user_one)
         )
         abandoned.node.add_contributor(user_two, save=True)
-        abandoned.machine_state = DefaultStates.INITIAL.value
+        abandoned.machine_state = DefaultStates.INITIAL.db_name
         abandoned.save()
 
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)

@@ -317,7 +317,7 @@ class PreprintIsValidListMixin:
     def test_preprint_has_abandoned_preprint(
             self, app, user_admin_contrib, user_write_contrib, user_non_contrib,
             preprint, url):
-        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.machine_state = DefaultStates.INITIAL.db_name
         preprint.save()
         # unauth
         res = app.get(url)

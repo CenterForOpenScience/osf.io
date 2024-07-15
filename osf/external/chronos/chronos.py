@@ -6,7 +6,7 @@ from django.db import transaction
 from api.files.serializers import get_file_download_link
 from osf.models import ChronosJournal
 from osf.models import ChronosSubmission
-from osf.utils.workflows import ChronosSubmissionStatus, ReviewStates
+from osf.utils.workflows import ChronosSubmissionStatus, PreprintStates
 from website.settings import (
     CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
     CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST, VERIFY_CHRONOS_SSL_CERT
@@ -210,7 +210,7 @@ class ChronosClient(object):
             raise ValueError('Cannot submit because your submission was accepted')
         if submission_qs.filter(status=4).exists():
             raise ValueError('Cannot submit because your submission was published')
-        if preprint.machine_state != ReviewStates.ACCEPTED.db_name:
+        if preprint.machine_state != PreprintStates.ACCEPTED.db_name:
             raise ValueError('Cannot submit to Chronos if the preprint is not accepted by moderators')
 
         body = ChronosSerializer.serialize_manuscript(journal.journal_id, preprint)

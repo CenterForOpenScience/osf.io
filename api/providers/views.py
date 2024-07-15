@@ -481,8 +481,9 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
     # overrides APIView
     def get_renderer_context(self):
-        context = super(PreprintProviderPreprintList, self).get_renderer_context()
+        context = super().get_renderer_context()
         show_counts = is_truthy(self.request.query_params.get('meta[reviews_state_counts]', False))
+
         if show_counts:
             # TODO don't duplicate the above
             auth = get_user_auth(self.request)

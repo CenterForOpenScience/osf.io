@@ -192,7 +192,7 @@ class TestNotableDomain:
         obj = factory()
         obj.is_public = True
         obj.is_published = True
-        obj.machine_state = DefaultStates.PENDING.value
+        obj.machine_state = DefaultStates.PENDING.db_name
         obj.description = f'I\'m spam: {spam_domain.geturl()} me too: {spam_domain.geturl()}' \
                           f' iamNOTspam.org i-am-a-ham.io  https://stillNotspam.io'
         creator = getattr(obj, 'creator', None) or getattr(obj.node, 'creator')
