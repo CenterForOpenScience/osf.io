@@ -214,20 +214,36 @@ DEFAULT_STATES = [
     ('ACCEPTED', 'accepted'),
     ('REJECTED', 'rejected'),
 ]
+
 DEFAULT_TRIGGERS = [
     ('SUBMIT', 'submit'),
     ('ACCEPT', 'accept'),
     ('REJECT', 'reject'),
     ('EDIT_COMMENT', 'edit_comment'),
 ]
-REVIEW_STATES = DEFAULT_STATES + [
+
+REVIEW_STATES = [
+    ('INITIAL', 'initial'),
+    ('PENDING', 'pending'),
+    ('ACCEPTED', 'accepted'),
+    ('REJECTED', 'rejected'),
     ('WITHDRAWN', 'withdrawn'),
 ]
-REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
+
+REVIEW_TRIGGERS = [
+    ('SUBMIT', 'submit'),
+    ('ACCEPT', 'accept'),
+    ('REJECT', 'reject'),
+    ('EDIT_COMMENT', 'edit_comment'),
     ('WITHDRAW', 'withdraw')
 ]
 
-REGISTRATION_STATES = REVIEW_STATES + [
+REGISTRATION_STATES = [
+    ('INITIAL', 'initial'),
+    ('PENDING', 'pending'),
+    ('ACCEPTED', 'accepted'),
+    ('REJECTED', 'rejected'),
+    ('WITHDRAWN', 'withdrawn'),
     ('EMBARGO', 'embargo'),
     ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
     ('PENDING_WITHDRAW_REQUEST', 'pending_withdraw_request'),
