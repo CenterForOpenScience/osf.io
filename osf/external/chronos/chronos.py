@@ -210,7 +210,7 @@ class ChronosClient(object):
             raise ValueError('Cannot submit because your submission was accepted')
         if submission_qs.filter(status=4).exists():
             raise ValueError('Cannot submit because your submission was published')
-        if preprint.machine_state != ReviewStates.ACCEPTED.value:
+        if preprint.machine_state != ReviewStates.ACCEPTED.db_name:
             raise ValueError('Cannot submit to Chronos if the preprint is not accepted by moderators')
 
         body = ChronosSerializer.serialize_manuscript(journal.journal_id, preprint)

@@ -114,8 +114,8 @@ class BaseActionSerializer(JSONAPISerializer):
 
     comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
-    from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
+    from_state = ser.ChoiceField(choices=DefaultStates.char_field_choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=DefaultStates.char_field_choices(), read_only=True)
 
     date_created = ser.DateTimeField(source='created', read_only=True)
     date_modified = ser.DateTimeField(source='modified', read_only=True)
@@ -141,21 +141,21 @@ class BaseActionSerializer(JSONAPISerializer):
         return utils.absolute_reverse('actions:action-detail', kwargs={'action_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
     def create(self, validated_data):
-        trigger = validated_data.pop('trigger')
-        user = validated_data.pop('user')
-        target = validated_data.pop('target')
-        comment = validated_data.pop('comment', '')
-        permissions = validated_data.pop('permissions', '')
-        visible = validated_data.pop('visible', '')
+        trigger = validated_data.get('trigger')
+        user = validated_data.get('user')
+        target = validated_data.get('target')
+        comment = validated_data.get('comment', '')
+        permissions = validated_data.get('permissions', '')
+        visible = validated_data.get('visible', '')
 
         try:
-            if trigger == DefaultTriggers.ACCEPT.value:
+            if trigger == DefaultTriggers.ACCEPT.db_name:
                 return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
-            if trigger == DefaultTriggers.REJECT.value:
+            if trigger == DefaultTriggers.REJECT.db_name:
                 return target.run_reject(user, comment)
-            if trigger == DefaultTriggers.EDIT_COMMENT.value:
+            if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
                 return target.run_edit_comment(user, comment)
-            if trigger == DefaultTriggers.SUBMIT.value:
+            if trigger == DefaultTriggers.SUBMIT.db_name:
                 return target.run_submit(user)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
@@ -184,8 +184,8 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
     trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
-    from_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
+    from_state = ser.ChoiceField(choices=ReviewStates.char_field_choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=ReviewStates.char_field_choices(), read_only=True)
 
     provider = RelationshipField(
         read_only=True,
@@ -212,7 +212,7 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
-        if trigger != ReviewTriggers.WITHDRAW.value:
+        if trigger != ReviewTriggers.WITHDRAW.db_name:
             return super(ReviewActionSerializer, self).create(validated_data)
         user = validated_data.pop('user')
         target = validated_data.pop('target')

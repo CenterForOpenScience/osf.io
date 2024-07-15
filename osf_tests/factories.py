@@ -756,7 +756,6 @@ class PreprintFactory(DjangoModelFactory):
             name=filename,
             materialized_path='/{}'.format(filename))
 
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
         preprint_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
@@ -959,8 +958,8 @@ class ReviewActionFactory(DjangoModelFactory):
 
     trigger = FuzzyChoice(choices=DefaultTriggers.values())
     comment = factory.Faker('text')
-    from_state = FuzzyChoice(choices=DefaultStates.values())
-    to_state = FuzzyChoice(choices=DefaultStates.values())
+    from_state = FuzzyChoice(choices=DefaultStates.char_field_choices())
+    to_state = FuzzyChoice(choices=DefaultStates.char_field_choices())
 
     target = factory.SubFactory(PreprintFactory)
     creator = factory.SubFactory(AuthUserFactory)

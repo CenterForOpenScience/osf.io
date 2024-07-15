@@ -107,14 +107,15 @@ class ReviewActionFilterMixin(object):
 
         # filter by from_state
         expected = set(
-            [l._id for l in expected_actions if l.from_state == action.from_state])
-        actual = get_actual(app, url, user, from_state=action.from_state)
+            [l._id for l in expected_actions if l.from_state == action.from_state[0]])
+
+        actual = get_actual(app, url, user, from_state=action.from_state[0])
         assert expected == actual
 
         # filter by to_state
         expected = set(
-            [l._id for l in expected_actions if l.to_state == action.to_state])
-        actual = get_actual(app, url, user, to_state=action.to_state)
+            [l._id for l in expected_actions if l.to_state == action.to_state[0]])
+        actual = get_actual(app, url, user, to_state=action.to_state[0])
         assert expected == actual
 
         # filter by date_created

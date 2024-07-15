@@ -207,13 +207,6 @@ class ChoiceEnum(Enum):
         '''
         return self.value
 
-DEFAULT_STATES = [
-    ('INITIAL', 'initial'),
-    ('PENDING', 'pending'),
-    ('ACCEPTED', 'accepted'),
-    ('REJECTED', 'rejected'),
-]
-
 DEFAULT_TRIGGERS = [
     ('SUBMIT', 'submit'),
     ('ACCEPT', 'accept'),
@@ -221,13 +214,6 @@ DEFAULT_TRIGGERS = [
     ('EDIT_COMMENT', 'edit_comment'),
 ]
 
-REVIEW_STATES = [
-    ('INITIAL', 'initial'),
-    ('PENDING', 'pending'),
-    ('ACCEPTED', 'accepted'),
-    ('REJECTED', 'rejected'),
-    ('WITHDRAWN', 'withdrawn'),
-]
 
 REVIEW_TRIGGERS = [
     ('SUBMIT', 'submit'),
@@ -249,8 +235,24 @@ REGISTRATION_STATES = [
     ('PENDING_WITHDRAW', 'pending_withdraw'),
 ]
 
-ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
-DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
+
+class DefaultStates(ModerationEnum):
+    '''The states of a CollectionSubmission object.'''
+
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+
+
+class ReviewStates(ModerationEnum):
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+    WITHDRAWN = 4
+
+
 RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
 DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
 ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
@@ -268,33 +270,33 @@ ChronosSubmissionStatus = ChoiceEnum('ChronosSubmissionStatus', CHRONOS_STATUS_S
 
 DEFAULT_TRANSITIONS = [
     {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.INITIAL.value],
-        'dest': DefaultStates.PENDING.value,
+        'trigger': 'submit',
+        'source': [DefaultStates.INITIAL.db_name],
+        'dest': DefaultStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
     },
     {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
+        'trigger': 'submit',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
         'conditions': 'resubmission_allowed',
-        'dest': DefaultStates.PENDING.value,
+        'dest': DefaultStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
     },
     {
-        'trigger': DefaultTriggers.ACCEPT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
-        'dest': DefaultStates.ACCEPTED.value,
+        'trigger': 'accept',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
+        'dest': DefaultStates.ACCEPTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': DefaultTriggers.REJECT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.ACCEPTED.value],
-        'dest': DefaultStates.REJECTED.value,
+        'trigger': 'reject',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.ACCEPTED.db_name],
+        'dest': DefaultStates.REJECTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': DefaultTriggers.EDIT_COMMENT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value, DefaultStates.ACCEPTED.value],
+        'trigger': 'edit_comment',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name, DefaultStates.ACCEPTED.db_name],
         'dest': '=',
         'after': ['save_action', 'save_changes', 'notify_edit_comment'],
     },
@@ -302,42 +304,43 @@ DEFAULT_TRANSITIONS = [
 
 REVIEWABLE_TRANSITIONS = [
     {
-        'trigger': ReviewTriggers.WITHDRAW.value,
-        'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
-        'dest': ReviewStates.WITHDRAWN.value,
-        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
-    },
-    {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.INITIAL.value],
-        'dest': DefaultStates.PENDING.value,
+        'trigger': 'submit',
+        'source': [DefaultStates.INITIAL.db_name],
+        'dest': DefaultStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
     },
     {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
+        'trigger': 'submit',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
         'conditions': 'resubmission_allowed',
-        'dest': DefaultStates.PENDING.value,
+        'dest': DefaultStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
     },
     {
-        'trigger': DefaultTriggers.ACCEPT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
-        'dest': DefaultStates.ACCEPTED.value,
+        'trigger': 'accept',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
+        'dest': DefaultStates.ACCEPTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': DefaultTriggers.REJECT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.ACCEPTED.value],
-        'dest': DefaultStates.REJECTED.value,
+        'trigger': 'reject',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.ACCEPTED.db_name],
+        'dest': DefaultStates.REJECTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': DefaultTriggers.EDIT_COMMENT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value, DefaultStates.ACCEPTED.value],
+        'trigger': 'edit_comment',
+        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name, DefaultStates.ACCEPTED.db_name],
         'dest': '=',
         'after': ['save_action', 'save_changes', 'notify_edit_comment'],
     },
+    {
+        'trigger': 'withdrawn',
+        'source': [ReviewStates.PENDING.db_name, ReviewStates.ACCEPTED.db_name],
+        'dest': ReviewStates.WITHDRAWN.db_name,
+        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
+    },
+
 ]
 
 APPROVAL_TRANSITIONS = [

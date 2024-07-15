@@ -793,60 +793,44 @@ class MachineableMixin(models.Model):
     class Meta:
         abstract = True
 
-    # NOTE: machine_state should rarely/never be modified directly -- use the state transition methods below
-    machine_state = models.CharField(max_length=15, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
-
+    machine_state = models.CharField(
+        max_length=15,
+        db_index=True,
+        choices=DefaultStates.char_field_choices(),
+        default=DefaultStates.INITIAL.db_name
+    )
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
-    @property
-    def MachineClass(self):
-        raise NotImplementedError()
+    def validate_transition(self, transition_name, user, **kwargs):
+        """
+        Run the specified state transition and create a corresponding Action.
+
+        Params:
+            transition_name: The name of the transition to run.
+            user: The user triggering this transition.
+            kwargs: Additional parameters required by the transition.
+        """
+        from osf.utils.machines import ReviewsMachine
+        machine = self.MachineClass(self, 'machine_state')
+        transition = getattr(machine, transition_name)(user=user, **kwargs)
+
+        if not transition:
+            valid_triggers = machine.get_triggers(self.machine_state)
+            raise InvalidTriggerError(transition_name, self.machine_state, valid_triggers)
+
+        return machine.action
 
     def run_submit(self, user):
-        """Run the 'submit' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-        """
-        return self._run_transition(self.TriggersClass.SUBMIT.value, user=user)
+        return self.validate_transition('submit', user)
 
     def run_accept(self, user, comment, **kwargs):
-        """Run the 'accept' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.ACCEPT.value, user=user, comment=comment, **kwargs)
+        return self.validate_transition('accept', user, comment=comment, **kwargs)
 
     def run_reject(self, user, comment):
-        """Run the 'reject' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.REJECT.value, user=user, comment=comment)
+        return self.validate_transition('reject', user, comment=comment)
 
     def run_edit_comment(self, user, comment):
-        """Run the 'edit_comment' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: New comment text.
-        """
-        return self._run_transition(self.TriggersClass.EDIT_COMMENT.value, user=user, comment=comment)
-
-    def _run_transition(self, trigger, **kwargs):
-        machine = self.MachineClass(self, 'machine_state')
-        trigger_fn = getattr(machine, trigger)
-        with transaction.atomic():
-            result = trigger_fn(**kwargs)
-            action = machine.action
-            if not result or action is None:
-                valid_triggers = machine.get_triggers(self.machine_state)
-                raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
-            return action
+        return self.validate_transition('edit_comment', user, comment=comment)
 
 
 class NodeRequestableMixin(MachineableMixin):
@@ -875,13 +859,16 @@ class ReviewableMixin(MachineableMixin):
     """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
     TriggersClass = ReviewTriggers
-
-    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
+    MachineClass = ReviewsMachine
+    machine_state = models.CharField(
+        max_length=15,
+        db_index=True,
+        choices=ReviewStates.char_field_choices(),
+        default=ReviewStates.INITIAL.db_name
+    )
 
     class Meta:
         abstract = True
-
-    MachineClass = ReviewsMachine
 
     @property
     def in_public_reviews_state(self):
@@ -891,13 +878,7 @@ class ReviewableMixin(MachineableMixin):
         return self.machine_state in public_states
 
     def run_withdraw(self, user, comment):
-        """Run the 'withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
+        return self.validate_transition('withdraw', user, comment=comment)
 
 
 class GuardianMixin(models.Model):

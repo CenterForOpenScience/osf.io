@@ -395,7 +395,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def has_submitted_preprint(self):
-        return self.machine_state != DefaultStates.INITIAL.value
+        return self.machine_state != DefaultStates.INITIAL.db_name
 
     @property
     def deep_url(self):
@@ -581,7 +581,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.set_privacy('public', log=False, save=False)
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.machine_state = ReviewStates.ACCEPTED.value
+            self.machine_state = ReviewStates.ACCEPTED.db_name
             self.date_last_transitioned = self.date_published
 
             # This preprint will have a tombstone page when it's withdrawn.

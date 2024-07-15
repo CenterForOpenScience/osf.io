@@ -52,9 +52,9 @@ class BaseMachine(Machine):
         self._validate_transitions(self.Transitions)
 
         super(BaseMachine, self).__init__(
-            states=[s.value for s in self.States],
+            states=[s.db_name for s in self.States],
             transitions=self.Transitions,
-            initial=self.state,
+            initial=self.machineable.machine_state,
             send_event=True,
             prepare_event=['initialize_machine'],
             ignore_invalid_triggers=True,

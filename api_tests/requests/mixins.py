@@ -48,7 +48,7 @@ class NodeRequestTestMixin(object):
             creator=requester,
             target=project,
             request_type=RequestTypes.ACCESS.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.db_name
         )
         node_request.run_submit(requester)
         return node_request
