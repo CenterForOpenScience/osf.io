@@ -24,6 +24,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import enqueue_update_analytics
 
+from api.waffle.utils import flag_is_active
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
@@ -165,33 +166,7 @@ def get_addon_user_config(**kwargs):
 
     return addon.to_json(user)
 
-
-permission_map = {
-    'create_folder': permissions.WRITE,
-    'revisions': permissions.READ,
-    'metadata': permissions.READ,
-    'download': permissions.READ,
-    'render': permissions.READ,
-    'export': permissions.READ,
-    'upload': permissions.WRITE,
-    'delete': permissions.WRITE,
-    'copy': permissions.WRITE,
-    'move': permissions.WRITE,
-    'copyto': permissions.WRITE,
-    'moveto': permissions.WRITE,
-    'copyfrom': permissions.READ,
-    'movefrom': permissions.WRITE,
-}
-
-
-def get_permission_for_action(action):
-    """Retrieve the permission level required for a given action."""
-    permission = permission_map.get(action)
-    if not permission:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message='Invalid action specified.')
-    return permission
-
-
+  
 def make_auth(user):
     if user is not None:
         return {
@@ -232,9 +207,10 @@ def get_auth(auth, **kwargs):
     waterbutler_data = _decrypt_and_decode_jwt_payload()
     resource = _get_authenticated_resource(waterbutler_data['nid'])
 
+
     action = waterbutler_data['action']
     _check_resource_permissions(resource, auth, action)
-
+    
     provider_name = waterbutler_data['provider']
     file_version = file_node = None
     if provider_name == 'osfstorage':
@@ -246,6 +222,7 @@ def get_auth(auth, **kwargs):
         resource=resource, provider_name=provider_name, file_version=file_version,
     )
 
+
     _enqueue_metrics(file_version=file_version, file_node=file_node, action=action, auth=auth)
 
     # Construct the response payload including the JWT
@@ -255,8 +232,8 @@ def get_auth(auth, **kwargs):
         credentials=waterbutler_credentials,
         waterbutler_settings=waterbutler_settings
     )
-
-
+  
+  
 def _decrypt_and_decode_jwt_payload():
     try:
         payload_encrypted = request.args.get('payload', '').encode('utf-8')
@@ -895,10 +872,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     # There's no download action redirect to the Ember front-end file view and create guid.
     if action != 'download':
-        if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        if isinstance(target, Node) and flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
-        if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if isinstance(target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
 

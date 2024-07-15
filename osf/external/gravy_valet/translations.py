@@ -19,7 +19,7 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralUserSettings(
         config=EphemeralAddonConfig.from_legacy_config(legacy_config),
-        gv_id=gv_account_data.resource_id,
+        gv_data=gv_account_data,
         active_user=requesting_user,
     )
 
@@ -32,8 +32,7 @@ def make_ephemeral_node_settings(gv_addon_data, requested_resource, requesting_u
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralNodeSettings(
         config=EphemeralAddonConfig.from_legacy_config(legacy_config),
-        gv_id=gv_addon_data.resource_id,
-        folder_id=gv_addon_data.get_attribute('root_folder'),
+        gv_data=gv_addon_data,
         configured_resource=requested_resource,
         active_user=requesting_user,
     )
@@ -61,8 +60,7 @@ class EphemeralAddonConfig:
 class EphemeralNodeSettings:
     '''Minimalist dataclass for storing/translating the actually used properties of NodeSettings.'''
     config: EphemeralAddonConfig
-    folder_id: str
-    gv_id: str
+    gv_data: gv_requests.JSONAPIResultEntry
 
     # These are needed in order to make further requests for credentials
     configured_resource: type  # Node
@@ -74,6 +72,21 @@ class EphemeralNodeSettings:
     @property
     def short_name(self):
         return self.config.short_name
+
+    @property
+    def gv_id(self):
+        return self.gv_data.resource_id
+
+    @property
+    def configured(self):
+        return self.gv_data.get_included_attribute(
+            include_path=['base_account'],
+            attribute_name='credentials_available'
+        )
+
+    @property
+    def folder_id(self):
+        return self.gv_data.get_attribute('root_folder')
 
     def serialize_waterbutler_credentials(self):
         # sufficient for most OAuth services, including Box
@@ -92,7 +105,7 @@ class EphemeralNodeSettings:
 
     def _fetch_wb_config(self):
         result = gv_requests.get_waterbutler_config(
-            gv_addon_pk=self.gv_id,
+            gv_addon_pk=self.gv_data.resource_id,
             requested_resource=self.configured_resource,
             requesting_user=self.active_user
         )
@@ -101,14 +114,14 @@ class EphemeralNodeSettings:
     def create_waterbutler_log(self, *args, **kwargs):
         pass
 
-    def save():
+    def save(self):
         pass
 
 @dataclasses.dataclass
 class EphemeralUserSettings:
     '''Minimalist dataclass for storing the actually used properties of UserSettings.'''
     config: EphemeralAddonConfig
-    gv_id: str
+    gv_data: gv_requests.JSONAPIResultEntry
     # This is needed to support making further requests
     active_user: type  # : OSFUser
 
@@ -116,5 +129,10 @@ class EphemeralUserSettings:
     def short_name(self):
         return self.config.short_name
 
+    @property
+    def gv_id(self):
+        return self.gv_data.resource_id
+
+    @property
     def can_be_merged(self):
         return True
