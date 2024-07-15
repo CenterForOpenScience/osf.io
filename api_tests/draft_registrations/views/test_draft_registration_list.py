@@ -337,7 +337,6 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-
     def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
         with mock.patch.object(mails, 'send_mail') as mock_send_mail:
             app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)

@@ -9,7 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
 )
-from osf.utils.permissions import WRITE, READ, ADMIN
+from osf.utils.permissions import ADMIN
 from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
 from framework.auth.core import Auth
 
