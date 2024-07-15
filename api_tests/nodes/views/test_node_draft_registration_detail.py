@@ -31,11 +31,6 @@ class TestDraftRegistrationDetail(AbstractDraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_admin_group_member_can_view(self, app, user, url_draft_registrations, group_mem):
-        res = app.get(url_draft_registrations, auth=group_mem.auth)
-        assert res.status_code == 200
-
     def test_read_contributor_can_view_draft(self, app, user_read_contrib, url_draft_registrations):
         """
         Note this is the Node permissions not DraftRegistration permission
@@ -57,13 +52,6 @@ class TestDraftRegistrationDetail(AbstractDraftRegistrationTestCase):
     def test_unauthenticated_user_cannot_view_draft(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_mem_read_cannot_view(self, app, group, group_mem, project_public, url_draft_registrations):
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, READ)
-        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 403
 
     def test_cannot_view_deleted_draft(self, app, user, url_draft_registrations):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
@@ -246,27 +234,6 @@ class TestDraftRegistrationUpdate(AbstractDraftRegistrationTestCase):
     def test_unauthenticated_user_cannot_update_draft(self, app, payload, url_draft_registrations):
         res = app.put_json_api(url_draft_registrations, payload, expect_errors=True)
         assert res.status_code == 401
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_osf_group_member_admin_cannot_update_draft(
-            self, app, project_public, payload, url_draft_registrations, group_mem
-    ):
-        res = app.put_json_api(url_draft_registrations, payload, expect_errors=True, auth=group_mem.auth)
-        assert res.status_code == 403
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_osf_group_member_write_cannot_update_draft(
-            self, app, project_public, payload, url_draft_registrations, group, group_mem
-    ):
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, WRITE)
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload,
-            expect_errors=True,
-            auth=group_mem.auth
-        )
-        assert res.status_code == 403
 
     def test_registration_metadata_does_not_need_to_be_supplied(
             self, app, user, payload, url_draft_registrations):
@@ -574,18 +541,6 @@ class TestDraftRegistrationPatch(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 401
 
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_admin_cannot_update_draft(
-            self, app, user_non_contrib, payload, url_draft_registrations, group_mem
-    ):
-        res = app.patch_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
-
 
 @pytest.mark.django_db
 class TestDraftRegistrationDelete(AbstractDraftRegistrationTestCase):
@@ -616,20 +571,6 @@ class TestDraftRegistrationDelete(AbstractDraftRegistrationTestCase):
     def test_unauthenticated_user_cannot_delete_draft(self, app, url_draft_registrations):
         res = app.delete_json_api(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_member_admin_cannot_delete_draft(self, app, url_draft_registrations, group, group_mem):
-        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
-        assert res.status_code == 403
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_member_write_cannot_delete_draft(
-            self, app, url_draft_registrations, group, group_mem, project_public
-    ):
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, WRITE)
-        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
-        assert res.status_code == 403
 
     def test_draft_that_has_been_registered_cannot_be_deleted(
             self, app, user, project_public, draft_registration, url_draft_registrations):

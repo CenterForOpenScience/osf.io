@@ -337,33 +337,6 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_admin_cannot_create_draft(
-            self, app, user_write_contrib, payload_alt, url_draft_registrations, group_mem
-    ):
-
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload_alt,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 201
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_write_contrib_cannot_create_draft(
-            self, app, user_read_contrib, project_public, payload_alt, group, url_draft_registrations, group_mem
-    ):
-
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, WRITE)
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload_alt,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 201
 
     def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
         with mock.patch.object(mails, 'send_mail') as mock_send_mail:

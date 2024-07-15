@@ -231,19 +231,6 @@ class TestDraftRegistrationList(AbstractDraftRegistrationTestCase):
         data = res.json['data']
         assert len(data) == 1
 
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_osf_group_with_admin_permissions_can_view(
-            self, app, user, draft_registration, project_public, schema, url_draft_registrations
-    ):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, permissions.ADMIN)
-        res = app.get(url_draft_registrations, auth=group_mem.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 1
-        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
-
     def test_read_only_contributor_can_view_draft_list(self, app, user_read_contrib, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user_read_contrib.auth)
         assert res.status_code == 200
@@ -259,17 +246,6 @@ class TestDraftRegistrationList(AbstractDraftRegistrationTestCase):
     def test_unauthenticated_user_cannot_view_draft_list(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
-
-    @pytest.mark.skip("Don't support OSF Groups anymore")
-    def test_osf_group_with_read_permissions(
-        self, app, user_write_contrib, project_public,
-        user_read_contrib, user_non_contrib, url_draft_registrations, group, group_mem
-    ):
-
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, permissions.READ)
-        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 403
 
     def test_deleted_draft_registration_does_not_show_up_in_draft_list(
             self, app, user, draft_registration, url_draft_registrations):
@@ -430,31 +406,6 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
             url_draft_registrations,
             payload,
             auth=user_non_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_admin_cannot_create_draft(
-            self, app, group_mem, payload, url_draft_registrations
-    ):
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
-
-    @pytest.mark.skip('Old OSF Groups code')
-    def test_group_write_contrib_cannot_create_draft(
-            self, app, group, group_mem, payload, url_draft_registrations, project_public
-    ):
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, permissions.WRITE)
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
             expect_errors=True)
         assert res.status_code == 403
 

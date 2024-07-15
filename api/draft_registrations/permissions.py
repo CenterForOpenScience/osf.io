@@ -74,13 +74,13 @@ class DraftRegistrationPermission(permissions.BasePermission):
 
         if request.method in permissions.SAFE_METHODS:
             if isinstance(obj, DraftRegistration):
-                node_permission = obj.branched_from.has_permission(auth.user, READ)
-            return obj.has_permission(auth.user, READ) or node_permission
+                return obj.is_contributor(auth.user) or obj.has_permission(auth.user, READ)
+            return obj.has_permission(auth.user, READ)
         elif request.method == 'POST':  # Only Admin can create a draft registration
             if isinstance(obj, DraftRegistration):
-                node_permission = obj.branched_from.has_permission(auth.user, ADMIN)
-            return obj.has_permission(auth.user, ADMIN) or node_permission
+                return obj.is_contributor(auth.user) and obj.has_permission(auth.user, ADMIN)
+            return obj.has_permission(auth.user, ADMIN)
         else:
             if isinstance(obj, DraftRegistration):
-                node_permission = obj.branched_from.has_permission(auth.user, WRITE)
-            return obj.has_permission(auth.user, WRITE) or node_permission
+                return obj.is_contributor(auth.user) and obj.has_permission(auth.user, WRITE)
+            return obj.has_permission(auth.user, WRITE)
