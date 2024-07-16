@@ -815,64 +815,75 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
-    def send_email_task():
-        confirmation_url = user.get_confirmation_url(
-            email,
-            external=True,
-            force=True,
-            renew=renew,
-            external_id_provider=external_id_provider,
-            destination=destination
-        )
+    confirmation_url = user.get_confirmation_url(
+        email,
+        external=True,
+        force=True,
+        renew=renew,
+        external_id_provider=external_id_provider,
+        destination=destination
+    )
 
-        try:
-            merge_target = OSFUser.objects.get(emails__address=email)
-        except OSFUser.DoesNotExist:
-            merge_target = None
+    try:
+        merge_target = OSFUser.objects.get(emails__address=email)
+    except OSFUser.DoesNotExist:
+        merge_target = None
 
-        campaign = campaigns.campaign_for_user(user)
-        branded_preprints_provider = None
-        logo = None
-        # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-        if external_id_provider and external_id:
-            # First time login through external identity provider, link or create an OSF account confirmation
-            if user.external_identity[external_id_provider][external_id] == 'CREATE':
-                mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
-            elif user.external_identity[external_id_provider][external_id] == 'LINK':
-                mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
-        elif merge_target:
-            # Merge account confirmation
-            mail_template = mails.CONFIRM_MERGE
-            confirmation_url = '{}?logout=1'.format(confirmation_url)
-        elif user.is_active:
-            # Add email confirmation
-            mail_template = mails.CONFIRM_EMAIL
-            confirmation_url = '{}?logout=1'.format(confirmation_url)
-        elif campaign:
-            # Account creation confirmation: from campaign
-            mail_template = campaigns.email_template_for_campaign(campaign)
-            if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
-                branded_preprints_provider = campaigns.get_service_provider(campaign)
-            logo = campaigns.get_campaign_logo(campaign)
-        else:
-            # Account creation confirmation: from OSF
-            mail_template = mails.INITIAL_CONFIRM_EMAIL
+    campaign = campaigns.campaign_for_user(user)
+    branded_preprints_provider = None
+    logo = None
+    # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
+    if external_id_provider and external_id:
+        # First time login through external identity provider, link or create an OSF account confirmation
+        if user.external_identity[external_id_provider][external_id] == 'CREATE':
+            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
+        elif user.external_identity[external_id_provider][external_id] == 'LINK':
+            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+    elif merge_target:
+        # Merge account confirmation
+        mail_template = mails.CONFIRM_MERGE
+        confirmation_url = '{}?logout=1'.format(confirmation_url)
+    elif user.is_active:
+        # Add email confirmation
+        mail_template = mails.CONFIRM_EMAIL
+        confirmation_url = '{}?logout=1'.format(confirmation_url)
+    elif campaign:
+        # Account creation confirmation: from campaign
+        mail_template = campaigns.email_template_for_campaign(campaign)
+        if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
+            branded_preprints_provider = campaigns.get_service_provider(campaign)
+        logo = campaigns.get_campaign_logo(campaign)
+    else:
+        # Account creation confirmation: from OSF
+        mail_template = mails.INITIAL_CONFIRM_EMAIL
 
-        mails.send_mail(
-            email,
-            mail_template,
-            user=user,
-            confirmation_url=confirmation_url,
-            email=email,
-            merge_target=merge_target,
-            external_id_provider=external_id_provider,
-            branded_preprints_provider=branded_preprints_provider,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            can_change_preferences=False,
-            logo=logo if logo else settings.OSF_LOGO
-        )
+    mails.send_mail(
+        email,
+        mail_template,
+        user=user,
+        confirmation_url=confirmation_url,
+        email=email,
+        merge_target=merge_target,
+        external_id_provider=external_id_provider,
+        branded_preprints_provider=branded_preprints_provider,
+        osf_support_email=settings.OSF_SUPPORT_EMAIL,
+        can_change_preferences=False,
+        logo=logo if logo else settings.OSF_LOGO
+    )
 
-    enqueue_postcommit_task(send_email_task, [], {})
+def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
+    """
+    Asynchronously sends `user` a confirmation to the given `email` after the DB transaction is committed.
+
+    :param user: the user
+    :param email: the email
+    :param renew: refresh the token
+    :param external_id_provider: user's external id provider
+    :param external_id: user's external id
+    :param destination: the destination page to redirect after confirmation
+    :return:
+    """
+    enqueue_postcommit_task(send_confirm_email, (user, email, renew, external_id_provider, external_id, destination), {})
 
 
 def register_user(**kwargs):
