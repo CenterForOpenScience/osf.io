@@ -1,7 +1,8 @@
 from rest_framework import exceptions
+
+from api.base.serializers import relationship_diff
 from osf.models import Institution
 from osf.utils import permissions as osf_permissions
-from api.base.serializers import relationship_diff
 
 
 def get_institutions_to_add_remove(institutions, new_institutions):

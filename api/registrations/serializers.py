@@ -31,7 +31,6 @@ from api.base.serializers import (
     HideIfWithdrawalOrWikiDisabled,
 )
 from api.institutions.utils import update_institutions
-
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
 from osf.models import Node
