@@ -147,36 +147,20 @@ class BaseActionSerializer(JSONAPISerializer):
         comment = validated_data.get('comment', '')
         permissions = validated_data.get('permissions', '')
         visible = validated_data.get('visible', '')
-        if isinstance(target, Preprint):
-            try:
-                if trigger == PreprintStateTriggers.ACCEPT.db_name:
-                    return target.accept(user=user, comment=comment, permissions=permissions, visible=visible)
-                if trigger == PreprintStateTriggers.REJECT.db_name:
-                    return target.reject(user, comment)
-                if trigger == PreprintStateTriggers.EDIT_COMMENT.db_name:
-                    return target.edit_comment(user, comment)
-                if trigger == PreprintStateTriggers.SUBMIT.db_name:
-                    return target.submit(user)
-            except InvalidTriggerError as e:
-                # Invalid transition from the current state
-                raise Conflict(str(e))
-            else:
-                raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+        try:
+            if trigger == DefaultTriggers.ACCEPT.db_name:
+                return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
+            if trigger == DefaultTriggers.REJECT.db_name:
+                return target.run_reject(user, comment)
+            if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
+                return target.run_edit_comment(user, comment)
+            if trigger == DefaultTriggers.SUBMIT.db_name:
+                return target.run_submit(user)
+        except InvalidTriggerError as e:
+            # Invalid transition from the current state
+            raise Conflict(str(e))
         else:
-            try:
-                if trigger == DefaultTriggers.ACCEPT.db_name:
-                    return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
-                if trigger == DefaultTriggers.REJECT.db_name:
-                    return target.run_reject(user, comment)
-                if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
-                    return target.run_edit_comment(user, comment)
-                if trigger == DefaultTriggers.SUBMIT.db_name:
-                    return target.run_submit(user)
-            except InvalidTriggerError as e:
-                # Invalid transition from the current state
-                raise Conflict(str(e))
-            else:
-                raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
 
     class Meta:
         type_ = 'actions'
@@ -227,14 +211,30 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
-        if trigger != PreprintStateTriggers.WITHDRAW.db_name:
-            return super(ReviewActionSerializer, self).create(validated_data)
         user = validated_data.pop('user')
+        visible = validated_data.get('visible', '')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
+
         try:
-            return target.withdraw(user=user, comment=comment)
-        except InvalidTriggerError as e:
+            if trigger == PreprintStateTriggers.ACCEPT.db_name:
+                target.accept(user=user, comment=comment, permissions=permissions, visible=visible)
+            if trigger == PreprintStateTriggers.REJECT.db_name:
+                target.reject(user=user, comment=comment)
+            if trigger == PreprintStateTriggers.EDIT_COMMENT.db_name:
+                target.edit_comment(user=user, comment=comment)
+            if trigger == PreprintStateTriggers.SUBMIT.db_name:
+                target.submit(user=user, comment=comment)
+            if trigger == PreprintStateTriggers.WITHDRAW.db_name:
+                target.withdraw(user=user, comment=comment)
+
+            if not hasattr(target, 'action'):
+                valid_triggers = target.state_machine.get_triggers(target.machine_state)
+                raise InvalidTriggerError(trigger, target.machine_state, valid_triggers)
+
+            return target.action
+
+        except (InvalidTriggerError, MachineError) as e:
             # Invalid transition from the current state
             raise Conflict(str(e))
         else:

@@ -110,6 +110,7 @@ class PreprintStateMachine(Machine):
             model_attribute=state_property_name,
             after_state_change='_save_transition',
             send_event=True,
+            ignore_invalid_triggers=False,
             queued=True,
         )
 

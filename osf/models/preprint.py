@@ -155,8 +155,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
         self.ever_public = True
         self.save()
 
+    def perform_submit(self, ev):
+        action = self.actions.last()
+        if self.post_moderation:
+            now = action.created if action is not None else timezone.now()
+            self.date_published = now
+            self.is_published = True
+            self.ever_public = True
+        self.save()
+
     def perform_post_mod_submission(self, ev):
-        print(ev.__dict__)
         action = self.actions.last()
         now = action.created if action is not None else timezone.now()
         self.date_published = now
@@ -164,25 +172,24 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
         self.ever_public = True
         self.save()
 
-    def resubmission_allowed(self, ev):
+    @property
+    def pre_moderation(self):
         from api.providers.workflows import Workflows
-        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.value
-
-    def pre_moderation(self, ev):
-        from api.providers.workflows import Workflows
-        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+        print('pre_moderation', self.provider.reviews_workflow == Workflows.PRE_MODERATION.db_name)
+        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.db_name
 
     @property
     def post_moderation(self):
         from api.providers.workflows import Workflows
-        return self.provider.reviews_workflow == Workflows.POST_MODERATION.value
+        print('post_moderation', self.provider.reviews_workflow == Workflows.POST_MODERATION.db_name)
+        return self.provider.reviews_workflow == Workflows.POST_MODERATION.db_name
 
     def perform_withdraw(self, ev):
         self.date_withdrawn = self.actions.last().created if self.actions.last() is not None else timezone.now()
         self.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
-        user = ev.kwargs.get('user')
+        user = ev.kwargs['user']
         notify.notify_submit(self, user)
         auth = Auth(user)
         self.add_log(
@@ -194,14 +201,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
             save=False,
         )
 
+    def resubmission_allowed(self, ev):
+        from api.providers.workflows import Workflows
+        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+
     def notify_resubmit(self, ev):
-        notify.notify_resubmit(self, ev.kwargs.get('user'), self.actions.last())
+        notify.notify_resubmit(self, ev.kwargs['user'], self.actions.last())
 
     def notify_accept_reject(self, ev):
-        notify.notify_accept_reject(self, ev.kwargs.get('user'), self.actions.last(), PreprintStates)
+        user = ev.kwargs.get('user')
+        notify.notify_accept_reject(self, user, self.actions.last(), PreprintStates)
 
     def notify_edit_comment(self, ev):
-        notify.notify_edit_comment(self, ev.kwargs.get('user'), self.actions.last())
+        notify.notify_edit_comment(self, ev.args[0], self.actions.last())
 
     def notify_withdraw(self, ev):
         context = self.get_context()
@@ -221,7 +233,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
             context['force_withdrawal'] = True
 
         if not context.get('requester'):
-            context['requester'] = ev.kwargs.get('user')
+            context['requester'] = ev.kwargs['user']
 
         for contributor in self.contributors.all():
             context['contributor'] = contributor
@@ -246,7 +258,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
         }
 
     def _save_transition(self, ev):
-        user = ev.args[0]
+        user = ev.kwargs['user']
         from osf.models.action import ReviewAction
         action = ReviewAction.objects.create(
             target=self,
@@ -261,6 +273,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
         now = action.created if action is not None else timezone.now()
         self.date_last_transitioned = now
         self.save()
+        self.action = action
+        return action
 
     @property
     def in_public_reviews_state(self):

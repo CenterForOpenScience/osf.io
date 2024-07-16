@@ -304,24 +304,14 @@ PREPRINT_STATE_TRANSITIONS = [
     {
         'trigger': 'submit',
         'source': [PreprintStates.INITIAL],
-        'conditions': 'post_moderation',
-        'dest': PreprintStates.ACCEPTED,
-        'before': ['validate_submission'],
-        'after': ['perform_post_mod_submission', 'notify_submit'],
-    },
-    {
-        'trigger': 'submit',
-        'source': [PreprintStates.INITIAL],
         'dest': PreprintStates.PENDING,
-        'before': ['validate_submission'],
-        'after': ['notify_submit'],
+        'after': ['perform_submit', 'notify_submit'],
     },
     {
         'trigger': 'submit',
         'source': [PreprintStates.PENDING, PreprintStates.REJECTED],
         'conditions': 'resubmission_allowed',
         'dest': PreprintStates.PENDING,
-        'before': ['validate_submission'],
         'after': ['notify_resubmit'],
     },
     {
@@ -340,7 +330,7 @@ PREPRINT_STATE_TRANSITIONS = [
         'trigger': 'edit_comment',
         'source': [PreprintStates.PENDING, PreprintStates.REJECTED, PreprintStates.ACCEPTED],
         'dest': '=',
-        'after': ['notify_edit_comment'],
+        'after': [],
     },
     {
         'trigger': 'withdraw',
@@ -354,14 +344,6 @@ PREPRINT_STATE_TRANSITIONS = [
         'dest': PreprintStates.WITHDRAWN,
         'after': ['perform_withdraw', 'notify_withdraw']
     },
-    {
-        'trigger': 'withdraw',
-        'source': [PreprintStates.INITIAL, PreprintStates.PENDING, PreprintStates.ACCEPTED],
-        'dest': PreprintStates.WITHDRAWN,
-        'unless': ['post_moderation'],
-        'after': ['perform_withdraw', 'notify_withdraw']
-    },
-
 ]
 
 APPROVAL_TRANSITIONS = [
