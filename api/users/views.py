@@ -60,7 +60,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
-from framework.auth.views import send_confirm_email
+from framework.auth.views import send_confirm_email_async
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
@@ -900,7 +900,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
         if self.request.method == 'GET' and is_truthy(self.request.query_params.get('resend_confirmation')):
             if not confirmed and settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                    send_confirm_email(user, email=address, renew=True)
+                    send_confirm_email_async(user, email=address, renew=True)
                     user.email_last_sent = timezone.now()
                     user.save()
 

@@ -872,17 +872,6 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     )
 
 def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
-    """
-    Asynchronously sends `user` a confirmation to the given `email` after the DB transaction is committed.
-
-    :param user: the user
-    :param email: the email
-    :param renew: refresh the token
-    :param external_id_provider: user's external id provider
-    :param external_id: user's external id
-    :param destination: the destination page to redirect after confirmation
-    :return:
-    """
     enqueue_postcommit_task(send_confirm_email, (user, email, renew, external_id_provider, external_id, destination), {})
 
 
@@ -955,7 +944,7 @@ def register_user(**kwargs):
         )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-        send_confirm_email(user, email=user.username)
+        send_confirm_email_async(user, email=user.username)
         message = language.REGISTRATION_SUCCESS.format(email=user.username)
         return {'message': message}
     else:
@@ -1002,7 +991,7 @@ def resend_confirmation_post(auth):
         if user:
             if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 try:
-                    send_confirm_email(user, clean_email, renew=True)
+                    send_confirm_email_async(user, clean_email, renew=True)
                 except KeyError:
                     # already confirmed, redirect to dashboard
                     status_message = 'This email {0} has already been confirmed.'.format(clean_email)
@@ -1107,7 +1096,7 @@ def external_login_email_post():
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
-            send_confirm_email(
+            send_confirm_email_async(
                 user,
                 clean_email,
                 external_id_provider=external_id_provider,
@@ -1137,7 +1126,7 @@ def external_login_email_post():
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
-            send_confirm_email(
+            send_confirm_email_async(
                 user,
                 user.username,
                 external_id_provider=external_id_provider,

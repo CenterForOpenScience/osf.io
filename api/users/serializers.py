@@ -32,7 +32,7 @@ from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
-from framework.auth.views import send_confirm_email
+from framework.auth.views import send_confirm_email_async
 from api.base.versioning import get_kebab_snake_case_field
 
 
@@ -596,7 +596,7 @@ class UserEmailsSerializer(JSONAPISerializer):
             token = user.add_unconfirmed_email(address)
             user.save()
             if CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(user, email=address)
+                send_confirm_email_async(user, email=address)
                 user.email_last_sent = timezone.now()
                 user.save()
         except ValidationError as e:
