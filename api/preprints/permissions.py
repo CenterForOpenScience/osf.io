@@ -8,7 +8,6 @@ from api.nodes.permissions import (
 )
 from osf.models import Preprint, OSFUser, PreprintContributor, Identifier
 from addons.osfstorage.models import OsfStorageFolder
-from osf.utils.workflows import DefaultStates
 from osf.utils import permissions as osf_permissions
 
 
@@ -25,12 +24,22 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
             if auth.user is None:
                 return obj.verified_publishable
             else:
-                user_has_permissions = (
-                    obj.verified_publishable or
-                    (obj.is_public and auth.user.has_perm('view_submissions', obj.provider)) or
-                    obj.has_permission(auth.user, osf_permissions.ADMIN) or obj.is_contributor(auth.user)
-                )
-                return user_has_permissions
+                if obj.verified_publishable:
+                    return True
+
+                if obj.is_public and auth.user.has_perm('view_submissions', obj.provider):
+                    return True
+
+                if obj.has_permission(auth.user, osf_permissions.ADMIN):
+                    return True
+
+                if obj.is_contributor(auth.user):
+                    return True
+
+                if not obj.primary_file:
+                    return False
+
+                return False
         else:
             if not obj.has_permission(auth.user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(detail='User must be an admin to make these preprint edits.')

@@ -156,7 +156,6 @@ class TestPreprintRequestListCreate(PreprintRequestTestMixin):
 
     def test_admin_can_submit(self, app, admin, create_payload, pre_mod_preprint, post_mod_preprint, none_mod_preprint):
         for preprint in [pre_mod_preprint, post_mod_preprint, none_mod_preprint]:
-            print(preprint)
             res = app.post_json_api(self.url(preprint), create_payload, auth=admin.auth)
             assert res.status_code == 201
 

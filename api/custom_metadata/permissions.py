@@ -13,8 +13,6 @@ class CustomMetadataPermission(permissions.BasePermission):
             resource = resource.target
         auth = get_user_auth(request)
 
-        print(resource.can_view(auth), obj, view)
-
         if request.method in permissions.SAFE_METHODS:
             return resource.is_public or resource.can_view(auth)
         else:

@@ -100,10 +100,8 @@ class ReviewActionFilterMixin(object):
         assert expected == actual
 
         # filter by trigger
-        print(expected_actions)
         expected = set(
             [l._id for l in expected_actions if l.trigger[0] == action.trigger[0]])
-        print(expected, action.trigger)
 
         actual = get_actual(app, url, user, trigger=action.trigger[0])
         assert expected == actual

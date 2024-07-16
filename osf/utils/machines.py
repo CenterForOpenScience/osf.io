@@ -265,7 +265,6 @@ class PreprintRequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles preprint status changes and state transitions
         """
-        print('ev.event.name', ev.event.name)
         if ev.event.name == DefaultTriggers.EDIT_COMMENT.db_name and self.action is not None:
             self.machineable.comment = self.action.comment
         elif ev.event.name == DefaultTriggers.SUBMIT.db_name:
@@ -274,7 +273,6 @@ class PreprintRequestMachine(BaseMachine):
                 self.machineable.run_accept(user=self.machineable.creator, comment=self.machineable.comment, auto=True)
         elif ev.event.name == DefaultTriggers.ACCEPT.db_name:
             # If moderator accepts the withdrawal request
-            print('withdraw', self.machineable.target)
             self.machineable.target.run_withdraw(user=self.action.creator, comment=self.action.comment)
         self.machineable.save()
 

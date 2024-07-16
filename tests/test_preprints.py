@@ -844,6 +844,7 @@ class TestPermissionMethods:
 
         # Change preprint to unpublished
         preprint.is_published = False
+        preprint.is_public = False
         preprint.save()
         # Creator, contributor, and noncontributor can view
         assert preprint.can_view(auth)
@@ -1079,7 +1080,6 @@ class TestManageContributors:
                 {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
             ]
         )
-        print(preprint.visible_contributor_ids)
         with pytest.raises(ValueError) as e:
             preprint.set_visible(user=reg_user1, visible=False, auth=None)
             preprint.set_visible(user=user, visible=False, auth=None)
@@ -2098,6 +2098,7 @@ class TestCheckPreprintAuth(OsfTestCase):
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
+        self.preprint.is_public = False
         self.preprint.save()
         assert_false(views.check_resource_permissions(self.preprint, Auth(user=user2), 'download'))
 

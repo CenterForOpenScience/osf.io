@@ -147,7 +147,6 @@ class BaseActionSerializer(JSONAPISerializer):
         comment = validated_data.get('comment', '')
         permissions = validated_data.get('permissions', '')
         visible = validated_data.get('visible', '')
-        print('cdsds', comment, trigger, DefaultTriggers.EDIT_COMMENT.db_name)
         try:
             if trigger == DefaultTriggers.ACCEPT.db_name:
                 return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)

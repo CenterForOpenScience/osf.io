@@ -69,7 +69,7 @@ class PreprintManager(models.Manager):
         is_public=True,
         deleted__isnull=True,
         primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.db_name) \
+        primary_file__deleted_on__isnull=True) \
         & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
     def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
@@ -79,7 +79,7 @@ class PreprintManager(models.Manager):
             admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
             reviews_user_query = Q(is_public=True, provider__in=moderator_for)
             if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.db_name) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
+                contrib_user_query = Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
                 query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (self.no_user_query | admin_user_query | reviews_user_query)
@@ -100,7 +100,7 @@ class PreprintManager(models.Manager):
                 user=user,
                 allow_contribs=allow_contribs,
                 public_only=public_only,
-            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.db_name)
+            ) & Q(deleted__isnull=True)
         )
         # The auth subquery currently results in duplicates returned
         # https://openscience.atlassian.net/browse/OSF-9058

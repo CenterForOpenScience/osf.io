@@ -215,6 +215,7 @@ class TestIdentifierDetail:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
+    @pytest.mark.skip('No more abandoned preprints')
     def test_identifier_preprint_detail_abandoned(
             self, app, preprint, user, identifier_preprint, noncontrib
     ):
