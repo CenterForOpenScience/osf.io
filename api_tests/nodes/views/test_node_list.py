@@ -1111,7 +1111,6 @@ class TestNodeFiltering:
         assert res.status_code == 200
         assert private.node._id not in [each['id'] for each in res.json['data']]
 
-    @pytest.mark.skip('No more abanddon preprints')
     def test_abandonded_preprint_in_preprint_true_filter_results(
             self, app, user_one, user_two):
         abandoned = PreprintFactory(
@@ -1144,7 +1143,6 @@ class TestNodeFiltering:
         assert res.status_code == 200
         assert abandoned.node._id in [each['id'] for each in res.json['data']]
 
-    @pytest.mark.skip('No More abandoned preprints')
     def test_abandonded_preprint_in_preprint_false_filter_results(
             self, app, user_one, user_two):
         abandoned = PreprintFactory(

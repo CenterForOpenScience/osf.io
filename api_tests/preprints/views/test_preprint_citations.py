@@ -144,7 +144,6 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    @pytest.mark.skip('Just wrong behavior')
     def test_abandoned_preprint_citations(self):
         self.published_preprint.machine_state = DefaultStates.INITIAL.db_name
         self.published_preprint.save()
@@ -268,7 +267,6 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    @pytest.mark.skip('Just wrong behavior')
     def test_abandoned_preprint_citations(self):
         self.published_preprint.machine_state = DefaultStates.INITIAL.db_name
         self.published_preprint.save()

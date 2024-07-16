@@ -314,7 +314,6 @@ class PreprintIsValidListMixin:
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0
 
-    @pytest.mark.skip(' no more abandoned preperints')
     def test_preprint_has_abandoned_preprint(
             self, app, user_admin_contrib, user_write_contrib, user_non_contrib,
             preprint, url):

@@ -1167,7 +1167,6 @@ class TestPreprintBannerView(OsfTestCase):
         res = self.app.get(url)
         assert_in('Has supplemental materials for', res.body.decode())
 
-    @pytest.mark.skip('no more abandoned preprint')
     def test_public_project_abandoned_preprint(self):
         url = self.project_one.web_url_for('view_project')
 
