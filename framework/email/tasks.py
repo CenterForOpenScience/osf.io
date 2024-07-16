@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from io import BytesIO
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Attachment, Mail, FileContent
+from sendgrid.helpers.mail import Attachment, Mail, FileContent, Category
 
 from framework import sentry
 from framework.celery_tasks import app
@@ -38,7 +38,7 @@ def send_email(
     :param to_addr: A string, the recipient
     :param subject: subject of email
     :param message: body of message
-    :param tuple categories: Categories to add to the email using SendGrid's
+    :param categories: Categories to add to the email using SendGrid's
         SMTPAPI. Used for email analytics.
         See https://sendgrid.com/docs/User_Guide/Statistics/categories.html
         This parameter is only respected if using the Sendgrid API.
@@ -116,26 +116,26 @@ def _send_with_sendgrid(
         client = client or SendGridAPIClient(settings.SENDGRID_API_KEY)
         mail = Mail(from_email=from_addr, html_content=message, to_emails=to_addr, subject=subject)
         if categories:
-            mail.category = categories
+            mail.category = [Category(x) for x in categories]
         if attachment_name and attachment_content:
             content_bytes = _content_to_bytes(attachment_content)
             content_bytes = FileContent(b64encode(content_bytes).decode())
             attachment = Attachment(file_content=content_bytes, file_name=attachment_name)
             mail.add_attachment(attachment)
 
-        status, msg = client.send(mail)
-        if status >= 400:
+        response = client.send(mail)
+        if response.status_code >= 400:
             sentry.log_message(
-                f'{status} error response from sendgrid.'
+                f'{response.status_code} error response from sendgrid.'
                 f'from_addr:  {from_addr}\n'
                 f'to_addr:  {to_addr}\n'
                 f'subject:  {subject}\n'
                 'mimetype:  html\n'
-                f'message:  {message[:30]}\n'
+                f'message:  {response.body[:30]}\n'
                 f'categories:  {categories}\n'
                 f'attachment_name:  {attachment_name}\n'
             )
-        return status < 400
+        return response.status_code < 400
     else:
         sentry.log_message(
             f'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {to_addr}.'
