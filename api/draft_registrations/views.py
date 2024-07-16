@@ -27,7 +27,7 @@ from api.nodes.views import (
 )
 from api.nodes.permissions import ContributorOrPublic, AdminDeletePermissions
 from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
-from osf.models import DraftRegistrationContributor
+from osf.models import DraftRegistrationContributor, DraftRegistration
 
 class DraftRegistrationMixin(DraftMixin):
     """
@@ -67,8 +67,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         if user.is_anonymous:
             raise exceptions.NotAuthenticated()
         # Returns DraftRegistrations for which a user is a contributor
-        return user.draft_registrations_active
-
+        return DraftRegistration.objects.filter(contributors=user)
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (

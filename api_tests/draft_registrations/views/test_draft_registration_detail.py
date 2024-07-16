@@ -98,8 +98,8 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         project_public.add_contributor(node_admin, ADMIN)
         assert project_public.has_permission(node_admin, ADMIN) is True
         assert draft_registration.has_permission(node_admin, ADMIN) is False
-        res = app.get(url_draft_registrations, auth=node_admin.auth)
-        assert res.status_code == 200
+        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_admin_draft_not_node(self, app, user, project_public, draft_registration, url_draft_registrations):
         draft_admin = AuthUserFactory()
@@ -120,8 +120,8 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         project_public.add_contributor(node_admin, WRITE)
         assert project_public.has_permission(node_admin, WRITE) is True
         assert draft_registration.has_permission(node_admin, WRITE) is False
-        res = app.get(url_draft_registrations, auth=node_admin.auth)
-        assert res.status_code == 200
+        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_write_draft_not_node(self, app, user, project_public, draft_registration, url_draft_registrations):
         draft_admin = AuthUserFactory()
@@ -142,8 +142,8 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         project_public.add_contributor(node_admin, READ)
         assert project_public.has_permission(node_admin, READ) is True
         assert draft_registration.has_permission(node_admin, READ) is False
-        res = app.get(url_draft_registrations, auth=node_admin.auth)
-        assert res.status_code == 200
+        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_read_draft_not_node(self, app, user, project_public, draft_registration, url_draft_registrations):
         draft_admin = AuthUserFactory()
@@ -161,6 +161,9 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
         res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+        draft_registration.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
 
     def test_current_permissions_field(
