@@ -27,7 +27,7 @@ from api.nodes.views import (
 )
 from api.nodes.permissions import ContributorOrPublic, AdminDeletePermissions
 from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
-from osf.models import DraftRegistrationContributor, DraftRegistration
+from osf.models import DraftRegistrationContributor
 
 class DraftRegistrationMixin(DraftMixin):
     """
