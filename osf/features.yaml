@@ -17,7 +17,7 @@ flags:
     note: This is used to enable GravyValet, the system responible for addons, this will remove the files widget on the
           project overview page. Will be used with EMBER_USER_SETTINGS_ADDONS and EMBER_NODE_SETTINGS_ADDONS to flip all
           UI elements to the new addons system.
-    everyone: false
+    everyone: null
 
   - flag_name: EMBER_FILE_PROJECT_DETAIL
     name: ember_file_project_detail_page
