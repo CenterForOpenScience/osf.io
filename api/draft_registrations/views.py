@@ -53,7 +53,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        DraftRegistrationPermission
+        DraftRegistrationPermission,
     )
 
     view_category = 'draft_registrations'
