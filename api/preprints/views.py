@@ -51,6 +51,7 @@ from api.preprints.permissions import (
     AdminOrPublic,
     ContributorDetailPermissions,
     PreprintFilesPermissions,
+    CitationCanView,
 )
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -122,7 +123,11 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
 
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
-        queryset = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only)
+        from django.db.models import Q
+        queryset_id = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only).values_list('id', flat=True)
+        queryset = Preprint.objects.filter(
+            id__in=queryset_id
+        ).exclude(machine_state='initial')
         # Use get_metrics_queryset to return an queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
@@ -232,6 +237,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        CitationCanView,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
@@ -243,12 +249,8 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
 
     def get_object(self):
         preprint = self.get_preprint()
-        auth = get_user_auth(self.request)
+        return preprint.csl
 
-        if preprint.can_view(auth):
-            return preprint.csl
-
-        raise PermissionDenied if auth.user else NotAuthenticated
 
 
 class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
@@ -257,6 +259,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        CitationCanView,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
@@ -268,19 +271,16 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
 
     def get_object(self):
         preprint = self.get_preprint()
-        auth = get_user_auth(self.request)
         style = self.kwargs.get('style_id')
 
-        if preprint.can_view(auth):
-            try:
-                citation = render_citation(node=preprint, style=style)
-            except ValueError as err:  # style requested could not be found
-                csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
-                raise NotFound('{} is not a known style.'.format(csl_name))
+        try:
+            citation = render_citation(node=preprint, style=style)
+        except ValueError as err:  # style requested could not be found
+            csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
+            raise NotFound('{} is not a known style.'.format(csl_name))
 
-            return {'citation': citation, 'id': style}
+        return {'citation': citation, 'id': style}
 
-        raise PermissionDenied if auth.user else NotAuthenticated
 
 
 class PreprintIdentifierList(IdentifierList, PreprintMixin):

@@ -11,6 +11,32 @@ from addons.osfstorage.models import OsfStorageFolder
 from osf.utils import permissions as osf_permissions
 
 
+class CitationCanView(permissions.BasePermission):
+
+    acceptable_models = (Preprint,)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if not obj.is_published:
+            return obj.has_permission(auth.user, osf_permissions.ADMIN)
+
+        if not obj.is_public:
+            return obj.has_permission(auth.user, osf_permissions.WRITE)
+
+        if obj.is_published and obj.is_public:
+            return True
+        else:
+            if obj.has_permission(auth.user, osf_permissions.ADMIN):
+                return True
+
+        if not auth.user:
+            return False
+
+        return False
+
+
+
 class PreprintPublishedOrAdmin(permissions.BasePermission):
 
     acceptable_models = (Preprint,)
