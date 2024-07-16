@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
-from api.providers.workflows import Workflows, PUBLIC_STATES
+from api.providers.workflows import Workflows
 from framework import status
 from framework.auth import Auth
 from framework.auth.core import get_user
@@ -35,7 +35,6 @@ from .validators import validate_subject_hierarchy, validate_email, expand_subje
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import (
-    PreprintStateMachine,
     NodeRequestMachine,
     PreprintRequestMachine,
 )
@@ -46,7 +45,6 @@ from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
     PreprintStates,
-    PreprintStateTriggers,
 )
 
 from osf.utils.requests import get_request_and_user_id
@@ -852,32 +850,6 @@ class PreprintRequestableMixin(MachineableMixin):
         abstract = True
 
     MachineClass = PreprintRequestMachine
-
-
-class PreprintStateMachineMixin(MachineableMixin):
-    """Something that may be included in a reviewed collection and is subject to a reviews workflow.
-    """
-    TriggersClass = PreprintStateTriggers
-    MachineClass = PreprintStateMachine
-    machine_state = models.CharField(
-        max_length=15,
-        db_index=True,
-        choices=PreprintStates.char_field_choices(),
-        default=PreprintStates.INITIAL.db_name
-    )
-
-    class Meta:
-        abstract = True
-
-    @property
-    def in_public_reviews_state(self):
-        public_states = PUBLIC_STATES.get(self.provider.reviews_workflow)
-        if not public_states:
-            return False
-        return self.machine_state in public_states
-
-    def run_withdraw(self, user, comment):
-        return self.validate_transition('withdraw', user, comment=comment)
 
 
 class GuardianMixin(models.Model):

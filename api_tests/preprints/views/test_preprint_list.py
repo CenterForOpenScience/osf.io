@@ -383,11 +383,12 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
                         is_public=True)), PreprintFactory(
                             is_published=False, project=ProjectFactory(
                                 is_public=True)), ]
-            preprints[0].run_submit(user)
-            preprints[0].run_accept(user, 'comment')
-            preprints[1].run_submit(user)
-            preprints[1].run_reject(user, 'comment')
-            preprints[2].run_submit(user)
+
+            preprints[0].submit(user)
+            preprints[0].accept(user, 'comment')
+            preprints[1].submit(user)
+            preprints[1].reject(user, 'comment')
+            preprints[2].submit(user)
             return preprints
 
     @pytest.fixture
@@ -983,6 +984,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
             preprint_unpublished,
             preprint_published,
             url):
+
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]

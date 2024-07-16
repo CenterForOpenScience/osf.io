@@ -5,7 +5,6 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
-from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 
 from osf.utils import permissions
@@ -22,9 +21,8 @@ from osf.utils.workflows import (
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
-from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
+from website.settings import OSF_CONTACT_EMAIL
 
-from osf.utils import notifications as notify
 
 class BaseMachine(Machine):
 
@@ -98,101 +96,22 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class PreprintStateMachine(BaseMachine):
+class PreprintStateMachine(Machine):
     ActionClass = ReviewAction
     States = PreprintStates
     Transitions = PREPRINT_STATE_TRANSITIONS
 
-    def save_changes(self, ev):
-        now = self.action.created if self.action is not None else timezone.now()
-        should_publish = self.machineable.in_public_reviews_state
-        if self.machineable.is_retracted:
-            pass  # Do not alter published state
-        elif should_publish and not self.machineable.is_published:
-            if not (self.machineable.primary_file and self.machineable.primary_file.target == self.machineable):
-                raise ValueError('Preprint is not a valid preprint; cannot publish.')
-            if not self.machineable.provider:
-                raise ValueError('Preprint provider not specified; cannot publish.')
-            if not self.machineable.subjects.exists():
-                raise ValueError('Preprint must have at least one subject to be published.')
-            self.machineable.date_published = now
-            self.machineable.is_published = True
-            self.machineable.ever_public = True
-        elif not should_publish and self.machineable.is_published:
-            self.machineable.is_published = False
-        self.machineable.save()
-
-    def resubmission_allowed(self, ev):
-        return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
-
-    def pre_moderation(self, ev):
-        return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
-
-    def post_moderation(self, ev):
-        return self.machineable.provider.reviews_workflow == Workflows.POST_MODERATION.value
-
-    def perform_withdraw(self, ev):
-        self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
-        self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
-
-    def notify_submit(self, ev):
-        user = ev.kwargs.get('user')
-        notify.notify_submit(self.machineable, user)
-        auth = Auth(user)
-        self.machineable.add_log(
-            action=PreprintLog.PUBLISHED,
-            params={
-                'preprint': self.machineable._id
-            },
-            auth=auth,
-            save=False,
+    def __init__(self, model, active_state, state_property_name):
+        super().__init__(
+            model=model,
+            states=PreprintStates,
+            transitions=PREPRINT_STATE_TRANSITIONS,
+            initial=active_state,
+            model_attribute=state_property_name,
+            after_state_change='_save_transition',
+            send_event=True,
+            queued=True,
         )
-
-    def notify_resubmit(self, ev):
-        notify.notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
-
-    def notify_accept_reject(self, ev):
-        notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
-
-    def notify_edit_comment(self, ev):
-        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
-
-    def notify_withdraw(self, ev):
-        context = self.get_context()
-        context['ever_public'] = self.machineable.ever_public
-        try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
-                                                                   from_state='pending',
-                                                                   to_state='accepted',
-                                                                   trigger='accept')
-            context['requester'] = preprint_request_action.target.creator
-        except PreprintRequestAction.DoesNotExist:
-            # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
-            context['force_withdrawal'] = True
-
-        if not context.get('requester'):
-            context['requester'] = ev.kwargs.get('user')
-
-        for contributor in self.machineable.contributors.all():
-            context['contributor'] = contributor
-            if context.get('requester', None):
-                context['is_requester'] = context['requester'].username == contributor.username
-            mails.send_mail(
-                contributor.username,
-                mails.WITHDRAWAL_REQUEST_GRANTED,
-                document_type=self.machineable.provider.preprint_word,
-                **context
-            )
-
-    def get_context(self):
-        return {
-            'domain': DOMAIN,
-            'reviewable': self.machineable,
-            'workflow': self.machineable.provider.reviews_workflow,
-            'provider_url': self.machineable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.machineable.provider._id),
-            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
-            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
-        }
 
 
 class NodeRequestMachine(BaseMachine):
@@ -282,7 +201,7 @@ class PreprintRequestMachine(BaseMachine):
                 self.machineable.run_accept(user=self.machineable.creator, comment=self.machineable.comment, auto=True)
         elif ev.event.name == DefaultTriggers.ACCEPT.db_name:
             # If moderator accepts the withdrawal request
-            self.machineable.target.run_withdraw(user=self.action.creator, comment=self.action.comment)
+            self.machineable.target.withdraw(self.action.creator, comment=self.action.comment)
         self.machineable.save()
 
     def auto_approval_allowed(self):

@@ -36,7 +36,6 @@ class CitationCanView(permissions.BasePermission):
         return False
 
 
-
 class PreprintPublishedOrAdmin(permissions.BasePermission):
 
     acceptable_models = (Preprint,)

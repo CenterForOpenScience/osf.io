@@ -26,7 +26,7 @@ from .user import OSFUser
 from .provider import PreprintProvider
 from .preprintlog import PreprintLog
 from .contributor import PreprintContributor
-from .mixins import PreprintStateMachineMixin, Taggable, Loggable, GuardianMixin
+from .mixins import Taggable, Loggable, GuardianMixin
 from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, PreprintStates
@@ -56,6 +56,8 @@ from osf.exceptions import (
 )
 from django.contrib.postgres.fields import ArrayField
 from api.share.utils import update_share
+from osf.utils import notifications as notify
+
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +71,7 @@ class PreprintManager(models.Manager):
         is_public=True,
         deleted__isnull=True,
         primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) \
+        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.db_name) \
         & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
     def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
@@ -79,7 +81,7 @@ class PreprintManager(models.Manager):
             admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
             reviews_user_query = Q(is_public=True, provider__in=moderator_for)
             if allow_contribs:
-                contrib_user_query = Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
                 query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (self.no_user_query | admin_user_query | reviews_user_query)
@@ -100,7 +102,7 @@ class PreprintManager(models.Manager):
                 user=user,
                 allow_contribs=allow_contribs,
                 public_only=public_only,
-            ) & Q(deleted__isnull=True)
+            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
         )
         # The auth subquery currently results in duplicates returned
         # https://openscience.atlassian.net/browse/OSF-9058
@@ -108,8 +110,174 @@ class PreprintManager(models.Manager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, PreprintStateMachineMixin, BaseModel, TitleMixin, DescriptionMixin,
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMixin, DescriptionMixin,
                Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from osf.utils.machines import PreprintStateMachine
+        self.state_machine = PreprintStateMachine(
+            model=self,
+            active_state=self.state,
+            state_property_name='state'
+        )
+
+    machine_state = models.CharField(
+        max_length=15,
+        db_index=True,
+        choices=PreprintStates.char_field_choices(),
+        default=PreprintStates.INITIAL.db_name
+    )
+    date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    def validate_submission(self, ev):
+        from django.core.exceptions import ValidationError
+        if not self.title:
+            raise ValidationError('Cannot publish a preprint without a title')
+        if not self.primary_file:
+            raise ValidationError('Cannot transition non-initial preprint without primary file.')
+        if self.is_retracted:
+            raise ValidationError('Cannot transition that has been retracted.')
+        if not self.provider:
+            raise ValidationError('Preprint provider not specified; cannot publish.')
+        if not self.subjects.exists():
+            raise ValidationError('Preprint must have at least one subject to be published.')
+        if self.is_published:
+            raise ValidationError('Preprint is already published.')
+        if not (self.primary_file and self.primary_file.target == self):
+            raise ValueError('Preprint is not a valid preprint; cannot publish.')
+
+    def perform_accept(self, ev):
+        action = self.actions.last()
+        now = action.created if action is not None else timezone.now()
+        self.date_published = now
+        self.is_published = True
+        self.ever_public = True
+        self.save()
+
+    def perform_post_mod_submission(self, ev):
+        print(ev.__dict__)
+        action = self.actions.last()
+        now = action.created if action is not None else timezone.now()
+        self.date_published = now
+        self.is_published = True
+        self.ever_public = True
+        self.save()
+
+    def resubmission_allowed(self, ev):
+        from api.providers.workflows import Workflows
+        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+
+    def pre_moderation(self, ev):
+        from api.providers.workflows import Workflows
+        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+
+    @property
+    def post_moderation(self):
+        from api.providers.workflows import Workflows
+        return self.provider.reviews_workflow == Workflows.POST_MODERATION.value
+
+    def perform_withdraw(self, ev):
+        self.date_withdrawn = self.actions.last().created if self.actions.last() is not None else timezone.now()
+        self.withdrawal_justification = ev.kwargs.get('comment', '')
+
+    def notify_submit(self, ev):
+        user = ev.kwargs.get('user')
+        notify.notify_submit(self, user)
+        auth = Auth(user)
+        self.add_log(
+            action=PreprintLog.PUBLISHED,
+            params={
+                'preprint': self._id
+            },
+            auth=auth,
+            save=False,
+        )
+
+    def notify_resubmit(self, ev):
+        notify.notify_resubmit(self, ev.kwargs.get('user'), self.actions.last())
+
+    def notify_accept_reject(self, ev):
+        notify.notify_accept_reject(self, ev.kwargs.get('user'), self.actions.last(), PreprintStates)
+
+    def notify_edit_comment(self, ev):
+        notify.notify_edit_comment(self, ev.kwargs.get('user'), self.actions.last())
+
+    def notify_withdraw(self, ev):
+        context = self.get_context()
+        from osf.models.action import PreprintRequestAction
+
+        context['ever_public'] = self.ever_public
+        try:
+            preprint_request_action = PreprintRequestAction.objects.get(
+                target__target__id=self.id,
+                from_state='pending',
+                to_state='accepted',
+                trigger='accept'
+            )
+            context['requester'] = preprint_request_action.target.creator
+        except PreprintRequestAction.DoesNotExist:
+            # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
+            context['force_withdrawal'] = True
+
+        if not context.get('requester'):
+            context['requester'] = ev.kwargs.get('user')
+
+        for contributor in self.contributors.all():
+            context['contributor'] = contributor
+            if context.get('requester', None):
+                context['is_requester'] = context['requester'].username == contributor.username
+            mails.send_mail(
+                contributor.username,
+                mails.WITHDRAWAL_REQUEST_GRANTED,
+                document_type=self.provider.preprint_word,
+                **context
+            )
+
+    def get_context(self):
+        from website.settings import OSF_SUPPORT_EMAIL, DOMAIN, OSF_CONTACT_EMAIL
+        return {
+            'domain': DOMAIN,
+            'reviewable': self,
+            'workflow': self.provider.reviews_workflow,
+            'provider_url': self.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.provider._id),
+            'provider_contact_email': self.provider.email_contact or OSF_CONTACT_EMAIL,
+            'provider_support_email': self.provider.email_support or OSF_SUPPORT_EMAIL,
+        }
+
+    def _save_transition(self, ev):
+        user = ev.args[0]
+        from osf.models.action import ReviewAction
+        action = ReviewAction.objects.create(
+            target=self,
+            creator=user,
+            trigger=ev.event.name,
+            from_state=ev.transition.source.lower(),
+            to_state=ev.state.name,
+            comment=ev.kwargs.get('comment', ''),
+            auto=ev.kwargs.get('auto', False),
+        )
+
+        now = action.created if action is not None else timezone.now()
+        self.date_last_transitioned = now
+        self.save()
+
+    @property
+    def in_public_reviews_state(self):
+        from api.providers.workflows import PUBLIC_STATES
+        public_states = PUBLIC_STATES.get(self.provider.reviews_workflow)
+        if not public_states:
+            return False
+        return self.machine_state in public_states
+
+    @property
+    def state(self):
+        from osf.utils.machines import PreprintStates
+        return PreprintStates.from_db_name(self.machine_state)
+
+    @state.setter
+    def state(self, new_state):
+        self.machine_state = new_state.db_name
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save

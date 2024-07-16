@@ -303,53 +303,63 @@ DEFAULT_TRANSITIONS = [
 PREPRINT_STATE_TRANSITIONS = [
     {
         'trigger': 'submit',
-        'source': [PreprintStates.INITIAL.db_name],
-        'dest': PreprintStates.PENDING.db_name,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
+        'source': [PreprintStates.INITIAL],
+        'conditions': 'post_moderation',
+        'dest': PreprintStates.ACCEPTED,
+        'before': ['validate_submission'],
+        'after': ['perform_post_mod_submission', 'notify_submit'],
     },
     {
         'trigger': 'submit',
-        'source': [PreprintStates.PENDING.db_name, PreprintStates.REJECTED.db_name],
+        'source': [PreprintStates.INITIAL],
+        'dest': PreprintStates.PENDING,
+        'before': ['validate_submission'],
+        'after': ['notify_submit'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [PreprintStates.PENDING, PreprintStates.REJECTED],
         'conditions': 'resubmission_allowed',
-        'dest': PreprintStates.PENDING.db_name,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
+        'dest': PreprintStates.PENDING,
+        'before': ['validate_submission'],
+        'after': ['notify_resubmit'],
     },
     {
         'trigger': 'accept',
-        'source': [PreprintStates.PENDING.db_name, PreprintStates.REJECTED.db_name],
-        'dest': PreprintStates.ACCEPTED.db_name,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
+        'source': [PreprintStates.PENDING, PreprintStates.REJECTED],
+        'dest': PreprintStates.ACCEPTED,
+        'after': ['perform_accept', 'notify_accept_reject'],
     },
     {
         'trigger': 'reject',
-        'source': [PreprintStates.PENDING.db_name, PreprintStates.ACCEPTED.db_name],
-        'dest': PreprintStates.REJECTED.db_name,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
+        'source': [PreprintStates.PENDING, PreprintStates.ACCEPTED],
+        'dest': PreprintStates.REJECTED,
+        'after': ['notify_accept_reject'],
     },
     {
         'trigger': 'edit_comment',
-        'source': [PreprintStates.PENDING.db_name, PreprintStates.REJECTED.db_name, PreprintStates.ACCEPTED.db_name],
+        'source': [PreprintStates.PENDING, PreprintStates.REJECTED, PreprintStates.ACCEPTED],
         'dest': '=',
-        'after': ['save_action', 'save_changes', 'notify_edit_comment'],
+        'after': ['notify_edit_comment'],
     },
     {
         'trigger': 'withdraw',
-        'source': [PreprintStates.PENDING.db_name, PreprintStates.ACCEPTED.db_name],
-        'dest': PreprintStates.WITHDRAWN.db_name,
-        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
+        'source': [PreprintStates.PENDING, PreprintStates.ACCEPTED],
+        'dest': PreprintStates.WITHDRAWN,
+        'after': ['perform_withdraw', 'notify_withdraw']
     },
     {
         'trigger': 'withdraw',
-        'source': [PreprintStates.PENDING.db_name, PreprintStates.ACCEPTED.db_name],
-        'dest': PreprintStates.WITHDRAWN.db_name,
-        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
+        'source': [PreprintStates.PENDING, PreprintStates.ACCEPTED],
+        'dest': PreprintStates.WITHDRAWN,
+        'after': ['perform_withdraw', 'notify_withdraw']
     },
     {
         'trigger': 'withdraw',
-        'source': [PreprintStates.INITIAL.db_name, PreprintStates.PENDING.db_name, PreprintStates.ACCEPTED.db_name],
-        'dest': PreprintStates.WITHDRAWN.db_name,
+        'source': [PreprintStates.INITIAL, PreprintStates.PENDING, PreprintStates.ACCEPTED],
+        'dest': PreprintStates.WITHDRAWN,
         'unless': ['post_moderation'],
-        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
+        'after': ['perform_withdraw', 'notify_withdraw']
     },
 
 ]

@@ -2371,18 +2371,18 @@ class TestWithdrawnPreprint:
         assert preprint.ever_public
 
         # pre-mod
-        unpublished_preprint_pre_mod.run_submit(user)
+        unpublished_preprint_pre_mod.submit(user)
 
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_reject(user, 'it')
+        unpublished_preprint_pre_mod.reject(user, 'it')
         unpublished_preprint_pre_mod.reload()
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_accept(user, 'it')
+        unpublished_preprint_pre_mod.accept(user, 'it')
         unpublished_preprint_pre_mod.reload()
         assert unpublished_preprint_pre_mod.ever_public
 
         # post-mod
-        unpublished_preprint_post_mod.run_submit(user)
+        unpublished_preprint_post_mod.submit(user)
         assert unpublished_preprint_post_mod.ever_public
 
         # test_cannot_set_ever_public_to_False

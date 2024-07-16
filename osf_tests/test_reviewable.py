@@ -14,20 +14,20 @@ class TestReviewable:
         preprint = PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
         assert preprint.machine_state == DefaultStates.INITIAL.db_name
 
-        preprint.run_submit(user)
+        preprint.submit(user)
         assert preprint.machine_state == DefaultStates.PENDING.db_name
 
-        preprint.run_accept(user, 'comment')
+        preprint.accept(user, 'comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.db_name
         from_db = Preprint.objects.get(id=preprint.id)
         assert from_db.machine_state == DefaultStates.ACCEPTED.db_name
 
-        preprint.run_reject(user, 'comment')
+        preprint.reject(user, 'comment')
         assert preprint.machine_state == DefaultStates.REJECTED.db_name
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.REJECTED.db_name
 
-        preprint.run_accept(user, 'comment')
+        preprint.accept(user, 'comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.db_name
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.ACCEPTED.db_name

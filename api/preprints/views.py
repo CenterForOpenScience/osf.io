@@ -2,7 +2,7 @@ import re
 from distutils.version import StrictVersion
 
 from rest_framework import generics
-from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated
+from rest_framework.exceptions import MethodNotAllowed, NotFound
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -123,11 +123,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
 
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
-        from django.db.models import Q
-        queryset_id = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only).values_list('id', flat=True)
-        queryset = Preprint.objects.filter(
-            id__in=queryset_id
-        ).exclude(machine_state='initial')
+        queryset = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only)
         # Use get_metrics_queryset to return an queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
@@ -252,7 +248,6 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
         return preprint.csl
 
 
-
 class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_read).
     """
@@ -280,7 +275,6 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
             raise NotFound('{} is not a known style.'.format(csl_name))
 
         return {'citation': citation, 'id': style}
-
 
 
 class PreprintIdentifierList(IdentifierList, PreprintMixin):
