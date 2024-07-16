@@ -22,12 +22,12 @@ class TestReviewable:
         from_db = Preprint.objects.get(id=preprint.id)
         assert from_db.machine_state == DefaultStates.ACCEPTED.db_name
 
-        preprint.reject(user=user,  comment='comment')
+        preprint.reject(user=user, comment='comment')
         assert preprint.machine_state == DefaultStates.REJECTED.db_name
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.REJECTED.db_name
 
-        preprint.accept(user=user,  comment='comment')
+        preprint.accept(user=user, comment='comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.db_name
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.ACCEPTED.db_name

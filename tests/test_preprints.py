@@ -2371,18 +2371,18 @@ class TestWithdrawnPreprint:
         assert preprint.ever_public
 
         # pre-mod
-        unpublished_preprint_pre_mod.submit(user)
+        unpublished_preprint_pre_mod.submit(user=user)
 
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.reject(user, 'it')
+        unpublished_preprint_pre_mod.reject(user=user, comment='it')
         unpublished_preprint_pre_mod.reload()
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.accept(user, 'it')
+        unpublished_preprint_pre_mod.accept(user=user, comment='it')
         unpublished_preprint_pre_mod.reload()
         assert unpublished_preprint_pre_mod.ever_public
 
         # post-mod
-        unpublished_preprint_post_mod.submit(user)
+        unpublished_preprint_post_mod.submit(user=user)
         assert unpublished_preprint_post_mod.ever_public
 
         # test_cannot_set_ever_public_to_False
@@ -2402,7 +2402,7 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint)
-        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        withdrawal_request.run_accept(user=admin, comment=withdrawal_request.comment)
 
         assert preprint.is_retracted
         assert preprint.verified_publishable
@@ -2413,7 +2413,7 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_post_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_post_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(user=moderator, comment=withdrawal_request.comment)
 
         assert preprint_post_mod.is_retracted
         assert preprint_post_mod.verified_publishable
@@ -2424,7 +2424,7 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_pre_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_pre_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(user=moderator, comment=withdrawal_request.comment)
 
         assert preprint_pre_mod.is_retracted
         assert preprint_pre_mod.verified_publishable

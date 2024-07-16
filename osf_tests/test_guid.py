@@ -308,9 +308,9 @@ class TestResolveGuid(OsfTestCase):
         # test_provider_submitter_can_download_unpublished
         submitter = AuthUserFactory()
         pp = PreprintFactory(finish=True, provider=provider, is_published=False, creator=submitter)
-        pp.run_submit(submitter)
+        pp.submit(user=submitter)
         pp_branded = PreprintFactory(finish=True, provider=branded_provider, is_published=False, filename='preprint_file_two.txt', creator=submitter)
-        pp_branded.run_submit(submitter)
+        pp_branded.submit(user=submitter)
 
         res = self.app.get('{}download'.format(pp.url), auth=submitter.auth)
         assert res.status_code == 302

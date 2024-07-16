@@ -38,7 +38,7 @@ def withdraw_all_preprints(provider_id, page_size, user_guid, comment=None):
     preprints_withdrawn = 0
 
     for preprint in preprints:
-        preprint.withdraw(user, comment)
+        preprint.withdraw(user=user, comment=comment)
         preprint.reload()
         assert preprint.is_retracted
         preprints_withdrawn += 1

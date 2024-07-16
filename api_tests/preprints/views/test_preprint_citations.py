@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import pytest
 from api.base.settings.defaults import API_BASE
 from api.citations.utils import render_citation
 from django.utils import timezone

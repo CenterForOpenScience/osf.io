@@ -130,22 +130,29 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
     )
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
-    def validate_submission(self, ev):
+    def _validate_state(self, ev):
         from django.core.exceptions import ValidationError
-        if not self.title:
-            raise ValidationError('Cannot publish a preprint without a title')
         if not self.primary_file:
             raise ValidationError('Cannot transition non-initial preprint without primary file.')
+
+        if not self.title:
+            raise ValidationError('Cannot publish a preprint without a title')
         if self.is_retracted:
             raise ValidationError('Cannot transition that has been retracted.')
         if not self.provider:
             raise ValidationError('Preprint provider not specified; cannot publish.')
         if not self.subjects.exists():
             raise ValidationError('Preprint must have at least one subject to be published.')
-        if self.is_published:
-            raise ValidationError('Preprint is already published.')
         if not (self.primary_file and self.primary_file.target == self):
             raise ValueError('Preprint is not a valid preprint; cannot publish.')
+
+    @property
+    def ever_published(self):
+        return self.actions.filter(to_state=PreprintStates.ACCEPTED.db_name.upper()).exists()
+
+    def _validate_published(self, ev):
+        if self.is_published and not self.ever_published:
+            raise ValidationError('Preprint is already published.')
 
     def perform_accept(self, ev):
         action = self.actions.last()

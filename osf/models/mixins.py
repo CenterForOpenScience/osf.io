@@ -818,16 +818,16 @@ class MachineableMixin(models.Model):
         return machine.action
 
     def run_submit(self, user):
-        return self.validate_transition('submit', user)
+        return self.validate_transition('submit', user=user)
 
     def run_accept(self, user, comment, **kwargs):
-        return self.validate_transition('accept', user, comment=comment, **kwargs)
+        return self.validate_transition('accept', user=user, comment=comment, **kwargs)
 
     def run_reject(self, user, comment):
-        return self.validate_transition('reject', user, comment=comment)
+        return self.validate_transition('reject', user=user, comment=comment)
 
     def run_edit_comment(self, user, comment):
-        return self.validate_transition('edit_comment', user, comment=comment)
+        return self.validate_transition('edit_comment', user=user, comment=comment)
 
 
 class NodeRequestableMixin(MachineableMixin):

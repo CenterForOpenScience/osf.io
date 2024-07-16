@@ -202,7 +202,7 @@ class PreprintRequestMachine(BaseMachine):
                 self.machineable.run_accept(user=self.machineable.creator, comment=self.machineable.comment, auto=True)
         elif ev.event.name == DefaultTriggers.ACCEPT.db_name:
             # If moderator accepts the withdrawal request
-            self.machineable.target.withdraw(self.action.creator, comment=self.action.comment)
+            self.machineable.target.withdraw(user=self.action.creator, comment=self.action.comment)
         self.machineable.save()
 
     def auto_approval_allowed(self):

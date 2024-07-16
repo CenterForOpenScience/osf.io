@@ -166,6 +166,7 @@ class BaseActionSerializer(JSONAPISerializer):
         type_ = 'actions'
         abstract = True
 
+
 class ReviewActionSerializer(BaseActionSerializer):
     class Meta:
         type_ = 'review-actions'
@@ -217,13 +218,13 @@ class ReviewActionSerializer(BaseActionSerializer):
         comment = validated_data.pop('comment', '')
 
         try:
-            if trigger == PreprintStateTriggers.ACCEPT.db_name:
+            if trigger == DefaultTriggers.ACCEPT.db_name:
                 target.accept(user=user, comment=comment, permissions=permissions, visible=visible)
-            if trigger == PreprintStateTriggers.REJECT.db_name:
+            if trigger == DefaultTriggers.REJECT.db_name:
                 target.reject(user=user, comment=comment)
-            if trigger == PreprintStateTriggers.EDIT_COMMENT.db_name:
+            if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
                 target.edit_comment(user=user, comment=comment)
-            if trigger == PreprintStateTriggers.SUBMIT.db_name:
+            if trigger == DefaultTriggers.SUBMIT.db_name:
                 target.submit(user=user, comment=comment)
             if trigger == PreprintStateTriggers.WITHDRAW.db_name:
                 target.withdraw(user=user, comment=comment)

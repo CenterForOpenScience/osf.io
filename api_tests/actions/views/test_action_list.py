@@ -266,7 +266,7 @@ class TestReviewActionCreateRoot(object):
                 preprint.refresh_from_db()
                 print(trigger, preprint.provider.reviews_workflow)
                 print(preprint.provider.reviews_workflow)
-                print(preprint.post_moderation)
+                print(preprint.machine_state)
                 assert preprint.machine_state == to_state
                 if preprint.in_public_reviews_state:
                     if trigger != 'edit_comment':
