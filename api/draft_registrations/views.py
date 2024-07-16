@@ -72,7 +72,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         return DraftRegistration.objects.filter(
             Q(_contributors=user) &
             Q(deleted__isnull=True) &
-            (Q(registered_node__isnull=True) | Q(registered_node__deleted__isnull=False))
+            (Q(registered_node__isnull=True) | Q(registered_node__deleted__isnull=False)),
         )
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
