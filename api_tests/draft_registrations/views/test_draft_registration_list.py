@@ -121,6 +121,7 @@ class TestDraftRegistrationListTopLevelEndpoint:
     def test_logged_in_non_contributor_cannot_view_draft_list(self, app, user_non_contrib, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user_non_contrib.auth)
         assert res.status_code == 200
+        assert len(res.json['data']) == 0
 
     def test_deleted_draft_registration_does_not_show_up_in_draft_list(self, app, user, draft_registration, url_draft_registrations):
         draft_registration.deleted = timezone.now()
@@ -150,6 +151,8 @@ class TestDraftRegistrationListTopLevelEndpoint:
         draft_registration.save()
         registration.deleted = timezone.now()
         registration.save()
+        draft_registration.deleted = None
+        draft_registration.save()
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']

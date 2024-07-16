@@ -1,4 +1,5 @@
 from rest_framework import permissions as drf_permissions, exceptions
+from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -52,6 +53,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        DraftRegistrationPermission
     )
 
     view_category = 'draft_registrations'
@@ -67,7 +69,11 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         if user.is_anonymous:
             raise exceptions.NotAuthenticated()
         # Returns DraftRegistrations for which a user is a contributor
-        return DraftRegistration.objects.filter(contributors=user)
+        return DraftRegistration.objects.filter(
+            Q(_contributors=user) &
+            Q(deleted__isnull=True) &
+            (Q(registered_node__isnull=True) | Q(registered_node__deleted__isnull=False))
+        )
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
