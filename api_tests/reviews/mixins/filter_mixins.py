@@ -64,7 +64,13 @@ class ReviewActionFilterMixin(object):
                 project=ProjectFactory(is_public=True)
             )
             for _ in range(5):
-                actions.append(ReviewActionFactory(target=preprint))
+                review_action = ReviewActionFactory(target=preprint)
+                # FuzzyChoice getter is broken
+                review_action.trigger = review_action.trigger[0]
+                review_action.from_state = review_action.from_state[0]
+                review_action.to_state = review_action.to_state[0]
+                review_action.save()
+                actions.append(review_action)
         return actions
 
     @pytest.fixture()
@@ -101,22 +107,22 @@ class ReviewActionFilterMixin(object):
 
         # filter by trigger
         expected = set(
-            [l._id for l in expected_actions if l.trigger[0] == action.trigger[0]])
+            [l._id for l in expected_actions if l.trigger == action.trigger])
 
-        actual = get_actual(app, url, user, trigger=action.trigger[0])
+        actual = get_actual(app, url, user, trigger=action.trigger)
         assert expected == actual
 
         # filter by from_state
         expected = set(
-            [l._id for l in expected_actions if l.from_state == action.from_state[0]])
+            [l._id for l in expected_actions if l.from_state == action.from_state])
 
-        actual = get_actual(app, url, user, from_state=action.from_state[0])
+        actual = get_actual(app, url, user, from_state=action.from_state)
         assert expected == actual
 
         # filter by to_state
         expected = set(
-            [l._id for l in expected_actions if l.to_state == action.to_state[0]])
-        actual = get_actual(app, url, user, to_state=action.to_state[0])
+            [l._id for l in expected_actions if l.to_state == action.to_state])
+        actual = get_actual(app, url, user, to_state=action.to_state)
         assert expected == actual
 
         # filter by date_created

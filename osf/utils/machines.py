@@ -125,6 +125,12 @@ class PreprintStateMachine(BaseMachine):
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
+    def pre_moderation(self, ev):
+        return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+
+    def post_moderation(self, ev):
+        return self.machineable.provider.reviews_workflow == Workflows.POST_MODERATION.value
+
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
@@ -163,6 +169,9 @@ class PreprintStateMachine(BaseMachine):
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
             context['force_withdrawal'] = True
+
+        if not context.get('requester'):
+            context['requester'] = ev.kwargs.get('user')
 
         for contributor in self.machineable.contributors.all():
             context['contributor'] = contributor
