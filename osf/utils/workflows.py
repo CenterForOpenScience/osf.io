@@ -348,7 +348,7 @@ PREPRINT_STATE_TRANSITIONS = [
         'trigger': 'withdraw',
         'source': [PreprintStates.INITIAL.db_name, PreprintStates.PENDING.db_name, PreprintStates.ACCEPTED.db_name],
         'dest': PreprintStates.WITHDRAWN.db_name,
-        'unless': ['post_moderation', 'pre_moderation'],
+        'unless': ['post_moderation'],
         'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
     },
 
