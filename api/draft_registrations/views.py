@@ -69,11 +69,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         if user.is_anonymous:
             raise exceptions.NotAuthenticated()
         # Returns DraftRegistrations for which a user is a contributor
-        return DraftRegistration.objects.filter(
-            Q(_contributors=user) &
-            Q(deleted__isnull=True) &
-            (Q(registered_node__isnull=True) | Q(registered_node__deleted__isnull=False)),
-        )
+        return user.draft_registrations_active
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
