@@ -1,5 +1,4 @@
 from rest_framework import permissions as drf_permissions, exceptions
-from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
