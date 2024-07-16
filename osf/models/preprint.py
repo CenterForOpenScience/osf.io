@@ -871,11 +871,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, PreprintStateMachin
         if not auth.user:
             return self.verified_publishable
 
-        return (self.verified_publishable or
-            (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-            self.has_permission(auth.user, ADMIN) or
-            (self.is_contributor(auth.user) and self.has_submitted_preprint)
-        )
+        if self.is_public:
+            return True
+
+        if auth.user.has_perm('view_submissions', self.provider):
+            return True
+
+        return self.is_contributor(auth.user)
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this preprint.
@@ -891,9 +893,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, PreprintStateMachin
             raise ValueError('Cannot pass both `auth` and `user`')
         user = user or auth.user
 
-        return (
-            user and ((self.has_permission(user, WRITE) and self.has_submitted_preprint) or self.has_permission(user, ADMIN))
-        )
+        return user and self.has_permission(user, WRITE)
 
     def get_contributor_order(self):
         # Method needed for ContributorMixin

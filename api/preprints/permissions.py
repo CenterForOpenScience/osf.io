@@ -28,8 +28,7 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
                 user_has_permissions = (
                     obj.verified_publishable or
                     (obj.is_public and auth.user.has_perm('view_submissions', obj.provider)) or
-                    obj.has_permission(auth.user, osf_permissions.ADMIN) or
-                    (obj.is_contributor(auth.user) and obj.machine_state != DefaultStates.INITIAL.db_name)
+                    obj.has_permission(auth.user, osf_permissions.ADMIN) or obj.is_contributor(auth.user)
                 )
                 return user_has_permissions
         else:

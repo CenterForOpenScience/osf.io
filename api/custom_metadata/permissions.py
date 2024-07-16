@@ -8,12 +8,14 @@ class CustomMetadataPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, GuidMetadataRecord)
 
-        delegate_obj = obj.guid.referent
-        if isinstance(delegate_obj, BaseFileNode):
-            delegate_obj = delegate_obj.target
+        resource = obj.guid.referent
+        if isinstance(resource, BaseFileNode):
+            resource = resource.target
         auth = get_user_auth(request)
 
+        print(resource.can_view(auth), obj, view)
+
         if request.method in permissions.SAFE_METHODS:
-            return delegate_obj.is_public or delegate_obj.can_view(auth)
+            return resource.is_public or resource.can_view(auth)
         else:
-            return delegate_obj.can_edit(auth)
+            return resource.can_edit(auth)

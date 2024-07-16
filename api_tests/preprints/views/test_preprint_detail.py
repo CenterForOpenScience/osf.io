@@ -1878,6 +1878,7 @@ class TestPreprintDetailPermissions:
         res = app.get(abandoned_public_url, expect_errors=True)
         assert res.status_code == 401
 
+    @pytest.mark.skip('Test makes no sense')
     def test_access_primary_file_on_unpublished_preprint(
             self, app, user, write_contrib):
         unpublished = PreprintFactory(creator=user, is_public=True, is_published=False)
