@@ -21,9 +21,6 @@ if SENTRY_DSN:
     with configure_scope() as scope:
         scope.set_tag('App', 'celery')
 
-if CeleryConfig.broker_use_ssl:
-    app.setup_security()
-
 
 @app.task
 def error_handler(task_id, task_name):
