@@ -8,32 +8,8 @@ from api.nodes.permissions import (
 )
 from osf.models import Preprint, OSFUser, PreprintContributor, Identifier
 from addons.osfstorage.models import OsfStorageFolder
+from osf.utils.workflows import DefaultStates
 from osf.utils import permissions as osf_permissions
-
-
-class CitationCanView(permissions.BasePermission):
-
-    acceptable_models = (Preprint,)
-
-    def has_object_permission(self, request, view, obj):
-        assert_resource_type(obj, self.acceptable_models)
-        auth = get_user_auth(request)
-        if not obj.is_published:
-            return obj.has_permission(auth.user, osf_permissions.ADMIN)
-
-        if not obj.is_public:
-            return obj.has_permission(auth.user, osf_permissions.WRITE)
-
-        if obj.is_published and obj.is_public:
-            return True
-        else:
-            if obj.has_permission(auth.user, osf_permissions.ADMIN):
-                return True
-
-        if not auth.user:
-            return False
-
-        return False
 
 
 class PreprintPublishedOrAdmin(permissions.BasePermission):
@@ -49,22 +25,13 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
             if auth.user is None:
                 return obj.verified_publishable
             else:
-                if obj.verified_publishable:
-                    return True
-
-                if obj.is_public and auth.user.has_perm('view_submissions', obj.provider):
-                    return True
-
-                if obj.has_permission(auth.user, osf_permissions.ADMIN):
-                    return True
-
-                if obj.is_contributor(auth.user):
-                    return True
-
-                if not obj.primary_file:
-                    return False
-
-                return False
+                user_has_permissions = (
+                    obj.verified_publishable or
+                    (obj.is_public and auth.user.has_perm('view_submissions', obj.provider)) or
+                    obj.has_permission(auth.user, osf_permissions.ADMIN) or
+                    (obj.is_contributor(auth.user) and obj.machine_state != DefaultStates.INITIAL.value)
+                )
+                return user_has_permissions
         else:
             if not obj.has_permission(auth.user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(detail='User must be an admin to make these preprint edits.')

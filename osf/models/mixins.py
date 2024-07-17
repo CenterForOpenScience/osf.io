@@ -10,14 +10,13 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 from framework import status
 from framework.auth import Auth
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import (
-    InvalidTriggerError,
     ValidationValueError,
     UserStateError,
     UserNotAffiliatedError,
@@ -43,7 +42,6 @@ from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
 from osf.utils.workflows import (
     DefaultStates,
-    DefaultTriggers,
     PreprintStates,
 )
 
@@ -801,7 +799,7 @@ class MachineableMixin(models.Model):
     machine_state = models.CharField(
         max_length=15,
         db_index=True,
-        choices=DefaultStates.char_field_choices(),
+        choices=DefaultStates.choices(),
         default=DefaultStates.INITIAL.db_name
     )
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -816,7 +814,7 @@ class MachineableMixin(models.Model):
 
     @property
     def state(self):
-        return self.States(self.machine_state)
+        return self.States.from_db_name(self.machine_state)
 
     @state.setter
     def state(self, new_state):
@@ -838,7 +836,6 @@ class NodeRequestableMixin(MachineableMixin):
     @property
     def States(self):
         return DefaultStates
-
 
 
 class PreprintRequestableMixin(MachineableMixin):
@@ -927,7 +924,7 @@ class ReviewProviderMixin(GuardianMixin):
     class Meta:
         abstract = True
 
-    reviews_workflow = models.CharField(null=True, blank=True, max_length=30, choices=Workflows.choices())
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=30, choices=ModerationWorkflows.choices())
     reviews_comments_private = models.BooleanField(null=True, blank=True)
     reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
@@ -2042,7 +2039,7 @@ class SpamOverrideMixin(SpamMixin):
             return
         if user.is_hammy:
             return
-        if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
+        if getattr(self, 'provider', False) and self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.value:
             return
         host = ''
         if request_headers:

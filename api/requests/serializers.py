@@ -24,7 +24,7 @@ class RequestSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', read_only=True)
     request_type = ser.ChoiceField(read_only=True, required=False, choices=RequestTypes.choices())
-    machine_state = ser.ChoiceField(read_only=True, required=False, choices=DefaultStates.char_field_choices())
+    machine_state = ser.ChoiceField(read_only=True, required=False, choices=DefaultStates.choices())
     comment = ser.CharField(required=False, allow_blank=True, max_length=65535)
     created = VersionedDateTimeField(read_only=True)
     modified = VersionedDateTimeField(read_only=True)

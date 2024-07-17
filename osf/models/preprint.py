@@ -116,7 +116,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
     @property
     def MachineClass(self):
         from osf.utils.machines import PreprintStateMachine
-        raise PreprintStateMachine
+        return PreprintStateMachine
 
     @property
     def States(self):
@@ -181,15 +181,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
 
     @property
     def pre_moderation(self):
-        from api.providers.workflows import Workflows
-        print('pre_moderation', self.provider.reviews_workflow == Workflows.PRE_MODERATION.db_name)
-        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.db_name
+        from osf.utils.workflows import ModerationWorkflows
+        print('pre_moderation', self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.db_name)
+        return self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.db_name
 
     @property
     def post_moderation(self):
-        from api.providers.workflows import Workflows
-        print('post_moderation', self.provider.reviews_workflow == Workflows.POST_MODERATION.db_name)
-        return self.provider.reviews_workflow == Workflows.POST_MODERATION.db_name
+        from osf.utils.workflows import ModerationWorkflows
+        print('post_moderation', self.provider.reviews_workflow == ModerationWorkflows.POST_MODERATION.db_name)
+        return self.provider.reviews_workflow == ModerationWorkflows.POST_MODERATION.db_name
 
     def perform_withdraw(self, ev):
         self.date_withdrawn = self.actions.last().created if self.actions.last() is not None else timezone.now()
@@ -209,8 +209,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
         )
 
     def resubmission_allowed(self, ev):
-        from api.providers.workflows import Workflows
-        return self.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+        from osf.utils.workflows import ModerationWorkflows
+        return self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.value
 
     def notify_resubmit(self, ev):
         notify.notify_resubmit(self, ev.kwargs['user'], self.actions.last())
@@ -285,20 +285,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
 
     @property
     def in_public_reviews_state(self):
-        from api.providers.workflows import PUBLIC_STATES
+        from osf.utils.workflows import PUBLIC_STATES
         public_states = PUBLIC_STATES.get(self.provider.reviews_workflow)
         if not public_states:
             return False
         return self.machine_state in public_states
-
-    @property
-    def state(self):
-        from osf.utils.machines import PreprintStates
-        return PreprintStates.from_db_name(self.machine_state)
-
-    @state.setter
-    def state(self, new_state):
-        self.machine_state = new_state.db_name
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save

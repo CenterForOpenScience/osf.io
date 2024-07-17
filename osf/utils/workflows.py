@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from enum import Enum, IntEnum, unique
+from enum import IntEnum, unique
 
 
 class ModerationEnum(IntEnum):
@@ -13,6 +13,10 @@ class ModerationEnum(IntEnum):
 
     @classmethod
     def char_field_choices(cls):
+        return tuple((member.db_name, member.readable_value) for member in cls)
+
+    @classmethod
+    def choices(cls):
         return tuple((member.db_name, member.readable_value) for member in cls)
 
     @classmethod
@@ -179,38 +183,7 @@ class SchemaResponseTriggers(ModerationEnum):
         return transition_to_trigger_mappings.get((from_state, to_state))
 
 
-class CollectionSubmissionsTriggers(ModerationEnum):
-    '''The acceptable 'triggers' to use with a CollectionSubmissionsAction'''
-    SUBMIT = 0
-    ACCEPT = 1
-    REJECT = 2
-    REMOVE = 3
-    RESUBMIT = 4
-    CANCEL = 5
-
-
-@unique
-class ChoiceEnum(Enum):
-    @classmethod
-    def choices(cls):
-        return tuple((v, str(v).title()) for v in cls.values())
-
-    @classmethod
-    def values(cls):
-        return tuple(c.value for c in cls)
-
-    @property
-    def db_name(self):
-        '''Return the value stored in the database for the enum member.
-
-        For parity with ModerationEnum.
-        '''
-        return self.value
-
-
 class DefaultStates(ModerationEnum):
-    '''The states of a CollectionSubmission object.'''
-
     INITIAL = 0
     PENDING = 1
     ACCEPTED = 2
@@ -225,6 +198,13 @@ class PreprintStates(ModerationEnum):
     WITHDRAWN = 4
 
 
+class DefaultTriggers(ModerationEnum):
+    SUBMIT = 0
+    ACCEPT = 1
+    REJECT = 2
+    EDIT_COMMENT = 3
+
+
 class PreprintStateTriggers(ModerationEnum):
     SUBMIT = 0
     ACCEPT = 1
@@ -233,68 +213,78 @@ class PreprintStateTriggers(ModerationEnum):
     WITHDRAW = 4
 
 
-class DefaultTriggers(ModerationEnum):
+class CollectionSubmissionsTriggers(ModerationEnum):
+    '''The acceptable 'triggers' to use with a CollectionSubmissionsAction'''
     SUBMIT = 0
     ACCEPT = 1
     REJECT = 2
-    EDIT_COMMENT = 3
+    REMOVE = 3
+    RESUBMIT = 4
+    CANCEL = 5
 
 
-REGISTRATION_STATES = [
-    ('INITIAL', 'initial'),
-    ('PENDING', 'pending'),
-    ('ACCEPTED', 'accepted'),
-    ('REJECTED', 'rejected'),
-    ('WITHDRAWN', 'withdrawn'),
-    ('EMBARGO', 'embargo'),
-    ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
-    ('PENDING_WITHDRAW_REQUEST', 'pending_withdraw_request'),
-    ('PENDING_WITHDRAW', 'pending_withdraw'),
-]
+class RegistrationStates(ModerationEnum):
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+    WITHDRAWN = 4
+    EMBARGO = 5
+    PENDING_EMBARGO_TERMINATION = 6
+    PENDING_WITHDRAW_REQUEST = 7
+    PENDING_WITHDRAW = 8
 
 
-RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
+class ChronosSubmissionStatus(ModerationEnum):
+    DRAFT = 0
+    SUBMITTED = 1
+    ACCEPTED = 2
+    PUBLISHED = 3
+    CANCELLED = 4
 
-CHRONOS_STATUS_STATES = [
-    ('DRAFT', 1),
-    ('SUBMITTED', 2),
-    ('ACCEPTED', 3),
-    ('PUBLISHED', 4),
-    ('CANCELLED', 5),
-]
 
-ChronosSubmissionStatus = ChoiceEnum('ChronosSubmissionStatus', CHRONOS_STATUS_STATES)
+@unique
+class RequestTypes(ModerationEnum):
+    ACCESS = 0
+    WITHDRAWAL = 1
+
+@unique
+class ModerationWorkflows(ModerationEnum):
+    NONE = 0
+    PRE_MODERATION = 1
+    POST_MODERATION = 2
+    HYBRID_MODERATION = 3
 
 
 DEFAULT_TRANSITIONS = [
     {
         'trigger': 'run_submit',
-        'source': [DefaultStates.INITIAL.db_name],
-        'dest': DefaultStates.PENDING.db_name,
+        'source': [DefaultStates.INITIAL],
+        'dest': DefaultStates.PENDING,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
     },
     {
         'trigger': 'run_submit',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
+        'source': [DefaultStates.PENDING, DefaultStates.REJECTED],
         'conditions': 'resubmission_allowed',
-        'dest': DefaultStates.PENDING.db_name,
+        'dest': DefaultStates.PENDING,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
     },
     {
         'trigger': 'run_accept',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
-        'dest': DefaultStates.ACCEPTED.db_name,
+        'source': [DefaultStates.PENDING, DefaultStates.REJECTED],
+        'dest': DefaultStates.ACCEPTED,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
         'trigger': 'run_reject',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.ACCEPTED.db_name],
-        'dest': DefaultStates.REJECTED.db_name,
+        'source': [DefaultStates.PENDING, DefaultStates.ACCEPTED],
+        'dest': DefaultStates.REJECTED,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
         'trigger': 'run_edit_comment',
-        'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name, DefaultStates.ACCEPTED.db_name],
+        'source': [DefaultStates.PENDING, DefaultStates.REJECTED, DefaultStates.ACCEPTED],
         'dest': '=',
         'after': ['save_action', 'save_changes', 'notify_edit_comment'],
     },
@@ -582,7 +572,19 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
     },
 ]
 
-@unique
-class RequestTypes(ChoiceEnum):
-    ACCESS = 'access'
-    WITHDRAWAL = 'withdrawal'
+
+PUBLIC_STATES = {
+    ModerationWorkflows.NONE.value: (
+        DefaultStates.INITIAL.db_name,
+        DefaultStates.PENDING.db_name,
+        DefaultStates.ACCEPTED.db_name,
+        DefaultStates.REJECTED.db_name,
+    ),
+    ModerationWorkflows.PRE_MODERATION.value: (
+        DefaultStates.ACCEPTED.db_name,
+    ),
+    ModerationWorkflows.POST_MODERATION.value: (
+        DefaultStates.PENDING.db_name,
+        DefaultStates.ACCEPTED.db_name,
+    ),
+}

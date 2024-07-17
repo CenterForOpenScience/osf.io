@@ -1,7 +1,7 @@
 from django.utils import timezone
 from transitions import Machine, MachineError
 
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
@@ -207,7 +207,7 @@ class PreprintRequestMachine(BaseMachine):
 
     def auto_approval_allowed(self):
         # Returns True if the provider is pre-moderated and the preprint is never public.
-        return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value and not self.machineable.target.ever_public
+        return self.machineable.target.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.value and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
         context = self.get_context()
@@ -249,8 +249,8 @@ class PreprintRequestMachine(BaseMachine):
 class ApprovalsMachine(Machine):
     '''ApprovalsMachine manages state transitions for Sanction and SchemaResponses entities.
 
-    The valid machine states for a Sanction object are defined in Workflows.ApprovalStates.
-    The valid transitions between these states are defined in Workflows.APPROVAL_TRANSITIONS.
+    The valid machine states for a Sanction object are defined in ModerationWorkflows.ApprovalStates.
+    The valid transitions between these states are defined in ModerationWorkflows.APPROVAL_TRANSITIONS.
 
     The ApprovaslMachine can be used by by instantiating an ApprovalsMachine and attaching the
     desired model with the 'model' kwarg. Attached models will inherit the 'trigger' functions

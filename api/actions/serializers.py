@@ -110,12 +110,12 @@ class BaseActionSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
 
-    trigger = ser.ChoiceField(choices=DefaultTriggers.char_field_choices())
+    trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
     comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
-    from_state = ser.ChoiceField(choices=DefaultStates.char_field_choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=DefaultStates.char_field_choices(), read_only=True)
+    from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
 
     date_created = ser.DateTimeField(source='created', read_only=True)
     date_modified = ser.DateTimeField(source='modified', read_only=True)
@@ -149,13 +149,13 @@ class BaseActionSerializer(JSONAPISerializer):
         visible = validated_data.get('visible', '')
         try:
             if trigger == DefaultTriggers.ACCEPT.db_name:
-                target.accept(user=user, comment=comment, permissions=permissions, visible=visible)
+                target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
             if trigger == DefaultTriggers.REJECT.db_name:
-                target.reject(user=user, comment=comment)
+                target.run_reject(user=user, comment=comment)
             if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
-                target.edit_comment(user=user, comment=comment)
+                target.run_edit_comment(user=user, comment=comment)
             if trigger == DefaultTriggers.SUBMIT.db_name:
-                target.submit(user=user, comment=comment)
+                target.run_submit(user=user, comment=comment)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
             raise Conflict(str(e))

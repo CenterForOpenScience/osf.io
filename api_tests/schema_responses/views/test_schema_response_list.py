@@ -1,7 +1,7 @@
 import pytest
 from django.utils import timezone
 
-from api.providers.workflows import Workflows as ModerationWorkflows
+from osf.utils.workflows import ModerationWorkflows
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,

@@ -1,6 +1,6 @@
 import pytest
 
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 from framework.exceptions import PermissionsError
 from nose.tools import assert_raises
 from osf.migrations import update_provider_auth_groups
@@ -210,7 +210,7 @@ class TestModeratedFlows():
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
         provider.get_group('admin').user_set.add(provider_admin)
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         return provider
 
@@ -543,7 +543,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         embargo.save()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         registration.provider = provider
         registration.update_moderation_state()
@@ -651,7 +651,7 @@ class TestModerationActions:
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         return provider
 

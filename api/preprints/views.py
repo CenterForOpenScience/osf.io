@@ -2,7 +2,7 @@ import re
 from distutils.version import StrictVersion
 
 from rest_framework import generics
-from rest_framework.exceptions import MethodNotAllowed, NotFound
+from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -51,7 +51,6 @@ from api.preprints.permissions import (
     AdminOrPublic,
     ContributorDetailPermissions,
     PreprintFilesPermissions,
-    CitationCanView,
 )
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -233,7 +232,6 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        CitationCanView,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
@@ -245,7 +243,12 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
 
     def get_object(self):
         preprint = self.get_preprint()
-        return preprint.csl
+        auth = get_user_auth(self.request)
+
+        if preprint.can_view(auth):
+            return preprint.csl
+
+        raise PermissionDenied if auth.user else NotAuthenticated
 
 
 class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
@@ -254,7 +257,6 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        CitationCanView,
     )
 
     required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
@@ -266,15 +268,19 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
 
     def get_object(self):
         preprint = self.get_preprint()
+        auth = get_user_auth(self.request)
         style = self.kwargs.get('style_id')
 
-        try:
-            citation = render_citation(node=preprint, style=style)
-        except ValueError as err:  # style requested could not be found
-            csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
-            raise NotFound('{} is not a known style.'.format(csl_name))
+        if preprint.can_view(auth):
+            try:
+                citation = render_citation(node=preprint, style=style)
+            except ValueError as err:  # style requested could not be found
+                csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
+                raise NotFound('{} is not a known style.'.format(csl_name))
 
-        return {'citation': citation, 'id': style}
+            return {'citation': citation, 'id': style}
+
+        raise PermissionDenied if auth.user else NotAuthenticated
 
 
 class PreprintIdentifierList(IdentifierList, PreprintMixin):

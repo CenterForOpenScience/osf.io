@@ -11,7 +11,7 @@ from django.utils import timezone
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 
 from nose.tools import *  # noqa PEP8 asserts
 from waffle.testutils import override_switch
@@ -496,7 +496,7 @@ class TestModeratorRegistrationViews:
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         return provider
 

@@ -18,7 +18,7 @@ from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from osf_tests.factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 from osf.migrations import update_provider_auth_groups
 from osf.models.action import RegistrationAction
 from osf_tests.management_commands.test_migration_registration_responses import (
@@ -662,7 +662,7 @@ class TestRegistationModerationStates:
         provider = factories.RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         return provider
 
@@ -853,7 +853,7 @@ class TestForcedWithdrawal:
         provider = factories.RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         return provider
 

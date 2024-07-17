@@ -26,9 +26,9 @@ class BaseAction(ObjectIDMixin, BaseModel):
 
     creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
 
-    trigger = models.CharField(max_length=31, choices=DefaultTriggers.char_field_choices())
-    from_state = models.CharField(max_length=31, choices=DefaultStates.char_field_choices())
-    to_state = models.CharField(max_length=31, choices=DefaultStates.char_field_choices())
+    trigger = models.CharField(max_length=31, choices=DefaultTriggers.choices())
+    from_state = models.CharField(max_length=31, choices=DefaultStates.choices())
+    to_state = models.CharField(max_length=31, choices=DefaultStates.choices())
 
     comment = models.TextField(blank=True)
 

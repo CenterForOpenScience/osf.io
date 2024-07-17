@@ -956,10 +956,10 @@ class ReviewActionFactory(DjangoModelFactory):
     class Meta:
         model = models.ReviewAction
 
-    trigger = FuzzyChoice(choices=DefaultTriggers.char_field_choices())
+    trigger = FuzzyChoice(choices=DefaultTriggers.choices())
     comment = factory.Faker('text')
-    from_state = FuzzyChoice(choices=DefaultStates.char_field_choices())
-    to_state = FuzzyChoice(choices=DefaultStates.char_field_choices())
+    from_state = FuzzyChoice(choices=DefaultStates.choices())
+    to_state = FuzzyChoice(choices=DefaultStates.choices())
 
     target = factory.SubFactory(PreprintFactory)
     creator = factory.SubFactory(AuthUserFactory)

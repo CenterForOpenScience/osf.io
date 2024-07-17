@@ -3,7 +3,7 @@ import pytest
 
 from nose.tools import assert_raises
 
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 from framework.exceptions import PermissionsError
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
@@ -833,7 +833,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         provider = RegistrationProviderFactory()
         provider.update_group_permissions()
         _ensure_subscriptions(provider)
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         return provider
 

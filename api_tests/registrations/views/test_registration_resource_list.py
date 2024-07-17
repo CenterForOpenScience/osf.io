@@ -2,7 +2,7 @@ import pytest
 
 from django.utils import timezone
 
-from api.providers.workflows import Workflows as ModerationWorkflows
+from osf.utils.workflows import ModerationWorkflows
 from api_tests.resources.utils import configure_test_preconditions
 from api_tests.utils import UserRoles
 from osf.models import Outcome
