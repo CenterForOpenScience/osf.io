@@ -6,6 +6,15 @@ It exposes the WSGI callable as a module-level variable named ``application``.
 For more information on this file, see
 https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 """
+from website import settings
+
+if settings.NEWRELIC_INI_PATH:
+    try:
+        import newrelic.agent
+        newrelic.agent.initialize(settings.NEWRELIC_INI_PATH)
+    except Exception as err:
+        raise Exception(f'Unable to initialize newrelic! {err}')
+
 from api.base import settings as api_settings
 
 import os  # noqa
