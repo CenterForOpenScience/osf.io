@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0020_abstractprovider_advertise_on_discover_page'),
+        ('osf', '0021_preprint_custom_publication_citation'),
     ]
 
     operations = [
