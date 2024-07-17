@@ -164,7 +164,7 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, co
     if concurrency:
         cmd += f' --concurrency={concurrency}'
     if max_tasks_per_child:
-        cmd += f' --maxtasksperchild={max_tasks_per_child}'
+        cmd += f' --max-tasks-per-child={max_tasks_per_child}'
     ctx.run(bin_prefix(cmd), pty=True)
 
 
