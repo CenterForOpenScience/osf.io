@@ -8,9 +8,12 @@ https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 """
 from website import settings
 
-if not settings.DEBUG_MODE:
-    import newrelic.agent
-    newrelic.agent.initialize(settings.NEWRELIC_INI_PATH)
+if settings.NEWRELIC_INI_PATH:
+    try:
+        import newrelic.agent
+        newrelic.agent.initialize(settings.NEWRELIC_INI_PATH)
+    except Exception as err:
+        raise Exception(f'Unable to initialize newrelic! {err}')
 
 import os  # noqa
 from django.core.wsgi import get_wsgi_application  # noqa
