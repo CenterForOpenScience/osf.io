@@ -786,10 +786,17 @@ class CommentableMixin(object):
 
 
 class MachineableMixin(models.Model):
-    TriggersClass = DefaultTriggers
 
     class Meta:
         abstract = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state_machine = self.MachineClass(
+            model=self,
+            active_state=self.state,
+            state_property_name='state'
+        )
 
     machine_state = models.CharField(
         max_length=15,
@@ -799,35 +806,21 @@ class MachineableMixin(models.Model):
     )
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
-    def validate_transition(self, transition_name, user, **kwargs):
-        """
-        Run the specified state transition and create a corresponding Action.
+    @property
+    def MachineClass(self):
+        raise NotImplementedError()
 
-        Params:
-            transition_name: The name of the transition to run.
-            user: The user triggering this transition.
-            kwargs: Additional parameters required by the transition.
-        """
-        machine = self.MachineClass(self, 'machine_state')
-        transition = getattr(machine, transition_name)(user=user, **kwargs)
+    @property
+    def States(self):
+        raise NotImplementedError()
 
-        if not transition:
-            valid_triggers = machine.get_triggers(self.machine_state)
-            raise InvalidTriggerError(transition_name, self.machine_state, valid_triggers)
+    @property
+    def state(self):
+        return self.States(self.machine_state)
 
-        return machine.action
-
-    def run_submit(self, user):
-        return self.validate_transition('submit', user=user)
-
-    def run_accept(self, user, comment, **kwargs):
-        return self.validate_transition('accept', user=user, comment=comment, **kwargs)
-
-    def run_reject(self, user, comment):
-        return self.validate_transition('reject', user=user, comment=comment)
-
-    def run_edit_comment(self, user, comment):
-        return self.validate_transition('edit_comment', user=user, comment=comment)
+    @state.setter
+    def state(self, new_state):
+        self.machine_state = new_state.db_name
 
 
 class NodeRequestableMixin(MachineableMixin):
@@ -838,7 +831,14 @@ class NodeRequestableMixin(MachineableMixin):
     class Meta:
         abstract = True
 
-    MachineClass = NodeRequestMachine
+    @property
+    def MachineClass(self):
+        return NodeRequestMachine
+
+    @property
+    def States(self):
+        return DefaultStates
+
 
 
 class PreprintRequestableMixin(MachineableMixin):
@@ -849,7 +849,13 @@ class PreprintRequestableMixin(MachineableMixin):
     class Meta:
         abstract = True
 
-    MachineClass = PreprintRequestMachine
+    @property
+    def MachineClass(self):
+        return PreprintRequestMachine
+
+    @property
+    def States(self):
+        return DefaultStates
 
 
 class GuardianMixin(models.Model):

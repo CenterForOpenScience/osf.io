@@ -45,7 +45,7 @@ from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .identifiers import IdentifierMixin, Identifier
-from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
+from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin, MachineableMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
 from framework.sentry import log_exception
@@ -110,17 +110,18 @@ class PreprintManager(models.Manager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMixin, DescriptionMixin,
+class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, BaseModel, TitleMixin, DescriptionMixin,
                Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    @property
+    def MachineClass(self):
         from osf.utils.machines import PreprintStateMachine
-        self.state_machine = PreprintStateMachine(
-            model=self,
-            active_state=self.state,
-            state_property_name='state'
-        )
+        raise PreprintStateMachine
+
+    @property
+    def States(self):
+        from osf.utils.workflows import PreprintStates
+        return PreprintStates
 
     machine_state = models.CharField(
         max_length=15,
@@ -128,7 +129,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel, TitleMix
         choices=PreprintStates.char_field_choices(),
         default=PreprintStates.INITIAL.db_name
     )
-    date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
     def _validate_state(self, ev):
         from django.core.exceptions import ValidationError

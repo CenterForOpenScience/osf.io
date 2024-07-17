@@ -268,32 +268,32 @@ ChronosSubmissionStatus = ChoiceEnum('ChronosSubmissionStatus', CHRONOS_STATUS_S
 
 DEFAULT_TRANSITIONS = [
     {
-        'trigger': 'submit',
+        'trigger': 'run_submit',
         'source': [DefaultStates.INITIAL.db_name],
         'dest': DefaultStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
     },
     {
-        'trigger': 'submit',
+        'trigger': 'run_submit',
         'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
         'conditions': 'resubmission_allowed',
         'dest': DefaultStates.PENDING.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
     },
     {
-        'trigger': 'accept',
+        'trigger': 'run_accept',
         'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name],
         'dest': DefaultStates.ACCEPTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': 'reject',
+        'trigger': 'run_reject',
         'source': [DefaultStates.PENDING.db_name, DefaultStates.ACCEPTED.db_name],
         'dest': DefaultStates.REJECTED.db_name,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': 'edit_comment',
+        'trigger': 'run_edit_comment',
         'source': [DefaultStates.PENDING.db_name, DefaultStates.REJECTED.db_name, DefaultStates.ACCEPTED.db_name],
         'dest': '=',
         'after': ['save_action', 'save_changes', 'notify_edit_comment'],

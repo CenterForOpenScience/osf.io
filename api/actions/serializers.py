@@ -149,13 +149,13 @@ class BaseActionSerializer(JSONAPISerializer):
         visible = validated_data.get('visible', '')
         try:
             if trigger == DefaultTriggers.ACCEPT.db_name:
-                return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
+                target.accept(user=user, comment=comment, permissions=permissions, visible=visible)
             if trigger == DefaultTriggers.REJECT.db_name:
-                return target.run_reject(user, comment)
+                target.reject(user=user, comment=comment)
             if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
-                return target.run_edit_comment(user, comment)
+                target.edit_comment(user=user, comment=comment)
             if trigger == DefaultTriggers.SUBMIT.db_name:
-                return target.run_submit(user)
+                target.submit(user=user, comment=comment)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
             raise Conflict(str(e))
