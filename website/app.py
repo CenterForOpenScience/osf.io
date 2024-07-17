@@ -95,6 +95,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     # The settings module
     settings = importlib.import_module(settings_module)
 
+    if not settings.DEBUG_MODE:
+        import newrelic.agent
+        newrelic.agent.initialize(settings.NEWRELIC_INI_PATH)
+
     init_addons(settings, routes)
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'w') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)

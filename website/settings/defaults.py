@@ -2143,3 +2143,7 @@ PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
 DEFAULT_DRAFT_NODE_TITLE = 'Untitled'
 USE_COLOR = False
+
+# path to newrelic.ini config file
+# newrelic is only enabled when DEBUG_MODE is False
+NEWRELIC_INI_PATH = None
