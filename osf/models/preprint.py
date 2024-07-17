@@ -26,7 +26,7 @@ from .user import OSFUser
 from .provider import PreprintProvider
 from .preprintlog import PreprintLog
 from .contributor import PreprintContributor
-from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
+from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin, AffiliatedInstitutionMixin
 from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
@@ -109,7 +109,7 @@ class PreprintManager(models.Manager):
 
 
 class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
-        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
+        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
@@ -141,6 +141,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                          ('no', 'No'),
                          ('not_applicable', 'Not applicable')
                          ]
+
+    # overrides AffiliatedInstitutionMixin
+    affiliated_institutions = models.ManyToManyField('Institution', related_name='preprints')
 
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,

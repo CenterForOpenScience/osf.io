@@ -297,9 +297,10 @@ class AffiliatedInstitutionMixin(models.Model):
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
-    def add_affiliated_institution(self, inst, user, save=False, log=True):
+    def add_affiliated_institution(self, inst, user, log=True):
         if not user.is_affiliated_with_institution(inst):
-            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
+            raise UserNotAffiliatedError(f'User is not affiliated with {inst}')
+
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
             self.update_search()
