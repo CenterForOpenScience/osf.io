@@ -700,7 +700,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             csl['DOI'] = doi
 
         if self.logs.exists():
-            csl['issued'] = datetime_to_csl(self.logs.latest().date)
+            csl['issued'] = datetime_to_csl(self.registered_date)
 
         return csl
 
