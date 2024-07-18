@@ -40,6 +40,8 @@ def update_institutions(resource, new_institutions, user, post=False):
 
 
 def update_institutions_if_user_associated(resource, desired_institutions_data, user):
+    """Update institutions only if the user is associated with the institutions. Otherwise, raise an exception."""
+
     desired_institutions = Institution.objects.filter(_id__in=[item['_id'] for item in desired_institutions_data])
 
     # If a user wants to affiliate with a resource check that they have it.
@@ -50,6 +52,7 @@ def update_institutions_if_user_associated(resource, desired_institutions_data, 
             raise exceptions.PermissionDenied(detail=f'User needs to be affiliated with {inst.name}')
 
     # If a user doesn't include an affiliation they have, then remove it.
+    resource_institutions = resource.affiliated_institutions.all()
     for inst in user.get_affiliated_institutions():
-        if inst in resource.affiliated_institutions.all() and inst not in desired_institutions:
+        if inst in resource_institutions and inst not in desired_institutions:
             resource.remove_affiliated_institution(inst, user)

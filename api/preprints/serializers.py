@@ -561,14 +561,12 @@ class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
         user = self.context['request'].user
         update_institutions_if_user_associated(preprint, validated_data['data'], user)
         preprint.save()
-
         return self.make_instance_obj(preprint)
 
     def create(self, validated_data):
         instance = self.context['view'].get_object()
-        user = self.context['request'].user
         preprint = instance['self']
-        update_institutions_if_user_associated(preprint, validated_data['data'], user, post=True)
+        user = self.context['request'].user
+        update_institutions_if_user_associated(preprint, validated_data['data'], user)
         preprint.save()
-
         return self.make_instance_obj(preprint)

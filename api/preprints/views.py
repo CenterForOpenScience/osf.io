@@ -44,14 +44,11 @@ from api.preprints.serializers import (
     PreprintsInstitutionsRelationshipSerializer,
 )
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import (
-    NodeCitationStyleSerializer,
-)
-
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeStorageProvidersList, NodeStorageProvider
+from api.nodes.serializers import NodeCitationStyleSerializer
 from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
     PreprintPublishedOrWrite,
