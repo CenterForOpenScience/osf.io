@@ -103,8 +103,8 @@ class PreprintMachineStateView(PreprintMixin, GuidView):
 
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-        new_machine_state = request.POST['machine_state']
-        if preprint.machine_state != new_machine_state:
+        new_machine_state = request.POST.get('machine_state')
+        if new_machine_state and preprint.machine_state != new_machine_state:
             preprint.machine_state = new_machine_state
             preprint.save()
             preprint.refresh_from_db()
