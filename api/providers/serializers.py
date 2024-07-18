@@ -115,7 +115,7 @@ class CollectionProviderSerializer(ProviderSerializer):
         related_view='providers:collection-providers:provider-moderator-list',
         related_view_kwargs={'provider_id': '<_id>'},
     )
-    reviews_workflow = ser.ChoiceField(choices=ModerationWorkflows.choices(), read_only=True)
+    reviews_workflow = ser.ChoiceField(choices=ModerationWorkflows.choices(legacy=True), read_only=True)
 
     subscriptions = RelationshipField(
         related_view='providers:collection-providers:notification-subscription-list',
@@ -166,7 +166,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'permissions',
     ])
 
-    reviews_workflow = ser.ChoiceField(choices=ModerationWorkflows.choices(), read_only=True)
+    reviews_workflow = ser.ChoiceField(choices=ModerationWorkflows.choices(legacy=True), read_only=True)
     reviews_comments_anonymous = ser.BooleanField(read_only=True)
     allow_updates = ser.BooleanField(read_only=True)
     allow_bulk_uploads = ser.BooleanField(read_only=True)
@@ -216,7 +216,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
     advertise_on_discover_page = ser.BooleanField(read_only=True)
 
     # Reviews settings are the only writable fields
-    reviews_workflow = ser.ChoiceField(choices=ModerationWorkflows.choices())
+    reviews_workflow = ser.ChoiceField(choices=ModerationWorkflows.choices(legacy=True))
     reviews_comments_private = ser.BooleanField()
     reviews_comments_anonymous = ser.BooleanField()
 

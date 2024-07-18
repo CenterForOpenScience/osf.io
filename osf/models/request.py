@@ -12,7 +12,7 @@ class AbstractRequest(BaseModel, ObjectIDMixin):
     class Meta:
         abstract = True
 
-    request_type = models.CharField(max_length=31, choices=RequestTypes.choices())
+    request_type = models.CharField(max_length=31, choices=RequestTypes.choices(legacy=True))
     creator = models.ForeignKey('OSFUser', related_name='submitted_%(class)s', on_delete=models.CASCADE)
     comment = models.TextField(null=True, blank=True)
 

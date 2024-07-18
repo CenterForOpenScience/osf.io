@@ -30,7 +30,7 @@ class ChronosSubmission(BaseModel):
 
     submitter = models.ForeignKey('osf.OSFUser', null=False, blank=False, on_delete=models.CASCADE)
 
-    status = models.IntegerField(null=True, blank=True, default=None, choices=ChronosSubmissionStatus.choices())
+    status = models.IntegerField(null=True, blank=True, default=None, choices=ChronosSubmissionStatus.choices(legacy_integer=True))
 
     raw_response = DateTimeAwareJSONField(null=False, blank=False)
     submission_url = models.TextField(null=False, blank=False)

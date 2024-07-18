@@ -266,15 +266,13 @@ class TestReviewActionCreateRoot(object):
                 preprint.refresh_from_db()
                 assert preprint.machine_state == to_state
                 if preprint.in_public_reviews_state:
-                    if trigger != 'edit_comment':
-                        assert preprint.is_published
-                        # TODO nanosecond assert preprint.date_published == action.created
+                    assert preprint.is_published
+                    assert preprint.date_published == action.created
                 else:
                     assert not preprint.is_published
                     assert preprint.date_published is None
 
                 if trigger == 'edit_comment':
-                    pass
-                    # TODO: assert preprint.date_last_transitioned is None
+                    assert preprint.date_last_transitioned is None
                 else:
                     assert preprint.date_last_transitioned == action.created

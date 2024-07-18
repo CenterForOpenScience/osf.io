@@ -16,8 +16,15 @@ class ModerationEnum(IntEnum):
         return tuple((member.db_name, member.readable_value) for member in cls)
 
     @classmethod
-    def choices(cls):
-        return tuple((member.db_name, member.readable_value) for member in cls)
+    def choices(cls, legacy=False, legacy_integer=False, legacy_trigger=False):
+        if legacy:
+            return tuple((member.legacy_value, str(member.legacy_value).title()) for member in cls)
+        elif legacy_integer:
+            return tuple((member.value, str(member.value)) for member in cls)
+        elif legacy_trigger:
+            return tuple((member.db_name, member.db_name.title()) for member in cls)
+        else:
+            return tuple((member.db_name, member.readable_value) for member in cls)
 
     @classmethod
     def from_db_name(cls, state_db_name):
@@ -28,8 +35,17 @@ class ModerationEnum(IntEnum):
         return super().name.title().replace('_', '')
 
     @property
+    def legacy_value(self):
+        if super().name == 'NONE':
+            return None
+        return super().name.lower().replace('_', '-')
+
+    @property
     def db_name(self):
         return self.name.lower()
+
+    def __str__(self):
+        return self.db_name
 
     @classmethod
     def excluding(cls, *excluded_roles):
@@ -236,11 +252,11 @@ class RegistrationStates(ModerationEnum):
 
 
 class ChronosSubmissionStatus(ModerationEnum):
-    DRAFT = 0
-    SUBMITTED = 1
-    ACCEPTED = 2
-    PUBLISHED = 3
-    CANCELLED = 4
+    DRAFT = 1
+    SUBMITTED = 2
+    ACCEPTED = 3
+    PUBLISHED = 4
+    CANCELLED = 5
 
 
 @unique
