@@ -106,7 +106,11 @@ class PreprintMachineStateView(PreprintMixin, GuidView):
         new_machine_state = request.POST.get('machine_state')
         if new_machine_state and preprint.machine_state != new_machine_state:
             preprint.machine_state = new_machine_state
-            preprint.save()
+            try:
+                preprint.save()
+            except Exception as e:
+                messages.error(self.request, e.message)
+
             preprint.refresh_from_db()
 
         return redirect(self.get_success_url())
