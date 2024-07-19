@@ -10,6 +10,8 @@ urlpatterns = [
     re_path(r'^known_ham$', views.PreprintKnownHamList.as_view(), name='known-ham'),
     re_path(r'^withdrawal_requests$', views.PreprintWithdrawalRequestList.as_view(), name='withdrawal-requests'),
     re_path(r'^(?P<guid>[a-z0-9]+)/$', views.PreprintView.as_view(), name='preprint'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/change_provider/$', views.PreprintProviderChangeView.as_view(), name='preprint-provider'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/machine_state/$', views.PreprintMachineStateView.as_view(), name='preprint-machine-state'),
     re_path(r'^(?P<guid>[a-z0-9]+)/reindex_share_preprint/$', views.PreprintReindexShare.as_view(),
         name='reindex-share-preprint'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$', views.PreprintRemoveContributorView.as_view(),

@@ -57,7 +57,7 @@ class TestPreprintView:
 
     @pytest.fixture()
     def plain_view(self):
-        return views.PreprintView
+        return views.PreprintProviderChangeView
 
     @pytest.fixture()
     def view(self, req, plain_view):
@@ -589,3 +589,63 @@ class TestPreprintWithdrawalRequests:
             assert original_comment == withdrawal_request.target.withdrawal_justification
         else:
             assert not withdrawal_request.target.withdrawal_justification
+
+
+@pytest.mark.urls('admin.base.urls')
+@pytest.mark.django_db
+class TestPreprintMachineStateView:
+
+    @pytest.fixture()
+    def preprint(self):
+        return PreprintFactory()
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def admin_user(self):
+        admin_user = AuthUserFactory()
+        admin_user.is_admin = True
+        admin_user.save()
+        return admin_user
+
+    @pytest.fixture()
+    def req(self, user):
+        req = RequestFactory().post('/fake_path')
+        req.user = user
+        return req
+
+    @pytest.fixture()
+    def admin_req(self, admin_user):
+        req = RequestFactory().post('/fake_path')
+        req.user = admin_user
+        return req
+
+    def test_post_changes_machine_state(self, admin_req, preprint):
+        new_state = 'new_state'
+        admin_req.POST = {'machine_state': new_state}
+
+        view = setup_view(views.PreprintMachineStateView(), admin_req, guid=preprint._id)
+        response = view.post(admin_req)
+
+        preprint.refresh_from_db()
+        assert preprint.machine_state == new_state
+        assert response.status_code == 302
+
+    def test_post_no_change_in_machine_state(self, admin_req, preprint):
+        current_state = preprint.machine_state
+        admin_req.POST = {'machine_state': current_state}
+
+        view = setup_view(views.PreprintMachineStateView(), admin_req, guid=preprint._id)
+        response = view.post(admin_req)
+
+        preprint.refresh_from_db()
+        assert preprint.machine_state == current_state
+        assert response.status_code == 302
+
+    def test_no_permission_raises_error(self, req, preprint):
+        request = RequestFactory().post(reverse('preprints:preprint-machine-state', kwargs={'guid': preprint._id}))
+        request.user = req.user
+        with pytest.raises(PermissionDenied):
+            views.PreprintMachineStateView.as_view()(request, guid=preprint._id)
