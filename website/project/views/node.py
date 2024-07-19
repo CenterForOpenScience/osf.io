@@ -507,8 +507,8 @@ def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
                         primary=primary,
-                        embed_contributors=True,
-                        embed_descendants=True
+                        embed_contributors=False,
+                        embed_descendants=False
                         )
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
@@ -1509,3 +1509,26 @@ def get_pointed(auth, node, **kwargs):
         serialize_pointer(each.parent, auth)
         for each in NodeRelation.objects.filter(child=node, is_node_link=True)
     ]}
+
+@process_token_or_pass
+@must_be_valid_project(retractions_valid=True)
+@must_be_contributor_or_public
+@ember_flag_is_active(features.EMBER_PROJECT_DETAIL)
+def get_components(auth, node, **kwargs):
+    node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    if node.is_deleted:
+        raise HTTPError(http_status.HTTP_410_GONE)
+
+    user = auth.user
+    data = {
+        'user': {
+            'permissions': node.get_permissions(user) if user else [],
+        }
+    }
+    descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
+    data['user']['can_sort'] = all_readable
+    data['nodes'] = [
+        serialize_node_summary(node=each, auth=auth, primary=False, show_path=False)
+        for each in descendants
+    ]
+    return data
