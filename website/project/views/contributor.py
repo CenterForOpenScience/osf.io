@@ -1035,12 +1035,8 @@ def claim_user_form(auth, **kwargs):
 def claim_user_activate(**kwargs):
     uid, pid = kwargs['uid'], kwargs['pid']
     user = OSFUser.load(uid)
-    if not user:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-    try:
-        url = user.get_claim_url(project_id=pid)
-    except ValueError:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+    url = user.get_claim_url(project_id=pid)
+
     return {'url': url}
 
 

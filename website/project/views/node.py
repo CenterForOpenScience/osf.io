@@ -354,44 +354,16 @@ def node_addons(auth, node, **kwargs):
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
 
     try:
-        institution_id = None
-        user_institution = None
-        if auth.user:
-            user_institution = auth.user.affiliated_institutions.first()
-        for node_institution in node.affiliated_institutions.all():
-            if not user_institution or node_institution.id == user_institution.id:
-                institution_id = node_institution.id
-                break
-        if institution_id:
-            timestamp_pattern = RdmTimestampGrantPattern.objects.get(institution_id=institution_id, node_guid=node._id)
-        else:
-            timestamp_pattern = RdmTimestampGrantPattern.objects.filter(node_guid=node._id).first()
-        if timestamp_pattern:
-            ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
-        else:
-            timestamp_pattern = None
+        timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
+        ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
     except ObjectDoesNotExist:
         timestamp_pattern = None
 
     return ret
 def get_timestamp_pattern_division(auth, node, **kwargs):
     try:
-        institution_id = None
-        user_institution = None
-        if auth.user:
-            user_institution = auth.user.affiliated_institutions.first()
-        for node_institution in node.affiliated_institutions.all():
-            if not user_institution or node_institution.id == user_institution.id:
-                institution_id = node_institution.id
-                break
-        if institution_id:
-            timestamp_pattern = RdmTimestampGrantPattern.objects.get(institution_id=institution_id, node_guid=node._id)
-        else:
-            timestamp_pattern = RdmTimestampGrantPattern.objects.filter(node_guid=node._id).first()
-        if timestamp_pattern:
-            timestamp_pattern_division = timestamp_pattern.timestamp_pattern_division
-        else:
-            timestamp_pattern_division = None
+        timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
+        timestamp_pattern_division = timestamp_pattern.timestamp_pattern_division
     except ObjectDoesNotExist:
         timestamp_pattern_division = None
 
