@@ -14,7 +14,7 @@ from api.base.serializers import (
 from osf.exceptions import NodeStateError, ValidationValueError
 
 
-class UpdateSubjectsMixin(object):
+class UpdateSubjectsMixin:
     def update_subjects_method(self, resource, subjects, auth):
         # Method to update subjects on resource
         raise NotImplementedError()

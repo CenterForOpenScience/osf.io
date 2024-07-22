@@ -1,6 +1,6 @@
-import bleach
-
 from rest_framework import serializers as ser
+
+from framework.utils import sanitize_html
 from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
@@ -20,7 +20,7 @@ from api.base.serializers import (
 from api.base.versioning import get_kebab_snake_case_field
 
 
-class CommentReport(object):
+class CommentReport:
     def __init__(self, user_id, category, text):
         self._id = user_id
         self.category = category
@@ -129,10 +129,10 @@ class CommentSerializer(JSONAPISerializer):
         return obj.referent.target_type
 
     def sanitize_data(self):
-        ret = super(CommentSerializer, self).sanitize_data()
+        ret = super().sanitize_data()
         content = self.validated_data.get('get_content', None)
         if content:
-            ret['get_content'] = bleach.clean(content)
+            ret['get_content'] = sanitize_html(content)
         return ret
 
 
@@ -155,7 +155,7 @@ class CommentCreateSerializer(CommentSerializer):
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(expected_target_type, target_type)))
+            raise Conflict(detail=(f'The target resource has a type of "{expected_target_type}", but you set the json body\'s type field to "{target_type}".  You probably need to change the type field to match the target resource\'s type.'))
         return target_type
 
     def get_target(self, node_id, target_id):
@@ -165,7 +165,7 @@ class CommentCreateSerializer(CommentSerializer):
         elif not target.referent.belongs_to_node(node_id):
             raise ValueError('Cannot post to comment target on another node.')
         elif isinstance(target.referent, BaseFileNode) and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE:
-                raise ValueError('Comments are not supported for this file provider.')
+            raise ValueError('Comments are not supported for this file provider.')
         return target
 
     def create(self, validated_data):
@@ -179,7 +179,7 @@ class CommentCreateSerializer(CommentSerializer):
         except ValueError:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/data/id'},
-                detail='Invalid comment target \'{}\'.'.format(target_id),
+                detail=f'Invalid comment target \'{target_id}\'.',
             )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')

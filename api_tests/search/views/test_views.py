@@ -158,7 +158,7 @@ class TestSearch(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_search(self):
-        return '/{}search/'.format(API_BASE)
+        return f'/{API_BASE}search/'
 
     def test_search_results(
             self, app, url_search, user, user_one, user_two,
@@ -211,16 +211,16 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert '/{}search/users/?q=%2A'.format(API_BASE) in users_link
-        assert '/{}search/files/?q=%2A'.format(API_BASE) in files_link
-        assert '/{}search/projects/?q=%2A'.format(API_BASE) in projects_link
+        assert f'/{API_BASE}search/users/?q=%2A' in users_link
+        assert f'/{API_BASE}search/files/?q=%2A' in files_link
+        assert f'/{API_BASE}search/projects/?q=%2A' in projects_link
         assert '/{}search/components/?q=%2A'.format(
             API_BASE) in components_link
         assert '/{}search/registrations/?q=%2A'.format(
             API_BASE) in registrations_link
 
         # test_search_fields_links_with_query
-        url = '{}?q=science'.format(url_search)
+        url = f'{url_search}?q=science'
         res = app.get(url)
         assert res.status_code == 200
 
@@ -231,8 +231,8 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert '/{}search/users/?q=science'.format(API_BASE) in users_link
-        assert '/{}search/files/?q=science'.format(API_BASE) in files_link
+        assert f'/{API_BASE}search/users/?q=science' in users_link
+        assert f'/{API_BASE}search/files/?q=science' in files_link
         assert '/{}search/projects/?q=science'.format(
             API_BASE) in projects_link
         assert '/{}search/components/?q=science'.format(
@@ -245,7 +245,7 @@ class TestSearchComponents(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_component_search(self):
-        return '/{}search/components/'.format(API_BASE)
+        return f'/{API_BASE}search/components/'
 
     def test_search_components(
             self, app, url_component_search, user, user_one, user_two,
@@ -357,7 +357,7 @@ class TestSearchFiles(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_file_search(self):
-        return '/{}search/files/'.format(API_BASE)
+        return f'/{API_BASE}search/files/'
 
     def test_search_files(
             self, app, url_file_search, user, user_one,
@@ -423,7 +423,7 @@ class TestSearchProjects(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_project_search(self):
-        return '/{}search/projects/'.format(API_BASE)
+        return f'/{API_BASE}search/projects/'
 
     def test_search_projects(
             self, app, url_project_search, user, user_one,
@@ -537,7 +537,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_registration_search(self):
-        return '/{}search/registrations/'.format(API_BASE)
+        return f'/{API_BASE}search/registrations/'
 
     @pytest.fixture()
     def schema(self):
@@ -677,7 +677,7 @@ class TestSearchUsers(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_user_search(self):
-        return '/{}search/users/'.format(API_BASE)
+        return f'/{API_BASE}search/users/'
 
     def test_search_user(self, app, url_user_search, user, user_one, user_two):
 
@@ -754,7 +754,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_institution_search(self):
-        return '/{}search/institutions/'.format(API_BASE)
+        return f'/{API_BASE}search/institutions/'
 
     def test_search_institutions(
             self, app, url_institution_search, user, institution):
@@ -802,7 +802,7 @@ class TestSearchCollections(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_collection_search(self):
-        return '/{}search/collections/'.format(API_BASE)
+        return f'/{API_BASE}search/collections/'
 
     @pytest.fixture()
     def node_one(self, user):

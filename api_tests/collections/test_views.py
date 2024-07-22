@@ -1,5 +1,5 @@
 import pytest
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from django.utils.timezone import now
 
@@ -24,7 +24,7 @@ from api_tests.utils import disconnected_from_listeners
 from website.views import find_bookmark_collection
 
 
-url_collection_list = '/{}collections/'.format(API_BASE)
+url_collection_list = f'/{API_BASE}collections/'
 
 
 @pytest.fixture()
@@ -373,7 +373,7 @@ class TestCollectionFiltering:
         assert collection_three._id not in ids
 
         # test_get_one_collection_with_exact_filter_logged_in
-        url = '/{}collections/?filter[title]=Collection%20One'.format(API_BASE)
+        url = f'/{API_BASE}collections/?filter[title]=Collection%20One'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -384,7 +384,7 @@ class TestCollectionFiltering:
         assert collection_three._id not in ids
 
         # test_get_one_collection_with_exact_filter_not_logged_in
-        url = '/{}collections/?filter[title]=Collection%20One'.format(API_BASE)
+        url = f'/{API_BASE}collections/?filter[title]=Collection%20One'
 
         res = app.get(url)
         node_json = res.json['data']
@@ -395,7 +395,7 @@ class TestCollectionFiltering:
         assert collection_three._id not in ids
 
         # test_get_some_collections_with_substring_logged_in
-        url = '/{}collections/?filter[title]=Two'.format(API_BASE)
+        url = f'/{API_BASE}collections/?filter[title]=Two'
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -406,7 +406,7 @@ class TestCollectionFiltering:
         assert collection_three._id not in ids
 
         # test_get_no_projects_with_substring_not_logged_in
-        url = '/{}collections/?filter[title]=Two'.format(API_BASE)
+        url = f'/{API_BASE}collections/?filter[title]=Two'
 
         res = app.get(url)
         node_json = res.json['data']
@@ -417,7 +417,7 @@ class TestCollectionFiltering:
         assert collection_three._id not in ids
 
         # test_incorrect_filtering_field_logged_in
-        url = '/{}collections/?filter[notafield]=bogus'.format(API_BASE)
+        url = f'/{API_BASE}collections/?filter[notafield]=bogus'
 
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
@@ -440,7 +440,7 @@ class TestCollectionDetail:
 
     @pytest.fixture()
     def url_collection_detail(self, collection):
-        return '/{}collections/{}/'.format(API_BASE, collection._id)
+        return f'/{API_BASE}collections/{collection._id}/'
 
     def test_collection_detail_returns(
             self, app, url_collection_detail,
@@ -473,7 +473,7 @@ class TestCollectionDetail:
         # test_requesting_node_returns_error
         node = NodeFactory(creator=user_one)
         res = app.get(
-            '/{}collections/{}/'.format(API_BASE, node._id),
+            f'/{API_BASE}collections/{node._id}/',
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 404
@@ -500,7 +500,7 @@ class CollectionCRUDTestCase:
 
     @pytest.fixture()
     def url_collection_detail(self, collection):
-        return '/{}collections/{}/'.format(API_BASE, collection._id)
+        return f'/{API_BASE}collections/{collection._id}/'
 
     @pytest.fixture()
     def url_fake_collection_detail(self, collection):
@@ -883,7 +883,7 @@ class TestCollectionNodeLinksList:
 
     @pytest.fixture()
     def url_collection_nodelinks(self, collection):
-        return '/{}collections/{}/node_links/'.format(API_BASE, collection._id)
+        return f'/{API_BASE}collections/{collection._id}/node_links/'
 
     def test_collection_nodelinks_list_returns(
             self, app, url_collection_nodelinks, collection,
@@ -1012,7 +1012,7 @@ class TestCollectionNodeLinkCreate:
 
     @pytest.fixture()
     def url_fake_collection_nodelinks(self, id_fake_node):
-        return '/{}collections/{}/node_links/'.format(API_BASE, id_fake_node)
+        return f'/{API_BASE}collections/{id_fake_node}/node_links/'
 
     def test_creates_node_link_to_public_project_logged_in(
             self, app, url_collection_nodelinks,
@@ -1376,7 +1376,7 @@ class TestCollectionNodeLinkDetail:
         pointed_project = ProjectFactory(creator=user_two)
         pointer = collection.collect_object(pointed_project, user_one)
         assert collection.active_guids.filter(_id=pointed_project._id).exists()
-        url = '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, pointer.guid._id)
+        url = f'/{API_BASE}collections/{collection._id}/node_links/{pointer.guid._id}/'
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
         assert not collection.deleted
@@ -1601,7 +1601,7 @@ class TestCollectionBulkCreate:
 
     @pytest.fixture()
     def url_collections(self):
-        return '/{}collections/'.format(API_BASE)
+        return f'/{API_BASE}collections/'
 
     @pytest.fixture()
     def title_one(self):
@@ -1853,7 +1853,7 @@ class TestCollectionBulkUpdate:
 
     @pytest.fixture()
     def url_collections(self):
-        return '/{}collections/'.format(API_BASE)
+        return f'/{API_BASE}collections/'
 
     @pytest.fixture()
     def base_url_collections(self):
@@ -2090,19 +2090,19 @@ class TestNodeBulkDelete:
 
     @pytest.fixture()
     def url_collections(self):
-        return '/{}collections/'.format(API_BASE)
+        return f'/{API_BASE}collections/'
 
     @pytest.fixture()
     def url_project_one(self, collection_one):
-        return '/{}collections/{}/'.format(API_BASE, collection_one._id)
+        return f'/{API_BASE}collections/{collection_one._id}/'
 
     @pytest.fixture()
     def url_project_two(self, collection_two):
-        return '/{}collections/{}/'.format(API_BASE, collection_two._id)
+        return f'/{API_BASE}collections/{collection_two._id}/'
 
     @pytest.fixture()
     def url_project_private(self, collection_three):
-        return '/{}collections/{}/'.format(API_BASE, collection_three._id)
+        return f'/{API_BASE}collections/{collection_three._id}/'
 
     @pytest.fixture()
     def payload_one(self, collection_one, collection_two):
@@ -2179,7 +2179,7 @@ class TestNodeBulkDelete:
         res = app.get(url_project_private, auth=user_one.auth)
         assert res.status_code == 200
 
-        url = '/{}collections/{}/'.format(API_BASE, collection_user_two._id)
+        url = f'/{API_BASE}collections/{collection_user_two._id}/'
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
 
@@ -3003,7 +3003,7 @@ class TestCollectionRelationshipNodeLinks:
             self, app, url_private_linked_nodes,
             user_one, collection_private, node_private
     ):
-        res = app.get('{}?version=2.13'.format(url_private_linked_nodes), auth=user_one.auth)
+        res = app.get(f'{url_private_linked_nodes}?version=2.13', auth=user_one.auth)
         assert res.status_code == 200
         assert collection_private.linked_nodes_self_url in res.json['links']['self']
         assert collection_private.linked_nodes_related_url in res.json['links']['html']
@@ -3027,7 +3027,7 @@ class TestCollectionRelationshipNodeLinks:
             url_private_linked_regs, user_one,
             collection_private
     ):
-        res = app.get('{}?version=2.13'.format(url_private_linked_regs), auth=user_one.auth)
+        res = app.get(f'{url_private_linked_regs}?version=2.13', auth=user_one.auth)
         assert res.status_code == 200
         assert collection_private.linked_registrations_self_url in res.json['links']['self']
         assert collection_private.linked_registrations_related_url in res.json['links']['html']
@@ -3086,7 +3086,7 @@ class TestCollectionRelationshipNodeLinks:
             node_private
     ):
         res = app.post_json_api(
-            '{}?version=2.13'.format(url_private_linked_nodes), make_payload([node_contributor._id], False),
+            f'{url_private_linked_nodes}?version=2.13', make_payload([node_contributor._id], False),
             auth=user_one.auth
         )
 
@@ -3232,7 +3232,7 @@ class TestCollectionRelationshipNodeLinks:
                 {'id': registration_private._id, 'type': 'registrations'}
             ]
         }
-        url_private_linked_regs = '{}?version=2.13'.format(url_private_linked_regs)
+        url_private_linked_regs = f'{url_private_linked_regs}?version=2.13'
 
         # Cannot delete registration from someone else's collection
         res = app.delete_json_api(
@@ -3372,7 +3372,7 @@ class TestCollectionRelationshipNodeLinks:
 
         # test_type_mistyped_2_13
         res = app.post_json_api(
-            '{}?version=2.13'.format(url_private_linked_nodes),
+            f'{url_private_linked_nodes}?version=2.13',
             {'data': [{
                 'type': 'linked_nodes',
                 'id': node_contributor._id}
@@ -3534,7 +3534,7 @@ class TestCollectionRelationshipPreprintLinks:
             self, app, url_private_linked_preprints,
             user_one, collection_private, preprint_private
     ):
-        res = app.get('{}?version=2.13'.format(url_private_linked_preprints), auth=user_one.auth)
+        res = app.get(f'{url_private_linked_preprints}?version=2.13', auth=user_one.auth)
         assert res.status_code == 200
         assert collection_private.linked_preprints_self_url in res.json['links']['self']
         assert res.json['data'][0]['id'] == preprint_private._id
@@ -3577,7 +3577,7 @@ class TestCollectionRelationshipPreprintLinks:
             preprint_private
     ):
         res = app.post_json_api(
-            '{}?version=2.13'.format(url_private_linked_preprints), make_payload([preprint_contributor._id], False),
+            f'{url_private_linked_preprints}?version=2.13', make_payload([preprint_contributor._id], False),
             auth=user_one.auth
         )
 
@@ -3778,7 +3778,7 @@ class TestCollectionRelationshipPreprintLinks:
 
         # test_type_mistyped_2_13
         res = app.post_json_api(
-            '{}?version=2.13'.format(url_private_linked_preprints),
+            f'{url_private_linked_preprints}?version=2.13',
             {'data': [{
                 'type': 'linked_preprints',
                 'id': preprint_contributor._id}
@@ -4104,7 +4104,7 @@ class TestCollectionLinkedNodes:
         res = app.get('/{}collections/{}/linked_nodes/'.format(API_BASE,
                                                                collection._id), auth=user.auth)
         reg_res = app.get(
-            '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id), auth=user.auth)
+            f'/{API_BASE}collections/{collection._id}/linked_registrations/', auth=user.auth)
 
         assert res.status_code == 200
         assert reg_res.status_code == 200
@@ -4246,7 +4246,7 @@ class TestCollectionSubmissionList:
 
     @pytest.fixture()
     def url(self):
-        return '/{}collections/{{}}/collected_metadata/'.format(API_BASE)
+        return f'/{API_BASE}collections/{{}}/collected_metadata/'
 
     @pytest.fixture()
     def payload(self):
@@ -4337,18 +4337,18 @@ class TestCollectionSubmissionList:
         assert res.status_code == 200
 
     def test_filters(self, app, collection_with_one_collection_submission, collection_with_three_collection_submission, project_two, project_four, user_one, subject_one, url, payload):
-        res = app.get('{}?filter[id]={}'.format(url.format(collection_with_three_collection_submission._id), project_two._id), auth=user_one.auth)
+        res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[id]={project_two._id}', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[status]=two'.format(url.format(collection_with_three_collection_submission._id)), auth=user_one.auth)
+        res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[status]=two', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_collection_submission._id)), auth=user_one.auth)
+        res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[collected_type]=asdf', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
         # Sanity
-        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_collection_submission._id), subject_one._id), auth=user_one.auth)
+        res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[subjects]={subject_one._id}', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
@@ -4359,10 +4359,10 @@ class TestCollectionSubmissionList:
             auth=user_one.auth)
         assert res.status_code == 201
 
-        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_collection_submission._id), subject_one._id), auth=user_one.auth)
+        res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[subjects]={subject_one._id}', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_collection_submission._id)), auth=user_one.auth)
+        res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[collected_type]=asdf', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
@@ -4396,70 +4396,70 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
 
     @pytest.fixture()
     def url(self, collection):
-        return '/{}collections/{}/collection_submissions/'.format(API_BASE, collection._id)
+        return f'/{API_BASE}collections/{collection._id}/collection_submissions/'
 
     def test_subject_filter_using_id_v_2_2(
             self, app, user, subject_one, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
 
-        expected = set([project_one._id])
+        expected = {project_one._id}
         res = app.get(
-            '{}{}&version=2.2'.format(has_subject, subject_one._id),
+            f'{has_subject}{subject_one._id}&version=2.2',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
-        expected = set([project_two._id])
+        expected = {project_two._id}
         res = app.get(
-            '{}{}&version=2.2'.format(has_subject, subject_two._id),
+            f'{has_subject}{subject_two._id}&version=2.2',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
     def test_subject_filter_using_text_v_2_2(
             self, app, user, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
 
-        expected = set([project_two._id])
+        expected = {project_two._id}
         res = app.get(
-            '{}{}&version=2.2'.format(has_subject, subject_two.text),
+            f'{has_subject}{subject_two.text}&version=2.2',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
     def test_subject_filter_using_id_v_2_16(
             self, app, user, subject_one, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
 
-        expected = set([project_one._id])
+        expected = {project_one._id}
         res = app.get(
-            '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
+            f'{has_subject}{subject_one._id}&version={subjects_as_relationships_version}',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
-        expected = set([project_two._id])
+        expected = {project_two._id}
         res = app.get(
-            '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
+            f'{has_subject}{subject_two._id}&version={subjects_as_relationships_version}',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
     def test_subject_filter_using_text_v_2_16(
             self, app, user, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
         resource_two.subjects.add(subject_two)
-        expected = set([project_two._id])
+        expected = {project_two._id}
         res = app.get(
-            '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
+            f'{has_subject}{subject_two.text}&version={subjects_as_relationships_version}',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
 
@@ -4474,7 +4474,7 @@ class TestCollectionSubmissionSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def url(self, collection, resource):
-        return '/{}collections/{}/collected_metadata/{}/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+        return f'/{API_BASE}collections/{collection._id}/collected_metadata/{resource.guid._id}/subjects/'
 
     @pytest.fixture()
     def collection(self, user_admin_contrib):
@@ -4529,7 +4529,7 @@ class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
 
     @pytest.fixture()
     def url(self, collection, resource):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, resource.guid._id)
+        return f'/{API_BASE}collections/{collection._id}/collected_metadata/{resource.guid._id}/'
 
 
 @pytest.mark.django_db
@@ -4553,7 +4553,7 @@ class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
 
     @pytest.fixture()
     def url(self, collection, resource):
-        return '/{}collections/{}/collected_metadata/{}/relationships/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+        return f'/{API_BASE}collections/{collection._id}/collected_metadata/{resource.guid._id}/relationships/subjects/'
 
 
 @pytest.mark.django_db
@@ -4588,7 +4588,7 @@ class TestCollectionSubmissionDetail:
 
     @pytest.fixture()
     def url(self, collection, collection_submission):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, collection_submission.guid._id)
+        return f'/{API_BASE}collections/{collection._id}/collected_metadata/{collection_submission.guid._id}/'
 
     @pytest.fixture()
     def payload(self):
@@ -4638,12 +4638,12 @@ class TestCollectionSubmissionDetail:
         assert res.json['data']['id'] == collection_submission.guid._id
 
     #   test_collection_submission_has_subjects_links_for_later_versions
-        res = app.get(url + '?version={}'.format(subjects_as_relationships_version))
+        res = app.get(url + f'?version={subjects_as_relationships_version}')
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
-        expected_url = '{}subjects/'.format(url)
+        expected_url = f'{url}subjects/'
         assert urlparse(related_url).path == expected_url
         self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
-        expected_url = '{}relationships/subjects/'.format(url)
+        expected_url = f'{url}relationships/subjects/'
         assert urlparse(self_url).path == expected_url
 
         res = app.patch_json_api(

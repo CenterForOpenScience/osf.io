@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
@@ -16,7 +15,7 @@ class OneDriveClient(BaseClient):
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'Authorization': 'Bearer {}'.format(self.access_token)}
+            return {'Authorization': f'Bearer {self.access_token}'}
         return {}
 
     def folders(self, drive_id=None, folder_id=None):
@@ -44,7 +43,7 @@ class OneDriveClient(BaseClient):
             throws=HTTPError(401)
         )
         folder_list = resp.json()
-        logger.debug('folder_list:({})'.format(folder_list))
+        logger.debug(f'folder_list:({folder_list})')
         return folder_list['value']
 
     def user_info(self):
@@ -70,7 +69,7 @@ class OneDriveClient(BaseClient):
             throws=HTTPError(401)
         )
         me_data = me_resp.json()
-        logger.debug('me_data:({})'.format(me_data))
+        logger.debug(f'me_data:({me_data})')
 
         retval = {
             'id': me_data['id'],
@@ -89,7 +88,7 @@ class OneDriveClient(BaseClient):
             throws=HTTPError(401)
         )
         drive_data = drive_resp.json()
-        logger.debug('drive_data:({})'.format(drive_data))
+        logger.debug(f'drive_data:({drive_data})')
         retval['drive_id'] = drive_data['id']
 
         if drive_data['driveType'] == 'personal':
@@ -108,5 +107,5 @@ class OneDriveClient(BaseClient):
             # logger.debug('site_data:({})'.format(site_data))
             retval['name'] = '{} - {}'.format(retval['mail'], 'OneDrive for School or Business')
 
-        logger.debug('retval:({})'.format(retval))
+        logger.debug(f'retval:({retval})')
         return retval

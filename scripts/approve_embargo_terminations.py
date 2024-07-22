@@ -43,31 +43,31 @@ def main():
             registration = models.Registration.objects.get(embargo_termination_approval=request)
         except models.Registration.DoesNotExist:
             logger.error(
-                'EmbargoTerminationApproval {} is not attached to a registration'.format(request._id)
+                f'EmbargoTerminationApproval {request._id} is not attached to a registration'
             )
             continue
         if not registration.is_embargoed:
             # Embargo previously completed
-            logger.warning('Registration {0} associated with this embargo termination request ({0}) is not embargoed.'.format(
-                registration._id,
-                request._id
-            ))
+            logger.warning(
+                f'Registration {registration._id} associated with this embargo '
+                f'termination request ({request._id}) is not embargoed.'
+            )
             registration.embargo_termination_approval = None
             registration.save()
             continue
         embargo = registration.embargo
         if not embargo:
             # Embargo was otherwise disappeared
-            logger.warning('No Embargo associated with this embargo termination request ({0}) on Node: {1}'.format(
-                request._id,
-                registration._id
-            ))
+            logger.warning(
+                f'No Embargo associated with this embargo termination request '
+                f'({request._id}) on Node: {registration._id}'
+            )
             registration.embargo_termination_approval = None
             registration.save()
             continue
         else:
             count += 1
-            logger.info('Ending the Embargo ({0}) of Registration ({1}) early. Making the registration and all of its children public now.'.format(embargo._id, registration._id))
+            logger.info(f'Ending the Embargo ({embargo._id}) of Registration ({registration._id}) early. Making the registration and all of its children public now.')
             # Call 'accept' trigger directly. This will terminate the embargo
             # if the registration is unmoderated or push it into the moderation
             # queue if it is part of a moderated registry.
@@ -78,7 +78,7 @@ def main():
             assert registration.is_embargoed is False
             assert registration.is_public is True
 
-    logger.info('Auto-approved {0} of {1} embargo termination requests'.format(count, len(pending_embargo_termination_requests)))
+    logger.info(f'Auto-approved {count} of {len(pending_embargo_termination_requests)} embargo termination requests')
 
 @celery_app.task(name='scripts.approve_embargo_terminations')
 def run_main(dry_run=True):

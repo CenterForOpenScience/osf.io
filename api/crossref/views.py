@@ -24,7 +24,7 @@ class ParseCrossRefConfirmation(APIView):
 
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
-        return super(ParseCrossRefConfirmation, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_serializer_class(self):
         return None
@@ -65,7 +65,7 @@ class ParseCrossRefConfirmation(APIView):
 
                 elif record.get('status').lower() == 'failure':
                     if 'Relation target DOI does not exist' in record.find('msg').text:
-                        logger.warn('Related publication DOI does not exist, sending metadata again without it...')
+                        logger.warning('Related publication DOI does not exist, sending metadata again without it...')
                         client = preprint.get_doi_client()
                         client.create_identifier(preprint, category='doi', include_relation=False)
                     # This error occurs when a single preprint is being updated several times in a row with the same metadata [#PLAT-944]
@@ -73,7 +73,7 @@ class ParseCrossRefConfirmation(APIView):
                         break
                     else:
                         unexpected_errors = True
-            logger.info('Creation success email received from CrossRef for preprints: {}'.format(guids))
+            logger.info(f'Creation success email received from CrossRef for preprints: {guids}')
 
         if dois_processed != record_count or status != 'completed':
             if unexpected_errors:
@@ -84,6 +84,6 @@ class ParseCrossRefConfirmation(APIView):
                     batch_id=batch_id,
                     email_content=request.POST['body-plain'],
                 )
-                logger.error('Error submitting metadata for batch_id {} with CrossRef, email sent to help desk'.format(batch_id))
+                logger.error(f'Error submitting metadata for batch_id {batch_id} with CrossRef, email sent to help desk')
 
         return HttpResponse('Mail received', status=200)

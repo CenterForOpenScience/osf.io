@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from framework.auth import decorators
 from framework.utils import iso8601format
 from website.registries import utils

@@ -12,11 +12,11 @@ class DataverseSerializer(OAuthAddonSerializer):
 
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
-        ret = super(DataverseSerializer, self).serialize_account(external_account)
+        ret = super().serialize_account(external_account)
         host = external_account.oauth_key
         ret.update({
             'host': host,
-            'host_url': 'https://{0}'.format(host),
+            'host_url': f'https://{host}',
         })
 
         return ret
@@ -38,7 +38,7 @@ class DataverseSerializer(OAuthAddonSerializer):
         addon_urls = self.addon_serialized_urls
         # Make sure developer returns set of needed urls
         for url in self.REQUIRED_URLS:
-            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
+            assert url in addon_urls, f"addon_serilized_urls must include key '{url}'"
         ret.update(addon_urls)
         return ret
 
@@ -55,13 +55,13 @@ class DataverseSerializer(OAuthAddonSerializer):
             'deauthorize': node.api_url_for('dataverse_deauthorize_node'),
             'getDatasets': node.api_url_for('dataverse_get_datasets'),
             'datasetPrefix': 'https://doi.org/',
-            'dataversePrefix': 'http://{0}/dataverse/'.format(host),
+            'dataversePrefix': f'http://{host}/dataverse/',
             'accounts': api_url_for('dataverse_account_list'),
         }
 
     @property
     def serialized_node_settings(self):
-        result = super(DataverseSerializer, self).serialized_node_settings
+        result = super().serialized_node_settings
         result['hosts'] = DEFAULT_HOSTS
 
         # Update with Dataverse specific fields

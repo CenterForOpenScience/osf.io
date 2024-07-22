@@ -1,4 +1,4 @@
-from django.conf.urls import re_path
+from django.urls import re_path
 from django.contrib.auth.decorators import login_required as login
 
 from . import views

@@ -19,8 +19,8 @@ logging.basicConfig(level=logging.INFO)
 def main(dry_run=True):
     for user in find_inactive_users_with_no_inactivity_email_sent_or_queued():
         if dry_run:
-            logger.warn('Dry run mode')
-        logger.warn('Email of type no_login queued to {0}'.format(user.username))
+            logger.warning('Dry run mode')
+        logger.warning(f'Email of type no_login queued to {user.username}')
         if not dry_run:
             with transaction.atomic():
                 queue_mail(

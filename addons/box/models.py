@@ -71,7 +71,7 @@ class Provider(ExternalProvider):
         return {
             'provider_id': about['id'],
             'display_name': about['name'],
-            'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
+            'profile_url': f'https://app.box.com/profile/{about["id"]}'
         }
 
 
@@ -118,7 +118,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def display_name(self):
-        return '{0}: {1}'.format(self.config.full_name, self.folder_id)
+        return f'{self.config.full_name}: {self.folder_id}'
 
     def fetch_full_folder_path(self):
         return self.folder_path
@@ -134,7 +134,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': '/ (Full Box)',
                 'urls': {
                     # 'folders': node.api_url_for('box_folder_list', folderId=0),
-                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/box/folders/',
                         params={'id': '0'}
                     )
                 }
@@ -169,7 +169,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': item['name'],
                 'path': os.path.join(folder_path, item['name']).replace('All Files', ''),
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/box/folders/',
                         params={'id': item['id']}
                     )
                 }
@@ -237,7 +237,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
-            'box_{0}'.format(action),
+            f'box_{action}',
             auth=auth,
             params={
                 'path': metadata['materialized'],

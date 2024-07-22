@@ -90,7 +90,6 @@ INSTALLED_APPS = (
     'django_celery_results',
     'rest_framework',
     'corsheaders',
-    'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
     'storages',
@@ -124,13 +123,6 @@ INSTALLED_APPS = (
 # local development using https
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
-
-# TODO: Are there more granular ways to configure reporting specifically related to the API?
-RAVEN_CONFIG = {
-    'tags': {'App': 'api'},
-    'dsn': osf_settings.SENTRY_DSN,
-    'release': osf_settings.VERSION,
-}
 
 BULK_SETTINGS = {
     'DEFAULT_BULK_LIMIT': 100,
@@ -231,8 +223,7 @@ MIDDLEWARE = (
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
-
-    'api.base.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'api.base.middleware.UnsignCookieSessionMiddleware',

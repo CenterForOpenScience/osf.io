@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 import os
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 import uuid
 
-import ssl
 from pymongo import MongoClient
 import requests
 from django.apps import apps
@@ -102,7 +100,7 @@ def migrate_uuid(node, wname):
 
 def share_db():
     """Generate db client for sharejs db"""
-    client = MongoClient(wiki_settings.SHAREJS_DB_URL, ssl_cert_reqs=ssl.CERT_NONE)
+    client = MongoClient(wiki_settings.SHAREJS_DB_URL, tlsAllowInvalidCertificates=True)
     return client[wiki_settings.SHAREJS_DB_NAME]
 
 
@@ -181,7 +179,7 @@ def serialize_wiki_settings(user, nodes):
     items = []
 
     for node in nodes:
-        assert node, '{} is not a valid Node.'.format(node._id)
+        assert node, f'{node._id} is not a valid Node.'
 
         can_read = node.has_permission(user, READ)
         is_admin = node.has_permission(user, ADMIN)

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """Serializer tests for the Bitbucket addon."""
 
-import mock
-from nose.tools import *  # noqa (PEP8 asserts)
+from unittest import mock
 import pytest
 
 from tests.base import OsfTestCase

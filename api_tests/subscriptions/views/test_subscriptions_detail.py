@@ -17,13 +17,13 @@ class TestSubscriptionDetail:
 
     @pytest.fixture()
     def global_user_notification(self, user):
-        notification = NotificationSubscriptionFactory(_id='{}_global'.format(user._id), user=user, event_name='global')
+        notification = NotificationSubscriptionFactory(_id=f'{user._id}_global', user=user, event_name='global')
         notification.add_user_to_subscription(user, 'email_transactional')
         return notification
 
     @pytest.fixture()
     def url(self, global_user_notification):
-        return '/{}subscriptions/{}/'.format(API_BASE, global_user_notification._id)
+        return f'/{API_BASE}subscriptions/{global_user_notification._id}/'
 
     @pytest.fixture()
     def url_invalid(self):
@@ -63,7 +63,7 @@ class TestSubscriptionDetail:
         res = app.get(url, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
-        assert notification_id == '{}_global'.format(user._id)
+        assert notification_id == f'{user._id}_global'
 
         # GET with invalid notification_id
         # No user

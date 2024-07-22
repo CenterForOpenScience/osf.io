@@ -53,7 +53,7 @@ def backfill_source_tags_for_osf4m_unregistered_contributors(dry_run):
 
     # Find ids of all meeting nodes
     meeting_nodes_id = meeting_source_tag.abstractnode_tagged.all().values_list('id', flat=True)
-    logger.info('Number of meeting nodes found: {}'.format(meeting_nodes_id.count()))
+    logger.info(f'Number of meeting nodes found: {meeting_nodes_id.count()}')
 
     # Find id of all log entries of these meeting nodes
     all_meeting_node_logs = NodeLog.objects.filter(action='contributor_added', node__id__in=meeting_nodes_id).only('created', 'params')
@@ -69,7 +69,7 @@ def backfill_source_tags_for_osf4m_unregistered_contributors(dry_run):
         set_bulk_create = set_of_user_ids.difference(set_of_user_ids_already_with_osf4m_source_tag)
         ThroughModel.objects.bulk_create([ThroughModel(tag_id=meeting_source_tag.pk, osfuser_id=user_id) for user_id in set_bulk_create])
         for id in set_bulk_create:
-            logger.info('User with id {} gets osf4m source tags'.format(id))
+            logger.info(f'User with id {id} gets osf4m source tags')
 
 
 def backfill_source_tags_for_nodes_and_preprints_unregistered_contributors(dry_run):
@@ -91,33 +91,33 @@ def backfill_source_tags_for_nodes_and_preprints_unregistered_contributors(dry_r
         osf_provider_source_tag = Tag.all_tags.get(name=provider_source_tag('osf'), system=True)
 
         # For post-NPD preprints
-        logger.info('Finding post-NPD preprints for {}'.format(provider._id))
+        logger.info(f'Finding post-NPD preprints for {provider._id}')
         all_provider_preprints_post_npd_id = provider.preprints.filter(migrated__isnull=True).values_list('id')
-        logger.info('Number of post-NPD preprints for {}: {}'.format(provider._id, all_provider_preprints_post_npd_id.count()))
+        logger.info(f'Number of post-NPD preprints for {provider._id}: {all_provider_preprints_post_npd_id.count()}')
         preprint_logs = PreprintLog.objects.filter(action='contributor_added', preprint__id__in=all_provider_preprints_post_npd_id).only('created', 'params')
-        logger.info('Finding post-NPD unreg contrib for {}'.format(provider._id))
+        logger.info(f'Finding post-NPD unreg contrib for {provider._id}')
         set_of_user_ids_post_npd = _get_set_of_user_ids_from_logs(preprint_logs)
-        logger.info('Number of post-NPD unreg contrib for {}: {}'.format(provider._id, str(len(set_of_user_ids_post_npd))))
+        logger.info(f'Number of post-NPD unreg contrib for {provider._id}: {str(len(set_of_user_ids_post_npd))}')
         if not dry_run:
             set_of_user_ids_already_with_provider_source_tag = set(OSFUser.objects.filter(tags__id=source_tag.id).values_list('pk', flat=True))
             set_bulk_create = set_of_user_ids_post_npd.difference(set_of_user_ids_already_with_provider_source_tag)
             ThroughModel.objects.bulk_create([ThroughModel(tag_id=source_tag.pk, osfuser_id=user_id) for user_id in set_bulk_create])
 
         # For pre-NPD preprints
-        logger.info('Finding pre-NPD preprints within then minutes for {}'.format(provider._id))
+        logger.info(f'Finding pre-NPD preprints within then minutes for {provider._id}')
         node_ids_created_within_ten_minutes = provider.preprints.filter(migrated__isnull=False, node__isnull=False, created__lte=F('node__created')+timedelta(minutes=10)).values_list('node__id', flat=True)
-        logger.info('Finding pre-NPD logs within then minutes for {}'.format(provider._id))
+        logger.info(f'Finding pre-NPD logs within then minutes for {provider._id}')
         node_logs_within_ten_minutes = NodeLog.objects.filter(action='contributor_added', node__id__in=node_ids_created_within_ten_minutes).only('created', 'params')
 
-        logger.info('Finding pre-NPD preprints more than a day for {}'.format(provider._id))
+        logger.info(f'Finding pre-NPD preprints more than a day for {provider._id}')
         node_ids_created_more_than_a_day = provider.preprints.filter(migrated__isnull=False, node__isnull=False, created__gte=F('node__created')+timedelta(days=1)).values_list('node__id', flat=True)
-        logger.info('Finding pre-NPD logs more than a day for {}'.format(provider._id))
+        logger.info(f'Finding pre-NPD logs more than a day for {provider._id}')
         node_logs_more_than_a_day = NodeLog.objects.filter(action='contributor_added', node__id__in=node_ids_created_more_than_a_day).only('created', 'params')
 
-        logger.info('Finding pre-NPD unreg contrib for {}'.format(provider._id))
+        logger.info(f'Finding pre-NPD unreg contrib for {provider._id}')
         set_of_user_ids_pre_npd_provider_tag = _get_set_of_user_ids_from_logs(node_logs_within_ten_minutes)
         set_of_user_ids_pre_npd_osf_tag = _get_set_of_user_ids_from_logs(node_logs_more_than_a_day)
-        logger.info('Number of pre-NPD unreg contrib for {}: {}'.format(provider._id, str(len(set_of_user_ids_pre_npd_provider_tag) + len(set_of_user_ids_pre_npd_osf_tag))))
+        logger.info(f'Number of pre-NPD unreg contrib for {provider._id}: {str(len(set_of_user_ids_pre_npd_provider_tag) + len(set_of_user_ids_pre_npd_osf_tag))}')
 
         if not dry_run:
             set_of_user_ids_already_with_provider_source_tag = set(OSFUser.objects.filter(tags__id=source_tag.id).values_list('pk', flat=True))
@@ -137,7 +137,7 @@ def backfill_osf_provider_tags_to_users_not_invited_but_have_no_source_tags(dry_
 
     # Find not invited users with no source tags
     id_users_with_no_source_tags = OSFUser.objects.exclude(is_invited=True).exclude(tags__id__in=source_tag_ids).values_list('pk', flat=True).order_by('pk')
-    logger.info('Number of users with no source tag {}'.format(id_users_with_no_source_tags.count()))
+    logger.info(f'Number of users with no source tag {id_users_with_no_source_tags.count()}')
 
     # Backfill OSF source tags to these users
     logger.info('Backfilling OSF Source tags to uninvited users with no source tags')

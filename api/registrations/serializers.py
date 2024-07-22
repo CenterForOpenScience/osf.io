@@ -2,7 +2,7 @@ import pytz
 import json
 from website.archiver.utils import normalize_unicode_filenames
 
-from distutils.version import StrictVersion
+from packaging.version import Version
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -96,58 +96,84 @@ class RegistrationSerializer(NodeSerializer):
     node_license = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))
     tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
     article_doi = ser.CharField(required=False, allow_null=True)
-    public = HideIfWithdrawal(ser.BooleanField(
-        source='is_public', required=False,
-               help_text='Nodes that are made public will give read-only access '
-        'to everyone. Private nodes require explicit read '
-        'permission. Write and admin access are the same for '
-        'public and private nodes. Administrators on a parent '
-        'node have implicit read permissions for all child nodes',
-    ))
-    current_user_permissions = HideIfWithdrawal(ser.SerializerMethodField(
-        help_text='List of strings representing the permissions '
-        'for the current user on this node.',
-    ))
+    public = HideIfWithdrawal(
+        ser.BooleanField(
+            source='is_public',
+            required=False,
+            help_text='Nodes that are made public will give read-only access '
+                      'to everyone. Private nodes require explicit read '
+                      'permission. Write and admin access are the same for '
+                      'public and private nodes. Administrators on a parent '
+                      'node have implicit read permissions for all child nodes',
+        ),
+    )
+    current_user_permissions = HideIfWithdrawal(
+        ser.SerializerMethodField(
+            help_text='List of strings representing the permissions '
+                      'for the current user on this node.',
+        ),
+    )
 
-    pending_embargo_approval = HideIfWithdrawal(ser.BooleanField(
-        read_only=True, source='is_pending_embargo',
-        help_text='The associated Embargo is awaiting approval by project admins.',
-    ))
-    pending_embargo_termination_approval = HideIfWithdrawal(ser.BooleanField(
-        read_only=True, source='is_pending_embargo_termination',
-        help_text='The associated Embargo early termination is awaiting approval by project admins',
-    ))
+    pending_embargo_approval = HideIfWithdrawal(
+        ser.BooleanField(
+            read_only=True, source='is_pending_embargo',
+            help_text='The associated Embargo is awaiting approval by project admins.',
+        ),
+    )
+    pending_embargo_termination_approval = HideIfWithdrawal(
+        ser.BooleanField(
+            read_only=True, source='is_pending_embargo_termination',
+            help_text='The associated Embargo early termination is awaiting approval by project admins',
+        ),
+    )
     embargoed = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_embargoed'))
-    pending_registration_approval = HideIfWithdrawal(ser.BooleanField(
-        source='is_pending_registration', read_only=True,
-        help_text='The associated RegistrationApproval is awaiting approval by project admins.',
-    ))
+    pending_registration_approval = HideIfWithdrawal(
+        ser.BooleanField(
+            source='is_pending_registration', read_only=True,
+            help_text='The associated RegistrationApproval is awaiting approval by project admins.',
+        ),
+    )
     archiving = HideIfWithdrawal(ser.BooleanField(read_only=True))
-    pending_withdrawal = HideIfWithdrawal(ser.BooleanField(
-        source='is_pending_retraction', read_only=True,
-        help_text='The registration is awaiting withdrawal approval by project admins.',
-    ))
+    pending_withdrawal = HideIfWithdrawal(
+        ser.BooleanField(
+            source='is_pending_retraction', read_only=True,
+            help_text='The registration is awaiting withdrawal approval by project admins.',
+        ),
+    )
     withdrawn = ser.BooleanField(
         source='is_retracted', read_only=True,
         help_text='The registration has been withdrawn.',
     )
     has_project = ser.SerializerMethodField()
 
-    date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
-    embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+    date_registered = VersionedDateTimeField(
+        source='registered_date',
+        read_only=True,
+        help_text='Date time of registration.',
+    )
+    date_withdrawn = VersionedDateTimeField(
+        read_only=True,
+        help_text='Date time of when this registration was retracted.',
+    )
+    embargo_end_date = HideIfWithdrawal(
+        ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'),
+    )
     custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
 
     withdrawal_justification = ser.CharField(read_only=True)
-    template_from = HideIfWithdrawal(ser.CharField(
-        read_only=True, allow_blank=False, allow_null=False,
-        help_text='Specify a node id for a node you would like to use as a template for the '
-        'new node. Templating is like forking, except that you do not copy the '
-        'files, only the project structure. Some information is changed on the top '
-        'level project by submitting the appropriate fields in the request body, '
-        'and some information will not change. By default, the description will '
-        'be cleared and the project will be made private.',
-    ))
+    template_from = HideIfWithdrawal(
+        ser.CharField(
+            read_only=True,
+            allow_blank=False,
+            allow_null=False,
+            help_text='Specify a node id for a node you would like to use as a template for the '
+                      'new node. Templating is like forking, except that you do not copy the '
+                      'files, only the project structure. Some information is changed on the top '
+                      'level project by submitting the appropriate fields in the request body, '
+                      'and some information will not change. By default, the description will '
+                      'be cleared and the project will be made private.',
+        ),
+    )
 
     # Populated via annnotation
     revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
@@ -159,37 +185,47 @@ class RegistrationSerializer(NodeSerializer):
 
     registration_supplement = ser.SerializerMethodField()
     # Will be deprecated in favor of registration_responses
-    registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
-        help_text='A dictionary with supplemental registration questions and responses.',
-    ))
-    registration_responses = HideIfWithdrawal(ser.SerializerMethodField(
-        help_text='A dictionary with supplemental registration questions and responses.',
-    ))
-    registered_by = HideIfWithdrawal(RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<registered_user._id>'},
-    ))
+    registered_meta = HideIfWithdrawal(
+        ser.SerializerMethodField(
+            help_text='A dictionary with supplemental registration questions and responses.',
+        ),
+    )
+    registration_responses = HideIfWithdrawal(
+        ser.SerializerMethodField(
+            help_text='A dictionary with supplemental registration questions and responses.',
+        ),
+    )
+    registered_by = HideIfWithdrawal(
+        RelationshipField(
+            related_view='users:user-detail',
+            related_view_kwargs={'user_id': '<registered_user._id>'},
+        ),
+    )
 
     registered_from = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<registered_from._id>'},
     )
 
-    children = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-children',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_node_count'},
-    ))
+    children = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-children',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_node_count'},
+        ),
+    )
 
-    comments = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-comments',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={
-            'unread': 'get_unread_comments_count',
-            'count': 'get_total_comments_count',
-        },
-        filter={'target': '<_id>'},
-    ))
+    comments = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-comments',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={
+                'unread': 'get_unread_comments_count',
+                'count': 'get_total_comments_count',
+            },
+            filter={'target': '<_id>'},
+        ),
+    )
 
     contributors = RelationshipField(
         related_view='registrations:registration-contributors',
@@ -208,74 +244,96 @@ class RegistrationSerializer(NodeSerializer):
         help_text='This feature is experimental and being tested. It may be deprecated.',
     )
 
-    files = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-storage-providers',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_files_count'},
-    ))
-
-    wikis = HideIfWithdrawalOrWikiDisabled(RelationshipField(
-        related_view='registrations:registration-wikis',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_wiki_page_count'},
-    ))
-
-    forked_from = HideIfWithdrawal(RelationshipField(
-        related_view=lambda reg: (
-            'registrations:registration-detail'
-            if getattr(reg.forked_from, 'is_registration', False)
-            else 'nodes:node-detail'
-        ),
-        related_view_kwargs={'node_id': '<forked_from_id>'},
-    ))
-
-    template_node = HideIfWithdrawal(RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<template_node._id>'},
-    ))
-
-    license = HideIfWithdrawal(NodeLicenseRelationshipField(
-        related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<license.node_license._id>'},
-        read_only=False,
-    ))
-
-    logs = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-logs',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
-
-    forks = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-forks',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_forks_count'},
-    ))
-
-    groups = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-groups',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
-
-    node_links = ShowIfVersion(
-        HideIfWithdrawal(RelationshipField(
-            related_view='registrations:registration-pointers',
+    files = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-storage-providers',
             related_view_kwargs={'node_id': '<_id>'},
-            related_meta={'count': 'get_pointers_count'},
-            help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.',
-        )), min_version='2.0', max_version='2.0',
+            related_meta={'count': 'get_files_count'},
+        ),
     )
 
-    linked_by_nodes = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-linked-by-nodes',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_linked_by_nodes_count'},
-    ))
+    wikis = HideIfWithdrawalOrWikiDisabled(
+        RelationshipField(
+            related_view='registrations:registration-wikis',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_wiki_page_count'},
+        ),
+    )
 
-    linked_by_registrations = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-linked-by-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_linked_by_registrations_count'},
-    ))
+    forked_from = HideIfWithdrawal(
+        RelationshipField(
+            related_view=lambda reg: (
+                'registrations:registration-detail'
+                if getattr(reg.forked_from, 'is_registration', False)
+                else 'nodes:node-detail'
+            ),
+            related_view_kwargs={'node_id': '<forked_from_id>'},
+        ),
+    )
+
+    template_node = HideIfWithdrawal(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<template_node._id>'},
+        ),
+    )
+
+    license = HideIfWithdrawal(
+        NodeLicenseRelationshipField(
+            related_view='licenses:license-detail',
+            related_view_kwargs={'license_id': '<license.node_license._id>'},
+            read_only=False,
+        ),
+    )
+
+    logs = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-logs',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
+
+    forks = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-forks',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_forks_count'},
+        ),
+    )
+
+    groups = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-groups',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
+
+    node_links = ShowIfVersion(
+        HideIfWithdrawal(
+            RelationshipField(
+                related_view='registrations:registration-pointers',
+                related_view_kwargs={'node_id': '<_id>'},
+                related_meta={'count': 'get_pointers_count'},
+                help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.',
+            ),
+        ), min_version='2.0', max_version='2.0',
+    )
+
+    linked_by_nodes = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-linked-by-nodes',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_linked_by_nodes_count'},
+        ),
+    )
+
+    linked_by_registrations = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-linked-by-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_linked_by_registrations_count'},
+        ),
+    )
 
     parent = RelationshipField(
         related_view='registrations:registration-detail',
@@ -288,11 +346,13 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<root._id>'},
     )
 
-    region = HideIfWithdrawal(RelationshipField(
-        related_view='regions:region-detail',
-        related_view_kwargs={'region_id': '<osfstorage_region._id>'},
-        read_only=True,
-    ))
+    region = HideIfWithdrawal(
+        RelationshipField(
+            related_view='regions:region-detail',
+            related_view_kwargs={'region_id': '<osfstorage_region._id>'},
+            read_only=True,
+        ),
+    )
 
     affiliated_institutions = RelationshipField(
         related_view='registrations:registration-institutions',
@@ -308,57 +368,75 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'schema_id': '<registered_schema_id>'},
     )
 
-    settings = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-settings',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    settings = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-settings',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
-    registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
-    draft_registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    draft_registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-draft-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
-    preprints = HideIfWithdrawal(HideIfRegistration(RelationshipField(
-        related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<_id>'},
-    )))
+    preprints = HideIfWithdrawal(
+        HideIfRegistration(
+            RelationshipField(
+                related_view='nodes:node-preprints',
+                related_view_kwargs={'node_id': '<_id>'},
+            ),
+        ),
+    )
 
     identifiers = RelationshipField(
         related_view='registrations:identifier-list',
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    linked_nodes = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:linked-nodes',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_node_links_count'},
-        self_view='registrations:node-pointer-relationship',
-        self_view_kwargs={'node_id': '<_id>'},
-    ))
+    linked_nodes = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:linked-nodes',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_node_links_count'},
+            self_view='registrations:node-pointer-relationship',
+            self_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
-    linked_registrations = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:linked-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_registration_links_count'},
-        self_view='registrations:node-registration-pointer-relationship',
-        self_view_kwargs={'node_id': '<_id>'},
-    ))
+    linked_registrations = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:linked-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_registration_links_count'},
+            self_view='registrations:node-registration-pointer-relationship',
+            self_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
-    view_only_links = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-view-only-links',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_view_only_links_count'},
-    ))
+    view_only_links = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-view-only-links',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_view_only_links_count'},
+        ),
+    )
 
-    citation = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-citation',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    citation = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-citation',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
     provider = RegistrationProviderRelationshipField(
         related_view='providers:registration-providers:registration-provider-detail',
@@ -371,32 +449,42 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    requests = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-requests-list',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    requests = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:registration-requests-list',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
     provider_specific_metadata = ser.JSONField(required=False)
 
-    schema_responses = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:schema-responses-list',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    schema_responses = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:schema-responses-list',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
-    original_response = HideIfWithdrawal(RelationshipField(
-        related_view='schema_responses:schema-responses-detail',
-        related_view_kwargs={'schema_response_id': 'get_original_response_id'},
-    ))
+    original_response = HideIfWithdrawal(
+        RelationshipField(
+            related_view='schema_responses:schema-responses-detail',
+            related_view_kwargs={'schema_response_id': 'get_original_response_id'},
+        ),
+    )
 
-    latest_response = HideIfWithdrawal(RelationshipField(
-        related_view='schema_responses:schema-responses-detail',
-        related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
-    ))
+    latest_response = HideIfWithdrawal(
+        RelationshipField(
+            related_view='schema_responses:schema-responses-detail',
+            related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
+        ),
+    )
 
-    resources = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:resource-list',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    resources = HideIfWithdrawal(
+        RelationshipField(
+            related_view='registrations:resource-list',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
     cedar_metadata_records = RelationshipField(
         related_view='registrations:registration-cedar-metadata-records-list',
@@ -633,10 +721,10 @@ class RegistrationCreateSerializer(RegistrationSerializer):
     """
 
     def expect_cleaner_attributes(self, request):
-        return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        return Version(getattr(request, 'version', '2.0')) >= Version(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
 
     def __init__(self, *args, **kwargs):
-        super(RegistrationCreateSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         request = kwargs['context']['request']
         # required fields defined here for the different versions
         if self.expect_cleaner_attributes(request):
@@ -714,9 +802,11 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         orphan_files = self._find_orphan_files(registering, draft)
         if orphan_files:
             orphan_files_names = [file_data['file_name'] for file_data in orphan_files]
-            raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
-                                             'The following file(s) are attached, but are not part of a component being'
-                                             ' registered: {}'.format(', '.join(orphan_files_names)))
+            raise exceptions.ValidationError(
+                'All files attached to this form must be registered to complete the process. '
+                'The following file(s) are attached, but are not part of a component being '
+                f'registered: {", ".join(orphan_files_names)}',
+            )
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)
@@ -749,7 +839,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         for qid in file_qids:
             for file_response in draft.registration_responses.get(qid, []):
                 if not self._is_attached_file_valid(file_response, registering):
-                        orphan_files.append(file_response)
+                    orphan_files.append(file_response)
 
         return orphan_files
 
@@ -796,10 +886,12 @@ class RegistrationDetailSerializer(RegistrationSerializer):
 
     id = IDField(source='_id', required=True)
 
-    pending_withdrawal = HideIfWithdrawal(ser.BooleanField(
-        source='is_pending_retraction', required=False,
-        help_text='The registration is awaiting withdrawal approval by project admins.',
-    ))
+    pending_withdrawal = HideIfWithdrawal(
+        ser.BooleanField(
+            source='is_pending_retraction', required=False,
+            help_text='The registration is awaiting withdrawal approval by project admins.',
+        ),
+    )
     withdrawal_justification = ser.CharField(required=False)
 
 

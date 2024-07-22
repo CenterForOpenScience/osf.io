@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -82,7 +82,7 @@ class TestGETCollectionsModeratorList:
 
     def test_GET_admin_with_filter(self, app, url, nonmoderator, moderator, admin, provider):
         # mod/nonmoderator unused here, just len verification
-        res = app.get('{}?filter[permission_group]=admin&filter[id]={}'.format(url, admin._id), auth=admin.auth)
+        res = app.get(f'{url}?filter[permission_group]=admin&filter[id]={admin._id}', auth=admin.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == admin._id

@@ -119,7 +119,7 @@ class BaseUserSettings(BaseAddonSettings):
         return hasattr(self, 'merge')
 
     def to_json(self, user):
-        ret = super(BaseUserSettings, self).to_json(user)
+        ret = super().to_json(user)
         ret['has_auth'] = self.has_auth
         ret.update({
             'nodes': [
@@ -137,8 +137,8 @@ class BaseUserSettings(BaseAddonSettings):
 
     def __repr__(self):
         if self.owner:
-            return '<{cls} owned by user {uid}>'.format(cls=self.__class__.__name__, uid=self.owner._id)
-        return '<{cls} with no owner>'.format(cls=self.__class__.__name__)
+            return f'<{self.__class__.__name__} owned by user {self.owner._id}>'
+        return f'<{self.__class__.__name__} with no owner>'
 
 
 @oauth_complete.connect
@@ -186,7 +186,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
     def delete(self, save=True):
         for account in self.external_accounts.filter(provider=self.config.short_name):
             self.revoke_oauth_access(account, save=False)
-        super(BaseOAuthUserSettings, self).delete(save=save)
+        super().delete(save=save)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
@@ -328,7 +328,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         self.save()
 
     def to_json(self, user):
-        ret = super(BaseOAuthUserSettings, self).to_json(user)
+        ret = super().to_json(user)
 
         ret['accounts'] = self.serializer(
             user_settings=self
@@ -343,7 +343,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
     def on_delete(self):
         """When the user deactivates the addon, clear auth for connected nodes.
         """
-        super(BaseOAuthUserSettings, self).on_delete()
+        super().on_delete()
         nodes = [AbstractNode.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
             node_addon = node.get_addon(self.oauth_provider.short_name)
@@ -378,7 +378,7 @@ class BaseNodeSettings(BaseAddonSettings):
         return False
 
     def to_json(self, user):
-        ret = super(BaseNodeSettings, self).to_json(user)
+        ret = super().to_json(user)
         ret.update({
             'user': {
                 'permissions': self.owner.get_permissions(user)
@@ -458,32 +458,27 @@ class BaseNodeSettings(BaseAddonSettings):
         if hasattr(self, 'user_settings'):
             if self.user_settings is None:
                 return (
-                    u'Because you have not configured the {addon} add-on, your authentication will not be '
-                    u'transferred to the forked {category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
-                ).format(
-                    addon=self.config.full_name,
-                    category=node.project_or_component,
+                    f'Because you have not configured the {self.config.full_name} '
+                    'add-on, your authentication will not be transferred to the forked '
+                    f'{node.project_or_component}. You may authorize and configure the '
+                    f'{self.config.full_name} add-on in the new fork on the settings '
+                    'page.'
                 )
 
             elif self.user_settings and self.user_settings.owner == user:
                 return (
-                    u'Because you have authorized the {addon} add-on for this '
-                    u'{category}, forking it will also transfer your authentication to '
-                    u'the forked {category}.'
-                ).format(
-                    addon=self.config.full_name,
-                    category=node.project_or_component,
+                    f'Because you have authorized the {self.config.full_name} add-on '
+                    f'for this {node.project_or_component}, forking it will also '
+                    'transfer your authentication to the forked '
+                    f'{node.project_or_component}.'
                 )
             else:
                 return (
-                    u'Because the {addon} add-on has been authorized by a different '
-                    u'user, forking it will not transfer authentication to the forked '
-                    u'{category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
-                ).format(
-                    addon=self.config.full_name,
-                    category=node.project_or_component,
+                    f'Because the {self.config.full_name} add-on has been authorized '
+                    'by a different user, forking it will not transfer authentication '
+                    f'to the forked {node.project_or_component}. You may authorize and '
+                    f'configure the {self.config.full_name} add-on in the new fork on '
+                    'the settings page.'
                 )
 
     def after_fork(self, node, fork, user, save=True):
@@ -541,12 +536,12 @@ class BaseNodeSettings(BaseAddonSettings):
 # Archiver #
 ############
 
-class GenericRootNode(object):
+class GenericRootNode:
     path = '/'
     name = ''
 
 
-class BaseStorageAddon(object):
+class BaseStorageAddon:
     """
     Mixin class for traversing file trees of addons with files
     """
@@ -558,10 +553,10 @@ class BaseStorageAddon(object):
 
     @property
     def archive_folder_name(self):
-        name = 'Archive of {addon}'.format(addon=self.config.full_name)
+        name = f'Archive of {self.config.full_name}'
         folder_name = getattr(self, 'folder_name', '').lstrip('/').strip()
         if folder_name:
-            name = name + ': {folder}'.format(folder=folder_name)
+            name = name + f': {folder_name}'
         return name
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
@@ -640,19 +635,22 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
     class Meta:
         abstract = True
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder_id(self):
         raise NotImplementedError(
             "BaseOAuthNodeSettings subclasses must expose a 'folder_id' property."
         )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder_name(self):
         raise NotImplementedError(
             "BaseOAuthNodeSettings subclasses must expose a 'folder_name' property."
         )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder_path(self):
         raise NotImplementedError(
             "BaseOAuthNodeSettings subclasses must expose a 'folder_path' property."
@@ -670,7 +668,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             self,
             '_logger_class',
             type(
-                '{0}NodeLogger'.format(self.config.short_name.capitalize()),
+                f'{self.config.short_name.capitalize()}NodeLogger',
                 (logger.AddonNodeLogger,),
                 {'addon_short_name': self.config.short_name}
             )
@@ -762,9 +760,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
         """
         if self.has_auth and self.user_settings.owner == removed:
             return (
-                u'The {addon} add-on for this {category} is authenticated by {name}. '
-                u'Removing this user will also remove write access to {addon} '
-                u'unless another contributor re-authenticates the add-on.'
+                'The {addon} add-on for this {category} is authenticated by {name}. '
+                'Removing this user will also remove write access to {addon} '
+                'unless another contributor re-authenticates the add-on.'
             ).format(
                 addon=self.config.full_name,
                 category=node.project_or_component,
@@ -785,8 +783,8 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             self.user_settings.save()
             self.clear_auth()
             message = (
-                u'Because the {addon} add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
+                'Because the {addon} add-on for {category} "{title}" was authenticated '
+                'by {user}, authentication information has been deleted.'
             ).format(
                 addon=self.config.full_name,
                 category=markupsafe.escape(node.category_display),
@@ -797,7 +795,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_addons')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">add-ons</a></u> page.'
+                    ' You can re-authenticate on the <u><a href="{url}">add-ons</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -808,7 +806,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
 
         :return: the cloned settings
         """
-        clone = super(BaseOAuthNodeSettings, self).after_fork(
+        clone = super().after_fork(
             node=node,
             fork=fork,
             user=user,
@@ -834,9 +832,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
         """
         if self.has_auth:
             return (
-                u'The contents of {addon} add-ons cannot be registered at this time; '
-                u'the {addon} add-on linked to this {category} will not be included '
-                u'as part of this registration.'
+                'The contents of {addon} add-ons cannot be registered at this time; '
+                'the {addon} add-on linked to this {category} will not be included '
+                'as part of this registration.'
             ).format(
                 addon=self.config.full_name,
                 category=node.project_or_component,
@@ -926,13 +924,13 @@ class BaseCitationsNodeSettings(BaseOAuthNodeSettings):
         self.list_id = None
         self.save()
 
-        return super(BaseCitationsNodeSettings, self).set_auth(*args, **kwargs)
+        return super().set_auth(*args, **kwargs)
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         if add_log:
             self.owner.add_log(
-                '{0}_node_deauthorized'.format(self.provider_name),
+                f'{self.provider_name}_node_deauthorized',
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
