@@ -1,6 +1,6 @@
 from addons.s3.serializer import S3Serializer
 
-class S3Provider(object):
+class S3Provider:
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
     name = 'Amazon S3'
@@ -8,7 +8,7 @@ class S3Provider(object):
     serializer = S3Serializer
 
     def __init__(self, account=None):
-        super(S3Provider, self).__init__()
+        super().__init__()
 
         # provide an unauthenticated session by default
         self.account = account

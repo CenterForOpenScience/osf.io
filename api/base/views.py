@@ -1,9 +1,7 @@
-from builtins import str
-
 from collections import defaultdict
-from distutils.version import StrictVersion
+from packaging.version import Version
 
-from django_bulk_update.helper import bulk_update
+from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.db.models import F, Q
@@ -52,7 +50,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         assert getattr(self, 'view_name', None), 'Must specify view_name on view.'
         assert getattr(self, 'view_category', None), 'Must specify view_category on view.'
         self.view_fqn = ':'.join([self.view_category, self.view_name])
-        super(JSONAPIBaseView, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def _get_embed_partial(self, field_name, field):
         """Create a partial function to fetch the values of an embedded field. A basic
@@ -144,7 +142,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         (request, object -> embed items) if the query string contains embeds.  Allows
          multiple levels of nesting.
         """
-        context = super(JSONAPIBaseView, self).get_serializer_context()
+        context = super().get_serializer_context()
         if self.kwargs.get('is_embedded'):
             embeds = []
         else:
@@ -152,9 +150,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
         fields_check = self.get_serializer_class()._declared_fields.copy()
         serializer_class_type = get_meta_type(self.serializer_class, self.request)
-        if 'fields[{}]'.format(serializer_class_type) in self.request.query_params:
+        if f'fields[{serializer_class_type}]' in self.request.query_params:
             # Check only requested and mandatory fields
-            sparse_fields = self.request.query_params['fields[{}]'.format(serializer_class_type)]
+            sparse_fields = self.request.query_params[f'fields[{serializer_class_type}]']
             for field in list(fields_check.copy().keys()):
                 if field not in ('type', 'id', 'links') and field not in sparse_fields:
                     fields_check.pop(field)
@@ -258,7 +256,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = LinkedNodesRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
@@ -284,7 +282,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(LinkedNodesRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
@@ -364,7 +362,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = LinkedRegistrationsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
@@ -393,14 +391,14 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(LinkedRegistrationsRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle])
 def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
@@ -443,7 +441,7 @@ def root(request, format=None, **kwargs):
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle])
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({
@@ -501,7 +499,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         try:
             return node.contributor_set.get(user=user)
         except Contributor.DoesNotExist:
-            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+            raise NotFound(f'{user} cannot be found in the list of contributors.')
 
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -552,7 +550,7 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
             elif query_val == ADMIN:
                 # If admin, return only members of admin group
                 return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
-        return super(BaseContributorList, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
 
 class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -613,7 +611,7 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
         )
 
 
-class WaterButlerMixin(object):
+class WaterButlerMixin:
 
     path_lookup_url_kwarg = 'path'
     provider_lookup_url_kwarg = 'provider'
@@ -627,7 +625,7 @@ class WaterButlerMixin(object):
         node = self.get_node(check_object_permissions=False)
         content_type = ContentType.objects.get_for_model(node)
 
-        objs_to_create = defaultdict(lambda: [])
+        objs_to_create = defaultdict(list)
         file_objs = []
 
         for item in files_list:
@@ -713,25 +711,25 @@ class DeprecatedView(JSONAPIBaseView):
         raise NotImplementedError()
 
     def __init__(self, *args, **kwargs):
-        super(DeprecatedView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.is_deprecated = False
 
     def determine_version(self, request, *args, **kwargs):
-        version, scheme = super(DeprecatedView, self).determine_version(request, *args, **kwargs)
-        if StrictVersion(version) > StrictVersion(self.max_version):
+        version, scheme = super().determine_version(request, *args, **kwargs)
+        if Version(version) > Version(self.max_version):
             self.is_deprecated = True
-            raise NotFound(detail='This route has been deprecated. It was last available in version {}'.format(self.max_version))
+            raise NotFound(detail=f'This route has been deprecated. It was last available in version {self.max_version}')
         return version, scheme
 
     def finalize_response(self, request, response, *args, **kwargs):
-        response = super(DeprecatedView, self).finalize_response(request, response, *args, **kwargs)
+        response = super().finalize_response(request, response, *args, **kwargs)
         if self.is_deprecated:
             # Already has the error message
             return response
         if response.status_code == 204:
             response.status_code = 200
             response.data = {}
-        deprecation_warning = 'This route is deprecated and will be unavailable after version {}'.format(self.max_version)
+        deprecation_warning = f'This route is deprecated and will be unavailable after version {self.max_version}'
         if response.data.get('meta', False):
             if response.data['meta'].get('warnings', False):
                 response.data['meta']['warnings'].append(deprecation_warning)

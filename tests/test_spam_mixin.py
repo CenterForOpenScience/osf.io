@@ -1,12 +1,10 @@
-from __future__ import absolute_import
 import abc
 
 import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from nose.tools import assert_equal, assert_in, assert_raises
 
-import mock
+from unittest import mock
 
 from framework.auth import Auth
 
@@ -42,7 +40,7 @@ def test_throttled_autoban(mock_mail):
 class TestReportAbuse(DbTestCase):
 
     def setUp(self):
-        super(TestReportAbuse, self).setUp()
+        super().setUp()
         self.comment = CommentFactory()
         self.auth = Auth(user=self.comment.user)
 
@@ -51,24 +49,24 @@ class TestReportAbuse(DbTestCase):
         time = timezone.now()
         self.comment.report_abuse(
             user, date=time, category='spam', text='ads', save=True)
-        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
+        assert self.comment.spam_status == SpamStatus.FLAGGED
         equivalent = dict(
             date=time,
             category='spam',
             text='ads',
             retracted=False
         )
-        assert_in(user._id, self.comment.reports)
-        assert_equal(self.comment.reports[user._id], equivalent)
+        assert user._id in self.comment.reports
+        assert self.comment.reports[user._id] == equivalent
 
     def test_report_abuse_own_comment(self):
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             self.comment.report_abuse(
                 self.auth.user,
                 category='spam', text='ads',
                 save=True
             )
-        assert_equal(self.comment.spam_status, SpamStatus.UNKNOWN)
+        assert self.comment.spam_status == SpamStatus.UNKNOWN
 
     def test_retract_report(self):
         user = UserFactory()
@@ -76,17 +74,17 @@ class TestReportAbuse(DbTestCase):
         self.comment.report_abuse(
             user, date=time, category='spam', text='ads', save=True
         )
-        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
+        assert self.comment.spam_status == SpamStatus.FLAGGED
         self.comment.retract_report(user, save=True)
-        assert_equal(self.comment.spam_status, SpamStatus.UNKNOWN)
+        assert self.comment.spam_status == SpamStatus.UNKNOWN
         equivalent = {
             'date': time,
             'category': 'spam',
             'text': 'ads',
             'retracted': True
         }
-        assert_in(user._id, self.comment.reports)
-        assert_equal(self.comment.reports[user._id], equivalent)
+        assert user._id in self.comment.reports
+        assert self.comment.reports[user._id] == equivalent
 
     def test_retract_report_not_reporter(self):
         reporter = UserFactory()
@@ -94,9 +92,9 @@ class TestReportAbuse(DbTestCase):
         self.comment.report_abuse(
             reporter, category='spam', text='ads', save=True
         )
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             self.comment.retract_report(non_reporter, save=True)
-        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
+        assert self.comment.spam_status == SpamStatus.FLAGGED
 
     def test_retract_one_report_of_many(self):
         user_1 = UserFactory()
@@ -105,7 +103,7 @@ class TestReportAbuse(DbTestCase):
         self.comment.report_abuse(
             user_1, date=time, category='spam', text='ads', save=True
         )
-        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
+        assert self.comment.spam_status == SpamStatus.FLAGGED
         self.comment.report_abuse(
             user_2, date=time, category='spam', text='all', save=True
         )
@@ -116,9 +114,9 @@ class TestReportAbuse(DbTestCase):
             'text': 'ads',
             'retracted': True
         }
-        assert_in(user_1._id, self.comment.reports)
-        assert_equal(self.comment.reports[user_1._id], equivalent)
-        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
+        assert user_1._id in self.comment.reports
+        assert self.comment.reports[user_1._id] == equivalent
+        assert self.comment.spam_status == SpamStatus.FLAGGED
 
     def test_cannot_remove_flag_not_retracted(self):
         user = UserFactory()
@@ -126,28 +124,28 @@ class TestReportAbuse(DbTestCase):
             user, category='spam', text='ads', save=True
         )
         self.comment.remove_flag(save=True)
-        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
+        assert self.comment.spam_status == SpamStatus.FLAGGED
 
     def test_remove_flag(self):
         self.comment.flag_spam()
         self.comment.save()
-        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
+        assert self.comment.spam_status == SpamStatus.FLAGGED
         self.comment.remove_flag(save=True)
-        assert_equal(self.comment.spam_status, SpamStatus.UNKNOWN)
+        assert self.comment.spam_status == SpamStatus.UNKNOWN
 
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             self.comment.save()
 
     def test_validate_reports_bad_type(self):
         self.comment.reports[self.auth.user._id] = 'not a dict'
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             self.comment.save()
 
     def test_validate_reports_bad_value(self):
         self.comment.reports[self.auth.user._id] = {'foo': 'bar'}
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             self.comment.save()
 
 

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-
 import copy
 import functools
-from rest_framework import status as http_status
+from rest_framework import status
 import json
 import logging
 import os
@@ -53,11 +51,11 @@ _TPL_LOOKUP_SAFE = TemplateLookup(
 )
 
 REDIRECT_CODES = [
-    http_status.HTTP_301_MOVED_PERMANENTLY,
-    http_status.HTTP_302_FOUND,
+    status.HTTP_301_MOVED_PERMANENTLY,
+    status.HTTP_302_FOUND,
 ]
 
-class Rule(object):
+class Rule:
     """ Container for routing and rendering rules."""
 
     @staticmethod
@@ -118,11 +116,11 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except Exception as error:
             logger.exception(error)
             if settings.SENTRY_DSN and not app.debug:
-                sentry.log_exception()
+                sentry.log_exception(error)
             if debug_mode:
                 raise
             data = HTTPError(
-                http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message=repr(error),
             )
         return renderer(data, **renderer_kwargs or {})
@@ -193,17 +191,10 @@ def process_rules(app, rules, prefix=''):
                     methods=rule.methods,
                 )
             except AssertionError:
-                raise AssertionError('URLRule({}, {})\'s view function name is overwriting an existing endpoint'.format(prefix + url, view_func.__name__ + rule.endpoint_suffix))
+                raise AssertionError(f'URLRule({prefix + url}, {view_func.__name__ + rule.endpoint_suffix})\'s view function name is overwriting an existing endpoint')
 
 
 ### Renderer helpers ###
-
-def render_mustache_string(tpl_string, data):
-    import pystache
-    return pystache.render(tpl_string, context=data)
-
-def render_jinja_string(tpl, data):
-    pass
 
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data, trust=True):
@@ -241,8 +232,6 @@ def render_mako_string(tpldir, tplname, data, trust=True):
 
 
 renderer_extension_map = {
-    '.stache': render_mustache_string,
-    '.jinja': render_jinja_string,
     '.mako': render_mako_string,
 }
 
@@ -294,7 +283,7 @@ def call_url(url, view_kwargs=None):
     rv, _, _, _ = unpack(rv)
 
     # Follow redirects
-    if isinstance(rv, werkzeug.wrappers.BaseResponse) \
+    if isinstance(rv, werkzeug.wrappers.Response) \
             and rv.status_code in REDIRECT_CODES:
         redirect_url = rv.headers['Location']
         return call_url(redirect_url)
@@ -303,7 +292,7 @@ def call_url(url, view_kwargs=None):
 
 ### Renderers ###
 
-class Renderer(object):
+class Renderer:
 
     CONTENT_TYPE = 'text/html'
 
@@ -326,7 +315,7 @@ class Renderer(object):
             return self.handle_error(data)
 
         # Return if response
-        if isinstance(data, werkzeug.wrappers.BaseResponse):
+        if isinstance(data, werkzeug.wrappers.Response):
             return data
 
         # Unpack tuple
@@ -336,7 +325,7 @@ class Renderer(object):
         rendered = self.render(data, redirect_url, *args, **kwargs)
 
         # Return if response
-        if isinstance(rendered, werkzeug.wrappers.BaseResponse):
+        if isinstance(rendered, werkzeug.wrappers.Response):
             return rendered
 
         # Set content type in headers
@@ -507,11 +496,11 @@ class WebRenderer(Renderer):
                 uri_data = call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
-                return '<div>URI {} not found</div>'.format(markupsafe.escape(uri)), is_replace
+                return f'<div>URI {markupsafe.escape(uri)} not found</div>', is_replace
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(markupsafe.escape(str(error_msg))), is_replace
+                    return f'<div>{markupsafe.escape(str(error_msg))}</div>', is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
@@ -555,34 +544,8 @@ class WebRenderer(Renderer):
         try:
             # TODO: Seems like Jinja2 and handlebars renderers would not work with this call sig
             rendered = renderer(self.template_dir, template_name, data, trust=self.trust)
-        except IOError:
-            return '<div>Template {} not found.</div>'.format(template_name)
-
-        ## Parse HTML using html5lib; lxml is too strict and e.g. throws
-        ## errors if missing parent container; htmlparser mangles whitespace
-        ## and breaks replacement
-        #parsed = BeautifulSoup(rendered, 'html5lib')
-        #subtemplates = parsed.find_all(
-        #    lambda tag: tag.has_attr('mod-meta')
-        #)
-        #
-        #for element in subtemplates:
-        #
-        #    # Extract HTML of original element
-        #    element_html = str(element)
-        #
-        #    # Render nested template
-        #    template_rendered, is_replace = self.render_element(element, data)
-        #
-        #    # Build replacement
-        #    if is_replace:
-        #        replacement = template_rendered
-        #    else:
-        #        element.string = template_rendered
-        #        replacement = str(element)
-        #
-        #    # Replace
-        #    rendered = rendered.replace(element_html, replacement)
+        except OSError:
+            return f'<div>Template {template_name} not found.</div>'
 
         return rendered
 

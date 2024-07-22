@@ -12,6 +12,7 @@ owncloud_root_folder = generic_root_folder('owncloud')
 
 class OwnCloudAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.owncloud'
     label = 'addons_owncloud'
     full_name = 'ownCloud'

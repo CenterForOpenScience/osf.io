@@ -1,8 +1,10 @@
-import furl
+from furl import furl
+from urllib.parse import unquote_plus
+
 from django.utils import timezone
 from rest_framework import status as http_status
 import json
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from lxml import etree
 import requests
@@ -26,7 +28,7 @@ class CasHTTPError(CasError):
     """Error raised when an unexpected error is returned from the CAS server."""
 
     def __init__(self, code, message, headers, content):
-        super(CasHTTPError, self).__init__(code, message)
+        super().__init__(code, message)
         self.headers = headers
         self.content = content
 
@@ -41,10 +43,10 @@ class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""
 
     def __init__(self, message):
-        super(CasTokenError, self).__init__(http_status.HTTP_400_BAD_REQUEST, message)
+        super().__init__(http_status.HTTP_400_BAD_REQUEST, message)
 
 
-class CasResponse(object):
+class CasResponse:
     """A wrapper for an HTTP response returned from CAS."""
 
     def __init__(self, authenticated=False, status=None, user=None, attributes=None):
@@ -54,7 +56,7 @@ class CasResponse(object):
         self.attributes = attributes or {}
 
 
-class CasClient(object):
+class CasClient:
     """HTTP client for the CAS server."""
 
     def __init__(self, base_url):
@@ -74,8 +76,7 @@ class CasClient(object):
         :return: dedicated CAS login url
         """
 
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.append('login')
+        url = furl(self.BASE_URL).add(path='login')
         url.args['service'] = service_url
         if campaign:
             url.args['campaign'] = campaign
@@ -85,19 +86,16 @@ class CasClient(object):
         return url.url
 
     def get_logout_url(self, service_url):
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.append('logout')
+        url = furl(self.BASE_URL).add(path='logout')
         url.args['service'] = service_url
         return url.url
 
     def get_profile_url(self):
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('oauth2', 'profile',))
+        url = furl(self.BASE_URL).add(path=['oauth2', 'profile'])
         return url.url
 
     def get_auth_token_revocation_url(self):
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('oauth2', 'revoke'))
+        url = furl(self.BASE_URL).add(path=['oauth2', 'revoke'])
         return url.url
 
     def service_validate(self, ticket, service_url):
@@ -110,8 +108,7 @@ class CasClient(object):
         :raises: CasError if an unexpected response is returned
         """
 
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('p3', 'serviceValidate',))
+        url = furl(self.BASE_URL).add(path=['p3', 'serviceValidate'])
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 
@@ -141,7 +138,7 @@ class CasClient(object):
 
         url = self.get_profile_url()
         headers = {
-            'Authorization': 'Bearer {}'.format(access_token),
+            'Authorization': f'Bearer {access_token}',
         }
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
@@ -267,11 +264,11 @@ def make_response_from_ticket(ticket, service_url):
     :return: redirect response
     """
 
-    service_furl = furl.furl(service_url)
+    service_furl = furl(service_url)
     # `service_url` is guaranteed to be removed of `ticket` parameter, which has been pulled off in
     # `framework.sessions.before_request()`.
     if 'ticket' in service_furl.args:
-        service_furl.args.pop('ticket')
+        service_furl.remove(args=['ticket'])
     client = get_client()
     cas_resp = client.service_validate(ticket, service_furl.url)
     if cas_resp.authenticated:
@@ -307,11 +304,11 @@ def make_response_from_ticket(ticket, service_url):
                     f'CAS response - redirect existing external IdP login to verification key login: user=[{user._id}]',
                     LogLevel.INFO
                 )
-                return redirect(get_logout_url(get_login_url(
+                return redirect(get_logout_url(unquote_plus(get_login_url(
                     service_url,
                     username=user.username,
                     verification_key=user.verification_key
-                )))
+                ))))
 
             # if user is authenticated by CAS
             print_cas_log(f'CAS response - finalizing authentication: user=[{user._id}]', LogLevel.INFO)
@@ -325,7 +322,7 @@ def make_response_from_ticket(ticket, service_url):
             )
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],

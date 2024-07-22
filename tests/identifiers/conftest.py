@@ -14,6 +14,6 @@ def app():
 
     rm_handlers(test_app, django_handlers)
 
-    test_app.testing = True
+    test_app.config['TESTING'] = True
     return test_app
 

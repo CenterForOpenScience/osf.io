@@ -23,8 +23,8 @@ def manage_spammy_content(regex, days=1, models=[Node, Preprint, Registration], 
         count = count + len(data)
 
     script_finish_time = timezone.now()
-    logger.info('Script finished time: {}'.format(script_finish_time))
-    logger.info('Run time {}'.format(script_finish_time - script_start_time))
+    logger.info(f'Script finished time: {script_finish_time}')
+    logger.info(f'Run time {script_finish_time - script_start_time}')
 
     if ban:
         logger.info(f'Banned {count} users')

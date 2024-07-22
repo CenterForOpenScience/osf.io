@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import factory
 from factory.django import DjangoModelFactory
 from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
@@ -8,9 +7,9 @@ from addons.owncloud.models import UserSettings, NodeSettings
 
 class OwnCloudAccountFactory(ExternalAccountFactory):
     provider = 'owncloud'
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    profile_url = factory.Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n))
-    oauth_secret = factory.Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n))
+    provider_id = factory.Sequence(lambda n: f'id-{n}')
+    profile_url = factory.Sequence(lambda n: f'https://localhost/{n}/owncloud')
+    oauth_secret = factory.Sequence(lambda n: f'https://localhost/{n}/owncloud')
     display_name = 'catname'
     oauth_key = 'meoword'
 

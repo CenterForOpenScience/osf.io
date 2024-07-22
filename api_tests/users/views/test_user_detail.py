@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
-from future.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 import datetime as dt
 
 from django.db import connection, transaction
@@ -49,40 +48,40 @@ class TestUserDetail:
     def test_get(self, app, user_one, user_two, project, view_only_link):
 
         #   test_gets_200
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_correct_pk_user
-        url = '/{}users/{}/?version=latest'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/?version=latest'
         res = app.get(url)
         user_json = res.json['data']
         assert user_json['attributes']['full_name'] == user_one.fullname
         assert user_one.social['twitter'] == user_json['attributes']['social']['twitter']
 
     #   test_get_incorrect_pk_user_logged_in
-        url = '/{}users/{}/'.format(API_BASE, user_two._id)
+        url = f'/{API_BASE}users/{user_two._id}/'
         res = app.get(url)
         user_json = res.json['data']
         assert user_json['attributes']['full_name'] != user_one.fullname
 
     #   test_returns_timezone_and_locale
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url)
         attributes = res.json['data']['attributes']
         assert attributes['timezone'] == user_one.timezone
         assert attributes['locale'] == user_one.locale
 
     #   test_get_new_users
-        url = '/{}users/{}/'.format(API_BASE, user_two._id)
+        url = f'/{API_BASE}users/{user_two._id}/'
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == user_two.fullname
         assert res.json['data']['attributes']['social'] == {}
 
     #   test_get_incorrect_pk_user_not_logged_in
-        url = '/{}users/{}/'.format(API_BASE, user_two._id)
+        url = f'/{API_BASE}users/{user_two._id}/'
         res = app.get(url, auth=user_one.auth)
         user_json = res.json['data']
         assert user_json['attributes']['full_name'] != user_one.fullname
@@ -100,13 +99,13 @@ class TestUserDetail:
         assert int(query_dict.get('s')[0]) == size
 
     #   test_profile_image_in_links
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url)
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
 
     #   user_viewed_through_anonymous_link
-        url = '/{}users/{}/?view_only={}'.format(API_BASE, user_one._id, view_only_link.key)
+        url = f'/{API_BASE}users/{user_one._id}/?view_only={view_only_link.key}'
         res = app.get(url)
         user_json = res.json['data']
         assert user_json['id'] == ''
@@ -116,15 +115,15 @@ class TestUserDetail:
         assert user_json['links'] == {}
 
     def test_preprint_relationship(self, app, user_one):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
-        preprint_url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
+        preprint_url = f'/{API_BASE}users/{user_one._id}/preprints/'
         res = app.get(url, auth=user_one)
         user_json = res.json['data']
         href_url = user_json['relationships']['preprints']['links']['related']['href']
         assert preprint_url in href_url
 
     def test_registrations_relationship(self, app, user_one):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         registration_url = '/{}users/{}/registrations/'.format(
             API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
@@ -133,19 +132,19 @@ class TestUserDetail:
         assert registration_url in href_url
 
     def test_nodes_relationship_is_absent(self, app, user_one):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url, auth=user_one)
         assert 'node' not in res.json['data']['relationships'].keys()
 
     def test_emails_relationship(self, app, user_one):
         # test relationship does not show for anonymous request
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url)
         assert 'emails' not in res.json['data']['relationships'].keys()
 
     def test_user_settings_relationship(self, app, user_one, user_two):
         # settings relationship does not show for anonymous request
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url)
         assert 'settings' not in res.json['data']['relationships'].keys()
 
@@ -159,7 +158,7 @@ class TestUserDetail:
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-8966
     def test_browsable_api_for_user_detail(self, app, user_one):
-        url = '/{}users/{}/?format=api'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/?format=api'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
@@ -167,7 +166,7 @@ class TestUserDetail:
         socialname = 'ohhey'
         user_one.social = {'twitter': [socialname], 'github': []}
         user_one.save()
-        url = '/{}users/{}/?version=2.9'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/?version=2.9'
         res = app.get(url, auth=user_one)
         user_social_json = res.json['data']['attributes']['social']
 
@@ -175,7 +174,7 @@ class TestUserDetail:
         assert user_social_json['github'] == ''
         assert 'linkedIn' not in user_social_json.keys()
 
-        url = '/{}users/{}/?version=2.10'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/?version=2.10'
         res = app.get(url, auth=user_one)
         user_social_json = res.json['data']['attributes']['social']
 
@@ -261,33 +260,33 @@ class TestUserRoutesNodeRoutes:
             bookmark_collection):
 
         #   test_get_200_path_users_me_userone_logged_in
-        url = '/{}users/me/'.format(API_BASE)
+        url = f'/{API_BASE}users/me/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
     #   test_get_200_path_users_me_usertwo_logged_in
-        url = '/{}users/me/'.format(API_BASE)
+        url = f'/{API_BASE}users/me/'
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
 
     #   test_get_200_path_users_user_id_user_logged_in
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
     #   test_get_200_path_users_user_id_no_user
-        url = '/{}users/{}/'.format(API_BASE, user_two._id)
+        url = f'/{API_BASE}users/{user_two._id}/'
         res = app.get(url)
         assert res.status_code == 200
 
     #   test_get_200_path_users_user_id_unauthorized_user
-        url = '/{}users/{}/'.format(API_BASE, user_two._id)
+        url = f'/{API_BASE}users/{user_two._id}/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == user_two._id
 
     #   test_get_200_path_users_me_nodes_user_logged_in
-        url = '/{}users/me/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/me/nodes/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
@@ -301,7 +300,7 @@ class TestUserRoutesNodeRoutes:
         assert project_deleted_user_one._id not in ids
 
     #   test_get_200_path_users_user_id_nodes_user_logged_in
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
@@ -315,7 +314,7 @@ class TestUserRoutesNodeRoutes:
         assert project_deleted_user_one._id not in ids
 
     #   test_get_200_path_users_user_id_nodes_no_user
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/'
         res = app.get(url)
         assert res.status_code == 200
 
@@ -331,7 +330,7 @@ class TestUserRoutesNodeRoutes:
         assert project_deleted_user_one._id not in ids
 
     #   test_get_200_path_users_user_id_nodes_unauthorized_user
-        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/'
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
 
@@ -348,7 +347,7 @@ class TestUserRoutesNodeRoutes:
 
     def test_embed_nodes(self, app, user_one, project_public_user_one):
 
-        url = '/{}users/{}/?embed=nodes'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/?embed=nodes'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         embedded_data = res.json['data']['embeds']['nodes']['data'][0]['attributes']
@@ -360,69 +359,69 @@ class TestUserRoutesNodeRoutes:
         # TODO: change expected exception from 403 to 401 for unauthorized
         # users
 
-        url = '/{}users/me/nodes/'.format(API_BASE)
+        url = f'/{API_BASE}users/me/nodes/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
     #   test_get_403_path_users_me_no_user
         # TODO: change expected exception from 403 to 401 for unauthorized
         # users
-        url = '/{}users/me/'.format(API_BASE)
+        url = f'/{API_BASE}users/me/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
     #   test_get_404_path_users_user_id_me_user_logged_in
-        url = '/{}users/{}/me/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/me/'
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_users_user_id_me_no_user
-        url = '/{}users/{}/me/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/me/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_users_user_id_me_unauthorized_user
-        url = '/{}users/{}/me/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/me/'
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_users_user_id_nodes_me_user_logged_in
-        url = '/{}users/{}/nodes/me/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/me/'
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_users_user_id_nodes_me_unauthorized_user
-        url = '/{}users/{}/nodes/me/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/me/'
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_users_user_id_nodes_me_no_user
-        url = '/{}users/{}/nodes/me/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/nodes/me/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_nodes_me_user_logged_in
-        url = '/{}nodes/me/'.format(API_BASE)
+        url = f'/{API_BASE}nodes/me/'
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_nodes_me_no_user
-        url = '/{}nodes/me/'.format(API_BASE)
+        url = f'/{API_BASE}nodes/me/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_nodes_user_id_user_logged_in
-        url = '/{}nodes/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}nodes/{user_one._id}/'
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_nodes_user_id_unauthorized_user
-        url = '/{}nodes/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}nodes/{user_one._id}/'
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_get_404_path_nodes_user_id_no_user
-        url = '/{}nodes/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}nodes/{user_one._id}/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
@@ -478,7 +477,7 @@ class TestUserUpdate:
 
     @pytest.fixture()
     def url_user_one(self, user_one):
-        return '/v2/users/{}/'.format(user_one._id)
+        return f'/v2/users/{user_one._id}/'
 
     @pytest.fixture()
     def data_new_user_one(self, user_one):
@@ -1174,7 +1173,7 @@ class TestDeactivatedUser:
 
     def test_requesting_as_deactivated_user_returns_400_response(
             self, app, user_one):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
         user_one.is_disabled = True
@@ -1185,7 +1184,7 @@ class TestDeactivatedUser:
 
     def test_unconfirmed_users_return_entire_user_object(
             self, app, user_one, user_two):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 200
         user_one.is_registered = False
@@ -1198,7 +1197,7 @@ class TestDeactivatedUser:
 
     def test_requesting_deactivated_user_returns_410_response_and_meta_info(
             self, app, user_one, user_two):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 200
         user_one.is_disabled = True
@@ -1215,7 +1214,7 @@ class TestDeactivatedUser:
 
 
 @pytest.mark.django_db
-class UserProfileMixin(object):
+class UserProfileMixin:
 
     @pytest.fixture()
     def request_payload(self):
@@ -1263,7 +1262,7 @@ class UserProfileMixin(object):
 
     @pytest.fixture()
     def user_one_url(self, user_one):
-        return '/v2/users/{}/'.format(user_one._id)
+        return f'/v2/users/{user_one._id}/'
 
     @mock.patch('osf.models.user.OSFUser.check_spam')
     def test_user_put_profile_200(self, mock_check_spam, app, user_one, user_one_url, request_payload, request_key, user_attr):
@@ -1307,7 +1306,7 @@ class UserProfileMixin(object):
         request_payload['data']['attributes'][request_key][0]['institution'] = ''
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'institution' the field value '' is too short"
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value '' should be non-empty"
 
     def test_user_put_profile_validation_start_year_dependency(self, app, user_one, user_one_url, request_payload, request_key):
         # Tests to make sure ongoing is bool

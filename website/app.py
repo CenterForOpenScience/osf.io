@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import framework
 import importlib
 import json
@@ -19,7 +16,6 @@ from framework.flask import add_handlers, app
 # Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
 from framework.postcommit_tasks import handlers as postcommit_handlers
-from framework.sentry import sentry
 from framework.transactions import handlers as transaction_handlers
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
@@ -42,7 +38,7 @@ def init_addons(settings, routes=True):
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
         try:
-            addon = apps.get_app_config('addons_{}'.format(addon_name))
+            addon = apps.get_app_config(f'addons_{addon_name}')
         except LookupError:
             addon = None
         if addon:
@@ -50,6 +46,7 @@ def init_addons(settings, routes=True):
                 settings.ADDONS_AVAILABLE.append(addon)
             settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
+
 
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
@@ -98,6 +95,13 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     # The settings module
     settings = importlib.import_module(settings_module)
 
+    if settings.NEWRELIC_INI_PATH:
+        try:
+            import newrelic.agent
+            newrelic.agent.initialize(settings.NEWRELIC_INI_PATH)
+        except Exception as err:
+            raise Exception(f'Unable to initialize newrelic! {err}')
+
     init_addons(settings, routes)
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'w') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
@@ -119,11 +123,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if attach_request_handlers:
         attach_handlers(app, settings)
 
-    if app.debug:
-        logger.info("Sentry disabled; Flask's debug mode enabled")
-    else:
-        sentry.init_app(app)
-        logger.info("Sentry enabled; Flask's debug mode disabled")
+    # sentry-sdk automatically detects flask in dependencies and inits flask integration
 
     apply_middlewares(app, settings)
 

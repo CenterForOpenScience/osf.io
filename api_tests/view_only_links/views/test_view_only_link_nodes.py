@@ -201,8 +201,11 @@ class TestViewOnlyLinkNodesSet:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
-            project_two._id)
+        assert res.json['errors'][0]['detail'] == (
+            f'The node {project_two._id} cannot be affiliated with this View Only Link '
+            'because the node you\'re trying to affiliate is not descended from the '
+            'node that the View Only Link is attached to.'
+        )
 
     def test_set_node_second_level_component_without_first_level_parent(
             self, app, user, public_project, second_level_component, view_only_link, url):
@@ -259,7 +262,7 @@ class TestViewOnlyLinkNodesSet:
             self, app, user, read_write_user, read_only_user,
             non_contributor, component_one_payload, component_one, url):
 
-        #   test_invalid_nodes_in_payload
+        # test_invalid_nodes_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
@@ -273,7 +276,7 @@ class TestViewOnlyLinkNodesSet:
             expect_errors=True)
         assert res.status_code == 404
 
-    #   test_type_required_in_payload
+        # test_type_required_in_payload
         payload = {
             'data': [{
                 'id': component_one._id
@@ -286,7 +289,7 @@ class TestViewOnlyLinkNodesSet:
             expect_errors=True)
         assert res.status_code == 400
 
-    #   test_id_required_in_payload
+        # test_id_required_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
@@ -299,7 +302,7 @@ class TestViewOnlyLinkNodesSet:
             expect_errors=True)
         assert res.status_code == 400
 
-    #   test_read_write_contributor_cannot_set_nodes
+        # test_read_write_contributor_cannot_set_nodes
         res = app.post_json_api(
             url,
             component_one_payload,
@@ -307,7 +310,7 @@ class TestViewOnlyLinkNodesSet:
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_read_only_contributor_cannot_set_nodes
+        # test_read_only_contributor_cannot_set_nodes
         res = app.post_json_api(
             url,
             component_one_payload,
@@ -315,7 +318,7 @@ class TestViewOnlyLinkNodesSet:
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_logged_in_user_cannot_set_nodes
+        # test_logged_in_user_cannot_set_nodes
         res = app.post_json_api(
             url,
             component_one_payload,
@@ -323,7 +326,7 @@ class TestViewOnlyLinkNodesSet:
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_unauthenticated_user_cannot_set_nodes
+        # test_unauthenticated_user_cannot_set_nodes
         res = app.post_json_api(url, component_one_payload, expect_errors=True)
         assert res.status_code == 401
 
@@ -485,8 +488,11 @@ class TestViewOnlyLinkNodesUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
-            component_one._id)
+        assert res.json['errors'][0]['detail'] == (
+            f'The node {component_one._id} cannot be affiliated with this View Only '
+            'Link because the node you\'re trying to affiliate is not descended from '
+            'the node that the View Only Link is attached to.'
+        )
 
     def test_update_node_not_component(
             self, app, user, project_two, component_two, url):
@@ -502,8 +508,11 @@ class TestViewOnlyLinkNodesUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
-            project_two._id)
+        assert res.json['errors'][0]['detail'] == (
+            f'The node {project_two._id} cannot be affiliated with this View Only Link '
+            'because the node you\'re trying to affiliate is not descended from the '
+            'node that the View Only Link is attached to.'
+        )
 
     def test_update_node_second_level_component_without_first_level_parent(
             self, app, user, public_project, second_level_component, view_only_link, url):
@@ -569,7 +578,7 @@ class TestViewOnlyLinkNodesUpdate:
             non_contributor, public_project, component_one,
             update_payload, url):
 
-        #   test_invalid_nodes_in_payload
+        # test_invalid_nodes_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
@@ -586,7 +595,7 @@ class TestViewOnlyLinkNodesUpdate:
             expect_errors=True)
         assert res.status_code == 404
 
-    #   test_type_required_in_payload
+        # test_type_required_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
@@ -602,7 +611,7 @@ class TestViewOnlyLinkNodesUpdate:
             expect_errors=True)
         assert res.status_code == 400
 
-    #   test_id_required_in_payload
+        # test_id_required_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
@@ -618,7 +627,7 @@ class TestViewOnlyLinkNodesUpdate:
             expect_errors=True)
         assert res.status_code == 400
 
-    #   test_read_write_contributor_cannot_update_nodes
+        # test_read_write_contributor_cannot_update_nodes
         res = app.put_json_api(
             url,
             update_payload,
@@ -626,7 +635,7 @@ class TestViewOnlyLinkNodesUpdate:
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_read_only_contributor_cannot_update_nodes
+        # test_read_only_contributor_cannot_update_nodes
         res = app.put_json_api(
             url,
             update_payload,
@@ -634,7 +643,7 @@ class TestViewOnlyLinkNodesUpdate:
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_logged_in_user_cannot_update_nodes
+        # test_logged_in_user_cannot_update_nodes
         res = app.put_json_api(
             url,
             update_payload,
@@ -642,6 +651,6 @@ class TestViewOnlyLinkNodesUpdate:
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_unauthenticated_user_cannot_update_nodes
+        # test_unauthenticated_user_cannot_update_nodes
         res = app.put_json_api(url, update_payload, expect_errors=True)
         assert res.status_code == 401

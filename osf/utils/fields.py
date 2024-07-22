@@ -81,7 +81,7 @@ class EncryptedTextField(models.TextField):
 
 class NonNaiveDateTimeField(models.DateTimeField):
     def get_prep_value(self, value):
-        value = super(NonNaiveDateTimeField, self).get_prep_value(value)
+        value = super().get_prep_value(value)
         if value is not None and (value.tzinfo is None or value.tzinfo.utcoffset(value) is None):
             raise NaiveDatetimeException('Tried to encode a naive datetime.')
         return value
@@ -95,11 +95,11 @@ class EncryptedJSONField(JSONField):
 
     def get_prep_value(self, value, **kwargs):
         value = rapply(value, encrypt_string, prefix=self.prefix)
-        return super(EncryptedJSONField, self).get_prep_value(value, **kwargs)
+        return super().get_prep_value(value, **kwargs)
 
     def to_python(self, value):
         return rapply(value, decrypt_string, prefix=self.prefix)
 
     def from_db_value(self, value, expression, connection):
-        value = super(EncryptedJSONField, self).from_db_value(value, expression, connection)
+        value = super().from_db_value(value, expression, connection)
         return self.to_python(value)

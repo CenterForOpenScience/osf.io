@@ -43,7 +43,7 @@ class TestNodeList:
 
     @pytest.fixture()
     def sparse_url(self, user):
-        return '/{}sparse/nodes/'.format(API_BASE)
+        return f'/{API_BASE}sparse/nodes/'
 
     @pytest.fixture()
     def preprint(self, public_project, user):

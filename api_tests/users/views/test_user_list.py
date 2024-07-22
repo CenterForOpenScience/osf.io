@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 from importlib import import_module
 
 import itsdangerous
 from django.conf import settings as django_conf_settings
-import mock
+from unittest import mock
 import pytest
 import unittest
-from future.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from uuid import UUID
 
 from api.base.settings.defaults import API_BASE
@@ -40,12 +39,12 @@ class TestUsers:
         return AuthUserFactory(fullname='Freddie Mercury II')
 
     def test_returns_200(self, app):
-        res = app.get('/{}users/'.format(API_BASE))
+        res = app.get(f'/{API_BASE}users/')
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     def test_find_user_in_users(self, app, user_one, user_two):
-        url = '/{}users/'.format(API_BASE)
+        url = f'/{API_BASE}users/'
 
         res = app.get(url)
         user_son = res.json['data']
@@ -54,7 +53,7 @@ class TestUsers:
         assert user_two._id in ids
 
     def test_all_users_in_users(self, app, user_one, user_two):
-        url = '/{}users/'.format(API_BASE)
+        url = f'/{API_BASE}users/'
 
         res = app.get(url)
         user_son = res.json['data']
@@ -66,7 +65,7 @@ class TestUsers:
     def test_merged_user_is_not_in_user_list(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)
-        res = app.get('/{}users/'.format(API_BASE))
+        res = app.get(f'/{API_BASE}users/')
         user_son = res.json['data']
 
         ids = [each['id'] for each in user_son]
@@ -75,7 +74,7 @@ class TestUsers:
         assert user_one._id not in ids
 
     def test_find_multiple_in_users(self, app, user_one, user_two):
-        url = '/{}users/?filter[full_name]=fred'.format(API_BASE)
+        url = f'/{API_BASE}users/?filter[full_name]=fred'
 
         res = app.get(url)
         user_json = res.json['data']
@@ -84,7 +83,7 @@ class TestUsers:
         assert user_two._id in ids
 
     def test_find_single_user_in_users(self, app, user_one, user_two):
-        url = '/{}users/?filter[full_name]=my'.format(API_BASE)
+        url = f'/{API_BASE}users/?filter[full_name]=my'
         user_one.fullname = 'My Mom'
         user_one.save()
         res = app.get(url)
@@ -94,7 +93,7 @@ class TestUsers:
         assert user_two._id not in ids
 
     def test_find_no_user_in_users(self, app, user_one, user_two):
-        url = '/{}users/?filter[full_name]=NotMyMom'.format(API_BASE)
+        url = f'/{API_BASE}users/?filter[full_name]=NotMyMom'
         res = app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -133,7 +132,7 @@ class TestUsers:
             creator=user_one,
             is_public=True)
 
-        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        url = f'/{API_BASE}users/?show_projects_in_common=true'
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -145,7 +144,7 @@ class TestUsers:
     def test_users_projects_in_common(self, app, user_one, user_two):
         user_one.fullname = 'hello'
         user_one.save()
-        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        url = f'/{API_BASE}users/?show_projects_in_common=true'
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -229,7 +228,7 @@ class TestUsers:
             self, app, user_one, user_two):
         user_one.fullname = 'hello'
         user_one.save()
-        url = '/{}users/'.format(API_BASE)
+        url = f'/{API_BASE}users/'
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -239,7 +238,7 @@ class TestUsers:
     def test_users_list_takes_profile_image_size_param(
             self, app, user_one, user_two):
         size = 42
-        url = '/{}users/?profile_image_size={}'.format(API_BASE, size)
+        url = f'/{API_BASE}users/?profile_image_size={size}'
         res = app.get(url)
         user_json = res.json['data']
         for user in user_json:
@@ -259,7 +258,7 @@ class TestUsers:
         doe_jane.family_name = 'Jane'
         doe_jane.save()
 
-        url = '/{}users/?filter[given_name,family_name]=Doe'.format(API_BASE)
+        url = f'/{API_BASE}users/?filter[given_name,family_name]=Doe'
         res = app.get(url)
         data = res.json['data']
         assert len(data) == 2
@@ -284,7 +283,7 @@ class TestUsers:
 
     def test_users_list_filter_multiple_fields_with_bad_filter(
             self, app, user_one, user_two):
-        url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(API_BASE)
+        url = f'/{API_BASE}users/?filter[given_name,not_a_filter]=Doe'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
 
@@ -302,7 +301,7 @@ class TestUsersCreate:
 
     @pytest.fixture()
     def url_base(self):
-        return '/{}users/'.format(API_BASE)
+        return f'/{API_BASE}users/'
 
     @pytest.fixture()
     def data(self, email_unconfirmed):
@@ -317,7 +316,7 @@ class TestUsersCreate:
         }
 
     def tearDown(self, app):
-        super(TestUsersCreate, self).tearDown()
+        super().tearDown()
         app.reset()  # clears cookies
         OSFUser.remove()
 
@@ -326,7 +325,7 @@ class TestUsersCreate:
             self, mock_mail, app, user, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
-            '{}?send_email=true'.format(url_base),
+            f'{url_base}?send_email=true',
             data,
             auth=user.auth,
             expect_errors=True
@@ -341,7 +340,7 @@ class TestUsersCreate:
             self, mock_mail, app, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
-            '{}?send_email=true'.format(url_base),
+            f'{url_base}?send_email=true',
             data,
             expect_errors=True
         )
@@ -363,7 +362,7 @@ class TestUsersCreate:
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
-            '{}?send_email=true'.format(url_base),
+            f'{url_base}?send_email=true',
             data
         )
         assert res.status_code == 201
@@ -400,9 +399,9 @@ class TestUsersCreate:
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
-            '{}?send_email=true'.format(url_base),
+            f'{url_base}?send_email=true',
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': f'Bearer {token.token_id}'}
         )
 
         assert res.status_code == 201
@@ -444,7 +443,7 @@ class TestUsersCreate:
         res = app.post_json_api(
             url_base,
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': f'Bearer {token.token_id}'}
         )
 
         assert res.status_code == 201
@@ -484,9 +483,9 @@ class TestUsersCreate:
 
         assert OSFUser.objects.filter(fullname='No Email').count() == 0
         res = app.post_json_api(
-            '{}?send_email=true'.format(url_base),
+            f'{url_base}?send_email=true',
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': f'Bearer {token.token_id}'}
         )
 
         assert res.status_code == 201
@@ -525,9 +524,9 @@ class TestUsersCreate:
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
-            '{}?send_email=true'.format(url_base),
+            f'{url_base}?send_email=true',
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)},
+            headers={'Authorization': f'Bearer {token.token_id}'},
             expect_errors=True
         )
 
@@ -565,9 +564,9 @@ class TestUsersCreate:
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
-            '{}?send_email=true'.format(url_base),
+            f'{url_base}?send_email=true',
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': f'Bearer {token.token_id}'}
         )
 
         assert res.status_code == 201

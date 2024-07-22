@@ -17,9 +17,9 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
         qs = AbstractNode.objects.filter(creator__isnull=True)
-        logger.info('Found {} nodes with no creator'.format(qs.count()))
+        logger.info(f'Found {qs.count()} nodes with no creator')
         for node in AbstractNode.objects.filter(creator__isnull=True):
-            logger.info('Setting the creator for AbstractNode {} to the first contrbutor'.format(node._id))
+            logger.info(f'Setting the creator for AbstractNode {node._id} to the first contrbutor')
             AbstractNode.objects.filter(id=node.id).update(creator=node.contributors.first())
         if dry:
             raise Exception('Abort Transaction - Dry Run')

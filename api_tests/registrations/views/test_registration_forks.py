@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
@@ -171,8 +171,8 @@ class TestRegistrationForksList:
         expected_logs.append('node_forked')
 
         forked_logs = data['embeds']['logs']['data']
-        assert set(expected_logs) == set(
-            log['attributes']['action'] for log in forked_logs)
+        assert set(expected_logs) == {
+            log['attributes']['action'] for log in forked_logs}
         assert len(forked_logs) == len(expected_logs)
 
         forked_from = data['embeds']['forked_from']['data']
@@ -361,7 +361,7 @@ class TestRegistrationForkCreate:
     def test_fork_private_components_no_access(
             self, app, user_two, user_three, public_registration,
             public_registration_url, fork_data):
-        url = '{}?embed=children'.format(public_registration_url)
+        url = f'{public_registration_url}?embed=children'
         NodeFactory(
             parent=public_registration,
             creator=user_two,
@@ -375,7 +375,7 @@ class TestRegistrationForkCreate:
     def test_fork_components_you_can_access(
             self, app, user, private_registration,
             private_registration_url, fork_data):
-        url = '{}?embed=children'.format(private_registration_url)
+        url = f'{private_registration_url}?embed=children'
         new_component = NodeFactory(parent=private_registration, creator=user)
         res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
@@ -386,7 +386,7 @@ class TestRegistrationForkCreate:
     def test_fork_private_node_links(
             self, app, user, private_registration_url, fork_data):
 
-        url = '{}?embed=node_links'.format(private_registration_url)
+        url = f'{private_registration_url}?embed=node_links'
 
         # Node link is forked, but shows up as a private node link
         res = app.post_json_api(url, fork_data, auth=user.auth)

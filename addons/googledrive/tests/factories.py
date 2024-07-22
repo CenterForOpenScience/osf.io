@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Factory boy factories for the Google Drive addon."""
 import factory
 
@@ -14,9 +13,9 @@ from addons.googledrive.models import UserSettings
 
 class GoogleDriveAccountFactory(ExternalAccountFactory):
     provider = 'googledrive'
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
-    oauth_secret = factory.Sequence(lambda n: 'secret-{0}'.format(n))
+    provider_id = factory.Sequence(lambda n: f'id-{n}')
+    oauth_key = factory.Sequence(lambda n: f'key-{n}')
+    oauth_secret = factory.Sequence(lambda n: f'secret-{n}')
     expires_at = timezone.now() + relativedelta(days=1)
 
 class GoogleDriveUserSettingsFactory(DjangoModelFactory):

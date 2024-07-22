@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -7,11 +7,11 @@ from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestM
 from osf.utils import permissions
 
 @pytest.mark.django_db
-@pytest.mark.enable_enqueue
+@pytest.mark.enable_enqueue_task
 class TestCreateNodeRequestAction(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):
-        return '/{}actions/requests/nodes/'.format(API_BASE)
+        return f'/{API_BASE}actions/requests/nodes/'
 
     def create_payload(self, _id=None, **attrs):
         payload = {
@@ -258,7 +258,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
 class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
     @pytest.fixture()
     def url(self, pre_request, post_request, none_request):
-        return '/{}actions/requests/preprints/'.format(API_BASE)
+        return f'/{API_BASE}actions/requests/preprints/'
 
     def create_payload(self, _id=None, **attrs):
         payload = {
@@ -377,7 +377,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             for user in [noncontrib, write_contrib]:
                 initial_state = request.machine_state
                 initial_comment = request.comment
-                payload = self.create_payload(request._id, trigger='edit_comment', comment='{}ASDFG'.format(user._id))
+                payload = self.create_payload(request._id, trigger='edit_comment', comment=f'{user._id}ASDFG')
                 res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
                 assert res.status_code == 403
                 request.reload()

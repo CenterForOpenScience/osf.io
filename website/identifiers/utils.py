@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import re
 import logging
 import unicodedata
@@ -13,7 +11,7 @@ PAIR_SEPARATOR = ': '
 
 
 def encode(match):
-    return '%{:02x}'.format(ord(match.group()))
+    return f'%{ord(match.group()):02x}'
 
 
 def decode(match):

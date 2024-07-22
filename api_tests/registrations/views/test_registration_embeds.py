@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa:
 import functools
 
 from framework.auth.core import Auth
@@ -16,7 +15,7 @@ from osf_tests.factories import (
 class TestRegistrationEmbeds(ApiTestCase):
 
     def setUp(self):
-        super(TestRegistrationEmbeds, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.auth = Auth(self.user)
@@ -44,41 +43,38 @@ class TestRegistrationEmbeds(ApiTestCase):
             project=self.child1, is_public=True)
 
     def test_embed_children(self):
-        url = '/{0}registrations/{1}/?embed=children'.format(
+        url = '/{}registrations/{}/?embed=children'.format(
             API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth)
         json = res.json
         embeds = json['data']['embeds']
-        assert_equal(len(embeds['children']['data']), 2)
+        assert len(embeds['children']['data']) == 2
         titles = [self.child1.title, self.child2.title]
         for child in embeds['children']['data']:
-            assert_in(child['attributes']['title'], titles)
+            assert child['attributes']['title'] in titles
 
     def test_embed_contributors(self):
-        url = '/{0}registrations/{1}/?embed=contributors'.format(
+        url = '/{}registrations/{}/?embed=contributors'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.user.auth)
         embeds = res.json['data']['embeds']
         ids = [c._id for c in self.contribs] + [self.user._id]
-        ids = ['{}-{}'.format(self.registration._id, id_) for id_ in ids]
+        ids = [f'{self.registration._id}-{id_}' for id_ in ids]
         for contrib in embeds['contributors']['data']:
-            assert_in(contrib['id'], ids)
+            assert contrib['id'] in ids
 
     def test_embed_identifiers(self):
-        url = '/{0}registrations/{1}/?embed=identifiers'.format(
+        url = '/{}registrations/{}/?embed=identifiers'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_embed_attributes_not_relationships(self):
         url = '/{}registrations/{}/?embed=title'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.contrib1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'The following fields are not embeddable: title'
-        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'The following fields are not embeddable: title'

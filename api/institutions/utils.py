@@ -35,7 +35,7 @@ def update_institutions(resource, new_institutions, user, post=False):
 
     for inst in add:
         if not user.is_affiliated_with_institution(inst):
-            raise exceptions.PermissionDenied(detail=f'User needs to be affiliated with {inst.name}',)
+            raise exceptions.PermissionDenied(detail=f'User needs to be affiliated with {inst.name}')
         resource.add_affiliated_institution(inst, user)
 
 

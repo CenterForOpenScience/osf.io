@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
+from corsheaders.middleware import CorsMiddleware
 from django.http import HttpResponse
-
-from future.moves.urllib.parse import urlparse
-import mock
-from nose.tools import *  # noqa:
+from urllib.parse import urlparse
+from unittest import mock
 from rest_framework.test import APIRequestFactory
 from django.test.utils import override_settings
 
+from api.base import settings as api_settings
 from website.util import api_v2_url
-from api.base import settings
-from api.base.middleware import CorsMiddleware
+from django.conf import settings
 from tests.base import ApiTestCase
 from osf_tests import factories
 
@@ -18,8 +16,8 @@ class MiddlewareTestCase(ApiTestCase):
     MIDDLEWARE = None
 
     def setUp(self):
-        super(MiddlewareTestCase, self).setUp()
-        self.middleware = self.MIDDLEWARE()
+        super().setUp()
+        self.middleware = self.MIDDLEWARE(lambda _: HttpResponse())
         self.mock_response = mock.Mock()
         self.request_factory = APIRequestFactory()
 
@@ -35,12 +33,11 @@ class TestCorsMiddleware(MiddlewareTestCase):
             domains=[domain.netloc.lower()],
             name='Institute for Sexy Lizards'
         )
-        settings.load_origins_whitelist()
+        api_settings.load_origins_whitelist()
+        settings.CORS_ORIGIN_WHITELIST = list(set(settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
-        response = HttpResponse()
-        self.middleware.process_request(request)
-        self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        response = self.middleware(request)
+        assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_preprintproviders_added_to_cors_whitelist(self):
@@ -50,23 +47,20 @@ class TestCorsMiddleware(MiddlewareTestCase):
             domain=domain.geturl().lower(),
             _id='DinoXiv'
         )
-        settings.load_origins_whitelist()
+        api_settings.load_origins_whitelist()
+        settings.CORS_ORIGIN_WHITELIST = list(set(settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
-        response = HttpResponse()
-        self.middleware.process_request(request)
-        self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        response = self.middleware(request)
+        assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_cross_origin_request_with_cookies_does_not_get_cors_headers(self):
         url = api_v2_url('users/me/')
         domain = urlparse('https://dinosaurs.sexy')
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
-        response = HttpResponse()
         with mock.patch.object(request, 'COOKIES', True):
-            self.middleware.process_request(request)
-            self.middleware.process_response(request, response)
-        assert_not_in('Access-Control-Allow-Origin', response)
+            response = self.middleware(request)
+        assert 'Access-Control-Allow-Origin' not in response
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_cross_origin_request_with_Authorization_gets_cors_headers(self):
@@ -77,10 +71,10 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_ORIGIN=domain.geturl(),
             HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq'
         )
-        response = HttpResponse()
-        self.middleware.process_request(request)
-        self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        api_settings.load_origins_whitelist()
+        settings.CORS_ORIGIN_WHITELIST = list(set(settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
+        response = self.middleware(request)
+        assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_cross_origin_request_with_Authorization_and_cookie_does_not_get_cors_headers(
@@ -92,11 +86,11 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_ORIGIN=domain.geturl(),
             HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq'
         )
-        response = HttpResponse()
+        api_settings.load_origins_whitelist()
+        settings.CORS_ORIGIN_WHITELIST = list(set(settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
         with mock.patch.object(request, 'COOKIES', True):
-            self.middleware.process_request(request)
-            self.middleware.process_response(request, response)
-        assert_not_in('Access-Control-Allow-Origin', response)
+            response = self.middleware(request)
+        assert 'Access-Control-Allow-Origin' not in response
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(
@@ -109,7 +103,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_ACCESS_CONTROL_REQUEST_METHOD='GET',
             HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization'
         )
-        response = HttpResponse()
-        self.middleware.process_request(request)
-        self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        api_settings.load_origins_whitelist()
+        settings.CORS_ORIGIN_WHITELIST = list(set(settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
+        response = self.middleware(request)
+        assert response['Access-Control-Allow-Origin'] == domain.geturl()

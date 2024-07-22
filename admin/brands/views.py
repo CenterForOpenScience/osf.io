@@ -34,7 +34,7 @@ class BrandList(PermissionRequiredMixin, ListView):
             query_set, page_size)
         kwargs.setdefault('brands', query_set)
         kwargs.setdefault('page', page)
-        return super(BrandList, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
 
 class BrandDisplay(PermissionRequiredMixin, DetailView):
@@ -116,4 +116,4 @@ class BrandCreate(PermissionRequiredMixin, CreateView):
         if not is_a11y(secondary_color):
             messages.warning(request, """The selected secondary color is not a11y compliant.
                 For more information, visit https://color.a11y.com/""")
-        return super(BrandCreate, self).post(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)

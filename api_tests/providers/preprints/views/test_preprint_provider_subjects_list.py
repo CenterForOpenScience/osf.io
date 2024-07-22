@@ -144,11 +144,11 @@ class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(ProviderSpecific
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
+        return f'/{API_BASE}preprint_providers/{provider_1._id}/taxonomies/?page[size]=15&'
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
+        return f'/{API_BASE}preprint_providers/{provider_2._id}/taxonomies/?page[size]=15&'
 
 
 class TestPreprintProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
@@ -156,11 +156,11 @@ class TestPreprintProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
+        return f'/{API_BASE}providers/preprints/{provider_1._id}/taxonomies/?page[size]=15&'
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
+        return f'/{API_BASE}providers/preprints/{provider_2._id}/taxonomies/?page[size]=15&'
 
 
 class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
@@ -168,11 +168,11 @@ class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return '/{}providers/preprints/{}/subjects/?page[size]=15&'.format(API_BASE, provider_1._id)
+        return f'/{API_BASE}providers/preprints/{provider_1._id}/subjects/?page[size]=15&'
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return '/{}providers/preprints/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)
+        return f'/{API_BASE}providers/preprints/{provider_2._id}/subjects/?page[size]=15&'
 
 
 @pytest.mark.django_db
@@ -200,11 +200,11 @@ class TestPreprintProviderHighlightedTaxonomies:
 
     @pytest.fixture()
     def url_deprecated(self, provider):
-        return '/{}preprint_providers/{}/taxonomies/highlighted/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}preprint_providers/{provider._id}/taxonomies/highlighted/'
 
     @pytest.fixture()
     def url(self, provider):
-        return '/{}providers/preprints/{}/taxonomies/highlighted/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/preprints/{provider._id}/taxonomies/highlighted/'
 
     def test_taxonomy_other_ordering(self, app, url, provider, subj_a, subj_aa, other_subj, z_subj):
         res = app.get(url)
@@ -232,7 +232,7 @@ class TestPreprintProviderHighlightedSubjects(TestPreprintProviderHighlightedTax
 
     @pytest.fixture()
     def url(self, provider):
-        return '/{}providers/preprints/{}/subjects/highlighted/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/preprints/{provider._id}/subjects/highlighted/'
 
 
 @pytest.mark.django_db

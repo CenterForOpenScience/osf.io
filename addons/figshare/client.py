@@ -20,7 +20,7 @@ class FigshareClient(BaseClient):
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'Authorization': 'token {}'.format(self.access_token)}
+            return {'Authorization': f'token {self.access_token}'}
         return {}
 
     @property
@@ -57,7 +57,7 @@ class FigshareClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'account', 'projects', project_id, 'articles')
         ).json()
         project['articles'] = []
-        if(articles):
+        if articles:
             project['articles'] = []
             for article in articles:
                 fetched = self.article(article['id'])
