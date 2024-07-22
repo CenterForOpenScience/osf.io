@@ -12,6 +12,7 @@ TEMPLATE_PATH = os.path.join(
 
 class S3AddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.s3'
     label = 'addons_s3'
     full_name = 'Amazon S3'

@@ -52,7 +52,7 @@ class TestWikiPageModel:
 class TestWikiPage(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiPage, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.wiki = WikiFactory(user=self.user, node=self.project)
@@ -71,18 +71,18 @@ class TestWikiPage(OsfTestCase):
         assert bool(version.wiki_page)
 
     def test_url(self):
-        assert self.wiki.url == '{project_url}wiki/home/'.format(project_url=self.project.url)
+        assert self.wiki.url == f'{self.project.url}wiki/home/'
 
     def test_url_for_wiki_page_name_with_spaces(self):
         wiki = WikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
-        url = '{}wiki/{}/'.format(self.project.url, wiki.page_name)
+        url = f'{self.project.url}wiki/{wiki.page_name}/'
         assert wiki.url == url
 
     def test_url_for_wiki_page_name_with_special_characters(self):
         wiki = WikiFactory(user=self.user, node=self.project)
         wiki.page_name = 'Wiki!@#$%^&*()+'
         wiki.save()
-        url = '{}wiki/{}/'.format(self.project.url, wiki.page_name)
+        url = f'{self.project.url}wiki/{wiki.page_name}/'
         assert wiki.url == url
 
     # Regression test for an issue on prod:

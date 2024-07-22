@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 import factory
@@ -10,8 +9,8 @@ from addons.figshare.models import UserSettings, NodeSettings
 
 class FigshareAccountFactory(ExternalAccountFactory):
     provider = 'figshare'
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
+    provider_id = factory.Sequence(lambda n: f'id-{n}')
+    oauth_key = factory.Sequence(lambda n: f'key-{n}')
     expires_at = timezone.now() + relativedelta(seconds=3600)
 
 

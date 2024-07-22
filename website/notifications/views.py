@@ -65,18 +65,18 @@ def configure_subscription(auth):
 
         if notification_type == 'adopt_parent':
             sentry.log_message(
-                '{!r} attempted to adopt_parent of a none node id, {}'.format(user, target_id)
+                f'{user!r} attempted to adopt_parent of a none node id, {target_id}'
             )
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         owner = user
     else:
         if not node.has_permission(user, READ):
-            sentry.log_message('{!r} attempted to subscribe to private node, {}'.format(user, target_id))
+            sentry.log_message(f'{user!r} attempted to subscribe to private node, {target_id}')
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         if isinstance(node, Registration):
             sentry.log_message(
-                '{!r} attempted to subscribe to registration, {}'.format(user, target_id)
+                f'{user!r} attempted to subscribe to registration, {target_id}'
             )
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -116,4 +116,4 @@ def configure_subscription(auth):
 
     subscription.save()
 
-    return {'message': 'Successfully subscribed to {} list on {}'.format(notification_type, event_id)}
+    return {'message': f'Successfully subscribed to {notification_type} list on {event_id}'}

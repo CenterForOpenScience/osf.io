@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from nose.tools import assert_true
 import pytest
 import unittest
 
@@ -13,7 +11,7 @@ class TestCore(unittest.TestCase):
 
     def setUp(self):
 
-        super(TestCore, self).setUp()
+        super().setUp()
 
         self.user = UserFactory()
         self.user.add_addon('box')
@@ -24,4 +22,4 @@ class TestCore(unittest.TestCase):
 
     def test_get_addon_returns_box_user_settings(self):
         result = self.user.get_addon('box')
-        assert_true(isinstance(result, UserSettings))
+        assert isinstance(result, UserSettings)

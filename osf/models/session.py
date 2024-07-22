@@ -19,4 +19,4 @@ class UserSessionMap(BaseModel):
     def save(self, *args, **kwargs):
         if self._state.adding and not self.expire_date:
             self.expire_date = timezone.now() + timedelta(seconds=settings.SESSION_COOKIE_AGE)
-        super(UserSessionMap, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)

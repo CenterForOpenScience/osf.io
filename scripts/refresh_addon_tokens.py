@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
 import logging
 import math
@@ -48,12 +47,12 @@ def main(delta, Provider, rate_limit, dry_run):
     for record in get_targets(delta, Provider.short_name):
         if Provider(record).has_expired_credentials:
             logger.info(
-                'Found expired record {}, skipping'.format(record.__repr__())
+                f'Found expired record {record.__repr__()}, skipping'
             )
             continue
 
         logger.info(
-            'Refreshing tokens on record {0}; expires at {1}'.format(
+            'Refreshing tokens on record {}; expires at {}'.format(
                 record.__repr__(),
                 record.expires_at.strftime('%c')
             )
@@ -62,7 +61,7 @@ def main(delta, Provider, rate_limit, dry_run):
             if allowance < 1:
                 try:
                     time.sleep(rate_limit[1] - (time.time() - last_call))
-                except (ValueError, IOError):
+                except (ValueError, OSError):
                     pass  # Value/IOError indicates negative sleep time in Py 3.5/2.7, respectively
                 allowance = rate_limit[0]
 
@@ -95,6 +94,6 @@ def run_main(addons=None, rate_limit=(5, 1), dry_run=True):
         delta = relativedelta(days=days)
         Provider = look_up_provider(addon)
         if not Provider:
-            logger.error('Unable to find Provider class for addon {}'.format(addon))
+            logger.error(f'Unable to find Provider class for addon {addon}')
         else:
             main(delta, Provider, rate_limit, dry_run=dry_run)

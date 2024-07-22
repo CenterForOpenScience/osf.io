@@ -50,7 +50,7 @@ def boa_add_user_account(auth, **kwargs):
     except ValidationError:
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id='{}:{}'.format(BOA_API_ENDPOINT, username).lower()
+            provider_id=f'{BOA_API_ENDPOINT}:{username}'.lower()
         )
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password

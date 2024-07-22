@@ -3,38 +3,36 @@
 # Requirements that are used in the development environment only
 
 # Testing
-pytest==5.0.0
-pytest-socket==0.3.5
-pytest-xdist==1.34.0
-pytest-django==3.10.0
-python-coveralls==2.9.3
-pytest-testmon==1.0.3
-pytest-asyncio==0.10.0  # The last version that supports Python 3.6 and pytest 5.0
-asynctest==0.13.0
-nose
-factory-boy==2.10.0
-webtest-plus==0.3.3
-mock==2.0.0
-Faker==4.0.1
-schema==0.3.1
-responses==0.10.6
+pytest==7.4.4
+pytest-socket==0.7.0
+pytest-xdist==3.5.0
+pytest-django==4.8.0
+python-coveralls==2.9.3 # do we need it?
+pytest-testmon==2.1.0
+pytest-asyncio==0.23.5
+pytest-html==4.1.1
+factory-boy==3.3.0
+webtest-plus==1.0.0
+Faker==23.2.1
+schema==0.7.4
+responses==0.25.0
 
 # Syntax checking
-flake8==3.6.0
+flake8==7.0.0
 flake8-mutable==1.2.0
-pre-commit==1.10.5
+pre-commit==3.7.1
 
 # Django Debug Toolbar for local development
-django-debug-toolbar==3.2.4
+django-debug-toolbar==4.3.0
 
 # Ipdb
-ipdb==0.10.1
+ipdb==0.13.13
 
 # PyDevD (Remote Debugging)
-pydevd==0.0.6
+pydevd==3.0.3
 
 # n+1 query detection
-nplusone==0.8.2
+nplusone==1.0.0
 
 # Profiling
-django-silk==4.2.0  # pyup: <3.0 # Remove this when we're using MIDDLEWARE
+django-silk==5.1.0

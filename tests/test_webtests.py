@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Functional tests using WebTest."""
-import datetime as dt
-from rest_framework import status as http_status
+from urllib.parse import quote_plus
+
+from rest_framework import status
 import logging
 import unittest
 
 import markupsafe
-import mock
+from unittest import mock
 import pytest
-from nose.tools import *  # noqa: F403
 import re
-
+from bs4 import BeautifulSoup
 from django.utils import timezone
 from addons.wiki.utils import to_mongo_key
-from framework.auth import exceptions as auth_exc
+from framework.auth import exceptions
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
 from tests.base import fake
@@ -35,83 +34,79 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
-from website import settings, language
-from addons.osfstorage.models import OsfStorageFile
+from website import language
 from website.util import web_url_for, api_url_for
-
-from api_tests import utils as test_utils
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
 
-def assert_in_html(member, container, **kwargs):
+def assert_in_html(member, container):
     """Looks for the specified member in markupsafe-escaped HTML output"""
     member = markupsafe.escape(member)
-    return assert_in(member, container, **kwargs)
+    assert member in container
 
 
-def assert_not_in_html(member, container, **kwargs):
+def assert_not_in_html(member, container):
     """Looks for the specified member in markupsafe-escaped HTML output"""
     member = markupsafe.escape(member)
-    return assert_not_in(member, container, **kwargs)
+    assert member not in container
 
 
 class TestDisabledUser(OsfTestCase):
 
     def setUp(self):
-        super(TestDisabledUser, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user.set_password('Korben Dallas')
         self.user.is_disabled = True
         self.user.save()
 
     def test_profile_disabled_returns_401(self):
-        res = self.app.get(self.user.url, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        res = self.app.get(self.user.url)
+        assert res.status_code == 410
 
 
 class TestAnUnregisteredUser(OsfTestCase):
 
     def test_cant_see_profile_if_not_logged_in(self):
         url = web_url_for('profile_view')
-        res = self.app.get(url)
-        res = res.follow()
-        assert_equal(res.status_code, 308)
-        assert_in('/login/', res.headers['Location'])
+        res = self.app.resolve_redirect(self.app.get(url))
+        assert res.status_code == 308
+        assert '/login/' in res.headers['Location']
 
 
 @pytest.mark.enable_bookmark_creation
 class TestAUser(OsfTestCase):
 
     def setUp(self):
-        super(TestAUser, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 
     def test_can_see_profile_url(self):
-        res = self.app.get(self.user.url).maybe_follow()
-        assert_in(self.user.url, res)
+        res = self.app.get(self.user.url, follow_redirects=True)
+        assert self.user.url in res.text
 
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
-        res = self.app.get('/login/').follow()
-        assert_equal(res.status_code, 302)
+        res = self.app.resolve_redirect(self.app.get('/login/'))
+        assert res.status_code == 302
         location = res.headers.get('Location')
-        assert_in('login?service=', location)
+        assert 'login?service=' in location
 
     def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
-        assert_equal(res.status_code, 302)
+        assert res.status_code == 302
         assert 'dashboard' in res.headers.get('Location')
 
     def test_register_page(self):
         res = self.app.get('/register/')
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
-        assert_equal(res.status_code, 302)
+        assert res.status_code == 302
         assert 'dashboard' in res.headers.get('Location')
 
     def test_sees_projects_in_her_dashboard(self):
@@ -120,11 +115,11 @@ class TestAUser(OsfTestCase):
         project.add_contributor(self.user)
         project.save()
         res = self.app.get('/myprojects/', auth=self.user.auth)
-        assert_in('Projects', res)  # Projects heading
+        assert 'Projects' in res.text  # Projects heading
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
-        res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
-        assert_not_in('OSF Storage', res)
+        res = self.app.get('/settings/addons/', auth=self.auth, follow_redirects=True)
+        assert 'OSF Storage' not in res.text
 
     def test_sees_osffiles_in_project_addon_settings(self):
         project = ProjectFactory(creator=self.user)
@@ -132,14 +127,14 @@ class TestAUser(OsfTestCase):
             self.user,
             permissions=permissions.ADMIN,
             save=True)
-        res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
-        assert_in('OSF Storage', res)
+        res = self.app.get(f'/{project._primary_key}/addons/', auth=self.auth, follow_redirects=True)
+        assert 'OSF Storage' in res.text
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
-        res = self.app.get('/myprojects/', auth=self.auth, auto_follow=True)
+        res = self.app.get('/myprojects/', auth=self.auth, follow_redirects=True)
         title = res.html.title.string
-        assert_equal('OSF | My Projects', title)
+        assert 'OSF | My Projects' == title
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
@@ -149,8 +144,8 @@ class TestAUser(OsfTestCase):
             permissions=permissions.ADMIN,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert_in('Make Public', res)
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Public' in res.text
 
     def test_cant_see_make_public_button_if_not_admin(self):
         # User is a contributor on a project
@@ -160,8 +155,8 @@ class TestAUser(OsfTestCase):
             permissions=permissions.WRITE,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert_not_in('Make Public', res)
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Public' not in res.text
 
     def test_can_see_make_private_button_if_admin(self):
         # User is a contributor on a project
@@ -171,8 +166,8 @@ class TestAUser(OsfTestCase):
             permissions=permissions.ADMIN,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert_in('Make Private', res)
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Private' in res.text
 
     def test_cant_see_make_private_button_if_not_admin(self):
         # User is a contributor on a project
@@ -182,24 +177,24 @@ class TestAUser(OsfTestCase):
             permissions=permissions.WRITE,
             save=True)
         # User goes to the project page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert_not_in('Make Private', res)
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
+        assert 'Make Private' not in res.text
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
         # User goes to the project's page
-        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        res = self.app.get(project.url, auth=self.auth, follow_redirects=True)
         # Can see log event
-        assert_in('created', res)
+        assert 'created' in res.text
 
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
-        res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
+        res = self.app.get(f'/{project._primary_key}/wiki/home/', auth=self.auth)
         # Sees a message indicating no content
-        assert_in('Add important information, links, or images here to describe your project.', res)
+        assert 'Add important information, links, or images here to describe your project.' in res.text
         # Sees that edit panel is open by default when home wiki has no content
-        assert_in('panelsUsed: ["view", "menu", "edit"]', res)
+        assert 'panelsUsed: ["view", "menu", "edit"]' in res.text
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
@@ -213,13 +208,10 @@ class TestAUser(OsfTestCase):
             wiki_page=wiki_page,
             content=wiki_content
         )
-        res = self.app.get('/{0}/wiki/{1}/'.format(
-            project._primary_key,
-            wiki_page_name,
-        ), auth=self.auth)
-        assert_not_in('Add important information, links, or images here to describe your project.', res)
-        assert_in(wiki_content, res)
-        assert_in('panelsUsed: ["view", "menu"]', res)
+        res = self.app.get(f'/{project._primary_key}/wiki/{wiki_page_name}/', auth=self.auth)
+        assert 'Add important information, links, or images here to describe your project.' not in res.text
+        assert wiki_content in res.text
+        assert 'panelsUsed: ["view", "menu"]' in res.text
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
@@ -233,37 +225,34 @@ class TestAUser(OsfTestCase):
         # user2 creates a public project and adds no wiki content
         project = ProjectFactory(creator=user2, is_public=True)
         # self navigates to project
-        res = self.app.get(project.url).maybe_follow()
+        res = self.app.get(project.url, follow_redirects=True)
         # Should not see wiki widget (since non-contributor and no content)
-        assert_not_in('Add important information, links, or images here to describe your project.', res)
+        assert 'Add important information, links, or images here to describe your project.' not in res.text
 
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
-        res = self.app.get('/{0}/wiki/{1}/'.format(
-            project._primary_key,
-            'not a real page yet',
-        ), auth=self.auth, expect_errors=True)
-        assert_in('Add important information, links, or images here to describe your project.', res)
+        res = self.app.get(f'/{project._primary_key}/wiki/not a real page yet/', auth=self.auth)
+        assert 'Add important information, links, or images here to describe your project.' in res.text
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
-        assert_equal(td2.text, self.user.display_absolute_url)
+        assert td2.text == self.user.display_absolute_url
 
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
-        assert_equal(td2.text, user2.display_absolute_url)
+        assert td2.text == user2.display_absolute_url
 
 
 @pytest.mark.enable_bookmark_creation
 class TestComponents(OsfTestCase):
 
     def setUp(self):
-        super(TestComponents, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
@@ -281,20 +270,18 @@ class TestComponents(OsfTestCase):
         self.project_url = self.project.web_url_for('view_project')
 
     def test_sees_parent(self):
-        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        parent_title = res.html.find_all('h2', class_='node-parent-title')
-        assert_equal(len(parent_title), 1)
-        assert_in(self.project.title, parent_title[0].text)  # Bs4 will handle unescaping HTML here
+        res = self.app.get(self.component.url, auth=self.user.auth, follow_redirects=True)
+        parent_title = BeautifulSoup(res.text).find_all('h2', class_='node-parent-title')
+        assert len(parent_title) == 1
+        assert self.project.title in parent_title[0].text  # Bs4 will handle unescaping HTML here
 
     def test_delete_project(self):
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=self.user.auth
-        ).maybe_follow()
-        assert_in(
-            'Delete {0}'.format(self.component.project_or_component),
-            res
+            auth=self.user.auth,
+            follow_redirects=True
         )
+        assert f'Delete {self.component.project_or_component}' in res.text
 
     def test_cant_delete_project_if_not_admin(self):
         non_admin = AuthUserFactory()
@@ -306,19 +293,18 @@ class TestComponents(OsfTestCase):
         )
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=non_admin.auth
-        ).maybe_follow()
-        assert_not_in(
-            'Delete {0}'.format(self.component.project_or_component),
-            res
+            auth=non_admin.auth,
+            follow_redirects=True
         )
+        assert f'Delete {self.component.project_or_component}' not in res.text
 
     def test_can_configure_comments_if_admin(self):
         res = self.app.get(
             self.component.url + 'settings/',
             auth=self.user.auth,
-        ).maybe_follow()
-        assert_in('Commenting', res)
+            follow_redirects=True
+        )
+        assert 'Commenting' in res.text
 
     def test_cant_configure_comments_if_not_admin(self):
         non_admin = AuthUserFactory()
@@ -330,20 +316,21 @@ class TestComponents(OsfTestCase):
         )
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=non_admin.auth
-        ).maybe_follow()
-        assert_not_in('Commenting', res)
+            auth=non_admin.auth,
+            follow_redirects=True
+        )
+        assert 'Commenting' not in res.text
 
     def test_components_should_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
-        assert_in('Components', res)
+        assert 'Components' in res.text
 
 
 @pytest.mark.enable_bookmark_creation
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
-        super(TestPrivateLinkView, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory(anonymous=True)
@@ -352,13 +339,13 @@ class TestPrivateLinkView(OsfTestCase):
         self.project_url = self.project.web_url_for('view_project')
 
     def test_anonymous_link_hide_contributor(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in('Anonymous Contributors', res.body.decode())
-        assert_not_in(self.user.fullname, res)
+        res = self.app.get(self.project_url, query_string={'view_only': self.link.key})
+        assert 'Anonymous Contributors' in res.text
+        assert self.user.fullname not in res.text
 
     def test_anonymous_link_hides_citations(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_not_in('Citation:', res)
+        res = self.app.get(self.project_url, query_string={'view_only': self.link.key})
+        assert 'Citation:' not in res.text
 
     def test_no_warning_for_read_only_user_with_valid_link(self):
         link2 = PrivateLinkFactory(anonymous=False)
@@ -369,14 +356,11 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=permissions.READ,
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': link2.key},
+        res = self.app.get(self.project_url, query_string={'view_only': link2.key},
                            auth=self.user.auth)
-        assert_not_in(
-            'is being viewed through a private, view-only link. '
-            'Anyone with the link can view this project. Keep '
-            'the link safe.',
-            res.body.decode()
-        )
+        assert ('is being viewed through a private, view-only link. '
+                'Anyone with the link can view this project. '
+                'Keep the link safe.') not in res.text
 
     def test_no_warning_for_read_only_user_with_invalid_link(self):
         self.project.add_contributor(
@@ -384,21 +368,17 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=permissions.READ,
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
+        res = self.app.get(self.project_url, query_string={'view_only': 'not_valid'},
                            auth=self.user.auth)
-        assert_not_in(
-            'is being viewed through a private, view-only link. '
-            'Anyone with the link can view this project. Keep '
-            'the link safe.',
-            res.body.decode()
-        )
-
+        assert ('is being viewed through a private, view-only link. '
+                'Anyone with the link can view this project. '
+                'Keep the link safe.') not in res.text
 
 @pytest.mark.enable_bookmark_creation
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
-        super(TestMergingAccounts, self).setUp()
+        super().setUp()
         self.user = UserFactory.build()
         self.user.fullname = "tess' test string"
         self.user.set_password('science')
@@ -414,17 +394,17 @@ class TestMergingAccounts(OsfTestCase):
         project.add_contributor(self.user, log=False)
         project.save()
         # At the project page, both are listed as contributors
-        res = self.app.get(project.url).maybe_follow()
-        assert_in_html(self.user.fullname, res)
-        assert_in_html(self.dupe.fullname, res)
+        res = self.app.get(project.url, follow_redirects=True)
+        assert_in_html(self.user.fullname, res.text)
+        assert_in_html(self.dupe.fullname, res.text)
         # The accounts are merged
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
-        res = self.app.get(project.url).maybe_follow()
-        assert_in_html(self.user.fullname, res)
-        assert_true(self.dupe.is_merged)
-        assert_not_in(self.dupe.fullname, res)
+        res = self.app.get(project.url, follow_redirects=True)
+        assert_in_html(self.user.fullname, res.text)
+        assert self.dupe.is_merged
+        assert self.dupe.fullname not in res.text
 
     def test_merged_user_has_alert_message_on_profile(self):
         # Master merges dupe
@@ -432,15 +412,15 @@ class TestMergingAccounts(OsfTestCase):
         self.user.save()
         # At the dupe user's profile there is an alert message at the top
         # indicating that the user is merged
-        res = self.app.get('/profile/{0}/'.format(self.dupe._primary_key)).maybe_follow()
-        assert_in('This account has been merged', res)
+        res = self.app.get(f'/profile/{self.dupe._primary_key}/', follow_redirects=True)
+        assert 'This account has been merged' in res.text
 
 
 @pytest.mark.enable_bookmark_creation
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
-        super(TestShortUrls, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
         self.consolidate_auth = Auth(user=self.user)
@@ -459,10 +439,9 @@ class TestShortUrls(OsfTestCase):
     def _url_to_body(self, url):
         return self.app.get(
             url,
-            auth=self.auth
-        ).maybe_follow(
             auth=self.auth,
-        ).normal_body
+            follow_redirects=True
+        ).text
 
     # In the following tests, we need to patch `framework.csrf.handlers.get_current_user_id`
     # because in `framework.csrf.handlers.after_request`, the call to `get_current_user_id`
@@ -476,24 +455,15 @@ class TestShortUrls(OsfTestCase):
 
     def test_project_url(self):
         with mock.patch('framework.csrf.handlers.get_current_user_id', return_value=self.user._id):
-            assert_equal(
-                self._url_to_body(self.project.deep_url),
-                self._url_to_body(self.project.url),
-            )
+            assert self._url_to_body(self.project.deep_url) == self._url_to_body(self.project.url)
 
     def test_component_url(self):
         with mock.patch('framework.csrf.handlers.get_current_user_id', return_value=self.user._id):
-            assert_equal(
-                self._url_to_body(self.component.deep_url),
-                self._url_to_body(self.component.url),
-            )
+            assert self._url_to_body(self.component.deep_url) == self._url_to_body(self.component.url)
 
     def test_wiki_url(self):
         with mock.patch('framework.csrf.handlers.get_current_user_id', return_value=self.user._id):
-            assert_equal(
-                self._url_to_body(self.wiki.deep_url),
-                self._url_to_body(self.wiki.url),
-            )
+            assert self._url_to_body(self.wiki.deep_url) == self._url_to_body(self.wiki.url)
 
 
 @pytest.mark.enable_bookmark_creation
@@ -501,7 +471,7 @@ class TestShortUrls(OsfTestCase):
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
-        super(TestClaiming, self).setUp()
+        super().setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
 
@@ -516,8 +486,8 @@ class TestClaiming(OsfTestCase):
 
         res = self.app.get(self.project.url, auth=self.referrer.auth)
         # Correct name is shown
-        assert_in_html(name2, res)
-        assert_not_in(name1, res)
+        assert_in_html(name2, res.text)
+        assert name1 not in res.text
 
     def test_user_can_set_password_on_claim_page(self):
         name, email = fake.name(), fake_email()
@@ -530,14 +500,14 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         self.project.reload()
-        assert_in('Set Password', res)
-        form = res.forms['setPasswordForm']
+        assert 'Set Password' in res.text
+        form = res.get_form('setPasswordForm')
         #form['username'] = new_user.username #Removed as long as E-mail can't be updated.
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
-        res = form.submit().follow()
+        self.app.resolve_redirect(form.submit(self.app))
         new_user.reload()
-        assert_true(new_user.check_password('killerqueen'))
+        assert new_user.check_password('killerqueen')
 
     def test_sees_is_redirected_if_user_already_logged_in(self):
         name, email = fake.name(), fake_email()
@@ -550,8 +520,8 @@ class TestClaiming(OsfTestCase):
         existing = AuthUserFactory()
         claim_url = new_user.get_claim_url(self.project._primary_key)
         # a user is already logged in
-        res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
-        assert_equal(res.status_code, 302)
+        res = self.app.get(claim_url, auth=existing.auth)
+        assert res.status_code == 302
 
     def test_unregistered_users_names_are_project_specific(self):
         name1, name2, email = fake.name(), fake.name(), fake_email()
@@ -569,13 +539,12 @@ class TestClaiming(OsfTestCase):
             auth=Auth(self.referrer)
         )
         project2.save()
-        self.app.authenticate(*self.referrer.auth)
         # Each project displays a different name in the contributor list
-        res = self.app.get(self.project.url)
-        assert_in_html(name1, res)
+        res = self.app.get(self.project.url, auth=self.referrer.auth)
+        assert_in_html(name1, res.text)
 
-        res2 = self.app.get(project2.url)
-        assert_in_html(name2, res2)
+        res2 = self.app.get(project2.url, auth=self.referrer.auth)
+        assert_in_html(name2, res2.text)
 
     @unittest.skip('as long as E-mails cannot be changed')
     def test_cannot_set_email_to_a_user_that_already_exists(self):
@@ -591,17 +560,14 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         self.project.reload()
-        assert_in('Set Password', res)
-        form = res.forms['setPasswordForm']
+        assert 'Set Password' in res
+        form = res.get_form('setPasswordForm')
         # Fills out an email that is the username of another user
         form['username'] = reg_user.username
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
-        res = form.submit().maybe_follow(expect_errors=True)
-        assert_in(
-            language.ALREADY_REGISTERED.format(email=reg_user.username),
-            res
-        )
+        res = form.submit(follow_redirects=True)
+        assert language.ALREADY_REGISTERED.format(email=reg_user.username) in res.text
 
     def test_correct_display_name_is_shown_at_claim_page(self):
         original_name = fake.name()
@@ -617,13 +583,13 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         # Correct name (different_name) should be on page
-        assert_in_html(different_name, res)
+        assert_in_html(different_name, res.text)
 
 
 class TestConfirmingEmail(OsfTestCase):
 
     def setUp(self):
-        super(TestConfirmingEmail, self).setUp()
+        super().setUp()
         self.user = UnconfirmedUserFactory()
         self.confirmation_url = self.user.get_confirmation_url(
             self.user.username,
@@ -638,8 +604,8 @@ class TestConfirmingEmail(OsfTestCase):
         user2 = AuthUserFactory()
         url = api_url_for('update_user')
         header = {'id': user1.username, 'emails': [{'address': user1.username}]}
-        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        res = self.app.put(url, json=header, auth=user2.auth)
+        assert res.status_code == 403
 
     def test_cannnot_make_primary_email_for_another_user(self):
         user1 = AuthUserFactory()
@@ -652,8 +618,8 @@ class TestConfirmingEmail(OsfTestCase):
                   'emails': [{'address': user1.username, 'primary': False, 'confirmed': True},
                             {'address': email, 'primary': True, 'confirmed': True}
                   ]}
-        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        res = self.app.put(url, json=header, auth=user2.auth)
+        assert res.status_code == 403
 
     def test_cannnot_add_email_for_another_user(self):
         user1 = AuthUserFactory()
@@ -664,16 +630,16 @@ class TestConfirmingEmail(OsfTestCase):
                   'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
                             {'address': email, 'primary': False, 'confirmed': False}
                   ]}
-        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        res = self.app.put(url, json=header, auth=user2.auth)
+        assert res.status_code == 403
 
     def test_error_page_if_confirm_link_is_used(self):
         self.user.confirm_email(self.confirmation_token)
         self.user.save()
-        res = self.app.get(self.confirmation_url, expect_errors=True)
+        res = self.app.get(self.confirmation_url)
 
-        assert_in(auth_exc.InvalidTokenError.message_short, res)
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert exceptions.InvalidTokenError.message_short in res.text
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.enable_implicit_clean
@@ -681,7 +647,7 @@ class TestConfirmingEmail(OsfTestCase):
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
-        super(TestClaimingAsARegisteredUser, self).setUp()
+        super().setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
         name, email = fake.name(), fake_email()
@@ -696,26 +662,25 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
         url = self.user.get_claim_url(self.project._primary_key)
         # Follow to password re-enter page
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+        res = self.app.get(url, auth=reg_user.auth, follow_redirects=True)
 
         # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body.decode())
+        assert 'Claim Contributor' in res.text
 
-        form = res.forms['claimContributorForm']
+        form = res.get_form('claimContributorForm')
         form['password'] = 'queenfan86'
-        res = form.submit(auth=reg_user.auth)
-        res = res.follow(auth=reg_user.auth)
-
+        res = form.submit(self.app, auth=reg_user.auth)
+        self.app.resolve_redirect(res)
         self.project.reload()
         self.user.reload()
         # user is now a contributor to the project
-        assert_in(reg_user, self.project.contributors)
+        assert reg_user in self.project.contributors
 
         # the unregistered user (self.user) is removed as a contributor, and their
-        assert_not_in(self.user, self.project.contributors)
+        assert self.user not in self.project.contributors
 
         # unclaimed record for the project has been deleted
-        assert_not_in(self.project, self.user.unclaimed_records)
+        assert self.project not in self.user.unclaimed_records
 
     def test_claim_user_registered_preprint_with_correct_password(self):
         preprint = PreprintFactory(creator=self.referrer)
@@ -728,31 +693,31 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
         url = unreg_user.get_claim_url(preprint._id)
         # Follow to password re-enter page
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+        res = self.app.get(url, auth=reg_user.auth, follow_redirects=True)
 
         # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body.decode())
+        assert 'Claim Contributor' in res.text
 
-        form = res.forms['claimContributorForm']
+        form = res.get_form('claimContributorForm')
         form['password'] = 'queenfan86'
-        res = form.submit(auth=reg_user.auth)
+        res = form.submit(self.app, auth=reg_user.auth)
 
         preprint.reload()
         unreg_user.reload()
         # user is now a contributor to the project
-        assert_in(reg_user, preprint.contributors)
+        assert reg_user in preprint.contributors
 
         # the unregistered user (unreg_user) is removed as a contributor, and their
-        assert_not_in(unreg_user, preprint.contributors)
+        assert unreg_user not in preprint.contributors
 
         # unclaimed record for the project has been deleted
-        assert_not_in(preprint, unreg_user.unclaimed_records)
+        assert preprint not in unreg_user.unclaimed_records
 
 
 class TestResendConfirmation(OsfTestCase):
 
     def setUp(self):
-        super(TestResendConfirmation, self).setUp()
+        super().setUp()
         self.unconfirmed_user = UnconfirmedUserFactory()
         self.confirmed_user = UserFactory()
         self.get_url = web_url_for('resend_confirmation_get')
@@ -761,74 +726,74 @@ class TestResendConfirmation(OsfTestCase):
     # test that resend confirmation page is load correctly
     def test_resend_confirmation_get(self):
         res = self.app.get(self.get_url)
-        assert_equal(res.status_code, 200)
-        assert_in('Resend Confirmation', res.body.decode())
-        assert_in('resendForm', res.forms)
+        assert res.status_code == 200
+        assert 'Resend Confirmation' in res.text
+        assert res.get_form('resendForm')
 
     # test that unconfirmed user can receive resend confirmation email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_can_receive_resend_confirmation_email(self, mock_send_mail):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
+        form = res.get_form('resendForm')
         form['email'] = self.unconfirmed_user.unconfirmed_emails[0]
-        res = form.submit()
+        res = form.submit(self.app)
 
         # check email, request and response
-        assert_true(mock_send_mail.called)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, self.post_url)
-        assert_in_html('If there is an OSF account', res)
+        assert mock_send_mail.called
+        assert res.status_code == 200
+        assert res.request.path == self.post_url
+        assert_in_html('If there is an OSF account', res.text)
 
     # test that confirmed user cannot receive resend confirmation email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_receive_resend_confirmation_email_1(self, mock_send_mail):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
+        form = res.get_form('resendForm')
         form['email'] = self.confirmed_user.emails.first().address
-        res = form.submit()
+        res = form.submit(self.app)
 
         # check email, request and response
-        assert_false(mock_send_mail.called)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, self.post_url)
-        assert_in_html('has already been confirmed', res)
+        assert not mock_send_mail.called
+        assert res.status_code == 200
+        assert res.request.path == self.post_url
+        assert_in_html('has already been confirmed', res.text)
 
     # test that non-existing user cannot receive resend confirmation email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_receive_resend_confirmation_email_2(self, mock_send_mail):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
+        form = res.get_form('resendForm')
         form['email'] = 'random@random.com'
-        res = form.submit()
+        res = form.submit(self.app)
 
         # check email, request and response
-        assert_false(mock_send_mail.called)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, self.post_url)
-        assert_in_html('If there is an OSF account', res)
+        assert not mock_send_mail.called
+        assert res.status_code == 200
+        assert res.request.path == self.post_url
+        assert_in_html('If there is an OSF account', res.text)
 
     # test that user cannot submit resend confirmation request too quickly
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_resend_confirmation_twice_quickly(self, mock_send_mail):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
+        form = res.get_form('resendForm')
         form['email'] = self.unconfirmed_user.email
-        res = form.submit()
-        res = form.submit()
+        res = form.submit(self.app)
+        res = form.submit(self.app)
 
         # check request and response
-        assert_equal(res.status_code, 200)
-        assert_in_html('Please wait', res)
+        assert res.status_code == 200
+        assert_in_html('Please wait', res.text)
 
 
 class TestForgotPassword(OsfTestCase):
 
     def setUp(self):
-        super(TestForgotPassword, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.auth_user = AuthUserFactory()
         self.get_url = web_url_for('forgot_password_get')
@@ -841,64 +806,64 @@ class TestForgotPassword(OsfTestCase):
         # visit forgot password link while another user is logged in
         res = self.app.get(self.get_url, auth=self.auth_user.auth)
         # check redirection to CAS logout
-        assert_equal(res.status_code, 302)
+        assert res.status_code == 302
         location = res.headers.get('Location')
-        assert_not_in('reauth', location)
-        assert_in('logout?service=', location)
-        assert_in('forgotpassword', location)
+        assert 'reauth' not in location
+        assert 'logout?service=' in location
+        assert 'forgotpassword' in location
 
     # test that forgot password page is loaded correctly
     def test_get_forgot_password(self):
         res = self.app.get(self.get_url)
-        assert_equal(res.status_code, 200)
-        assert_in('Forgot Password', res.body.decode())
-        assert_in('forgotPasswordForm', res.forms)
+        assert res.status_code == 200
+        assert 'Forgot Password' in res.text
+        assert res.get_form('forgotPasswordForm')
 
     # test that existing user can receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_can_receive_reset_password_email(self, mock_send_mail):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['forgotPasswordForm']
+        form = res.get_form('forgotPasswordForm')
         form['forgot_password-email'] = self.user.username
-        res = form.submit()
+        res = form.submit(self.app)
 
         # check mail was sent
-        assert_true(mock_send_mail.called)
+        assert mock_send_mail.called
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check request URL is /forgotpassword
-        assert_equal(res.request.path, self.post_url)
+        assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is set
         self.user.reload()
-        assert_not_equal(self.user.verification_key_v2, {})
+        assert self.user.verification_key_v2 != {}
 
     # test that non-existing user cannot receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_receive_reset_password_email(self, mock_send_mail):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['forgotPasswordForm']
+        form = res.get_form('forgotPasswordForm')
         form['forgot_password-email'] = 'fake' + self.user.username
-        res = form.submit()
+        res = form.submit(self.app)
 
         # check mail was not sent
-        assert_false(mock_send_mail.called)
+        assert not mock_send_mail.called
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check request URL is /forgotpassword
-        assert_equal(res.request.path, self.post_url)
+        assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
-        assert_equal(self.user.verification_key_v2, {})
+        assert self.user.verification_key_v2 == {}
 
     # test that non-existing user cannot receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -908,45 +873,45 @@ class TestForgotPassword(OsfTestCase):
 
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['forgotPasswordForm']
+        form = res.get_form('forgotPasswordForm')
         form['forgot_password-email'] = self.user.username
-        res = form.submit()
+        res = form.submit(self.app)
 
         # check mail was not sent
-        assert_false(mock_send_mail.called)
+        assert not mock_send_mail.called
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check request URL is /forgotpassword
-        assert_equal(res.request.path, self.post_url)
+        assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
-        assert_equal(self.user.verification_key_v2, {})
+        assert self.user.verification_key_v2 == {}
 
     # test that user cannot submit forgot password request too quickly
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
-        form = res.forms['forgotPasswordForm']
+        form = res.get_form('forgotPasswordForm')
         form['forgot_password-email'] = self.user.username
-        res = form.submit()
-        res = form.submit()
+        res = form.submit(self.app)
+        res = form.submit(self.app)
 
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check push notification
-        assert_in_html('Please wait', res)
-        assert_not_in_html('If there is an OSF account', res)
+        assert_in_html('Please wait', res.text)
+        assert_not_in_html('If there is an OSF account', res.text)
 
 
 class TestForgotPasswordInstitution(OsfTestCase):
 
     def setUp(self):
-        super(TestForgotPasswordInstitution, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.auth_user = AuthUserFactory()
         self.get_url = web_url_for('redirect_unsupported_institution')
@@ -956,61 +921,62 @@ class TestForgotPasswordInstitution(OsfTestCase):
 
     # log users out before they land on institutional forgot password page
     def test_forgot_password_logs_out_user(self):
+        # TODO: check in qa url encoding
         # visit forgot password link while another user is logged in
         res = self.app.get(self.get_url, auth=self.auth_user.auth)
         # check redirection to CAS logout
-        assert_equal(res.status_code, 302)
+        assert res.status_code == 302
         location = res.headers.get('Location')
-        assert_in('campaign=unsupportedinstitution', location)
-        assert_in('logout?service=', location)
+        assert quote_plus('campaign=unsupportedinstitution') in location
+        assert 'logout?service=' in location
 
     # test that institutional forgot password page redirects to CAS unsupported
     # institution page
     def test_get_forgot_password(self):
         res = self.app.get(self.get_url)
-        assert_equal(res.status_code, 302)
+        assert res.status_code == 302
         location = res.headers.get('Location')
-        assert_in('campaign=unsupportedinstitution', location)
+        assert 'campaign=unsupportedinstitution' in location
 
     # test that user from disabled institution can receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_can_receive_reset_password_email(self, mock_send_mail):
         # submit email to institutional forgot-password page
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was sent
-        assert_true(mock_send_mail.called)
+        assert mock_send_mail.called
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check request URL is /forgotpassword
-        assert_equal(res.request.path, self.post_url)
+        assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is set
         self.user.reload()
-        assert_not_equal(self.user.verification_key_v2, {})
+        assert self.user.verification_key_v2 != {}
 
     # test that non-existing user cannot receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_receive_reset_password_email(self, mock_send_mail):
         # load forgot password page and submit email
-        res = self.app.post(self.post_url, {'forgot_password-email': 'fake' + self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
 
         # check mail was not sent
-        assert_false(mock_send_mail.called)
+        assert not mock_send_mail.called
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check request URL is /forgotpassword-institution
-        assert_equal(res.request.path, self.post_url)
+        assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
-        assert_equal(self.user.verification_key_v2, {})
+        assert self.user.verification_key_v2 == {}
 
     # test that non-existing user cannot receive institutional reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -1018,34 +984,34 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.user.deactivate_account()
         self.user.save()
 
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was not sent
-        assert_false(mock_send_mail.called)
+        assert not mock_send_mail.called
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check request URL is /forgotpassword-institution
-        assert_equal(res.request.path, self.post_url)
+        assert res.request.path == self.post_url
         # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
+        assert_in_html('If there is an OSF account', res.text)
+        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
-        assert_equal(self.user.verification_key_v2, {})
+        assert self.user.verification_key_v2 == {}
 
     # test that user cannot submit forgot password request too quickly
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
         # submit institutional forgot-password request in rapid succession
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
-        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check http 200 response
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         # check push notification
-        assert_in_html('Please wait', res)
-        assert_not_in_html('If there is an OSF account', res)
+        assert_in_html('Please wait', res.text)
+        assert_not_in_html('If there is an OSF account', res.text)
 
 
 @unittest.skip('Public projects/components are dynamically loaded now.')
@@ -1085,10 +1051,10 @@ class TestAUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         res = self.app.get(url, auth=self.me.auth)
         # I see '3 more' as a link
-        assert_in('3 more', res)
+        assert '3 more' in res.text
 
         res = res.click('3 more')
-        assert_equal(res.request.path, self.project.url)
+        assert res.request.path == self.project.url
 
     def test_has_no_public_projects_or_components_on_own_profile(self):
         # User goes to their profile
@@ -1096,16 +1062,16 @@ class TestAUserProfile(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
 
         # user has no public components/projects
-        assert_in('You have no public projects', res)
-        assert_in('You have no public components', res)
+        assert 'You have no public projects' in res
+        assert 'You have no public components' in res
 
     def test_user_no_public_projects_or_components(self):
         # I go to other user's profile
         url = web_url_for('profile_view_id', uid=self.user._id)
         # User has no public components/projects
         res = self.app.get(url, auth=self.me.auth)
-        assert_in('This user has no public projects', res)
-        assert_in('This user has no public components', res)
+        assert 'This user has no public projects' in res
+        assert 'This user has no public components'in res
 
     # regression test
     def test_does_not_show_registrations(self):
@@ -1120,15 +1086,15 @@ class TestAUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._id)
         # Registration does not appear on profile
         res = self.app.get(url, auth=self.me.auth)
-        assert_in('This user has no public components', res)
-        assert_not_in(reg.title, res)
-        assert_not_in(reg.nodes[0].title, res)
+        assert 'This user has no public components' in res
+        assert reg.title not in res
+        assert reg.nodes[0].title not in res
 
 
 @pytest.mark.enable_bookmark_creation
 class TestPreprintBannerView(OsfTestCase):
     def setUp(self):
-        super(TestPreprintBannerView, self).setUp()
+        super().setUp()
 
         self.admin = AuthUserFactory()
         self.write_contrib = AuthUserFactory()
@@ -1149,23 +1115,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
     def test_public_project_abandoned_preprint(self):
         self.preprint.machine_state = 'initial'
@@ -1175,23 +1141,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_deleted_preprint(self):
         self.preprint.deleted = timezone.now()
@@ -1201,23 +1167,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_private_preprint(self):
         self.preprint.is_public = False
@@ -1227,23 +1193,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_unpublished_preprint(self):
         self.preprint.is_published = False
@@ -1253,23 +1219,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body.decode())
+        assert 'Has supplemental materials for' not in res.text
 
     def test_public_project_pending_preprint_post_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1281,33 +1247,33 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_in('Pending\n', res.body.decode())
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_in('Pending\n', res.body.decode())
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_in('Pending\n', res.body.decode())
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('on {}'.format(self.preprint.provider.name), res.body.decode())
-        assert_not_in('Pending\n', res.body.decode())
-        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
+        assert f'on {self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('on {}'.format(self.preprint.provider.name), res.body.decode())
-        assert_not_in('Pending\n', res.body.decode())
-        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
+        assert f'on {self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' not in res.text
 
     def test_implicit_admins_can_see_project_status(self):
         project = ProjectFactory(creator=self.admin)
@@ -1323,9 +1289,9 @@ class TestPreprintBannerView(OsfTestCase):
         url = component.web_url_for('view_project')
 
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(preprint.provider.name), res.body.decode())
-        assert_in('Pending\n', res.body.decode())
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
+        assert f'{preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
     def test_public_project_pending_preprint_pre_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1337,33 +1303,33 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_in('Pending\n', res.body.decode())
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' in res.text
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_in('Pending\n', res.body.decode())
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' in res.text
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_in('Pending\n', res.body.decode())
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.'in res.text
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_not_in('Pending\n', res.body.decode())
-        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' not in res.text
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
-        assert_not_in('Pending\n', res.body.decode())
-        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
+        assert f'{self.preprint.provider.name}' in res.text
+        assert 'Pending\n' not in res.text
+        assert 'This preprint is not publicly available or searchable until approved by a moderator.' not in res.text
 
 if __name__ == '__main__':
     unittest.main()

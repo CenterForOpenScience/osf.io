@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 import hmac
 import json
 import time
@@ -42,7 +40,7 @@ def unserialize_payload(message):
     return order_recursive(payload)
 
 
-class Signer(object):
+class Signer:
 
     def __init__(self, secret, digest):
         assert callable(digest)

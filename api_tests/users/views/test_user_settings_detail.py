@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -18,7 +17,7 @@ def user_two():
 
 @pytest.fixture()
 def url(user_one):
-    return '/{}users/{}/settings/'.format(API_BASE, user_one._id)
+    return f'/{API_BASE}users/{user_one._id}/settings/'
 
 
 @pytest.mark.django_db
@@ -85,7 +84,10 @@ class TestUserSettingsUpdateTwoFactor:
 
     def test_update_two_factor_enabled(self, app, user_one, url, payload):
         # Invalid data type
-        payload['data']['attributes']['two_factor_enabled'] = 'yEs'
+
+        # Previously, certain string values like 'yEs' have been interpreted as not truthy,
+        # but the current implementation requires distinct rejecting like 'yEp' or similar variants.
+        payload['data']['attributes']['two_factor_enabled'] = 'yEp'
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'

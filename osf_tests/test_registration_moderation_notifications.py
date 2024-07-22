@@ -1,6 +1,6 @@
 import pytest
-import mock
-from mock import call
+from unittest import mock
+from unittest.mock import call
 
 from django.utils import timezone
 from osf.management.commands.add_notification_subscription import add_reviews_notification_setting
@@ -53,7 +53,7 @@ class TestRegistrationMachineNotification:
 
     MOCK_NOW = timezone.now()
 
-    @pytest.yield_fixture(autouse=True)
+    @pytest.fixture(autouse=True)
     def setup(self):
         populate_registration_provider_notification_subscriptions()
         with mock.patch('osf.utils.machines.timezone.now', return_value=self.MOCK_NOW):

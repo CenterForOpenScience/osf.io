@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
-from osf.metrics.counted_usage import CountedAuthUsage
+from osf.metrics.counted_usage import CountedAuthUsage, PageviewInfo
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,9 @@ class CountedAuthUsageSerializer(ser.Serializer):
         return data
 
     def create(self, validated_data):
+        pageview_info = None
+        if pageview_info_data := validated_data.get('pageview_info'):
+            pageview_info = PageviewInfo(**pageview_info_data)
         return CountedAuthUsage.record(
             platform_iri=website_settings.DOMAIN,
             provider_id=validated_data.get('provider_id'),
@@ -70,7 +73,7 @@ class CountedAuthUsageSerializer(ser.Serializer):
             session_id=validated_data['session_id'],  # must be provided by the view
             user_is_authenticated=validated_data['user_is_authenticated'],  # must be provided by the view
             action_labels=validated_data.get('action_labels'),
-            pageview_info=validated_data.get('pageview_info'),
+            pageview_info=pageview_info,
         )
 
 

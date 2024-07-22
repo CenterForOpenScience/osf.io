@@ -36,13 +36,13 @@ class TestPurgedFiles:
         file.create_version(
             stuck_registration.creator,
             {
-                u'service': u'Fulgham',
-                addon_settings.WATERBUTLER_RESOURCE: u'osf',
-                u'object': u'Sanders',
-                u'bucket': u'Hurts',
+                'service': 'Fulgham',
+                addon_settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': 'Sanders',
+                'bucket': 'Hurts',
             }, {
-                u'size': 1234,
-                u'contentType': u'text/plain'
+                'size': 1234,
+                'contentType': 'text/plain'
             })
         file.save()
         return file
@@ -53,13 +53,13 @@ class TestPurgedFiles:
         file.create_version(
             withdrawn_registration.creator,
             {
-                u'service': u'Fulgham',
-                addon_settings.WATERBUTLER_RESOURCE: u'osf',
-                u'object': u'Sanders',
-                u'bucket': u'Hurts',
+                'service': 'Fulgham',
+                addon_settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': 'Sanders',
+                'bucket': 'Hurts',
             }, {
-                u'size': 1234,
-                u'contentType': u'text/plain'
+                'size': 1234,
+                'contentType': 'text/plain'
             })
         file.save()
         return file

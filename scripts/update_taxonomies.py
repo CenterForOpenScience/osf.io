@@ -50,17 +50,14 @@ def update_taxonomies(filename):
             if len(subjects) > 1:
                 parent, created_p = Subject.objects.get_or_create(text=subjects[-2], provider=bepress_provider)
                 if created_p:
-                    logger.info('Created parent "{}":{} for subject {}'.format(parent.text, parent._id, text))
-            logger.info(u'Getting or creating Subject "{}"{}'.format(
+                    logger.info(f'Created parent "{parent.text}":{parent._id} for subject {text}')
+            logger.info('Getting or creating Subject "{}"{}'.format(
                 text,
-                u' with parent {}:{}'.format(parent.text, parent._id) if parent else ''
+                f' with parent {parent.text}:{parent._id}' if parent else ''
             ))
             subject, _ = Subject.objects.get_or_create(text=text, provider=bepress_provider)
             if parent and not subject.parent:
-                logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
-                    parent.text, parent._id,
-                    subject.text, subject._id
-                ))
+                logger.info(f'Adding parent "{parent.text}":{parent._id} to Subject "{subject.text}":{subject._id}')
                 subject.parent = parent
                 subject.save()
 

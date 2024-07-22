@@ -19,10 +19,10 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
         qs = Registration.objects.filter(_contributors__is_registered=False, is_deleted=False)
-        logger.info('Found {} registrations with unregistered contributors'.format(qs.count()))
+        logger.info(f'Found {qs.count()} registrations with unregistered contributors')
         for registration in qs:
             registration_id = registration._id
-            logger.info('Adding unclaimed_records for unregistered contributors on {}'.format(registration_id))
+            logger.info(f'Adding unclaimed_records for unregistered contributors on {registration_id}')
             registered_from_id = registration.registered_from._id
 
             # Update unclaimed records for all unregistered contributors in the registration
@@ -34,7 +34,7 @@ def main():
 
                 if not record:
                     # Old unregistered contributors that have been removed from the original node will not have a record
-                    logger.info('No record for node {} for user {}, inferring from other data'.format(registered_from_id, contrib_id))
+                    logger.info(f'No record for node {registered_from_id} for user {contrib_id}, inferring from other data')
 
                     # Get referrer id from logs
                     for log in registration.logs.filter(action='contributor_added').order_by('date'):
@@ -43,7 +43,7 @@ def main():
                             break
                     else:
                         # This should not get hit. Worst outcome is that resent claim emails will fail to send via admin for this record
-                        logger.info('No record of {} in {}\'s logs.'.format(contrib_id, registration_id))
+                        logger.info(f'No record of {contrib_id} in {registration_id}\'s logs.')
                         referrer_id = None
 
                     verification_key = generate_verification_key(verification_type='claim')
@@ -57,7 +57,7 @@ def main():
                         'email': None,
                     }
 
-                logger.info('Writing new unclaimed_record entry for user {} for registration {}.'.format(contrib_id, registration_id))
+                logger.info(f'Writing new unclaimed_record entry for user {contrib_id} for registration {registration_id}.')
                 contributor.unclaimed_records[registration_id] = record
                 contributor.save()
 

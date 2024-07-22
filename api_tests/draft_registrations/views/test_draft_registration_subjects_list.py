@@ -20,4 +20,4 @@ class TestDraftRegistrationSubjectsList(SubjectsListMixin):
     @pytest.fixture()
     def url(self, resource):
         # Overrides SubjectsListMixin
-        return '/{}draft_registrations/{}/subjects/'.format(API_BASE, resource._id)
+        return f'/{API_BASE}draft_registrations/{resource._id}/subjects/'

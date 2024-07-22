@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.urls import reverse, reverse_lazy
 from django.http import Http404
 from django.shortcuts import redirect
@@ -24,7 +22,7 @@ class LoginView(FormView):
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
-        return super(LoginView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         user = authenticate(
@@ -39,7 +37,7 @@ class LoginView(FormView):
                 'Email and/or Password incorrect. Please try again.'
             )
             return redirect('auth:login')
-        return super(LoginView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         redirect_to = self.request.GET.get(self.redirect_field_name, '')
@@ -64,7 +62,7 @@ class RegisterUser(PermissionRequiredMixin, FormView):
         osf_user = OSFUser.load(osf_id)
 
         if not osf_user:
-            raise Http404('OSF user with id "{}" not found. Please double check.'.format(osf_id))
+            raise Http404(f'OSF user with id "{osf_id}" not found. Please double check.')
 
         osf_user.is_staff = True
         osf_user.save()
@@ -84,16 +82,16 @@ class RegisterUser(PermissionRequiredMixin, FormView):
         osf_user.save()
 
         if created:
-            messages.success(self.request, 'Registration successful for OSF User {}!'.format(osf_user.username))
+            messages.success(self.request, f'Registration successful for OSF User {osf_user.username}!')
         else:
-            messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
-        return super(RegisterUser, self).form_valid(form)
+            messages.success(self.request, f'Permissions update successful for OSF User {osf_user.username}!')
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('auth:register')
 
     def get_initial(self):
-        initial = super(RegisterUser, self).get_initial()
+        initial = super().get_initial()
         initial['osf_id'] = self.request.GET.get('id')
         return initial
 
@@ -106,7 +104,7 @@ class DeskUserCreateFormView(PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
-        return super(DeskUserCreateFormView, self).form_valid(form)
+        return super().form_valid(form)
 
 
 class DeskUserUpdateFormView(PermissionRequiredMixin, UpdateView):

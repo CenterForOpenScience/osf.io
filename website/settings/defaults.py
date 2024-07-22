@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Base settings file, common to all environments.
 These settings can be overridden in local.py.
@@ -32,7 +31,7 @@ BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
 TEST_ENV = False
 
-with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+with open(os.path.join(APP_PATH, 'package.json')) as fobj:
     VERSION = json.load(fobj)['version']
 
 # Expiration time for verification key
@@ -213,7 +212,7 @@ PROFILE_IMAGE_PROVIDER = 'gravatar'
 CONFERENCE_MIN_COUNT = 5
 
 WIKI_WHITELIST = {
-    'tags': [
+    'tags': {
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
         'center', 'cite', 'code',
         'dd', 'del', 'dfn', 'div', 'dl', 'dt', 'em', 'embed', 'font',
@@ -222,7 +221,7 @@ WIKI_WHITELIST = {
         's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup',
         'table', 'tbody', 'td', 'th', 'thead', 'tr', 'tt', 'ul', 'u',
         'var', 'wbr',
-    ],
+    },
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
         'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
@@ -230,11 +229,11 @@ WIKI_WHITELIST = {
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    'styles': [
+    'styles': {
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
-    ]
+    },
 }
 
 # Maps category identifier => Human-readable representation for use in
@@ -498,7 +497,7 @@ class CeleryConfig:
         task_ignore_result = True
         task_store_errors_even_if_ignored = True
 
-    broker_url = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
+    broker_url = os.environ.get('BROKER_URL', f'amqp://{RABBITMQ_USERNAME}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_VHOST}')
     broker_use_ssl = False
 
     # Default RabbitMQ backend
@@ -2143,3 +2142,8 @@ PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
 DEFAULT_DRAFT_NODE_TITLE = 'Untitled'
+USE_COLOR = False
+
+# path to newrelic.ini config file
+# newrelic is only enabled when DEBUG_MODE is False
+NEWRELIC_INI_PATH = None

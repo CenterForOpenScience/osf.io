@@ -28,7 +28,7 @@ from addons.wiki.models import WikiPage
 from website.files.exceptions import VersionNotFoundError
 
 
-class WikiMixin(object):
+class WikiMixin:
     """Mixin with convenience methods for retrieving the wiki page based on the
     URL. By default, fetches the wiki page based on the wiki_id kwarg.
     """
@@ -170,7 +170,7 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    renderer_classes = (PlainTextRenderer, )
+    renderer_classes = (PlainTextRenderer,)
     view_category = 'wikis'
     view_name = 'wiki-content'
 
@@ -246,7 +246,7 @@ class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    renderer_classes = (PlainTextRenderer, )
+    renderer_classes = (PlainTextRenderer,)
     view_category = 'wikis'
     view_name = 'wiki-version-content'
 

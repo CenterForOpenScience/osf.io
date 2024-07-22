@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Views tests for the wiki addon."""
 import pytest
-import mock
+from unittest import mock
 import pytz
 import datetime
 from django.utils import timezone
@@ -23,7 +22,7 @@ pytestmark = pytest.mark.django_db
 class TestUpdateNodeWiki(OsfTestCase):
 
     def setUp(self):
-        super(TestUpdateNodeWiki, self).setUp()
+        super().setUp()
         # Create project with component
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
@@ -120,7 +119,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 
         # user views comments -- sets user.comments_viewed_timestamp
         url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'page': 'wiki',
             'rootId': wiki_page._id
         }, auth=self.user.auth)
@@ -147,7 +146,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 
         # user views comments -- sets user.comments_viewed_timestamp
         url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'page': 'wiki',
             'rootId': wiki_page._id
         }, auth=self.user.auth)
@@ -156,7 +155,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert wiki_page._id in self.user.comments_viewed_timestamp
 
         # contributor views comments -- sets contributor.comments_viewed_timestamp
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'page': 'wiki',
             'rootId': wiki_page._id
         }, auth=contributor.auth)
@@ -198,7 +197,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):
-        super(TestRenameNodeWiki, self).setUp()
+        super().setUp()
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
@@ -237,7 +236,7 @@ class TestRenameNodeWiki(OsfTestCase):
 
     def test_rename_page_not_found(self):
         wp = WikiPage.objects.get_for_node(self.project, 'abc123')
-        wp = WikiPage.objects.get_for_node(self.project, u'ˆ•¶£˙˙®¬™∆˙')
+        wp = WikiPage.objects.get_for_node(self.project, 'ˆ•¶£˙˙®¬™∆˙')
 
     def test_rename_page(self):
         new_name = 'New pAGE'
@@ -308,7 +307,7 @@ class TestRenameNodeWiki(OsfTestCase):
 class TestDeleteNodeWiki(OsfTestCase):
 
     def setUp(self):
-        super(TestDeleteNodeWiki, self).setUp()
+        super().setUp()
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)

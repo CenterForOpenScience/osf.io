@@ -1,8 +1,7 @@
-import mock  # noqa
+from unittest import mock
 from datetime import timedelta
 
 from django.utils import timezone
-from nose.tools import *
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory
@@ -11,10 +10,11 @@ from osf.models.queued_mail import QueuedMail, queue_mail, NO_ADDON, NO_LOGIN_TY
 from scripts.send_queued_mails import main, pop_and_verify_mails_for_each_user, find_queued_mails_ready_to_be_sent
 from website import settings
 
+
 class TestSendQueuedMails(OsfTestCase):
 
     def setUp(self):
-        super(TestSendQueuedMails, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user.date_last_login = timezone.now()
         self.user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
@@ -33,7 +33,7 @@ class TestSendQueuedMails(OsfTestCase):
     def test_queue_addon_mail(self, mock_send):
         self.queue_mail()
         main(dry_run=False)
-        assert_true(mock_send.called)
+        assert mock_send.called
 
     @mock.patch('osf.models.queued_mail.send_mail')
     def test_no_two_emails_to_same_person(self, mock_send):
@@ -43,7 +43,7 @@ class TestSendQueuedMails(OsfTestCase):
         self.queue_mail(user=user)
         self.queue_mail(user=user)
         main(dry_run=False)
-        assert_equal(mock_send.call_count, 1)
+        assert mock_send.call_count == 1
 
     def test_pop_and_verify_mails_for_each_user(self):
         user_with_email_sent = UserFactory()
@@ -67,15 +67,15 @@ class TestSendQueuedMails(OsfTestCase):
             user_with_no_emails_sent._id: [mail4]
         }
         mails_ = list(pop_and_verify_mails_for_each_user(user_queue))
-        assert_equal(len(mails_), 2)
+        assert len(mails_) == 2
         user_mails = [mail.user for mail in mails_]
-        assert_false(user_with_email_sent in user_mails)
-        assert_true(user_with_multiple_emails in user_mails)
-        assert_true(user_with_no_emails_sent in user_mails)
+        assert not (user_with_email_sent in user_mails)
+        assert user_with_multiple_emails in user_mails
+        assert user_with_no_emails_sent in user_mails
 
     def test_find_queued_mails_ready_to_be_sent(self):
         mail1 = self.queue_mail()
         mail2 = self.queue_mail(send_at=timezone.now()+timedelta(days=1))
         mail3 = self.queue_mail(send_at=timezone.now())
         mails = find_queued_mails_ready_to_be_sent()
-        assert_equal(mails.count(), 2)
+        assert mails.count() == 2

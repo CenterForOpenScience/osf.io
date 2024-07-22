@@ -10,6 +10,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(
 
 class ZoteroAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.zotero'
     label = 'addons_zotero'
     full_name = 'Zotero'

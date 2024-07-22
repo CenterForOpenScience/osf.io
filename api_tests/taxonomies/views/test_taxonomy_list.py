@@ -40,7 +40,7 @@ class TestTaxonomy:
 
     @pytest.fixture()
     def url_subject_list(self):
-        return '/{}taxonomies/'.format(API_BASE)
+        return f'/{API_BASE}taxonomies/'
 
     @pytest.fixture()
     def res_subject_list(self, app, url_subject_list):
@@ -81,7 +81,7 @@ class TestTaxonomy:
             self, app, subject, subject_child_one,
             subject_child_two, url_subject_list):
         top_level_subjects = Subject.objects.filter(parent__isnull=True)
-        top_level_url = '{}?filter[parents]=null'.format(url_subject_list)
+        top_level_url = f'{url_subject_list}?filter[parents]=null'
 
         res = app.get(top_level_url)
         assert res.status_code == 200
@@ -111,7 +111,7 @@ class TestTaxonomy:
 
     def test_is_deprecated(self, app, url_subject_list):
         res = app.get(
-            '{}?version=2.6'.format(url_subject_list),
+            f'{url_subject_list}?version=2.6',
             expect_errors=True)
         assert res.status_code == 404
 

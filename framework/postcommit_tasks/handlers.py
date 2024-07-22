@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import functools
 import hashlib
 import logging
@@ -11,7 +10,7 @@ import os
 from celery.canvas import Signature
 from celery.local import PromiseProxy
 from gevent.pool import Pool
-from flask import _app_ctx_stack as context_stack
+from flask import current_app, has_app_context
 
 from website import settings
 
@@ -56,7 +55,7 @@ def postcommit_after_request(response, base_status_error_code=500):
 
     except AttributeError as ex:
         if not settings.DEBUG_MODE:
-            logger.error('Post commit task queue not initialized: {}'.format(ex))
+            logger.error(f'Post commit task queue not initialized: {ex}')
     return response
 
 def get_task_from_postcommit_queue(name, predicate, celery=True):
@@ -72,7 +71,7 @@ def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=Tru
     """
     Any task queued with this function where celery=True will be run asynchronously.
     """
-    if context_stack.top and context_stack.top.app.testing:
+    if has_app_context() and current_app.config.get('TESTING', False):
         # For testing purposes only: run fn directly
         fn(*args, **kwargs)
     else:
@@ -84,7 +83,7 @@ def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=Tru
 
         if not once_per_request:
             # we want to run it once for every occurrence, add a random string
-            key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
+            key = f'{key}:{binascii.hexlify(os.urandom(8))}'
 
         if celery and isinstance(fn, PromiseProxy):
             postcommit_celery_queue().update({key: fn.si(*args, **kwargs)})

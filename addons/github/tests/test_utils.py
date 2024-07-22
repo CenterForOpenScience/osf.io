@@ -2,8 +2,6 @@ import json
 import hmac
 import hashlib
 
-import nose
-from nose.tools import *  # noqa
 import pytest
 
 from tests.base import OsfTestCase
@@ -26,14 +24,14 @@ HOOK_PAYLOAD = json.dumps({
 class TestHookVerify(OsfTestCase):
 
     def setUp(self):
-        super(TestHookVerify, self).setUp()
+        super().setUp()
         self.node_settings = NodeSettings(
             hook_secret='speakfriend',
         )
 
     def test_verify_no_secret(self):
         self.node_settings.hook_secret = None
-        with assert_raises(HookError):
+        with pytest.raises(HookError):
             utils.verify_hook_signature(self.node_settings, {}, {})
 
     def test_verify_valid(self):
@@ -52,13 +50,10 @@ class TestHookVerify(OsfTestCase):
             assert 0
 
     def test_verify_invalid(self):
-        with assert_raises(HookError):
+        with pytest.raises(HookError):
             utils.verify_hook_signature(
                 self.node_settings,
                 HOOK_PAYLOAD,
                 {'X-Hub-Signature': 'invalid'}
             )
 
-
-if __name__ == '__main__':
-    nose.run()

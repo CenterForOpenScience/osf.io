@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Persistence layer for the google drive addon.
 """
 import os
@@ -13,10 +12,11 @@ from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.googledrive import settings as drive_settings
 from addons.googledrive.client import (GoogleAuthClient,
-                                               GoogleDriveClient)
+                                       GoogleDriveClient)
 from addons.googledrive.serializer import GoogleDriveSerializer
 from addons.googledrive.utils import to_hgrid
 from website.util import api_v2_url
+
 
 # from website.files.models.ext import PathFollowingFileNode
 
@@ -142,11 +142,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'id': about['rootFolderId'],
                 'name': '/ (Full Google Drive)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(self.owner._id),
+                    'folders': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/googledrive/folders/',
                         params={
                             'path': '/',
                             'id': about['rootFolderId']
-                    })
+                        })
                 }
             }]
 
@@ -218,7 +219,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='googledrive')
 
         self.owner.add_log(
-            'googledrive_{0}'.format(action),
+            f'googledrive_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,

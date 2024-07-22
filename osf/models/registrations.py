@@ -1,7 +1,7 @@
 import logging
 import datetime
 import html
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -653,7 +653,7 @@ class Registration(AbstractNode):
         return retraction
 
     def delete_registration_tree(self, save=False):
-        logger.debug('Marking registration {} as deleted'.format(self._id))
+        logger.debug(f'Marking registration {self._id} as deleted')
         self.is_deleted = True
         self.deleted = timezone.now()
         if not getattr(self.embargo, 'for_existing_registration', False):
@@ -768,25 +768,25 @@ class Registration(AbstractNode):
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
-            super(Registration, self).add_tag(tag, auth, save, log, system)
+            super().add_tag(tag, auth, save, log, system)
         else:
             raise NodeStateError('Cannot add tags to withdrawn registrations.')
 
     def add_tags(self, tags, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
-            super(Registration, self).add_tags(tags, auth, save, log, system)
+            super().add_tags(tags, auth, save, log, system)
         else:
             raise NodeStateError('Cannot add tags to withdrawn registrations.')
 
     def remove_tag(self, tag, auth, save=True):
         if self.retraction is None:
-            super(Registration, self).remove_tag(tag, auth, save)
+            super().remove_tag(tag, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
     def remove_tags(self, tags, auth, save=True):
         if self.retraction is None:
-            super(Registration, self).remove_tags(tags, auth, save)
+            super().remove_tags(tags, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
@@ -997,9 +997,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     # For ContributorMixin
     guardian_object_type = 'draft_registration'
 
-    READ_DRAFT_REGISTRATION = 'read_{}'.format(guardian_object_type)
-    WRITE_DRAFT_REGISTRATION = 'write_{}'.format(guardian_object_type)
-    ADMIN_DRAFT_REGISTRATION = 'admin_{}'.format(guardian_object_type)
+    READ_DRAFT_REGISTRATION = f'read_{guardian_object_type}'
+    WRITE_DRAFT_REGISTRATION = f'write_{guardian_object_type}'
+    ADMIN_DRAFT_REGISTRATION = f'admin_{guardian_object_type}'
 
     # For ContributorMixin
     base_perms = [READ_DRAFT_REGISTRATION, WRITE_DRAFT_REGISTRATION, ADMIN_DRAFT_REGISTRATION]
@@ -1084,9 +1084,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         node = self.branched_from
         branched_type = self.branched_from_type
         if branched_type == 'DraftNode':
-            path = '/draft_registrations/{}/'.format(self._id)
+            path = f'/draft_registrations/{self._id}/'
         elif branched_type == 'Node':
-            path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
+            path = f'/nodes/{node._id}/draft_registrations/{self._id}/'
         return api_v2_url(path)
 
     # used by django and DRF
@@ -1177,13 +1177,13 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def institutions_url(self):
         # For NodeInstitutionsRelationshipSerializer
-        path = '/draft_registrations/{}/institutions/'.format(self._id)
+        path = f'/draft_registrations/{self._id}/institutions/'
         return api_v2_url(path)
 
     @property
     def institutions_relationship_url(self):
         # For NodeInstitutionsRelationshipSerializer
-        path = '/draft_registrations/{}/relationships/institutions/'.format(self._id)
+        path = f'/draft_registrations/{self._id}/relationships/institutions/'
         return api_v2_url(path)
 
     def update_search(self):

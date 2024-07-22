@@ -51,7 +51,7 @@ class BaseMachine(Machine):
         self.__state_attr = state_attr
         self._validate_transitions(self.Transitions)
 
-        super(BaseMachine, self).__init__(
+        super().__init__(
             states=[s.value for s in self.States],
             transitions=self.Transitions,
             initial=self.state,
@@ -180,7 +180,7 @@ class ReviewsMachine(BaseMachine):
             'domain': DOMAIN,
             'reviewable': self.machineable,
             'workflow': self.machineable.provider.reviews_workflow,
-            'provider_url': self.machineable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.machineable.provider._id),
+            'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
             'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
         }
@@ -204,7 +204,7 @@ class NodeRequestMachine(BaseMachine):
                     auth=Auth(ev.kwargs['user']),
                     permissions=contributor_permissions,
                     visible=ev.kwargs.get('visible', True),
-                    send_email='{}_request'.format(self.machineable.request_type))
+                    send_email=f'{self.machineable.request_type}_request')
 
     def resubmission_allowed(self, ev):
         # TODO: [PRODUCT-395]
@@ -214,8 +214,8 @@ class NodeRequestMachine(BaseMachine):
         """ Notify admins that someone is requesting access
         """
         context = self.get_context()
-        context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
-        context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
+        context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
+        context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
 
         for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
             mails.send_mail(

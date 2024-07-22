@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
 """
 This script is modified in this PR (https://github.com/CenterForOpenScience/osf.io/pull/7595)
@@ -36,7 +35,7 @@ def main():
     total = 0
 
     for style_file in get_style_files(settings.CITATION_STYLES_PATH):
-        with open(style_file, 'r') as f:
+        with open(style_file) as f:
             try:
                 root = etree.parse(f).getroot()
             except etree.XMLSyntaxError:
@@ -77,4 +76,4 @@ def get_style_files(path):
 
 if __name__ == '__main__':
     total = main()
-    print('Parsed {} styles'.format(total))
+    print(f'Parsed {total} styles')
