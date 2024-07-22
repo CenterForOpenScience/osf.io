@@ -324,7 +324,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def test_admin_can_create_draft(
             self, app, user, project_public, url_draft_registrations,
             payload, metaschema_open_ended):
-        url = '{}&embed=branched_from&embed=initiator'.format(url_draft_registrations)
+        url = f'{url_draft_registrations}&embed=branched_from&embed=initiator'
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']

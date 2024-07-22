@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 from abc import ABC, abstractmethod
 import csv
@@ -324,7 +323,7 @@ class RegistrationResponseField(UploadField):
         return '' if self.type == 'string' else []
 
     def __init__(self, value, validations, log_error, _):
-        super(RegistrationResponseField, self).__init__()
+        super().__init__()
         self.required = validations.get('required', False)
         self.type = validations.get('type', 'string')
         self.format = validations.get('format')
@@ -363,7 +362,7 @@ class MetadataField(UploadField):
         return '' if self.format == 'string' else []
 
     def __init__(self, value, validations, log_error, store):
-        super(MetadataField, self).__init__()
+        super().__init__()
         self.format = validations.get('format', 'string')
         self.required = validations.get('required', False)
         self.value = value.strip()

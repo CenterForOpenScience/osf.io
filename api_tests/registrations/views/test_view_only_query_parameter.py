@@ -21,7 +21,7 @@ def admin():
 
 @pytest.fixture()
 def base_url():
-    return '/{}registrations/'.format(API_BASE)
+    return f'/{API_BASE}registrations/'
 
 
 @pytest.fixture()
@@ -76,7 +76,7 @@ def private_node_one_private_link(private_node_one):
 
 @pytest.fixture()
 def private_node_one_url(private_node_one):
-    return '/{}registrations/{}/'.format(API_BASE, private_node_one._id)
+    return f'/{API_BASE}registrations/{private_node_one._id}/'
 
 
 @pytest.fixture()
@@ -96,7 +96,7 @@ def private_node_two(admin, read_contrib, write_contrib):
 
 @pytest.fixture()
 def private_node_two_url(private_node_two):
-    return '/{}registrations/{}/'.format(API_BASE, private_node_two._id)
+    return f'/{API_BASE}registrations/{private_node_two._id}/'
 
 
 @pytest.fixture()
@@ -130,7 +130,7 @@ def public_node_one_private_link(public_node_one):
 
 @pytest.fixture()
 def public_node_one_url(public_node_one):
-    return '/{}registrations/{}/'.format(API_BASE, public_node_one._id)
+    return f'/{API_BASE}registrations/{public_node_one._id}/'
 
 
 @pytest.fixture()
@@ -148,7 +148,7 @@ def public_node_two(admin, read_contrib, write_contrib):
 
 @pytest.fixture()
 def public_node_two_url(public_node_two):
-    return '/{}registrations/{}/'.format(API_BASE, public_node_two._id)
+    return f'/{API_BASE}registrations/{public_node_two._id}/'
 
 
 class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
@@ -186,7 +186,7 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
 
     def test_author_questions_are_anonymous(self, app, base_url, reg_report, admin, reg_report_anonymous_link):
         # Admin contributor sees q2 (author question)
-        url = '/{}registrations/{}/'.format(API_BASE, reg_report._id)
+        url = f'/{API_BASE}registrations/{reg_report._id}/'
         res = app.get(url, auth=admin.auth)
         assert res.status_code == 200
         meta = res.json['data']['attributes']['registered_meta']

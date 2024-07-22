@@ -1,8 +1,7 @@
-from asynctest import TestCase as AsyncTestCase
 from boaapi.boa_client import BoaException
 from boaapi.status import CompilerStatus, ExecutionStatus
 from http.client import HTTPMessage
-import mock
+from unittest import mock
 import pytest
 from unittest.mock import ANY, MagicMock
 from urllib.error import HTTPError
@@ -21,13 +20,13 @@ DEFAULT_MAX_JOB_WAITING_TIME = boa_settings.MAX_JOB_WAITING_TIME
 
 class AsyncMock(MagicMock):
     async def __call__(self, *args, **kwargs):
-        return super(AsyncMock, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 class TestBoaErrorHandling(OsfTestCase):
 
     def setUp(self):
-        super(TestBoaErrorHandling, self).setUp()
+        super().setUp()
         self.error_message = 'fake-error-message'
         self.user_username = 'fake-user-username'
         self.user_fullname = 'fake-user-fullname'
@@ -40,7 +39,7 @@ class TestBoaErrorHandling(OsfTestCase):
         self.job_id = '1a2b3c4d5e6f7g8'
 
     def tearDown(self):
-        super(TestBoaErrorHandling, self).tearDown()
+        super().tearDown()
 
     def test_boa_error_code(self):
         assert BoaErrorCode.NO_ERROR == -1
@@ -95,7 +94,7 @@ class TestBoaErrorHandling(OsfTestCase):
 class TestSubmitToBoa(OsfTestCase):
 
     def setUp(self):
-        super(TestSubmitToBoa, self).setUp()
+        super().setUp()
         self.host = 'http://locahost:9999/boa/?q=boa/api'
         self.username = 'fake-boa-username'
         self.password = 'fake-boa-password'
@@ -109,7 +108,7 @@ class TestSubmitToBoa(OsfTestCase):
         self.output_upload_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/?kind=file'
 
     def tearDown(self):
-        super(TestSubmitToBoa, self).tearDown()
+        super().tearDown()
 
     def test_submit_to_boa_async_called(self):
         with mock.patch(
@@ -135,10 +134,11 @@ class TestSubmitToBoa(OsfTestCase):
 
 
 @pytest.mark.django_db
-class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
+@pytest.mark.asyncio
+class TestSubmitToBoaAsync(OsfTestCase):
 
     def setUp(self):
-        super(TestSubmitToBoaAsync, self).setUp()
+        super().setUp()
         self.host = 'http://locahost:9999/boa/?q=boa/api'
         self.username = 'fake-boa-username'
         self.password = 'fake-boa-password'
@@ -168,7 +168,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
         boa_settings.MAX_JOB_WAITING_TIME = DEFAULT_MAX_JOB_WAITING_TIME
 
     def tearDown(self):
-        super(TestSubmitToBoaAsync, self).tearDown()
+        super().tearDown()
 
     async def test_submit_success(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \

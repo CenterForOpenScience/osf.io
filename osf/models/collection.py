@@ -73,7 +73,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
     @property
     def url(self):
-        return '/{}/'.format(self._id)
+        return f'/{self._id}/'
 
     @property
     def active_collection_submissions(self):
@@ -93,31 +93,31 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
     @property
     def absolute_api_v2_url(self):
-        return api_v2_url('/collections{}'.format(self.url))
+        return api_v2_url(f'/collections{self.url}')
 
     @property
     def linked_nodes_self_url(self):
-        return '{}relationships/linked_nodes/'.format(self.absolute_api_v2_url)
+        return f'{self.absolute_api_v2_url}relationships/linked_nodes/'
 
     @property
     def linked_registrations_self_url(self):
-        return '{}relationships/linked_registrations/'.format(self.absolute_api_v2_url)
+        return f'{self.absolute_api_v2_url}relationships/linked_registrations/'
 
     @property
     def linked_preprints_self_url(self):
-        return '{}relationships/linked_preprints/'.format(self.absolute_api_v2_url)
+        return f'{self.absolute_api_v2_url}relationships/linked_preprints/'
 
     @property
     def linked_preprints_related_url(self):
-        return '{}linked_preprints/'.format(self.absolute_api_v2_url)
+        return f'{self.absolute_api_v2_url}linked_preprints/'
 
     @property
     def linked_nodes_related_url(self):
-        return '{}linked_nodes/'.format(self.absolute_api_v2_url)
+        return f'{self.absolute_api_v2_url}linked_nodes/'
 
     @property
     def linked_registrations_related_url(self):
-        return '{}linked_registrations/'.format(self.absolute_api_v2_url)
+        return f'{self.absolute_api_v2_url}linked_registrations/'
 
     @classmethod
     def bulk_update_search(cls, collection_submissions, op='update', index=None):
@@ -136,7 +136,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
                 # Bookmark collections are always named 'Bookmarks'
                 self.title = 'Bookmarks'
         saved_fields = self.get_dirty_fields() or []
-        ret = super(Collection, self).save(*args, **kwargs)
+        ret = super().save(*args, **kwargs)
 
         if first_save:
             # Set defaults for M2M
@@ -198,19 +198,19 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             raise ValidationError('May not specify "program_area" for this collection')
 
         if self.collected_type_choices and collected_type not in self.collected_type_choices:
-            raise ValidationError('"{}" is not an acceptable "type" for this collection'.format(collected_type))
+            raise ValidationError(f'"{collected_type}" is not an acceptable "type" for this collection')
 
         if self.status_choices and status not in self.status_choices:
-            raise ValidationError('"{}" is not an acceptable "status" for this collection'.format(status))
+            raise ValidationError(f'"{status}" is not an acceptable "status" for this collection')
 
         if self.volume_choices and volume not in self.volume_choices:
-            raise ValidationError('"{}" is not an acceptable "volume" for this collection'.format(volume))
+            raise ValidationError(f'"{volume}" is not an acceptable "volume" for this collection')
 
         if self.issue_choices and issue not in self.issue_choices:
-            raise ValidationError('"{}" is not an acceptable "issue" for this collection'.format(issue))
+            raise ValidationError(f'"{issue}" is not an acceptable "issue" for this collection')
 
         if self.program_area_choices and program_area not in self.program_area_choices:
-            raise ValidationError('"{}" is not an acceptable "program_area" for this collection'.format(program_area))
+            raise ValidationError(f'"{program_area}" is not an acceptable "program_area" for this collection')
 
         if school_type:
             if not self.school_type_choices:
@@ -240,7 +240,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             # Not all objects have a content_type_pk, have to look the other way.
             # Ideally, all objects would, and we could do:
             #   self.content_types.filter(id=obj.content_type_pk).exists()
-            raise ValidationError('"{}" is not an acceptable "ContentType" for this collection'.format(ContentType.objects.get_for_model(obj).model))
+            raise ValidationError(f'"{ContentType.objects.get_for_model(obj).model}" is not an acceptable "ContentType" for this collection')
 
         # Unique together -- self and guid
         collection_submission = self.collectionsubmission_set.filter(guid=obj.guids.first())

@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from addons.forward.tests.utils import ForwardAddonTestCase
@@ -17,7 +17,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
     django_app = JSONAPITestApp()
 
     def setUp(self):
-        super(TestForward, self).setUp()
+        super().setUp()
         self.app.authenticate(*self.user.auth)
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
@@ -26,7 +26,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
         self.project.is_public = True
         self.project.save()
         self.django_app.put_json_api(
-            '/v2/nodes/{}/addons/forward/'.format(self.project._id),
+            f'/v2/nodes/{self.project._id}/addons/forward/',
             {'data': {'attributes': {'url': 'http://possiblyspam.com'}}},
             auth=self.user.auth,
         )
@@ -56,7 +56,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
         }
 
         self.django_app.put_json_api(
-            '/v2/nodes/{}/settings/'.format(self.project._id),
+            f'/v2/nodes/{self.project._id}/settings/',
             payload,
             auth=self.user.auth,
         )
@@ -71,7 +71,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
 
     def test_invalid_url(self):
         res = self.django_app.put_json_api(
-            '/v2/nodes/{}/addons/forward/'.format(self.project._id),
+            f'/v2/nodes/{self.project._id}/addons/forward/',
             {'data': {'attributes': {'url': 'bad url'}}},
             auth=self.user.auth, expect_errors=True,
         )

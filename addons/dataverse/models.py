@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
 from addons.base import exceptions as addon_errors
@@ -71,14 +70,14 @@ class DataverseFile(DataverseFileNode, File):
         return version
 
 
-class DataverseProvider(object):
+class DataverseProvider:
     """An alternative to `ExternalProvider` not tied to OAuth"""
     name = 'Dataverse'
     short_name = 'dataverse'
     serializer = DataverseSerializer
 
     def __init__(self, account=None):
-        super(DataverseProvider, self).__init__()  # this does exactly nothing...
+        super().__init__()  # this does exactly nothing...
         # provide an unauthenticated session by default
         self.account = account
 
@@ -165,7 +164,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         try:
-            return super(NodeSettings, self)._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
+            return super()._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
         except HTTPError as e:
             # The Dataverse API returns a 404 if the dataset has no published files
             if e.code == http_status.HTTP_404_NOT_FOUND and version == 'latest-published':
@@ -215,7 +214,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def create_waterbutler_log(self, auth, action, metadata):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
         self.owner.add_log(
-            'dataverse_{0}'.format(action),
+            f'dataverse_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,

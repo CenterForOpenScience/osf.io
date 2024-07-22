@@ -38,7 +38,7 @@ class TestNodeBibliographicContributors:
 
     @pytest.fixture()
     def url(self, project):
-        return '/{}nodes/{}/bibliographic_contributors/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/bibliographic_contributors/'
 
     def test_list_and_filter_bibliographic_contributors(self, app, url, project, admin_contributor_bib,
             write_contributor_non_bib, read_contributor_bib, non_contributor):
@@ -73,15 +73,15 @@ class TestNodeBibliographicContributors:
         assert read_contributor_bib._id in actual
 
         # Test filter contributors on perms
-        perm_filter = '{}?filter[permission]={}'.format(url, READ)
+        perm_filter = f'{url}?filter[permission]={READ}'
         res = app.get(perm_filter, auth=admin_contributor_bib.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert len(res.json['data']) == 2
 
-        perm_filter = '{}?filter[permission]={}'.format(url, ADMIN)
+        perm_filter = f'{url}?filter[permission]={ADMIN}'
         res = app.get(perm_filter, auth=admin_contributor_bib.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == '{}-{}'.format(project._id, admin_contributor_bib._id)
+        assert res.json['data'][0]['id'] == f'{project._id}-{admin_contributor_bib._id}'

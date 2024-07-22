@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 import pytest
 from django.utils import timezone
-from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
 from osf_tests.factories import (
@@ -26,26 +24,21 @@ class CitationsUtilsTestCase(OsfTestCase):
         # Convert a datetime instance to csl's date-variable schema
         now = timezone.now()
 
-        assert_equal(
-            datetime_to_csl(now),
-            {'date-parts': [[now.year, now.month, now.day]]},
-        )
+        assert datetime_to_csl(now) == {'date-parts': [[now.year, now.month, now.day]]}
 
 
 class CitationsNodeTestCase(OsfTestCase):
     def setUp(self):
-        super(CitationsNodeTestCase, self).setUp()
+        super().setUp()
         self.node = ProjectFactory()
 
     def tearDown(self):
-        super(CitationsNodeTestCase, self).tearDown()
+        super().tearDown()
         OSFUser.objects.all().delete()
 
     def test_csl_single_author(self):
         # Nodes with one contributor generate valid CSL-data
-        assert_equal(
-            self.node.csl,
-            {
+        assert self.node.csl == {
                 'publisher': 'OSF',
                 'author': [{
                     'given': self.node.creator.given_name,
@@ -56,8 +49,7 @@ class CitationsNodeTestCase(OsfTestCase):
                 'title': self.node.title,
                 'type': 'webpage',
                 'id': self.node._id,
-            },
-        )
+            }
 
     def test_csl_multiple_authors(self):
         # Nodes with multiple contributors generate valid CSL-data
@@ -65,9 +57,7 @@ class CitationsNodeTestCase(OsfTestCase):
         self.node.add_contributor(user)
         self.node.save()
 
-        assert_equal(
-            self.node.csl,
-            {
+        assert self.node.csl == {
                 'publisher': 'OSF',
                 'author': [
                     {
@@ -84,8 +74,7 @@ class CitationsNodeTestCase(OsfTestCase):
                 'title': self.node.title,
                 'type': 'webpage',
                 'id': self.node._id,
-            },
-        )
+            }
 
     def test_non_visible_contributors_arent_included_in_csl(self):
         node = ProjectFactory()
@@ -94,12 +83,12 @@ class CitationsNodeTestCase(OsfTestCase):
         invisible = UserFactory()
         node.add_contributor(invisible, auth=Auth(node.creator), visible=False)
         node.save()
-        assert_equal(len(node.csl['author']), 2)
+        assert len(node.csl['author']) == 2
         expected_authors = [
             contrib.csl_name(node._id) for contrib in [node.creator, visible]
         ]
 
-        assert_equal(node.csl['author'], expected_authors)
+        assert node.csl['author'] == expected_authors
 
 class CitationsUserTestCase(OsfTestCase):
 
@@ -160,43 +149,36 @@ class CitationsViewsTestCase(OsfTestCase):
         # populate the DB with parsed citation styles
         try:
             parse_citation_styles.main()
-        except OSError:
-            pass
+        except OSError as e:
+            raise e
 
     def test_list_styles(self):
         # Response includes a list of available citation styles
         response = self.app.get(api_url_for('list_citation_styles'))
 
-        assert_true(response.json)
+        assert response.json
 
-        assert_equal(
-            len(
+        assert len(
                 [
                     style for style in response.json['styles']
                     if style.get('id') == 'bibtex'
                 ]
-            ),
-            1,
-        )
+            ) == 1
 
     def test_list_styles_filter(self):
         # Response includes a list of available citation styles
         response = self.app.get(api_url_for('list_citation_styles', q='bibtex'))
 
-        assert_true(response.json)
+        assert response.json
 
-        assert_equal(
-            len(response.json['styles']), 1
-        )
+        assert len(response.json['styles']) == 1
 
-        assert_equal(
-            response.json['styles'][0]['id'], 'bibtex'
-        )
+        assert response.json['styles'][0]['id'] == 'bibtex'
 
     def test_node_citation_view(self):
         node = ProjectFactory()
         user = AuthUserFactory()
         node.add_contributor(user)
         node.save()
-        response = self.app.get('/api/v1' + '/project/' + node._id + '/citation/', auto_follow=True, auth=user.auth)
-        assert_true(response.json)
+        response = self.app.get('/api/v1' + '/project/' + node._id + '/citation/', auth=user.auth, follow_redirects=True)
+        assert response.json

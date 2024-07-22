@@ -12,7 +12,8 @@ class CitationsOauthProvider(ExternalProvider):
 
     _client = None
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def serializer(self):
         pass
 
@@ -72,15 +73,17 @@ class CitationsOauthProvider(ExternalProvider):
 
         return self._citations_for_folder(list_id)
 
-class CitationsProvider(object):
+class CitationsProvider:
 
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def serializer(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def provider_name(self):
         pass
 
@@ -125,7 +128,7 @@ class CitationsProvider(object):
         node_addon.save()
 
         node_addon.owner.add_log(
-            '{0}_folder_selected'.format(self.provider_name),
+            f'{self.provider_name}_folder_selected',
             params={
                 'project': node_addon.owner.parent_id,
                 'node': node_addon.owner._id,
@@ -221,7 +224,7 @@ class CitationsProvider(object):
                 ancestor_id = folders[list_id].get('parent_list_id')
 
             while ancestor_id != attached_list_id:
-                if ancestor_id is '__':
+                if ancestor_id == '__':
                     raise HTTPError(http_status.HTTP_403_FORBIDDEN)
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
 

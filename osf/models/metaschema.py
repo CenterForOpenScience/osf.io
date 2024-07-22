@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 from django.db import models
 import waffle
-import jsonschema
-
+from jsonschema import validate, ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator
 from website.util import api_v2_url
 
 from .base import BaseModel, ObjectIDMixin
@@ -101,7 +99,7 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
         unique_together = ('name', 'schema_version')
 
     def __unicode__(self):
-        return '(name={}, schema_version={}, id={})'.format(self.name, self.schema_version, self.id)
+        return f'(name={self.name}, schema_version={self.schema_version}, id={self.id})'
 
 
 class RegistrationSchema(AbstractSchema):
@@ -139,7 +137,7 @@ class RegistrationSchema(AbstractSchema):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/schemas/registrations/{}/'.format(self._id)
+        path = f'/schemas/registrations/{self._id}/'
         return api_v2_url(path)
 
     def validate_metadata(self, metadata, reviewer=False, required_fields=False):
@@ -150,8 +148,8 @@ class RegistrationSchema(AbstractSchema):
                                                    required_fields=required_fields,
                                                    is_reviewer=reviewer)
         try:
-            jsonschema.validate(metadata, schema)
-        except jsonschema.ValidationError as e:
+            validate(metadata, schema, cls=Draft7Validator)
+        except JsonSchemaValidationError as e:
             for page in self.schema['pages']:
                 for question in page['questions']:
                     if e.relative_schema_path[0] == 'required':
@@ -177,7 +175,7 @@ class RegistrationSchema(AbstractSchema):
                             'For your registration your response to the field with qid: \'{}\' is invalid.'.format(question['qid']),
                         )
             raise ValidationError(e)
-        except jsonschema.SchemaError as e:
+        except SchemaError as e:
             raise ValidationValueError(e)
         return
 
@@ -193,7 +191,7 @@ class FileMetadataSchema(AbstractSchema):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/schemas/files/{}/'.format(self._id)
+        path = f'/schemas/files/{self._id}/'
         return api_v2_url(path)
 
 
@@ -225,7 +223,7 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '{}schema_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
+        path = f'{self.schema.absolute_api_v2_url}schema_blocks/{self._id}/'
         return api_v2_url(path)
 
     def save(self, *args, **kwargs):

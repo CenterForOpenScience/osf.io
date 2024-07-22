@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0021_preprint_custom_publication_citation'),
+        ('osf', '0022_alter_abstractnode_subjects_alter_abstractnode_tags_and_more'),
     ]
 
     operations = [

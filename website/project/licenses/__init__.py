@@ -11,7 +11,7 @@ def set_license(node, license_detail, auth, node_type='node'):
     NodeLicenseRecord = apps.get_model('osf.NodeLicenseRecord')
 
     if node_type not in ['node', 'preprint']:
-        raise ValueError('{} is not a valid node_type argument'.format(node_type))
+        raise ValueError(f'{node_type} is not a valid node_type argument')
 
     license_record = node.node_license if node_type == 'node' else node.license
 
@@ -27,20 +27,20 @@ def set_license(node, license_detail, auth, node_type='node'):
         return {}, False
 
     if not node.has_permission(auth.user, permissions.WRITE):
-        raise framework_exceptions.PermissionsError('You need admin or write permissions to change a {}\'s license'.format(node_type))
+        raise framework_exceptions.PermissionsError(f'You need admin or write permissions to change a {node_type}\'s license')
 
     try:
         node_license = NodeLicense.objects.get(license_id=license_id)
     except NodeLicense.DoesNotExist:
-        raise osf_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
+        raise osf_exceptions.NodeStateError(f'Trying to update a {node_type} with an invalid license')
 
     if node_type == 'preprint':
         if node.provider.licenses_acceptable.exists() and not node.provider.licenses_acceptable.filter(id=node_license.id):
-            raise framework_exceptions.PermissionsError('Invalid license chosen for {}'.format(node.provider.name))
+            raise framework_exceptions.PermissionsError(f'Invalid license chosen for {node.provider.name}')
 
     for required_property in node_license.properties:
         if not license_detail.get(required_property):
-            raise ValidationError('{} must be specified for this license'.format(required_property))
+            raise ValidationError(f'{required_property} must be specified for this license')
 
     if license_record is None:
         license_record = NodeLicenseRecord(node_license=node_license)

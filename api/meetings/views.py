@@ -1,4 +1,3 @@
-
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F
@@ -23,7 +22,7 @@ from osf.models import AbstractNode, Conference, Contributor, Tag, PageCounter
 from website import settings
 
 
-class MeetingMixin(object):
+class MeetingMixin:
     """Mixin with convenience method get_meeting
     """
 
@@ -59,9 +58,9 @@ class BaseMeetingView(JSONAPIBaseView, MeetingMixin):
 class MeetingList(BaseMeetingView, generics.ListAPIView, ListFilterMixin):
 
     view_name = 'meeting-list'
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-modified',)  # default ordering
 
-    ordering_fields = ('name', 'submissions_count', 'location', 'start_date',)
+    ordering_fields = ('name', 'submissions_count', 'location', 'start_date')
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
@@ -106,7 +105,7 @@ class BaseMeetingSubmission(JSONAPIBaseView, MeetingMixin):
     view_category = 'meetings'
 
     def get_serializer_context(self):
-        context = super(BaseMeetingSubmission, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['meeting'] = self.get_meeting()
         return context
 
@@ -114,8 +113,8 @@ class BaseMeetingSubmission(JSONAPIBaseView, MeetingMixin):
 class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFilterMixin):
     view_name = 'meeting-submissions'
 
-    ordering = ('-created', )  # default ordering
-    ordering_fields = ('title', 'meeting_category', 'author_name', 'created', 'download_count',)
+    ordering = ('-created',)  # default ordering
+    ordering_fields = ('title', 'meeting_category', 'author_name', 'created', 'download_count')
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
@@ -137,7 +136,7 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             return Q(meeting_category__icontains=operation['value'])
 
-        return super(MeetingSubmissionList, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
     def annotate_queryset_for_filtering_and_sorting(self, meeting, queryset):
         queryset = self.annotate_queryset_with_meeting_category(meeting, queryset)
@@ -179,9 +178,9 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
         ).order_by('_order')
 
         queryset = queryset.annotate(
-            author_family_name=Subquery(contributors.values(('user__family_name'))[:1]),
-            author_full_name=Subquery(contributors.values(('user__fullname'))[:1]),
-            author_id=Subquery(contributors.values(('user__guids___id'))[:1]),
+            author_family_name=Subquery(contributors.values('user__family_name')[:1]),
+            author_full_name=Subquery(contributors.values('user__fullname')[:1]),
+            author_id=Subquery(contributors.values('user__guids___id')[:1]),
         ).annotate(
             author_name=Case(
                 When(author_family_name='', then=F('author_full_name')),
@@ -224,5 +223,5 @@ class MeetingSubmissionDetail(BaseMeetingSubmission, generics.RetrieveAPIView, N
         node = self.get_node()
         # Submission must be associated with the Conference
         if node.id not in meeting.submissions.values_list('id', flat=True):
-            raise NotFound('This is not a submission to {}.'.format(meeting.name))
+            raise NotFound(f'This is not a submission to {meeting.name}.')
         return node

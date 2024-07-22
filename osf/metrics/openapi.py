@@ -6,8 +6,9 @@ following https://spec.openapis.org/oas/v3.1.0
 '''
 import dataclasses
 import enum
+from collections.abc import Iterable
 from http import HTTPStatus
-from typing import Iterable, Any, Dict, Optional
+from typing import Any
 
 from website import settings as website_settings
 
@@ -16,11 +17,11 @@ class Mediatype(enum.Enum):
     JSONAPI = 'application/vnd.api+json'
 
 
-def get_metrics_openapi_json_dict(reports: Dict[str, type]) -> str:
+def get_metrics_openapi_json_dict(reports: dict[str, type]) -> str:
     return get_metrics_openapi_root(reports).as_json_dict()
 
 
-def get_metrics_openapi_root(reports: Dict[str, type]) -> 'OpenapiRoot':
+def get_metrics_openapi_root(reports: dict[str, type]) -> 'OpenapiRoot':
     # TODO: language parameter, get translations
     _parameters = get_metrics_openapi_parameters(reports)
     return OpenapiRoot(
@@ -44,7 +45,7 @@ def get_metrics_openapi_root(reports: Dict[str, type]) -> 'OpenapiRoot':
     )
 
 
-def get_metrics_openapi_paths(parameters) -> Dict[str, 'OpenapiPath']:
+def get_metrics_openapi_paths(parameters) -> dict[str, 'OpenapiPath']:
     return {
         '/reports/': OpenapiPath({
             'get': OpenapiOperation(
@@ -211,7 +212,7 @@ def get_metrics_openapi_paths(parameters) -> Dict[str, 'OpenapiPath']:
         ),
     }
 
-def get_metrics_openapi_parameters(reports: Dict[str, type]) -> dict:
+def get_metrics_openapi_parameters(reports: dict[str, type]) -> dict:
     return {
         'days_back': OpenapiParameter(
             name='days_back',
@@ -336,9 +337,9 @@ def _make_jsonable(value):
 @dataclasses.dataclass
 class OpenapiExample(JsonDataclass):
     value: Any = None
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    externalValue: Optional[str] = None
+    summary: str | None = None
+    description: str | None = None
+    externalValue: str | None = None
 
 
 class OpenapiParameterLocation(enum.Enum):
@@ -356,9 +357,9 @@ class OpenapiParameter(JsonDataclass):
     required: bool
     deprecated: bool = False
     allowEmptyValue: bool = False
-    schema: Optional[dict] = None
+    schema: dict | None = None
     example: Any = None
-    examples: Optional[Dict[str, OpenapiExample]] = None
+    examples: dict[str, OpenapiExample] | None = None
 
     def as_json_dict(self):
         _parameter_json = super().as_json_dict(skip_fields={'location'})
@@ -375,27 +376,27 @@ class OpenapiHeader(JsonDataclass):
     required: bool
     deprecated: bool = False
     allowEmptyValue: bool = False
-    schema: Optional[dict] = None
+    schema: dict | None = None
 
 
 @dataclasses.dataclass
 class OpenapiMediatypeContent(JsonDataclass):
     example: Any = None
-    schema: Optional[dict] = None
-    examples: Optional[Dict[str, OpenapiExample]] = None
+    schema: dict | None = None
+    examples: dict[str, OpenapiExample] | None = None
 
 
 @dataclasses.dataclass
 class OpenapiResponse(JsonDataclass):
     description: str
-    content: Dict[Mediatype, OpenapiMediatypeContent] = dataclasses.field(default_factory=dict)
-    headers: Dict[str, OpenapiHeader] = dataclasses.field(default_factory=dict)
+    content: dict[Mediatype, OpenapiMediatypeContent] = dataclasses.field(default_factory=dict)
+    headers: dict[str, OpenapiHeader] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
 class OpenapiResponses(JsonDataclass):
-    by_status_code: Dict[HTTPStatus, OpenapiResponse]
-    default: Optional[OpenapiResponse] = None
+    by_status_code: dict[HTTPStatus, OpenapiResponse]
+    default: OpenapiResponse | None = None
 
     def as_json_dict(self):
         _responses_json = super().as_json_dict(skip_fields={'by_status_code'})
@@ -406,25 +407,25 @@ class OpenapiResponses(JsonDataclass):
 @dataclasses.dataclass
 class OpenapiServer(JsonDataclass):
     url: str
-    description: Optional[str] = None
+    description: str | None = None
     # variables: Iterable[OpenapiServerVariable]
 
 
 @dataclasses.dataclass
 class OpenapiContact(JsonDataclass):
-    name: Optional[str] = None
-    url: Optional[str] = None
-    email: Optional[str] = None
+    name: str | None = None
+    url: str | None = None
+    email: str | None = None
 
 
 @dataclasses.dataclass
 class OpenapiOperation(JsonDataclass):
     operationId: str
     responses: OpenapiResponses
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[Iterable[str]] = None
-    parameters: Optional[Iterable[OpenapiParameter]] = None
+    summary: str | None = None
+    description: str | None = None
+    tags: Iterable[str] | None = None
+    parameters: Iterable[OpenapiParameter] | None = None
     deprecated: bool = False
     # externalDocs: Optional[OpenapiExternalDocs] = None
     # requestBody: Optional[OpenapiRequestBody] = None
@@ -435,10 +436,10 @@ class OpenapiOperation(JsonDataclass):
 
 @dataclasses.dataclass
 class OpenapiPath(JsonDataclass):
-    operations: Dict[str, OpenapiOperation]
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    parameters: Optional[Iterable[OpenapiParameter]] = None
+    operations: dict[str, OpenapiOperation]
+    summary: str | None = None
+    description: str | None = None
+    parameters: Iterable[OpenapiParameter] | None = None
 
     def as_json_dict(self):
         _path_json = super().as_json_dict(skip_fields={'operations'})
@@ -450,10 +451,10 @@ class OpenapiPath(JsonDataclass):
 class OpenapiInfo(JsonDataclass):
     title: str
     version: str
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    termsOfService: Optional[str] = None
-    contact: Optional[OpenapiContact] = None
+    summary: str | None = None
+    description: str | None = None
+    termsOfService: str | None = None
+    contact: OpenapiContact | None = None
     # license: Optional[OpenapiLicense] = None
 
 
@@ -461,6 +462,6 @@ class OpenapiInfo(JsonDataclass):
 class OpenapiRoot(JsonDataclass):
     info: OpenapiInfo
     servers: Iterable[OpenapiServer]
-    paths: Dict[str, OpenapiPath]
-    components: Dict
+    paths: dict[str, OpenapiPath]
+    components: dict
     openapi: str = '3.1.0'

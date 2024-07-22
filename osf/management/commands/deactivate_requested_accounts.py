@@ -19,7 +19,7 @@ def deactivate_requested_accounts(dry_run=True):
 
     for user in users:
         if user.has_resources:
-            logger.info('OSF support is being emailed about deactivating the account of user {}.'.format(user._id))
+            logger.info(f'OSF support is being emailed about deactivating the account of user {user._id}.')
             if not dry_run:
                 mails.send_mail(
                     to_addr=OSF_SUPPORT_EMAIL,
@@ -28,7 +28,7 @@ def deactivate_requested_accounts(dry_run=True):
                     can_change_preferences=False,
                 )
         else:
-            logger.info('Disabling user {}.'.format(user._id))
+            logger.info(f'Disabling user {user._id}.')
             if not dry_run:
                 user.deactivate_account()
                 user.is_registered = False
@@ -67,7 +67,7 @@ class Command(BaseCommand):
     '''
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

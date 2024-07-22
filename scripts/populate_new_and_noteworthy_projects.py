@@ -80,14 +80,14 @@ def is_eligible_node(node):
 
     for contrib in node.contributors:
         if contrib._id in NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST:
-            logger.info('Node {} skipped because a contributor, {}, is blacklisted.'.format(node._id, contrib._id))
+            logger.info(f'Node {node._id} skipped because a contributor, {contrib._id}, is blacklisted.')
             return False
 
     return True
 
 def update_node_links(designated_node, target_node_ids, description):
     """ Takes designated node, removes current node links and replaces them with node links to target nodes """
-    logger.info('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
+    logger.info(f'Repopulating {designated_node._id} with latest {description} nodes.')
     user = designated_node.creator
     auth = Auth(user)
 
@@ -98,7 +98,7 @@ def update_node_links(designated_node, target_node_ids, description):
         n = Node.load(n_id)
         if is_eligible_node(n):
             designated_node.add_pointer(n, auth, save=True)
-            logger.info('Added node link {} to {}'.format(n, designated_node))
+            logger.info(f'Added node link {n} to {designated_node}')
 
 def main(dry_run=True):
     init_app(routes=False)
@@ -110,7 +110,7 @@ def main(dry_run=True):
 
     try:
         new_and_noteworthy_links_node.save()
-        logger.info('Node links on {} updated.'.format(new_and_noteworthy_links_node._id))
+        logger.info(f'Node links on {new_and_noteworthy_links_node._id} updated.')
     except (KeyError, RuntimeError) as error:
         logger.error('Could not migrate new and noteworthy nodes due to error')
         logger.exception(error)

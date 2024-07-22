@@ -1,5 +1,5 @@
 import pytest
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
@@ -53,7 +53,7 @@ class TestIdentifierDetail:
 
     @pytest.fixture()
     def res_node(self, app, identifier_node):
-        url_node = '/{}identifiers/{}/'.format(API_BASE, identifier_node._id)
+        url_node = f'/{API_BASE}identifiers/{identifier_node._id}/'
         return app.get(url_node)
 
     @pytest.fixture()
@@ -104,7 +104,7 @@ class TestIdentifierDetail:
         path = urlparse(
             data_node['relationships']['referent']['links']['related']['href']
         ).path
-        assert '/{}nodes/{}/'.format(API_BASE, node._id) == path
+        assert f'/{API_BASE}nodes/{node._id}/' == path
 
         # test_identifier_detail_returns_correct_category_node
         assert data_node['attributes']['category'] == identifier_node.category
@@ -116,7 +116,7 @@ class TestIdentifierDetail:
             self, app, preprint, identifier_preprint,
             user
     ):
-        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
 
         res = app.get(url, expect_errors=True)
 
@@ -129,7 +129,7 @@ class TestIdentifierDetail:
         path = urlparse(
             data['relationships']['referent']['links']['related']['href']
         ).path
-        assert '/{}preprints/{}/'.format(API_BASE, preprint._id) == path
+        assert f'/{API_BASE}preprints/{preprint._id}/' == path
 
         # test_identifier_detail_returns_correct_category_preprint
         assert data['attributes']['category'] == identifier_preprint.category
@@ -140,7 +140,7 @@ class TestIdentifierDetail:
     def test_identifier_preprint_detail_unpublished(
             self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
         preprint.is_published = False
         preprint.save()
 
@@ -166,7 +166,7 @@ class TestIdentifierDetail:
     def test_identifier_preprint_detail_deleted(
             self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
         preprint.deleted = timezone.now()
         preprint.save()
 
@@ -192,7 +192,7 @@ class TestIdentifierDetail:
     def test_identifier_preprint_detail_private(
             self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
         preprint.is_public = False
         preprint.save()
 
@@ -218,7 +218,7 @@ class TestIdentifierDetail:
     def test_identifier_preprint_detail_abandoned(
             self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
         preprint.machine_state = DefaultStates.INITIAL.value
         preprint.save()
 
@@ -258,7 +258,7 @@ class TestIdentifierDetail:
         doi_value = '10.123/datacitedoi/woo'
         preprint.set_identifier_value(category='legacy_doi', value=doi_value)
         identifier = preprint.identifiers.filter(category='legacy_doi').first()
-        url = '/{}identifiers/{}/'.format(API_BASE, identifier._id)
+        url = f'/{API_BASE}identifiers/{identifier._id}/'
 
         res = app.get(url, auth=user.auth)
         attributes = res.json['data']['attributes']

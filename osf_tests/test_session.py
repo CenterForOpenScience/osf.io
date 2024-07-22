@@ -9,6 +9,8 @@ import itsdangerous
 import pytest
 from unittest import mock
 
+from flask import g
+
 from api.base.authentication.drf import drf_get_session_from_cookie
 from framework.sessions import set_current_session, flask_get_session_from_cookie, get_session, create_session
 from framework.sessions.utils import remove_session, remove_sessions_for_user
@@ -268,8 +270,9 @@ class TestUserSessionMap:
 class TestSessions(AppTestCase):
 
     def setUp(self):
-        super(TestSessions, self).setUp()
-        self.context.g.current_session = None
+        super().setUp()
+        self.context.__enter__()
+        g.current_session = None
         self.user = AuthUserFactory()
         self.fake_url = 'http://fake.osf.io/fake'
         # Authenticated Session
@@ -299,14 +302,16 @@ class TestSessions(AppTestCase):
         self.cookie_invalid = fake.md5()
 
     def tearDown(self):
-        super(TestSessions, self).tearDown()
+        # closing request context manager which was entered in setUp method of TestCase
+        self.context.__exit__(None, None, None)
+        super().tearDown()
 
     @mock.patch('framework.sessions.get_session')
     def test_set_current_session(self, mock_get_session):
         mock_get_session.return_value = self.session
         set_current_session()
-        assert self.context.g.current_session is not None
-        assert self.context.g.current_session.get('auth_user_id', None) == self.user._primary_key
+        assert g.current_session is not None
+        assert g.current_session.get('auth_user_id', None) == self.user._primary_key
 
     def test_drf_get_session_from_cookie_with_cookie_not_signed_by_server_secret(self):
         ret_val = drf_get_session_from_cookie(self.cookie_invalid)
@@ -376,9 +381,9 @@ class TestSessions(AppTestCase):
         assert session is not None
         assert session.session_key == self.session.session_key
         assert session.get('auth_user_id', None) == self.user._primary_key
-        assert self.context.g.current_session is not None
-        assert self.context.g.current_session.session_key == self.session.session_key
-        assert self.context.g.current_session.get('auth_user_id', None) == self.user._primary_key
+        assert g.current_session is not None
+        assert g.current_session.session_key == self.session.session_key
+        assert g.current_session.get('auth_user_id', None) == self.user._primary_key
 
     @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
@@ -389,7 +394,7 @@ class TestSessions(AppTestCase):
         assert session is not None
         assert session.session_key is None
         assert session.get('auth_user_id', None) is None
-        assert self.context.g.current_session is not None
+        assert g.current_session is not None
 
     @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
@@ -400,7 +405,7 @@ class TestSessions(AppTestCase):
         assert session is not None
         assert session.session_key is None
         assert session.get('auth_user_id', None) is None
-        assert self.context.g.current_session is not None
+        assert g.current_session is not None
 
     @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
@@ -409,7 +414,7 @@ class TestSessions(AppTestCase):
         flask_mock_get_session_from_cookie.side_effect = InvalidCookieOrSessionError()
         session = get_session()
         assert session is None
-        assert self.context.g.current_session is None
+        assert g.current_session is None
 
     @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
@@ -418,7 +423,7 @@ class TestSessions(AppTestCase):
         flask_mock_get_session_from_cookie.side_effect = InvalidCookieOrSessionError()
         session = get_session()
         assert session is None
-        assert self.context.g.current_session is None
+        assert g.current_session is None
 
     @mock.patch('framework.sessions.get_session')
     def test_create_session_with_response_when_session_is_invalid(self, mock_get_session):

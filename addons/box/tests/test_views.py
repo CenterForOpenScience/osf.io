@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Views tests for the Box addon."""
 from django.utils import timezone
 from rest_framework import status as http_status
-from nose.tools import *  # noqa (PEP8 asserts)
-import mock
+from unittest import mock
 import pytest
 from urllib3.exceptions import MaxRetryError
 
@@ -32,18 +30,18 @@ class TestAuthViews(BoxAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseM
         self.mock_refresh = mock.patch('addons.box.models.Provider.refresh_oauth_key')
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
-        super(TestAuthViews, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_refresh.stop()
-        super(TestAuthViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch(
         'addons.box.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_delete_external_account(self):
-        super(TestAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
 
 class TestConfigViews(BoxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -62,20 +60,20 @@ class TestConfigViews(BoxAddonTestCase, views_testing.OAuthAddonConfigViewsTestC
             return_value=(self.folder['id'], self.folder['path'])
         )
         self.mock_data.start()
-        super(TestConfigViews, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_data.stop()
-        super(TestConfigViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch.object(BoxSerializer, 'credentials_are_valid', return_value=True)
     def test_import_auth(self, *args):
-        super(TestConfigViews, self).test_import_auth()
+        super().test_import_auth()
 
 class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
 
     def setUp(self):
-        super(TestFilebrowserViews, self).setUp()
+        super().setUp()
         self.user.add_addon('box')
         self.node_settings.external_account = self.user_settings.external_accounts[0]
         self.node_settings.save()
@@ -93,10 +91,10 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
-            assert_equal(len(res.json), len(expected))
+            assert len(res.json) == len(expected)
             first = res.json[0]
-            assert_in('kind', first)
-            assert_equal(first['name'], contents[0]['name'])
+            assert 'kind' in first
+            assert first['name'] == contents[0]['name']
 
     @mock.patch('addons.box.models.NodeSettings.folder_id')
     def test_box_list_folders_if_folder_is_none(self, mock_folder):
@@ -104,7 +102,7 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
         mock_folder.__get__ = mock.Mock(return_value=None)
         url = self.project.api_url_for('box_folder_list')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(len(res.json), 1)
+        assert len(res.json) == 1
 
     def test_box_list_folders_if_folder_is_none_and_folders_only(self):
         with patch_client('addons.box.models.Client'):
@@ -115,7 +113,7 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
-            assert_equal(len(res.json), len(expected))
+            assert len(res.json) == len(expected)
 
     def test_box_list_folders_folders_only(self):
         with patch_client('addons.box.models.Client'):
@@ -123,7 +121,7 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
-            assert_equal(len(res.json), len(expected))
+            assert len(res.json) == len(expected)
 
     def test_box_list_folders_doesnt_include_root(self):
         with mock.patch('addons.box.models.Client.folder') as folder_mock:
@@ -133,22 +131,22 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
             contents = mock_client.folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
 
-            assert_equal(len(res.json), len(expected))
+            assert len(res.json) == len(expected)
 
     @mock.patch('addons.box.models.Client.folder')
     def test_box_list_folders_returns_error_if_invalid_path(self, mock_metadata):
         mock_metadata.side_effect = BoxAPIException(status=404, message='File not found')
         url = self.project.api_url_for('box_folder_list', folder_id='lolwut')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_404_NOT_FOUND)
+        res = self.app.get(url, auth=self.user.auth)
+        assert res.status_code == http_status.HTTP_404_NOT_FOUND
 
     @mock.patch('addons.box.models.Client.folder')
     def test_box_list_folders_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
         url = self.project.api_url_for('box_folder_list', folder_id='fo')
         mock_metadata.side_effect = MaxRetryError(mock_response, url)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        res = self.app.get(url, auth=self.user.auth)
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 
 class TestRestrictions(BoxAddonTestCase, OsfTestCase):
@@ -179,14 +177,14 @@ class TestRestrictions(BoxAddonTestCase, OsfTestCase):
         # tries to access a parent folder
         url = self.project.api_url_for('box_folder_list',
             path='foo bar')
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        res = self.app.get(url, auth=self.contrib.auth)
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_restricted_config_contrib_no_addon(self):
         url = api_url_for('box_set_config', pid=self.project._primary_key)
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        res = self.app.put(url, json={'selected': {'path': 'foo'}},
+            auth=self.contrib.auth)
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
     def test_restricted_config_contrib_not_owner(self):
         # Contributor has box auth, but is not the node authorizer
@@ -194,6 +192,6 @@ class TestRestrictions(BoxAddonTestCase, OsfTestCase):
         self.contrib.save()
 
         url = api_url_for('box_set_config', pid=self.project._primary_key)
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        res = self.app.put(url, json={'selected': {'path': 'foo'}},
+            auth=self.contrib.auth)
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN

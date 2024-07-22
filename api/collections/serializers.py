@@ -492,18 +492,18 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
         if not pointer_node:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
-                detail='Target Node \'{}\' not found.'.format(target_node_id),
+                detail=f'Target Node \'{target_node_id}\' not found.',
             )
         try:
             pointer = collection.collect_object(pointer_node, user)
         except ValidationError:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
-                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, collection._id),
+                detail=f'Target Node \'{target_node_id}\' already pointed to by \'{collection._id}\'.',
             )
         return pointer
 
-class CollectedAbstractNodeRelationshipSerializer(object):
+class CollectedAbstractNodeRelationshipSerializer:
     _abstract_node_subclass = None
 
     def make_instance_obj(self, obj):
@@ -548,7 +548,7 @@ class CollectedAbstractNodeRelationshipSerializer(object):
             except ValidationError as e:
                 raise InvalidModelValueError(
                     source={'pointer': '/data/relationships/node_links/data/id'},
-                    detail='Target Node {} generated error: {}.'.format(node._id, e.message),
+                    detail=f'Target Node {node._id} generated error: {e.message}.',
                 )
 
         return self.make_instance_obj(collection)

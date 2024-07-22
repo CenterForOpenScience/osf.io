@@ -1,15 +1,23 @@
-from __future__ import unicode_literals
-
 import logging
 import inspect
 from functools import wraps
 
-from raven import Client
+from sentry_sdk import init, configure_scope, capture_message, set_context, capture_exception
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from website import settings
 
 logger = logging.getLogger(__name__)
-sentry = Client(dsn=settings.SENTRY_DSN, release=settings.VERSION, tags={'App': 'celery'})
+
+init(
+    dsn=settings.SENTRY_DSN,
+    integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+    release=settings.VERSION,
+)
+with configure_scope() as scope:
+    scope.set_tag('App', 'celery')
 
 # statuses
 FAILED = 'failed'
@@ -20,15 +28,18 @@ COMPLETED = 'completed'
 
 def log_to_sentry(message, **kwargs):
     if not settings.SENTRY_DSN:
-        return logger.warn('send_to_raven called with no SENTRY_DSN')
-    return sentry.captureMessage(message, extra=kwargs)
+        return logger.warning('log_to_sentry called with no SENTRY_DSN')
+    if kwargs:
+        set_context('extra', kwargs)
+    return capture_message(message)
+
 
 # Use _index here as to not clutter the namespace for kwargs
 def dispatch(_event, status, _index=None, **kwargs):
     if _index:
-        _event = '{}.{}'.format(_event, _index)
+        _event = f'{_event}.{_index}'
 
-    logger.debug('[{}][{}]{!r}'.format(_event, status, kwargs))
+    logger.debug(f'[{_event}][{status}]{kwargs!r}')
 
 
 def logged(event, index=None):
@@ -41,7 +52,7 @@ def logged(event, index=None):
                 res = func(*args, **kwargs)
             except Exception as e:
                 if settings.SENTRY_DSN:
-                    sentry.captureException()
+                    capture_exception(e)
                 dispatch(event, FAILED, _index=index, exception=e, **context)
                 raise
             else:
@@ -52,7 +63,7 @@ def logged(event, index=None):
 
 
 def extract_context(func, *args, **kwargs):
-    arginfo = inspect.getargspec(func)
+    arginfo = inspect.getfullargspec(func)
     arg_names = arginfo.args
     defaults = {
         arg_names.pop(-1): kwarg

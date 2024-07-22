@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import logging
 import re
 
@@ -56,7 +53,7 @@ class DataCiteClient(AbstractIdentifierClient):
 
     def create_identifier(self, node, category, doi_value=None):
         if category != 'doi':
-            raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
+            raise NotImplementedError(f'Creating an identifier with category {category} is not supported')
         doi_value = doi_value or self._get_doi_value(node)
         metadata_record_xml = self.build_metadata(node, doi_value, as_xml=True)
         if settings.DATACITE_ENABLED:
@@ -71,7 +68,7 @@ class DataCiteClient(AbstractIdentifierClient):
 
     def update_identifier(self, node, category, doi_value=None):
         if category != 'doi':
-            raise NotImplementedError('Updating metadata not supported for {}'.format(category))
+            raise NotImplementedError(f'Updating metadata not supported for {category}')
         doi_value = doi_value or self._get_doi_value(node)
 
         # Reuse create logic to post updated metadata if the resource is still public
