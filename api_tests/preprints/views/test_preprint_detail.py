@@ -28,6 +28,7 @@ from osf_tests.factories import (
     ProjectFactory,
     SubjectFactory,
     PreprintProviderFactory,
+    InstitutionFactory
 )
 from website.settings import DOI_FORMAT, CROSSREF_URL
 
@@ -57,6 +58,10 @@ class TestPreprintDetail:
     @pytest.fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
 
     @pytest.fixture()
     def preprint_pre_mod(self, user):
@@ -214,6 +219,16 @@ class TestPreprintDetail:
         assert res.status_code == 200
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
         assert f'{url}identifiers/' in link
+
+    def test_return_affiliated_institutions(self, app, user, preprint, institution, url):
+        """
+        Confirmation test for the the new preprint affiliated institutions feature
+        """
+        preprint.affiliated_institutions.add(institution)
+        res = app.get(url)
+        assert res.status_code == 200
+        relationship_link = res.json['data']['relationships']['affiliated_institutions']['links']['related']['href']
+        assert f'/v2/preprints/{preprint._id}/institutions/' in relationship_link
 
 
 @pytest.mark.django_db
