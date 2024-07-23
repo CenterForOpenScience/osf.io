@@ -34,6 +34,7 @@ var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
 var datepicker = require('js/rdmDatepicker');
+var { ContributorsControl } = require("js/contributors");
 require('js/rdmSelect2');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
@@ -141,29 +142,29 @@ var commonDropdownSuggestOptions = {
 var initDropdownSuggestAllUsers = function (placeholder) {
     var options = {
         ajax: {
-	    url: $osf.apiV2Url('/users/'),
-	    dataType: 'json',
-	    data: function (term, page) {
-		return {
-		  'filter[id,full_name][icontains]': term,
-		};
-	    },
-	    results: function (data, page, query) {
-		var users = [];
-		for (var i in data.data) {
-		    var d = data.data[i];
-		    var userAttr = d.attributes;
-		    var guid = d.id.toUpperCase();
-		    // OSFUser.fullname
-		    var name = userAttr.full_name + ' @' + guid;
-		    users.push({id: userAttr.uid, text: name});
-		}
-		return {
-		    results: users
-		};
-	    },
+            url: $osf.apiV2Url('/users/'),
+            dataType: 'json',
+            data: function (term, page) {
+                return {
+                'filter[id,full_name][icontains]': term,
+                };
+            },
+            results: function (data, page, query) {
+                var users = [];
+                for (var i in data.data) {
+                    var d = data.data[i];
+                    var userAttr = d.attributes;
+                    var guid = d.id.toUpperCase();
+                    // OSFUser.fullname
+                    var name = userAttr.full_name + ' @' + guid;
+                    users.push({id: userAttr.uid, text: name});
+                }
+                return {
+                    results: users
+                };
+            },
             placeholder: placeholder
-	},
+       },
         minimumInputLength: 1,
         formatInputTooShort: function (input, min) {
            var n = min - input.length;
@@ -175,7 +176,6 @@ var initDropdownSuggestAllUsers = function (placeholder) {
 };
 
 var initDropdownSuggestContributors = function (placeholder) {
-    var contributors = window.contextVars.node.contributors;
     var makeData = function (user) {
         var full_name = user.fullname;
         if (full_name === null) {
@@ -186,8 +186,16 @@ var initDropdownSuggestContributors = function (placeholder) {
         return {id: user.primary_key, text: name};
     };
     var options = {
-        data: $.map(contributors, makeData),
-        placeholder: placeholder
+        ajax: {
+            url: nodeApiUrl + "get_contributors/",
+            dataType: "json",
+            results: function (data, page, query) {
+                return {
+                    results: $.map(data.contributors, makeData),
+                };
+            },
+            placeholder: placeholder,
+        },
     };
     $.extend(true, options, commonDropdownSuggestOptions);
     $('#LogSearchName').select2(options);
@@ -410,6 +418,8 @@ $(document).ready(function () {
         // If the clicked element has .keep-open, don't allow the event to propagate
         return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
     });
+
+    new ContributorsControl({ apiUrl: nodeApiUrl }, "#contributorsList");
 
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {

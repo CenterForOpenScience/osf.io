@@ -1,125 +1,152 @@
 <%namespace name="contributor_list" file="./contributor_list.mako" />
 ## TODO: Rename summary to node
-<%def name="render_node(summary, show_path)">
+<%def name="render_node(show_path)">
 ## TODO: Don't rely on ID
 <!-- ${_("component")} -->
 <div id="render-node">
-% if summary['can_view']:
-    <li
-            node_id="${summary['id']}"
-            class="
-                project list-group-item list-group-item-node cite-container
-                ${'pointer' if not summary['primary'] else ''}
-        ">
-
+<!-- ko if: node.can_view -->
+    <li data-bind="attr: { 'node_id': node.id }, css: { project: true, 'list-group-item': true, 'list-group-item-node': true, 'cite-container': true, pointer: node.primary }">
         <h4 class="list-group-item-heading">
             <span class="component-overflow f-w-lg" style="line-height: 1.5;">
-            % if not summary['primary']:
-            <i class="fa fa-link" data-toggle="tooltip" title='${_("Linked %(nodeType)s") % dict(nodeType=_(summary['node_type']))}'></i>
-            % endif
+                <!-- ko if: !node.primary -->
+                <i class="fa fa-link" data-toggle="tooltip" data-bind="attr: { title: localizedNodeType }"></i>
+                <!-- /ko -->
 
-            % if not summary['is_public']:
-                <span class="fa fa-lock" data-toggle="tooltip" title='${_("This project is private")}'></span>
-            % endif
-                <span class="project-statuses-lg">
-                    % if summary['is_pending_registration']:
+                <!-- ko if: !node.is_public -->
+                    <span class="fa fa-lock" data-toggle="tooltip" title='${_("This project is private")}'></span>
+                <!-- /ko -->
+                    <span class="project-statuses-lg">
+                        <!-- ko if: node.is_pending_registration -->
                         <span class="label label-info"><strong>Pending registration</strong></span> |
-                    % elif summary['is_retracted']:
-                        <span class="label label-danger"><strong>Withdrawn</strong></span> |
-                    % elif summary['is_pending_retraction']:
-                        <span class="label label-info"><strong>Pending withdrawal</strong></span> |
-                    % elif summary['is_embargoed']:
-                        <span class="label label-info"><strong>Embargoed</strong></span> |
-                    % elif summary['is_pending_embargo']:
-                        <span class="label label-info"><strong>Pending embargo</strong></span> |
-                    % endif
-                    % if summary['archiving']:
-                        <span class="label label-primary"><strong>Archiving</strong></span> |
-                    % endif
-                </span>
-            <span data-bind='getIcon: ${ summary["category"] | sjson, n }'></span>
-            % if not summary['archiving']:
-                <a href="${summary['url']}">${summary['title']}</a>
-            % else:
-                <span class="f-w-lg">${summary['title']}</span>
-            % endif
+                        <!-- /ko -->
 
-            % if summary['is_registration']:
-                | Registered: ${summary['registered_date']}
-            % elif summary['is_fork']:
-                | Forked: ${summary['forked_date']}
-            % endif
+                        <!-- ko if: node.is_retracted -->
+                        <span class="label label-danger"><strong>Withdrawn</strong></span> |
+                        <!-- /ko -->
+
+                        <!-- ko if: node.is_pending_retraction -->
+                        <span class="label label-info"><strong>Pending withdrawal</strong></span> |
+                        <!-- /ko -->
+
+                        <!-- ko if: node.is_embargoed -->
+                        <span class="label label-info"><strong>Embargoed</strong></span> |
+                        <!-- /ko -->
+
+                        <!-- ko if: node.is_pending_embargo -->
+                        <span class="label label-info"><strong>Pending embargo</strong></span> |
+                        <!-- /ko -->
+
+                        <!-- ko if: node.archiving -->
+                        <span class="label label-primary"><strong>Archiving</strong></span> |
+                        <!-- /ko -->
+                    </span>
+                <span data-bind="getIcon: node.category"></span>
+                <!-- ko ifnot: node.archiving -->
+                <a data-bind="attr: { href: node.url }, text: node.title"></a>
+                <!-- /ko -->
+                <!-- ko if: node.archiving -->
+                <span class="f-w-lg" data-bind="text: node.title"></span>
+                <!-- /ko -->
+
+                <!-- ko if: node.is_registration -->
+                | Registered: <span data-bind="text: node.registered_date"></span>
+                <!-- /ko -->
+                <!-- ko if: node.is_fork -->
+                | Forked: <span data-bind="text: node.forked_date"></span>
+                <!-- /ko -->
             </span>
 
-            % if not summary['archiving']:
+            <!-- ko ifnot: node.archiving -->
             <div class="pull-right">
-                % if not summary['primary'] and permissions.WRITE in user['permissions'] and not node['is_registration']:
-                    <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title='${_("Remove link")}'></i>
-                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title='${_("Create a fork of %(summaryTitle)s") % dict (summaryTitle=summary['title'])}'></i>
-                % endif
-                % if summary['primary'] and summary['logged_in'] and summary['is_contributor_or_group_member'] and not summary['is_registration']:
-                    <div class="generic-dropdown dropdown pull-right">
-                        <button class="btn btn-default dropdown-toggle dropdown-toggle-sm" type="button" data-toggle="dropdown">
-                            <span class="fa fa-ellipsis-h"></span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-right">
-                            <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">${_("Manage Contributors")}</a></li>
-                            <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">${_("Settings")}</a></li>
-                            % if summary['is_admin']:
-                            <li>
-                                <a tabindex="-1"
-                                    data-toggle="modal" data-target="#nodesDelete"
-                                    data-bind="click: $root.delete.bind($root, ${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['is_supplemental_project'] | sjson, n},  '${summary['api_url']}')"
-                                    type="button">
-                                    ${_("Delete")}
-                                </a>
-                            </li>
-                            % endif
-                        </ul>
-                  </div>
-                % endif
+                <!-- ko if: !node.primary && $parent.hasPermission('write') && !node.is_registration -->
+                <i class="fa fa-times remove-pointer"
+                data-bind="attr: { 'data-id': node.id }, 
+                            tooltip: { title: _('Remove link') }">
+                </i>
+                <i class="fa fa-code-fork" 
+                data-bind="click: function() { NodeActions.forkPointer(node.id, node.primary_id); }, 
+                            tooltip: { title: _('Create a fork of %(summaryTitle)s', {summaryTitle: node.title}) }">
+                </i>
+                <!-- /ko -->
+                
+                <!-- ko if: node.primary && node.logged_in && node.is_contributor_or_group_member && !node.is_registration -->
+                <div class="generic-dropdown dropdown pull-right">
+                    <button class="btn btn-default dropdown-toggle dropdown-toggle-sm" type="button" data-toggle="dropdown">
+                        <span class="fa fa-ellipsis-h"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <li>
+                            <a tabindex="-1" 
+                            data-bind="attr: { href: domain + node.id + '/contributors/' }, 
+                                        text: _('Manage Contributors')">
+                            </a>
+                        </li>
+                        <li>
+                            <a tabindex="-1" 
+                            data-bind="attr: { href: domain + node.id + '/settings/' }, 
+                                        text: _('Settings')">
+                            </a>
+                        </li>
+                        <!-- ko if: node.is_admin -->
+                        <li>
+                            <a tabindex="-1" 
+                            data-toggle="modal" data-target="#nodesDelete"
+                            data-bind="click: function() { $root.delete(node.childExists, node.node_type, node.is_supplemental_project, node.api_url); }, 
+                                        text: _('Delete')">
+                            </a>
+                        </li>
+                        <!-- /ko -->
+                    </ul>
+                </div>
+                <!-- /ko -->
             </div>
-            % endif
+            <!-- /ko -->
+
         </h4>
 
-        % if show_path and summary['node_type'] == 'component':
+        <!-- ko if: node.show_path && node.node_type == 'component' -->
             <div style="padding-bottom: 10px">
-                % if summary['parent_is_public']:
-                    ${summary['parent_title']}
-                % else:
-                    <em>-- private project --</em>
-                % endif
-                 / <b>${summary['title']}</b>
+                <!-- ko if: node.parent_is_public -->
+                <span data-bind="text: node.parent_title"></span>
+                <!-- /ko -->
+                <!-- ko ifnot: node.parent_is_public -->
+                <em>-- private project --</em>
+                <!-- /ko -->
+                / <b data-bind="text: node.title"></b>
             </div>
-        % endif
+        <!-- /ko -->
 
         <div class="list-group-item-text"></div>
 
-        % if not summary['anonymous']:
-        <!-- Show abbreviated contributors list -->
-        <div class="project-authors">
-            ${contributor_list.render_contributors(contributors=summary['contributors'], others_count=summary['others_count'], node_url=summary['url'])}
-        </div>
-        % if summary['groups']:
+        <!-- ko ifnot: node.anonymous -->
+            <!-- Show abbreviated contributors list -->
+            <!-- ko with: contributors -->
             <div class="project-authors">
-                ${summary['groups']}
+                ${contributor_list.render_contributors()}
             </div>
-        % endif
-        % else:
+            <!-- /ko -->
+            <!-- ko if: node.groups -->
+                <div class="project-authors">
+                    <span data-bind="text: node.groups"></span>
+                </div>
+            <!-- /ko -->
+        <!-- /ko -->
+        <!-- ko if: node.anonymous -->
             <div>Anonymous Contributors</div>
-        % endif
-        % if summary['description']:
-            <span class="text-muted">${summary['description']}</span>
-        % endif
-        % if not summary['archiving']:
-            <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
+        <!-- /ko -->
+        <!-- ko if: node.description -->
+            <span class="text-muted" data-bind="text: node.description"></span>
+        <!-- /ko -->
+        <!-- ko if: node.archiving -->
+        <div class="body hide" data-bind="attr: {id: 'body-' + node.id}" style="overflow:hidden;">
             <hr />
-            % if summary['is_retracted']:
+            <!-- ko if: node.is_retracted -->
                 <h4>Recent activity information has been withdrawn.</h4>
-            % else:
+            <!-- /ko -->
+            <!-- ko ifnot: node.is_retracted -->
                 <!-- Recent Activity (Logs) -->
                 Recent Activity
-                <div id="logFeed-${summary['primary_id'] if not summary['primary'] else summary['id']}">
+                <div data-bind="attr: { id: 'logFeed-' + (node.primary ? node.id : node.primary_id) }">
                     <div class="spinner-loading-wrapper">
                         <div class="ball-scale ball-scale-blue">
                             <div></div>
@@ -127,46 +154,24 @@
                          <p class="m-t-sm fg-load-message"> Loading logs...  </p>
                     </div>
                 </div>
-            % endif
+            <!-- /ko -->
         </div>
-        % endif
+        <!-- /ko -->
     </li>
-
-% else:
-    <li
-        node_id="${summary['id']}"
+<!-- /ko -->
+<!-- ko ifnot: node.can_view -->
+    <li data-bind="attr: { 'node_id': node.id }"
         class="project list-group-item list-group-item-node">
-        <p class="list-group-item-heading f-w-lg">
-            %if summary['is_registration']:
-                Private Registration
-            %elif summary['is_fork']:
-                Private Fork
-            %elif not summary['primary']:
-                Private Link
-            %else:
-                Private Component
-            %endif
-            % if not summary['primary'] and permissions.WRITE in user['permissions'] and not node['is_registration']:
-                ## Allow deletion of pointers, even if user doesn't know what they are deleting
+        <p class="list-group-item-heading f-w-lg"
+            data-bind="text: displayText">
+            <!-- ko if: !node.primary && $parent.hasPermission('write') && !node.is_registration -->
                 <span class="pull-right">
-                    <i class="fa fa-times remove-pointer pointer" data-id="${summary['id']}"
+                    <i class="fa fa-times remove-pointer pointer" data-bind="attr: { 'data-id': node.id }"
                     data-toggle="tooltip" title="Remove link"></i>
                 </span>
-            % endif
+            <!-- /ko -->
         </p>
     </li>
-
-% endif
+<!-- /ko -->
 </div>
-<script type="text/javascript">
-    window.contextVars = window.contextVars || {};
-    var nodes = window.contextVars.nodes || [];
-    nodes.push({
-        node : ${summary | sjson, n},
-        id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
-    });
-    window.contextVars = $.extend(true, {}, window.contextVars, {
-        nodes : nodes
-    });
-</script>
 </%def>
