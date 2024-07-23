@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import logging
 from rest_framework import status as http_status
@@ -12,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Subquery
 
 from framework import status
+from framework.forms import push_errors_to_status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -227,8 +227,7 @@ def project_new_node(auth, node, **kwargs):
             'status': 'success',
         }, 201, None, redirect_url
     else:
-        # TODO: This function doesn't seem to exist anymore?
-        status.push_errors_to_status(form.errors)
+        push_errors_to_status(form.errors)
     raise HTTPError(http_status.HTTP_400_BAD_REQUEST, redirect_url=node.url)
 
 
@@ -267,7 +266,7 @@ def project_before_template(auth, node, **kwargs):
 @must_not_be_registration
 def node_registrations(auth, node, **kwargs):
     if request.path.startswith('/project/'):
-        return redirect('/{}/registrations/'.format(node._id))
+        return redirect(f'/{node._id}/registrations/')
     return use_ember_app()
 
 @must_be_valid_project
@@ -300,7 +299,7 @@ def node_setting(auth, node, **kwargs):
 
     addon_settings = {}
     for addon in ['forward']:
-        addon_config = apps.get_app_config('addons_{}'.format(addon))
+        addon_config = apps.get_app_config(f'addons_{addon}')
         config = addon_config.to_json()
         config['template_lookup'] = addon_config.template_lookup
         config['addon_icon_url'] = addon_config.icon_url
@@ -333,7 +332,7 @@ def node_addons(auth, node, **kwargs):
     ret['addon_settings'] = [addon for addon in addon_settings]
 
     # Addons can have multiple categories, but we only want a set of unique ones being used.
-    ret['addon_categories'] = sorted(set([item for addon in addon_settings for item in addon['categories']]))
+    ret['addon_categories'] = sorted({item for addon in addon_settings for item in addon['categories']})
 
     # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
@@ -349,7 +348,7 @@ def serialize_addons(node, auth):
                         and addon.short_name not in ('wiki', 'forward', 'twofactor')]
 
     for addon in addons_available:
-        addon_config = apps.get_app_config('addons_{}'.format(addon.short_name))
+        addon_config = apps.get_app_config(f'addons_{addon.short_name}')
         config = addon_config.to_json()
         config['template_lookup'] = addon_config.template_lookup
         config['addon_icon_url'] = addon_config.icon_url
@@ -585,7 +584,7 @@ def update_node(auth, node, **kwargs):
         updated_field_names = node.update(data, auth=auth)
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
-            message_short="Failed to update attribute '{0}'".format(e.key),
+            message_short=f"Failed to update attribute '{e.key}'",
             message_long=e.reason
         ))
     # Need to cast tags to a string to make them JSON-serialiable
@@ -618,7 +617,7 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
-    id = '{}_deleted'.format(node.project_or_component)
+    id = f'{node.project_or_component}_deleted'
     status.push_status_message(message, kind='success', trust=False, id=id)
     parent = node.parent_node
     if parent and parent.can_view(auth):
@@ -901,7 +900,7 @@ def serialize_collections(collection_submissions, auth):
     return [{
         'title': collection_submission.collection.title,
         'name': collection_submission.collection.provider.name,
-        'url': '/collections/{}/'.format(collection_submission.collection.provider._id),
+        'url': f'/collections/{collection_submission.collection.provider._id}/',
         'status': collection_submission.status,
         'type': collection_submission.collected_type,
         '_id': collection_submission._id,
@@ -1079,7 +1078,7 @@ def node_child_tree(user, node):
     """
     serialized_nodes = []
 
-    assert node, '{} is not a valid Node.'.format(node._id)
+    assert node, f'{node._id} is not a valid Node.'
 
     parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
     children = (Node.objects.get_children(node)

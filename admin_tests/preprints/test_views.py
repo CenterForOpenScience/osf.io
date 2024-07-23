@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from django.test import RequestFactory
 from django.urls import reverse
@@ -357,7 +357,7 @@ class TestPreprintReindex:
 
 class TestPreprintDeleteView(AdminTestCase):
     def setUp(self):
-        super(TestPreprintDeleteView, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
         self.request = RequestFactory().post('/fake_path')
@@ -387,7 +387,7 @@ class TestPreprintDeleteView(AdminTestCase):
 
 class TestRemoveContributor(AdminTestCase):
     def setUp(self):
-        super(TestRemoveContributor, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
         self.user_2 = AuthUserFactory()

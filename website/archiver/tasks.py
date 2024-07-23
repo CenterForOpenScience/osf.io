@@ -46,19 +46,19 @@ logger = get_task_logger(__name__)
 
 class ArchiverSizeExceeded(Exception):
     def __init__(self, result, *args, **kwargs):
-        super(ArchiverSizeExceeded, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.result = result
 
 
 class ArchiverStateError(Exception):
     def __init__(self, info, *args, **kwargs):
-        super(ArchiverStateError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.info = info
 
 
 class ArchivedFileNotFound(Exception):
     def __init__(self, registration, missing_files, *args, **kwargs):
-        super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.draft_registration = DraftRegistration.objects.get(registered_node=registration)
         self.missing_files = missing_files
@@ -160,7 +160,7 @@ def make_copy_request(job_pk, url, data):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    logger.info('Sending copy request for addon: {0} on node: {1}'.format(data['provider'], dst._id))
+    logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
     res = requests.post(url, data=json.dumps(data))
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)
@@ -187,7 +187,7 @@ def archive_addon(addon_short_name, job_pk):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    logger.info('Archiving addon: {0} on node: {1}'.format(addon_short_name, src._id))
+    logger.info(f'Archiving addon: {addon_short_name} on node: {src._id}')
 
     cookie = user.get_or_create_cookie().decode()
     params = {'cookie': cookie}
@@ -204,7 +204,7 @@ def archive_addon(addon_short_name, job_pk):
         addon_short_name = 'dataverse'
     src_provider = src.get_addon(addon_short_name)
     folder_name_nfd, folder_name_nfc = normalize_unicode_filenames(src_provider.archive_folder_name)
-    rename = '{}{}'.format(folder_name_nfd, rename_suffix)
+    rename = f'{folder_name_nfd}{rename_suffix}'
     url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)
     make_copy_request.delay(job_pk=job_pk, url=url, data=data)
@@ -223,7 +223,7 @@ def archive_node(stat_results, job_pk):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    logger.info('Archiving node: {0}'.format(src._id))
+    logger.info(f'Archiving node: {src._id}')
 
     if not isinstance(stat_results, list):
         stat_results = [stat_results]
@@ -261,7 +261,7 @@ def archive(job_pk):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger = get_task_logger(__name__)
-    logger.info('Received archive task for Node: {0} into Node: {1}'.format(src._id, dst._id))
+    logger.info(f'Received archive task for Node: {src._id} into Node: {dst._id}')
     return celery.chain(
         [
             celery.group([

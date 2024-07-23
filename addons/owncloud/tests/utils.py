@@ -7,7 +7,7 @@ from addons.owncloud.tests.factories import (
 )
 
 
-class OwnCloudAddonTestCaseBaseMixin(object):
+class OwnCloudAddonTestCaseBaseMixin:
 
     short_name = 'owncloud'
     full_name = 'OwnCloud'
@@ -26,12 +26,12 @@ class OwnCloudAddonTestCaseBaseMixin(object):
 class OwnCloudBasicAuthAddonTestCase(OwnCloudAddonTestCaseBaseMixin, OAuthAddonTestCaseMixin, AddonTestCase):
 
     def __init__(self, *args, **kwargs):
-        super(OwnCloudBasicAuthAddonTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.auth = None
         self.external_account = None
 
     def set_user_settings(self, settings):
-        super(OwnCloudBasicAuthAddonTestCase, self).set_user_settings(settings)
+        super().set_user_settings(settings)
 
     def set_node_settings(self, settings):
-        super(OwnCloudBasicAuthAddonTestCase, self).set_node_settings(settings)
+        super().set_node_settings(settings)

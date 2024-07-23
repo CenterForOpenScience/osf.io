@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from website.util import api_v2_url
 from tests.base import assert_dict_contains_subset
@@ -7,7 +7,7 @@ from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
 def _get_application_detail_route(app):
-    path = 'applications/{}/'.format(app.client_id)
+    path = f'applications/{app.client_id}/'
     return api_v2_url(path, base_route='/')
 
 

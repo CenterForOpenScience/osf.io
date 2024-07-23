@@ -30,7 +30,7 @@ class SchemaResponseParentPermission:
     Note: SchemaResponses for deleted parent resources should appear to be deleted,
     while access should be denied to SchemaResponses on withdrawn parent resources.
     '''
-    acceptable_models = (SchemaResponse, )
+    acceptable_models = (SchemaResponse,)
     REQUIRED_PERMISSIONS = {}
 
     def _get_schema_response(self, obj):
@@ -93,7 +93,7 @@ class RegistrationSchemaResponseListPermission(permissions.BasePermission):
 
     To GET a registration's SchemaResponses, the registration must be visible to the user.
     '''
-    acceptable_models = (Registration, )
+    acceptable_models = (Registration,)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -116,7 +116,7 @@ class SchemaResponseListPermission(permissions.BasePermission):
     To POST a SchemaResponse, the user must have "admin" permissions on the
     specified parent resource.
     '''
-    acceptable_models = (Registration, )
+    acceptable_models = (Registration,)
 
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
@@ -167,7 +167,7 @@ class SchemaResponseActionDetailPermission(SchemaResponseParentPermission, permi
     No additional methods supported
     '''
 
-    acceptable_models = (SchemaResponseAction, )
+    acceptable_models = (SchemaResponseAction,)
 
     def _get_schema_response(self, obj):
         return obj.target

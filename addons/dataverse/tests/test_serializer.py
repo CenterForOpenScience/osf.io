@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-from nose.tools import *  # noqa
-import mock
+from unittest import mock
 import pytest
 
 
@@ -25,7 +23,7 @@ class TestDataverseSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
     required_settings_authorized = ('ownerName', )
 
     def setUp(self):
-        super(TestDataverseSerializer, self).setUp()
+        super().setUp()
         self.ser = self.Serializer(
             user_settings=self.user_settings,
             node_settings=self.node_settings
@@ -36,7 +34,7 @@ class TestDataverseSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
 
     def tearDown(self):
         self.mock_api.stop()
-        super(TestDataverseSerializer, self).tearDown()
+        super().tearDown()
 
     def test_serialize_acccount(self):
         ea = self.ExternalAccountFactory()
@@ -49,6 +47,6 @@ class TestDataverseSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
             'profile_url': ea.profile_url,
             'nodes': [],
             'host': ea.oauth_key,
-            'host_url': 'https://{0}'.format(ea.oauth_key),
+            'host_url': f'https://{ea.oauth_key}',
         }
-        assert_equal(self.ser.serialize_account(ea), expected)
+        assert self.ser.serialize_account(ea) == expected

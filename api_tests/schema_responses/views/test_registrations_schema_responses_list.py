@@ -206,7 +206,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         expected_ids = {updated_response.previous_response._id}
         if role in ['read', 'write', 'admin']:
             expected_ids.add(updated_response._id)
-        encountered_ids = set(entry['id'] for entry in resp.json['data'])
+        encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
     # Only test contributors here.
@@ -223,7 +223,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         resp = app.get(make_api_url(registration), auth=auth)
 
         expected_ids = set(registration.schema_responses.values_list('_id', flat=True))
-        encountered_ids = set(entry['id'] for entry in resp.json['data'])
+        encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
     @pytest.mark.parametrize('registration_status', ['public', 'private'])
@@ -242,7 +242,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         expected_ids = {updated_response.previous_response._id}
         if response_state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]:
             expected_ids.add(updated_response._id)
-        encountered_ids = set(entry['id'] for entry in resp.json['data'])
+        encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
     def test_GET__nested_registration_returns_root_responses(self, app):

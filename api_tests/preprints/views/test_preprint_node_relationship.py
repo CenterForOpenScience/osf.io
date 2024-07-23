@@ -39,7 +39,7 @@ class TestPreprintNodeRelationship:
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/relationships/node/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/relationships/node/'
 
     def test_preprint_node_relationship_get(self, app, user, user_two, preprint, supplemental_project, url):
         # For testing purposes
@@ -69,7 +69,7 @@ class TestPreprintNodeRelationship:
         assert res.json['data']['id'] == supplemental_project._id
         assert url in res.json['links']['self']
 
-        res = app.get('{}?version=2.13'.format(url), auth=user.auth)
+        res = app.get(f'{url}?version=2.13', auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['type'] == 'nodes'
         assert res.json['data']['id'] == supplemental_project._id

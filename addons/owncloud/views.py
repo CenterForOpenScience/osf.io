@@ -1,5 +1,4 @@
 """Views for the node settings page."""
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
@@ -48,9 +47,10 @@ def owncloud_add_user_account(auth, **kwargs):
 
     # Ensure that ownCloud uses https
     host_url = request.json.get('host')
-    host = furl()
-    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-    host.scheme = 'https'
+    host = furl(
+        host=host_url.rstrip('/').replace('https://', '').replace('http://', ''),
+        scheme='https',
+    )
 
     username = request.json.get('username')
     password = request.json.get('password')
@@ -68,15 +68,14 @@ def owncloud_add_user_account(auth, **kwargs):
             'message': 'ownCloud Login failed.'
         }, http_status.HTTP_401_UNAUTHORIZED
 
-    provider = OwnCloudProvider(account=None, host=host.url,
-                            username=username, password=password)
+    provider = OwnCloudProvider(account=None, host=host.url, username=username, password=password)
     try:
         provider.account.save()
     except ValidationError:
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id='{}:{}'.format(host.url, username).lower()
+            provider_id=f'{host.url}:{username}'.lower()
         )
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password

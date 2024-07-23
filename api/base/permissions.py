@@ -48,8 +48,10 @@ class TokenHasScope(permissions.BasePermission):
             normalized_scopes = oauth_scopes.normalize_scopes(allowed_scopes)
         except KeyError:
             # This should never fire: it implies that CAS issued a scope name not in the master list of scopes
-            raise exceptions.APIException('OAuth2 token specifies unrecognized scope. User token specifies '
-                                          'the following scopes: {}'.format(', '.join(allowed_scopes)))
+            raise exceptions.APIException(
+                'OAuth2 token specifies unrecognized scope. User token specifies '
+                'the following scopes: {}'.format(', '.join(allowed_scopes)),
+            )
 
         return required_scopes.issubset(normalized_scopes)
 
@@ -140,7 +142,7 @@ class OwnerOnly(permissions.BasePermission):
     # TODO: Write tests for basic, session, and oauth-based authentication
     def has_object_permission(self, request, view, obj):
         """Not applied to all members of a queryset"""
-        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), 'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}'.format(obj)
+        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), f'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {obj}'
         return (obj.owner.id == request.user.id)
 
 
@@ -156,5 +158,5 @@ def PermissionWithGetter(Base, getter):
 
         def has_object_permission(self, request, view, obj):
             obj = self.get_object(request, view, obj)
-            return super(Perm, self).has_object_permission(request, view, obj)
+            return super().has_object_permission(request, view, obj)
     return Perm

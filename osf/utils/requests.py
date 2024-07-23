@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from past.builtins import basestring
 import requests
 from django.db import transaction
 from flask import Request as FlaskRequest
@@ -10,7 +8,7 @@ from api.base import settings
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
-class DummyRequest(object):
+class DummyRequest:
     pass
 dummy_request = DummyRequest()
 
@@ -86,7 +84,7 @@ def string_type_request_headers(req):
         request_headers = {
             k: v
             for k, v in get_headers_from_request(req).items()
-            if isinstance(v, basestring)
+            if isinstance(v, str)
         }
     return request_headers
 

@@ -20,4 +20,4 @@ class TestRegistrationRelationshipSubjects(SubjectsRelationshipMixin):
 
     @pytest.fixture()
     def url(self, resource):
-        return '/{}registrations/{}/relationships/subjects/'.format(API_BASE, resource._id)
+        return f'/{API_BASE}registrations/{resource._id}/relationships/subjects/'

@@ -1,10 +1,10 @@
-import bleach
 import functools
 import unicodedata
 
 from collections import defaultdict
 from django.db.models import CharField, OuterRef, Subquery
 from framework.auth import Auth
+from framework.utils import sanitize_html
 
 from website import (
     mails,
@@ -23,7 +23,7 @@ FILE_DOWNLOAD_LINK_TEMPLATE = settings.DOMAIN + 'download/{file_id}'
 
 def normalize_unicode_filenames(filename):
     return [
-        bleach.clean(unicodedata.normalize(form, filename)).replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+        sanitize_html(unicodedata.normalize(form, filename)).replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
         for form in ['NFD', 'NFC']
     ]
 

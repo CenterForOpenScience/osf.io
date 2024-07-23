@@ -138,7 +138,7 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
     required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
 
     serializer_class = ViewOnlyLinkNodesSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'view-only-links'
     view_name = 'view-only-link-nodes-relationships'
@@ -153,7 +153,7 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(ViewOnlyLinkNodesRelationships, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret

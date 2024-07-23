@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-from enum import IntEnum, unique
+from enum import Enum, IntEnum, unique
 
 
 class ModerationEnum(IntEnum):

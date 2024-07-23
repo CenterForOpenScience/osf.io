@@ -15,7 +15,7 @@ class TestRegistrationProviderList(ProviderListViewTestBaseMixin):
 
     @pytest.fixture()
     def url(self, request):
-        return '/{}providers/registrations/'.format(API_BASE)
+        return f'/{API_BASE}providers/registrations/'
 
     @pytest.fixture
     def moderated_provider(self):

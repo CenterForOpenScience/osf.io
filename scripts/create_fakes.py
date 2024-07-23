@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Fake data generator.
 
 To use:
@@ -32,11 +31,10 @@ Examples:
 ...will create 3 preprints with the providers osf and test_provider
 
 """
-from __future__ import print_function, absolute_import
 
 import ast
 import sys
-import mock
+from unittest import mock
 import argparse
 import logging
 
@@ -275,7 +273,7 @@ def create_fake_user():
                    )
     user.set_password('faker123')
     user.save()
-    logger.info('Created user: {0} <{1}>'.format(user.fullname, user.username))
+    logger.info(f'Created user: {user.fullname} <{user.username}>')
     return user
 
 
@@ -340,7 +338,7 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
 
     node.save()
     project.save()
-    logger.info('Created project: {0}'.format(node.title))
+    logger.info(f'Created project: {node.title}')
     return project
 
 
@@ -374,7 +372,7 @@ def main():
         name = args.name + str(i) if args.name else ''
         create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags,
                             args.presentation_name, args.is_registration, args.is_preprint, args.preprint_provider)
-    print('Created {n} fake projects.'.format(n=args.n_projects))
+    print(f'Created {args.n_projects} fake projects.')
     sys.exit(0)
 
 

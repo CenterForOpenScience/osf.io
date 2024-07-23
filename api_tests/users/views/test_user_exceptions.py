@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -34,7 +33,7 @@ class TestExceptionFormatting:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}users/{}/'.format(API_BASE, user._id)
+        return f'/{API_BASE}users/{user._id}/'
 
     def test_user_errors(self, app, user, user_two, url):
 
@@ -46,7 +45,7 @@ class TestExceptionFormatting:
                                auth=user.auth,
                                expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
+        assert (isinstance(errors, list))
         assert res.json['errors'][0]['source'] == {
             'pointer': '/data/attributes/full_name'}
         assert res.json['errors'][0]['detail'] == 'This field is required.'
@@ -54,14 +53,14 @@ class TestExceptionFormatting:
     #   test_updates_user_unauthorized
         res = app.put_json_api(url, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
+        assert (isinstance(errors, list))
         assert errors[0] == {
             'detail': exceptions.NotAuthenticated.default_detail}
 
     #   test_updates_user_forbidden
         res = app.put_json_api(url, auth=user_two.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
+        assert (isinstance(errors, list))
         assert errors[0] == {
             'detail': exceptions.PermissionDenied.default_detail}
 
@@ -69,7 +68,7 @@ class TestExceptionFormatting:
         url = '/{}users/{}/'.format(API_BASE, '12345')
         res = app.get(url, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
+        assert (isinstance(errors, list))
         assert errors[0] == {'detail': exceptions.NotFound.default_detail}
 
     #   test_basic_auth_me_wrong_password

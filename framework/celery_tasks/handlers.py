@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 import logging
 import threading
 import functools
 
 from celery import group
-from flask import _app_ctx_stack as context_stack
+from flask import has_app_context
 
 from api.base.api_globals import api_globals
 from website import settings
@@ -63,7 +62,7 @@ def _enqueue_task(signature):
     :param signature: Celery task signature
     """
     if (
-        context_stack.top is None and
+        not has_app_context() and
         getattr(api_globals, 'request', None) is None
     ):  # Not in a request context
         signature.apply()

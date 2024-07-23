@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import logging
 
 from rest_framework import permissions as drf_permissions
@@ -36,7 +35,7 @@ class CedarMetadataRecordCreate(JSONAPIBaseView, CreateAPIView):
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
 
     serializer_class = CedarMetadataRecordsCreateSerializer
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
     model_class = CedarMetadataRecord
 
     # This view goes under the _/ namespace

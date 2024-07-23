@@ -2,7 +2,16 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
-24.03.0 (2024-07-08)
+24.05.0 (2024-07-22)
+====================
+- Bump base python version from py3.6 to py3.12.
+- Switch to using poetry for dependency management
+- Bump most (not all) dependencies to their maximum version as of mid-March.
+- Significantly update Dockerfile
+- Upgrade Django to v4.2
+- Generate test summary reports in CI
+
+24.04.0 (2024-07-08)
 ====================
 - Preprints into Ember OSF Web, Phase 2 Backend Release
 

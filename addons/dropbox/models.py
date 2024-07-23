@@ -5,7 +5,7 @@ import os
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
-from dropbox.dropbox import Dropbox
+from dropbox import Dropbox
 from dropbox.exceptions import ApiError, DropboxException
 from dropbox.files import FolderMetadata
 from furl import furl
@@ -55,7 +55,7 @@ class Provider(ExternalProvider):
     def auth_url(self):
         # Dropbox requires explicitly requesting refresh_tokens via `token_access_type`
         # https://developers.dropbox.com/oauth-guide#implementing-oauth
-        url = super(Provider, self).auth_url
+        url = super().auth_url
         return furl(url).add({'token_access_type': 'offline'}).url
 
     def handle_callback(self, response):
@@ -122,7 +122,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def display_name(self):
-        return '{0}: {1}'.format(self.config.full_name, self.folder)
+        return f'{self.config.full_name}: {self.folder}'
 
     def fetch_access_token(self):
         return self.api.fetch_access_token()
@@ -140,9 +140,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'kind': 'folder',
                 'name': '/ (Full Dropbox)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
-                        params={'id': '/'}
-                    )
+                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/dropbox/folders/', params={'id': '/'})
                 }
             }]
 
@@ -171,8 +169,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': item.path_display.split('/')[-1],
                 'path': item.path_display,
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
-                        params={'id': item.path_display}
+                    'folders': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/dropbox/folders/', params={'id': item.path_display}
                     )
                 }
             }
@@ -207,12 +205,13 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
+        url = self.owner.web_url_for(
+            'addon_view_or_download_file',
             path=metadata['path'].strip('/'),
             provider='dropbox'
         )
         self.owner.add_log(
-            'dropbox_{0}'.format(action),
+            f'dropbox_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,
@@ -227,7 +226,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         )
 
     def __repr__(self):
-        return u'<NodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
+        return f'<NodeSettings(node_id={self.owner._primary_key!r})>'
 
     ##### Callback overrides #####
     def after_delete(self, user):

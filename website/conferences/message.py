@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import re
 import hmac
 import hashlib
@@ -30,7 +28,7 @@ BASE_REGEX = r"""
         @osf\.io
     """
 
-class ConferenceMessage(object):
+class ConferenceMessage:
 
     def __init__(self):
         self.request = request._get_current_object()
@@ -117,7 +115,7 @@ class ConferenceMessage(object):
         else:
             # sender format: email@domain.tld
             name = self.sender
-        return str(HumanName(name))
+        return str(HumanName(name, encoding='UTF-8'))
 
     @cached_property
     def sender_email(self):
@@ -138,15 +136,14 @@ class ConferenceMessage(object):
     def route(self):
         match = re.search(re.compile(BASE_REGEX.format(allowed_types=(self.allowed_types or 'poster|talk')), re.IGNORECASE | re.VERBOSE), self.form['recipient'])
         if not match:
-            raise ConferenceError('Invalid recipient: '.format(self.form['recipient']))
+            # removed format as it was doing nothing if it is indedeed needed, use git blame
+            raise ConferenceError('Invalid recipient:')
         data = match.groupdict()
         if bool(settings.DEV_MODE) != bool(data['test']):
             # NOTE: test.osf.io has DEV_MODE = False
             if not data['test'] or (data['test'] and data['test'].rstrip('-') != 'test'):
                 raise ConferenceError(
-                    'Mismatch between `DEV_MODE` and recipient {0}'.format(
-                        self.form['recipient']
-                    )
+                    f"Mismatch between `DEV_MODE` and recipient {self.form['recipient']}"
                 )
         return data
 
@@ -168,7 +165,7 @@ class ConferenceMessage(object):
         return list(filter(
             lambda value: value is not None,
             list(map(
-                lambda idx: self.request.files.get('attachment-{0}'.format(idx + 1)),
+                lambda idx: self.request.files.get(f'attachment-{idx + 1}'),
                 list(range(count)),
             )),
         ))

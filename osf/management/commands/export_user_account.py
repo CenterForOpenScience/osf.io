@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import datetime as dt
 import time
-import io
 import os
 import json
 import logging
@@ -116,7 +113,7 @@ def export_wikis(node, current_dir):
     os.mkdir(wikis_dir)
     for wiki in WikiPage.objects.get_wiki_pages_latest(node):
         if wiki.content:
-            with io.open(os.path.join(wikis_dir, '{}.md'.format(wiki.wiki_page.page_name)), 'w', encoding='utf-8') as f:
+            with open(os.path.join(wikis_dir, f'{wiki.wiki_page.page_name}.md'), 'w', encoding='utf-8') as f:
                 f.write(wiki.content)
 
 def export_resource(node, user, current_dir):
@@ -225,7 +222,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
 
     """
     user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
-    proceed = input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
+    proceed = input(f'\nUser has {get_usage(user):.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] ')
     if not proceed or proceed.lower() != 'y':
         print('Exiting...')
         exit(1)
@@ -264,7 +261,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
     export_resources(quickfiles_to_export, user, quickfiles_dir, 'quickfiles')
 
     timestamp = dt.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-    output = os.path.join(path, '{user_id}-export-{timestamp}'.format(**locals()))
+    output = os.path.join(path, f'{user_id}-export-{timestamp}')
     print('Creating {output}.zip ...').format(**locals())
     shutil.make_archive(output, 'zip', base_dir)
     shutil.rmtree(base_dir)
@@ -284,7 +281,7 @@ class Command(BaseCommand):
         #   export only projects/registrations/preprints
         #   export only private projects
         #   export only projects on which user is an admin
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             'user',
             type=str,

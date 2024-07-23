@@ -2,6 +2,7 @@ from django.utils import timezone
 from transitions import Machine, MachineError
 
 from osf.utils.workflows import ModerationWorkflows
+from osf.utils import notifications as notify
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
@@ -49,8 +50,8 @@ class BaseMachine(Machine):
         self.__state_attr = state_attr
         self._validate_transitions(self.Transitions)
 
-        super(BaseMachine, self).__init__(
-            states=[s.db_name for s in self.States],
+        super().__init__(
+            states=[s.value for s in self.States],
             transitions=self.Transitions,
             initial=self.machineable.machine_state,
             send_event=True,
@@ -114,6 +115,49 @@ class PreprintStateMachine(Machine):
             queued=True,
         )
 
+    def notify_resubmit(self, ev):
+        notify.notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
+
+    def notify_accept_reject(self, ev):
+        notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
+
+    def notify_edit_comment(self, ev):
+        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
+
+    def notify_withdraw(self, ev):
+        context = self.get_context()
+        context['ever_public'] = self.machineable.ever_public
+        try:
+            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
+                                                                   from_state='pending',
+                                                                   to_state='accepted',
+                                                                   trigger='accept')
+            context['requester'] = preprint_request_action.target.creator
+        except PreprintRequestAction.DoesNotExist:
+            # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
+            context['force_withdrawal'] = True
+
+        for contributor in self.machineable.contributors.all():
+            context['contributor'] = contributor
+            if context.get('requester', None):
+                context['is_requester'] = context['requester'].username == contributor.username
+            mails.send_mail(
+                contributor.username,
+                mails.WITHDRAWAL_REQUEST_GRANTED,
+                document_type=self.machineable.provider.preprint_word,
+                **context
+            )
+
+    def get_context(self):
+        return {
+            'domain': DOMAIN,
+            'reviewable': self.machineable,
+            'workflow': self.machineable.provider.reviews_workflow,
+            'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
+            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
+            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
+        }
+
 
 class NodeRequestMachine(BaseMachine):
     ActionClass = NodeRequestAction
@@ -133,7 +177,7 @@ class NodeRequestMachine(BaseMachine):
                     auth=Auth(ev.kwargs['user']),
                     permissions=contributor_permissions,
                     visible=ev.kwargs.get('visible', True),
-                    send_email='{}_request'.format(self.machineable.request_type))
+                    send_email=f'{self.machineable.request_type}_request')
 
     def resubmission_allowed(self, ev):
         # TODO: [PRODUCT-395]
@@ -143,8 +187,8 @@ class NodeRequestMachine(BaseMachine):
         """ Notify admins that someone is requesting access
         """
         context = self.get_context()
-        context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
-        context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
+        context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
+        context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
 
         for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
             mails.send_mail(

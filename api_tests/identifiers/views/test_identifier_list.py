@@ -1,6 +1,6 @@
 import pytest
 
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 import responses
 from django.utils import timezone
@@ -131,7 +131,7 @@ class TestRegistrationIdentifierList:
 
     def test_node_not_allowed_from_registrations_endpoint(
             self, app, node):
-        url = '/{}registrations/{}/identifiers/'.format(API_BASE, node._id)
+        url = f'/{API_BASE}registrations/{node._id}/identifiers/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
@@ -139,7 +139,7 @@ class TestRegistrationIdentifierList:
             self, app, registration):
         registration.deleted = timezone.now()
         registration.save()
-        url = '/{}registrations/{}/identifiers/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}registrations/{registration._id}/identifiers/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 410
 
@@ -157,7 +157,7 @@ class TestNodeIdentifierList:
 
     @pytest.fixture()
     def url_node_identifiers(self, node):
-        return '/{}nodes/{}/identifiers/'.format(API_BASE, node._id)
+        return f'/{API_BASE}nodes/{node._id}/identifiers/'
 
     @pytest.fixture()
     def res_node_identifiers(self, app, url_node_identifiers):
@@ -193,7 +193,7 @@ class TestNodeIdentifierList:
                 item['relationships']['referent']['links']['related']['href']
             ).path for item in data_node_identifiers
         ]
-        assert '/{}nodes/{}/'.format(API_BASE, node._id) in paths
+        assert f'/{API_BASE}nodes/{node._id}/' in paths
 
     def test_identifier_list_returns_correct_categories_and_values(
             self, data_node_identifiers):
@@ -221,7 +221,7 @@ class TestNodeIdentifierList:
             ['carpid', 'nopeid']
         )
 
-        filter_url = '{}?filter[category]=carpid'.format(url_node_identifiers)
+        filter_url = f'{url_node_identifiers}?filter[category]=carpid'
         new_res = app.get(filter_url)
 
         carpid_total = Identifier.objects.filter(category='carpid').count()
@@ -240,7 +240,7 @@ class TestNodeIdentifierList:
 
     def test_registration_not_allowed_from_nodes_endpoint(
             self, app, registration):
-        url = '/{}nodes/{}/identifiers/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}nodes/{registration._id}/identifiers/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
@@ -248,7 +248,7 @@ class TestNodeIdentifierList:
             self, app, node):
         node.is_deleted = True
         node.save()
-        url = '/{}nodes/{}/identifiers/'.format(API_BASE, node._id)
+        url = f'/{API_BASE}nodes/{node._id}/identifiers/'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 410
 
@@ -262,7 +262,7 @@ class TestPreprintIdentifierList:
 
     @pytest.fixture()
     def url_preprint_identifier(self, preprint):
-        return '/{}preprints/{}/identifiers/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/identifiers/'
 
     @pytest.fixture()
     def res_preprint_identifier(self, app, url_preprint_identifier):
@@ -295,7 +295,7 @@ class TestPreprintIdentifierList:
                 item['relationships']['referent']['links']['related']['href']
             ).path for item in data_preprint_identifier
         ]
-        assert '/{}preprints/{}/'.format(API_BASE, preprint._id) in paths
+        assert f'/{API_BASE}preprints/{preprint._id}/' in paths
 
     def test_identifier_list_returns_correct_categories_and_values(
             self, data_preprint_identifier):
@@ -447,7 +447,7 @@ class TestNodeIdentifierCreate:
 
     @pytest.fixture()
     def identifier_url(self, resource):
-        return '/{}{}s/{}/identifiers/'.format(API_BASE, resource.__class__.__name__.lower(), resource._id)
+        return f'/{API_BASE}{resource.__class__.__name__.lower()}s/{resource._id}/identifiers/'
 
     @pytest.fixture()
     def identifier_payload(self):

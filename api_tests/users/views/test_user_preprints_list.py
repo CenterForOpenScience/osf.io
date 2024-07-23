@@ -47,19 +47,19 @@ class TestUserPreprints:
             project_public, project_private):
 
         #   test_authorized_in_gets_200
-        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/preprints/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_anonymous_gets_200
-        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/preprints/'
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_preprints_logged_in
-        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/preprints/'
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -69,7 +69,7 @@ class TestUserPreprints:
         assert project_private._id not in ids
 
     #   test_get_projects_not_logged_in
-        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/preprints/'
         res = app.get(url)
         node_json = res.json['data']
 
@@ -79,7 +79,7 @@ class TestUserPreprints:
         assert project_private._id not in ids
 
     #   test_get_projects_logged_in_as_different_user
-        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/preprints/'
         res = app.get(url, auth=user_two.auth)
         node_json = res.json['data']
 
@@ -91,7 +91,7 @@ class TestUserPreprints:
         abandoned_preprint = PreprintFactory(creator=user_one, finish=False)
         abandoned_preprint.machine_state = 'initial'
         abandoned_preprint.save()
-        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/preprints/'
         res = app.get(url, auth=user_one.auth)
         actual = [result['id'] for result in res.json['data']]
         assert abandoned_preprint._id not in actual
@@ -129,7 +129,7 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user._id)
+        return f'/{API_BASE}users/{user._id}/preprints/?version=2.2&'
 
     def test_provider_filter_equals_returns_one(
             self, app, user, provider_two, preprint_two, provider_url):
@@ -160,14 +160,14 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         preprint_two.save()
 
         # Unauthenticated users cannot see users/me/preprints
-        url = '/{}users/me/preprints/?version=2.2&'.format(API_BASE)
+        url = f'/{API_BASE}users/me/preprints/?version=2.2&'
         expected = [preprint_two._id]
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
         # Noncontribs cannot see withdrawn preprints
         user2 = AuthUserFactory()
-        url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
+        url = f'/{API_BASE}users/{user2._id}/preprints/?version=2.2&'
         expected = []
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
@@ -178,7 +178,7 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         user2 = AuthUserFactory()
         preprint_one.add_contributor(user2, permissions.READ, save=True)
         preprint_two.add_contributor(user2, permissions.READ, save=True)
-        url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
+        url = f'/{API_BASE}users/{user2._id}/preprints/?version=2.2&'
         expected = [preprint_two._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
@@ -254,14 +254,14 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
 
     def test_filter_published_false_admin(
             self, app, user_admin_contrib, preprint_unpublished, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]

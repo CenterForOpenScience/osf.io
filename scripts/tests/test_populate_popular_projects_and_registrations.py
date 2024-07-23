@@ -1,6 +1,4 @@
-from nose.tools import *  # noqa
-
-import mock
+from unittest import mock
 
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory, RegistrationFactory
@@ -13,7 +11,7 @@ from scripts import populate_popular_projects_and_registrations as script
 class TestPopulateNewAndNoteworthy(OsfTestCase):
 
     def setUp(self):
-        super(TestPopulateNewAndNoteworthy, self).setUp()
+        super().setUp()
         self.pop1 = ProjectFactory(is_public=True)
         self.pop2 = ProjectFactory(is_public=True)
 
@@ -21,7 +19,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.popreg2 = RegistrationFactory(is_public=True)
 
     def tearDown(self):
-        super(TestPopulateNewAndNoteworthy, self).tearDown()
+        super().tearDown()
 
     @mock.patch('website.project.utils.get_keen_activity')
     def test_populate_popular_nodes_and_registrations(self, mock_client):
@@ -82,16 +80,16 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
 
         mock_client.return_value = {'node_pageviews': node_pageviews, 'node_visits': node_visits}
 
-        assert_equal(len(self.popular_links_node.nodes), 0)
-        assert_equal(len(self.popular_links_registrations.nodes), 0)
+        assert len(self.popular_links_node.nodes) == 0
+        assert len(self.popular_links_registrations.nodes) == 0
 
         script.main(dry_run=False)
 
         self.popular_links_node.reload()
         self.popular_links_registrations.reload()
 
-        assert_equal(len(self.popular_links_node.nodes), 2)
-        assert_equal(len(self.popular_links_registrations.nodes), 2)
+        assert len(self.popular_links_node.nodes) == 2
+        assert len(self.popular_links_registrations.nodes) == 2
 
-        assert_equals(popular_nodes, self.popular_links_node.nodes)
-        assert_equals(popular_registrations, self.popular_links_registrations.nodes)
+        assert popular_nodes == self.popular_links_node.nodes
+        assert popular_registrations == self.popular_links_registrations.nodes

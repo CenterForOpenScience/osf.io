@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -55,7 +55,7 @@ class TestWikiVersionList:
 
     @pytest.fixture()
     def public_url(self, public_project, public_wiki):
-        return '/{}wikis/{}/versions/'.format(API_BASE, public_wiki._id)
+        return f'/{API_BASE}wikis/{public_wiki._id}/versions/'
 
     @pytest.fixture()
     def private_project(self, user):
@@ -67,7 +67,7 @@ class TestWikiVersionList:
 
     @pytest.fixture()
     def private_url(self, private_project, private_wiki):
-        return '/{}wikis/{}/versions/'.format(API_BASE, private_wiki._id)
+        return f'/{API_BASE}wikis/{private_wiki._id}/versions/'
 
     @pytest.fixture()
     def public_registration(self, user, public_project, public_wiki):
@@ -154,29 +154,29 @@ class TestWikiVersionList:
 
         #   test_public_node_wiki_versions_relationship_links
         res = app.get(public_url)
-        expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, public_wiki._id)
-        expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
+        expected_wiki_page_relationship_url = f'{API_BASE}wikis/{public_wiki._id}/'
+        expected_user_relationship_url = f'{API_BASE}users/{user._id}/'
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
         #   test_private_node_wiki_versions_relationship_links
         res = app.get(private_url, auth=user.auth)
-        expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, private_wiki._id)
-        expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
+        expected_wiki_page_relationship_url = f'{API_BASE}wikis/{private_wiki._id}/'
+        expected_user_relationship_url = f'{API_BASE}users/{user._id}/'
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
         #   test_public_registration_wiki_versions_relationship_links
         res = app.get(public_registration_url)
         expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, WikiPage.objects.get_for_node(public_registration, 'home')._id)
-        expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
+        expected_user_relationship_url = f'{API_BASE}users/{user._id}/'
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
         #   test_private_registration_wiki_versions_relationship_links
         res = app.get(private_registration_url, auth=user.auth)
         expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, WikiPage.objects.get_for_node(private_registration, 'home')._id)
-        expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
+        expected_user_relationship_url = f'{API_BASE}users/{user._id}/'
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
@@ -213,19 +213,19 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
 
     @pytest.fixture()
     def url_wiki_versions_public(self, wiki_public):
-        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_public._id)
+        return f'/{API_BASE}wikis/{wiki_public._id}/versions/'
 
     @pytest.fixture()
     def url_wiki_versions_private(self, wiki_private):
-        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_private._id)
+        return f'/{API_BASE}wikis/{wiki_private._id}/versions/'
 
     @pytest.fixture()
     def url_wiki_versions_registration_public(self, wiki_registration_public):
-        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_registration_public._id)
+        return f'/{API_BASE}wikis/{wiki_registration_public._id}/versions/'
 
     @pytest.fixture()
     def url_wiki_versions_registration_private(self, wiki_registration_private):
-        return '/{}wikis/{}/versions/'.format(API_BASE, wiki_registration_private._id)
+        return f'/{API_BASE}wikis/{wiki_registration_private._id}/versions/'
 
     def test_update_public_wiki_page_as_contributor(
         self, app, user_write_contributor, wiki_public,

@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from transitions import MachineError
 
 from django.contrib.contenttypes.fields import GenericForeignKey
