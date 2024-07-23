@@ -582,10 +582,9 @@ class PreprintFilterMixin(ListFilterMixin):
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)
 
-    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
         return Preprint.objects.can_view(
             base_queryset=base_queryset,
             user=auth_user,
             allow_contribs=allow_contribs,
-            public_only=public_only,
         )

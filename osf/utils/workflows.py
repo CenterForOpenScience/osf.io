@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum, unique
+from enum import IntEnum, unique
 
 
 class ModerationEnum(IntEnum):

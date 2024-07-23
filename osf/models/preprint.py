@@ -65,48 +65,95 @@ class PreprintManager(models.Manager):
     def get_queryset(self):
         return GuidMixinQuerySet(self.model, using=self._db)
 
-    no_user_query = Q(
-        is_published=True,
-        is_public=True,
-        deleted__isnull=True,
-        primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.db_name) \
-        & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+    no_user_query = (
+        Q(
+            is_published=True,
+            is_public=True,
+            deleted__isnull=True,
+            primary_file__isnull=False,
+            primary_file__deleted_on__isnull=True
+        ) &
+        ~Q(
+            machine_state=DefaultStates.INITIAL.db_name
+        ) &
+        (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+    )
 
-    def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
-        include_non_public = user and not user.is_anonymous and not public_only
-        if include_non_public:
-            moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider, with_superuser=False)
-            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
-            reviews_user_query = Q(is_public=True, provider__in=moderator_for)
-            if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
-                query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
-            else:
-                query = (self.no_user_query | admin_user_query | reviews_user_query)
+    def admin_user_query(self, user):
+        return Q(
+            id__in=get_objects_for_user(
+                user,
+                'admin_preprint',
+                self.filter(
+                    Q(preprintcontributor__user_id=user.id)
+                ),
+                with_superuser=False
+            )
+        )
+
+    def reviews_user_query(self, moderator_for):
+        return Q(
+            is_public=True,
+            provider__in=moderator_for
+        )
+
+    def contrib_user_query(self, user):
+        return ~Q(
+            machine_state=DefaultStates.INITIAL.value
+        ) & Q(
+            id__in=get_objects_for_user(
+                user,
+                'read_preprint',
+                self.filter(
+                    Q(preprintcontributor__user_id=user.id)
+                ),
+                with_superuser=False
+            )
+        )
+
+    def preprint_permissions_query(self, user=None, allow_contribs=True):
+        moderator_for = PreprintProvider.objects.none()
+
+        if not user or user.is_anonymous:
+            return self.no_user_query
         else:
-            moderator_for = PreprintProvider.objects.none()
-            query = self.no_user_query
+            moderator_for.add(
+                *get_objects_for_user(
+                    user,
+                    'view_submissions',
+                    PreprintProvider,
+                    with_superuser=False
+                )
+            )
+
+            query = self.no_user_query | self.admin_user_query(user) | self.reviews_user_query(user)
+
+            if allow_contribs:
+                query = self.no_user_query | self.contrib_user_query(user)
 
         if not moderator_for.exists():
-            query = query & Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+            query &= Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+
         return query
 
-    def can_view(self, base_queryset=None, user=None, allow_contribs=True, public_only=False):
+    def can_view(self, base_queryset=None, user=None, allow_contribs=True):
         if base_queryset is None:
             base_queryset = self
-        include_non_public = user and not public_only
-        ret = base_queryset.filter(
+
+        filtered_queryset = base_queryset.filter(
             self.preprint_permissions_query(
                 user=user,
                 allow_contribs=allow_contribs,
-                public_only=public_only,
-            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+            )
+            & Q(deleted__isnull=True)
+            & ~Q(machine_state=DefaultStates.INITIAL.value)
         )
+
         # The auth subquery currently results in duplicates returned
         # https://openscience.atlassian.net/browse/OSF-9058
         # TODO: Remove need for .distinct using correct subqueries
-        return ret.distinct('id', 'created') if include_non_public else ret
+
+        return filtered_queryset.distinct('id', 'created') if user else filtered_queryset
 
 
 class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, BaseModel, TitleMixin, DescriptionMixin,
@@ -181,13 +228,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
     @property
     def pre_moderation(self):
         from osf.utils.workflows import ModerationWorkflows
-        print('pre_moderation', self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.db_name)
         return self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.db_name
 
     @property
     def post_moderation(self):
         from osf.utils.workflows import ModerationWorkflows
-        print('post_moderation', self.provider.reviews_workflow == ModerationWorkflows.POST_MODERATION.db_name)
         return self.provider.reviews_workflow == ModerationWorkflows.POST_MODERATION.db_name
 
     def perform_withdraw(self, ev):
@@ -280,7 +325,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
         self.date_last_transitioned = now
         self.save()
         self.action = action
-        return action
 
     @property
     def in_public_reviews_state(self):
@@ -817,8 +861,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
-        if self.has_submitted_preprint and not self.primary_file:
-            raise ValidationError('Cannot save non-initial preprint without primary file.')
 
         ret = super().save(*args, **kwargs)
 

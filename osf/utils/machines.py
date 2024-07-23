@@ -22,7 +22,7 @@ from osf.utils.workflows import (
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
-from website.settings import OSF_CONTACT_EMAIL
+from website.settings import OSF_CONTACT_EMAIL, DOMAIN, OSF_SUPPORT_EMAIL
 
 
 class BaseMachine(Machine):

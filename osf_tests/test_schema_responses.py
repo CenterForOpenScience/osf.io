@@ -1,7 +1,7 @@
 from unittest import mock
 import pytest
 
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 from framework.exceptions import PermissionsError
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
