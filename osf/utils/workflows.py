@@ -209,6 +209,8 @@ class PreprintStates(ModerationEnum):
     ACCEPTED = 2
     REJECTED = 3
     WITHDRAWN = 4
+    SPAM = 5
+    DELETED = 6
 
 
 class DefaultTriggers(ModerationEnum):
@@ -346,7 +348,7 @@ PREPRINT_STATE_TRANSITIONS = [
         'trigger': 'edit_comment',
         'source': [PreprintStates.PENDING, PreprintStates.REJECTED, PreprintStates.ACCEPTED],
         'dest': '=',
-        'before': ['_validate_state'],
+        'before': [],
         'after': [],
     },
     {
@@ -362,6 +364,20 @@ PREPRINT_STATE_TRANSITIONS = [
         'dest': PreprintStates.WITHDRAWN,
         'before': ['_validate_state'],
         'after': ['perform_withdraw', 'notify_withdraw']
+    },
+    {
+        'trigger': 'mark_as_spam',
+        'source': ['*'],
+        'dest': PreprintStates.SPAM,
+        'before': ['_validate_state'],
+        'after': ['perform_mark_as_spam', 'notify_withdraw']
+    },
+    {
+        'trigger': 'mark_as_deleted',
+        'source': ['*'],
+        'dest': PreprintStates.DELETED,
+        'before': ['_validate_state'],
+        'after': ['perform_delete', 'notify_withdraw']
     },
 ]
 

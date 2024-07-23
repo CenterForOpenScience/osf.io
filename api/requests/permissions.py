@@ -2,7 +2,6 @@ from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
 from osf.models.action import NodeRequestAction, PreprintRequestAction
-from osf.models.mixins import NodeRequestableMixin, PreprintRequestableMixin
 from osf.models.node import Node
 from osf.models.preprint import Preprint
 from osf.utils.workflows import DefaultTriggers

@@ -33,10 +33,6 @@ from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.machines import (
-    NodeRequestMachine,
-    PreprintRequestMachine,
-)
 
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
@@ -817,40 +813,6 @@ class MachineableMixin(models.Model):
     @state.setter
     def state(self, new_state):
         self.machine_state = new_state.db_name
-
-
-class NodeRequestableMixin(MachineableMixin):
-    """
-    Inherited by NodeRequest. Defines the MachineClass.
-    """
-
-    class Meta:
-        abstract = True
-
-    @property
-    def MachineClass(self):
-        return NodeRequestMachine
-
-    @property
-    def States(self):
-        return DefaultStates
-
-
-class PreprintRequestableMixin(MachineableMixin):
-    """
-    Inherited by PreprintRequest. Defines the MachineClass
-    """
-
-    class Meta:
-        abstract = True
-
-    @property
-    def MachineClass(self):
-        return PreprintRequestMachine
-
-    @property
-    def States(self):
-        return DefaultStates
 
 
 class GuardianMixin(models.Model):

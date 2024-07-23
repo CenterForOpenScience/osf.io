@@ -1211,6 +1211,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if auth and user:
             raise ValueError('Cannot pass both `auth` and `user`')
         user = user or auth.user
+
         return (user and self.has_permission(user, WRITE))
 
     def get_addons(self):

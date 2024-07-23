@@ -294,13 +294,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 f'Submit a preprint by creating a `submit` Action at {url}',
             )
 
-        save_preprint = False
         recently_published = False
 
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
-            save_preprint = True
 
         old_tags = set(preprint.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
@@ -312,28 +310,25 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         for new_tag in (current_tags - old_tags):
             preprint.add_tag(new_tag, auth=auth)
+
         for deleted_tag in (old_tags - current_tags):
             preprint.remove_tag(deleted_tag, auth=auth)
 
         if 'node' in validated_data:
             node = validated_data.pop('node', None)
             self.set_field(preprint.set_supplemental_node, node, auth)
-            save_preprint = True
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
             self.update_subjects(preprint, subjects, auth)
-            save_preprint = True
 
         if 'title' in validated_data:
             title = validated_data['title']
             self.set_field(preprint.set_title, title, auth)
-            save_preprint = True
 
         if 'description' in validated_data:
             description = validated_data['description']
             self.set_field(preprint.set_description, description, auth)
-            save_preprint = True
 
         if 'article_doi' in validated_data:
             doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
@@ -344,20 +339,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 )
 
             preprint.article_doi = validated_data['article_doi']
-            save_preprint = True
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
             self.set_field(preprint.set_preprint_license, license_details, auth)
-            save_preprint = True
 
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
-            save_preprint = True
 
         if 'custom_publication_citation' in validated_data:
             preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
-            save_preprint = True
 
         if 'has_coi' in validated_data:
             try:
@@ -419,12 +410,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='A valid primary_file must be set before publishing a preprint.',
                 )
             self.set_field(preprint.set_published, published, auth)
-            save_preprint = True
             recently_published = published
             preprint.set_privacy('public', log=False, save=True)
 
-        if save_preprint:
-            preprint.save()
+        preprint.save()
 
         if recently_published:
             for author in preprint.contributors:
@@ -459,7 +448,12 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
+        preprint = Preprint(
+            provider=provider,
+            title=title,
+            creator=creator,
+            description=description,
+        )
         preprint.save()
 
         return self.update(preprint, validated_data)

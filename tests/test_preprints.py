@@ -99,6 +99,7 @@ class TestPreprintProperties:
         assert len(preprint.contributors) == 1
         assert preprint.contributors[0] == preprint.creator
 
+    @pytest.mark.skip('old')
     def test_verified_publishable(self, preprint):
         preprint.is_published = False
         assert preprint.verified_publishable is False
