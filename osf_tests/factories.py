@@ -731,20 +731,22 @@ class PreprintFactory(DjangoModelFactory):
             node=project,
             is_public=is_public
         )
+        assert instance.machine_state == 'initial'
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
-        file_size = kwargs.pop('file_size', 1337)
+        instance.save()
+        assert instance.machine_state == 'initial'
 
+        file_size = kwargs.pop('file_size', 1337)
         doi = kwargs.pop('doi', None)
         license_details = kwargs.pop('license_details', None)
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.article_doi = doi
-
         user = kwargs.pop('creator', None) or instance.creator
 
         from addons.osfstorage import settings as osfstorage_settings
@@ -755,16 +757,19 @@ class PreprintFactory(DjangoModelFactory):
             path=f'/{filename}',
             name=filename,
             materialized_path=f'/{filename}')
-
         preprint_file.save()
-        preprint_file.create_version(user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': file_size,
-            'contentType': 'img/png'
-        }).save()
+        preprint_file.create_version(
+            user,
+            {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            },
+            {
+                'size': file_size,
+                'contentType': 'img/png'
+            }
+        ).save()
 
         auth = Auth(user)
         instance.set_primary_file(preprint_file, auth=auth, save=True)
@@ -773,7 +778,6 @@ class PreprintFactory(DjangoModelFactory):
             instance.set_preprint_license(license_details, auth=auth)
         instance.set_published(is_published, auth=auth)
 
-        instance.save()
         return instance
 
 class TagFactory(DjangoModelFactory):

@@ -112,18 +112,14 @@ class PreprintManager(models.Manager):
         )
 
     def preprint_permissions_query(self, user=None, allow_contribs=True):
-        moderator_for = PreprintProvider.objects.none()
-
         if not user or user.is_anonymous:
             return self.no_user_query
         else:
-            moderator_for.add(
-                *get_objects_for_user(
-                    user,
-                    'view_submissions',
-                    PreprintProvider,
-                    with_superuser=False
-                )
+            moderator_for = get_objects_for_user(
+                user,
+                'view_submissions',
+                PreprintProvider,
+                with_superuser=False
             )
 
             query = self.no_user_query | self.admin_user_query(user) | self.reviews_user_query(user)
@@ -131,10 +127,9 @@ class PreprintManager(models.Manager):
             if allow_contribs:
                 query = self.no_user_query | self.contrib_user_query(user)
 
-        if not moderator_for.exists():
-            query &= Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
-
-        return query
+            if not moderator_for.exists():
+                query &= Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+            return query
 
     def can_view(self, base_queryset=None, user=None, allow_contribs=True):
         if base_queryset is None:
@@ -578,12 +573,18 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
 
     @property
     def verified_publishable(self):
-        return self.is_published and \
-            self.is_public and \
-            self.has_submitted_preprint and not \
-            self.deleted and not \
-            self.is_preprint_orphan and not \
-            (self.is_retracted and not self.ever_public)
+        return self.public
+
+    @property
+    def public(self):
+        if self.deleted:
+            return False
+        if self.is_retracted:
+            return False
+        if self.is_spam:
+            return False
+        if self.in_public_reviews_state:
+            return True
 
     @property
     def should_request_identifiers(self):
@@ -856,29 +857,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
             return None
 
     def save(self, *args, **kwargs):
-        first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
 
-        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
-            raise ValidationError('Cannot set "ever_public" to False')
-
-        ret = super().save(*args, **kwargs)
-
-        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.verified_publishable):
+        if saved_fields and self.verified_publishable:
             request, user_id = get_request_and_user_id()
             request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
             if user:
                 self.check_spam(user, saved_fields, request_headers)
 
-        if first_save:
-            self._set_default_region()
-            self.update_group_permissions()
-            self._add_creator_as_contributor()
-
-        if (not first_save and 'is_published' in saved_fields) or self.is_published:
+        if saved_fields.get('is_published') or self.is_published:
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)
-        return ret
+
+        return super().save(*args, **kwargs)
 
     def update_or_enqueue_on_resource_updated(self, user_id, first_save, saved_fields):
         # Needed for ContributorMixin
@@ -1491,13 +1482,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
         if save:
             self.save()
 
+
 @receiver(post_save, sender=Preprint)
-def create_file_node(sender, instance, **kwargs):
-    if instance.root_folder:
-        return
-    # Note: The "root" node will always be "named" empty string
-    root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
-    root_folder.save()
+def create_file_node(sender, instance, created, **kwargs):
+    if created:
+        root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
+        root_folder.save()
+        instance._set_default_region()
+        instance.update_group_permissions()
+        instance._add_creator_as_contributor()
 
 
 class PreprintUserObjectPermission(UserObjectPermissionBase):
