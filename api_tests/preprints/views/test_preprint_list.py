@@ -26,6 +26,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
     PreprintProviderFactory,
+    InstitutionFactory,
 )
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
@@ -145,6 +146,7 @@ class TestPreprintList(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
+        self.institution = InstitutionFactory()
 
         self.preprint = PreprintFactory(creator=self.user)
         self.url = f'/{API_BASE}preprints/'
@@ -183,6 +185,18 @@ class TestPreprintList(ApiTestCase):
         assert pp._id not in unauth_res_ids
         assert pp._id not in user_res_ids
         assert pp._id in mod_res_ids
+
+    def test_return_affiliated_institutions(self):
+        """
+        Confirmation test for the the new preprint affiliated institutions feature
+        """
+        self.preprint.affiliated_institutions.add(self.institution)
+        res = self.app.get(self.url)
+        assert len(res.json['data']) == 1
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        relationship_link = res.json['data'][0]['relationships']['affiliated_institutions']['links']['related']['href']
+        assert f'/v2/preprints/{self.preprint._id}/institutions/' in relationship_link
 
 
 class TestPreprintsListFiltering(PreprintsListFilteringMixin):
