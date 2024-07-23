@@ -309,7 +309,7 @@ PREPRINT_STATE_TRANSITIONS = [
         'source': [PreprintStates.INITIAL],
         'dest': PreprintStates.PENDING,
         'conditions': 'pre_moderation',
-        'before': ['_validate_state'],
+        'before': ['_validate_submit'],
         'after': ['notify_submit'],
     },
     {
@@ -317,15 +317,15 @@ PREPRINT_STATE_TRANSITIONS = [
         'source': [PreprintStates.INITIAL],
         'dest': PreprintStates.PENDING,
         'conditions': 'post_moderation',
-        'before': ['_validate_state'],
-        'after': ['perform_accept', 'notify_submit'],
+        'before': ['_validate_submit'],
+        'after': ['perform_submit', 'notify_submit'],
     },
     {
         'trigger': 'submit',
         'source': [PreprintStates.PENDING, PreprintStates.REJECTED],
         'conditions': 'resubmission_allowed',
         'dest': PreprintStates.PENDING,
-        'before': ['_validate_state'],
+        'before': ['_validate_submit'],
         'after': ['notify_resubmit'],
     },
     {

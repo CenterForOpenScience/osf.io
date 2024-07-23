@@ -175,17 +175,22 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
         from django.core.exceptions import ValidationError
         if not self.primary_file:
             raise ValidationError('Cannot transition non-initial preprint without primary file.')
-
         if not self.title:
             raise ValidationError('Cannot publish a preprint without a title')
-        if self.is_retracted:
-            raise ValidationError('Cannot transition that has been retracted.')
-        if not self.provider:
-            raise ValidationError('Preprint provider not specified; cannot publish.')
         if not self.subjects.exists():
             raise ValidationError('Preprint must have at least one subject to be published.')
+
+    def _validate_submit(self, ev):
+        if not self.provider:
+            raise ValidationError('Preprint provider not specified; cannot publish.')
+        if not self.primary_file:
+            raise ValueError('Preprint doesn\'t have a primary file.')
         if not (self.primary_file and self.primary_file.target == self):
             raise ValueError('Preprint is not a valid preprint; cannot publish.')
+        if not self.title:
+            raise ValidationError('Cannot publish a preprint without a title')
+
+        assert self.provider.reviews_workflow
 
     @property
     def ever_published(self):
@@ -210,14 +215,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
             self.date_published = now
             self.is_published = True
             self.ever_public = True
-        self.save()
-
-    def perform_post_mod_submission(self, ev):
-        action = self.actions.last()
-        now = action.created if action is not None else timezone.now()
-        self.date_published = now
-        self.is_published = True
-        self.ever_public = True
         self.save()
 
     @property
@@ -857,7 +854,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, B
             return None
 
     def save(self, *args, **kwargs):
-        saved_fields = self.get_dirty_fields() or []
+        saved_fields = self.get_dirty_fields()
 
         if saved_fields and self.verified_publishable:
             request, user_id = get_request_and_user_id()
