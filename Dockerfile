@@ -20,6 +20,7 @@ RUN apk add --no-cache --virtual .run-deps \
     libxslt \
     libpq-dev \
     libffi \
+    libffi-dev \
     libev \
     libevent \
     && yarn global add bower \
