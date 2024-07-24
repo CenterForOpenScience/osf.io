@@ -1,2 +1,2 @@
 # up-to-date with mendeley's master + add folder support and future dep updates
-git+https://github.com/CenterForOpenScience/mendeley-python-sdk.git@feature/osf-dep-updates
+git+https://github.com/CenterForOpenScience/mendeley-python-sdk.git@be8a811fa6c3b105d9f5c656cabb6b1ba855ed5b # branch is feature/osf-dep-updates
