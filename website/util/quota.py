@@ -349,6 +349,24 @@ def update_default_storage(user):
                     user_settings.set_region(region._id)
                     logger.info(u'user={}, institution={}, user_settings.set_region({})'.format(user, institution.name, region.name))
 
+def update_node_storage(node):
+    if node is not None:
+        node_settings = node.get_addon('osfstorage')
+        if node_settings is None:
+            node_settings = node.add_addon('osfstorage')
+        institution = node.affiliated_institutions.first()
+        if institution is not None:
+            try:
+                # logger.info(u'Institution: {}'.format(institution.name))
+                region = Region.objects.get(_id=institution._id)
+            except Region.DoesNotExist:
+                # logger.info('Inside update_default_storage: region does not exist.')
+                pass
+            else:
+                if node_settings.region._id != region._id:
+                    node_settings.set_region(region._id)
+                    logger.info(u'node={}, institution={}, node_settings.set_region({})'.format(node, institution.name, region.name))
+
 def get_node_file_list(file_node):
     if 'file' in file_node.type:
         return [file_node]

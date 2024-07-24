@@ -721,6 +721,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             params=params
         )
 
+    def set_region(self, region_id):
+        try:
+            region = Region.objects.get(_id=region_id)
+        except Region.DoesNotExist:
+            raise ValueError('Region cannot be found.')
+
+        self.region = region
+        self.save()
+        return
 
 @receiver(post_save, sender=OsfStorageFile)
 def create_metadata_records(sender, instance, created, **kwargs):
