@@ -173,4 +173,4 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return resource.is_public or resource.can_view(auth)
         else:
-            return resource.has_permission(auth.user, osf_permissions.WRITE)
+            return resource.can_edit(auth.user)
