@@ -893,7 +893,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             raise ValueError('Cannot pass both `auth` and `user`')
         user = user or auth.user
 
-        return user and self.has_permission(user, WRITE)
+        return (
+            user and ((self.has_permission(user, WRITE) and self.has_submitted_preprint) or self.has_permission(user, ADMIN))
+        )
 
     def get_contributor_order(self):
         # Method needed for ContributorMixin
