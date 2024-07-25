@@ -73,9 +73,9 @@ class DraftRegistrationPermission(permissions.BasePermission):
 
         if request.method in permissions.SAFE_METHODS:
             if isinstance(obj, DraftRegistration):
-                return obj.can_view(auth.user)
+                return obj.can_view(auth)
             elif isinstance(obj, AbstractNode):
-                return obj.has_permission(auth.user, READ)
+                return obj.can_view(auth)
         elif request.method == 'POST':  # Only Admin can create a draft registration
             if isinstance(obj, DraftRegistration):
                 return obj.is_contributor(auth.user) and obj.has_permission(auth.user, ADMIN)

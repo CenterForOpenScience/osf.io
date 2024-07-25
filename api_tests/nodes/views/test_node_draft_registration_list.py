@@ -216,20 +216,6 @@ class TestDraftRegistrationList(AbstractDraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
-    def test_node_admin_can_view_draft_list(
-            self, app, user, draft_registration, project_public, user_admin_contrib, schema, url_draft_registrations
-    ):
-        """
-        Project Admins should be implicitly granted READ permissions on Drafts even if not explicitly a contributor.
-        """
-        draft_registration.remove_contributor(user_admin_contrib, Auth(user_admin_contrib), _force=True)
-        assert user_admin_contrib not in draft_registration.contributors.all()
-        assert project_public.has_permission(user_admin_contrib, permissions.ADMIN)
-
-        res = app.get(url_draft_registrations, auth=user_admin_contrib.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 1
 
     def test_read_only_contributor_can_view_draft_list(self, app, user_read_contrib, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user_read_contrib.auth)
@@ -239,9 +225,14 @@ class TestDraftRegistrationList(AbstractDraftRegistrationTestCase):
         res = app.get(url_draft_registrations, auth=user_write_contrib.auth)
         assert res.status_code == 200
 
-    def test_logged_in_non_contributor_cannot_view_draft_list(self, app, user_non_contrib, url_draft_registrations):
-        res = app.get(url_draft_registrations, auth=user_non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
+    def test_draft_contributor_not_project_contributor_can_view_draft_list(self, app, user_non_contrib, draft_registration, project_public, url_draft_registrations):
+        draft_registration.add_contributor(contributor=user_non_contrib, auth=Auth(draft_registration.initiator), save=True)
+        assert not project_public.is_contributor(user_non_contrib)
+        assert draft_registration.is_contributor(user_non_contrib)
+        res = app.get(url_draft_registrations, auth=user_non_contrib.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
 
     def test_unauthenticated_user_cannot_view_draft_list(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
