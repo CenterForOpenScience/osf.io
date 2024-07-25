@@ -8,7 +8,7 @@ from osf.models import (
     OSFUser,
 )
 from api.nodes.permissions import ContributorDetailPermissions
-from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.utils.permissions import WRITE, ADMIN
 
 
 class IsContributorOrAdminContributor(permissions.BasePermission):
