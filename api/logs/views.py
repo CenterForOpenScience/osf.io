@@ -13,7 +13,7 @@ from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
 
 
-class LogMixin(object):
+class LogMixin:
     """
     Mixin with convenience method get_log
     """

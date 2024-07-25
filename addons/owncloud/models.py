@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
@@ -13,6 +12,7 @@ from addons.owncloud.serializer import OwnCloudSerializer
 from addons.owncloud.settings import DEFAULT_HOSTS, USE_SSL
 from osf.models.external import BasicAuthProviderMixin
 from website.util import api_v2_url
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +40,7 @@ class OwnCloudProvider(BasicAuthProviderMixin):
     def __init__(self, account=None, host=None, username=None, password=None):
         if username:
             username = username.lower()
-        return super(OwnCloudProvider, self).__init__(account=account, host=host, username=username, password=password)
+        return super().__init__(account=account, host=host, username=username, password=password)
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
@@ -54,7 +54,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = OwnCloudSerializer
 
     def to_json(self, user):
-        ret = super(UserSettings, self).to_json(user)
+        ret = super().to_json(user)
         ret['hosts'] = DEFAULT_HOSTS
         return ret
 
@@ -126,7 +126,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         url = self.owner.web_url_for('addon_view_or_download_file',
                                      path=metadata['path'], provider='owncloud')
         self.owner.add_log(
-            'owncloud_{0}'.format(action),
+            f'owncloud_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,
@@ -158,10 +158,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'id': '/',
                 'name': '/ (Full ownCloud)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/owncloud/folders/'.format(self.owner._id),
+                    'folders': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/owncloud/folders/',
                         params={
                             'path': '/',
-                    })
+                        })
                 }
             }]
 
@@ -172,7 +173,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         ret = []
         for item in c.list(path):
-            if item.file_type is 'dir':
+            if item.file_type == 'dir':
                 ret.append({
                     'addon': 'owncloud',
                     'path': item.path,
@@ -180,10 +181,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     'id': item.path,
                     'name': item.path.strip('/').split('/')[-1],
                     'urls': {
-                        'folders': api_v2_url('nodes/{}/addons/owncloud/folders/'.format(self.owner._id),
+                        'folders': api_v2_url(
+                            f'nodes/{self.owner._id}/addons/owncloud/folders/',
                             params={
                                 'path': item.path,
-                        })
+                            })
 
                     }
                 })

@@ -1,6 +1,7 @@
 {
     "addons": [
         "box",
+        "boa",
         "dataverse",
         "dropbox",
         "figshare",
@@ -60,6 +61,7 @@
         "bitbucket"
     ],
     "addons_description": {
+        "boa": "Boa is a domain-specific language and infrastructure that eases mining software repositories.",
         "box": "Box is a file storage add-on. Connect your Box account to an OSF project to interact with files hosted on Box via the OSF.",
         "dataverse": "Dataverse is an open source software application to share, cite, and archive data. Connect your Dataverse account to share your Dataverse datasets via the OSF.",
         "dropbox": "Dropbox is a file storage add-on. Connect your Dropbox account to an OSF project to interact with files hosted on Dropbox via the OSF.",
@@ -79,6 +81,7 @@
         "onedrive": "Microsoft OneDrive is a file storage add-on. Connect your Microsoft OneDrive account to an OSF project to interact with files hosted on Microsoft OneDrive via the OSF."
     },
     "addons_url": {
+        "boa": "https://boa.cs.iastate.edu/",
         "box": "http://www.box.com",
         "dataverse": "https://dataverse.harvard.edu/",
         "dropbox": "http://www.dropbox.com",

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import lxml
 import pytest
 import responses
@@ -15,6 +14,16 @@ from tests.test_addons import assert_urls_equal
 from website import settings
 from website.identifiers.clients import DataCiteClient
 from website.identifiers.utils import request_identifiers
+
+
+def _frozendict(dictionary: dict):
+    return frozenset(dictionary.items())
+
+
+def _assert_unordered_list_of_dicts_equal(actual_list_of_dicts, expected_list_of_dicts):
+    actual = frozenset(map(_frozendict, actual_list_of_dicts))
+    expected = frozenset(map(_frozendict, expected_list_of_dicts))
+    assert actual == expected
 
 
 @pytest.mark.django_db
@@ -37,7 +46,7 @@ class TestDataCiteClient:
         assert identifiers['doi'] == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
 
         assert len(mock_datacite.calls) == 2
-        datacite_metadata = mock_datacite.calls[0].request.body.decode()
+        datacite_metadata = mock_datacite.calls[0].request.body
         assert datacite_metadata == datacite_client.build_metadata(node=registration)
         doi_body = mock_datacite.calls[1].request.body
         assert doi_body == f'doi={identifiers["doi"]}\r\nurl=http://localhost:5000/{registration._id}/'.encode()
@@ -47,7 +56,7 @@ class TestDataCiteClient:
         assert identifiers['doi'] == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
 
         assert len(mock_datacite.calls) == 2
-        datacite_metadata = mock_datacite.calls[0].request.body.decode()
+        datacite_metadata = mock_datacite.calls[0].request.body
         assert datacite_metadata == datacite_client.build_metadata(node=registration)
         doi_body = mock_datacite.calls[1].request.body
         assert doi_body == f'doi={identifiers["doi"]}\r\nurl=http://localhost:5000/{registration._id}/'.encode()
@@ -66,11 +75,11 @@ class TestDataCiteClient:
         assert datacite_client.build_doi(registration) == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
 
     def test_datacite_build_metadata(self, registration, datacite_client):
-        metadata_xml = datacite_client.build_metadata(registration).encode('utf-8')
+        metadata_xml = datacite_client.build_metadata(registration)
         parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
         root = lxml.etree.fromstring(metadata_xml, parser=parser)
         xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
-        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd'
+        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.5/metadata.xsd'
         assert root.attrib[xsi_location] == expected_location
 
         identifier = root.find('{%s}identifier' % schema40.ns[None])
@@ -81,20 +90,20 @@ class TestDataCiteClient:
         assert len(creators.getchildren()) == len(registration.visible_contributors)
 
         publisher = root.find('{%s}publisher' % schema40.ns[None])
-        assert publisher.text == 'Open Science Framework'
+        assert publisher.text == 'OSF Registries'
 
         pub_year = root.find('{%s}publicationYear' % schema40.ns[None])
         assert pub_year.text == str(registration.registered_date.year)
 
         resource_type = root.find('{%s}resourceType' % schema40.ns[None])
         assert resource_type.text == 'Pre-registration'
-        assert resource_type.attrib['resourceTypeGeneral'] == 'Text'
+        assert resource_type.attrib['resourceTypeGeneral'] == 'StudyRegistration'
 
     def test_datcite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
-        visible_contrib2.given_name = u'ヽ༼ ಠ益ಠ ༽ﾉ'
-        visible_contrib2.family_name = u'ლ(´◉❥◉｀ლ)'
+        visible_contrib2.given_name = 'ヽ༼ ಠ益ಠ ༽ﾉ'
+        visible_contrib2.family_name = 'ლ(´◉❥◉｀ლ)'
         visible_contrib2.save()
         invisible_contrib = AuthUserFactory()
         invisible_contrib.given_name = 'Shady'
@@ -107,12 +116,12 @@ class TestDataCiteClient:
         registration.add_contributor(visible_contrib2, visible=True)
         registration.save()
 
-        metadata_xml = datacite_client.build_metadata(registration)
-        # includes visible contrib name
+        metadata_xml = datacite_client.build_metadata(registration).decode()
+        # includes visible contrib name as creator
         assert f'<contributorName nameType="Personal">{visible_contrib.fullname}</contributorName>' not in metadata_xml
         assert f'<creatorName nameType="Personal">{visible_contrib.fullname}</creatorName>' in metadata_xml
-
-        assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' in metadata_xml
+        # does not include invisible contrib name
+        assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' not in metadata_xml
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
 
     def test_datacite_format_related_resources(self, datacite_client):
@@ -132,22 +141,26 @@ class TestDataCiteClient:
             {
                 'relatedIdentifier': data_artifact.identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
             },
             {
                 'relatedIdentifier': materials_artifact.identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
             },
             {
                 'relatedIdentifier': 'publication',
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementTo',
+                'relationType': 'References',
             },
+            {
+                'relatedIdentifier': registration.registered_from.absolute_url.rstrip('/'),
+                'relatedIdentifierType': 'URL',
+                'relationType': 'IsVersionOf',
+            },
+
         ]
-        formatted_relationships = metadata_dict['relatedIdentifiers']
-        sort_func = lambda x: x['relatedIdentifier']
-        assert sorted(formatted_relationships, key=sort_func) == sorted(expected_relationships, key=sort_func)
+        _assert_unordered_list_of_dicts_equal(metadata_dict['relatedIdentifiers'], expected_relationships)
 
     def test_datacite_format_related_resources__ignores_duplicate_pids(self, datacite_client):
         registration = RegistrationFactory(is_public=True, has_doi=True)
@@ -166,10 +179,15 @@ class TestDataCiteClient:
             {
                 'relatedIdentifier': identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
+            },
+            {
+                'relatedIdentifier': registration.registered_from.absolute_url.strip('/'),
+                'relatedIdentifierType': 'URL',
+                'relationType': 'IsVersionOf',
             },
         ]
-        assert metadata_dict['relatedIdentifiers'] == expected_relationships
+        _assert_unordered_list_of_dicts_equal(metadata_dict['relatedIdentifiers'], expected_relationships)
 
     def test_datacite_format_related_resources__ignores_inactive_resources(self, datacite_client):
         registration = RegistrationFactory(is_public=True, has_doi=True)
@@ -193,10 +211,15 @@ class TestDataCiteClient:
             {
                 'relatedIdentifier': active_artifact.identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
+            },
+            {
+                'relatedIdentifier': registration.registered_from.absolute_url.strip('/'),
+                'relatedIdentifierType': 'URL',
+                'relationType': 'IsVersionOf',
             },
         ]
-        assert metadata_dict['relatedIdentifiers'] == expected_relationships
+        _assert_unordered_list_of_dicts_equal(metadata_dict['relatedIdentifiers'], expected_relationships)
 
 
 @pytest.mark.django_db
@@ -204,7 +227,7 @@ class TestDataCiteViews(OsfTestCase):
     """ This tests the v1 views for Project/Registration DOI creation."""
 
     def setUp(self):
-        super(TestDataCiteViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
         self.client = DataCiteClient(self.node)
@@ -260,7 +283,6 @@ class TestDataCiteViews(OsfTestCase):
                 category='doi',
                 value='fakedoi',
             ),
-            expect_errors=True,
         )
         assert res.status_code == 404
 

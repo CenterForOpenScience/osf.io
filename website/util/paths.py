@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import json
 import logging
@@ -12,13 +10,13 @@ logger = logging.getLogger(__name__)
 
 def load_asset_paths():
     if settings.DEBUG_MODE:
-        logger.warn('Skipping load of "webpack-assets.json" in DEBUG_MODE.')
+        logger.warning('Skipping load of "webpack-assets.json" in DEBUG_MODE.')
         return
     asset_paths = None
     try:
         with open(settings.ASSET_HASH_PATH) as fp:
             asset_paths = json.load(fp)
-    except IOError:
+    except OSError:
         logger.error('No "webpack-assets.json" file found. You may need to run webpack.')
         pass
     return asset_paths
@@ -31,7 +29,7 @@ def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
     (which may include the hash of the file).
     """
     if not asset_paths:
-        logger.warn('webpack-assets.json has not yet been generated. Falling back to non-cache-busted assets')
+        logger.warning('webpack-assets.json has not yet been generated. Falling back to non-cache-busted assets')
         return path
     if not debug:
         key = path.replace(base_static_path, '').replace('.js', '')

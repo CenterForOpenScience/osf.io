@@ -37,7 +37,7 @@
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                         % if node.get('storage_limit_status') and node['storage_limit_status']['text'] and permissions.WRITE in user['permissions']:
-                            <a href="https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps"  target="_blank" class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is ${node['storage_limit_status']['text']} the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon."><i class="fa fa-exclamation-triangle"></i></a>
+                            <a href="https://help.osf.io/article/137-osf-storage-caps"  target="_blank" class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is ${node['storage_limit_status']['text']} the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon."><i class="fa fa-exclamation-triangle"></i></a>
                         % endif
 
                         % if node.get('storage_usage'):
@@ -374,6 +374,46 @@
                                         Type: <i>${collection['type']}</i>
                                     </div>
                                 % endif
+                                % if collection['status'] and collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i> |&nbsp; Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % elif collection['status']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i>
+                                    </div>
+                                % elif collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % endif
+                                % if collection['volume'] and collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i> |&nbsp; Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % elif collection['volume']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i>
+                                    </div>
+                                % elif collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % endif
+                                <hr>
+                                % if collection['disease'] and collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i> |&nbsp; Data Type: <i>${collection['data_type']}</i>
+                                    </div>
+                                % elif collection['disease']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i>
+                                    </div>
+                                % elif collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Data Type: <i>${collection['data_type']}</i>
+                                    </div>
+                                % endif
                                 <hr>
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
                                 % if user['is_admin']:
@@ -394,6 +434,45 @@
                                 % elif collection['type']:
                                     <div  style="padding-left: 30px;">
                                         Type: <i>${collection['type']}</i>
+                                    </div>
+                                % endif
+                                % if collection['status'] and collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i> |&nbsp; Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % elif collection['status']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i>
+                                    </div>
+                                % elif collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % endif
+                                % if collection['volume'] and collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i> |&nbsp; Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % elif collection['volume']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i>
+                                    </div>
+                                % elif collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % endif
+                                % if collection['disease'] and collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i> |&nbsp; Data Type: <i>${collection['data_type']}</i>
+                                    </div>
+                                % elif collection['disease']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i>
+                                    </div>
+                                % elif collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Data Type: <i>${collection['data_type']}</i>
                                     </div>
                                 % endif
                                 <hr>

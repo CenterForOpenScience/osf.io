@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
-import mock
-from nose.tools import *  # noqa: F403
+from unittest import mock
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (UserFactory, ProjectFactory, NodeFactory,
@@ -11,11 +9,12 @@ from framework.auth import Auth
 from website.util import rubeus
 from website.util.rubeus import sort_by_name
 
+
 class TestRubeus(OsfTestCase):
 
     def setUp(self):
 
-        super(TestRubeus, self).setUp()
+        super().setUp()
 
         self.project = ProjectFactory.create()
         self.consolidated_auth = Auth(user=self.project.creator)
@@ -45,9 +44,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {0}'.format(
-                node_settings.bucket
-            ),
+            'name': f'Amazon S3: {node_settings.bucket}',
             'kind': 'folder',
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
@@ -74,7 +71,7 @@ class TestRubeus(OsfTestCase):
 
         del actual['urls']
 
-        assert_equals(actual, expected)
+        assert actual == expected
 
     def test_build_addon_root_has_correct_upload_limits(self):
         self.node_settings.config.max_file_size = 10
@@ -95,7 +92,7 @@ class TestRubeus(OsfTestCase):
             user=user
         )
 
-        assert_equal(result['accept']['maxSize'], self.node_settings.config.max_file_size)
+        assert result['accept']['maxSize'] == self.node_settings.config.max_file_size
 
         # user now has elevated upload limit
         user.add_system_tag('high_upload_limit')
@@ -107,10 +104,7 @@ class TestRubeus(OsfTestCase):
             permissions=permissions,
             user=user
         )
-        assert_equal(
-            result['accept']['maxSize'],
-            self.node_settings.config.high_max_file_size
-        )
+        assert result['accept']['maxSize'] == self.node_settings.config.high_max_file_size
 
     def test_build_addon_root_for_anonymous_vols_hides_path(self):
         private_anonymous_link = PrivateLinkFactory(anonymous=True)
@@ -140,9 +134,7 @@ class TestRubeus(OsfTestCase):
             private_key=private_link.key
         )
 
-        assert result['name'] == 'Amazon S3: {0}'.format(
-            self.node_settings.bucket
-        )
+        assert result['name'] == f'Amazon S3: {self.node_settings.bucket}'
 
     def test_hgrid_dummy_fail(self):
         node_settings = self.node_settings
@@ -153,9 +145,7 @@ class TestRubeus(OsfTestCase):
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {0}'.format(
-                node_settings.bucket
-            ),
+            'name': f'Amazon S3: {node_settings.bucket}',
             'kind': 'folder',
             'permissions': {
                 'view': node.can_view(user),
@@ -178,8 +168,8 @@ class TestRubeus(OsfTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        assert_not_equals(rubeus.build_addon_root(
-            node_settings, node_settings.bucket, permissions=permissions), rv)
+        assert rubeus.build_addon_root(
+            node_settings, node_settings.bucket, permissions=permissions) != rv
 
     def test_hgrid_dummy_overrides(self):
         node_settings = self.node_settings
@@ -190,9 +180,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon S3: {0}'.format(
-                node_settings.bucket
-            ),
+            'name': f'Amazon S3: {node_settings.bucket}',
             'kind': 'folder',
             'permissions': {
                 'view': node.can_view(user),
@@ -214,13 +202,10 @@ class TestRubeus(OsfTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        assert_equal(
-            rubeus.build_addon_root(
+        assert rubeus.build_addon_root(
                 node_settings, node_settings.bucket,
                 permissions=permissions, urls={}
-            ),
-            expected
-        )
+            ) == expected
 
     def test_get_nodes_deleted_component(self):
         node = NodeFactory(creator=self.project.creator, parent=self.project)
@@ -229,7 +214,7 @@ class TestRubeus(OsfTestCase):
             self.project, Auth(user=UserFactory())
         )
         nodes = collector._get_nodes(self.project)
-        assert_equal(len(nodes['children']), 0)
+        assert len(nodes['children']) == 0
 
     def test_serialized_pointer_has_flag_indicating_its_a_pointer(self):
         project = ProjectFactory(creator=self.consolidated_auth.user)
@@ -238,7 +223,7 @@ class TestRubeus(OsfTestCase):
         serializer = rubeus.NodeFileCollector(node=project, auth=self.consolidated_auth)
         ret = serializer._get_nodes(project)
         child = ret['children'][1]  # first child is OSFStorage, second child is pointer
-        assert_true(child['isPointer'])
+        assert child['isPointer']
 
     def test_private_components_not_shown(self):
         user = UserFactory()
@@ -308,7 +293,7 @@ mock_addon.config.get_hgrid_data.return_value = [serialized]
 class TestSerializingNodeWithAddon(OsfTestCase):
 
     def setUp(self):
-        super(TestSerializingNodeWithAddon, self).setUp()
+        super().setUp()
         self.auth = AuthFactory()
         self.project = ProjectFactory(creator=self.auth.user)
         self.project.get_addons = mock.Mock()
@@ -316,8 +301,9 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         self.serializer = rubeus.NodeFileCollector(node=self.project, auth=self.auth)
 
     def test_collect_addons(self):
-        ret = self.serializer._collect_addons(self.project)
-        assert_equal(ret, [serialized])
+        return_value, active_addons = self.serializer._collect_addons(self.project)
+        assert return_value == [serialized]
+        assert len(active_addons) == 1
 
     def test_sort_by_name(self):
         files = [
@@ -340,33 +326,24 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         ]
         ret = sort_by_name(files)
         for index, value in enumerate(ret):
-            assert_equal(value['name'], sorted_files[index]['name'])
+            assert value['name'] == sorted_files[index]['name']
 
     def test_sort_by_name_none(self):
         files = None
         sorted_files = None
         ret = sort_by_name(files)
-        assert_equal(ret, sorted_files)
+        assert ret == sorted_files
 
     def test_serialize_node(self):
         ret = self.serializer._get_nodes(self.project)
-        assert_equal(
-            len(ret['children']),
-            len(self.project.get_addons.return_value) + len(list(self.project.nodes))
-        )
-        assert_equal(ret['kind'], rubeus.FOLDER)
-        assert_equal(ret['name'], self.project.title)
-        assert_equal(
-            ret['permissions'],
-            {
+        assert len(ret['children']) == len(self.project.get_addons.return_value) + len(list(self.project.nodes))
+        assert ret['kind'] == rubeus.FOLDER
+        assert ret['name'] == self.project.title
+        assert ret['permissions'] == {
                 'view': True,
                 'edit': True,
             }
-        )
-        assert_equal(
-            ret['urls'],
-            {
+        assert ret['urls'] == {
                 'upload': None,
                 'fetch': None,
-            },
-        )
+            }

@@ -9,7 +9,7 @@ from website.mails import presends
 from website import settings as osf_settings
 
 from osf import features
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 

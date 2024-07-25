@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from transitions import MachineError
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -9,9 +9,9 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.metaschema import RegistrationSchemaBlock
-from osf.models.schema_response_block import SchemaResponseBlock
+from .base import BaseModel, ObjectIDMixin
+from .metaschema import RegistrationSchemaBlock
+from .schema_response_block import SchemaResponseBlock
 from osf.utils import notifications
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine

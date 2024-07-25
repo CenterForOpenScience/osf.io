@@ -1,0 +1,5 @@
+{
+    "boa_node_authorized" : "${user} authorized the Boa addon for ${node}",
+    "boa_node_deauthorized" : "${user} deauthorized the Boa addon for ${node}",
+    "boa_node_deauthorized_no_user" : "Boa addon for ${node} deauthorized"
+}

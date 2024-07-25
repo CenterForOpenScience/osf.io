@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Factory boy factories for the OneDrive addon."""
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
@@ -12,9 +11,9 @@ from addons.onedrive.models import UserSettings, NodeSettings
 
 class OneDriveAccountFactory(ExternalAccountFactory):
     provider = 'onedrive'
-    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
-    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
+    provider_id = Sequence(lambda n: f'id-{n}')
+    oauth_key = Sequence(lambda n: f'key-{n}')
+    oauth_secret = Sequence(lambda n: f'secret-{n}')
     expires_at = timezone.now() + relativedelta(days=1)
 
 class OneDriveUserSettingsFactory(DjangoModelFactory):

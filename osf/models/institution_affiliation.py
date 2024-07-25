@@ -4,8 +4,8 @@ from django.db import models
 
 from framework import sentry
 
-from osf.models.base import BaseModel
-from osf.models.validators import validate_email
+from .base import BaseModel
+from .validators import validate_email
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import LowercaseEmailField
 from osf.exceptions import InstitutionAffiliationStateError

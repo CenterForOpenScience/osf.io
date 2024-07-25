@@ -3,6 +3,7 @@ from addons.base.apps import BaseAddonAppConfig
 
 class WikiAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.wiki'
     label = 'addons_wiki'
 

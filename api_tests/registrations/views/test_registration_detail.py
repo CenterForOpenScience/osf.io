@@ -1,7 +1,7 @@
-import mock
+from unittest import mock
 import pytest
 import datetime
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from rest_framework import exceptions
 from django.utils import timezone
@@ -108,7 +108,7 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def public_url(self, public_registration):
-        return '/{}registrations/{}/'.format(API_BASE, public_registration._id)
+        return f'/{API_BASE}registrations/{public_registration._id}/'
 
     @pytest.fixture()
     def private_url(self, private_registration):
@@ -174,7 +174,7 @@ class TestRegistrationDetail:
         assert 'detail' in res.json['errors'][0]
 
     #   test_do_not_return_node_detail
-        url = '/{}registrations/{}/'.format(API_BASE, public_project._id)
+        url = f'/{API_BASE}registrations/{public_project._id}/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
@@ -187,7 +187,7 @@ class TestRegistrationDetail:
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
 
     #   test_do_not_return_registration_in_node_detail
-        url = '/{}nodes/{}/'.format(API_BASE, public_registration._id)
+        url = f'/{API_BASE}nodes/{public_registration._id}/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
@@ -219,7 +219,7 @@ class TestRegistrationDetail:
 
     #   test_hide_if_registration
         # Registrations are a HideIfRegistration field
-        node_url = '/{}nodes/{}/'.format(API_BASE, private_project._id)
+        node_url = f'/{API_BASE}nodes/{private_project._id}/'
         res = app.get(node_url, auth=user.auth)
         assert res.status_code == 200
         assert 'registrations' in res.json['data']['relationships']
@@ -229,12 +229,12 @@ class TestRegistrationDetail:
         assert 'registrations' not in res.json['data']['relationships']
 
     #   test_registration_has_subjects_links_for_later_versions
-        res = app.get(public_url + '?version={}'.format(subjects_as_relationships_version))
+        res = app.get(public_url + f'?version={subjects_as_relationships_version}')
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
-        expected_url = '{}subjects/'.format(public_url)
+        expected_url = f'{public_url}subjects/'
         assert urlparse(related_url).path == expected_url
         self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
-        expected_url = '{}relationships/subjects/'.format(public_url)
+        expected_url = f'{public_url}relationships/subjects/'
         assert urlparse(self_url).path == expected_url
 
 
@@ -296,7 +296,7 @@ class TestRegistrationUpdateTestCase:
 
     @pytest.fixture()
     def public_url(self, public_registration):
-        return '/{}registrations/{}/'.format(API_BASE, public_registration._id)
+        return f'/{API_BASE}registrations/{public_registration._id}/'
 
     @pytest.fixture()
     def private_url(self, private_registration):
@@ -569,7 +569,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
         private_to_public_payload = make_payload(id=private_registration._id)
 
-        url = '/{}registrations/{}/'.format(API_BASE, private_registration._id)
+        url = f'/{API_BASE}registrations/{private_registration._id}/'
         res = app.put_json_api(url, private_to_public_payload, auth=user.auth)
         assert res.json['data']['attributes']['public'] is True
         private_registration.reload()
@@ -745,7 +745,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
             id=registration_comp._id,
             attributes={'pending_withdrawal': True}
         )
-        url = '/{}registrations/{}/'.format(API_BASE, registration_comp._id)
+        url = f'/{API_BASE}registrations/{registration_comp._id}/'
         res = app.put_json_api(url, payload_component, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
@@ -1102,7 +1102,7 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
 
     @pytest.fixture()
     def url_node(self, node):
-        return '/{}registrations/{}/'.format(API_BASE, node._id)
+        return f'/{API_BASE}registrations/{node._id}/'
 
     @pytest.fixture()
     def make_payload(self):

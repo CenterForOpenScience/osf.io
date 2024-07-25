@@ -3,20 +3,20 @@ import uuid
 from website.util import api_v2_url
 
 from django.db import models
-from osf.models import base
+from .base import BaseModel, ObjectIDMixin
 from website.security import random_string
 
 from framework.auth import cas
 
 from website import settings
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 
 def generate_client_secret():
     return random_string(length=40)
 
 
-class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
+class ApiOAuth2Scope(ObjectIDMixin, BaseModel):
     """
     Store information about recognized OAuth2 scopes. Only scopes registered under this database model can
         be requested by third parties.
@@ -27,14 +27,14 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
     is_public = models.BooleanField(default=True, db_index=True)
 
     def absolute_url(self):
-        return urljoin(settings.API_DOMAIN, '/v2/scopes/{}/'.format(self.name))
+        return urljoin(settings.API_DOMAIN, f'/v2/scopes/{self.name}/')
 
 
 def generate_client_id():
     return uuid.uuid4().hex
 
 
-class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
+class ApiOAuth2Application(ObjectIDMixin, BaseModel):
     """Registration and key for user-created OAuth API applications
 
     This collection is also used by CAS to create the master list of available applications.
@@ -95,7 +95,7 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def url(self):
-        return '/settings/applications/{}/'.format(self.client_id)
+        return f'/settings/applications/{self.client_id}/'
 
     @property
     def absolute_url(self):
@@ -104,7 +104,7 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        path = '/applications/{}/'.format(self.client_id)
+        path = f'/applications/{self.client_id}/'
         return api_v2_url(path)
 
     # used by django and DRF
@@ -116,7 +116,7 @@ def generate_token_id():
     return random_string(length=70)
 
 
-class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
+class ApiOAuth2PersonalToken(ObjectIDMixin, BaseModel):
     """Information for user-created personal access tokens
 
     This collection is also used by CAS to create the master list of available tokens.
@@ -159,7 +159,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def url(self):
-        return '/settings/tokens/{}/'.format(self._id)
+        return f'/settings/tokens/{self._id}/'
 
     @property
     def absolute_url(self):
@@ -168,7 +168,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        path = '/tokens/{}/'.format(self._id)
+        path = f'/tokens/{self._id}/'
         return api_v2_url(path)
 
     # used by django and DRF

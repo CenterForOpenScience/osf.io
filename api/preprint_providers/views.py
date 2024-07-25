@@ -1,5 +1,7 @@
 from api.base.views import DeprecatedView
-from api.preprint_providers.serializers import DeprecatedPreprintProviderSerializer
+from api.preprint_providers.serializers import (
+    DeprecatedPreprintProviderSerializer,
+)
 from api.providers import views
 
 

@@ -45,7 +45,7 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
         return obj._id
 
     def get_detail_url(self, obj):
-        return '{}/identifiers/{}'.format(obj.absolute_api_v2_url, obj._id)
+        return f'{obj.absolute_api_v2_url}/identifiers/{obj._id}'
 
     def self_url(self, obj):
         return absolute_reverse(

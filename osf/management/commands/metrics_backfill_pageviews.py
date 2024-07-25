@@ -75,7 +75,7 @@ def main(source, dry_run=False, resume_from=None):
             something_wonderful.update(db_info)
         populate_action_labels(something_wonderful, row)
 
-        logger.info('*** {}: something wonderful:({})'.format(count, something_wonderful))
+        logger.info(f'*** {count}: something wonderful:({something_wonderful})')
 
         if not dry_run:
             CountedAuthUsage.record(**something_wonderful)
@@ -167,7 +167,7 @@ def _get_surrounding_guids(guid_referent):
     return surrounding_guids
 
 def _timestamp_to_dt(timestamp):
-    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
+    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.UTC)
 
 def _timestamp_to_date(timestamp):
     dt_obj = _timestamp_to_dt(timestamp)
@@ -177,7 +177,7 @@ def _timestamp_to_date(timestamp):
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--source',
             type=open,

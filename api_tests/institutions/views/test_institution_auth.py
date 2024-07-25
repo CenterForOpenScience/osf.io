@@ -14,9 +14,9 @@ from framework.auth import signals, Auth
 from framework.auth.core import get_user
 from framework.auth.views import send_confirm_email
 
-from osf.models import OSFUser, InstitutionAffiliation
-from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
-from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory
+from osf.models import OSFUser, InstitutionAffiliation, InstitutionStorageRegion
+from osf.models.institution import SsoFilterCriteriaAction
+from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory, RegionFactory
 
 from tests.base import capture_signals
 
@@ -67,7 +67,7 @@ def make_payload(
             },
             settings.JWT_SECRET,
             algorithm='HS256'
-        ),
+        ).encode(),
         settings.JWE_SECRET
     )
 
@@ -75,6 +75,46 @@ def make_payload(
 @pytest.fixture()
 def institution():
     return InstitutionFactory()
+
+
+@pytest.fixture()
+def institution_region():
+    return RegionFactory()
+
+
+@pytest.fixture()
+def institution_region_preferred():
+    return RegionFactory()
+
+
+@pytest.fixture()
+def user_default_region():
+    user = UserFactory()
+    return user.addons_osfstorage_user_settings.default_region
+
+
+@pytest.fixture()
+def institution_without_user_default_region(institution_region, institution_region_preferred):
+    institution = InstitutionFactory()
+    institution.storage_regions.add(institution_region)
+    InstitutionStorageRegion.objects.create(
+        institution=institution,
+        storage_region=institution_region_preferred,
+        is_preferred=True
+    )
+    return institution
+
+
+@pytest.fixture()
+def institution_with_default_user_region(user_default_region, institution_region_preferred):
+    institution = InstitutionFactory()
+    institution.storage_regions.add(user_default_region)
+    InstitutionStorageRegion.objects.create(
+        institution=institution,
+        storage_region=institution_region_preferred,
+        is_preferred=True
+    )
+    return institution
 
 
 @pytest.fixture()
@@ -110,7 +150,7 @@ def institution_secondary_type_2():
 
 
 @pytest.fixture()
-def institution_selective():
+def institution_selective_type_1():
     institution = InstitutionFactory()
     institution._id = 'uom'
     institution.save()
@@ -118,8 +158,16 @@ def institution_selective():
 
 
 @pytest.fixture()
+def institution_selective_type_2():
+    institution = InstitutionFactory()
+    institution._id = 'yls'
+    institution.save()
+    return institution
+
+
+@pytest.fixture()
 def url_auth_institution():
-    return '/{0}institutions/auth/'.format(API_BASE)
+    return f'/{API_BASE}institutions/auth/'
 
 
 @pytest.fixture()
@@ -149,7 +197,7 @@ class TestInstitutionAuth:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution, username))
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -292,7 +340,7 @@ class TestInstitutionAuth:
                 )
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -332,7 +380,7 @@ class TestInstitutionAuth:
                 )
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -446,6 +494,50 @@ class TestInstitutionAuth:
 
 
 @pytest.mark.django_db
+class TestInstitutionStorageRegion:
+
+    def test_region_updated_for_new_user(self, app, institution_region_preferred, institution_without_user_default_region, url_auth_institution):
+        username = 'user_with_region_1@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
+        assert res.status_code == 204
+        user = OSFUser.objects.get(username=username)
+        assert user.addons_osfstorage_user_settings.default_region == institution_region_preferred
+
+    def test_region_not_updated_for_new_user(self, app, user_default_region, institution_region_preferred, institution_with_default_user_region, url_auth_institution):
+        username = 'user_with_region_2@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+        res = app.post(url_auth_institution, make_payload(institution_with_default_user_region, username))
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user.addons_osfstorage_user_settings.default_region == user_default_region
+        assert user.addons_osfstorage_user_settings.default_region != institution_region_preferred
+
+    def test_region_not_updated_for_existing_user_affiliated(self, app, institution_region, institution_region_preferred,
+                                                             institution_without_user_default_region, url_auth_institution):
+        username = 'user_with_region_3@osf.edu'
+        user = make_user(username, 'Foo Bar')
+        user.save()
+        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
+        assert res.status_code == 204
+        user.reload()
+        assert user.addons_osfstorage_user_settings.default_region != institution_region
+        assert user.addons_osfstorage_user_settings.default_region != institution_region_preferred
+
+    def test_region_not_updated_for_existing_user_not_affiliated(self, app, institution_region, institution_region_preferred,
+                                                                 institution_without_user_default_region, url_auth_institution):
+        username = 'user_with_region_4@osf.edu'
+        user = make_user(username, 'Bar Foo')
+        user.add_or_update_affiliated_institution(institution_without_user_default_region)
+        user.save()
+        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
+        assert res.status_code == 204
+        user.reload()
+        assert user.addons_osfstorage_user_settings.default_region != institution_region
+        assert user.addons_osfstorage_user_settings.default_region != institution_region_preferred
+
+
+@pytest.mark.django_db
 class TestInstitutionAuthnSharedSSOCriteriaType2:
 
     def test_new_user_primary_only(self, app, url_auth_institution, type_2_ineligible_user_roles,
@@ -460,7 +552,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
                 make_payload(institution_primary_type_2, username, user_roles=type_2_ineligible_user_roles)
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -481,7 +573,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
                 make_payload(institution_primary_type_2, username, user_roles=type_2_eligible_user_roles)
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -640,7 +732,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         INSTITUTION_SHARED_SSO_MAP.update({
             'fsu': {
                 'attribute_name': 'userRoles',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
+                'criteria_action': SsoFilterCriteriaAction.CONTAINS.value,
                 'criteria_value': 'FSU_OSF_MAGLAB',
                 'institution_id': 'invalid_institution_id',
             },
@@ -672,7 +764,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         INSTITUTION_SHARED_SSO_MAP.update({
             'fsu': {
                 'attribute_name': 'userRoles',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
+                'criteria_action': SsoFilterCriteriaAction.CONTAINS.value,
                 'criteria_value': 'FSU_OSF_MAGLAB',
                 'institution_id': 'nationalmaglab',
             },
@@ -711,7 +803,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -732,7 +824,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
                 make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -885,7 +977,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         INSTITUTION_SHARED_SSO_MAP.update({
             'brown': {
                 'attribute_name': 'isMemberOf',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+                'criteria_action': SsoFilterCriteriaAction.EQUALS_TO.value,
                 'criteria_value': 'thepolicylab',
                 'institution_id': 'invalid_institution_id',
             },
@@ -917,7 +1009,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         INSTITUTION_SHARED_SSO_MAP.update({
             'brown': {
                 'attribute_name': 'isMemberOf',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+                'criteria_action': SsoFilterCriteriaAction.EQUALS_TO.value,
                 'criteria_value': 'thepolicylab',
                 'institution_id': 'thepolicylab',
             },
@@ -945,15 +1037,15 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
 
 @pytest.mark.django_db
-class TestInstitutionAuthnSelectiveSSO:
+class TestInstitutionAuthnSelectiveSSOCriteriaType1:
 
-    def test_selective_sso_allowed_new_user(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_allowed_new_user(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
         payload = make_payload(
-            institution_selective,
+            institution_selective_type_1,
             username,
             selective_sso_filter='http://directory.manchester.ac.uk/epe/3rdparty/osf'
         )
@@ -966,16 +1058,16 @@ class TestInstitutionAuthnSelectiveSSO:
         assert user
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
-        assert institution_selective in user.get_affiliated_institutions()
+        assert institution_selective_type_1 in user.get_affiliated_institutions()
 
-    def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_not_affiliated@osf.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
 
         payload = make_payload(
-            institution_selective,
+            institution_selective_type_1,
             username,
             selective_sso_filter='http://directory.manchester.ac.uk/epe/3rdparty/osf'
         )
@@ -986,18 +1078,18 @@ class TestInstitutionAuthnSelectiveSSO:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert institution_selective in user.get_affiliated_institutions()
+        assert institution_selective_type_1 in user.get_affiliated_institutions()
 
-    def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_affiliated@osf.edu'
         user = make_user(username, 'Foo Bar')
-        user.add_or_update_affiliated_institution(institution_selective)
+        user.add_or_update_affiliated_institution(institution_selective_type_1)
         user.save()
         number_of_affiliations = user.get_affiliated_institutions().count()
 
         payload = make_payload(
-            institution_selective,
+            institution_selective_type_1,
             username,
             selective_sso_filter='http://directory.manchester.ac.uk/epe/3rdparty/osf'
         )
@@ -1008,25 +1100,113 @@ class TestInstitutionAuthnSelectiveSSO:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert institution_selective in user.get_affiliated_institutions()
+        assert institution_selective_type_1 in user.get_affiliated_institutions()
         assert number_of_affiliations == user.get_affiliated_institutions().count()
 
-    def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
-        payload = make_payload(institution_selective, username, selective_sso_filter='')
+        payload = make_payload(institution_selective_type_1, username, selective_sso_filter='')
         res = app.post(url_auth_institution, payload, expect_errors=True)
         assert res.status_code == 403
         assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
 
-    def test_selective_sso_denied_invalid_filter(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_denied_invalid_filter(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
-        payload = make_payload(institution_selective, username, selective_sso_filter='invalid_non_empty_filter')
+        payload = make_payload(institution_selective_type_1, username, selective_sso_filter='invalid_non_empty_filter')
+        res = app.post(url_auth_institution, payload, expect_errors=True)
+        assert res.status_code == 403
+        assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
+
+
+@pytest.mark.django_db
+class TestInstitutionAuthnSelectiveSSOCriteriaType2:
+
+    def test_selective_sso_allowed_new_user(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_created@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+
+        payload = make_payload(
+            institution_selective_type_2,
+            username,
+            selective_sso_filter='Yes'
+        )
+        with capture_signals() as mock_signals:
+            res = app.post(url_auth_institution, payload)
+        assert res.status_code == 204
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.fullname == 'Fake User'
+        assert user.accepted_terms_of_service is None
+        assert institution_selective_type_2 in user.get_affiliated_institutions()
+
+    def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_not_affiliated@osf.edu'
+        user = make_user(username, 'Foo Bar')
+        user.save()
+
+        payload = make_payload(
+            institution_selective_type_2,
+            username,
+            selective_sso_filter='yes'
+        )
+        with capture_signals() as mock_signals:
+            res = app.post(url_auth_institution, payload)
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+
+        user.reload()
+        assert user.fullname == 'Foo Bar'
+        assert institution_selective_type_2 in user.get_affiliated_institutions()
+
+    def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_affiliated@osf.edu'
+        user = make_user(username, 'Foo Bar')
+        user.add_or_update_affiliated_institution(institution_selective_type_2)
+        user.save()
+        number_of_affiliations = user.get_affiliated_institutions().count()
+
+        payload = make_payload(
+            institution_selective_type_2,
+            username,
+            selective_sso_filter='y'
+        )
+        with capture_signals() as mock_signals:
+            res = app.post(url_auth_institution, payload)
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+
+        user.reload()
+        assert user.fullname == 'Foo Bar'
+        assert institution_selective_type_2 in user.get_affiliated_institutions()
+        assert number_of_affiliations == user.get_affiliated_institutions().count()
+
+    def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_created@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+
+        payload = make_payload(institution_selective_type_2, username, selective_sso_filter='')
+        res = app.post(url_auth_institution, payload, expect_errors=True)
+        assert res.status_code == 403
+        assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
+
+    def test_selective_sso_denied_invalid_filter(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_created@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+
+        payload = make_payload(institution_selective_type_2, username, selective_sso_filter='invalid_non_empty_filter')
         res = app.post(url_auth_institution, payload, expect_errors=True)
         assert res.status_code == 403
         assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
@@ -1046,7 +1226,7 @@ class TestInstitutionAuthnWithIdentity:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.get(username=sso_email)
         assert user
@@ -1313,7 +1493,7 @@ class TestInstitutionAuthnWithIdentity:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user.reload()
         assert user.fullname == 'User10 OSF'

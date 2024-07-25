@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import pytest
 
 from framework.auth import signing
@@ -57,7 +55,7 @@ def sign_payload(payload):
 class TestMove():
     @pytest.fixture()
     def move_url(self, node):
-        return '/_/wb/hooks/{}/move/'.format(node._id)
+        return f'/_/wb/hooks/{node._id}/move/'
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
@@ -293,7 +291,7 @@ class TestMovePreprint():
 
     @pytest.fixture()
     def move_url(self, preprint):
-        return '/_/wb/hooks/{}/move/'.format(preprint._id)
+        return f'/_/wb/hooks/{preprint._id}/move/'
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
@@ -549,7 +547,7 @@ class TestMovePreprint():
 class TestCopy():
     @pytest.fixture()
     def copy_url(self, node):
-        return '/_/wb/hooks/{}/copy/'.format(node._id)
+        return f'/_/wb/hooks/{node._id}/copy/'
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
@@ -749,7 +747,7 @@ class TestCopyPreprint():
 
     @pytest.fixture()
     def copy_url(self, preprint):
-        return '/_/wb/hooks/{}/copy/'.format(preprint._id)
+        return f'/_/wb/hooks/{preprint._id}/copy/'
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):

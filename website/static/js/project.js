@@ -261,7 +261,7 @@ $(document).ready(function() {
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
       if(e){
-        window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
+        window.location = '/search/?q="' + $(e.target).text().toString().trim()+ '"';
       }
     });
 

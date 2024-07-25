@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
@@ -8,11 +6,18 @@ from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.s3.provider import S3Provider
 from addons.s3.serializer import S3Serializer
-from addons.s3.settings import (BUCKET_LOCATIONS,
-                                        ENCRYPT_UPLOADS_DEFAULT)
-from addons.s3.utils import (bucket_exists,
-                                     get_bucket_location_or_error,
-                                     get_bucket_names)
+from addons.s3.settings import (
+    BUCKET_LOCATIONS,
+    ENCRYPT_UPLOADS_DEFAULT
+)
+from addons.s3.utils import (
+    bucket_exists,
+    get_bucket_location_or_error,
+    get_bucket_names,
+    get_bucket_prefixes
+)
+from website.util import api_v2_url
+
 
 class S3FileNode(BaseFileNode):
     _provider = 's3'
@@ -53,10 +58,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def display_name(self):
-        return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
+        return f'{self.config.full_name}: {self.folder_id}'
 
     def set_folder(self, folder_id, auth):
-        if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
+        bucket_name = folder_id.split(':')[0]
+
+        if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, bucket_name):
             error_message = ('We are having trouble connecting to that bucket. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)
@@ -66,7 +73,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         bucket_location = get_bucket_location_or_error(
             self.external_account.oauth_key,
             self.external_account.oauth_secret,
-            folder_id
+            bucket_name
         )
         try:
             bucket_location = BUCKET_LOCATIONS[bucket_location]
@@ -75,32 +82,46 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             # Default to the key. When hit, add mapping to settings
             pass
 
-        self.folder_name = '{} ({})'.format(folder_id, bucket_location)
+        self.folder_name = f'{folder_id} ({bucket_location})'
         self.save()
 
-        self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
+        self.nodelogger.log(action='bucket_linked', extra={'bucket': bucket_name, 'path': self.folder_id}, save=True)
 
-    def get_folders(self, **kwargs):
-        # This really gets only buckets, not subfolders,
-        # as that's all we want to be linkable on a node.
-        try:
+    def get_folders(self, path, folder_id):
+        """
+        Our S3 implementation allows for folder_id to be a bucket's root, or a subfolder in that bucket.
+        """
+        # This is the root, so list all buckets.
+        if not folder_id:
             buckets = get_bucket_names(self)
-        except Exception:
-            raise exceptions.InvalidAuthError()
 
-        return [
-            {
+            return [{
                 'addon': 's3',
                 'kind': 'folder',
-                'id': bucket,
+                'id': f'{bucket}:/',
                 'name': bucket,
-                'path': bucket,
+                'bucket_name': bucket,
+                'path': '/',
                 'urls': {
-                    'folders': ''
+                    'folders': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/s3/folders/',
+                        params={
+                            'id': bucket,
+                            'bucket_name': bucket,
+                        }
+                    ),
                 }
-            }
-            for bucket in buckets
-        ]
+            } for bucket in buckets]
+        # This is for a directory for a specific bucket, folders (Prefixes), but not files (Keys) returned, because
+        # these we can only set folders as our base folder_id
+        else:
+            bucket_name, _, path = folder_id.partition(':/')
+            return get_bucket_prefixes(
+                self.external_account.oauth_key,
+                self.external_account.oauth_secret,
+                prefix=path,
+                bucket_name=bucket_name
+            )
 
     @property
     def complete(self):
@@ -124,7 +145,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def delete(self, save=True):
         self.deauthorize(log=False)
-        super(NodeSettings, self).delete(save=save)
+        super().delete(save=save)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -135,10 +156,16 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         }
 
     def serialize_waterbutler_settings(self):
+        """
+        We use the folder id to hold the bucket location
+        """
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
+
+        bucket_name = self.folder_id.split(':')[0]
         return {
-            'bucket': self.folder_id,
+            'bucket': bucket_name,
+            'id': self.folder_id,
             'encrypt_uploads': self.encrypt_uploads
         }
 
@@ -146,7 +173,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
 
         self.owner.add_log(
-            's3_{0}'.format(action),
+            f's3_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,

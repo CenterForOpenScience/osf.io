@@ -1,4 +1,5 @@
-from django.conf.urls import include, re_path
+from django.conf.urls import include
+from django.urls import re_path
 from django.contrib import admin
 from admin.base.settings import ADMIN_BASE, DEBUG
 from admin.base import views
@@ -34,6 +35,7 @@ urlpatterns = [
             re_path(r'^internet_archive/', include('admin.internet_archive.urls', namespace='internet_archive')),
             re_path(r'^schema_responses/', include('admin.schema_responses.urls', namespace='schema_responses')),
             re_path(r'^registration_schemas/', include('admin.registration_schemas.urls', namespace='registration_schemas')),
+            re_path(r'^cedar_metadata_templates/', include('admin.cedar.urls', namespace='cedar_metadata_templates')),
         ]),
     ),
 ]

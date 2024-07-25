@@ -1,6 +1,8 @@
+from django.apps import apps
+
 from babel import dates, core, Locale
 
-from osf.models import AbstractNode, OSFUser, NotificationDigest, NotificationSubscription
+from osf.models import AbstractNode, NotificationDigest, NotificationSubscription
 from osf.utils.permissions import ADMIN, READ
 from website import mails
 from website.notifications import constants
@@ -52,6 +54,7 @@ def notify(event, user, node, timestamp, **context):
     return sent_users
 
 def notify_mentions(event, user, node, timestamp, **context):
+    OSFUser = apps.get_model('osf', 'OSFUser')
     recipient_ids = context.get('new_mentions', [])
     recipients = OSFUser.objects.filter(guids___id__in=recipient_ids)
     sent_users = notify_global_event(event, user, node, timestamp, recipients, context=context)
@@ -89,11 +92,13 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
+    OSFUser = apps.get_model('osf', 'OSFUser')
+
     if notification_type == 'none':
         return
 
     # If `template` is not specified, default to using a template with name `event`
-    template = '{template}.html.mako'.format(template=template or event)
+    template = f'{template or event}.html.mako'
 
     # user whose action triggered email sending
     context['user'] = user
@@ -224,15 +229,15 @@ def localize_timestamp(timestamp, user):
     # Do our best to find a valid locale
     try:
         user_locale.date_formats
-    except IOError:  # An IOError will be raised if locale's casing is incorrect, e.g. de_de vs. de_DE
+    except OSError:  # An IOError will be raised if locale's casing is incorrect, e.g. de_de vs. de_DE
         # Attempt to fix the locale, e.g. de_de -> de_DE
         try:
             user_locale = Locale(fix_locale(user.locale))
             user_locale.date_formats
-        except (core.UnknownLocaleError, IOError):
+        except (core.UnknownLocaleError, OSError):
             user_locale = Locale('en')
 
     formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
     formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
 
-    return u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+    return f'{formatted_time} on {formatted_date}'

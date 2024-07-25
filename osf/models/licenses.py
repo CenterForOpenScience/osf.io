@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 import functools
 
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 
 
 def _serialize(fields, instance):
@@ -85,7 +84,7 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
     def __unicode__(self):
         if self.node_license:
             return self.node_license.__unicode__()
-        return super(NodeLicenseRecord, self).__unicode__()
+        return super().__unicode__()
 
     @property
     def name(self):

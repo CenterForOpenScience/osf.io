@@ -4,7 +4,7 @@ from django.db import models
 
 from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 from addons.base.models import BaseStorageAddon
@@ -35,7 +35,7 @@ class ArchiveTarget(ObjectIDMixin, BaseModel):
     errors = ArrayField(models.TextField(), default=list, blank=True)
 
     def __repr__(self):
-        return '<{0}(_id={1}, name={2}, status={3})>'.format(
+        return '<{}(_id={}, name={}, status={})>'.format(
             self.__class__.__name__,
             self._id,
             self.name,

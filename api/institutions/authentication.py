@@ -9,6 +9,9 @@ import waffle
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
+from addons.osfstorage.models import UserSettings as OSFStorageUserSettings
+from addons.osfstorage.models import Region
+
 from api.base.authentication import drf
 from api.base import exceptions, settings
 
@@ -18,7 +21,7 @@ from framework.auth import get_or_create_institutional_user
 from osf import features
 from osf.exceptions import InstitutionAffiliationStateError
 from osf.models import Institution
-from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
+from osf.models.institution import SsoFilterCriteriaAction
 
 from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
@@ -41,13 +44,13 @@ logger = logging.getLogger(__name__)
 INSTITUTION_SHARED_SSO_MAP = {
     'brown': {
         'attribute_name': 'isMemberOf',
-        'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+        'criteria_action': SsoFilterCriteriaAction.EQUALS_TO.value,
         'criteria_value': 'thepolicylab',
         'institution_id': 'thepolicylab',
     },
     'fsu': {
         'attribute_name': 'userRoles',
-        'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
+        'criteria_action': SsoFilterCriteriaAction.CONTAINS.value,
         'criteria_value': 'FSU_OSF_MAGLAB',
         'institution_id': 'nationalmaglab',
     },
@@ -57,7 +60,14 @@ INSTITUTION_SHARED_SSO_MAP = {
 # the key is the institution ID and the (entry) value is the expected value of the filter attribute
 # "selectiveSsoFilter". For local testing w/ Postman and CAS, add `'fake-saml-type-2': 'allowOsf'`.
 INSTITUTION_SELECTIVE_SSO_MAP = {
-    'uom': 'http://directory.manchester.ac.uk/epe/3rdparty/osf',
+    'uom': {
+        'criteria_action': SsoFilterCriteriaAction.EQUALS_TO.value,
+        'criteria_value': 'http://directory.manchester.ac.uk/epe/3rdparty/osf',
+    },
+    'yls': {
+        'criteria_action': SsoFilterCriteriaAction.IN.value,
+        'criteria_value': ['Yes', 'yes', 'y'],
+    },
 }
 
 
@@ -116,7 +126,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 jwe.decrypt(request.body, settings.JWE_SECRET),
                 settings.JWT_SECRET,
                 options={'verify_exp': False},
-                algorithm='HS256',
+                algorithms=['HS256'],
             )
         except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
             raise AuthenticationFailed(detail='InstitutionSsoRequestNotAuthorized')
@@ -145,8 +155,16 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # Check selective login first
         if provider['id'] in INSTITUTION_SELECTIVE_SSO_MAP:
+            selective_sso_map = INSTITUTION_SELECTIVE_SSO_MAP[provider['id']]
+            criteria_action = selective_sso_map.get('criteria_action')
+            criteria_value = selective_sso_map.get('criteria_value')
+            allow_sso = False
             # Selective SSO: login not allowed
-            if selective_sso_filter != INSTITUTION_SELECTIVE_SSO_MAP[provider['id']]:
+            if criteria_action == SsoFilterCriteriaAction.EQUALS_TO.value and selective_sso_filter == criteria_value:
+                allow_sso = True
+            if criteria_action == SsoFilterCriteriaAction.IN.value and selective_sso_filter in criteria_value:
+                allow_sso = True
+            if not allow_sso:
                 message = f'Institution SSO Error: user is not allowed for institution SSO due to selective SSO ' \
                           f'rules [sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]'
                 logger.error(message)
@@ -168,9 +186,9 @@ class InstitutionAuthentication(BaseAuthentication):
             attribute_value = provider['user'].get(attribute_name)
             # Check affiliation filter criteria and retrieve the secondary institution ID
             secondary_institution_id = None
-            if criteria_action == SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value:
+            if criteria_action == SsoFilterCriteriaAction.EQUALS_TO.value:
                 secondary_institution_id = switch_map.get('institution_id') if criteria_value == attribute_value else None
-            elif criteria_action == SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value:
+            elif criteria_action == SsoFilterCriteriaAction.CONTAINS.value:
                 secondary_institution_id = switch_map.get('institution_id') if criteria_value in attribute_value else None
             else:
                 message = f'Institution Shared SSO Error: invalid affiliation filter criteria action ' \
@@ -370,5 +388,19 @@ class InstitutionAuthentication(BaseAuthentication):
                 sso_mail=sso_email,
                 sso_department=department,
             )
+
+        # Storage region is only updated if the user is created via institutional SSO; the region will be set to the
+        # institution's preferred one if the user's current region is not in the institution's default region list.
+        if is_created:
+            user_settings = OSFStorageUserSettings.objects.get(owner=user)
+            institution_region_list = institution.storage_regions.all()
+            if institution_region_list and user_settings.default_region not in institution_region_list:
+                try:
+                    user_settings.default_region = institution_region_list.get(institutionstorageregion__is_preferred=True)
+                    user_settings.save()
+                except Region.DoesNotExist:
+                    message = f'Institution SSO Warning: Institution {institution._id} does not have a preferred default region'
+                    sentry.log_message(message)
+                    logger.error(message)
 
         return user, None

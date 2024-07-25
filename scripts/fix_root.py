@@ -14,10 +14,10 @@ def main(dry=True):
         true_root = node.get_root()
         if not node.root or node.root.id != true_root.id:
             count += 1
-            logger.info('Setting root for node {} to {}'.format(node._id, true_root._id))
+            logger.info(f'Setting root for node {node._id} to {true_root._id}')
             if not dry:
                 AbstractNode.objects.filter(id=node.id).update(root=true_root)
-    logger.info('Finished migrating {} nodes'.format(count))
+    logger.info(f'Finished migrating {count} nodes')
 
 if __name__ == '__main__':
     dry = '--dry' in sys.argv

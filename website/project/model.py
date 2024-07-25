@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 import logging
 import re
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 
-from osf.models import OSFUser
 from osf.utils import sanitize
 
 logger = logging.getLogger(__name__)
@@ -29,6 +28,8 @@ def get_valid_mentioned_users_guids(comment, contributors):
     :param list contributors: List of contributors or group members on the node
     :return list new_mentions: List of valid contributors or group members mentioned in the comment content
     """
+    OSFUser = apps.get_model('osf', 'OSFUser')
+
     mentions = set(re.findall(r'\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5,})\/\)', comment.content))
     if not mentions:
         return []
@@ -74,6 +75,6 @@ def validate_title(value):
 
 class NodeUpdateError(Exception):
     def __init__(self, reason, key, *args, **kwargs):
-        super(NodeUpdateError, self).__init__(reason, *args, **kwargs)
+        super().__init__(reason, *args, **kwargs)
         self.key = key
         self.reason = reason

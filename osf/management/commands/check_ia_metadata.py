@@ -30,13 +30,13 @@ mirrored_relationships = [
 
 def check_ia_metadata(collection=settings.IA_ROOT_COLLECTION, guids=None):
     item_data = requests.get(
-        f'https://archive.org/advancedsearch.php'
+        'https://archive.org/advancedsearch.php'
         f'?q=collection%3A({collection}) AND identifier:(osf-registrations-*-{settings.ID_VERSION})'
-        f'&fl[]='
-        + f'&fl[]='.join([get_ia_field(field) for field in mirrored_fields])
-        + f'&fl[]=identifier'
-        f'&rows=100000'
-        f'&output=json'
+        '&fl[]='
+        + '&fl[]='.join([get_ia_field(field) for field in mirrored_fields])
+        + '&fl[]=identifier'
+        '&rows=100000'
+        '&output=json'
     ).json()['response']['docs']
     item_data = sorted(item_data, key=lambda x: x['identifier'])
 
@@ -91,7 +91,7 @@ class Command(BaseCommand):
     '''
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--collection',
             type=str,

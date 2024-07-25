@@ -7,7 +7,8 @@ from osf.exceptions import (
     IdentifierHasReferencesError,
     NoSuchPIDValidatorError,
 )
-from osf.models.base import BaseModel, ObjectIDMixin
+from osf.metadata.rdfutils import DOI
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import identifiers as identifier_utils
 
@@ -54,6 +55,11 @@ class Identifier(ObjectIDMixin, BaseModel):
         # Let the caller decide what to do with any validation errors
         return validator.validate(self.value)
 
+    def as_semantic_iri(self) -> str:
+        if self.category == 'doi':
+            return DOI[self.value]
+        raise ValueError(f'unsure how to iri with category "{self.category}"')
+
 
 class IdentifierMixin(models.Model):
     """Model mixin that adds methods for getting and setting Identifier objects
@@ -77,21 +83,28 @@ class IdentifierMixin(models.Model):
         if client:
             return client.create_identifier(self, category)
 
-    def request_identifier_update(self, category):
+    def request_identifier_update(self, category, create=False):
         '''Noop if no existing identifier value for the category.'''
-        if not self.get_identifier_value(category):
+
+        if not self.get_identifier_value(category) and not create:
             return
 
         client = self.get_doi_client()
         if client:
             return client.update_identifier(self, category)
 
+    def all_identifiers(self):
+        return Identifier.objects.filter(
+            object_id=self.id,
+            content_type=ContentType.objects.get_for_model(self),
+            deleted__isnull=True,
+        )
+
     def get_identifier(self, category):
         """Returns None of no identifier matches"""
-        content_type = ContentType.objects.get_for_model(self)
-        found_identifier = Identifier.objects.filter(object_id=self.id, category=category, content_type=content_type, deleted__isnull=True).first()
+        found_identifier = self.all_identifiers().filter(category=category).first()
         if category == 'doi' and not found_identifier:
-            found_identifier = Identifier.objects.filter(object_id=self.id, category='legacy_doi', content_type=content_type, deleted__isnull=True).first()
+            found_identifier = self.all_identifiers().filter(category='legacy_doi').first()
         return found_identifier
 
     def get_identifier_value(self, category):
@@ -107,6 +120,20 @@ class IdentifierMixin(models.Model):
         if value and not created:
             identifier.value = value
             identifier.save()
+
+    def get_semantic_iris(self):
+        try:  # since this is a mixin, don't assume osf.models.BaseModel
+            _get_super_iris = super().get_semantic_iris
+        except AttributeError:
+            pass
+        else:
+            yield from _get_super_iris()
+        # yield each identifier as iri
+        for _identifier in self.all_identifiers():
+            try:
+                yield _identifier.as_semantic_iri()
+            except ValueError:
+                pass
 
     class Meta:
         abstract = True

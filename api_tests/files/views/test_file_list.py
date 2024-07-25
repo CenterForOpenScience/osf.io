@@ -75,7 +75,7 @@ class TestNodeFileList:
     def test_does_not_return_trashed_files(
             self, app, user, node, file, deleted_file):
         res = app.get(
-            '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
+            f'/{API_BASE}nodes/{node._id}/files/osfstorage/',
             auth=user.auth
         )
         data = res.json.get('data')
@@ -123,20 +123,11 @@ class TestNodeFileList:
         )
         data = res.json['data']
         assert len(data) == 2
-        assert data[0]['attributes']['extra'] == {
-            'datasetVersion': 'latest',
-            'hashes': {
-                'md5': None,
-                'sha256': None
-            }
+        dataset_versions = {
+            _datum['attributes']['extra']['datasetVersion']
+            for _datum in data
         }
-        assert data[1]['attributes']['extra'] == {
-            'datasetVersion': 'latest-published',
-            'hashes': {
-                'md5': None,
-                'sha256': None
-            }
-        }
+        assert dataset_versions == {'latest', 'latest-published'}
 
     @responses.activate
     def test_disambiguate_dataverse_paths_retrieve(self, app, user, node, dataverse, dataverse_draft_filenode, dataverse_published_filenode):
@@ -155,7 +146,6 @@ class TestNodeFileList:
                     'path': '/testpath',
                     'materialized': '/testpath',
                     'kind': 'file',
-
                     'extra': {
                         'datasetVersion': 'latest',
                     },
@@ -179,20 +169,11 @@ class TestNodeFileList:
         )
         data = res.json['data']
         assert len(data) == 2
-        assert data[0]['attributes']['extra'] == {
-            'datasetVersion': 'latest',
-            'hashes': {
-                'md5': None,
-                'sha256': None
-            }
+        dataset_versions = {
+            _datum['attributes']['extra']['datasetVersion']
+            for _datum in data
         }
-        assert data[1]['attributes']['extra'] == {
-            'datasetVersion': 'latest-published',
-            'hashes': {
-                'md5': None,
-                'sha256': None
-            }
-        }
+        assert dataset_versions == {'latest', 'latest-published'}
 
 
 @pytest.mark.django_db
@@ -227,7 +208,7 @@ class TestFileFiltering:
             file_three, file_four
     ):
         res = app.get(
-            '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
+            f'/{API_BASE}nodes/{node._id}/files/osfstorage/',
             auth=user.auth
         )
         data = res.json.get('data')

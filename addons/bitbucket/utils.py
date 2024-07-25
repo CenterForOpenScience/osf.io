@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import unquote_plus
+from urllib.parse import unquote_plus
 from rest_framework import status as http_status
 
 from framework.exceptions import HTTPError

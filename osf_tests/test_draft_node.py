@@ -22,6 +22,7 @@ from osf_tests.factories import (
     get_default_metaschema,
 )
 from website.project.signals import after_create_registration
+from website import settings
 
 pytestmark = pytest.mark.django_db
 
@@ -123,8 +124,8 @@ class TestDraftNode:
             schema=get_default_metaschema(),
             data=data,
         )
-        assert draft.title == 'Untitled'
-        assert draft.branched_from.title == 'Untitled'
+        assert draft.title == ''
+        assert draft.branched_from.title == settings.DEFAULT_DRAFT_NODE_TITLE
         assert draft.branched_from.type == 'osf.draftnode'
         assert draft.branched_from.creator == user
         assert len(draft.logs.all()) == 0

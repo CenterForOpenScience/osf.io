@@ -1,0 +1,9 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
+    dcat:accessService <http://localhost:5000> ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:name "Person McNamington" .

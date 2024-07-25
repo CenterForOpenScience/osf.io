@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 from rest_framework import status as http_status
 import logging
@@ -11,8 +8,8 @@ from framework.exceptions import HTTPError
 from framework.analytics import update_counter
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-from framework.sessions import session
-from osf.models import BaseFileNode, Guid, Session
+from framework.sessions import get_session
+from osf.models import BaseFileNode, Guid
 
 from addons.osfstorage import settings
 
@@ -20,20 +17,15 @@ logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
 def enqueue_update_analytics(node, file, version_idx, action='download'):
-    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, session._id, session.data, action), {}, celery=True)
+    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, get_session().session_key, action), {}, celery=True)
 
 @app.task(max_retries=5, default_retry_delay=60)
-def update_analytics_async(node_id, file_id, version_idx, session_id=None, session_data=None, action='download'):
-    if not session_data:
-        session_data = {}
+def update_analytics_async(node_id, file_id, version_idx, session_key=None, action='download'):
     node = Guid.load(node_id).referent
     file = BaseFileNode.load(file_id)
-    session_obj = Session.load(session_id)
-    if not session_obj:
-        session_obj = Session(data=session_data)
-    update_analytics(node, file, version_idx, session_obj, action)
+    update_analytics(node, file, version_idx, session_key, action)
 
-def update_analytics(node, file, version_idx, session_obj, action='download'):
+def update_analytics(node, file, version_idx, session_key, action='download'):
     """
     :param Node node: Root node to update
     :param str file_id: The _id field of a filenode
@@ -53,8 +45,8 @@ def update_analytics(node, file, version_idx, session_obj, action='download'):
     }
     resource = node.guids.first()
 
-    update_counter(resource, file, version=None, action=action, node_info=node_info, session_obj=session_obj)
-    update_counter(resource, file, version_idx, action, node_info=node_info, session_obj=session_obj)
+    update_counter(resource, file, version=None, action=action, node_info=node_info, session_key=session_key)
+    update_counter(resource, file, version_idx, action, node_info=node_info, session_key=session_key)
 
 
 def serialize_revision(node, record, version, index, anon=False):
@@ -105,11 +97,7 @@ def get_filename(version_idx, file_version, file_record):
     if version_idx == len(file_record.versions):
         return file_record.name
     name, ext = os.path.splitext(file_record.name)
-    return u'{name}-{date}{ext}'.format(
-        name=name,
-        date=file_version.created.isoformat(),
-        ext=ext,
-    )
+    return f'{name}-{file_version.created.isoformat()}{ext}'
 
 
 def validate_location(value):
@@ -126,7 +114,7 @@ def must_be(_type):
         @functools.wraps(func)
         def wrapped(self, *args, **kwargs):
             if not self.kind == _type:
-                raise ValueError('This instance is not a {}'.format(_type))
+                raise ValueError(f'This instance is not a {_type}')
             return func(self, *args, **kwargs)
         return wrapped
     return _must_be

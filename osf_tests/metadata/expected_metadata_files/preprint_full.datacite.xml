@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.5/metadata.xsd">
+  <identifier identifierType="DOI">11.pp/FK2osf.io/w4ibb</identifier>
+  <creators>
+    <creator>
+      <creatorName nameType="Personal">Person McNamington</creatorName>
+      <nameIdentifier nameIdentifierScheme="URL">http://localhost:5000/w1ibb</nameIdentifier>
+    </creator>
+  </creators>
+  <titles>
+    <title>this is a preprint title!</title>
+  </titles>
+  <publisher>PP the Preprint Provider</publisher>
+  <publicationYear>2123</publicationYear>
+  <subjects>
+    <subject subjectScheme="preprovi">wibble</subject>
+    <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wibbble</subject>
+    <subject subjectScheme="preprovi">wobble</subject>
+    <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wobbble</subject>
+  </subjects>
+  <contributors>
+    <contributor contributorType="HostingInstitution">
+      <contributorName nameType="Organizational">Center for Open Science</contributorName>
+      <nameIdentifier nameIdentifierScheme="URL">https://cos.io/</nameIdentifier>
+      <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29</nameIdentifier>
+    </contributor>
+  </contributors>
+  <dates>
+    <date dateType="Created">2123-05-04</date>
+    <date dateType="Updated">2123-05-04</date>
+  </dates>
+  <resourceType resourceTypeGeneral="Preprint">Preprint</resourceType>
+  <alternateIdentifiers>
+    <alternateIdentifier alternateIdentifierType="URL">http://localhost:5000/w4ibb</alternateIdentifier>
+  </alternateIdentifiers>
+  <rightsList/>
+  <descriptions>
+    <description descriptionType="Abstract">this is a preprint description!</description>
+  </descriptions>
+  <fundingReferences/>
+  <relatedIdentifiers>
+    <relatedIdentifier relatedIdentifierType="DOI" relationType="HasVersion">11.111/something-or-other</relatedIdentifier>
+    <relatedIdentifier relatedIdentifierType="DOI" relationType="IsSupplementedBy">10.70102/FK2osf.io/w2ibb</relatedIdentifier>
+  </relatedIdentifiers>
+  <relatedItems>
+    <relatedItem relationType="HasVersion" relatedItemType="Text">
+      <relatedItemIdentifier relatedItemIdentifierType="DOI">11.111/something-or-other</relatedItemIdentifier>
+      <titles/>
+      <publisher>OSF</publisher>
+    </relatedItem>
+    <relatedItem relationType="IsSupplementedBy" relatedItemType="Dataset">
+      <relatedItemIdentifier relatedItemIdentifierType="DOI">10.70102/FK2osf.io/w2ibb</relatedItemIdentifier>
+      <titles>
+        <title xml:lang="en">this is a project title!</title>
+      </titles>
+      <publicationYear>2123</publicationYear>
+      <publisher>OSF</publisher>
+    </relatedItem>
+  </relatedItems>
+</resource>

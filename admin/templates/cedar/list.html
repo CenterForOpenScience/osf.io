@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% load static %}
+{% block title %}
+    <title>OSF Admin | Cedar Metadata Template List</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Cedar Metadata Templates</h2>
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped, table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Version</th>
+            <th>Active</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for template in cedar_metadata_templates %}
+        <tr>
+            <td>
+                <a href="{% url 'cedar_metadata_templates:detail' id=template.id %}"
+                    target="_blank"
+                    class="btn btn-primary"
+                >
+                    {{ template.schema_name }}
+                </a>
+            </td>
+            <td>
+                {{ template.template_version }}
+            </td>
+            <td>
+                {{ template.active }}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+{% endblock content %}

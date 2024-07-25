@@ -129,7 +129,7 @@ class TestViewOnlyLinksCreate:
         assert res.json['errors'][0]['detail'] == 'Invalid link name.'
 
     def test_default_anonymous_not_in_payload(self, app, user, public_project, base_url):
-        url = '{}?embed=creator'.format(base_url)
+        url = f'{base_url}?embed=creator'
         payload = {
             'attributes': {
                 'name': 'testlink',
@@ -143,7 +143,7 @@ class TestViewOnlyLinksCreate:
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_default_name_not_in_payload(self, app, user, public_project, base_url):
-        url = '{}?embed=creator'.format(base_url)
+        url = f'{base_url}?embed=creator'
         payload = {
             'attributes': {
                 'anonymous': False,
@@ -158,7 +158,7 @@ class TestViewOnlyLinksCreate:
 
     def test_admin_can_create_vol(
             self, app, user, url, public_project, view_only_link):
-        url = '{}?embed=creator'.format(url)
+        url = f'{url}?embed=creator'
         payload = {
             'attributes': {
                 'name': 'testlink',

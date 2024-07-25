@@ -1,16 +1,19 @@
-import rdflib
+import typing
+from rdflib.term import Node, URIRef
+
+from osf.metadata import rdfutils
 
 
 class Focus:
     '''the "focus" is what to gather metadata about.
     '''
-    iri: rdflib.URIRef
-    rdftype: rdflib.URIRef  # TODO: allow multiple types, but don't make a big deal about it
+    iri: URIRef
+    rdftype: URIRef  # TODO: allow multiple types, but don't make a big deal about it
 
     def __init__(self, iri, rdftype):
         assert (iri and rdftype)
-        assert isinstance(iri, rdflib.URIRef)
-        assert isinstance(rdftype, rdflib.URIRef)
+        assert isinstance(iri, URIRef)
+        assert isinstance(rdftype, URIRef)
         self.iri = iri
         self.rdftype = rdftype
 
@@ -22,3 +25,12 @@ class Focus:
 
     def __hash__(self):
         return hash((self.iri, self.rdftype))
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(iri={self.iri}, rdftype={self.rdftype})'
+
+    def __str__(self):
+        return repr(self)
+
+    def reference_triples(self) -> typing.Iterable[tuple[Node, Node, Node]]:
+        yield self.iri, rdfutils.RDF.type, self.rdftype

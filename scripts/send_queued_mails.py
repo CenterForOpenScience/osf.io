@@ -29,22 +29,22 @@ def main(dry_run=True):
 
     emails_to_be_sent = pop_and_verify_mails_for_each_user(user_queue)
 
-    logger.info('Emails being sent at {0}'.format(timezone.now().isoformat()))
+    logger.info(f'Emails being sent at {timezone.now().isoformat()}')
 
     for mail in emails_to_be_sent:
         if not dry_run:
             with transaction.atomic():
                 try:
                     sent_ = mail.send_mail()
-                    message = 'Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr) if sent_ else \
-                        'Email of type {0} failed to be sent to {1}'.format(mail.email_type, mail.to_addr)
+                    message = f'Email of type {mail.email_type} sent to {mail.to_addr}' if sent_ else \
+                        f'Email of type {mail.email_type} failed to be sent to {mail.to_addr}'
                     logger.info(message)
                 except Exception as error:
-                    logger.error('Email of type {0} to be sent to {1} caused an ERROR'.format(mail.email_type, mail.to_addr))
+                    logger.error(f'Email of type {mail.email_type} to be sent to {mail.to_addr} caused an ERROR')
                     logger.exception(error)
                     pass
         else:
-            logger.info('Email of type {} will be sent to {}'.format(mail.email_type, mail.to_addr))
+            logger.info(f'Email of type {mail.email_type} will be sent to {mail.to_addr}')
 
 
 def find_queued_mails_ready_to_be_sent():

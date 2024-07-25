@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from django.utils import timezone
 from osf.management.commands.correct_registration_moderation_states import correct_registration_moderation_states

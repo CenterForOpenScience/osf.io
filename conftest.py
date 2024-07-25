@@ -1,4 +1,3 @@
-from __future__ import print_function
 from unittest import mock
 import logging
 import os
@@ -12,7 +11,9 @@ import pytest
 import responses
 import xml.etree.ElementTree as ET
 
+from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
+from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
 
 
@@ -33,8 +34,6 @@ SILENT_LOGGERS = [
     'website.search_migration.migrate',
     'website.util.paths',
     'requests_oauthlib.oauth2_session',
-    'raven.base.Client',
-    'raven.contrib.django.client.DjangoClient',
     'transitions.core',
     'MARKDOWN',
     'elasticsearch',
@@ -56,6 +55,8 @@ def override_settings():
     website_settings.BCRYPT_LOG_ROUNDS = 1
     # Make sure we don't accidentally send any emails
     website_settings.SENDGRID_API_KEY = None
+    # or try to contact a SHARE
+    website_settings.SHARE_ENABLED = False
     # Set this here instead of in SILENT_LOGGERS, in case developers
     # call setLevel in local.py
     logging.getLogger('website.mails.mails').setLevel(logging.CRITICAL)
@@ -86,8 +87,8 @@ _MOCKS = {
         'mark': 'enable_search',
         'replacement': mock.MagicMock()
     },
-    'website.search.elastic_search': {
-        'mark': 'enable_search',
+    'osf.external.messages.celery_publishers._publish_user_status_change': {
+        'mark': 'enable_account_status_messaging',
         'replacement': mock.MagicMock()
     }
 }
@@ -121,8 +122,13 @@ def _test_speedups_disable(request, settings, _test_speedups):
         patcher.start()
 
 
+@pytest.fixture(scope='session')
+def setup_connections():
+    connections.create_connection(hosts=['http://localhost:9201'])
+
+
 @pytest.fixture(scope='function')
-def es6_client():
+def es6_client(setup_connections):
     return connections.get_connection()
 
 
@@ -148,12 +154,15 @@ def _es_marker(request):
 
 
 @pytest.fixture
-def mock_share():
-    with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
-        with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
-            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                rsps.add(responses.POST, f'{website_settings.SHARE_URL}api/v2/normalizeddata/', status=200)
-                yield rsps
+def mock_share_responses():
+    with shtrove_test_utils.mock_share_responses() as _shmock_responses:
+        yield _shmock_responses
+
+
+@pytest.fixture
+def mock_update_share():
+    with shtrove_test_utils.mock_update_share() as _shmock_update:
+        yield _shmock_update
 
 
 @pytest.fixture
@@ -186,7 +195,7 @@ def mock_datacite(registration):
 
     doi = registration.get_doi_client().build_doi(registration)
 
-    with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml'), 'r') as fp:
+    with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml')) as fp:
         base_xml = ET.fromstring(fp.read())
         base_xml.find('{http://datacite.org/schema/kernel-4}identifier').text = doi
         data = ET.tostring(base_xml)
@@ -271,6 +280,12 @@ def mock_celery():
     with mock.patch.object(website_settings, 'USE_CELERY', True):
         with mock.patch('osf.external.internet_archive.tasks.enqueue_postcommit_task') as mock_celery:
             yield mock_celery
+
+
+@pytest.fixture
+def mock_spam_head_request():
+    with mock.patch.object(spam_tasks.requests, 'head') as mock_spam_head_request:
+        yield mock_spam_head_request
 
 
 def rolledback_transaction(loglabel):

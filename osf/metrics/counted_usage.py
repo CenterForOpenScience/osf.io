@@ -3,7 +3,7 @@ import enum
 import logging
 from urllib.parse import urlsplit
 
-from elasticsearch_dsl import InnerDoc, analyzer, tokenizer
+from elasticsearch6_dsl import InnerDoc, analyzer, tokenizer
 from elasticsearch_metrics import metrics
 from elasticsearch_metrics.signals import pre_save
 from django.dispatch import receiver
@@ -95,10 +95,10 @@ def _autofill_fields(sender, instance, **kwargs):
 
 def _fill_pageview_info(counted_usage):
     pageview = counted_usage.pageview_info
+    pageview_dict = pageview.to_dict()
     pageview.hour_of_day = counted_usage.timestamp.hour
-    pageview.page_path = urlsplit(pageview.page_url).path.rstrip('/')
-    referer = getattr(pageview, 'referer_url', None)
-    if referer:
+    pageview.page_path = urlsplit(pageview_dict['page_url']).path.rstrip('/')
+    if referer := pageview_dict.get('referer_url'):
         pageview.referer_domain = urlsplit(referer).netloc
 
 

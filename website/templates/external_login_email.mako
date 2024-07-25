@@ -13,14 +13,16 @@
         </p>
 
         <form id='resendForm' method='POST' class='form' role='form'>
-            <div class='form-group'>
-                ${form.email(placeholder='Email address', autofocus=True, required=True) | unicode, n }
-            </div>
             % if not auth_user_fullname:
                 <div class='form-group'>
-                    ${form.name(placeholder='Full name', autofocus=True, required='required') | unicode, n }
+                    Full name:
+                    ${form.name(placeholder='Albert Einstein', autofocus=True, required='required') | unicode, n }
                 </div>
             % endif
+            <div class='form-group'>
+                Email address:
+                ${form.email(placeholder='support@osf.io', autofocus=True, required=True) | unicode, n }
+            </div>
             <div class='form-group'>
                 ${form.accepted_terms_of_service(required='required') | unicode, n }
                 <label>I have read and agree to the <a target="_blank" href='https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md'>Terms of Use</a> and <a target="_blank" href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>.</label>

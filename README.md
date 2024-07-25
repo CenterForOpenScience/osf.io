@@ -8,7 +8,6 @@ The code for [https://osf.io](https://osf.io).
 - Issues: https://github.com/CenterForOpenScience/osf.io/issues?state=open
 - COS Development Docs: http://cosdev.readthedocs.org/
 
-
 ## Running the OSF For Development
 
 To run the OSF for local development, see [README-docker-compose.md](https://github.com/CenterForOpenScience/osf.io/blob/develop/README-docker-compose.md).

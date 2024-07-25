@@ -57,10 +57,13 @@ DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
-SESSION_COOKIE_NAME = 'api'
+SESSION_COOKIE_NAME = osf_settings.COOKIE_NAME
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
 SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
+SESSION_COOKIE_AGE = 2592000  # 30 days in seconds
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'redis'
 
 # csrf:
 CSRF_COOKIE_NAME = 'api-csrf'
@@ -87,7 +90,6 @@ INSTALLED_APPS = (
     'django_celery_results',
     'rest_framework',
     'corsheaders',
-    'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
     'storages',
@@ -100,6 +102,7 @@ INSTALLED_APPS = (
     # Addons
     'addons.osfstorage',
     'addons.bitbucket',
+    'addons.boa',
     'addons.box',
     'addons.dataverse',
     'addons.dropbox',
@@ -120,13 +123,6 @@ INSTALLED_APPS = (
 # local development using https
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
-
-# TODO: Are there more granular ways to configure reporting specifically related to the API?
-RAVEN_CONFIG = {
-    'tags': {'App': 'api'},
-    'dsn': osf_settings.SENTRY_DSN,
-    'release': osf_settings.VERSION,
-}
 
 BULK_SETTINGS = {
     'DEFAULT_BULK_LIMIT': 100,
@@ -227,11 +223,10 @@ MIDDLEWARE = (
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
-
-    'api.base.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'api.base.middleware.UnsignCookieSessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -299,7 +294,7 @@ VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
 ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward', 'boa']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 
@@ -337,6 +332,16 @@ STORAGE_USAGE_MAX_ENTRIES = 10000000
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    'redis': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_HOST', 'redis://192.168.168.167:6379'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 100,
+            },
+        },
     },
     STORAGE_USAGE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',

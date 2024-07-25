@@ -1,36 +1,37 @@
-import mock
+from unittest import mock
 import pytz
 import pytest
 import itsdangerous
 from datetime import datetime, timedelta
+from importlib import import_module
 
 from django.utils import timezone
+from django.conf import settings as django_conf_settings
 
 from website import settings
 
 from osf_tests.factories import (
     AuthUserFactory,
-    SessionFactory
 )
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
 class TestUserLastLoginDate(OsfTestCase):
 
     def setUp(self):
-        super(TestUserLastLoginDate, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
 
-        self.session = SessionFactory(
-            data={
-                'auth_user_id': self.user._id,
-                'auth_user_username': self.user.username
-            }
-        )
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
+        self.session = SessionStore()
+        self.session['auth_user_id'] = self.user._id
+        self.session['auth_user_username'] = self.user.username
+        self.session.create()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
 
     @mock.patch.object(timezone, 'now')
     def test_date_last_login_updated_from_none(self, mock_time):

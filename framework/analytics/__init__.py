@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 import logging
 
 from framework.celery_tasks import app
@@ -20,7 +18,7 @@ def get_total_activity_count(user_id):
     return UserActivityCounter.get_total_activity_count(user_id)
 
 
-def update_counter(resource, file, version, action, node_info=None, session_obj=None):
+def update_counter(resource, file, version, action, node_info=None, session_key=None):
     """Update counters for resource.
 
     :param obj resource
@@ -29,7 +27,7 @@ def update_counter(resource, file, version, action, node_info=None, session_obj=
     :param str action, ex. 'download'
     """
     from osf.models import PageCounter
-    return PageCounter.update_counter(resource, file, version=version, action=action, node_info=node_info, session_obj=session_obj)
+    return PageCounter.update_counter(resource, file, version=version, action=action, node_info=node_info, session_key=session_key)
 
 
 def get_basic_counters(resource, file, version, action):

@@ -24,14 +24,14 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
-from osf.models.node_relation import NodeRelation
-from osf.models.nodelog import NodeLog
-from osf.models.subject import Subject
-from osf.models.spam import SpamMixin, SpamStatus
-from osf.models.validators import validate_title
-from osf.models.tag import Tag
+from .node_relation import NodeRelation
+from .nodelog import NodeLog
+from .subject import Subject
+from .spam import SpamMixin, SpamStatus
+from .validators import validate_title
+from .tag import Tag
 from osf.utils import sanitize
-from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
+from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import (
@@ -299,7 +299,7 @@ class AffiliatedInstitutionMixin(models.Model):
 
     def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
-            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
+            raise UserNotAffiliatedError(f'User is not affiliated with {inst.name}')
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
             self.update_search()
@@ -549,7 +549,7 @@ class AddonModelMixin(models.Model):
             if not _force:
                 return False
 
-        config = apps.get_app_config('addons_{}'.format(addon_name))
+        config = apps.get_app_config(f'addons_{addon_name}')
         model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
@@ -592,8 +592,8 @@ class AddonModelMixin(models.Model):
 
     def _settings_model(self, addon_model, config=None):
         if not config:
-            config = apps.get_app_config('addons_{}'.format(addon_model))
-        return getattr(config, '{}_settings'.format(self.settings_type))
+            config = apps.get_app_config(f'addons_{addon_model}')
+        return getattr(config, f'{self.settings_type}_settings')
 
 
 class NodeLinkMixin(models.Model):
@@ -653,17 +653,15 @@ class NodeLinkMixin(models.Model):
 
     def check_node_link(self, child_node, parent_node):
         if child_node._id == parent_node._id:
-            raise ValueError(
-                'Cannot link node \'{}\' to itself.'.format(child_node._id)
-            )
+            raise ValueError(f"Cannot link node '{child_node._id}' to itself.")
         existant_relation = NodeRelation.objects.filter(parent=parent_node, child=child_node).first()
         if existant_relation and existant_relation.is_node_link:
             raise ValueError(
-                'Target Node \'{}\' already pointed to by \'{}\'.'.format(child_node._id, parent_node._id)
+                f"Target Node '{child_node._id}' already pointed to by '{parent_node._id}'."
             )
         elif existant_relation and not existant_relation.is_node_link:
             raise ValueError(
-                'Target Node \'{}\' is already a child of \'{}\'.'.format(child_node._id, parent_node._id)
+                f"Target Node '{child_node._id}' is already a child of '{parent_node._id}'."
             )
 
     def rm_node_link(self, node_relation, auth):
@@ -726,7 +724,7 @@ class NodeLinkMixin(models.Model):
         try:
             node = self.node_relations.get(is_node_link=True, id=node_relation.id).child
         except NodeRelation.DoesNotExist:
-            raise ValueError('Node link {0} not in list'.format(node_relation._id))
+            raise ValueError(f'Node link {node_relation._id} not in list')
 
         # Fork node to which current nodelink points
         forked = node.fork_node(auth)
@@ -761,7 +759,7 @@ class NodeLinkMixin(models.Model):
     fork_pointer = fork_node_link  # For v1 compat
 
 
-class CommentableMixin(object):
+class CommentableMixin:
     """Abstract class that defines the interface for models that have comments attached to them."""
 
     @property
@@ -936,7 +934,7 @@ class GuardianMixin(models.Model):
 
     def format_group(self, name):
         if name not in self.groups:
-            raise ValueError('Invalid group: "{}"'.format(name))
+            raise ValueError(f'Invalid group: "{name}"')
         return self.group_format.format(self=self, group=name)
 
     def get_group(self, name):
@@ -999,7 +997,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     def get_request_state_counts(self):
         # import stuff here to get around circular imports
-        from osf.models import PreprintRequest
+        from . import PreprintRequest
         qs = PreprintRequest.objects.filter(
             target__provider__id=self.id,
             target__is_public=True,
@@ -1104,7 +1102,7 @@ class TaxonomizableMixin(models.Model):
         is_list = type(subj_list) is list
 
         if (expect_list and not is_list) or (not expect_list and is_list):
-            raise ValidationValueError('Subjects are improperly formatted. {}'.format(error_msg))
+            raise ValidationValueError(f'Subjects are improperly formatted. {error_msg}')
 
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
@@ -1135,7 +1133,9 @@ class TaxonomizableMixin(models.Model):
         if add_log and hasattr(self, 'add_log'):
             self.add_subjects_log(old_subjects, auth)
 
-        self.save(old_subjects=old_subjects)
+        self.save()
+        if hasattr(self, 'update_search'):
+            self.update_search()
 
     def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
@@ -1160,7 +1160,9 @@ class TaxonomizableMixin(models.Model):
         if add_log and hasattr(self, 'add_log'):
             self.add_subjects_log(old_subjects, auth)
 
-        self.save(old_subjects=old_subjects)
+        self.save()
+        if hasattr(self, 'update_search'):
+            self.update_search()
 
     def map_subjects_between_providers(self, old_provider, new_provider, auth=None):
         """
@@ -1483,10 +1485,10 @@ class ContributorMixin(models.Model):
         if user_id:
             contributor = OSFUser.load(user_id)
             if not contributor:
-                raise ValueError('User with id {} was not found.'.format(user_id))
+                raise ValueError(f'User with id {user_id} was not found.')
 
             if self.contributor_set.filter(user=contributor).exists():
-                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                raise ValidationValueError(f'{contributor.fullname} is already a contributor.')
 
             if contributor.is_registered:
                 contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
@@ -1506,7 +1508,7 @@ class ContributorMixin(models.Model):
         else:
             contributor = get_user(email=email)
             if contributor and self.contributor_set.filter(user=contributor).exists():
-                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                raise ValidationValueError(f'{contributor.fullname} is already a contributor.')
 
             if contributor and contributor.is_registered:
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
@@ -1579,11 +1581,11 @@ class ContributorMixin(models.Model):
                 # has only one admin
                 admin = admins.first()
                 if (admin == user or getattr(admin, 'user', None) == user) and ADMIN != permission:
-                    error_msg = '{} is the only admin.'.format(user.fullname)
+                    error_msg = f'{user.fullname} is the only admin.'
                     raise self.state_error(error_msg)
             if not self.contributor_set.filter(user=user).exists():
                 raise ValueError(
-                    'User {0} not in contributors'.format(user.fullname)
+                    f'User {user.fullname} not in contributors'
                 )
             if not self.get_group(permission).user_set.filter(id=user.id).exists():
                 self.set_permissions(user, permission, save=False)
@@ -1736,7 +1738,7 @@ class ContributorMixin(models.Model):
                     raise ValueError('User not found')
                 if not self.contributors.filter(id=user.id).exists():
                     raise ValueError(
-                        'User {0} not in contributors'.format(user.fullname)
+                        f'User {user.fullname} not in contributors'
                     )
 
                 permission = user_dict.get('permission', None) or user_dict.get('permissions', None)
@@ -1818,12 +1820,12 @@ class ContributorMixin(models.Model):
         try:
             contributor = self.contributor_set.get(user=user)
         except self.contributor_class.DoesNotExist:
-            raise ValueError(u'User {0} not in contributors'.format(user))
+            raise ValueError(f'User {user} not in contributors')
         return contributor.visible
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
-            raise ValueError(u'User {0} not in contributors'.format(user))
+            raise ValueError(f'User {user} not in contributors')
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         kwargs['visible'] = True
@@ -1868,7 +1870,7 @@ class ContributorMixin(models.Model):
 
         if not user or user.is_anonymous:
             return False
-        perm = '{}_{}'.format(permission, object_type)
+        perm = f'{permission}_{object_type}'
         # Using get_group_perms to get permissions that are inferred through
         # group membership - not inherited from superuser status
         has_permission = perm in get_group_perms(user, self)
@@ -1890,7 +1892,7 @@ class ContributorMixin(models.Model):
             permission_group = self.get_group(permission)
             permission_group.user_set.add(user)
         else:
-            raise ValueError('User already has permission {0}'.format(permission))
+            raise ValueError(f'User already has permission {permission}')
         if save:
             self.save()
 
@@ -1945,7 +1947,7 @@ class ContributorMixin(models.Model):
             permission_group = self.get_group(permission)
             permission_group.user_set.remove(user)
         else:
-            raise ValueError('User does not have permission {0}'.format(permission))
+            raise ValueError(f'User does not have permission {permission}')
         if save:
             self.save()
 
@@ -1988,7 +1990,7 @@ class SpamOverrideMixin(SpamMixin):
     def log_params(self):
         return NotImplementedError()
 
-    def get_spam_fields(self):
+    def get_spam_fields(self, saved_fields=None):
         return NotImplementedError()
 
     def undelete(self, save=False):
@@ -2051,7 +2053,7 @@ class SpamOverrideMixin(SpamMixin):
         if save:
             self.save()
 
-    def _get_spam_content(self, saved_fields):
+    def _get_spam_content(self, saved_fields=None, include_tags=True):
         """
         This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
         django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
@@ -2067,7 +2069,7 @@ class SpamOverrideMixin(SpamMixin):
             values = list(self.__class__.objects.filter(id=self.id, **exclude_null).values_list(field, flat=True))
             if values:
                 content.append((' '.join(values) or '').encode('utf-8'))
-        if self.all_tags.exists():
+        if include_tags and self.all_tags.exists():
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:
             return None
@@ -2117,7 +2119,7 @@ class SpamOverrideMixin(SpamMixin):
         delete the account or any info associated with it. It should not be assumed the account is spam and it should
         not be used to train spam detecting services.
         """
-        if user.is_ham:
+        if user.is_hammy:
             return False
         self.confirm_spam(save=True, train_spam_services=False)
         self.set_privacy('private', log=False, save=True)
@@ -2257,19 +2259,26 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, include_contributors=True, save=True):
+    def copy_editable_fields(self, resource, alternative_resource=None, include_contributors=True, save=True, excluded_attributes=None):
         """
-        Copy various editable fields from the 'resource' object to the current object.
-        Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
-        The field on the resource will always supersede the field on the alternative_resource. For example,
-        copying fields from the draft_registration to the registration.  resource will be a DraftRegistration object,
-        but the alternative_resource will be a Node.  DraftRegistration fields will trump Node fields.
-        TODO, add optional logging parameter
+        This method copies various editable fields from the 'resource' object to the current object. Includes, title,
+        description, category, contributors, node_license, tags, subjects, and affiliated_institutions.
+        The field on the resource will always supersede the field on the alternative_resource. For example, copying
+        fields from the draft_registration to the registration.  resource will be a DraftRegistration object, but the
+        alternative_resource will be a Node. DraftRegistration fields will trump Node fields.
+
+        :param Object resource: Primary resource where you want to copy attributes
+        :param Object alternative_resource: Backup resource for copying attributes
+        :param Boolean include_contributors: represents whether to also copy the resource's contributors
+        :param Boolean save: represents whether to save the resources changes immediately
+        :param List: a list of strings representing attributes to exclude from copying
         """
-        self.set_editable_attribute('title', resource, alternative_resource)
-        self.set_editable_attribute('description', resource, alternative_resource)
-        self.set_editable_attribute('category', resource, alternative_resource)
-        self.set_editable_attribute('node_license', resource, alternative_resource)
+        if not excluded_attributes:
+            excluded_attributes = []
+
+        for attribute in ['title', 'description', 'category', 'node_license']:
+            if attribute not in excluded_attributes:
+                self.set_editable_attribute(attribute, resource, alternative_resource)
 
         if include_contributors:
             # Contributors will always come from "resource", as contributor constraints

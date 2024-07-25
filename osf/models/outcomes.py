@@ -10,9 +10,9 @@ from django.db import models
 from django.utils.functional import cached_property
 
 from osf.exceptions import NoPIDError
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.mixins import EditableFieldsMixin
-from osf.models.nodelog import NodeLog
+from .base import BaseModel, ObjectIDMixin
+from .mixins import EditableFieldsMixin
+from .nodelog import NodeLog
 from osf.utils.outcomes import ArtifactTypes, OutcomeActions
 
 NODE_LOGS_FOR_OUTCOME_ACTION = {

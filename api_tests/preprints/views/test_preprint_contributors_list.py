@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 from datetime import datetime
-import mock
+from unittest import mock
 import pytest
 import random
 from django.utils import timezone
@@ -63,11 +62,11 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def url_published(self, preprint_published):
-        return '/{}preprints/{}/'.format(API_BASE, preprint_published._id)
+        return f'/{API_BASE}preprints/{preprint_published._id}/'
 
     @pytest.fixture()
     def url_unpublished(self, preprint_unpublished):
-        return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+        return f'/{API_BASE}preprints/{preprint_unpublished._id}/'
 
     @pytest.fixture()
     def url_fake(self):
@@ -76,7 +75,7 @@ class NodeCRUDTestCase:
     @pytest.fixture()
     def make_contrib_id(self):
         def contrib_id(preprint_id, user_id):
-            return '{}-{}'.format(preprint_id, user_id)
+            return f'{preprint_id}-{user_id}'
         return contrib_id
 
 
@@ -91,7 +90,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_unpublished(self, preprint_unpublished):
-        return '/{}preprints/{}/contributors/'.format(API_BASE, preprint_unpublished._id)
+        return f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/'
 
     def test_concatenated_id(self, app, user, preprint_published, url_published):
         res = app.get(url_published)
@@ -246,7 +245,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
     def test_filtering_on_obsolete_fields(self, app, user, url_published):
         # regression test for changes in filter fields
-        url_fullname = '{}?filter[fullname]=foo'.format(url_published)
+        url_fullname = f'{url_published}?filter[fullname]=foo'
         res = app.get(url_fullname, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']
@@ -254,7 +253,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         assert errors[0]['detail'] == '\'fullname\' is not a valid field for this endpoint.'
 
         # middle_name is now middle_names
-        url_middle_name = '{}?filter[middle_name]=foo'.format(url_published)
+        url_middle_name = f'{url_published}?filter[middle_name]=foo'
         res = app.get(url_middle_name, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']
@@ -295,7 +294,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
     def test_unregistered_contributor_field_is_null_if_account_claimed(
             self, app, user):
         preprint = PreprintFactory(creator=user, is_published=True)
-        url = '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id)
+        url = f'/{API_BASE}preprints/{preprint._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
@@ -309,7 +308,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
             'Robert Jackson',
             'robert@gmail.com',
             auth=Auth(user), save=True)
-        url = '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id)
+        url = f'/{API_BASE}preprints/{preprint._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
@@ -320,7 +319,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         preprint_two = PreprintFactory(creator=user, is_published=True)
         preprint_two.add_unregistered_contributor(
             'Bob Jackson', 'robert@gmail.com', auth=Auth(user), save=True)
-        url = '/{}preprints/{}/contributors/'.format(API_BASE, preprint_two._id)
+        url = f'/{API_BASE}preprints/{preprint_two._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
@@ -350,10 +349,10 @@ class TestPreprintContributorList(NodeCRUDTestCase):
                 save=True
             )
         req_one = app.get(
-            '{}?page=2'.format(url_published),
+            f'{url_published}?page=2',
             auth=Auth(preprint_published.creator))
         req_two = app.get(
-            '{}?page=2'.format(url_published),
+            f'{url_published}?page=2',
             auth=Auth(preprint_published.creator))
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
@@ -1350,12 +1349,12 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_preprint_contribs(self, preprint_published):
-        return '/{}preprints/{}/contributors/'.format(API_BASE, preprint_published._id)
+        return f'/{API_BASE}preprints/{preprint_published._id}/contributors/'
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_no_email_if_false(
             self, mock_mail, app, user, url_preprint_contribs):
-        url = '{}?send_email=false'.format(url_preprint_contribs)
+        url = f'{url_preprint_contribs}?send_email=false'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1373,7 +1372,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     def test_add_contributor_needs_preprint_filter_to_send_email(
             self, mock_mail, app, user, user_two,
             url_preprint_contribs):
-        url = '{}?send_email=default'.format(url_preprint_contribs)
+        url = f'{url_preprint_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1398,7 +1397,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_preprint(
             self, mock_send, app, user, user_two, url_preprint_contribs):
-        url = '{}?send_email=preprint'.format(url_preprint_contribs)
+        url = f'{url_preprint_contribs}?send_email=preprint'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1423,7 +1422,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_sends_email(
             self, mock_mail, app, user, url_preprint_contribs):
-        url = '{}?send_email=preprint'.format(url_preprint_contribs)
+        url = f'{url_preprint_contribs}?send_email=preprint'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1440,7 +1439,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_preprint(
             self, mock_send, app, user, url_preprint_contribs):
-        url = '{}?send_email=preprint'.format(url_preprint_contribs)
+        url = f'{url_preprint_contribs}?send_email=preprint'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1459,7 +1458,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_invalid_send_email_param(
             self, mock_mail, app, user, url_preprint_contribs):
-        url = '{}?send_email=true'.format(url_preprint_contribs)
+        url = f'{url_preprint_contribs}?send_email=true'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1479,7 +1478,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_without_email_no_email(
             self, mock_mail, app, user, url_preprint_contribs):
-        url = '{}?send_email=preprint'.format(url_preprint_contribs)
+        url = f'{url_preprint_contribs}?send_email=preprint'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1499,7 +1498,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_publishing_preprint_sends_emails_to_contributors(
             self, mock_update, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
-        url = '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+        url = f'/{API_BASE}preprints/{preprint_unpublished._id}/'
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permissions=permissions.WRITE, save=True)
         payload = {
@@ -1539,7 +1538,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_contributor_added_not_sent_if_unpublished(
             self, mock_mail, app, user, preprint_unpublished):
-        url = '/{}preprints/{}/contributors/?send_email=preprint'.format(API_BASE, preprint_unpublished._id)
+        url = f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/?send_email=preprint'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1833,7 +1832,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_published(self, preprint_published):
-        return '/{}preprints/{}/contributors/'.format(API_BASE, preprint_published._id)
+        return f'/{API_BASE}preprints/{preprint_published._id}/contributors/'
 
     @pytest.fixture()
     def url_unpublished(self, preprint_unpublished):
@@ -2279,7 +2278,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_published(self, preprint_published):
-        return '/{}preprints/{}/contributors/'.format(API_BASE, preprint_published._id)
+        return f'/{API_BASE}preprints/{preprint_published._id}/contributors/'
 
     @pytest.fixture()
     def url_unpublished(self, preprint_unpublished):
@@ -2635,7 +2634,7 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_published(self, preprint_published):
-        return '/{}preprints/{}/contributors/'.format(API_BASE, preprint_published._id)
+        return f'/{API_BASE}preprints/{preprint_published._id}/contributors/'
 
     @pytest.fixture()
     def url_unpublished(self, preprint_unpublished):
@@ -2967,7 +2966,7 @@ class TestPreprintContributorFiltering:
         assert len(res.json['data']) == 3
 
     #   test_filtering_node_with_only_bibliographic_contributors
-        base_url = '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id)
+        base_url = f'/{API_BASE}preprints/{preprint._id}/contributors/'
         # no filter
         res = app.get(base_url, auth=user.auth)
         assert res.status_code == 200
@@ -3000,7 +2999,7 @@ class TestPreprintContributorFiltering:
         preprint.add_contributor(non_bibliographic_contrib, visible=False)
         preprint.save()
 
-        base_url = '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id)
+        base_url = f'/{API_BASE}preprints/{preprint._id}/contributors/'
 
         # no filter
         res = app.get(base_url, auth=user.auth)

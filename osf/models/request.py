@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from django.db import models
 
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.workflows import RequestTypes
-from osf.models.mixins import NodeRequestableMixin, PreprintRequestableMixin
+from .mixins import NodeRequestableMixin, PreprintRequestableMixin
 
 
 class AbstractRequest(BaseModel, ObjectIDMixin):

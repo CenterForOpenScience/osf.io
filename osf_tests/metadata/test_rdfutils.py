@@ -11,7 +11,7 @@ def test_contextualized_graph():
 
     url_prefix_tests = {
         'https://osf.io/vocab/2022/blarg': ('osf', rdflib.URIRef(rdfutils.OSF), 'blarg'),
-        'http://purl.org/dc/terms/blarg': ('dct', rdflib.URIRef(rdfutils.DCT), 'blarg'),
+        'http://purl.org/dc/terms/blarg': ('dcterms', rdflib.URIRef(rdfutils.DCTERMS), 'blarg'),
         'http://xmlns.com/foaf/0.1/blarg': ('foaf', rdflib.URIRef(rdfutils.FOAF), 'blarg'),
         'http://www.w3.org/2002/07/owl#blarg': ('owl', rdflib.URIRef(rdfutils.OWL), 'blarg'),
     }
@@ -39,7 +39,7 @@ def test_checksum_iri():
         assert actual_iri == expected_iri
 
 
-def test_format_dct_extent():
+def test_format_dcterms_extent():
     extent_tests = {
         0: '0.000000 MB',
         1: '0.000001 MB',
@@ -50,7 +50,7 @@ def test_format_dct_extent():
         -9: None,
     }
     for number_of_bytes, expected_extent in extent_tests.items():
-        assert rdfutils.format_dct_extent(number_of_bytes) == expected_extent
+        assert rdfutils.format_dcterms_extent(number_of_bytes) == expected_extent
 
 
 def test_primitivify_rdf():
@@ -59,15 +59,15 @@ def test_primitivify_rdf():
         {'in': None, 'out': None},
         {'in': 'woop', 'out': 'woop'},
         {'in': [rdflib.Literal('hello'), 'goodbye'], 'out': ['hello', 'goodbye']},
-        {'in': rdfutils.DCT.Agent, 'out': 'http://purl.org/dc/terms/Agent'},
+        {'in': rdfutils.DCTERMS.Agent, 'out': 'http://purl.org/dc/terms/Agent'},
         {
-            'in': ('a', ['b', rdfutils.DCT.title]),
+            'in': ('a', ['b', rdfutils.DCTERMS.title]),
             'out': ('a', ['b', 'http://purl.org/dc/terms/title']),
         },
         {
             'in': {
                 'blah': 'blip',
-                rdfutils.DCT.description: ('a', ['b', rdfutils.DCT.title], 78),
+                rdfutils.DCTERMS.description: ('a', ['b', rdfutils.DCTERMS.title], 78),
                 rdfutils.OSF.warb: {
                     rdfutils.OSF.warbly: {
                         rdfutils.OSF.warbl: {'seven', 7},

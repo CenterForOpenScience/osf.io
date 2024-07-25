@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
@@ -35,7 +34,7 @@ class ConferenceManager(models.Manager):
             else:
                 return self.get_queryset().get(endpoint__iexact=endpoint)
         except Conference.DoesNotExist:
-            raise ConferenceError('Endpoint {} not found'.format(endpoint))
+            raise ConferenceError(f'Endpoint {endpoint} not found')
 
 
 class Conference(ObjectIDMixin, BaseModel):
@@ -79,7 +78,7 @@ class Conference(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        return urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
+        return urljoin(settings.DOMAIN, f'/view/{self.endpoint}')
 
     @property
     def valid_submissions(self):

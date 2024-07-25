@@ -1,18 +1,24 @@
-import mock
+from django.db import IntegrityError
+from django.utils import timezone
+from unittest import mock
 import pytest
 
-from django.utils import timezone
-from past.builtins import basestring
-
-from osf.models import Institution
-from osf_tests.factories import InstitutionFactory, AuthUserFactory, UserFactory, InstitutionAssetFileFactory
+from addons.osfstorage.models import Region
+from osf.models import Institution, InstitutionStorageRegion
+from osf_tests.factories import (
+    AuthUserFactory,
+    InstitutionFactory,
+    InstitutionAssetFileFactory,
+    RegionFactory,
+    UserFactory,
+)
 from website import mails, settings
 
 
 @pytest.mark.django_db
 def test_factory():
     inst = InstitutionFactory()
-    assert isinstance(inst.name, basestring)
+    assert isinstance(inst.name, str)
     assert len(inst.domains) > 0
     assert len(inst.email_domains) > 0
 
@@ -62,6 +68,18 @@ def test_institution_banner_path():
     logo = InstitutionAssetFileFactory(institutions=[inst], name='banner')
     expected_banner_path = logo.file.url
     assert inst.banner_path == expected_banner_path
+
+
+@pytest.mark.django_db
+def test_institution_support_email_default_blank():
+    institution = InstitutionFactory()
+    assert institution.support_email == ''
+
+
+@pytest.mark.django_db
+def test_institution_support_email():
+    institution = InstitutionFactory(support_email='support@osf.edu')
+    assert institution.support_email == 'support@osf.edu'
 
 
 class TestInstitutionPermissions:
@@ -154,7 +172,7 @@ class TestInstitutionManager:
             to_addr=user.username,
             mail=mails.INSTITUTION_DEACTIVATION,
             user=user,
-            forgot_password_link='{}{}'.format(settings.DOMAIN, forgot_password),
+            forgot_password_link=f'{settings.DOMAIN}{forgot_password}',
             osf_support_email=settings.OSF_SUPPORT_EMAIL
         )
 
@@ -173,3 +191,59 @@ class TestInstitutionManager:
         with mock.patch.object(institution, 'save', return_value=None) as mock_save:
             institution.reactivate()
             assert not mock_save.called
+
+
+@pytest.mark.django_db
+class TestInstitutionStorageRegion:
+
+    def test_fields(self):
+        institution = InstitutionFactory()
+        region = RegionFactory()
+        region_preferred = RegionFactory()
+        institution_storage_region = InstitutionStorageRegion.objects.create(
+            institution=institution,
+            storage_region=region
+        )
+        assert institution_storage_region.institution == institution
+        assert institution_storage_region.storage_region == region
+        assert not institution_storage_region.is_preferred
+
+        institution_storage_region = InstitutionStorageRegion.objects.create(
+            institution=institution,
+            storage_region=region_preferred,
+            is_preferred=True
+        )
+        assert institution_storage_region.institution == institution
+        assert institution_storage_region.storage_region == region_preferred
+        assert institution_storage_region.is_preferred
+
+    def test_constraints_institution_and_region(self):
+        institution = InstitutionFactory()
+        region = RegionFactory()
+        InstitutionStorageRegion.objects.create(
+            institution=institution,
+            storage_region=region,
+        )
+        same_institution = Institution.objects.get(id=institution.id)
+        same_region = Region.objects.get(id=region.id)
+        with pytest.raises(IntegrityError):
+            InstitutionStorageRegion.objects.create(
+                institution=same_institution,
+                storage_region=same_region,
+            )
+
+    def test_constraints_institution_and_is_preferred(self):
+        institution = InstitutionFactory()
+        region = RegionFactory()
+        region_preferred = RegionFactory()
+        InstitutionStorageRegion.objects.create(
+            institution=institution,
+            storage_region=region_preferred,
+            is_preferred=True
+        )
+        with pytest.raises(IntegrityError):
+            InstitutionStorageRegion.objects.create(
+                institution=institution,
+                storage_region=region,
+                is_preferred=True
+            )

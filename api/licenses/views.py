@@ -55,7 +55,7 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'licenses'
     view_name = 'license-list'
 
-    ordering = ('name', )  # default ordering
+    ordering = ('name',)  # default ordering
 
     def get_default_queryset(self):
         # excludes CCBYNCND and CCBYSA40

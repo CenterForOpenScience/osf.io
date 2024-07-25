@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from rest_framework import status as http_status
 import logging
 
@@ -11,7 +9,6 @@ from django.db import transaction
 from flask import request
 
 from framework.auth import Auth
-from framework.sessions import get_session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
@@ -124,14 +121,14 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
     from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
     is_anon = has_anonymous_link(target, Auth(private_key=request.args.get('view_only')))
 
-    counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
+    counter_prefix = f'download:{file_node.target._id}:{file_node._id}:'
 
     version_count = file_node.versions.count()
     counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
     qs = FileVersion.objects.filter(basefilenode__id=file_node.id).prefetch_related('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
-        version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)
+        version._download_count = counts.get(f'{counter_prefix}{version_count - i - 1}', 0)
 
     # Return revisions in descending order
     return {
@@ -377,7 +374,7 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
     if not auth:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     if file_node == OsfStorageFolder.objects.get_root(target=target):
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         file_node.delete(user=user)
@@ -395,14 +392,6 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_download(file_node, payload, **kwargs):
-    # Set user ID in session data for checking if user is contributor
-    # to project.
-    user_id = payload.get('user')
-    if user_id:
-        current_session = get_session()
-        current_session.data['auth_user_id'] = user_id
-        current_session.save()
-
     if not request.args.get('version'):
         version_id = None
     else:

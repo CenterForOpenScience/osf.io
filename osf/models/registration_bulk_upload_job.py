@@ -2,7 +2,7 @@ from enum import IntEnum
 
 from django.db import models
 
-from osf.models.base import BaseModel
+from .base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
 
 

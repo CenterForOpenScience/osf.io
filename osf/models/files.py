@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import logging
 import os
 
@@ -14,12 +12,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
 
+from api.share.utils import update_share
 from framework.analytics import get_basic_counters
 from framework import sentry
-from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
-from osf.models.comment import CommentableMixin
-from osf.models.mixins import Taggable
-from osf.models.validators import validate_location
+from .base import BaseModel, OptionalGuidMixin, ObjectIDMixin
+from .comment import CommentableMixin
+from .mixins import Taggable
+from .validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
@@ -42,7 +41,7 @@ logger = logging.getLogger(__name__)
 class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
-        qs = super(BaseFileNodeManager, self).get_queryset()
+        qs = super().get_queryset()
 
         if hasattr(self.model, '_provider') and self.model._provider is not None:
             return qs.filter(provider=self.model._provider)
@@ -58,7 +57,7 @@ class ActiveFileNodeManager(Manager):
     """
 
     def get_queryset(self):
-        qs = super(ActiveFileNodeManager, self).get_queryset()
+        qs = super().get_queryset()
         return qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
 
 class UnableToResolveFileClass(Exception):
@@ -156,7 +155,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """
         # Files are inaccessible if a node is retracted, so just show
         # the retraction detail page for files on retractions
-        from osf.models import AbstractNode
+        from .node import AbstractNode
         if isinstance(self.target, AbstractNode):
             if self.target.is_registration and self.target.is_retracted:
                 return self.target.web_url_for('view_project')
@@ -164,7 +163,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     @property
     def absolute_api_v2_url(self):
-        path = '/files/{}/'.format(self._id)
+        path = f'/files/{self._id}/'
         return api_v2_url(path)
 
     # For Comment API compatibility
@@ -233,7 +232,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return self.node and self.node.has_permission(user, perm)
 
     def to_storage(self, **kwargs):
-        storage = super(BaseFileNode, self).to_storage(**kwargs)
+        storage = super().to_storage(**kwargs)
         if 'trashed' not in self.type.lower():
             for key in tuple(storage.keys()):
                 if 'deleted' in key:
@@ -273,7 +272,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             else:
                 if subclass._provider == provider:
                     return subclass
-        raise UnableToResolveFileClass('Could not resolve class for {} and {}'.format(provider, type_cls))
+        raise UnableToResolveFileClass(f'Could not resolve class for {provider} and {type_cls}')
 
     def _resolve_class(self, type_cls):
         for subclass in BaseFileNode.__subclasses__():
@@ -340,7 +339,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             headers=headers,
         )
         if resp.status_code != 200:
-            logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
+            logger.warning(f'Unable to find {self} got status code {resp.status_code}')
             return None
         return self.update(revision, resp.json()['data']['attributes'])
         # TODO Switch back to head requests
@@ -395,7 +394,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return self.absolute_api_v2_url
 
     def _repoint_guids(self, updated):
-        logger.warn('BaseFileNode._repoint_guids is deprecated.')
+        logger.warning('BaseFileNode._repoint_guids is deprecated.')
 
     def _update_node(self, recursive=True, save=True):
         if self.parent is not None:
@@ -442,13 +441,19 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return self
 
+    @property
+    def should_update_search(self):
+        # Only OsfStorageFile expected to actually update_search
+        return False
+
     def update_search(self):
+        update_share(self)
         from website import search
         try:
             search.search.update_file(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            sentry.log_exception()
+            sentry.log_exception(e)
 
     def _serialize(self, **kwargs):
         return {
@@ -461,7 +466,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def save(self, *args, **kwargs):
         if hasattr(self._meta.model, '_provider') and self._meta.model._provider is not None:
             self.provider = self._meta.model._provider
-        super(BaseFileNode, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __repr__(self):
         return '<{}(name={!r}, target={!r})>'.format(
@@ -606,7 +611,7 @@ class Folder(models.Model):
 
     def _create_child(self, name, kind, path=None, materialized_path=None, save=True):
         if not self.pk:
-            logger.warn('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
+            logger.warning('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
             self.save()
 
         target_content_type = ContentType.objects.get_for_model(self.target)
@@ -680,7 +685,7 @@ class TrashedFileNode(BaseFileNode):
             return: Bytes deleted
         """
         if not client:
-            logger.warn(f'No GCS Client detected. Not purging BFN {self.id}')
+            logger.warning(f'No GCS Client detected. Not purging BFN {self.id}')
             return 0
         freed = 0
         for version in self.versions.all():
@@ -692,7 +697,7 @@ class TrashedFileNode(BaseFileNode):
 
     def _unpurge(self, client=None, save=True):
         if not client:
-            logger.warn(f'No GCS Client detected. Not unpurging BFN {self.id}')
+            logger.warning(f'No GCS Client detected. Not unpurging BFN {self.id}')
             return 0
         consumed = self.versions.latest()._unpurge(client=client, save=save)
         self.purged = None
@@ -752,7 +757,7 @@ class TrashedFolder(TrashedFileNode):
         :param deleted_on:
         :return:
         """
-        tf = super(TrashedFolder, self).restore(recursive=True, parent=None, save=True, deleted_on=None)
+        tf = super().restore(recursive=True, parent=None, save=True, deleted_on=None)
 
         if not self.is_file and recursive:
             deleted_on = deleted_on or self.deleted_on
@@ -807,24 +812,24 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     def _purge(self, client=None, save=True):
         if not client:
-            logger.warn(f'No GCS Client detected. Not purging FV {self.id}')
+            logger.warning(f'No GCS Client detected. Not purging FV {self.id}')
             return 0
         if self.basefilenode_set.filter(deleted__isnull=True).exists():
-            logger.warn(f'Live file detected. Not purging FV {self.id}')
+            logger.warning(f'Live file detected. Not purging FV {self.id}')
             return 0
         if not self.location or not self.location.get('object'):
-            logger.warn(f'No valid location detected. Not purging FV {self.id}')
+            logger.warning(f'No valid location detected. Not purging FV {self.id}')
             return 0
         dup = FileVersion.objects.exclude(id=self.id).filter(location__object=self.location['object'], basefilenode__deleted__isnull=True).first()
         if dup:
-            logger.warn(f'Duplicate live file detected on FV {dup.id}. Not purging FV {self.id}')
+            logger.warning(f'Duplicate live file detected on FV {dup.id}. Not purging FV {self.id}')
             return 0
         bucket = client.get_bucket(self.location['bucket'])
         blob = bucket.get_blob(self.location['object'])
         if blob:
             blob.delete()
         else:
-            logger.warn(f'Blob not found for FV {self.id}. Marking as purged.')
+            logger.warning(f'Blob not found for FV {self.id}. Marking as purged.')
         self.purged = timezone.now()
         if save:
             self.save()
@@ -834,7 +839,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         if not self.purged:
             return 0
         if not client:
-            logger.warn(f'No GCS Credentials detected. Not unpurging FV {self.id}')
+            logger.warning(f'No GCS Credentials detected. Not unpurging FV {self.id}')
             return 0
         backup_bucket = client.get_bucket('{}-backup'.format(self.location['bucket']))
         bucket = client.get_bucket(self.location['bucket'])
@@ -864,36 +869,6 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
         if save:
             self.save()
-
-    def _find_matching_archive(self, save=True):
-        """Find another version with the same sha256 as this file.
-        If found copy its vault name and glacier id, no need to create additional backups.
-        returns True if found otherwise false
-        """
-
-        if 'sha256' not in self.metadata:
-            return False  # Dont bother searching for nothing
-
-        if 'vault' in self.metadata and 'archive' in self.metadata:
-            # Shouldn't ever happen, but we already have an archive
-            return True  # We've found ourself
-
-        other = self.__class__.objects.filter(
-            metadata__sha256=self.metadata['sha256']
-        ).exclude(
-            _id=self._id, metadata__archive__is_null=True, metadata__vault__is_null=True
-        )
-        if not other.exists():
-            return False
-        try:
-            other = other.first()
-            self.metadata['vault'] = other.metadata['vault']
-            self.metadata['archive'] = other.metadata['archive']
-        except KeyError:
-            return False
-        if save:
-            self.save()
-        return True
 
     def serialize_waterbutler_settings(self, node_id, root_id):
         return dict(self.region.waterbutler_settings, **{

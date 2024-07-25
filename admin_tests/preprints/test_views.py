@@ -1,7 +1,5 @@
 import pytest
-import mock
-import json
-import responses
+from unittest import mock
 
 from django.test import RequestFactory
 from django.urls import reverse
@@ -334,22 +332,17 @@ class TestPreprintView:
 @pytest.mark.enable_implicit_clean
 class TestPreprintReindex:
 
-    def test_reindex_preprint_share(self, preprint, req):
+    def test_reindex_preprint_share(self, preprint, req, mock_update_share):
         preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
         preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
         view = views.PreprintReindexShare()
         view = setup_log_view(view, req, guid=preprint._id)
-
-        with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
-            with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
-                with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                    rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
-                    view.post(req)
-                    data = json.loads(rsps.calls[0].request.body.decode())
-                    assert data['data']['type'] == 'NormalizedData'
-                    assert AdminLogEntry.objects.count() == count + 1
+        mock_update_share.reset_mock()
+        view.post(req)
+        mock_update_share.assert_called_once_with(preprint)
+        assert AdminLogEntry.objects.count() == count + 1
 
     @mock.patch('website.search.search.update_preprint')
     def test_reindex_preprint_elastic(self, mock_update_search, preprint, req):
@@ -364,7 +357,7 @@ class TestPreprintReindex:
 
 class TestPreprintDeleteView(AdminTestCase):
     def setUp(self):
-        super(TestPreprintDeleteView, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
         self.request = RequestFactory().post('/fake_path')
@@ -394,7 +387,7 @@ class TestPreprintDeleteView(AdminTestCase):
 
 class TestRemoveContributor(AdminTestCase):
     def setUp(self):
-        super(TestRemoveContributor, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
         self.user_2 = AuthUserFactory()

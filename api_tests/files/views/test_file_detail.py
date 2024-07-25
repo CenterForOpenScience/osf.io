@@ -1,10 +1,12 @@
-from __future__ import unicode_literals
+from urllib.parse import quote, quote_plus
 
 import itsdangerous
-import mock
+from unittest import mock
 import pytest
 import pytz
 from django.utils import timezone
+from importlib import import_module
+from django.conf import settings as django_conf_settings
 
 from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
@@ -14,10 +16,7 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-
-
-from osf.models import NodeLog, Session, Node, FileVersionUserMetadata
-
+from osf.models import NodeLog, QuickFilesNode, Node, FileVersionUserMetadata
 from osf.utils.permissions import WRITE, READ
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -30,6 +29,7 @@ from osf_tests.factories import (
 )
 from website import settings as website_settings
 
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 # stolen from^W^Winspired by DRF
 # rest_framework.fields.DateTimeField.to_representation
@@ -59,7 +59,7 @@ class TestFileView:
 
     @pytest.fixture()
     def file_url(self, file):
-        return '/{}files/{}/'.format(API_BASE, file._id)
+        return f'/{API_BASE}files/{file._id}/'
 
     @pytest.fixture()
     def file_guid_url(self, file):
@@ -80,7 +80,7 @@ class TestFileView:
         url_with_guid = '/{}files/{}/'.format(
             API_BASE, deleted_file.get_guid()._id
         )
-        url_with_id = '/{}files/{}/'.format(API_BASE, deleted_file._id)
+        url_with_id = f'/{API_BASE}files/{deleted_file._id}/'
 
         res = app.get(url_with_guid, auth=user.auth)
         assert res.status_code == 200
@@ -110,14 +110,14 @@ class TestFileView:
         assert res.json['data']['attributes']['guid'] == guid._id
 
     def test_file_with_wrong_guid(self, app, user):
-        url = '/{}files/{}/'.format(API_BASE, user._id)
+        url = f'/{API_BASE}files/{user._id}/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_not_created_with_basic_auth(
             self, mock_allow, app, user, file_url):
-        res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
+        res = app.get(f'{file_url}?create_guid=1', auth=user.auth)
         guid = res.json['data']['attributes'].get('guid', None)
         assert res.status_code == 200
         assert mock_allow.call_count == 1
@@ -126,14 +126,15 @@ class TestFileView:
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_created_with_cookie(
             self, mock_allow, app, user, file_url, file):
-        session = Session(data={'auth_user_id': user._id})
-        session.save()
+        session = SessionStore()
+        session['auth_user_id'] = user._id
+        session.create()
         cookie = itsdangerous.Signer(
             website_settings.SECRET_KEY
-        ).sign(session._id)
+        ).sign(session.session_key)
         app.set_cookie(website_settings.COOKIE_NAME, cookie.decode())
 
-        res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
+        res = app.get(f'{file_url}?create_guid=1', auth=user.auth)
 
         app.reset()  # clear cookie
 
@@ -207,7 +208,7 @@ class TestFileView:
             user=contributor, page='files'
         )
         res = app.get(
-            '/{}files/{}/?related_counts=True'.format(API_BASE, file._id),
+            f'/{API_BASE}files/{file._id}/?related_counts=True',
             auth=user.auth
         )
         assert res.status_code == 200
@@ -562,7 +563,7 @@ class TestFileView:
     def test_get_file_guids_misc(self, app, user, file, node):
         # test_get_file_resolves_guids
         guid = file.get_guid(create=True)
-        url = '/{}files/{}/'.format(API_BASE, guid._id)
+        url = f'/{API_BASE}files/{guid._id}/'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert set(res.json.keys()) == {'meta', 'data'}
@@ -574,7 +575,7 @@ class TestFileView:
         assert res.status_code == 404
 
         # test_get_file_non_file_guid_gives_404
-        url = '/{}files/{}/'.format(API_BASE, node._id)
+        url = f'/{API_BASE}files/{node._id}/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -598,7 +599,7 @@ class TestFileView:
         folder = node.get_addon('osfstorage').get_root(
         ).append_folder('I\'d be a teacher!!')
         folder.save()
-        folder_url = '/{}files/{}/'.format(API_BASE, folder._id)
+        folder_url = f'/{API_BASE}files/{folder._id}/'
         res = app.get(folder_url, auth=user.auth)
         split_href = res.json['data']['relationships']['files']['links']['related']['href'].split(
             '/')
@@ -645,7 +646,7 @@ class TestFileVersionView:
         }).save()
 
         res = app.get(
-            '/{}files/{}/versions/'.format(API_BASE, file._id),
+            f'/{API_BASE}files/{file._id}/versions/',
             auth=user.auth,
         )
         assert res.status_code == 200
@@ -658,7 +659,7 @@ class TestFileVersionView:
     def test_load_and_property(self, app, user, file):
         # test_by_id
         res = app.get(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            f'/{API_BASE}files/{file._id}/versions/1/',
             auth=user.auth,
         )
         assert res.status_code == 200
@@ -669,34 +670,34 @@ class TestFileVersionView:
         render_link = res.json['data']['links']['render']
         download_link = res.json['data']['links']['download']
         assert mfr_url in render_link
-        assert download_link in render_link
-        assert 'revision=1' in render_link
+        assert quote_plus(download_link) in render_link
+        assert quote('revision=1') in render_link
 
         guid = file.get_guid(create=True)._id
         res = app.get(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            f'/{API_BASE}files/{file._id}/versions/1/',
             auth=user.auth,
         )
         render_link = res.json['data']['links']['render']
         download_link = res.json['data']['links']['download']
         assert mfr_url in render_link
-        assert download_link in render_link
+        assert quote_plus(download_link) in render_link
         assert guid in render_link
-        assert 'revision=1' in render_link
+        assert quote('revision=1') in render_link
 
         # test_read_only
         assert app.put(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            f'/{API_BASE}files/{file._id}/versions/1/',
             expect_errors=True, auth=user.auth,
         ).status_code == 405
 
         assert app.post(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            f'/{API_BASE}files/{file._id}/versions/1/',
             expect_errors=True, auth=user.auth,
         ).status_code == 405
 
         assert app.delete(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            f'/{API_BASE}files/{file._id}/versions/1/',
             expect_errors=True, auth=user.auth,
         ).status_code == 405
 
@@ -732,7 +733,7 @@ class TestFileTagging:
 
     @pytest.fixture()
     def url(self, file):
-        return '/{}files/{}/'.format(API_BASE, file._id)
+        return f'/{API_BASE}files/{file._id}/'
 
     @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_tags_add_and_update_properly(self, app, user, url, payload):
@@ -797,7 +798,7 @@ class TestPreprintFileView:
 
     @pytest.fixture()
     def file_url(self, primary_file):
-        return '/{}files/{}/'.format(API_BASE, primary_file._id)
+        return f'/{API_BASE}files/{primary_file._id}/'
 
     @pytest.fixture()
     def other_user(self):
