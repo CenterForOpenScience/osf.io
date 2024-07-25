@@ -5,7 +5,7 @@ from django.apps import apps
 from django.db.models import F, Max, Q, Subquery
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import generics, permissions as drf_permissions, exceptions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
@@ -648,8 +648,11 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
     # overrides ListCreateAPIView
     def get_queryset(self):
+        user = self.request.user
         node = self.get_node()
-        return node.draft_registrations_active
+        if user.is_anonymous:
+            raise exceptions.NotAuthenticated()
+        return user.draft_registrations_active.filter(branched_from=node)
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
