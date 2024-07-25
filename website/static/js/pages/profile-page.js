@@ -10,7 +10,6 @@ require('../project.js'); // Needed for nodelists to work
 require('../components/logFeed.js'); // Needed for nodelists to work
 var profile = require('../profile.js'); // Social, Job, Education classes
 var publicNodes = require('../components/publicNodes.js');
-var quickFiles = require('../components/quickFiles.js');
 
 var ctx = window.contextVars;
 // Instantiate all the profile modules

@@ -145,8 +145,8 @@ def update_storage_usage_cache(target_id, target_guid, per_page=500000):
 def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
 
-    if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
-        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id), {}, celery=True)
+    if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint):
+        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
 
 def update_storage_usage_with_size(payload):
     BaseFileNode = apps.get_model('osf.basefilenode')
@@ -157,9 +157,6 @@ def update_storage_usage_with_size(payload):
     if not metadata.get('nid'):
         return
     target_node = AbstractNode.load(metadata['nid'])
-
-    if target_node.is_quickfiles:
-        return
 
     action = payload['action']
     provider = metadata.get('provider', 'osfstorage')
@@ -189,7 +186,7 @@ def update_storage_usage_with_size(payload):
         source_provider = payload['source']['provider']
         if target_node == source_node and source_provider == provider:
             return  # Its not going anywhere.
-        if source_provider == 'osfstorage' and not source_node.is_quickfiles:
+        if source_provider == 'osfstorage':
             if source_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
                 return update_storage_usage(source_node)
 

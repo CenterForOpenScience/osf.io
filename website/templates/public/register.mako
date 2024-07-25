@@ -91,7 +91,7 @@
                 <div class="form-group" data-bind=" css: { 'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid() }">
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
-                        ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+                        ## Maxlength for full names must be 186
                         <input autofocus type="text" class="form-control" id="inputName" placeholder="Name" data-bind="value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName) }" maxlength="186">
                         <p class="help-block" data-bind="validationMessage: fullName" style="display: none;"></p>
                     </div>

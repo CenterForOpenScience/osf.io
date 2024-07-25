@@ -20,12 +20,10 @@ from flask import request, g
 from lxml import html
 from pytest import approx
 from rest_framework import status as http_status
-from werkzeug.test import ClientRedirectError
 
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage import settings as osfstorage_settings
 from addons.wiki.models import WikiPage
-from api_tests.utils import create_test_file
 from framework import auth
 from framework.auth import Auth, authenticate, cas, core
 from framework.auth.campaigns import (
@@ -53,6 +51,9 @@ from osf.models import (
     NodeRelation,
     NotableDomain
 )
+
+from api_tests.utils import create_test_file
+
 from osf.utils import permissions
 from osf_tests.factories import (
     fake_email,

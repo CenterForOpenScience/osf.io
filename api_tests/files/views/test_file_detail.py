@@ -54,10 +54,6 @@ class TestFileView:
         return ProjectFactory(creator=user, comment_level='public')
 
     @pytest.fixture()
-    def quickfiles_node(self, user):
-        return QuickFilesNode.objects.get(creator=user)
-
-    @pytest.fixture()
     def file(self, user, node):
         return api_utils.create_test_file(node, user, create_guid=False)
 

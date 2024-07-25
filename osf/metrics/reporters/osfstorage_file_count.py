@@ -48,6 +48,6 @@ class OsfstorageFileCountReporter(DailyReporter):
 
     def keen_events_from_report(self, report):
         event = {
-            'osfstorage_files_including_quickfiles': report.files.to_dict(),
+            'osfstorage_files': report.files.to_dict(),
         }
         return {'file_summary': [event]}
