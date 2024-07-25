@@ -216,7 +216,6 @@ class TestDraftRegistrationList(AbstractDraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
-
     def test_read_only_contributor_can_view_draft_list(self, app, user_read_contrib, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user_read_contrib.auth)
         assert res.status_code == 200
