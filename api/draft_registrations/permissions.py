@@ -71,6 +71,9 @@ class DraftRegistrationPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
 
+        if not auth.user:
+            return False
+
         if request.method in permissions.SAFE_METHODS:
             if isinstance(obj, DraftRegistration):
                 return obj.can_view(auth)

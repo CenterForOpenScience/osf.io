@@ -35,11 +35,11 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
 
     def test_logged_in_non_contributor_cannot_view_draft(self, app, user_non_contrib, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user_non_contrib.auth, expect_errors=True)
-        assert res.status_code == 200
+        assert res.status_code == 403
 
     def test_unauthenticated_user_cannot_view_draft(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
-        assert res.status_code == 200
+        assert res.status_code == 401
 
     def test_detail_view_returns_editable_fields(
             self, app, user, draft_registration, url_draft_registrations, project_public
