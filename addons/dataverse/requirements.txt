@@ -1,3 +1,3 @@
 # Allow for optional timeout parameter.
 # https://github.com/IQSS/dataverse-client-python/pull/27
-git+https://github.com/CenterForOpenScience/dataverse-client-python.git@feature/dv-client-updates
+git+https://github.com/CenterForOpenScience/dataverse-client-python.git@2b3827578048e6df3818f82381c7ea9a2395e526 # branch is feature/dv-client-updates

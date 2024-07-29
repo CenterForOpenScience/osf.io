@@ -1,7 +1,7 @@
 import datetime
 
 from django.dispatch import receiver
-from elasticsearch_dsl import InnerDoc
+from elasticsearch6_dsl import InnerDoc
 from elasticsearch_metrics import metrics
 from elasticsearch_metrics.signals import pre_save as metrics_pre_save
 
