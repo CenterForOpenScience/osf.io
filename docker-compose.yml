@@ -86,6 +86,8 @@ services:
     ports:
       - 5432:5432
     environment:
+      POSTGRES_DB: osf
+      POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_INITDB_SQL: |
         SELECT 'CREATE DATABASE gravyvalet' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gravyvalet')\gexec
     volumes:
