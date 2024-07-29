@@ -1,6 +1,8 @@
 import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import PreprintFactory, AuthUserFactory, InstitutionFactory
+from osf.utils.permissions import READ, WRITE, ADMIN
+
 
 @pytest.mark.django_db
 class TestPreprintInstitutionsRelationship:
@@ -13,21 +15,21 @@ class TestPreprintInstitutionsRelationship:
     @pytest.fixture()
     def admin_with_institutional_affiliation(self, institution, preprint):
         user = AuthUserFactory()
-        preprint.add_permission(user, 'admin')
+        preprint.add_contributor(user, permissions=ADMIN)
         user.add_or_update_affiliated_institution(institution)
         return user
 
     @pytest.fixture()
     def write_user_with_institutional_affiliation(self, institution, preprint):
         user = AuthUserFactory()
-        preprint.add_permission(user, 'write')
+        preprint.add_contributor(user, permissions=WRITE)
         user.add_or_update_affiliated_institution(institution)
         return user
 
     @pytest.fixture()
     def read_user_with_institutional_affiliation(self, institution, preprint):
         user = AuthUserFactory()
-        preprint.add_permission(user, 'read')
+        preprint.add_contributor(user, permissions=READ)
         user.add_or_update_affiliated_institution(institution)
         return user
 
@@ -41,7 +43,7 @@ class TestPreprintInstitutionsRelationship:
     @pytest.fixture()
     def admin_without_institutional_affiliation(self, preprint):
         user = AuthUserFactory()
-        preprint.add_permission(user, 'admin')
+        preprint.add_contributor(user, permissions=ADMIN)
         return user
 
     @pytest.fixture()
