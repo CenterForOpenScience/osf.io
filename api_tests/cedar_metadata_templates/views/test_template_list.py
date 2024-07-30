@@ -12,4 +12,4 @@ class TestCedarMetadataTemplateList(TestCedarMetadataTemplate):
         assert resp.status_code == 200
         data = resp.json['data']
         assert len(data) == 2
-        assert set(active_template_ids) == set([datum['id'] for datum in data])
+        assert set(active_template_ids) == {datum['id'] for datum in data}

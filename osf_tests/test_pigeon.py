@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory, NodeFactory
 from osf.external.internet_archive.tasks import _archive_to_ia, _update_ia_metadata

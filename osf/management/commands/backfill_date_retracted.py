@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 # This is a management command, rather than a migration script, for two primary reasons:
 #   1. It makes no changes to database structure (e.g. AlterField), only database content.
 #   2. It may need to be ran more than once, as it skips failed registrations.
 
-from __future__ import unicode_literals
 from datetime import timedelta
 import logging
 
@@ -26,11 +24,11 @@ def set_date_retracted(*args):
         .prefetch_related('registered_from__guids')
     )
     total = registrations.count()
-    logger.info('Migrating {} retractions.'.format(total))
+    logger.info(f'Migrating {total} retractions.')
 
     for registration in registrations:
         if not registration.registered_from:
-            logger.warn('Skipping failed registration {}'.format(registration._id))
+            logger.warning(f'Skipping failed registration {registration._id}')
             continue
         retraction_logs = registration.registered_from.logs.filter(action='retraction_approved', params__retraction_id=registration.retraction._id)
         if retraction_logs.count() != 1 and retraction_logs.first().date - retraction_logs.last().date > timedelta(seconds=5):
@@ -51,7 +49,7 @@ def set_date_retracted(*args):
 
 def unset_date_retracted(*args):
     retractions = Retraction.objects.filter(state=Sanction.APPROVED).exclude(date_retracted=None)
-    logger.info('Migrating {} retractions.'.format(retractions.count()))
+    logger.info(f'Migrating {retractions.count()} retractions.')
 
     for retraction in retractions:
         retraction.date_retracted = None
@@ -63,7 +61,7 @@ class Command(BaseCommand):
     Backfill Retraction.date_retracted with `RETRACTION_APPROVED` log date.
     """
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

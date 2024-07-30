@@ -1,7 +1,5 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '3.4'
-
 volumes:
   redis_data_vol:
     external: false
@@ -35,7 +33,7 @@ volumes:
     external: false
   osfstoragecache_vol:
     external: false
-  osf_requirements_vol:
+  osf_requirements_3_12_vol:
     external: false
   osf_node_modules_vol:
     external: false
@@ -79,24 +77,17 @@ services:
     stdin_open: true
 
   postgres:
-    image: postgres:9.6
+    image: postgres:15.4
     command:
       - /bin/bash
       - -c
-      - echo "$$POSTGRES_INITDB" > /docker-entrypoint-initdb.d/commands.sh &&
-        echo "$$POSTGRES_INITDB_SQL" > /docker-entrypoint-initdb.d/commands.sql &&
-        chmod +x /docker-entrypoint-initdb.d/commands.sh &&
-        /docker-entrypoint.sh postgres
+      - echo "$$POSTGRES_INITDB_SQL" > /docker-entrypoint-initdb.d/commands.sql &&
+        docker-entrypoint.sh postgres
     ports:
       - 5432:5432
     environment:
-      POSTGRES_DB: osf
-      POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_INITDB_SQL: |
         SELECT 'CREATE DATABASE gravyvalet' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gravyvalet')\gexec
-      POSTGRES_INITDB: |
-        sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
-        sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
     volumes:
       - "${POSTGRES_DATA_VOL:-postgres_data_vol}:/var/lib/postgresql/data/"
     stdin_open: true
@@ -366,41 +357,42 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --all &&
-        (python3 -m compileall /usr/lib/python3.6 || true) &&
-        rm -Rf /python3.6/* &&
-        cp -Rf -p /usr/lib/python3.6 /
+      - python -m venv /tmp/venv
+        && /tmp/venv/bin/pip install poetry==1.8.0 &&
+        /tmp/venv/bin/poetry install --no-root --without release --compile --sync &&
+        rm -rf /python3.12/* &&
+        cp -Rf -p /usr/local/lib/python3.12 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/python3.6
+      - osf_requirements_3_12_vol:/python3.12
 
   assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke assets -dw
+    command: python3 -m invoke assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   admin_assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke admin.assets -dw
+    command: python3 -m invoke admin.assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -432,13 +424,13 @@ services:
 #      - .docker-compose.env
 #    volumes:
 #      - ./:/code
-#      - osf_requirements_vol:/usr/local/lib/python3.6
+#      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
 
   worker:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke celery_worker
+    command: python3 -m invoke celery-worker
     restart: unless-stopped
     depends_on:
       - postgres
@@ -452,7 +444,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
@@ -462,7 +454,7 @@ services:
 
   admin:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke adminserver -h 0.0.0.0
+    command: python3 -m invoke adminserver -h 0.0.0.0
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
@@ -477,7 +469,7 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -485,7 +477,7 @@ services:
 
   api:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke apiserver -h 0.0.0.0
+    command: python3 -m invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -500,14 +492,14 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke server -h 0.0.0.0
+    command: python3 -m invoke server -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 5000:5000
@@ -523,7 +515,7 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web

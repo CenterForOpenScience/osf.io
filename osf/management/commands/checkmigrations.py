@@ -18,6 +18,6 @@ class Command(BaseCommand):
         if unapplied_migrations:
             self.stdout.write('The following migrations are unapplied:', self.style.ERROR)
             for migration in unapplied_migrations:
-                self.stdout.write('  {}.{}'.format(migration[0].app_label, migration[0].name), self.style.MIGRATE_LABEL)
+                self.stdout.write(f'  {migration[0].app_label}.{migration[0].name}', self.style.MIGRATE_LABEL)
             sys.exit(1)
         self.stdout.write('All migrations have been applied. Have a nice day!', self.style.SUCCESS)

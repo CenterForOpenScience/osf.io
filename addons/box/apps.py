@@ -6,6 +6,7 @@ box_root_folder = generic_root_folder('box')
 
 class BoxAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.box'
     label = 'addons_box'
     full_name = 'Box'

@@ -51,7 +51,7 @@ from osf.models import (
 from osf.utils.workflows import CollectionSubmissionStates
 
 
-class CollectionMixin(object):
+class CollectionMixin:
     """Mixin with convenience methods for retrieving the current collection based on the
     current URL. By default, fetches the current node based on the collection_id kwarg.
     """
@@ -168,7 +168,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     view_name = 'collection-list'
     model_class = Collection
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-modified',)  # default ordering
 
     def get_default_queryset(self):
         user = self.request.user
@@ -402,7 +402,7 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
     view_category = 'collections'
     view_name = 'collection-submission-detail'
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -441,7 +441,7 @@ class LegacyCollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateD
     view_category = 'collections'
     view_name = 'collection-submission-detail'
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -574,7 +574,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -664,7 +664,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedRegistrationsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -692,7 +692,7 @@ class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedPreprintsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -763,7 +763,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = CollectionSubmission
 
-    ordering = ('_order', '-modified',)
+    ordering = ('_order', '-modified')
 
     def get_queryset(self):
         return self.get_collection().collectionsubmission_set.filter(
@@ -793,7 +793,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeLinksList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 

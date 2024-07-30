@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
 import os
 from rest_framework import status as http_status
 import requests
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import json
 
 import waffle
@@ -17,9 +15,8 @@ from flask import g
 from django.conf import settings as api_settings
 from django.utils.encoding import smart_str
 from werkzeug.http import dump_cookie
-
-
-from geolite2 import geolite2
+from geoip2.database import Reader
+from geoip2.errors import AddressNotFoundError
 
 from framework import status
 from framework import sentry
@@ -68,6 +65,7 @@ from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
 from api.waffle.utils import flag_is_active
 
+
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
@@ -82,6 +80,7 @@ def set_status_message(user):
             extra={}
         )
 
+
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -89,11 +88,16 @@ def get_globals():
     user = _get_current_user()
     set_status_message(user)
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.get_affiliated_institutions()] if user else []
-    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
+    try:
+        location = Reader('GeoLite2-City.mmdb').city(request.remote_addr)
+        # TODO: replace with adequate error handling during keen removal
+    except (FileNotFoundError, AddressNotFoundError):
+        location = None
+
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=request.host, is_deleted=False)._id
-            request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
+            request_login_url = f'{settings.DOMAIN}institutions/{inst_id}'
         except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
@@ -185,7 +189,7 @@ class OsfWebRenderer(WebRenderer):
     """
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
-        super(OsfWebRenderer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, data, *args, **kwargs):
         """
@@ -193,7 +197,7 @@ class OsfWebRenderer(WebRenderer):
         waffle's own middleware code at https://github.com/django-waffle/django-waffle/blob/master/waffle/middleware.py
         """
 
-        resp = super(OsfWebRenderer, self).__call__(data, *args, **kwargs)
+        resp = super().__call__(data, *args, **kwargs)
         max_age = get_setting('MAX_AGE')
 
         if hasattr(request, 'waffles'):
@@ -1802,9 +1806,9 @@ def make_url_map(app):
 
         @app.route('/assets/<filename>')
         def provider_static(filename):
-            return send_from_directory(provider_static_path, filename)
+            return send_from_directory(directory=provider_static_path, path=filename)
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():
-            req = requests.get('{}/ember-cli-live-reload.js'.format(settings.LIVE_RELOAD_DOMAIN), stream=True)
+            req = requests.get(f'{settings.LIVE_RELOAD_DOMAIN}/ember-cli-live-reload.js', stream=True)
             return Response(stream_with_context(req.iter_content()), content_type=req.headers['content-type'])

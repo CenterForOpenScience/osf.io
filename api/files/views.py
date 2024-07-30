@@ -32,7 +32,7 @@ from api.files.serializers import FileVersionSerializer
 from osf.utils.permissions import ADMIN
 
 
-class FileMixin(object):
+class FileMixin:
     """Mixin with convenience methods for retrieving the current file based on the
     current URL. By default, fetches the file based on the file_id kwarg.
     """
@@ -81,7 +81,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
-    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle, )
+    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle)
     view_category = 'files'
     view_name = 'file-detail'
 

@@ -21,7 +21,7 @@ class TestInstitutionUsersList:
         user_two.add_or_update_affiliated_institution(institution)
         user_two.save()
 
-        url = '/{0}institutions/{1}/users/'.format(API_BASE, institution._id)
+        url = f'/{API_BASE}institutions/{institution._id}/users/'
         res = app.get(url)
 
         assert res.status_code == 200

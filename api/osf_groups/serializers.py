@@ -118,7 +118,7 @@ class GroupMemberSerializer(JSONAPISerializer):
     def get_group_role(self, validated_data, default_role):
         role = validated_data.get('role', default_role)
         if role not in GROUP_ROLES:
-            raise exceptions.ValidationError('{} is not a valid role; choose manager or member.'.format(role))
+            raise exceptions.ValidationError(f'{role} is not a valid role; choose manager or member.')
         return role
 
     class Meta:
@@ -153,7 +153,7 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
         if user_id:
             user = OSFUser.load(user_id)
             if not user:
-                raise exceptions.NotFound(detail='User with id {} not found.'.format(user_id))
+                raise exceptions.NotFound(detail=f'User with id {user_id} not found.')
             if group.has_permission(user, 'member'):
                 raise exceptions.ValidationError(detail='User is already a member of this group.')
             return user

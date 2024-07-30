@@ -70,27 +70,27 @@ class LogsTestCase:
 
     @pytest.fixture()
     def url_node_private_log(self, node_private):
-        return '/{}nodes/{}/logs/'.format(API_BASE, node_private._id)
+        return f'/{API_BASE}nodes/{node_private._id}/logs/'
 
     @pytest.fixture()
     def url_logs(self):
-        return '/{}logs/'.format(API_BASE)
+        return f'/{API_BASE}logs/'
 
     @pytest.fixture()
     def url_log_private_nodes(self, log_private, url_logs):
-        return '{}{}/nodes/'.format(url_logs, log_private._id)
+        return f'{url_logs}{log_private._id}/nodes/'
 
     @pytest.fixture()
     def url_log_public_nodes(self, log_public, url_logs):
-        return '{}{}/nodes/'.format(url_logs, log_public._id)
+        return f'{url_logs}{log_public._id}/nodes/'
 
     @pytest.fixture()
     def url_log_detail_private(self, log_private, url_logs):
-        return '{}{}/'.format(url_logs, log_private._id)
+        return f'{url_logs}{log_private._id}/'
 
     @pytest.fixture()
     def url_log_detail_public(self, log_public, url_logs):
-        return '{}{}/'.format(url_logs, log_public._id)
+        return f'{url_logs}{log_public._id}/'
 
 
 @pytest.mark.django_db
@@ -135,7 +135,7 @@ class TestLogDetail(LogsTestCase):
 
         # test_log_detail_data_format_api
         res = app.get(
-            '{}?format=api'.format(url_log_detail_public),
+            f'{url_log_detail_public}?format=api',
             auth=user_one.auth)
         assert res.status_code == 200
         assert log_public._id in res.body.decode()
@@ -168,11 +168,11 @@ class TestNodeFileLogDetail:
 
     @pytest.fixture()
     def url_node_logs(self, node):
-        return '/{}nodes/{}/logs/'.format(API_BASE, node._id)
+        return f'/{API_BASE}nodes/{node._id}/logs/'
 
     @pytest.fixture()
     def url_component_logs(self, component):
-        return '/{}nodes/{}/logs/'.format(API_BASE, component._id)
+        return f'/{API_BASE}nodes/{component._id}/logs/'
 
     @pytest.fixture()
     def node_with_log(self, node, user_one, file_component, component):

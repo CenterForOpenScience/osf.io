@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Populate development database with Preprint Provider elements"""
 
 import logging
@@ -28,7 +27,7 @@ def get_subject_id(name):
         try:
             subject = Subject.objects.get(provider___id='osf', text=name)
         except Subject.DoesNotExist:
-            raise Exception('Subject: "{}" not found'.format(name))
+            raise Exception(f'Subject: "{name}" not found')
         else:
             SUBJECTS_CACHE[name] = subject._id
 
@@ -39,7 +38,7 @@ def get_license(name):
     try:
         license = NodeLicense.objects.get(name=name)
     except NodeLicense.DoesNotExist:
-        raise Exception('License: "{}" not found'.format(name))
+        raise Exception(f'License: "{name}" not found')
     return license
 
 
@@ -59,7 +58,7 @@ def update_or_create(provider_data):
             setattr(provider, key, val)
         changed_fields = provider.save()
         if changed_fields:
-            print('Updated {}: {}'.format(provider.name, changed_fields))
+            print(f'Updated {provider.name}: {changed_fields}')
         return provider, False
     else:
         new_provider = PreprintProvider(**provider_data)
@@ -70,7 +69,7 @@ def update_or_create(provider_data):
             new_provider.default_license = get_license(default_license)
             new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
-        print('Added new preprint provider: {}'.format(provider._id))
+        print(f'Added new preprint provider: {provider._id}')
         return new_provider, True
 
 
@@ -78,7 +77,7 @@ def format_domain_url(domain):
     prefix = PREPRINT_PROVIDER_DOMAINS['prefix'] or PROTOCOL
     suffix = PREPRINT_PROVIDER_DOMAINS['suffix'] or '/'
 
-    return '{}{}{}'.format(prefix, str(domain), suffix)
+    return f'{prefix}{str(domain)}{suffix}'
 
 
 def main(env):
@@ -1251,6 +1250,6 @@ if __name__ == '__main__':
     if not env:
         env = 'prod'
     elif env not in ENVS:
-        print('A specified environment must be one of: {}'.format(ENVS))
+        print(f'A specified environment must be one of: {ENVS}')
         sys.exit(1)
     main(env)

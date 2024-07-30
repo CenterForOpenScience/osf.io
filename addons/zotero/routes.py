@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from framework.routing import Rule, json_renderer
 
 from addons.zotero.views import zotero_views

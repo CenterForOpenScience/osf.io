@@ -166,7 +166,7 @@ class TestRegistrationResourceListGETBehavior:
     ):
         # Only artifacts with `finalized=True` and `deleted=None` should appear.
         resp = app.get(make_api_url(registration), auth=admin_user.auth)
-        returned_ids = set(entry['id'] for entry in resp.json['data'])
+        returned_ids = {entry['id'] for entry in resp.json['data']}
         assert returned_ids == {artifact_one._id, artifact_two._id}
 
     def test_anonymized_data(self, app, registration, artifact_one, admin_user):

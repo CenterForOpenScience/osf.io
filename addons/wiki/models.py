@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import functools
 import logging
@@ -12,12 +11,13 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
-from bleach import Cleaner
 from functools import partial
 from bleach.linkifier import LinkifyFilter
 from django.db import models
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
+
+from framework.utils import sanitize_html
 from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
@@ -42,13 +42,14 @@ logger = logging.getLogger(__name__)
 
 SHAREJS_HOST = 'localhost'
 SHAREJS_PORT = 7007
-SHAREJS_URL = '{}:{}'.format(SHAREJS_HOST, SHAREJS_PORT)
+SHAREJS_URL = f'{SHAREJS_HOST}:{SHAREJS_PORT}'
 
 SHAREJS_DB_NAME = 'sharejs'
-SHAREJS_DB_URL = 'mongodb://{}:{}/{}'.format(settings.DB_HOST, settings.DB_PORT, SHAREJS_DB_NAME)
+SHAREJS_DB_URL = f'mongodb://{settings.DB_HOST}:{settings.DB_PORT}/{SHAREJS_DB_NAME}'
 
 # TODO: Change to release date for wiki change
-WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098).replace(tzinfo=pytz.utc)
+WIKI_CHANGE_DATE = datetime.datetime.fromtimestamp(1423760098, pytz.utc)
+
 
 def validate_page_name(value):
     value = (value or '').strip()
@@ -61,6 +62,7 @@ def validate_page_name(value):
     if len(value) > 100:
         raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
+
 
 def build_html_output(content, node):
     return markdown.markdown(
@@ -76,6 +78,7 @@ def build_html_output(content, node):
         ]
     )
 
+
 def render_content(content, node):
     html_output = build_html_output(content, node)
 
@@ -86,7 +89,7 @@ def render_content(content, node):
 
 
 def build_wiki_url(node, label, base, end):
-    return '/{pid}/wiki/{wname}/'.format(pid=node._id, wname=label)
+    return f'/{node._id}/wiki/{label}/'
 
 
 class WikiVersionNodeManager(models.Manager):
@@ -101,7 +104,7 @@ class WikiVersionNodeManager(models.Manager):
                 version = wiki_page.current_version_number - 1
             elif version == 'current' or version is None:
                 version = wiki_page.current_version_number
-            elif not ((isinstance(version, int) or version.isdigit())):
+            elif not (isinstance(version, int) or version.isdigit()):
                 return None
 
             try:
@@ -127,13 +130,13 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         """The cleaned HTML of the page"""
         html_output = build_html_output(self.content, node=node)
         try:
-            cleaner = Cleaner(
+            return sanitize_html(
+                html_output,
                 tags=settings.WIKI_WHITELIST['tags'],
                 attributes=settings.WIKI_WHITELIST['attributes'],
                 styles=settings.WIKI_WHITELIST['styles'],
-                filters=[partial(LinkifyFilter, callbacks=[nofollow, ])]
+                filters=[partial(LinkifyFilter, callbacks=[nofollow])]
             )
-            return cleaner.clean(html_output)
         except TypeError:
             logger.warning('Returning unlinkified content.')
             return render_content(self.content, node=node)
@@ -161,7 +164,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             sharejs_version = doc_item['_v']
             sharejs_timestamp = doc_item['_m']['mtime']
             sharejs_timestamp /= 1000  # Convert to appropriate units
-            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
+            sharejs_date = datetime.datetime.fromtimestamp(sharejs_timestamp, pytz.utc)
 
             if sharejs_version > 1 and sharejs_date > self.created:
                 return doc_item['_data']
@@ -169,7 +172,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         return self.content
 
     def save(self, *args, **kwargs):
-        rv = super(WikiVersion, self).save(*args, **kwargs)
+        rv = super().save(*args, **kwargs)
         if self.wiki_page.node:
             self.wiki_page.node.update_search()
         self.wiki_page.modified = self.created
@@ -218,7 +221,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/wiki_versions/{}/'.format(self._id)
+        path = f'/wiki_versions/{self._id}/'
         return api_v2_url(path)
 
     # used by django and DRF
@@ -272,7 +275,7 @@ class WikiPage(GuidMixin, BaseModel):
         ]
 
     def save(self, *args, **kwargs):
-        rv = super(WikiPage, self).save(*args, **kwargs)
+        rv = super().save(*args, **kwargs)
         if self.node and self.node.is_public:
             self.node.update_search()
         return rv
@@ -329,7 +332,7 @@ class WikiPage(GuidMixin, BaseModel):
 
     @property
     def url(self):
-        return u'{}wiki/{}/'.format(self.node.url, self.page_name)
+        return f'{self.node.url}wiki/{self.page_name}/'
 
     def get_version(self, version=None):
         if version:
@@ -350,7 +353,7 @@ class WikiPage(GuidMixin, BaseModel):
 
     @property
     def deep_url(self):
-        return u'{}wiki/{}/'.format(self.node.deep_url, self.page_name)
+        return f'{self.node.deep_url}wiki/{self.page_name}/'
 
     def clone_wiki_page(self, copy, user, save=True):
         """Clone a wiki page.
@@ -399,7 +402,7 @@ class WikiPage(GuidMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/wikis/{}/'.format(self._id)
+        path = f'/wikis/{self._id}/'
         return api_v2_url(path)
 
     def rename(self, new_name, auth):
@@ -417,11 +420,7 @@ class WikiPage(GuidMixin, BaseModel):
         if key == 'home':
             raise PageCannotRenameError('Cannot rename wiki home page')
         if (existing_wiki_page and not existing_wiki_page.deleted and key != new_key) or new_key == 'home':
-            raise PageConflictError(
-                'Page already exists with name {0}'.format(
-                    new_name,
-                )
-            )
+            raise PageConflictError(f'Page already exists with name {new_name}')
 
         # rename the page first in case we hit a validation exception.
         old_name = self.page_name
@@ -521,7 +520,7 @@ class NodeSettings(BaseNodeSettings):
     def after_fork(self, node, fork, user, save=True):
         """Copy wiki settings and wiki pages to forks."""
         WikiPage.clone_wiki_pages(node, fork, user, save)
-        return super(NodeSettings, self).after_fork(node, fork, user, save)
+        return super().after_fork(node, fork, user, save)
 
     def after_register(self, node, registration, user, save=True):
         """Copy wiki settings and wiki pages to registrations."""

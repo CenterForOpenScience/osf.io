@@ -67,7 +67,7 @@ def make_payload(
             },
             settings.JWT_SECRET,
             algorithm='HS256'
-        ),
+        ).encode(),
         settings.JWE_SECRET
     )
 
@@ -167,7 +167,7 @@ def institution_selective_type_2():
 
 @pytest.fixture()
 def url_auth_institution():
-    return '/{0}institutions/auth/'.format(API_BASE)
+    return f'/{API_BASE}institutions/auth/'
 
 
 @pytest.fixture()
@@ -197,7 +197,7 @@ class TestInstitutionAuth:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution, username))
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -340,7 +340,7 @@ class TestInstitutionAuth:
                 )
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -380,7 +380,7 @@ class TestInstitutionAuth:
                 )
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -552,7 +552,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
                 make_payload(institution_primary_type_2, username, user_roles=type_2_ineligible_user_roles)
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -573,7 +573,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
                 make_payload(institution_primary_type_2, username, user_roles=type_2_eligible_user_roles)
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -803,7 +803,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -824,7 +824,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
                 make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -1226,7 +1226,7 @@ class TestInstitutionAuthnWithIdentity:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.get(username=sso_email)
         assert user
@@ -1493,7 +1493,7 @@ class TestInstitutionAuthnWithIdentity:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user.reload()
         assert user.fullname == 'User10 OSF'

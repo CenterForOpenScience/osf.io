@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from osf.utils.requests import get_request_and_user_id, get_headers_from_request
 
 from addons.base.models import BaseNodeSettings
@@ -36,7 +35,7 @@ class NodeSettings(DirtyFieldsMixin, BaseNodeSettings):
         return clone, None
 
     def save(self, request=None, *args, **kwargs):
-        super(NodeSettings, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if request:
             if not hasattr(request, 'user'):  # TODO: remove when Flask is removed
                 _, user_id = get_request_and_user_id()

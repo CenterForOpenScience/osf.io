@@ -35,9 +35,11 @@ class TestReindexProvider:
         return AuthUserFactory()
 
     def test_reindex_provider_preprint(self, mock_update_share, preprint_provider, preprint):
+        mock_update_share.reset_mock()
         call_command('reindex_provider', f'--providers={preprint_provider._id}')
-        assert mock_update_share.called_once_with(preprint)
+        mock_update_share.assert_called_once_with(preprint)
 
     def test_reindex_provider_registration(self, mock_update_share, registration_provider, registration):
+        mock_update_share.reset_mock()
         call_command('reindex_provider', f'--providers={registration_provider._id}')
-        assert mock_update_share.called_once_with(registration)
+        mock_update_share.assert_called_once_with(registration)

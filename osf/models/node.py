@@ -1,9 +1,8 @@
-from past.builtins import basestring
 import functools
 import itertools
 import logging
 import re
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import warnings
 from rest_framework import status as http_status
 
@@ -11,7 +10,6 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
-from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ImproperlyConfigured
@@ -130,7 +128,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                 node_relation_table = AsIs(NodeRelation._meta.db_table)
                 cursor.execute(sql, [
                     node_relation_table,
-                    AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
+                    AsIs(f'LEFT JOIN osf_abstractnode ON {node_relation_table}.child_id = osf_abstractnode.id' if active else ''),
                     root.pk,
                     AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
                     node_relation_table,
@@ -149,8 +147,8 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, basestring):
-                raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
+            if not isinstance(private_link, str):
+                raise TypeError(f'"private_link" must be either {str} or {PrivateLink}. Got {private_link!r}')
 
             return self.filter(private_links__is_deleted=False, private_links__key=private_link).filter(is_deleted=False)
 
@@ -214,7 +212,7 @@ class AbstractNodeManager(TypedModelManager):
             base_queryset = self
 
         if permission not in PERMISSIONS:
-            raise ValueError('Permission must be one of {}, {}, or {}.'.format(PERMISSIONS[0], PERMISSIONS[1], PERMISSIONS[2]))
+            raise ValueError(f'Permission must be one of {PERMISSIONS[0]}, {PERMISSIONS[1]}, or {PERMISSIONS[2]}.')
 
         nodes = base_queryset.filter(is_deleted=False)
         permission_object_id = Permission.objects.get(codename=permission).id
@@ -440,7 +438,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if 'is_node_link' in kwargs:
             filter_kwargs['is_node_link'] = kwargs.pop('is_node_link')
         for key, val in kwargs.items():
-            filter_kwargs['child__{}'.format(key)] = val
+            filter_kwargs[f'child__{key}'] = val
         node_relations = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
                         .select_related('child')
                         .order_by('_order'))
@@ -474,7 +472,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
         self._is_templated_clone = False
-        super(AbstractNode, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return ('(title={self.title!r}, category={self.category!r}) '
@@ -516,13 +514,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property  # TODO Separate out for submodels
     def absolute_api_v2_url(self):
         if self.is_registration:
-            path = '/registrations/{}/'.format(self._id)
+            path = f'/registrations/{self._id}/'
         elif self.is_collection:
-            path = '/collections/{}/'.format(self._id)
+            path = f'/collections/{self._id}/'
         elif self.type == 'osf.draftnode':
-            path = '/draft_nodes/{}/'.format(self._id)
+            path = f'/draft_nodes/{self._id}/'
         else:
-            path = '/nodes/{}/'.format(self._id)
+            path = f'/nodes/{self._id}/'
         return api_v2_url(path)
 
     @property
@@ -533,7 +531,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def deep_url(self):
-        return '/project/{}/'.format(self._primary_key)
+        return f'/project/{self._primary_key}/'
 
     @property
     def sanction(self):
@@ -628,14 +626,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def url(self):
-        return '/{}/'.format(self._primary_key)
+        return f'/{self._primary_key}/'
 
     @property
     def api_url(self):
         if not self.url:
-            logger.error('Node {0} has a parent that is not a project'.format(self._id))
+            logger.error(f'Node {self._id} has a parent that is not a project')
             return None
-        return '/api/v1{0}'.format(self.deep_url)
+        return f'/api/v1{self.deep_url}'
 
     @property
     def display_absolute_url(self):
@@ -721,7 +719,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     def update_search(self):
         update_share(self)
@@ -732,7 +730,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     def delete_search_entry(self):
         from website import search
@@ -740,7 +738,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     @classmethod
     def find_by_institutions(cls, inst, query=None):
@@ -895,7 +893,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if permission not in self.groups:
             return False
 
-        perm = Permission.objects.get(codename='{}_node'.format(permission))
+        perm = Permission.objects.get(codename=f'{permission}_node')
         node_group_objects = NodeGroupObjectPermission.objects.filter(permission_id=perm.id,
                                                             content_object_id=self.id).values_list('group_id', flat=True)
         return OSFUser.objects.filter(groups__id__in=node_group_objects).distinct('id', 'family_name')
@@ -1006,7 +1004,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 abstractnode=AbstractNode._meta.db_table,
                 noderelation=NodeRelation._meta.db_table,
                 nodelicenserecord=NodeLicenseRecord._meta.db_table,
-                fields=', '.join('"{}"."{}"'.format(NodeLicenseRecord._meta.db_table, f.column) for f in NodeLicenseRecord._meta.concrete_fields)
+                fields=', '.join(f'"{NodeLicenseRecord._meta.db_table}"."{f.column}"' for f in NodeLicenseRecord._meta.concrete_fields)
             ), [self.id])
             res = cursor.fetchone()
             if res:
@@ -1072,13 +1070,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         Unlike remove_tag, this optimization method assumes that the provided
         tags are already present on the node.
         """
-        super(AbstractNode, self).remove_tags(tags, auth, save)
+        super().remove_tags(tags, auth, save)
         self.update_search()
         return True
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
-            raise ValueError(u'User {0} not in contributors'.format(user))
+            raise ValueError(f'User {user} not in contributors')
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
             Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
@@ -1390,8 +1388,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         cannot_edit_or_admin_parent = not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user)
         if cannot_edit_or_admin_parent or not_contributor_or_admin_parent:
             raise PermissionsError(
-                'User {} does not have permission '
-                'to register this node'.format(auth.user._id)
+                f'User {auth.user._id} does not have permission to register this node'
             )
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
@@ -1538,11 +1535,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if not primary_only:
                 primary = self.get_primary(node)
                 if primary:
-                    for descendant in node.get_descendants_recursive(primary_only=primary_only):
-                        yield descendant
+                    yield from node.get_descendants_recursive(primary_only=primary_only)
             else:
-                for descendant in node.get_descendants_recursive(primary_only=primary_only):
-                    yield descendant
+                yield from node.get_descendants_recursive(primary_only=primary_only)
 
     @property
     def nodes_primary(self):
@@ -1585,7 +1580,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Non-contributors can't fork private nodes
         if not (self.is_public or self.has_permission(user, READ)):
-            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
+            raise PermissionsError(f'{user!r} does not have permission to fork node {self._id!r}')
 
         when = timezone.now()
 
@@ -1742,7 +1737,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Non-contributors can't template private nodes
         if not (self.is_public or self.has_permission(auth.user, READ)):
-            raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
+            raise PermissionsError(f'{auth.user!r} does not have permission to template node {self._id!r}')
 
         new = self.clone()
         if isinstance(new, Registration):
@@ -1923,7 +1918,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             self._suppress_log = False
         saved_fields = self.get_dirty_fields(check_relationship=True) or []
-        ret = super(AbstractNode, self).save(*args, **kwargs)
+        ret = super().save(*args, **kwargs)
         if saved_fields:
             self.on_update(first_save, saved_fields)
 
@@ -2156,9 +2151,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                             }
                             setattr(self, key, value)
                     except AttributeError:
-                        raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
+                        raise NodeUpdateError(reason=f"Invalid value for attribute '{key}'", key=key)
                     except warnings.Warning:
-                        raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
+                        raise NodeUpdateError(reason=f"Attribute '{key}' doesn't exist on the Node class", key=key)
         if save:
             updated = self.get_dirty_fields()
             self.save()
@@ -2210,7 +2205,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if (not auth or isinstance(auth.user, AnonymousUser)) or (
                 len(hierarchy) != (Node.objects.get_nodes_for_user(auth.user, ADMIN_NODE, hierarchy)).count()):
             raise PermissionsError(
-                '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
+                f'{auth.user!r} does not have permission to modify this '
+                f'{self.category or "node"}, or a component in its hierarchy.'
             )
 
         # After delete callback
@@ -2229,7 +2225,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             project_signals.node_deleted.send(node)
             node._remove_from_associated_collections(auth)
 
-        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
+        Node.objects.bulk_update(hierarchy, fields=['is_deleted', 'deleted_date', 'deleted'])
 
         if len(hierarchy.filter(is_public=True)):
             AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
@@ -2237,7 +2233,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return True
 
     def add_addon(self, name, auth, log=True):
-        ret = super(AbstractNode, self).add_addon(name, auth)
+        ret = super().add_addon(name, auth)
         if ret and log:
             self.add_log(
                 action=NodeLog.ADDON_ADDED,
@@ -2262,7 +2258,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             mandatory add-ons!
         :return bool: Add-on was deleted
         """
-        ret = super(AbstractNode, self).delete_addon(addon_name, auth, _force)
+        ret = super().delete_addon(addon_name, auth, _force)
         if ret:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
@@ -2384,7 +2380,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Overrides ContributorMixin
     # TODO: Deprecate this when we emberize contributors management for nodes
     def add_contributor(self, *args, **kwargs):
-        contributor = super(AbstractNode, self).add_contributor(*args, **kwargs)
+        contributor = super().add_contributor(*args, **kwargs)
         if contributor and not contributor.is_registered:
             self._add_related_source_tags(contributor)
 

@@ -1,14 +1,14 @@
 from importlib import import_module
 
 from rest_framework import status as http_status
-from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone
 from django.conf import settings as django_conf_settings
 import itsdangerous
 from flask import request, g
-import furl
+from furl import furl
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
@@ -35,7 +35,7 @@ def add_key_to_url(url, scheme, key):
     if parsed_url.fragment:
         # Fragments should exists server side so this mean some one set up a # in the url
         # WSGI sucks and auto unescapes it so we just shove it back into the path with the escaped hash
-        replacements['path'] = '{}%23{}'.format(parsed_url.path, parsed_url.fragment)
+        replacements['path'] = f'{parsed_url.path}%23{parsed_url.fragment}'
         replacements['fragment'] = ''
 
     parsed_redirect_url = parsed_url._replace(**replacements)
@@ -147,7 +147,7 @@ def create_session(response, data=None):
         user_session[key] = value
     user_session.save()
     if response is not None:
-        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key)
+        cookie_value = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key))
         response.set_cookie(
             settings.COOKIE_NAME,
             value=cookie_value,
@@ -171,15 +171,14 @@ def before_request():
     # Request Type 1: Service ticket validation during CAS login.
     ticket = request.args.get('ticket')
     if ticket:
-        service_url = furl.furl(request.url)
-        service_url.args.pop('ticket')
+        service_url = furl(request.url).remove(args=['ticket'])
         # Attempt to authenticate wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
     # Request Type 2: Basic Auth with username and password in Authorization headers
     # Note: As for flask/V1 request, many views rely on an ``auth`` object that comes from the ``session``
     #       to identify the user. Thus, we still need to keep the session creation and usage here.
-    if request.authorization:
+    if request.authorization and request.authorization.type == 'basic':
         user = get_user(
             email=request.authorization.username,
             password=request.authorization.password

@@ -1,6 +1,5 @@
 import datetime
-import mock
-from nose.tools import assert_equal
+from unittest import mock
 import pytest
 import time
 
@@ -16,7 +15,7 @@ pytestmark = pytest.mark.django_db
 class MendeleyApiTestCase(OsfTestCase):
 
     def setUp(self):
-        super(MendeleyApiTestCase, self).setUp()
+        super().setUp()
         self.provider = models.Mendeley()
         self.mock_partial = mendeley.Mendeley(
             client_id='1234567890',
@@ -36,4 +35,4 @@ class MendeleyApiTestCase(OsfTestCase):
         client = APISession(self.mock_partial, self.mock_credentials)
         client.request()
         args, kwargs = mock_request.call_args
-        assert_equal(kwargs['params'], {'view': 'all', 'limit': '500'})
+        assert kwargs['params'] == {'view': 'all', 'limit': '500'}

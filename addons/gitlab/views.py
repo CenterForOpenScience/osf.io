@@ -1,5 +1,4 @@
 """Views for the node settings page."""
-# -*- coding: utf-8 -*-
 from dateutil.parser import parse as dateparse
 from rest_framework import status as http_status
 import logging
@@ -256,12 +255,12 @@ def gitlab_root_folder(*args, **kwargs):
 # Repos #
 #########
 
-def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,
+def add_hook_log(node, node_settings, action, path, date, committer, include_urls=False,
                  sha=None, save=False):
     """Add log event for commit from webhook payload.
 
     :param node: Node to add logs to
-    :param gitlab: GitLab node settings record
+    :param node_settings: GitLab node settings record
     :param path: Path to file
     :param date: Date of commit
     :param committer: Committer name
@@ -271,8 +270,8 @@ def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False
 
     """
     gitlab_data = {
-        'user': gitlab.user,
-        'repo': gitlab.repo,
+        'user': node_settings.user,
+        'repo': node_settings.repo,
     }
 
     urls = {}
@@ -281,8 +280,8 @@ def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False
         url = node.web_url_for('addon_view_or_download_file', path=path, provider=SHORT_NAME)
 
         urls = {
-            'view': '{0}?branch={1}'.format(url, sha),
-            'download': '{0}?action=download&branch={1}'.format(url, sha)
+            'view': f'{url}?branch={sha}',
+            'download': f'{url}?action=download&branch={sha}'
         }
 
     node.add_log(

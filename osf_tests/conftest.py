@@ -19,7 +19,7 @@ def app():
     rm_handlers(test_app, django_handlers)
     rm_handlers(test_app, celery_handlers)
 
-    test_app.testing = True
+    test_app.config['TESTING'] = True
     return test_app
 
 
@@ -28,7 +28,7 @@ def app_init():
     init_app(routes=False, set_backends=False)
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def request_context(app):
     context = app.test_request_context(headers={
         'Remote-Addr': '146.9.219.56',
