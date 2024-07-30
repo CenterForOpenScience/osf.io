@@ -1,85 +1,61 @@
-FROM node:8-alpine3.9
+FROM python:3.12-alpine3.17 AS base
 
-# Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
+# Creation of www-data group was removed as it is created by default in alpine 3.14 and higher
+# Alpine does not create a www-data user, so we still need to create that. 82 is the standard
+# uid/guid for www-data in Alpine.
 RUN set -x \
-    && addgroup -g 82 -S www-data \
     && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
 RUN apk add --no-cache --virtual .run-deps \
     gcc \
     g++ \
-    python3-dev \
+    nodejs \
+    npm \
+    yarn \
     libxslt-dev \
     su-exec \
     bash \
-    python3 \
     git \
-    # lxml2
     libxml2 \
     libxslt \
-    # psycopg2
-    postgresql-libs \
-    # cryptography
+    libpq-dev \
     libffi \
-    # gevent
     libev \
     libevent \
-    && yarn global add bower
+    && yarn global add bower \
+    && mkdir -p /var/www \
+    && chown www-data:www-data /var/www
 
-RUN python3 -m ensurepip && \
-    pip3 install --upgrade pip==21.0
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_OPTIONS_ALWAYS_COPY=1 \
+    POETRY_VIRTUALENVS_CREATE=0
 
-WORKDIR /code
+FROM base AS build
 
-COPY ./requirements.txt ./
-COPY ./requirements/ ./requirements/
-COPY ./addons/bitbucket/requirements.txt ./addons/bitbucket/
-COPY ./addons/boa/requirements.txt ./addons/boa/
-COPY ./addons/box/requirements.txt ./addons/box/
-#COPY ./addons/citations/requirements.txt ./addons/citations/
-COPY ./addons/dataverse/requirements.txt ./addons/dataverse/
-COPY ./addons/dropbox/requirements.txt ./addons/dropbox/
-#COPY ./addons/figshare/requirements.txt ./addons/figshare/
-#COPY ./addons/forward/requirements.txt ./addons/forward/
-COPY ./addons/github/requirements.txt ./addons/github/
-COPY ./addons/gitlab/requirements.txt ./addons/gitlab/
-#COPY ./addons/googledrive/requirements.txt ./addons/googledrive/
-COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
-COPY ./addons/onedrive/requirements.txt /code/addons/onedrive/
-#COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
-COPY ./addons/owncloud/requirements.txt ./addons/owncloud/
-COPY ./addons/s3/requirements.txt ./addons/s3/
-COPY ./addons/twofactor/requirements.txt ./addons/twofactor/
-#COPY ./addons/wiki/requirements.txt ./addons/wiki/
-COPY ./addons/zotero/requirements.txt ./addons/zotero/
+ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    YARN_CACHE_FOLDER=/tmp/yarn-cache \
+    POETRY_CACHE_DIR=/tmp/poetry-cache \
+    POETRY_HOME=/tmp/poetry
+
+RUN python3 -m venv $POETRY_HOME
+RUN $POETRY_HOME/bin/pip install poetry==1.8.3
+
 
 RUN set -ex \
-    && mkdir -p /var/www \
-    && chown www-data:www-data /var/www \
     && apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
-        python3-dev \
-        # lxml2
         musl-dev \
         libxml2-dev \
         libxslt-dev \
-        # psycopg2
-        postgresql-dev \
         # cryptography
-        libffi-dev \
-    && for reqs_file in \
-        /code/requirements.txt \
-        /code/requirements/release.txt \
-        /code/addons/*/requirements.txt \
-    ; do \
-        pip3 install --no-cache-dir -r "$reqs_file" \
-    ; done \
-    && (pip3 uninstall uritemplate.py --yes || true) \
-    && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
-    # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
-    && python3 -m compileall /usr/lib/python3.6 || true \
-    && apk del .build-deps
+        libffi-dev
+
+WORKDIR /code
+COPY pyproject.toml .
+COPY poetry.lock .
+# Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
+RUN $POETRY_HOME/bin/poetry install --without=dev --no-root --compile
 
 # Settings
 COPY ./tasks/ ./tasks/
@@ -137,7 +113,7 @@ RUN \
     # OSF
     yarn install --frozen-lockfile \
     && mkdir -p ./website/static/built/ \
-    && invoke build_js_config_files \
+    && python3 -m invoke build-js-config-files \
     && yarn run webpack-prod \
     # Admin
     && cd ./admin \
@@ -152,23 +128,32 @@ RUN \
 COPY ./ ./
 
 ARG GIT_COMMIT=
-ENV GIT_COMMIT ${GIT_COMMIT}
+ENV GIT_COMMIT=${GIT_COMMIT}
 
-# TODO: Admin/API should fully specify their bower static deps, and not include ./website/static in their defaults.py.
+# TODO: Admin/API should fully specify their bower static deps, and not
+#       include ./website/static in their defaults.py.
 #       (this adds an additional 300+mb to the build image)
-RUN for module in \
-        api.base.settings \
-        admin.base.settings \
-    ; do \
-        export DJANGO_SETTINGS_MODULE=$module \
-        && python3 manage.py collectstatic --noinput --no-init-app \
-    ; done \
-    && for file in \
-        ./website/templates/_log_templates.mako \
-        ./website/static/built/nodeCategories.json \
-    ; do \
-        touch $file && chmod o+w $file \
-    ; done \
-    && rm ./website/settings/local.py ./api/base/settings/local.py
 
-CMD ["su-exec", "nobody", "invoke", "--list"]
+RUN for module in \
+       api.base.settings \
+       admin.base.settings \
+   ; do \
+       export DJANGO_SETTINGS_MODULE=$module \
+       && python3 manage.py collectstatic --noinput --no-init-app \
+   ; done \
+   && for file in \
+       ./website/templates/_log_templates.mako \
+       ./website/static/built/nodeCategories.json \
+   ; do \
+       touch $file && chmod o+w $file \
+   ; done \
+   && rm ./website/settings/local.py ./api/base/settings/local.py
+
+FROM base AS runtime
+
+WORKDIR /code
+COPY --from=build /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /code /code
+
+CMD ["su-exec", "nobody", "python", "-m", "invoke", "--list"]

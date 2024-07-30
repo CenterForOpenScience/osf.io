@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-
 import markupsafe
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings,
+    BaseOAuthUserSettings,
+    BaseStorageAddon,)
 from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -13,6 +13,7 @@ from addons.figshare import settings as figshare_settings
 from addons.figshare import messages
 from addons.figshare.client import FigshareClient
 from addons.figshare.serializer import FigshareSerializer
+
 
 class FigshareFileNode(BaseFileNode):
     _provider = 'figshare'
@@ -35,11 +36,11 @@ class FigshareFile(FigshareFileNode, File):
         Always pass revision as None to avoid conflict.
         Call super to update _history and last_touched anyway.
         """
-        version = super(FigshareFile, self).update(None, data, user=user, save=save)
+        version = super().update(None, data, user=user, save=save)
 
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':
-            return (version, u"""
+            return (version, """
             <style>
             .file-download{{display: none;}}
             .file-share{{display: none;}}
@@ -78,7 +79,7 @@ class FigshareProvider(ExternalProvider):
 
         return {
             'provider_id': about['id'],
-            'display_name': u'{} {}'.format(about['first_name'], about.get('last_name')),
+            'display_name': f'{about["first_name"]} {about.get("last_name")}',
         }
 
 
@@ -108,7 +109,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return self._api
 
     def fetch_folder_name(self):
-        return u'{0}:{1}'.format(self.folder_name or 'Unnamed {0}'.format(self.folder_path or ''), self.folder_id)
+        return '{}:{}'.format(self.folder_name or 'Unnamed {}'.format(self.folder_path or ''), self.folder_id)
 
     def fetch_full_folder_path(self):
         return self.folder_name
@@ -168,7 +169,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def create_waterbutler_log(self, auth, action, metadata):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='figshare')
         self.owner.add_log(
-            'figshare_{0}'.format(action),
+            f'figshare_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,

@@ -16,7 +16,6 @@ Usage:
     # Force archive OSFS and Dropbox on abc12
     python3 manage.py force_archive --addons dropbox --guids abc12
 """
-from __future__ import unicode_literals
 
 from copy import deepcopy
 from rest_framework import status as http_status
@@ -147,7 +146,7 @@ def perform_wb_copy(reg, node_settings):
             raise Exception('Archive folder for {} already exists. Investigate manually and rerun with either --delete-collisions or --skip-collisions')
         if DELETE_COLLISIONS:
             archive_folder = dst.files.exclude(type='osf.trashedfolder').get(name=node_settings.archive_folder_name.replace('/', '-'))
-            logger.info('Removing {}'.format(archive_folder))
+            logger.info(f'Removing {archive_folder}')
             archive_folder.delete()
         if SKIP_COLLISIONS:
             complete_archive_target(reg, node_settings.short_name)
@@ -287,30 +286,30 @@ def revert_log_actions(file_tree, reg, obj_cache):
         assert file_obj.target in reg.registered_from.root.node_and_primary_descendants()
         if log.action == 'osf_storage_file_added':
             # Find and mark deleted
-            logger.info('Reverting add {}:{} from {}'.format(file_obj._id, file_obj.name, log.date))
+            logger.info(f'Reverting add {file_obj._id}:{file_obj.name} from {log.date}')
             file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=True, cached=bool(file_obj._id in obj_cache))
         elif log.action == 'osf_storage_file_removed':
             # Find parent and add to children, or undelete
-            logger.info('Reverting delete {}:{} from {}'.format(file_obj._id, file_obj.name, log.date))
+            logger.info(f'Reverting delete {file_obj._id}:{file_obj.name} from {log.date}')
             file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=False, cached=bool(file_obj._id in obj_cache))
         elif log.action == 'osf_storage_file_updated':
             # Find file and revert version
-            logger.info('Reverting update {}:{} from {}'.format(file_obj._id, file_obj.name, log.date))
+            logger.info(f'Reverting update {file_obj._id}:{file_obj.name} from {log.date}')
             file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), revert=True)
         elif log.action == 'osf_storage_folder_created':
             # Find folder and mark deleted
-            logger.info('Reverting folder {}:{} from {}'.format(file_obj._id, file_obj.name, log.date))
+            logger.info(f'Reverting folder {file_obj._id}:{file_obj.name} from {log.date}')
             file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=True, cached=bool(file_obj._id in obj_cache))
         elif log.action == 'addon_file_moved':
-            logger.info('Reverting move {}:{} from {}'.format(file_obj._id, file_obj.name, log.date))
+            logger.info(f'Reverting move {file_obj._id}:{file_obj.name} from {log.date}')
             parent = BaseFileNode.objects.get(_id__in=obj_cache, name='/{}'.format(log.params['source']['materialized']).rstrip('/').split('/')[-2])
             file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), move_under=parent)
         elif log.action == 'addon_file_renamed':
             logger.info('Reverting rename {}:{} -> {} from {}'.format(file_obj._id, log.params['source']['name'], file_obj.name, log.date))
             file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), rename=log.params['source']['name'])
         else:
-            raise Exception('Unexpected log action: {}'.format(log.action))
-        assert not noop, '{}: Failed to revert action for NodeLog {}'.format(reg._id, log._id)
+            raise Exception(f'Unexpected log action: {log.action}')
+        assert not noop, f'{reg._id}: Failed to revert action for NodeLog {log._id}'
         if file_obj._id not in obj_cache:
             obj_cache.add(file_obj._id)
     return file_tree
@@ -341,10 +340,10 @@ def archive(registration):
             continue
         logs_to_revert = reg.registered_from.logs.filter(date__gt=reg.registered_date).exclude(action__in=LOG_WHITELIST)
         if len(PERMISSIBLE_ADDONS) == 1:
-            assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exists(), '{}: {} had unexpected unacceptable logs'.format(registration._id, reg.registered_from._id)
+            assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exists(), f'{registration._id}: {reg.registered_from._id} had unexpected unacceptable logs'
         else:
-            assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exclude(action__in=PERMISSIBLE_BLACKLIST).exists(), '{}: {} had unexpected unacceptable logs'.format(registration._id, reg.registered_from._id)
-        logger.info('Preparing to archive {}'.format(reg._id))
+            assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exclude(action__in=PERMISSIBLE_BLACKLIST).exists(), f'{registration._id}: {reg.registered_from._id} had unexpected unacceptable logs'
+        logger.info(f'Preparing to archive {reg._id}')
         for short_name in PERMISSIBLE_ADDONS:
             node_settings = reg.registered_from.get_addon(short_name)
             if not hasattr(node_settings, '_get_file_tree'):
@@ -352,7 +351,7 @@ def archive(registration):
                 continue
             if not node_settings.configured:
                 if not ALLOW_UNCONFIGURED:
-                    raise Exception('{}: {} on {} is not configured. If this is permissible, re-run with `--allow-unconfigured`.'.format(reg._id, short_name, reg.registered_from._id))
+                    raise Exception(f'{reg._id}: {short_name} on {reg.registered_from._id} is not configured. If this is permissible, re-run with `--allow-unconfigured`.')
                 continue
             if not reg.archive_job.get_target(short_name) or reg.archive_job.get_target(short_name).status == ARCHIVER_SUCCESS:
                 continue
@@ -361,7 +360,7 @@ def archive(registration):
                 manually_archive(file_tree, reg, node_settings)
                 complete_archive_target(reg, short_name)
             else:
-                assert reg.archiving, '{}: Must be `archiving` for WB to copy'.format(reg._id)
+                assert reg.archiving, f'{reg._id}: Must be `archiving` for WB to copy'
                 perform_wb_copy(reg, node_settings)
 
 def archive_registrations():
@@ -372,7 +371,7 @@ def archive_registrations():
 
 def verify(registration):
     for reg in registration.node_and_primary_descendants():
-        logger.info('Verifying {}'.format(reg._id))
+        logger.info(f'Verifying {reg._id}')
         if reg.archive_job.status == ARCHIVER_SUCCESS:
             continue
         nonignorable_logs = get_logs_to_revert(reg)
@@ -397,7 +396,7 @@ def verify(registration):
                             return False
         addons = reg.registered_from.get_addon_names()
         if set(addons) - set(PERMISSIBLE_ADDONS | {'wiki'}) != set():
-            logger.error('{}: Original node {} has addons: {}'.format(registration._id, reg.registered_from._id, addons))
+            logger.error(f'{registration._id}: Original node {reg.registered_from._id} has addons: {addons}')
             return False
         if nonignorable_logs.exists():
             logger.info('{}: Original node {} has had revertable file operations'.format(
@@ -415,7 +414,7 @@ def verify_registrations(registration_ids):
     for r_id in registration_ids:
         reg = Registration.load(r_id)
         if not reg:
-            logger.warn('Registration {} not found'.format(r_id))
+            logger.warning(f'Registration {r_id} not found')
         else:
             if verify(reg):
                 VERIFIED.append(reg)
@@ -423,9 +422,9 @@ def verify_registrations(registration_ids):
                 SKIPPED.append(reg)
 
 def check(reg):
-    logger.info('Checking {}'.format(reg._id))
+    logger.info(f'Checking {reg._id}')
     if reg.is_deleted:
-        logger.info('Registration {} is deleted.'.format(reg._id))
+        logger.info(f'Registration {reg._id} is deleted.')
         CHECKED_OKAY.append(reg)
         return
     expired_if_before = timezone.now() - ARCHIVE_TIMEOUT_TIMEDELTA
@@ -438,32 +437,32 @@ def check(reg):
     else:
         still_archiving = not archive_tree_finished
     if still_archiving and root_job.datetime_initiated < expired_if_before:
-        logger.warn('Registration {} is stuck in archiving'.format(reg._id))
+        logger.warning(f'Registration {reg._id} is stuck in archiving')
         if verify(reg):
-            logger.info('Registration {} verified recoverable'.format(reg._id))
+            logger.info(f'Registration {reg._id} verified recoverable')
             CHECKED_STUCK_RECOVERABLE.append(reg)
         else:
-            logger.info('Registration {} verified broken'.format(reg._id))
+            logger.info(f'Registration {reg._id} verified broken')
             CHECKED_STUCK_BROKEN.append(reg)
     else:
-        logger.info('Registration {} is not stuck in archiving'.format(reg._id))
+        logger.info(f'Registration {reg._id} is not stuck in archiving')
         CHECKED_OKAY.append(reg)
 
 def check_registrations(registration_ids):
     for r_id in registration_ids:
         reg = Registration.load(r_id)
         if not reg:
-            logger.warn('Registration {} not found'.format(r_id))
+            logger.warning(f'Registration {r_id} not found')
         else:
             check(reg)
 
 def log_results(dry_run):
     if CHECKED_OKAY:
-        logger.info('{} registrations not stuck: {}'.format(len(CHECKED_OKAY), [e._id for e in CHECKED_OKAY]))
+        logger.info(f'{len(CHECKED_OKAY)} registrations not stuck: {[e._id for e in CHECKED_OKAY]}')
     if CHECKED_STUCK_RECOVERABLE:
-        logger.info('{} registrations stuck but recoverable: {}'.format(len(CHECKED_STUCK_RECOVERABLE), [e._id for e in CHECKED_STUCK_RECOVERABLE]))
+        logger.info(f'{len(CHECKED_STUCK_RECOVERABLE)} registrations stuck but recoverable: {[e._id for e in CHECKED_STUCK_RECOVERABLE]}')
     if CHECKED_STUCK_BROKEN:
-        logger.warn('{} registrations stuck and unrecoverable: {}'.format(len(CHECKED_STUCK_BROKEN), [e._id for e in CHECKED_STUCK_BROKEN]))
+        logger.warning(f'{len(CHECKED_STUCK_BROKEN)} registrations stuck and unrecoverable: {[e._id for e in CHECKED_STUCK_BROKEN]}')
 
     if VERIFIED:
         logger.info('{} registrations verified: {}'.format(
@@ -476,11 +475,11 @@ def log_results(dry_run):
             [e._id for e in ARCHIVED]
         ))
     if SKIPPED:
-        logger.error('{} registrations skipped: {}'.format(len(SKIPPED), [e._id for e in SKIPPED]))
+        logger.error(f'{len(SKIPPED)} registrations skipped: {[e._id for e in SKIPPED]}')
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

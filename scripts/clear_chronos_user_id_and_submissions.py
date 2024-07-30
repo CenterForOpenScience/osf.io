@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 def main(dry_run=True):
     if dry_run:
         for user in models.OSFUser.objects.filter(chronos_user_id__isnull=False):
-            logger.info('Reset chronos_user_id for user with guid {}'.format(user._id))
+            logger.info(f'Reset chronos_user_id for user with guid {user._id}')
         for submission in models.ChronosSubmission.objects.all():
-            logger.info('Deleting chronos submission with id {}'.format(submission.publication_id))
+            logger.info(f'Deleting chronos submission with id {submission.publication_id}')
     else:
         models.OSFUser.objects.all().update(chronos_user_id=None)
         models.ChronosSubmission.objects.all().delete()

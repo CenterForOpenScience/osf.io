@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import datetime
 import responses
@@ -74,11 +74,11 @@ class TestPreprintDetail:
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/'
 
     @pytest.fixture()
     def unpublished_url(self, unpublished_preprint):
-        return '/{}preprints/{}/'.format(API_BASE, unpublished_preprint._id)
+        return f'/{API_BASE}preprints/{unpublished_preprint._id}/'
 
     @pytest.fixture()
     def res(self, app, url):
@@ -133,7 +133,7 @@ class TestPreprintDetail:
 
     def test_withdrawn_preprint(self, app, user, moderator, preprint_pre_mod):
         # test_retracted_fields
-        url = '/{}preprints/{}/'.format(API_BASE, preprint_pre_mod._id)
+        url = f'/{API_BASE}preprints/{preprint_pre_mod._id}/'
         res = app.get(url, auth=user.auth)
         data = res.json['data']
 
@@ -171,7 +171,7 @@ class TestPreprintDetail:
         res = app.get(url, auth=user.auth)
         embeds = res.json['data']['embeds']
         ids = preprint.contributors.all().values_list('guids___id', flat=True)
-        ids = ['{}-{}'.format(preprint._id, id_) for id_ in ids]
+        ids = [f'{preprint._id}-{id_}' for id_ in ids]
         for contrib in embeds['contributors']['data']:
             assert contrib['id'] in ids
 
@@ -213,7 +213,7 @@ class TestPreprintDetail:
         res = app.get(embed_url)
         assert res.status_code == 200
         link = res.json['data']['relationships']['identifiers']['links']['related']['href']
-        assert '{}identifiers/'.format(url) in link
+        assert f'{url}identifiers/' in link
 
 
 @pytest.mark.django_db
@@ -229,7 +229,7 @@ class TestPreprintDelete:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}preprints/{{}}/'.format(API_BASE)
+        return f'/{API_BASE}preprints/{{}}/'
 
     def test_cannot_delete_preprints(
             self, app, user, url, unpublished_preprint, published_preprint):
@@ -252,7 +252,7 @@ class TestPreprintUpdate:
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/'
 
     @pytest.fixture()
     def subject(self):
@@ -592,7 +592,7 @@ class TestPreprintUpdate:
         assert preprint.article_doi == '10.1234/test'
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
-        assert preprint_detail['links']['doi'] == f'https://doi.org/10.1234/test'
+        assert preprint_detail['links']['doi'] == 'https://doi.org/10.1234/test'
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513
@@ -778,7 +778,7 @@ class TestPreprintUpdate:
 
     def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
-        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        url = f'/{API_BASE}preprints/{unpublished._id}/'
         payload = build_preprint_update_payload(
             unpublished._id, attributes={'is_published': True})
         app.patch_json_api(url, payload, auth=user.auth)
@@ -790,7 +790,7 @@ class TestPreprintUpdate:
         project = ProjectFactory(creator=user)
         unpublished = PreprintFactory(creator=user, is_published=False, project=project)
         assert not unpublished.node.is_public
-        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        url = f'/{API_BASE}preprints/{unpublished._id}/'
         payload = build_preprint_update_payload(
             unpublished._id, attributes={'is_published': True})
         app.patch_json_api(url, payload, auth=user.auth)
@@ -1244,7 +1244,7 @@ class TestPreprintUpdateLicense:
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/'
 
     @pytest.fixture()
     def make_payload(self):
@@ -1775,11 +1775,11 @@ class TestPreprintDetailPermissions:
 
     @pytest.fixture()
     def unpublished_url(self, unpublished_preprint):
-        return '/{}preprints/{}/'.format(API_BASE, unpublished_preprint._id)
+        return f'/{API_BASE}preprints/{unpublished_preprint._id}/'
 
     @pytest.fixture()
     def private_url(self, private_preprint):
-        return '/{}preprints/{}/'.format(API_BASE, private_preprint._id)
+        return f'/{API_BASE}preprints/{private_preprint._id}/'
 
     def test_preprint_is_published_detail(
             self, app, admin, write_contrib, non_contrib,
@@ -1882,7 +1882,7 @@ class TestPreprintDetailPermissions:
             self, app, user, write_contrib):
         unpublished = PreprintFactory(creator=user, is_public=True, is_published=False)
         preprint_file_id = unpublished.primary_file._id
-        url = '/{}files/{}/'.format(API_BASE, preprint_file_id)
+        url = f'/{API_BASE}files/{preprint_file_id}/'
 
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
@@ -2070,9 +2070,9 @@ class TestPreprintDetailWithMetrics:
     ])
     def test_preprint_detail_with_downloads(self, app, settings, metric_name, metric_class_name):
         preprint = PreprintFactory()
-        url = '/{}preprints/{}/?metrics[{}]=total'.format(API_BASE, preprint._id, metric_name)
+        url = f'/{API_BASE}preprints/{preprint._id}/?metrics[{metric_name}]=total'
 
-        with mock.patch('api.preprints.views.{}.get_count_for_preprint'.format(metric_class_name)) as mock_get_count_for_preprint:
+        with mock.patch(f'api.preprints.views.{metric_class_name}.get_count_for_preprint') as mock_get_count_for_preprint:
             mock_get_count_for_preprint.return_value = 42
             res = app.get(url)
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from django.db import transaction
 import hashlib
 import mailchimp3
@@ -65,7 +63,7 @@ def subscribe_mailchimp(list_name, user_id):
             }
         )
     except MailChimpError as error:
-        sentry.log_exception()
+        sentry.log_exception(error)
         sentry.log_message(error)
         user.mailchimp_mailing_lists[list_name] = False
     else:
@@ -98,7 +96,7 @@ def unsubscribe_mailchimp(list_name, user_id, username=None):
             subscriber_hash=user_hash
         )
     except MailChimpError as error:
-        sentry.log_exception()
+        sentry.log_exception(error)
         sentry.log_message(error)
         pass
 

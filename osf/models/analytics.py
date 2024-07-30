@@ -100,9 +100,9 @@ class PageCounter(BaseModel):
     @classmethod
     def update_counter(cls, resource, file, version, action, node_info, session_key):
         if version is not None:
-            page = '{0}:{1}:{2}:{3}'.format(action, resource._id, file._id, version)
+            page = f'{action}:{resource._id}:{file._id}:{version}'
         else:
-            page = '{0}:{1}:{2}'.format(action, resource._id, file._id)
+            page = f'{action}:{resource._id}:{file._id}'
 
         cleaned_page = cls.clean_page(page)
         date = timezone.now()

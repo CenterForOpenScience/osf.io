@@ -100,7 +100,7 @@ class OSFOrderingFilter(OrderingFilter):
         :param fields, array, input sort fields
         :returns array of source fields for sorting.
         """
-        valid_fields = super(OSFOrderingFilter, self).remove_invalid_fields(queryset, fields, view, request)
+        valid_fields = super().remove_invalid_fields(queryset, fields, view, request)
         if not valid_fields:
             for invalid_field in fields:
                 ordering_sign = '-' if invalid_field[0] == '-' else ''
@@ -133,7 +133,7 @@ class ElasticOSFOrderingFilter(OSFOrderingFilter):
         return sorted_list
 
 
-class FilterMixin(object):
+class FilterMixin:
     """ View mixin with helper functions for filtering. """
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
@@ -156,11 +156,11 @@ class FilterMixin(object):
     COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
     COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS
 
-    LIST_FIELDS = (ser.ListField, )
+    LIST_FIELDS = (ser.ListField,)
     RELATIONSHIP_FIELDS = (RelationshipField, TargetField)
 
     def __init__(self, *args, **kwargs):
-        super(FilterMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.serializer_class:
             raise NotImplementedError()
 
@@ -183,7 +183,7 @@ class FilterMixin(object):
         """
         serializer = self.get_serializer()
         if field_name not in serializer.fields:
-            raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
+            raise InvalidFilterError(detail=f"'{field_name}' is not a valid field for this endpoint.")
         if field_name not in getattr(serializer, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
         field = serializer.fields[field_name]
@@ -207,13 +207,13 @@ class FilterMixin(object):
             if not isinstance(field, self.COMPARABLE_FIELDS):
                 raise InvalidFilterComparisonType(
                     parameter='filter',
-                    detail="Field '{0}' does not support comparison operators in a filter.".format(field_name),
+                    detail=f"Field '{field_name}' does not support comparison operators in a filter.",
                 )
         if op in self.MATCH_OPERATORS:
             if not isinstance(field, self.MATCHABLE_FIELDS):
                 raise InvalidFilterMatchType(
                     parameter='filter',
-                    detail="Field '{0}' does not support match operators in a filter.".format(field_name),
+                    detail=f"Field '{field_name}' does not support match operators in a filter.",
                 )
 
     def _parse_date_param(self, field, source_field_name, op, value):
@@ -529,7 +529,7 @@ class ListFilterMixin(FilterMixin):
             if source_field_name in ('_id', 'root'):
                 # Param parser treats certain ID fields as bulk queries: a list of options, instead of just one
                 # Respect special-case behavior, and enforce exact match for these list fields.
-                options = set(item.lower() for item in params['value'])
+                options = {item.lower() for item in params['value']}
                 return_val = [
                     item for item in default_queryset
                     if getattr(item, source_field_name, '') in options

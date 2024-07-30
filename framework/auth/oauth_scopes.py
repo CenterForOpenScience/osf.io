@@ -20,7 +20,7 @@ class scope(namedtuple('scope', ['parts_', 'description', 'is_public'])):
         return frozenset((CoreScopes.ALWAYS_PUBLIC, )).union(self.parts_)
 
 
-class CoreScopes(object):
+class CoreScopes:
     """
     The smallest units of permission that can be granted- all other scopes are built out of these.
     Each named constant is a single string."""
@@ -203,7 +203,7 @@ class CoreScopes(object):
     WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
 
 
-class ComposedScopes(object):
+class ComposedScopes:
     """
     Composed scopes, listed in increasing order of access (most restrictive first). Each named constant is a tuple.
     """

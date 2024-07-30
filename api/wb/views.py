@@ -71,7 +71,7 @@ class MoveFileMetadataView(FileMetadataView):
 
     # overrides FileMetadataView
     def post(self, request, *args, **kwargs):
-        response = super(MoveFileMetadataView, self).post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
         if response.status_code == status.HTTP_400_BAD_REQUEST:
             return response
         response.status_code = status.HTTP_200_OK

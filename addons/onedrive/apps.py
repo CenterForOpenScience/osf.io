@@ -4,6 +4,7 @@ onedrive_root_folder = generic_root_folder('onedrive')
 
 class OneDriveAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.onedrive'
     label = 'addons_onedrive'
     full_name = 'OneDrive'

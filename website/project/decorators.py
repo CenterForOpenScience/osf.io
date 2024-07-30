@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import functools
 from rest_framework import status as http_status
 
@@ -337,7 +336,7 @@ def must_have_addon(addon_name, model):
             if addon is None:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-            kwargs['{0}_addon'.format(model)] = addon
+            kwargs[f'{model}_addon'] = addon
 
             return func(*args, **kwargs)
 

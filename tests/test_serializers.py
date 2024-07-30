@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-
-import mock
+from unittest import mock
 import datetime as dt
-from nose.tools import *  # noqa (PEP8 asserts)
 
 import pytest
 from osf_tests.factories import (
@@ -32,23 +29,23 @@ class TestUserSerializers(OsfTestCase):
         user = UserFactory()
         master.merge_user(user)
         d = utils.serialize_user(user)
-        assert_equal(d['id'], user._primary_key)
-        assert_equal(d['url'], user.url)
-        assert_equal(d.get('username', None), None)
-        assert_equal(d['fullname'], user.fullname)
-        assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['absolute_url'], user.absolute_url)
-        assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active)
+        assert d['id'] == user._primary_key
+        assert d['url'] == user.url
+        assert d.get('username', None) == None
+        assert d['fullname'] == user.fullname
+        assert d['registered'] == user.is_registered
+        assert d['absolute_url'] == user.absolute_url
+        assert d['date_registered'] == user.date_registered.strftime('%Y-%m-%d')
+        assert d['active'] == user.is_active
 
     def test_serialize_user_merged(self):
         master = UserFactory()
         user = UserFactory()
         master.merge_user(user)
         d = utils.serialize_user(user, full=True)
-        assert_true(d['is_merged'])
-        assert_equal(d['merged_by']['url'], user.merged_by.url)
-        assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
+        assert d['is_merged']
+        assert d['merged_by']['url'] == user.merged_by.url
+        assert d['merged_by']['absolute_url'] == user.merged_by.absolute_url
 
     def test_serialize_user_full(self):
         user = UserFactory()
@@ -62,14 +59,14 @@ class TestUserSerializers(OsfTestCase):
                                                   user,
                                                   use_ssl=True,
                                                   size=settings.PROFILE_IMAGE_LARGE)
-        assert_equal(d['id'], user._primary_key)
-        assert_equal(d['url'], user.url)
-        assert_equal(d.get('username'), None)
-        assert_equal(d['fullname'], user.fullname)
-        assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['profile_image_url'], profile_image_url)
-        assert_equal(d['absolute_url'], user.absolute_url)
-        assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
+        assert d['id'] == user._primary_key
+        assert d['url'] == user.url
+        assert d.get('username') == None
+        assert d['fullname'] == user.fullname
+        assert d['registered'] == user.is_registered
+        assert d['profile_image_url'] == profile_image_url
+        assert d['absolute_url'] == user.absolute_url
+        assert d['date_registered'] == user.date_registered.strftime('%Y-%m-%d')
         projects = [
             node
             for node in user.contributed
@@ -78,8 +75,8 @@ class TestUserSerializers(OsfTestCase):
             and not node.is_deleted
         ]
         public_projects = [p for p in projects if p.is_public]
-        assert_equal(d['number_projects'], len(projects))
-        assert_equal(d['number_public_projects'], len(public_projects))
+        assert d['number_projects'] == len(projects)
+        assert d['number_public_projects'] == len(public_projects)
 
 
 @pytest.mark.enable_bookmark_creation
@@ -97,17 +94,16 @@ class TestNodeSerializers(OsfTestCase):
         )
 
         # serialized result should have id and primary
-        assert_equal(result['id'], node._primary_key)
-        assert_true(result['primary'], True)
-        assert_equal(result['is_registration'], node.is_registration)
-        assert_equal(result['is_fork'], node.is_fork)
+        assert result['id'] == node._primary_key
+        assert result['primary'] == True
+        assert result['is_registration'] == node.is_registration
+        assert result['is_fork'] == node.is_fork
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
     def test_serialize_node_summary_for_registration_uses_correct_date_format(self):
         reg = RegistrationFactory()
         res = serialize_node_summary(reg, auth=Auth(reg.creator))
-        assert_equal(res['registered_date'],
-                reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
+        assert res['registered_date'] == reg.registered_date.strftime('%Y-%m-%d %H:%M UTC')
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/858
     def test_serialize_node_summary_private_registration_should_include_is_registration(self):
@@ -118,7 +114,7 @@ class TestNodeSerializers(OsfTestCase):
         res = serialize_node_summary(reg, auth=Auth(user))
 
         # serialized result should have is_registration
-        assert_true(res['is_registration'])
+        assert res['is_registration']
 
     # https://openscience.atlassian.net/browse/OSF-4618
     def test_get_children_only_returns_child_nodes_with_admin_permissions(self):
@@ -144,7 +140,7 @@ class TestNodeSerializers(OsfTestCase):
 
         non_contributor = NodeFactory(parent=admin_project)
         components = _get_children(admin_project, Auth(user))
-        assert_equal(len(components), 1)
+        assert len(components) == 1
 
     def test_serialize_node_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
@@ -158,7 +154,7 @@ class TestNodeSerializers(OsfTestCase):
             primary=True,
         )
         # serialized result should have is_fork
-        assert_true(res['is_fork'])
+        assert res['is_fork']
 
     def test_serialize_node_summary_private_fork_private_project_should_include_is_fork(self):
         # contributor on a private project
@@ -175,21 +171,21 @@ class TestNodeSerializers(OsfTestCase):
             primary=True,
         )
         # serialized result should have is_fork
-        assert_false(res['can_view'])
-        assert_true(res['is_fork'])
+        assert not res['can_view']
+        assert res['is_fork']
 
     def test_serialize_node_summary_child_exists(self):
         user = UserFactory()
         parent_node = ProjectFactory(creator=user)
         linked_node = ProjectFactory(creator=user)
         result = _view_project(parent_node, Auth(user))
-        assert_equal(result['node']['child_exists'], False)
+        assert result['node']['child_exists'] == False
         parent_node.add_node_link(linked_node, Auth(user), save=True)
         result = _view_project(parent_node, Auth(user))
-        assert_equal(result['node']['child_exists'], False)
+        assert result['node']['child_exists'] == False
         child_component = NodeFactory(creator=user, parent=parent_node)
         result = _view_project(parent_node, Auth(user))
-        assert_equal(result['node']['child_exists'], True)
+        assert result['node']['child_exists'] == True
 
     def test_serialize_node_summary_is_contributor_osf_group(self):
         project = ProjectFactory()
@@ -200,13 +196,13 @@ class TestNodeSerializers(OsfTestCase):
         res = _view_project(
             project, auth=Auth(user),
         )
-        assert_false(res['user']['is_contributor'])
-        assert_true(res['user']['is_contributor_or_group_member'])
-        assert_false(res['user']['is_admin'])
-        assert_true(res['user']['can_edit'])
-        assert_true(res['user']['has_read_permissions'])
-        assert_equal(set(res['user']['permissions']), set([permissions.READ, permissions.WRITE]))
-        assert_true(res['user']['can_comment'])
+        assert not res['user']['is_contributor']
+        assert res['user']['is_contributor_or_group_member']
+        assert not res['user']['is_admin']
+        assert res['user']['can_edit']
+        assert res['user']['has_read_permissions']
+        assert set(res['user']['permissions']) == {permissions.READ, permissions.WRITE}
+        assert res['user']['can_comment']
 
     def test_serialize_node_search_returns_only_visible_contributors(self):
         node = NodeFactory()
@@ -214,26 +210,26 @@ class TestNodeSerializers(OsfTestCase):
         node.add_contributor(non_visible_contributor, visible=False)
         serialized_node = _serialize_node_search(node)
 
-        assert_equal(serialized_node['firstAuthor'], node.visible_contributors[0].family_name)
-        assert_equal(len(node.visible_contributors), 1)
-        assert_false(serialized_node['etal'])
+        assert serialized_node['firstAuthor'] == node.visible_contributors[0].family_name
+        assert len(node.visible_contributors) == 1
+        assert not serialized_node['etal']
 
 
 @pytest.mark.enable_bookmark_creation
 class TestViewProject(OsfTestCase):
 
     def setUp(self):
-        super(TestViewProject, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.node = ProjectFactory(creator=self.user)
 
     def test_view_project_pending_registration_for_admin_contributor_does_contain_cancel_link(self):
         pending_reg = RegistrationFactory(project=self.node, archive=True)
-        assert_true(pending_reg.is_pending_registration)
+        assert pending_reg.is_pending_registration
         result = _view_project(pending_reg, Auth(self.user))
 
-        assert_not_equal(result['node']['disapproval_link'], '')
-        assert_in('/?token=', result['node']['disapproval_link'])
+        assert result['node']['disapproval_link'] != ''
+        assert '/?token=' in result['node']['disapproval_link']
         pending_reg.delete()
 
     def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
@@ -241,22 +237,22 @@ class TestViewProject(OsfTestCase):
         self.node.add_contributor(write_user, permissions=permissions.WRITE,
                                   auth=Auth(self.user), save=True)
         pending_reg = RegistrationFactory(project=self.node, archive=True)
-        assert_true(pending_reg.is_pending_registration)
+        assert pending_reg.is_pending_registration
         result = _view_project(pending_reg, Auth(write_user))
 
-        assert_equal(result['node']['disapproval_link'], '')
+        assert result['node']['disapproval_link'] == ''
         pending_reg.delete()
 
     def test_view_project_child_exists(self):
         linked_node = ProjectFactory(creator=self.user)
         result = _view_project(self.node, Auth(self.user))
-        assert_equal(result['node']['child_exists'], False)
+        assert result['node']['child_exists'] == False
         self.node.add_node_link(linked_node, Auth(self.user), save=True)
         result = _view_project(self.node, Auth(self.user))
-        assert_equal(result['node']['child_exists'], False)
+        assert result['node']['child_exists'] == False
         child_component = NodeFactory(creator=self.user, parent=self.node)
         result = _view_project(self.node, Auth(self.user))
-        assert_equal(result['node']['child_exists'], True)
+        assert result['node']['child_exists'] == True
 
 
 
@@ -264,7 +260,7 @@ class TestViewProject(OsfTestCase):
 class TestViewProjectEmbeds(OsfTestCase):
 
     def setUp(self):
-        super(TestViewProjectEmbeds, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
 
@@ -275,10 +271,10 @@ class TestViewProjectEmbeds(OsfTestCase):
 
         res = _view_project(project, auth=Auth(project.creator), embed_forks=True)
 
-        assert_in('forks', res['node'])
-        assert_equal(len(res['node']['forks']), 1)
+        assert 'forks' in res['node']
+        assert len(res['node']['forks']) == 1
 
-        assert_equal(res['node']['forks'][0]['id'], fork._id)
+        assert res['node']['forks'][0]['id'] == fork._id
 
     # Regression test
     def test_view_project_embed_registrations_sorted_by_registered_date_descending(self):
@@ -296,14 +292,14 @@ class TestViewProjectEmbeds(OsfTestCase):
 
         data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
         actual = [n['id'] for n in data['node']['registrations']]
-        assert_equal(actual, expected)
+        assert actual == expected
 
     def test_view_project_embed_descendants(self):
         child = NodeFactory(parent=self.project, creator=self.user)
         res = _view_project(self.project, auth=Auth(self.project.creator), embed_descendants=True)
-        assert_in('descendants', res['node'])
-        assert_equal(len(res['node']['descendants']), 1)
-        assert_equal(res['node']['descendants'][0]['id'], child._id)
+        assert 'descendants' in res['node']
+        assert len(res['node']['descendants']) == 1
+        assert res['node']['descendants'][0]['id'] == child._id
 
 
 class TestGetReadableDescendants(OsfTestCase):
@@ -316,8 +312,8 @@ class TestGetReadableDescendants(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         child = NodeFactory(parent=project, creator=self.user)
         nodes, all_readable = _get_readable_descendants(auth=Auth(project.creator), node=project)
-        assert_equal(nodes[0]._id, child._id)
-        assert_true(all_readable)
+        assert nodes[0]._id == child._id
+        assert all_readable
 
     def test__get_readable_descendants_includes_pointers(self):
         project = ProjectFactory(creator=self.user)
@@ -327,10 +323,10 @@ class TestGetReadableDescendants(OsfTestCase):
 
         nodes, all_readable = _get_readable_descendants(auth=Auth(project.creator), node=project)
 
-        assert_equal(len(nodes), 1)
-        assert_equal(nodes[0].title, pointed.title)
-        assert_equal(nodes[0]._id, pointed._id)
-        assert_true(all_readable)
+        assert len(nodes) == 1
+        assert nodes[0].title == pointed.title
+        assert nodes[0]._id == pointed._id
+        assert all_readable
 
     def test__get_readable_descendants_masked_by_permissions(self):
         # Users should be able to see through components they do not have
@@ -394,17 +390,17 @@ class TestGetReadableDescendants(OsfTestCase):
         NodeRelation.objects.create(parent=component7, child=component9)
 
         nodes, all_readable = _get_readable_descendants(auth=Auth(userA), node=project1)
-        assert_equal(len(nodes), 3)
-        assert_false(all_readable)
+        assert len(nodes) == 3
+        assert not all_readable
 
         for node in nodes:
-            assert_in(node.title, ['Two', 'Six', 'Seven'])
+            assert node.title in ['Two', 'Six', 'Seven']
 
         nodes, all_readable = _get_readable_descendants(auth=Auth(userB), node=project1)
-        assert_equal(len(nodes), 3)
-        assert_false(all_readable)
+        assert len(nodes) == 3
+        assert not all_readable
         for node in nodes:
-            assert_in(node.title, ['Four', 'Eight', 'Nine'])
+            assert node.title in ['Four', 'Eight', 'Nine']
 
 
 class TestNodeLogSerializers(OsfTestCase):
@@ -413,20 +409,20 @@ class TestNodeLogSerializers(OsfTestCase):
         node = NodeFactory()
         d = node.serialize()
 
-        assert_equal(d['id'], node._primary_key)
-        assert_equal(d['category'], node.category_display)
-        assert_equal(d['node_type'], node.project_or_component)
-        assert_equal(d['url'], node.url)
-        assert_equal(d['title'], node.title)
-        assert_equal(d['api_url'], node.api_url)
-        assert_equal(d['is_public'], node.is_public)
-        assert_equal(d['is_registration'], node.is_registration)
+        assert d['id'] == node._primary_key
+        assert d['category'] == node.category_display
+        assert d['node_type'] == node.project_or_component
+        assert d['url'] == node.url
+        assert d['title'] == node.title
+        assert d['api_url'] == node.api_url
+        assert d['is_public'] == node.is_public
+        assert d['is_registration'] == node.is_registration
 
 
 class TestAddContributorJson(OsfTestCase):
 
     def setUp(self):
-        super(TestAddContributorJson, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.profile = self.user.profile_url
         self.user_id = self.user._primary_key
@@ -454,48 +450,48 @@ class TestAddContributorJson(OsfTestCase):
         # User with no employment or education info listed
         user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(user_info['fullname'], self.fullname)
-        assert_equal(user_info['email'], self.username)
-        assert_equal(user_info['id'], self.user_id)
-        assert_equal(user_info['employment'], None)
-        assert_equal(user_info['education'], None)
-        assert_equal(user_info['n_projects_in_common'], 0)
-        assert_equal(user_info['registered'], True)
-        assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['profile_image_url'])
-        assert_equal(user_info['profile_url'], self.profile)
+        assert user_info['fullname'] == self.fullname
+        assert user_info['email'] == self.username
+        assert user_info['id'] == self.user_id
+        assert user_info['employment'] is None
+        assert user_info['education'] is None
+        assert user_info['n_projects_in_common'] == 0
+        assert user_info['registered'] == True
+        assert user_info['active'] == True
+        assert 'secure.gravatar.com' in user_info['profile_image_url']
+        assert user_info['profile_url'] == self.profile
 
     def test_add_contributor_json_with_edu(self):
         # Test user with only education information
         self.user.schools = self.schools
         user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(user_info['fullname'], self.fullname)
-        assert_equal(user_info['email'], self.username)
-        assert_equal(user_info['id'], self.user_id)
-        assert_equal(user_info['employment'], None)
-        assert_equal(user_info['education'], self.user.schools[0]['institution'])
-        assert_equal(user_info['n_projects_in_common'], 0)
-        assert_equal(user_info['registered'], True)
-        assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['profile_image_url'])
-        assert_equal(user_info['profile_url'], self.profile)
+        assert user_info['fullname'] == self.fullname
+        assert user_info['email'] == self.username
+        assert user_info['id'] == self.user_id
+        assert user_info['employment'] is None
+        assert user_info['education'] == self.user.schools[0]['institution']
+        assert user_info['n_projects_in_common'] == 0
+        assert user_info['registered'] == True
+        assert user_info['active'] == True
+        assert 'secure.gravatar.com' in user_info['profile_image_url']
+        assert user_info['profile_url'] == self.profile
 
     def test_add_contributor_json_with_job(self):
         # Test user with only employment information
         self.user.jobs = self.jobs
         user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(user_info['fullname'], self.fullname)
-        assert_equal(user_info['email'], self.username)
-        assert_equal(user_info['id'], self.user_id)
-        assert_equal(user_info['employment'], self.user.jobs[0]['institution'])
-        assert_equal(user_info['education'], None)
-        assert_equal(user_info['n_projects_in_common'], 0)
-        assert_equal(user_info['registered'], True)
-        assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['profile_image_url'])
-        assert_equal(user_info['profile_url'], self.profile)
+        assert user_info['fullname'] == self.fullname
+        assert user_info['email'] == self.username
+        assert user_info['id'] == self.user_id
+        assert user_info['employment'] == self.user.jobs[0]['institution']
+        assert user_info['education'] is None
+        assert user_info['n_projects_in_common'] == 0
+        assert user_info['registered'] == True
+        assert user_info['active'] == True
+        assert 'secure.gravatar.com' in user_info['profile_image_url']
+        assert user_info['profile_url'] == self.profile
 
     def test_add_contributor_json_with_job_and_edu(self):
         # User with both employment and education information
@@ -503,13 +499,13 @@ class TestAddContributorJson(OsfTestCase):
         self.user.schools = self.schools
         user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(user_info['fullname'], self.fullname)
-        assert_equal(user_info['email'], self.username)
-        assert_equal(user_info['id'], self.user_id)
-        assert_equal(user_info['employment'], self.user.jobs[0]['institution'])
-        assert_equal(user_info['education'], self.user.schools[0]['institution'])
-        assert_equal(user_info['n_projects_in_common'], 0)
-        assert_equal(user_info['registered'], True)
-        assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['profile_image_url'])
-        assert_equal(user_info['profile_url'], self.profile)
+        assert user_info['fullname'] == self.fullname
+        assert user_info['email'] == self.username
+        assert user_info['id'] == self.user_id
+        assert user_info['employment'] == self.user.jobs[0]['institution']
+        assert user_info['education'] == self.user.schools[0]['institution']
+        assert user_info['n_projects_in_common'] == 0
+        assert user_info['registered'] == True
+        assert user_info['active'] == True
+        assert 'secure.gravatar.com' in user_info['profile_image_url']
+        assert user_info['profile_url'] == self.profile

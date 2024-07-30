@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from rest_framework import generics
 from rest_framework import serializers as ser
 from rest_framework import status as http_status
@@ -44,7 +41,7 @@ class ReviewableCountsRelationshipField(RelationshipField):
         kwargs['related_meta'] = kwargs.get('related_meta') or {}
         if 'include_state_counts' not in kwargs['related_meta']:
             kwargs['related_meta']['include_state_counts'] = True
-        super(ReviewableCountsRelationshipField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_meta_information(self, metadata, provider):
         # Clone metadata because its mutability is questionable
@@ -65,7 +62,7 @@ class ReviewableCountsRelationshipField(RelationshipField):
             if auth and auth.logged_in and auth.user.has_perm('view_actions', provider):
                 metadata.update(provider.get_reviewable_state_counts())
 
-        return super(ReviewableCountsRelationshipField, self).get_meta_information(metadata, provider)
+        return super().get_meta_information(metadata, provider)
 
 
 class TargetRelationshipField(RelationshipField):
@@ -73,7 +70,7 @@ class TargetRelationshipField(RelationshipField):
 
     def __init__(self, *args, **kwargs):
         self._target_class = kwargs.pop('target_class', None)
-        super(TargetRelationshipField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def TargetClass(self):
@@ -194,12 +191,14 @@ class ReviewActionSerializer(BaseActionSerializer):
         filter_key='target__provider___id',
     )
 
-    creator = HideIfProviderCommentsAnonymous(RelationshipField(
-        read_only=True,
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<creator._id>'},
-        always_embed=True,
-    ))
+    creator = HideIfProviderCommentsAnonymous(
+        RelationshipField(
+            read_only=True,
+            related_view='users:user-detail',
+            related_view_kwargs={'user_id': '<creator._id>'},
+            always_embed=True,
+        ),
+    )
 
     target = TargetRelationshipField(
         target_class=Preprint,
@@ -213,7 +212,7 @@ class ReviewActionSerializer(BaseActionSerializer):
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
         if trigger != ReviewTriggers.WITHDRAW.value:
-            return super(ReviewActionSerializer, self).create(validated_data)
+            return super().create(validated_data)
         user = validated_data.pop('user')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')

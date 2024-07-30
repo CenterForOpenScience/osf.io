@@ -6,6 +6,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 class TwoFactorAddonAppConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.twofactor'
     label = 'addons_twofactor'
     full_name = 'Two-factor Authentication'

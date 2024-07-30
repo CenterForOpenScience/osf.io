@@ -139,7 +139,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
     ordering = ('-modified',)
     model_class = Registration
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides BulkUpdateJSONAPIView
     def get_serializer_class(self):
@@ -215,7 +215,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
             try:
                 serializer.save(draft=draft)
             except ValidationError as e:
-                log_exception()
+                log_exception(e)
                 raise e
         else:
             raise PermissionDenied(
@@ -243,7 +243,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     view_category = 'registrations'
     view_name = 'registration-detail'
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -661,7 +661,7 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = LinkedNodesRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
@@ -698,7 +698,7 @@ class RegistrationLinkedRegistrationsRelationship(JSONAPIBaseView, generics.Retr
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = LinkedRegistrationsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON,)
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
@@ -821,7 +821,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
         ContributorOrModerator,
     )
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
@@ -854,7 +854,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
-            raise Conflict(f'{target.provider.name } is an umoderated provider. If you believe this is an error, contact OSF Support.')
+            raise Conflict(f'{target.provider.name} is an umoderated provider. If you believe this is an error, contact OSF Support.')
 
         serializer.save(user=self.request.user)
 

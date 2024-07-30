@@ -25,7 +25,7 @@ class TestSchemaList:
 
     @pytest.fixture
     def url(self):
-        return '/{}schemas/registrations/?version=2.11'.format(API_BASE)
+        return f'/{API_BASE}schemas/registrations/?version=2.11'
 
     @pytest.fixture
     def egap_admin(self):
@@ -58,14 +58,14 @@ class TestSchemaList:
         assert res.status_code == 200
 
         # test_filter_on_active
-        url = '/{}schemas/registrations/?version=2.11&filter[active]=True'.format(API_BASE)
+        url = f'/{API_BASE}schemas/registrations/?version=2.11&filter[active]=True'
         res = app.get(url)
 
         assert res.status_code == 200
         active_schemas = RegistrationSchema.objects.get_latest_versions(factory_request).filter(active=True)
         assert res.json['meta']['total'] == active_schemas.count()
 
-        url = '/{}schemas/registrations/'.format(API_BASE)
+        url = f'/{API_BASE}schemas/registrations/'
         # test_make_sure_egap_admins_can_view_registrations
 
         res = app.get(url, auth=user.auth)

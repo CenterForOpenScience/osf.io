@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 import csv
 import io
 import pytest
 import string
 
-from nose.tools import assert_equal, assert_true
 from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
@@ -56,26 +54,25 @@ def make_row(field_values={}):
 def assert_parsed(actual_parsed, expected_parsed):
     parsed = {**actual_parsed['metadata'], **actual_parsed['registration_responses']}
     for key, value in expected_parsed.items():
-        assert_true(key in parsed)
+        assert key in parsed
         actual = parsed[key]
         expected = value
-        if actual and expected and type(actual) == list and type(expected) == list:
-            if type(actual[0]) == str:
-                assert_equal(actual.sort(), expected.sort(), msg=f'"{key}" parsed correctly')
+        if actual and expected and isinstance(actual, list) and isinstance(expected, list):
+            if isinstance(actual[0], str):
+                assert actual.sort() == expected.sort(), f'"{key}" parsed correctly'
                 continue
-        assert_equal(actual, expected)
+        assert actual == expected
 
 
 def assert_errors(actual_errors, expected_errors):
     for error in actual_errors:
-        assert_true('header' in error)
-        assert_true('column_index' in error)
-        assert_true('row_index' in error)
-        assert_true('external_id' in error)
-        assert_true(error['header'] in expected_errors)
-        assert_equal(error['type'], expected_errors[error['header']])
-
-    assert_true(len(actual_errors), len(expected_errors.keys()))
+        assert 'header' in error
+        assert 'column_index' in error
+        assert 'row_index' in error
+        assert 'external_id' in error
+        assert error['header'] in expected_errors
+        assert error['type'] == expected_errors[error['header']]
+    assert len(actual_errors), len(expected_errors.keys())
 
 
 @pytest.mark.django_db
@@ -125,10 +122,10 @@ class TestBulkUploadParserValidationErrors:
     def test_csv_parsed(self, header_row, open_ended_schema, subjects_list, registration_provider, valid_row):
         test_csv = write_csv(header_row, {'Title': open_ended_schema._id}, valid_row)
         upload = BulkRegistrationUpload(test_csv, registration_provider._id)
-        assert upload.is_validated is False
+        assert not upload.is_validated
         upload.validate()
         parsed = upload.get_parsed()
-        assert upload.is_validated is True
+        assert upload.is_validated
         assert upload.errors == []
         assert 'registrations' in parsed
         assert 'csv_raw' in parsed['registrations'][0]

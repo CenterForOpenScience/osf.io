@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION
@@ -55,12 +55,12 @@ class TestTokenDetailScopesAsRelationships:
 
     @pytest.fixture()
     def url_token_detail(self, user_one, token_user_one):
-        path = 'tokens/{}/?version={}'.format(token_user_one._id, SCOPES_RELATIONSHIP_VERSION)
+        path = f'tokens/{token_user_one._id}/?version={SCOPES_RELATIONSHIP_VERSION}'
         return api_v2_url(path, base_route='/')
 
     @pytest.fixture()
     def url_token_list(self):
-        return api_v2_url('tokens/?version={}'.format(SCOPES_RELATIONSHIP_VERSION), base_route='/')
+        return api_v2_url(f'tokens/?version={SCOPES_RELATIONSHIP_VERSION}', base_route='/')
 
     @pytest.fixture()
     def read_scope(self):
@@ -373,7 +373,7 @@ class TestTokenDetailScopesAsAttributes:
 
     @pytest.fixture()
     def url_token_detail(self, user_one, token_user_one):
-        path = 'tokens/{}/'.format(token_user_one._id)
+        path = f'tokens/{token_user_one._id}/'
         return api_v2_url(path, base_route='/')
 
     @pytest.fixture()
@@ -438,7 +438,7 @@ class TestTokenDetailScopesAsAttributes:
             {
                 'owner': user_one_token.owner._id,
                 'name': new_name,
-                'scopes': '{}'.format(write_scope.name),
+                'scopes': f'{write_scope.name}',
             },
             res.json['data']['attributes'])
         assert res.json['data']['id'] == user_one_token._id

@@ -1,3 +1,1 @@
-cachecontrol==0.10.2
-python-gitlab==2.5.0
-python-magic==0.4.6
+python-gitlab==4.4.0

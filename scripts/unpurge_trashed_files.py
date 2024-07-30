@@ -19,13 +19,13 @@ def unpurge_trash(ids):
     creds = Credentials.from_service_account_file(GCS_CREDS)
     client = Client(credentials=creds)
     if qs.count() < len(ids):
-        logger.warn('Some ids could not be found: {}'.format(list(set(ids) - set(qs.values_list('id', flat=True)))))
+        logger.warning(f"Some ids could not be found: {list(set(ids) - set(qs.values_list('id', flat=True)))}")
     for tf in qs.all():
         logger.info(f'Unpurging {tf.id}')
         try:
             tf.restore(client=client)
         except Exception as e:
-            log_exception()
+            log_exception(e)
             logger.error(f'Encountered Error handling {tf.id}')
 
 def main():

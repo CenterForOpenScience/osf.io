@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -30,7 +29,7 @@ class TestUserRequestExport:
 
     @pytest.fixture()
     def url(self, user_one):
-        return '/{}users/{}/settings/export/'.format(API_BASE, user_one._id)
+        return f'/{API_BASE}users/{user_one._id}/settings/export/'
 
     @pytest.fixture()
     def payload(self):
@@ -99,7 +98,7 @@ class TestUserChangePassword:
 
     @pytest.fixture()
     def url(self, user_one):
-        return '/{}users/{}/settings/password/'.format(API_BASE, user_one._id)
+        return f'/{API_BASE}users/{user_one._id}/settings/password/'
 
     @pytest.fixture()
     def payload(self, user_one):
@@ -181,7 +180,7 @@ class TestUserEmailsList:
 
     @pytest.fixture()
     def url(self, user_one):
-        return '/{}users/{}/settings/emails/'.format(API_BASE, user_one._id)
+        return f'/{API_BASE}users/{user_one._id}/settings/emails/'
 
     @pytest.fixture()
     def payload(self, user_one):
@@ -305,14 +304,14 @@ class TestUserEmailsList:
         # test filter by confirmed
         confirmed_tokens = [key for key, value in user_one.email_verifications.items() if value['confirmed']]
         confirmed_count = user_one.emails.count() + len(confirmed_tokens)
-        filtered_url = '{}?filter[confirmed]=True'.format(url)
+        filtered_url = f'{url}?filter[confirmed]=True'
         res = app.get(filtered_url, auth=user_one.auth)
         assert confirmed_count > 0
         assert len(res.json['data']) == confirmed_count
         for result in res.json['data']:
             assert result['attributes']['confirmed'] is True
 
-        filtered_url = '{}?filter[confirmed]=False'.format(url)
+        filtered_url = f'{url}?filter[confirmed]=False'
         res = app.get(filtered_url, auth=user_one.auth)
         assert len(res.json['data']) > 0
         for result in res.json['data']:
@@ -320,24 +319,24 @@ class TestUserEmailsList:
 
         # test filter by verified
         verified_count = user_one.emails.count()
-        filtered_url = '{}?filter[verified]=True'.format(url)
+        filtered_url = f'{url}?filter[verified]=True'
         res = app.get(filtered_url, auth=user_one.auth)
         assert verified_count > 0
         assert len(res.json['data']) == verified_count
         for result in res.json['data']:
             assert result['attributes']['verified'] is True
 
-        filtered_url = '{}?filter[verified]=False'.format(url)
+        filtered_url = f'{url}?filter[verified]=False'
         res = app.get(filtered_url, auth=user_one.auth)
         assert len(res.json['data']) > 0
         for result in res.json['data']:
             assert result['attributes']['verified'] is False
 
-        primary_filter_url = '{}?filter[primary]=True'.format(url)
+        primary_filter_url = f'{url}?filter[primary]=True'
         res = app.get(primary_filter_url, auth=user_one.auth)
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes']['primary'] is True
-        not_primary_url = '{}?filter[primary]=False'.format(url)
+        not_primary_url = f'{url}?filter[primary]=False'
         res = app.get(not_primary_url, auth=user_one.auth)
         assert len(res.json['data']) > 0
         for result in res.json['data']:
@@ -362,7 +361,7 @@ class TestUserEmailDetail:
 
     @pytest.fixture()
     def unconfirmed_url(self, user_one, unconfirmed_token):
-        return '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, unconfirmed_token)
+        return f'/{API_BASE}users/{user_one._id}/settings/emails/{unconfirmed_token}/'
 
     @pytest.fixture()
     def payload(self):
@@ -376,7 +375,7 @@ class TestUserEmailDetail:
     @pytest.fixture()
     def confirmed_url(self, user_one, confirmed_email):
         confirmed_email_hash = self.get_hashid(confirmed_email.id)
-        return '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, confirmed_email_hash)
+        return f'/{API_BASE}users/{user_one._id}/settings/emails/{confirmed_email_hash}/'
 
     def test_get_email_detail(self, app, confirmed_url, user_one, user_two, unconfirmed_url):
         # logged in and authorized and confirmed
@@ -397,27 +396,27 @@ class TestUserEmailDetail:
         assert res_unconfirmed.status_code == 200
         assert res_unconfirmed.json['data']['attributes']['confirmed'] is False
         assert 'resend_confirmation' in res_unconfirmed.json['data']['links'].keys()
-        assert '{}?resend_confirmation=true'.format(unconfirmed_url) in res_unconfirmed.json['data']['links']['resend_confirmation']
+        assert f'{unconfirmed_url}?resend_confirmation=true' in res_unconfirmed.json['data']['links']['resend_confirmation']
 
         # token for unconfirmed email different user
         res = app.get(unconfirmed_url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         # id does not exist
-        url = '/{}users/{}/settings/emails/thisisnotarealid/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/thisisnotarealid/'
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
         # id is a real hashid but the database id does not exist
         potential_id = hashids.encode(10000000)
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, potential_id)
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/{potential_id}/'
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
         # primary email detail
         primary_email = Email.objects.get(address=user_one.username)
         primary_hash = self.get_hashid(primary_email.id)
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, primary_hash)
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/{primary_hash}/'
         res_primary = app.get(url, auth=user_one.auth)
         assert res_primary.status_code == 200
         assert res_primary.json['data']['attributes']['primary'] is True
@@ -425,7 +424,7 @@ class TestUserEmailDetail:
         # is_merge field
         token = user_one.add_unconfirmed_email(user_two.username)
         user_one.save()
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, token)
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/{token}/'
         res_merge = app.get(url, auth=user_one.auth)
         assert res_merge.json['data']['attributes']['is_merge'] is True
         assert res_unconfirmed.json['data']['attributes']['is_merge'] is False
@@ -441,7 +440,7 @@ class TestUserEmailDetail:
         second_token = user_one.add_unconfirmed_email(unconfirmed_address)
         user_one.save()
         assert unconfirmed_token != second_token
-        second_token_url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, second_token)
+        second_token_url = f'/{API_BASE}users/{user_one._id}/settings/emails/{second_token}/'
         res = app.get(second_token_url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == second_token
@@ -485,7 +484,7 @@ class TestUserEmailDetail:
         # test delete primary email fails
         username_email = user_one.emails.get(address=user_one.username)
         username_hash = self.get_hashid(username_email.id)
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, username_hash)
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/{username_hash}/'
         res = app.delete_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == "Can't remove primary email"
@@ -514,7 +513,7 @@ class TestUserEmailDetail:
         user_one.reload()
         email = Email.objects.get(address=unconfirmed_address)
         email_hash = self.get_hashid(email.id)
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, email_hash)
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/{email_hash}/'
         res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['confirmed'] is True
         assert res.json['data']['attributes']['verified'] is True
@@ -562,7 +561,7 @@ class TestUserEmailDetail:
         payload['data']['attributes'] = {'verified': True}
         token = user_one.add_unconfirmed_email(user_two.username)
         user_one.save()
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, token)
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/{token}/'
 
         # test unconfirmed merge attempt fails
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
@@ -580,14 +579,14 @@ class TestUserEmailDetail:
 
     @mock.patch('api.users.views.send_confirm_email_async')
     def test_resend_confirmation_email(self, mock_send_confirm_email_async, app, user_one, unconfirmed_url, confirmed_url):
-        url = '{}?resend_confirmation=True'.format(unconfirmed_url)
+        url = f'{unconfirmed_url}?resend_confirmation=True'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 202
         assert mock_send_confirm_email_async.called
         call_count = mock_send_confirm_email_async.call_count
 
         # make sure setting false does not send confirm email
-        url = '{}?resend_confirmation=False'.format(unconfirmed_url)
+        url = f'{unconfirmed_url}?resend_confirmation=False'
         res = app.get(url, auth=user_one.auth)
         # should return 200 instead of 202 because nothing has been done
         assert res.status_code == 200
@@ -599,7 +598,7 @@ class TestUserEmailDetail:
         assert res.status_code == 200
 
         # resend confirmation with confirmed email address does not send confirmation email
-        url = '{}?resend_confirmation=True'.format(confirmed_url)
+        url = f'{confirmed_url}?resend_confirmation=True'
         res = app.get(url, auth=user_one.auth)
         assert mock_send_confirm_email_async.call_count == call_count
         assert res.status_code == 200

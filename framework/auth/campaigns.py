@@ -1,4 +1,4 @@
-import furl
+from furl import furl
 import threading
 
 from django.utils import timezone
@@ -25,7 +25,7 @@ def get_campaigns():
             newest_campaigns = {
                 'erpc': {
                     'system_tag': CampaignSourceTags.ErpChallenge.value,
-                    'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
+                    'redirect_url': furl(DOMAIN).add(path='erpc/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
                     'login_type': 'native',
                 },
@@ -51,14 +51,14 @@ def get_campaigns():
                 else:
                     template = 'branded'
                     name = provider.name
-                    url_path = 'preprints/{}'.format(provider._id)
+                    url_path = f'preprints/{provider._id}'
                     external_url = provider.domain
-                campaign = '{}-preprints'.format(provider._id)
+                campaign = f'{provider._id}-preprints'
                 system_tag = provider_source_tag(provider._id, 'preprint')
                 newest_campaigns.update({
                     campaign: {
                         'system_tag': system_tag,
-                        'redirect_url': furl.furl(DOMAIN).add(path=url_path).url,
+                        'redirect_url': furl(DOMAIN).add(path=url_path).url,
                         'external_url': external_url,
                         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
                         'login_type': 'proxy',
@@ -72,7 +72,7 @@ def get_campaigns():
             newest_campaigns.update({
                 'osf-registries': {
                     'system_tag': provider_source_tag('osf', 'registry'),
-                    'redirect_url': furl.furl(DOMAIN).add(path='registries/').url,
+                    'redirect_url': furl(DOMAIN).add(path='registries/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',
@@ -83,7 +83,7 @@ def get_campaigns():
             newest_campaigns.update({
                 'osf-registered-reports': {
                     'system_tag': CampaignSourceTags.OsfRegisteredReports.value,
-                    'redirect_url': furl.furl(DOMAIN).add(path='rr/').url,
+                    'redirect_url': furl(DOMAIN).add(path='rr/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',
@@ -94,7 +94,7 @@ def get_campaigns():
             newest_campaigns.update({
                 'agu_conference_2023': {
                     'system_tag': CampaignSourceTags.AguConference2023.value,
-                    'redirect_url': furl.furl(DOMAIN).add(path='dashboard/').url,
+                    'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_AGU_CONFERENCE_2023,
                     'login_type': 'native',
                 }

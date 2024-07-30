@@ -3,6 +3,27 @@ description: 'Last composite action before tests are run'
 runs:
   using: "composite"
   steps:
+  - id: cache-objects
+    uses: actions/cache@v2
+    with:
+      path: ~/.cache
+      key: reqs_${{ hashFiles('poetry.lock') }}
+      restore-keys: reqs_
+  - uses: ./.github/actions/build-es
+    with:
+      ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
+  - uses: ./.github/actions/build-es6
+    with:
+      ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+  - name: Set up Python 3.12
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.12'
+  - name: Install lxml
+    shell: bash
+    run: |
+      sudo apt update
+      sudo apt-get install libxml2-dev libxslt-dev python-dev
   - name: Copy Settings
     shell: bash
     run: |
@@ -13,19 +34,15 @@ runs:
   - name: PIP install
     shell: bash
     run: |
-      pip install --upgrade pip
-      pip install invoke==0.13.0
-      pip install flake8==2.4.0 --force-reinstall --upgrade
-      pip install wheel
-      invoke wheelhouse --dev --addons
+      # pinned pip to 21.0a and setuptools<58.0.0 as current dependencies do not build on newer versions of pip and setuptools
+      pip install poetry==1.8.0
+      poetry install --no-root --without release
   - name: Other installs
     shell: bash
     run: |
-      pip install psycopg2==2.7.3 --no-binary psycopg2
-      invoke travis_addon_settings
-      invoke requirements --dev --addons
+      # bumped psycopg to match requirements.txt, as otherwise build would fail
+      poetry run python3 -m invoke travis-addon-settings
       pip uninstall uritemplate.py --yes
-      pip install uritemplate.py==0.3.0
       # use yarn add --exact to match versions in yarn.lock w/o installing all deps
       yarn add --exact bower@^1.8.8
       yarn add --exact @centerforopenscience/list-of-licenses@^1.1.0

@@ -41,7 +41,7 @@ class TestMeetingsList:
     def test_meeting_list(self, res, meeting_one, meeting_two, meeting_three):
         assert res.status_code == 200
         assert len(res.json['data']) == 2
-        assert set([meeting['id']for meeting in res.json['data']]) == set([meeting_two.endpoint, meeting_three.endpoint])
+        assert {meeting['id']for meeting in res.json['data']} == {meeting_two.endpoint, meeting_three.endpoint}
 
 
 @pytest.mark.django_db
@@ -115,7 +115,7 @@ class TestMeetingListFilter:
         # Filter on name
         res = app.get('{}{}'.format(filter_url, '[name]=Science'))
         assert len(res.json['data']) == 2
-        assert set([meeting_one.endpoint, meeting_two.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert {meeting_one.endpoint, meeting_two.endpoint} == {meeting['id'] for meeting in res.json['data']}
 
         res = app.get('{}{}'.format(filter_url, '[name]=Neurons'))
         assert len(res.json['data']) == 1

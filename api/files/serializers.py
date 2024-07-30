@@ -4,7 +4,7 @@ from collections import OrderedDict
 from django.urls import resolve, reverse
 from django.core.exceptions import ValidationError
 
-import furl
+from furl import furl
 import pytz
 
 from framework.auth.core import Auth
@@ -67,7 +67,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         self.link_type = 'related'
         self.always_embed = kwargs.pop('always_embed', False)
 
-        super(CheckoutField, self).__init__('users:user-detail', **kwargs)
+        super().__init__('users:user-detail', **kwargs)
 
     def resolve(self, resource, field_name, request):
         """
@@ -134,7 +134,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
     def to_representation(self, value):
 
-        url = super(CheckoutField, self).to_representation(value)
+        url = super().to_representation(value)
 
         rel_meta = None
         if value and hasattr(value, '_id'):
@@ -158,7 +158,7 @@ class FileNodeRelationshipField(RelationshipField):
     def to_representation(self, value):
         if not isinstance(value.target, AbstractNode):
             raise SkipField
-        return super(FileNodeRelationshipField, self).to_representation(value)
+        return super().to_representation(value)
 
 
 def disambiguate_files_related_view(node):
@@ -240,12 +240,14 @@ class BaseFileSerializer(JSONAPISerializer):
         related_view_kwargs={'file_id': '<_id>'},
         kind='file',
     )
-    comments = HideIfPreprint(FileRelationshipField(
-        related_view='nodes:node-comments',
-        related_view_kwargs={'node_id': '<target._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': 'get_file_guid'},
-    ))
+    comments = HideIfPreprint(
+        FileRelationshipField(
+            related_view='nodes:node-comments',
+            related_view_kwargs={'node_id': '<target._id>'},
+            related_meta={'unread': 'get_unread_comments_count'},
+            filter={'target': 'get_file_guid'},
+        ),
+    )
 
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
@@ -260,7 +262,9 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
-            url = furl.furl(settings.DOMAIN).set(
+            # NOTE: furl encoding to be verified later
+            url = furl(
+                settings.DOMAIN,
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
             )
             if obj.provider == 'dataverse':
@@ -361,7 +365,7 @@ class BaseFileSerializer(JSONAPISerializer):
         return file
 
     def is_valid(self, **kwargs):
-        return super(BaseFileSerializer, self).is_valid(clean_html=False, **kwargs)
+        return super().is_valid(clean_html=False, **kwargs)
 
     def get_file_guid(self, obj):
         if obj:
@@ -371,7 +375,7 @@ class BaseFileSerializer(JSONAPISerializer):
         return None
 
     def get_absolute_url(self, obj):
-        return api_v2_url('files/{}/'.format(obj._id))
+        return api_v2_url(f'files/{obj._id}/')
 
 
 class FileSerializer(BaseFileSerializer):
@@ -495,7 +499,9 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         fobj = self.context['file']
-        return furl.furl(settings.DOMAIN).set(
+        # NOTE: furl encoding to be verified later
+        return furl(
+            settings.DOMAIN,
             path=(fobj.target._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier},  # TODO this can probably just be changed to revision or version
         ).url
@@ -521,7 +527,9 @@ def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
     # Add '' to the path to ensure thare's a trailing slash
     # The trailing slash avoids a 301
-    url = furl.furl(settings.DOMAIN).set(
+    # NOTE: furl encoding to be verified later
+    url = furl(
+        settings.DOMAIN,
         path=('download', guid._id if guid else obj._id, ''),
     )
 
@@ -541,10 +549,13 @@ def get_file_render_link(mfr_url, download_url, version=None):
     download_url_args['direct'] = None
     download_url_args['mode'] = 'render'
 
-    render_url = furl.furl(mfr_url).set(
+    # NOTE: furl encoding to be verified later
+    render_url = furl(
+        mfr_url,
         path=['render'],
         args={
-            'url': furl.furl(download_url).set(
+            'url': furl(
+                download_url,
                 args=download_url_args,
             ),
         },

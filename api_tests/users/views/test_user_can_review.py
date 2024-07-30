@@ -26,7 +26,7 @@ class TestUserCanReview:
 
     @pytest.fixture()
     def url(self):
-        return '/{}users/me/?fields[users]=can_view_reviews'.format(API_BASE)
+        return f'/{API_BASE}users/me/?fields[users]=can_view_reviews'
 
     def test_can_review(self, app, url, user, moderator, provider):
         res = app.get(url, auth=moderator.auth)

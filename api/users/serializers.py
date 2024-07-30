@@ -1,11 +1,11 @@
-import jsonschema
 from django.utils import timezone
-
-from rest_framework import serializers as ser
+from jsonschema import validate, Draft7Validator, ValidationError as JsonSchemaValidationError
 from rest_framework import exceptions
+from rest_framework import serializers as ser
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base.exceptions import InvalidModelValueError, Conflict
+from api.base.schemas.utils import validate_user_json, from_json
 from api.base.serializers import (
     BaseAPISerializer,
     JSONAPISerializer,
@@ -19,28 +19,23 @@ from api.base.serializers import (
     JSONAPIListField,
     ShowIfCurrentUser,
 )
-
-from api.base.utils import default_node_list_queryset
-from osf.models import Registration, Node
-from api.base.utils import absolute_reverse, get_user_auth, is_deprecated, hashids
-from osf.models import Email
-from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
-from osf.models import OSFUser, Preprint
-from osf.utils.requests import string_type_request_headers
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
-from osf.models.provider import AbstractProviderGroupObjectPermission
-from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
-from api.nodes.serializers import NodeSerializer, RegionRelationshipField
-from api.base.schemas.utils import validate_user_json, from_json
-from framework.auth.views import send_confirm_email_async
+from api.base.utils import absolute_reverse, default_node_list_queryset, get_user_auth, is_deprecated, hashids
 from api.base.versioning import get_kebab_snake_case_field
+from api.nodes.serializers import NodeSerializer, RegionRelationshipField
+from framework.auth.views import send_confirm_email_async
+from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
+from osf.models import Email, Node, OSFUser, Preprint, Registration
+from osf.models.provider import AbstractProviderGroupObjectPermission
+from osf.utils.requests import string_type_request_headers
+from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 
 
 class SocialField(ser.DictField):
     def __init__(self, min_version, **kwargs):
-        super(SocialField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.min_version = min_version
-        self.help_text = 'This field will change data formats after version {}'.format(self.min_version)
+        self.help_text = f'This field will change data formats after version {self.min_version}'
 
     def to_representation(self, value):
         old_social_string_fields = ['twitter', 'github', 'linkedIn']
@@ -54,7 +49,7 @@ class SocialField(ser.DictField):
                 elif social.get(key) == []:
                     social[key] = ''
             value = social
-        return super(SocialField, self).to_representation(value)
+        return super().to_representation(value)
 
 
 class UserSerializer(JSONAPISerializer):
@@ -91,63 +86,81 @@ class UserSerializer(JSONAPISerializer):
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
-    links = HideIfDisabled(LinksField(
-        {
-            'html': 'absolute_url',
-            'profile_image': 'profile_image_url',
-        },
-    ))
+    links = HideIfDisabled(
+        LinksField(
+            {
+                'html': 'absolute_url',
+                'profile_image': 'profile_image_url',
+            },
+        ),
+    )
 
-    nodes = HideIfDisabled(RelationshipField(
-        related_view='users:user-nodes',
-        related_view_kwargs={'user_id': '<_id>'},
-        related_meta={
-            'projects_in_common': 'get_projects_in_common',
-            'count': 'get_node_count',
-        },
-    ))
+    nodes = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-nodes',
+            related_view_kwargs={'user_id': '<_id>'},
+            related_meta={
+                'projects_in_common': 'get_projects_in_common',
+                'count': 'get_node_count',
+            },
+        ),
+    )
 
-    groups = HideIfDisabled(RelationshipField(
-        related_view='users:user-groups',
-        related_view_kwargs={'user_id': '<_id>'},
-    ))
+    groups = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-groups',
+            related_view_kwargs={'user_id': '<_id>'},
+        ),
+    )
 
-    registrations = HideIfDisabled(RelationshipField(
-        related_view='users:user-registrations',
-        related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'count': 'get_registration_count'},
-    ))
+    registrations = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-registrations',
+            related_view_kwargs={'user_id': '<_id>'},
+            related_meta={'count': 'get_registration_count'},
+        ),
+    )
 
-    institutions = HideIfDisabled(RelationshipField(
-        related_view='users:user-institutions',
-        related_view_kwargs={'user_id': '<_id>'},
-        self_view='users:user-institutions-relationship',
-        self_view_kwargs={'user_id': '<_id>'},
-        related_meta={'count': 'get_institutions_count'},
-    ))
+    institutions = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-institutions',
+            related_view_kwargs={'user_id': '<_id>'},
+            self_view='users:user-institutions-relationship',
+            self_view_kwargs={'user_id': '<_id>'},
+            related_meta={'count': 'get_institutions_count'},
+        ),
+    )
 
-    preprints = HideIfDisabled(RelationshipField(
-        related_view='users:user-preprints',
-        related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'count': 'get_preprint_count'},
-    ))
+    preprints = HideIfDisabled(
+        RelationshipField(
+            related_view='users:user-preprints',
+            related_view_kwargs={'user_id': '<_id>'},
+            related_meta={'count': 'get_preprint_count'},
+        ),
+    )
 
-    emails = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user-emails',
-        related_view_kwargs={'user_id': '<_id>'},
-    ))
+    emails = ShowIfCurrentUser(
+        RelationshipField(
+            related_view='users:user-emails',
+            related_view_kwargs={'user_id': '<_id>'},
+        ),
+    )
 
-    default_region = ShowIfCurrentUser(RegionRelationshipField(
-        related_view='regions:region-detail',
-        related_view_kwargs={'region_id': 'get_default_region_id'},
-        read_only=False,
-    ))
+    default_region = ShowIfCurrentUser(
+        RegionRelationshipField(
+            related_view='regions:region-detail',
+            related_view_kwargs={'region_id': 'get_default_region_id'},
+            read_only=False,
+        ),
+    )
 
-    settings = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user_settings',
-        related_view_kwargs={'user_id': '<_id>'},
-        read_only=True,
-    ))
+    settings = ShowIfCurrentUser(
+        RelationshipField(
+            related_view='users:user_settings',
+            related_view_kwargs={'user_id': '<_id>'},
+            read_only=True,
+        ),
+    )
 
     class Meta:
         type_ = 'users'
@@ -224,8 +237,8 @@ class UserSerializer(JSONAPISerializer):
     def validate_social(self, value):
         schema = from_json('social-schema.json')
         try:
-            jsonschema.validate(value, schema)
-        except jsonschema.ValidationError as e:
+            validate(value, schema, cls=Draft7Validator)
+        except JsonSchemaValidationError as e:
             raise InvalidModelValueError(e)
 
         return value
@@ -408,7 +421,7 @@ class UserSettingsSerializer(JSONAPISerializer):
 
     def to_representation(self, instance):
         self.context['twofactor_addon'] = instance.get_addon('twofactor')
-        return super(UserSettingsSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def get_two_factor_enabled(self, obj):
         try:
@@ -535,7 +548,7 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         return instance
 
 
-class UserEmail(object):
+class UserEmail:
     def __init__(self, email_id, address, confirmed, verified, primary, is_merge=False):
         self.id = email_id
         self.address = address
@@ -579,7 +592,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     def get_resend_confirmation_url(self, obj):
         if not obj.confirmed:
             url = self.get_absolute_url(obj)
-            return '{}?resend_confirmation=true'.format(url)
+            return f'{url}?resend_confirmation=true'
 
     class Meta:
         @staticmethod
@@ -591,7 +604,7 @@ class UserEmailsSerializer(JSONAPISerializer):
         address = validated_data['address']
         is_merge = Email.objects.filter(address=address).exists()
         if address in user.unconfirmed_emails or address in user.emails.all().values_list('address', flat=True):
-            raise Conflict('This user already has registered with the email address {}'.format(address))
+            raise Conflict(f'This user already has registered with the email address {address}')
         try:
             token = user.add_unconfirmed_email(address)
             user.save()

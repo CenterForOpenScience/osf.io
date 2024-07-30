@@ -52,8 +52,8 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'gitlab/file/' + ref,
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + ref,
         'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/' + ref,
-        'zip': '{0}/{1}/repository/archive.zip?branch={2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref),
-        'repo': '{0}/{1}/tree/{2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref)
+        'zip': f'{node_settings.external_account.oauth_secret}/{repo.path_with_namespace}/repository/archive.zip?branch={ref}',
+        'repo': f'{node_settings.external_account.oauth_secret}/{repo.path_with_namespace}/tree/{ref}'
     }
 
     branch_names = [each.name for each in branches]
@@ -76,6 +76,7 @@ USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_user_settings.m
 
 class GitLabAddonConfig(BaseAddonAppConfig):
 
+    default = True
     name = 'addons.gitlab'
     label = 'addons_gitlab'
     full_name = 'GitLab'

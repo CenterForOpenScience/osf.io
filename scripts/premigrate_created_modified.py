@@ -237,13 +237,13 @@ FINALIZE_MIGRATION = [
 @celery_app.task
 def run_sql(sql):
     table = sql.split(' ')[5]
-    logger.info('Updating table {}'.format(table))
+    logger.info(f'Updating table {table}')
     with transaction.atomic():
         with connection.cursor() as cursor:
             cursor.execute(sql)
             rows = cursor.fetchall()
             if not rows:
-                raise Exception('Sentry notification that {} is migrated'.format(table))
+                raise Exception(f'Sentry notification that {table} is migrated')
 
 @celery_app.task(name='scripts.premigrate_created_modified')
 def migrate():

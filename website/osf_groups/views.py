@@ -131,5 +131,5 @@ def subscribe_group_member(group, node, user, permission, auth, throttle=None):
     try:
         subscribe_user_to_notifications(node, user)
     except InvalidSubscriptionError as err:
-        logger.warn('Skipping subscription of user {} to node {}'.format(user, node._id))
-        logger.warn('Reason: {}'.format(str(err)))
+        logger.warning(f'Skipping subscription of user {user} to node {node._id}')
+        logger.warning(f'Reason: {str(err)}')

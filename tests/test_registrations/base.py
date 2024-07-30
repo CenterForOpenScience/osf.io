@@ -13,7 +13,7 @@ from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrati
 
 class RegistrationsTestBase(OsfTestCase):
     def setUp(self):
-        super(RegistrationsTestBase, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.auth = Auth(self.user)
@@ -50,17 +50,14 @@ class RegistrationsTestBase(OsfTestCase):
                 'attributes': {
                     'children': [self.node._id],
                     'draft_registration': self.draft._id,
-                    'lift_embargo': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
+                    'lift_embargo': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + ' GMT',
                     'registration_choice': 'embargo',
                 },
                 'type': 'registrations',
             },
         }
         self.invalid_embargo_date_payload = copy.deepcopy(self.embargo_payload)
-        self.invalid_embargo_date_payload['data']['attributes']['lift_embargo'] = u'Thu, 01 {month} {year} 05:00:00 GMT'.format(
-            month=current_month,
-            year=str(int(current_year) - 1)
-        )
+        self.invalid_embargo_date_payload['data']['attributes']['lift_embargo'] = f'Thu, 01 {current_month} {str(int(current_year) - 1)} 05:00:00 GMT'
 
         self.immediate_payload = {
             'data': {

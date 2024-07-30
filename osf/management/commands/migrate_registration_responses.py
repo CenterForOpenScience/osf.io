@@ -5,7 +5,6 @@ from django.core.management.base import BaseCommand
 from django.apps import apps
 from tqdm import tqdm
 
-from bulk_update.helper import bulk_update
 from framework.celery_tasks import app as celery_app
 from framework import sentry
 
@@ -48,7 +47,7 @@ def migrate_registrations(dry_run, rows='all', AbstractNodeModel=None):
     ).exclude(
         registration_responses_migrated=True,
     )
-    return migrate_responses(registrations, 'registrations', dry_run, rows)
+    return migrate_responses(AbstractNodeModel, registrations, 'registrations', dry_run, rows)
 
 def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None):
     """
@@ -63,19 +62,20 @@ def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None
     draft_registrations = DraftRegistrationModel.objects.exclude(
         registration_responses_migrated=True
     )
-    return migrate_responses(draft_registrations, 'draft registrations', dry_run, rows)
+    return migrate_responses(DraftRegistrationModel, draft_registrations, 'draft registrations', dry_run, rows)
 
-def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
+
+def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'):
     """
     DRY method to be used to migrate both DraftRegistration.registration_responses
     and Registration.registration_responses.
     """
     progress_bar = None
     if rows == 'all':
-        logger.info('Migrating all {}.'.format(resource_name))
+        logger.info(f'Migrating all {resource_name}.')
     else:
         resources = resources[:rows]
-        logger.info('Migrating up to {} {}.'.format(rows, resource_name))
+        logger.info(f'Migrating up to {rows} {resource_name}.')
         progress_bar = tqdm(total=rows)
 
     successes_to_save = []
@@ -92,7 +92,7 @@ def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
         except SchemaBlockConversionError as e:
             resource.registration_responses_migrated = False
             errors_to_save.append(resource)
-            logger.error('Unexpected/invalid nested data in resource: {} with error {}'.format(resource, e))
+            logger.error(f'Unexpected/invalid nested data in resource: {resource} with error {e}')
         if progress_bar:
             progress_bar.update()
 
@@ -104,21 +104,21 @@ def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
     total_count = success_count + error_count
 
     if total_count == 0:
-        logger.info('No {} left to migrate.'.format(resource_name))
+        logger.info(f'No {resource_name} left to migrate.')
         return total_count
 
-    logger.info('Successfully migrated {} out of {} {}.'.format(success_count, total_count, resource_name))
+    logger.info(f'Successfully migrated {success_count} out of {total_count} {resource_name}.')
     if error_count:
-        logger.warn('Encountered errors on {} out of {} {}.'.format(error_count, total_count, resource_name))
+        logger.warning(f'Encountered errors on {error_count} out of {total_count} {resource_name}.')
         if not success_count:
-            sentry.log_message('`migrate_registration_responses` has only errors left ({} errors)'.format(error_count))
+            sentry.log_message(f'`migrate_registration_responses` has only errors left ({error_count} errors)')
 
     if dry_run:
         logger.info('DRY RUN; discarding changes.')
     else:
         logger.info('Saving changes...')
-        bulk_update(successes_to_save, update_fields=['registration_responses', 'registration_responses_migrated'])
-        bulk_update(errors_to_save, update_fields=['registration_responses_migrated'])
+        model.objects.bulk_update(successes_to_save, fields=['registration_responses', 'registration_responses_migrated'])
+        model.objects.bulk_update(errors_to_save, fields=['registration_responses_migrated'])
 
     return total_count
 
@@ -126,7 +126,7 @@ def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
 @celery_app.task(name='management.commands.migrate_registration_responses')
 def migrate_registration_responses(dry_run=False, rows=5000):
     script_start_time = datetime.datetime.now()
-    logger.info('Script started time: {}'.format(script_start_time))
+    logger.info(f'Script started time: {script_start_time}')
 
     draft_count = migrate_draft_registrations(dry_run, rows)
     registration_count = migrate_registrations(dry_run, rows)
@@ -136,8 +136,8 @@ def migrate_registration_responses(dry_run=False, rows=5000):
         sentry.log_message('`migrate_registration_responses` command found nothing to migrate!')
 
     script_finish_time = datetime.datetime.now()
-    logger.info('Script finished time: {}'.format(script_finish_time))
-    logger.info('Run time {}'.format(script_finish_time - script_start_time))
+    logger.info(f'Script finished time: {script_finish_time}')
+    logger.info(f'Run time {script_finish_time - script_start_time}')
 
 
 class Command(BaseCommand):
