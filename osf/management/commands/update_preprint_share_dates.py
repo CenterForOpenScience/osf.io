@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import logging
 
 from django.core.management.base import BaseCommand
@@ -23,7 +22,7 @@ class Command(BaseCommand):
     Send more accurate preprint modified dates to SHARE (sends updates if preprint.modified < node.modified)
     """
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

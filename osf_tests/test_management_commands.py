@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 import time
 
@@ -44,7 +43,7 @@ def next_file_size():
 class TestDataStorageUsage(DbTestCase):
 
     def setUp(self):
-        super(TestDataStorageUsage, self).setUp()
+        super().setUp()
         self.region_us = RegionFactory(_id='US', name='United States')
 
     @staticmethod
@@ -115,7 +114,7 @@ class TestDataStorageUsage(DbTestCase):
         user = UserFactory()
         user_addon = user.get_addon('osfstorage')
         user_addon.default_region_id = self.region_us
-        region_ca = RegionFactory(_id='CA-1', name=u'Canada - Montréal')
+        region_ca = RegionFactory(_id='CA-1', name='Canada - Montréal')
         region_de = RegionFactory(_id='DE-1', name='Germany - Frankfurt')
         region_au = RegionFactory(_id='AU-1', name='Australia - Sydney')
 
@@ -127,7 +126,7 @@ class TestDataStorageUsage(DbTestCase):
             user=user,
             size=file_size
         )
-        logger.debug(u'Public project, US: {}'.format(file_size))
+        logger.debug(f'Public project, US: {file_size}')
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_public_nodes'] += file_size
         expected_summary_data['united_states'] += file_size
@@ -137,7 +136,7 @@ class TestDataStorageUsage(DbTestCase):
             user=user,
             size=file_size,
         )
-        logger.debug(u'Public project file version, US: {}'.format(file_size))
+        logger.debug(f'Public project file version, US: {file_size}')
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_public_nodes'] += file_size
         expected_summary_data['united_states'] += file_size
@@ -149,7 +148,7 @@ class TestDataStorageUsage(DbTestCase):
             user=user,
             size=file_size
         )
-        logger.debug(u'Private project, AU: {}'.format(file_size))
+        logger.debug(f'Private project, AU: {file_size}')
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_private_nodes'] += file_size
         expected_summary_data['australia_sydney'] += file_size
@@ -166,19 +165,19 @@ class TestDataStorageUsage(DbTestCase):
             user=user,
             size=file_size,
         )
-        logger.debug('Before deletion: {}'.format(deleted_file.target.title))
+        logger.debug(f'Before deletion: {deleted_file.target.title}')
 
         deleted_file.delete(user=user, save=True)
-        logger.debug(u'Deleted project, DE: {}'.format(file_size))
+        logger.debug(f'Deleted project, DE: {file_size}')
 
         expected_summary_data['total'] += file_size
         expected_summary_data['deleted'] += file_size
         expected_summary_data['germany_frankfurt'] += file_size
-        logger.debug('After deletion: {}'.format(deleted_file.target.title))
+        logger.debug(f'After deletion: {deleted_file.target.title}')
 
         file_size = next(small_size)
         PreprintFactory(creator=user, file_size=file_size)  # preprint_us
-        logger.debug(u'Preprint, US: {}'.format(file_size))
+        logger.debug(f'Preprint, US: {file_size}')
 
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_preprints'] += file_size
@@ -188,7 +187,7 @@ class TestDataStorageUsage(DbTestCase):
         user_addon.save()
         file_size = next(small_size)
         preprint_with_supplement_ca = PreprintFactory(creator=user, file_size=file_size)
-        logger.debug(u'Preprint, CA: {}'.format(file_size))
+        logger.debug(f'Preprint, CA: {file_size}')
 
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_preprints'] += file_size
@@ -204,7 +203,7 @@ class TestDataStorageUsage(DbTestCase):
             user=user,
             size=file_size
         )
-        logger.debug(u'Public supplemental project of Canadian preprint, US: {}'.format(file_size))
+        logger.debug(f'Public supplemental project of Canadian preprint, US: {file_size}')
 
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_supp_nodes'] += file_size
@@ -215,7 +214,7 @@ class TestDataStorageUsage(DbTestCase):
         withdrawn_preprint_us = PreprintFactory(creator=user, file_size=file_size)
         withdrawn_preprint_us.date_withdrawn = timezone.now()
         withdrawn_preprint_us.save()
-        logger.debug(u'Withdrawn preprint, US: {}'.format(file_size))
+        logger.debug(f'Withdrawn preprint, US: {file_size}')
 
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_preprints'] += file_size
@@ -231,7 +230,7 @@ class TestDataStorageUsage(DbTestCase):
             size=file_size
         )
         assert registration.get_addon('osfstorage').region == self.region_us
-        logger.debug(u'Registration, US: {}'.format(file_size))
+        logger.debug(f'Registration, US: {file_size}')
 
         expected_summary_data['total'] += file_size
         expected_summary_data['united_states'] += file_size
@@ -244,7 +243,7 @@ class TestDataStorageUsage(DbTestCase):
             user=user,
             size=file_size
         )
-        logger.debug(u'Withdrawn registration, US: {}'.format(file_size))
+        logger.debug(f'Withdrawn registration, US: {file_size}')
 
         expected_summary_data['total'] += file_size
         expected_summary_data['united_states'] += file_size
@@ -254,10 +253,10 @@ class TestDataStorageUsage(DbTestCase):
 
         actual_keys = actual_summary_data.keys()
         for key in actual_summary_data:
-            logger.info('Actual field: {}'.format(key))
+            logger.info(f'Actual field: {key}')
         expected_keys = expected_summary_data.keys()
         for key in expected_summary_data:
-            logger.info('Expected field: {}'.format(key))
+            logger.info(f'Expected field: {key}')
         assert actual_keys == expected_keys
         assert len(actual_keys) != 0
 

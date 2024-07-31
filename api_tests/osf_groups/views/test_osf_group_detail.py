@@ -48,7 +48,7 @@ def osf_group(manager, member, old_name):
 
 @pytest.fixture()
 def url(osf_group):
-    return '/{}groups/{}/'.format(API_BASE, osf_group._id)
+    return f'/{API_BASE}groups/{osf_group._id}/'
 
 @pytest.fixture()
 def managers_url(url):

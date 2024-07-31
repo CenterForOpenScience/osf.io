@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import logging
 
 from django.core.management.base import BaseCommand
@@ -11,20 +10,20 @@ logger = logging.getLogger(__name__)
 
 
 def remove_logs_and_files(node_guid):
-    assert node_guid, 'Expected truthy node_id, got {}'.format(node_guid)
+    assert node_guid, f'Expected truthy node_id, got {node_guid}'
     node = Node.load(node_guid)
-    assert node, 'Unable to find node with guid {}'.format(node_guid)
+    assert node, f'Unable to find node with guid {node_guid}'
     for n in node.node_and_primary_descendants():
-        logger.info('{} - Deleting file versions...'.format(n._id))
+        logger.info(f'{n._id} - Deleting file versions...')
         for file in n.files.exclude(parent__isnull=True):
             try:
                 file.versions.exclude(id=file.versions.latest('date_created').id).delete()
             except file.versions.model.DoesNotExist:
                 # No FileVersions, skip
                 pass
-        logger.info('{} - Deleting trashed file nodes...'.format(n._id))
+        logger.info(f'{n._id} - Deleting trashed file nodes...')
         BaseFileNode.objects.filter(type__in=TrashedFileNode._typedmodels_subtypes, node=n).delete()
-        logger.info('{} - Deleting logs...'.format(n._id))
+        logger.info(f'{n._id} - Deleting logs...')
         n.logs.exclude(id=n.logs.earliest().id).delete()
 
 class Command(BaseCommand):
@@ -33,7 +32,7 @@ class Command(BaseCommand):
     For cleaning up after RunScope tests that get out of hand.
     """
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--node',
             type=str,

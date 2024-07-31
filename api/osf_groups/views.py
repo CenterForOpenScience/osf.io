@@ -26,7 +26,7 @@ from osf.models import OSFGroup, OSFUser
 from osf.utils.permissions import MANAGER, GROUP_ROLES
 
 
-class OSFGroupMixin(object):
+class OSFGroupMixin:
     """
     Mixin with convenience method for retrieving the current OSF Group
     """
@@ -62,7 +62,7 @@ class GroupList(GroupBaseView, generics.ListCreateAPIView, ListFilterMixin):
 
     serializer_class = GroupSerializer
     view_name = 'group-list'
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     @require_flag(OSF_GROUPS)
     def get_default_queryset(self):
@@ -124,14 +124,14 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
     model_class = apps.get_model('osf.OSFUser')
     serializer_class = GroupMemberSerializer
     view_category = 'groups'
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     def _assert_member_belongs_to_group(self, user):
         group = self.get_osf_group()
         # Checking group membership instead of permissions, so unregistered members are
         # recognized as group members
         if not group.is_member(user):
-            raise NotFound('{} cannot be found in this OSFGroup'.format(user._id))
+            raise NotFound(f'{user._id} cannot be found in this OSFGroup')
 
     def get_serializer_class(self):
         if self.request.method in ('PUT', 'PATCH', 'DELETE'):
@@ -180,7 +180,7 @@ class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView,
 
     # Overrides ListBulkCreateJSONAPIView
     def get_serializer_context(self):
-        context = super(GroupMembersList, self).get_serializer_context()
+        context = super().get_serializer_context()
         # Permissions check handled here - needed when performing write operations
         context['group'] = self.get_osf_group()
         return context
@@ -214,11 +214,11 @@ class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView,
                 raise InvalidFilterValue(value=operation['value'])
             group = self.get_osf_group(check_object_permissions=False)
             return Q(id__in=group.managers if role == MANAGER else group.members_only)
-        return super(GroupMembersList, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
     @require_flag(OSF_GROUPS)
     def perform_create(self, serializer):
-        return super(GroupMembersList, self).perform_create(serializer)
+        return super().perform_create(serializer)
 
 
 class GroupMemberDetail(OSFGroupMemberBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
@@ -238,6 +238,6 @@ class GroupMemberDetail(OSFGroupMemberBaseView, generics.RetrieveUpdateDestroyAP
 
     # Overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
-        context = super(GroupMemberDetail, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['group'] = self.get_osf_group(check_object_permissions=False)
         return context

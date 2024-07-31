@@ -22,7 +22,7 @@ class BaseWaffleSerializer(JSONAPISerializer):
         return waffle_feature_is_active(self.context.get('request'), self.get_type(obj), obj.name)
 
     def get_id(self, obj):
-        return '{}_{}'.format(self.get_type(obj), obj.id)
+        return f'{self.get_type(obj)}_{obj.id}'
 
     class Meta:
         type_ = 'waffle'

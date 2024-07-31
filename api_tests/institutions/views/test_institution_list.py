@@ -17,7 +17,7 @@ class TestInstitutionList:
 
     @pytest.fixture()
     def url_institution(self):
-        return '/{}institutions/'.format(API_BASE)
+        return f'/{API_BASE}institutions/'
 
     def test_return_all_institutions(
             self, app, institution_one,

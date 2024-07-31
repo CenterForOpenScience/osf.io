@@ -1,12 +1,12 @@
 import collections
 import re
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
-import furl
+from furl import furl
 import waffle
 from django.urls import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -94,7 +94,7 @@ class ConditionalField(ser.Field):
     """
 
     def __init__(self, field, **kwargs):
-        super(ConditionalField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.field = getattr(field, 'child_relation', field)
         # source is intentionally field.source and not self.field.source
         self.source = field.source
@@ -118,7 +118,7 @@ class ConditionalField(ser.Field):
         return self.field.get_attribute(instance)
 
     def bind(self, field_name, parent):
-        super(ConditionalField, self).bind(field_name, parent)
+        super().bind(field_name, parent)
         self.field.bind(field_name, self)
 
     def to_representation(self, value):
@@ -146,10 +146,10 @@ class ShowIfVersion(ConditionalField):
     """
 
     def __init__(self, field, min_version=None, max_version=None, **kwargs):
-        super(ShowIfVersion, self).__init__(field, **kwargs)
+        super().__init__(field, **kwargs)
         self.min_version = min_version
         self.max_version = max_version
-        self.help_text = 'This field is deprecated as of version {}'.format(self.max_version) or kwargs.get('help_text')
+        self.help_text = f'This field is deprecated as of version {self.max_version}' or kwargs.get('help_text')
 
     def should_hide(self, instance):
         request = self.context.get('request')
@@ -341,14 +341,14 @@ class HideIfProviderCommentsPrivate(ConditionalField):
 
 class AllowMissing(ser.Field):
     def __init__(self, field, **kwargs):
-        super(AllowMissing, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.field = field
 
     def to_representation(self, value):
         return self.field.to_representation(value)
 
     def bind(self, field_name, parent):
-        super(AllowMissing, self).bind(field_name, parent)
+        super().bind(field_name, parent)
         self.field.bind(field_name, self)
 
     def get_attribute(self, instance):
@@ -393,11 +393,11 @@ class VersionedDateTimeField(ser.DateTimeField):
     def to_representation(self, value):
         request = self.context.get('request')
         if request:
-            if StrictVersion(request.version) >= '2.2':
+            if Version(request.version) >= Version('2.2'):
                 self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
             else:
                 self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
-        return super(VersionedDateTimeField, self).to_representation(value)
+        return super().to_representation(value)
 
 
 class IDField(ser.CharField):
@@ -407,7 +407,7 @@ class IDField(ser.CharField):
 
     def __init__(self, **kwargs):
         kwargs['label'] = 'ID'
-        super(IDField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     # Overrides CharField
     def to_internal_value(self, data):
@@ -423,7 +423,7 @@ class IDField(ser.CharField):
                             f' 404, so most likely you need to change the id field to match.'
                         ),
                     )
-        return super(IDField, self).to_internal_value(data)
+        return super().to_internal_value(data)
 
     def get_id(self, obj):
         return getattr(obj, self.source, '_id')
@@ -450,7 +450,7 @@ class TypeField(ser.CharField):
     def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
-        super(TypeField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     # Overrides CharField
     def to_internal_value(self, data):
@@ -464,8 +464,8 @@ class TypeField(ser.CharField):
             type_ = kebab_case
             self.context['request'].META.setdefault('warning', 'As of API Version {0}, all types are now Kebab-case. {0} will accept snake_case, but this will be deprecated in future versions.'.format(KEBAB_CASE_VERSION))
         elif type_ != data:
-            raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
-        return super(TypeField, self).to_internal_value(data)
+            raise api_exceptions.Conflict(detail=(f'This resource has a type of "{type_}", but you set the json body\'s type field to "{data}". You probably need to change the type field to match the resource\'s type.'))
+        return super().to_internal_value(data)
 
 
 class TargetTypeField(ser.CharField):
@@ -477,12 +477,12 @@ class TargetTypeField(ser.CharField):
         kwargs['write_only'] = True
         kwargs['required'] = True
         self.target_type = kwargs.pop('target_type')
-        super(TargetTypeField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def to_internal_value(self, data):
         if self.target_type != data:
-            raise api_exceptions.Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(self.target_type, data)))
-        return super(TargetTypeField, self).to_internal_value(data)
+            raise api_exceptions.Conflict(detail=(f'The target resource has a type of "{self.target_type}", but you set the json body\'s type field to "{data}".  You probably need to change the type field to match the target resource\'s type.'))
+        return super().to_internal_value(data)
 
 
 class JSONAPIListField(ser.ListField):
@@ -490,7 +490,7 @@ class JSONAPIListField(ser.ListField):
         if not isinstance(data, list):
             self.fail('not_a_list', input_type=type(data).__name__)
 
-        return super(JSONAPIListField, self).to_internal_value(data)
+        return super().to_internal_value(data)
 
 
 class ValuesListField(JSONAPIListField):
@@ -500,7 +500,7 @@ class ValuesListField(JSONAPIListField):
     """
     def __init__(self, **kwargs):
         self.attr_name = kwargs.pop('attr_name')
-        super(ValuesListField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def to_representation(self, val):
         return val.values_list(self.attr_name, flat=True)
@@ -517,7 +517,7 @@ class AuthorizedCharField(ser.CharField):
 
     def __init__(self, source, **kwargs):
         self.source = source
-        super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
+        super().__init__(source=self.source, **kwargs)
 
     def get_attribute(self, obj):
         user = self.context['request'].user
@@ -538,10 +538,10 @@ class AnonymizedRegexField(AuthorizedCharField):
         self.source = source
         self.regex = regex
         self.replace = replace
-        super(AnonymizedRegexField, self).__init__(source=self.source, **kwargs)
+        super().__init__(source=self.source, **kwargs)
 
     def get_attribute(self, obj):
-        value = super(AnonymizedRegexField, self).get_attribute(obj)
+        value = super().get_attribute(obj)
 
         if value:
             user = self.context['request'].user
@@ -675,9 +675,11 @@ class RelationshipField(ser.Field):
 
         field_counts_requested = [val for val in params.split(',')]
 
-        countable_fields = {field for field in self.parent.fields if
-                            getattr(self.parent.fields[field], 'json_api_link', False) or
-                            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)}
+        countable_fields = {
+            field for field in self.parent.fields if
+            getattr(self.parent.fields[field], 'json_api_link', False) or
+            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)
+        }
         for count_field in field_counts_requested:
             # Some fields will hide relationships, e.g. HideIfWithdrawal
             # Ignore related_counts for these fields
@@ -687,7 +689,7 @@ class RelationshipField(ser.Field):
 
             if not hidden and count_field not in countable_fields:
                 raise api_exceptions.InvalidQueryStringError(
-                    detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{0}'".format(
+                    detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{}'".format(
                         params,
                     ),
                     parameter='related_counts',
@@ -825,11 +827,11 @@ class RelationshipField(ser.Field):
             if href and not href == '{}':
                 if self.always_embed:
                     envelope = 'data'
-                query_dict = dict(format=['jsonapi', ], envelope=[envelope, ])
+                query_dict = dict(format=['jsonapi'], envelope=[envelope])
                 if 'view_only' in self.parent.context['request'].query_params.keys():
                     query_dict.update(view_only=[self.parent.context['request'].query_params['view_only']])
                 esi_url = utils.extend_querystring_params(href, query_dict)
-                return '<esi:include src="{}"/>'.format(esi_url)
+                return f'<esi:include src="{esi_url}"/>'
 
     def format_filter(self, obj):
         """ Take filters specified in self.filter and format them in a way that can be easily parametrized
@@ -900,7 +902,7 @@ class RelationshipField(ser.Field):
         if url is None:
             # Prior to 2.9, empty relationships were omitted from the response.
             # This conflicts with the JSON-API spec and was fixed in 2.9.
-            if StrictVersion(request.version) < StrictVersion('2.9'):
+            if Version(request.version) < Version('2.9'):
                 raise SkipField
             else:
                 return {'data': None}
@@ -945,7 +947,7 @@ class RelationshipField(ser.Field):
                         related_id = resolved_url.kwargs['institution_id']
                         related_type = 'institution-summary-metrics'
                     elif related_type == 'collections' and related_class.view_name == 'collection-submission-detail':
-                        related_id = f'{resolved_url.kwargs["collection_submission_id"]}-{resolved_url.kwargs["collection_id"]}'
+                        related_id = f'{resolved_url.kwargs['collection_submission_id']}-{resolved_url.kwargs['collection_id']}'
                         related_type = 'collection-submission'
                     elif related_type == 'collection-providers' and related_class.view_name == 'collection-provider-detail':
                         related_id = resolved_url.kwargs['provider_id']
@@ -991,14 +993,14 @@ class TypedRelationshipField(RelationshipField):
             for k, v in list(self.views.items()):
                 if v == untyped_view:
                     self.views[k] = view_name
-        return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
+        return super().get_url(obj, view_name, request, format)
 
 
 class FileRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
         if obj.kind == 'folder':
             raise SkipField
-        return super(FileRelationshipField, self).get_url(obj, view_name, request, format)
+        return super().get_url(obj, view_name, request, format)
 
 
 class TargetField(ser.Field):
@@ -1042,7 +1044,7 @@ class TargetField(ser.Field):
     def __init__(self, **kwargs):
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
-        super(TargetField, self).__init__(read_only=True, **kwargs)
+        super().__init__(read_only=True, **kwargs)
 
     def resolve(self, resource, field_name, request):
         """
@@ -1075,8 +1077,8 @@ class TargetField(ser.Field):
         href = value.get_absolute_url()
 
         if href:
-            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope, ], format=['jsonapi', ]))
-            return '<esi:include src="{}"/>'.format(esi_url)
+            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope], format=['jsonapi']))
+            return f'<esi:include src="{esi_url}"/>'
         return self.to_representation(value)
 
     def to_representation(self, value):
@@ -1200,7 +1202,7 @@ def _get_attr_from_tpl(attr_tpl, obj):
 
 
 # TODO: Make this a Field that is usable on its own?
-class Link(object):
+class Link:
     """Link object to use in conjunction with Links field. Does reverse lookup of
     URLs given an endpoint name and attributed enclosed in `<>`. This includes
     complex key strings like 'user.id'
@@ -1227,7 +1229,7 @@ class Link(object):
             args=arg_values,
             kwargs=kwarg_values,
             query_kwargs=query_kwarg_values,
-            **self.reverse_kwargs
+            **self.reverse_kwargs,
         )
 
 
@@ -1311,7 +1313,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         errors = {}
         bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
 
-        if isinstance(data, collections.Mapping):
+        if isinstance(data, collections.abc.Mapping):
             errors = data.get('errors', None)
             data = data.get('data', None)
         if enable_esi:
@@ -1372,10 +1374,10 @@ class JSONAPIListSerializer(ser.ListSerializer):
         if num_items > bulk_limit:
             raise api_exceptions.JSONAPIException(
                 source={'pointer': '/data'},
-                detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items),
+                detail=f'Bulk operation limit is {bulk_limit}, got {num_items}.',
             )
 
-        return super(JSONAPIListSerializer, self).run_validation(data)
+        return super().run_validation(data)
 
     # overrides ListSerializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
@@ -1385,7 +1387,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         Exclude 'type' from validated_data.
 
         """
-        ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
+        ret = super().is_valid(**kwargs)
 
         if clean_html is True:
             self._validated_data = functional.rapply(self.validated_data, sanitize.strip_html)
@@ -1400,7 +1402,7 @@ class BaseAPISerializer(ser.Serializer):
     def parse_sparse_fields(self):
         request = self.context.get('request')
         if request:
-            sparse_fieldset_query_param = 'fields[{}]'.format(get_meta_type(self, request))
+            sparse_fieldset_query_param = f'fields[{get_meta_type(self, request)}]'
             if sparse_fieldset_query_param in request.query_params:
                 fieldset = request.query_params[sparse_fieldset_query_param].split(',')
                 for field_name in list(self.fields.keys()):
@@ -1437,27 +1439,27 @@ class JSONAPISerializer(BaseAPISerializer):
         for index, field in enumerate(fields_check):
             if getattr(field, 'field', None):
                 fields_check[index] = field.field
-        invalid_embeds = set(embeds.keys()) - set(
-            [f.field_name for f in fields_check if getattr(f, 'json_api_link', False)],
-        )
+        invalid_embeds = set(embeds.keys()) - {
+            f.field_name for f in fields_check if getattr(f, 'json_api_link', False)
+        }
         return invalid_embeds
 
     def to_esi_representation(self, data, envelope='data'):
-        href = None
         query_params_blacklist = ['page[size]']
         href = self.get_absolute_url(data)
         if href and href != '{}':
-            esi_url = furl.furl(href).add(args=dict(self.context['request'].query_params)).remove(
+            # NOTE: furl encoding to be verified later
+            esi_url = furl(href).add(args=dict(self.context['request'].query_params)).remove(
                 args=query_params_blacklist,
             ).remove(args=['envelope']).add(args={'envelope': envelope}).url
-            return '<esi:include src="{}"/>'.format(esi_url)
+            return f'<esi:include src="{esi_url}"/>'
         # failsafe, let python do it if something bad happened in the ESI construction
-        return super(JSONAPISerializer, self).to_representation(data)
+        return super().to_representation(data)
 
     def run_validation(self, data):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
         # Validation for writeable SMFs is expected to happen in the model
-        _validated_data = super(JSONAPISerializer, self).run_validation(data)
+        _validated_data = super().run_validation(data)
         for field in self.writeable_method_fields:
             if field in data:
                 _validated_data[field] = data[field]
@@ -1609,7 +1611,7 @@ class JSONAPISerializer(BaseAPISerializer):
 
         """
         try:
-            ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+            ret = super().is_valid(**kwargs)
         except exceptions.ValidationError as e:
 
             # The following is for special error handling for ListFields.
@@ -1732,7 +1734,7 @@ class LinkedNode(JSONAPIRelationshipSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_nodes'
             return 'nodes'
 
@@ -1743,7 +1745,7 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_registrations'
             return 'registrations'
 
@@ -1752,7 +1754,7 @@ class LinkedPreprint(LinkedNode):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_preprints'
             return 'preprints'
 
@@ -1773,7 +1775,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_nodes'
             return 'nodes'
 
@@ -1787,7 +1789,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
         for node_id in diff['add']:
             node = AbstractNode.load(node_id) or Preprint.load(node_id)
             if not node:
-                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
+                raise exceptions.NotFound(detail=f'Node with id "{node_id}" was not found')
             nodes_to_add.append(node)
 
         return nodes_to_add, diff['remove'].values()
@@ -1855,7 +1857,7 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_registrations'
             return 'registrations'
 
@@ -1869,7 +1871,7 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
         for node_id in diff['add']:
             node = AbstractNode.load(node_id)
             if not node:
-                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
+                raise exceptions.NotFound(detail=f'Node with id "{node_id}" was not found')
             nodes_to_add.append(node)
 
         return nodes_to_add, diff['remove'].values()
@@ -1934,7 +1936,7 @@ class LinkedPreprintsRelationshipSerializer(LinkedNodesRelationshipSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.13'):
+            if Version(request.version) < Version('2.13'):
                 return 'linked_preprints'
             return 'preprints'
 
@@ -1967,7 +1969,7 @@ class HideIfSwitch(ConditionalField):
         :param hide_if: The value of the switch that indicates it's hidden.
         :param kwargs: You know, kwargs...
         """
-        super(HideIfSwitch, self).__init__(field, **kwargs)
+        super().__init__(field, **kwargs)
         self.switch_name = switch_name
         self.hide_if = hide_if
 
@@ -1988,7 +1990,7 @@ class DisableIfSwitch(HideIfSwitch):
         :param hide_if: The value of the switch that indicates it's hidden/validated.
         :param kwargs: My mama always told me life is like a bunch of kwargs...
         """
-        super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
+        super().__init__(switch_name, field, hide_if, **kwargs)
         self.validators.append(SwitchValidator(self.switch_name))
 
 

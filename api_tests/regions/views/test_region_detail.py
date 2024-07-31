@@ -15,7 +15,7 @@ class TestRegionDetail:
 
     @pytest.fixture()
     def bad_url(self):
-        return '/{}regions/blah/'.format(API_BASE)
+        return f'/{API_BASE}regions/blah/'
 
     @pytest.fixture()
     def region_url(self, region):

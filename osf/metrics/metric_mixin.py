@@ -6,7 +6,7 @@ from elasticsearch.exceptions import NotFoundError
 import pytz
 
 
-class MetricMixin(object):
+class MetricMixin:
 
     @classmethod
     def _get_all_indices(cls):
@@ -80,7 +80,7 @@ class MetricMixin(object):
         if not index and (before or after):
             indices = cls._get_relevant_indices(after, before)
             index = ','.join(indices)
-        return super(MetricMixin, cls).search(using=using, index=index, *args, **kwargs)
+        return super().search(using=using, index=index, *args, **kwargs)
 
     @classmethod
     def get_top_by_count(cls, qs, model_field, metric_field,
@@ -138,7 +138,7 @@ class MetricMixin(object):
             }) for k, v in id_to_count.items()
         ]
         # By default order by annotation, desc
-        order_by = order_by or '-{}'.format(annotation)
+        order_by = order_by or f'-{annotation}'
         return qs.annotate(**{
             annotation: models.Case(*whens, default=0, output_field=models.IntegerField())
         }).order_by(order_by)

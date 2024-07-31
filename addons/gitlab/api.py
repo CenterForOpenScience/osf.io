@@ -1,20 +1,15 @@
-from future.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 import requests
 
 import gitlab
-import cachecontrol
-from requests.adapters import HTTPAdapter
 from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 
 from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
 
-# Initialize caches
-https_cache = cachecontrol.CacheControlAdapter()
-default_adapter = HTTPAdapter()
 
-class GitLabClient(object):
+class GitLabClient:
 
     def __init__(self, external_account=None, access_token=None, host=None):
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
@@ -80,7 +75,7 @@ class GitLabClient(object):
         if branch:
             return self.gitlab.projects.get(repo_id).branches.get(branch)
 
-        return self.gitlab.projects.get(repo_id).branches.list()
+        return self.gitlab.projects.get(repo_id).branches.list(all=True)
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
@@ -90,7 +85,7 @@ class GitLabClient(object):
         :param str ref: Git reference
         :returns: tuple: Tuple of headers and file location
         """
-        uri = 'projects/{0}/repository/archive?sha={1}'.format(repo_id, ref)
+        uri = f'projects/{repo_id}/repository/archive?sha={ref}'
 
         request = self._get_api_request(uri)
 
@@ -131,10 +126,9 @@ class GitLabClient(object):
         return False
 
     def _get_api_request(self, uri):
-        headers = {'PRIVATE-TOKEN': '{}'.format(self.access_token)}
+        headers = {'PRIVATE-TOKEN': f'{self.access_token}'}
 
-        return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v4', uri),
-                            verify=True, headers=headers)
+        return requests.get(f'https://{self.host}/api/v4/{uri}', verify=True, headers=headers)
 
     def revoke_token(self):
         return False

@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 import random
 
 from framework.auth.core import Auth
@@ -59,11 +59,11 @@ class DraftRegistrationCRUDTestCase(NodeCRUDTestCase):
 class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNodeContributorList):
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}draft_registrations/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}draft_registrations/{}/contributors/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}draft_registrations/{project_private._id}/contributors/'
 
     # Overrides TestNodeContributorList
     def test_concatenated_id(self, app, user, project_public, url_public):
@@ -158,10 +158,10 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
                 save=True
             )
         req_one = app.get(
-            '{}?page=2'.format(url_public),
+            f'{url_public}?page=2',
             auth=user.auth)
         req_two = app.get(
-            '{}?page=2'.format(url_public),
+            f'{url_public}?page=2',
             auth=user.auth)
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
@@ -193,11 +193,11 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
 class TestDraftRegistrationContributorAdd(DraftRegistrationCRUDTestCase, TestNodeContributorAdd):
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}draft_registrations/{}/contributors/?send_email=false'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/?send_email=false'
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}draft_registrations/{}/contributors/?send_email=false'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}draft_registrations/{project_private._id}/contributors/?send_email=false'
 
     # Overrides TestNodeContributorAdd
     def test_adds_contributor_public_project_non_admin_osf_group(
@@ -226,14 +226,14 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
     @pytest.fixture()
     def url_project_contribs(self, project_public):
         # Overrides TestNodeContributorCreateEmail
-        return '/{}draft_registrations/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_sends_email(
             self, mock_mail, app, user, user_two,
             url_project_contribs):
         # Overrides TestNodeContributorCreateEmail
-        url = '{}?send_email=draft_registration'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -257,7 +257,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
     # Overrides TestNodeContributorCreateEmail
     def test_add_contributor_signal_if_default(
             self, app, user, user_two, url_project_contribs):
-        url = '{}?send_email=default'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -281,7 +281,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_sends_email(
             self, mock_mail, app, user, url_project_contribs):
-        url = '{}?send_email=draft_registration'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -299,7 +299,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
             self, mock_send, app, user, url_project_contribs):
-        url = '{}?send_email=draft_registration'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -318,7 +318,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_without_email_no_email(
             self, mock_mail, app, user, url_project_contribs):
-        url = '{}?send_email=draft_registration'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -385,7 +385,7 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}draft_registrations/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
     @pytest.fixture()
     def url_private(self, project_private):
@@ -429,7 +429,7 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}draft_registrations/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
     @pytest.fixture()
     def url_private(self, project_private):
@@ -440,7 +440,7 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
 class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, TestNodeContributorBulkDelete):
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}draft_registrations/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
     @pytest.fixture()
     def url_private(self, project_private):

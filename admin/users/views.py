@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
@@ -473,9 +471,7 @@ class GetPasswordResetLink(GetUserLink):
         user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
         user.save()
 
-        url = furl(DOMAIN)
-        url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
-        return url
+        return furl(DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
 
     def get_link_type(self):
         return 'Password Reset'
@@ -511,7 +507,7 @@ class ResetPasswordView(UserMixin, View):
 
         user.verification_key_v2 = generate_verification_key(verification_type='password')
         user.save()
-        url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
+        url.add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
 
         send_mail(
             subject='Reset OSF Password',

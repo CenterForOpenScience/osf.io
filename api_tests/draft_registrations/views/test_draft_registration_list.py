@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from framework.auth.core import Auth
@@ -30,8 +30,8 @@ def invisible_and_inactive_schema():
 class TestDraftRegistrationListTopLevelEndpoint:
 
     @pytest.fixture()
-    def url_draft_registrations(self):
-        return f'/{API_BASE}draft_registrations/'
+    def url_draft_registrations(self, project_public):
+        return f'/{API_BASE}draft_registrations/?'
 
     @pytest.fixture()
     def user(self):
@@ -165,8 +165,8 @@ class TestDraftRegistrationListTopLevelEndpoint:
 class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
-    def url_draft_registrations(self):
-        return f'/{API_BASE}draft_registrations/'
+    def url_draft_registrations(self, project_public):
+        return f'/{API_BASE}draft_registrations/?'
 
     # Overrides `payload` in TestDraftRegistrationCreate`
     @pytest.fixture()
@@ -284,7 +284,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         assert attributes['title'] == project_public.title
         assert attributes['description'] == project_public.description
         assert attributes['category'] == project_public.category
-        assert set(attributes['tags']) == set([tag.name for tag in project_public.tags.all()])
+        assert set(attributes['tags']) == {tag.name for tag in project_public.tags.all()}
         assert attributes['node_license']['year'] == '1998'
         assert attributes['node_license']['copyright_holders'] == ['Grapes McGee']
 
@@ -409,14 +409,14 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
 class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
     def url_draft_registrations(self):
-        return f'/{API_BASE}draft_registrations/'
+        return f'/{API_BASE}draft_registrations/?'
 
-    def test_admin_can_create_draft(self, app, user, url_draft_registrations, payload, metaschema_open_ended):
-        res = app.post_json_api(
-            f'{url_draft_registrations}?embed=branched_from&embed=initiator',
-            payload,
-            auth=user.auth
-        )
+    # Overrides TestDraftRegistrationList
+    def test_admin_can_create_draft(
+            self, app, user, url_draft_registrations,
+            payload, metaschema_open_ended):
+        url = f'{url_draft_registrations}embed=branched_from&embed=initiator'
+        res = app.post_json_api(url, payload, auth=user.auth)
 
         assert res.status_code == 201
         data = res.json['data']
@@ -520,7 +520,7 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         assert attributes['title'] == ''
         assert attributes['description'] != project_public.description
         assert attributes['category'] != project_public.category
-        assert set(attributes['tags']) != set([tag.name for tag in project_public.tags.all()])
+        assert set(attributes['tags']) != {tag.name for tag in project_public.tags.all()}
         assert attributes['node_license'] is None
 
         relationships = res.json['data']['relationships']

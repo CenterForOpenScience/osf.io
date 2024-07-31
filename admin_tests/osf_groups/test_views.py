@@ -3,7 +3,6 @@ from admin.osf_groups.views import (
     OSFGroupsFormView
 )
 from admin_tests.utilities import setup_log_view
-from nose import tools as nt
 from django.test import RequestFactory
 
 from tests.base import AdminTestCase
@@ -13,7 +12,7 @@ from osf_tests.factories import UserFactory, OSFGroupFactory
 class TestOSFGroupsListView(AdminTestCase):
 
     def setUp(self):
-        super(TestOSFGroupsListView, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.group = OSFGroupFactory(name='Brian Dawkins', creator=self.user)
         self.group2 = OSFGroupFactory(name='Brian Westbrook', creator=self.user)
@@ -26,11 +25,11 @@ class TestOSFGroupsListView(AdminTestCase):
 
         queryset = view.get_queryset()
 
-        nt.assert_equal(len(queryset), 3)
+        assert len(queryset) == 3
 
-        nt.assert_in(self.group, queryset)
-        nt.assert_in(self.group2, queryset)
-        nt.assert_in(self.group3, queryset)
+        assert self.group in queryset
+        assert self.group2 in queryset
+        assert self.group3 in queryset
 
     def test_get_queryset_by_name(self):
         request = RequestFactory().post('/fake_path/?name=Brian')
@@ -38,16 +37,16 @@ class TestOSFGroupsListView(AdminTestCase):
 
         queryset = view.get_queryset()
 
-        nt.assert_equal(len(queryset), 2)
+        assert len(queryset) == 2
 
-        nt.assert_in(self.group, queryset)
-        nt.assert_in(self.group2, queryset)
+        assert self.group in queryset
+        assert self.group2 in queryset
 
 
 class TestOSFGroupsFormView(AdminTestCase):
 
     def setUp(self):
-        super(TestOSFGroupsFormView, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.group = OSFGroupFactory(name='Brian Dawkins', creator=self.user)
         self.group2 = OSFGroupFactory(name='Brian Westbrook', creator=self.user)
@@ -58,7 +57,7 @@ class TestOSFGroupsFormView(AdminTestCase):
         view = setup_log_view(self.view, request)
 
         redirect = view.post(request)
-        assert redirect.url == '/osf_groups/{}/'.format(self.group._id)
+        assert redirect.url == f'/osf_groups/{self.group._id}/'
 
     def test_post_name(self):
         request = RequestFactory().post('/fake_path', data={'id': '', 'name': 'Brian'})

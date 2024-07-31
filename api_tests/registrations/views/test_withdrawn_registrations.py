@@ -1,5 +1,5 @@
 import pytest
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from api_tests.nodes.views.test_node_contributors_list import NodeCRUDTestCase
 from api.base.settings.defaults import API_BASE
@@ -89,18 +89,18 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 403
 
     #   test_cannot_return_a_withdrawn_registration_at_node_detail_endpoint
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}nodes/{registration._id}/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
     #   test_cannot_delete_a_withdrawn_registration
-        url = '/{}registrations/{}/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}registrations/{registration._id}/'
         res = app.delete_json_api(url, auth=user.auth, expect_errors=True)
         registration.reload()
         assert res.status_code == 405
 
     #   test_cannot_access_withdrawn_files_list
-        url = '/{}registrations/{}/files/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}registrations/{registration._id}/files/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -137,7 +137,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
             self, app, user, project_public, pointer_public,
             registration, withdrawn_registration):
         ProjectFactory(is_public=True, creator=user)
-        url = '/{}registrations/{}/logs/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}registrations/{registration._id}/logs/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -189,7 +189,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     def test_withdrawn_registrations_display_limited_relationship_fields(
             self, app, user, registration, withdrawn_registration):
 
-        url_withdrawn = '/{}registrations/{}/?version=2.14'.format(API_BASE, registration._id)
+        url_withdrawn = f'/{API_BASE}registrations/{registration._id}/?version=2.14'
         res = app.get(url_withdrawn, auth=user.auth)
 
         assert 'children' not in res.json['data']['relationships']
@@ -228,7 +228,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
             self, app, user, withdrawn_registration_with_child, registration_with_child):
 
         reg_child = registration_with_child.node_relations.first().child
-        url = '/{}registrations/{}/?version=2.2'.format(API_BASE, reg_child._id)
+        url = f'/{API_BASE}registrations/{reg_child._id}/?version=2.2'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['withdrawal_justification'] == withdrawn_registration_with_child.justification

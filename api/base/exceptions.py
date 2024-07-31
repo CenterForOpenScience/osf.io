@@ -1,6 +1,5 @@
-from past.builtins import basestring
 from rest_framework import status as http_status
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework import status
 from rest_framework.exceptions import APIException, AuthenticationFailed, ErrorDetail
@@ -40,7 +39,7 @@ def dict_error_formatting(errors, context, index=None):
         if error_key in top_level_error_keys:
             formatted_error_list.extend({error_key: description} for description in error_description)
         elif error_key in resource_object_identifiers:
-            formatted_error_list.extend([{'source': {'pointer': '/data/{}'.format(index) + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list.extend([{'source': {'pointer': f'/data/{index}' + error_key}, 'detail': reason} for reason in error_description])
         elif error_key == 'non_field_errors':
             formatted_error_list.extend([{'detail': description for description in error_description}])
         elif isinstance(error_description, list):
@@ -110,7 +109,7 @@ def json_api_exception_handler(exc, context):
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, context, index=None))
         else:
-            if isinstance(message, basestring):
+            if isinstance(message, str):
                 message = [message]
             for index, error in enumerate(message):
                 if isinstance(error, dict):
@@ -126,7 +125,7 @@ def json_api_exception_handler(exc, context):
 def format_validation_error(e):
     error_list = []
     for key, value in e.message_dict.items():
-        error_list.append('There was an issue with the {} field. {}'.format(key, value[0]))
+        error_list.append(f'There was an issue with the {key} field. {value[0]}')
     return error_list
 
 
@@ -152,7 +151,7 @@ class JSONAPIException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
 
     def __init__(self, detail=None, source=None, meta=None):
-        super(JSONAPIException, self).__init__(detail=detail)
+        super().__init__(detail=detail)
         self.source = source
         self.meta = meta
 
@@ -182,15 +181,15 @@ class JSONAPIParameterException(JSONAPIException):
         source = {
             'parameter': parameter,
         }
-        super(JSONAPIParameterException, self).__init__(detail=detail, source=source)
+        super().__init__(detail=detail, source=source)
 
 
 class JSONAPIAttributeException(JSONAPIException):
     def __init__(self, detail=None, attribute=None):
         source = {
-            'pointer': '/data/attributes/{}'.format(attribute),
+            'pointer': f'/data/attributes/{attribute}',
         }
-        super(JSONAPIAttributeException, self).__init__(detail=detail, source=source)
+        super().__init__(detail=detail, source=source)
 
 
 class InvalidQueryStringError(JSONAPIParameterException):
@@ -206,11 +205,11 @@ class InvalidFilterOperator(JSONAPIParameterException):
     def __init__(self, detail=None, value=None, valid_operators=('eq', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains')):
         if value and not detail:
             valid_operators = ', '.join(valid_operators)
-            detail = "Value '{0}' is not a supported filter operator; use one of {1}.".format(
+            detail = "Value '{}' is not a supported filter operator; use one of {}.".format(
                 value,
                 valid_operators,
             )
-        super(InvalidFilterOperator, self).__init__(detail=detail, parameter='filter')
+        super().__init__(detail=detail, parameter='filter')
 
 
 class InvalidFilterValue(JSONAPIParameterException):
@@ -219,13 +218,13 @@ class InvalidFilterValue(JSONAPIParameterException):
 
     def __init__(self, detail=None, value=None, field_type=None):
         if not detail:
-            detail = "Value '{0}' is not valid".format(value)
+            detail = f"Value '{value}' is not valid"
             if field_type:
-                detail += ' for a filter on type {0}'.format(
+                detail += ' for a filter on type {}'.format(
                     field_type,
                 )
             detail += '.'
-        super(InvalidFilterValue, self).__init__(detail=detail, parameter='filter')
+        super().__init__(detail=detail, parameter='filter')
 
 
 class InvalidFilterError(JSONAPIParameterException):
@@ -234,7 +233,7 @@ class InvalidFilterError(JSONAPIParameterException):
     status_code = http_status.HTTP_400_BAD_REQUEST
 
     def __init__(self, detail=None):
-        super(InvalidFilterError, self).__init__(detail=detail, parameter='filter')
+        super().__init__(detail=detail, parameter='filter')
 
 
 class InvalidFilterComparisonType(JSONAPIParameterException):
@@ -256,8 +255,8 @@ class InvalidFilterFieldError(JSONAPIParameterException):
 
     def __init__(self, detail=None, parameter=None, value=None):
         if value and not detail:
-            detail = "Value '{}' is not a filterable field.".format(value)
-        super(InvalidFilterFieldError, self).__init__(detail=detail, parameter=parameter)
+            detail = f"Value '{value}' is not a filterable field."
+        super().__init__(detail=detail, parameter=parameter)
 
 
 class UnconfirmedAccountError(APIException):
@@ -312,7 +311,7 @@ class NonDescendantNodeError(APIException):
     def __init__(self, node_id, detail=None):
         if not detail:
             detail = self.default_detail.format(node_id)
-        super(NonDescendantNodeError, self).__init__(detail=detail)
+        super().__init__(detail=detail)
 
 
 class PermanentlyMovedError(APIException):

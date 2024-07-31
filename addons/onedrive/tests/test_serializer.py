@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Serializer tests for the OneDrive addon."""
-import mock
+from unittest import mock
 import pytest
 
 from addons.onedrive.models import OneDriveProvider
@@ -36,13 +35,13 @@ class TestOneDriveSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
         )
         self.mock_client_folders.start()
 
-        super(TestOneDriveSerializer, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_client_user.stop()
         self.mock_client_folders.stop()
 
-        super(TestOneDriveSerializer, self).tearDown()
+        super().tearDown()
 
     def set_provider_id(self, pid):
         self.node_settings.folder_id = pid

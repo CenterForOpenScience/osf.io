@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-import furl
+from furl import furl, urljoin
 from rest_framework import status as http_status
-from future.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 import markupsafe
 from django.core.exceptions import ValidationError
@@ -23,6 +22,7 @@ from framework.auth.utils import ensure_external_identity_uniqueness, validate_r
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.sessions.utils import remove_sessions_for_user
 from framework.sessions import get_session
 from framework.utils import throttle_period_expired
@@ -37,7 +37,6 @@ from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from website.ember_osf_web.decorators import ember_flag_is_active
 from osf import features
-# from osf.models import PreprintProvider
 
 
 @block_bing_preview
@@ -249,9 +248,11 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
         forms.push_errors_to_status(form.errors)
     else:
         email = form.email.data
-        status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to '
-                          'reset the OSF password has been sent to {0}. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support. ').format(email)
+        status_message = (
+            f'If there is an OSF account associated with {email}, an email with instructions on how to '
+            f'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
+            'you should have, please contact OSF Support. '
+        )
         kind = 'success'
         # check if the user exists
         user_obj = get_user(email=email)
@@ -267,7 +268,7 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                 user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
-                reset_link = furl.urljoin(
+                reset_link = urljoin(
                     settings.DOMAIN,
                     web_url_for(
                         reset_route,
@@ -361,7 +362,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             data['next_url'] = web_url_for(redirect_view, campaigns=None, next=next_url)
             data['campaign'] = None
             sentry.log_message(
-                '{} is not a valid campaign. Please add it if this is a new one'.format(campaign)
+                f'{campaign} is not a valid campaign. Please add it if this is a new one'
             )
     # login or register with next parameter
     elif next_url:
@@ -800,7 +801,6 @@ def unconfirmed_email_add(auth=None):
         'removed_email': json_body['address']
     }, 200
 
-
 def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
     """
     Sends `user` a confirmation to the given `email`.
@@ -815,7 +815,6 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
-
     confirmation_url = user.get_confirmation_url(
         email,
         external=True,
@@ -843,11 +842,11 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     elif merge_target:
         # Merge account confirmation
         mail_template = mails.CONFIRM_MERGE
-        confirmation_url = '{}?logout=1'.format(confirmation_url)
+        confirmation_url = f'{confirmation_url}?logout=1'
     elif user.is_active:
         # Add email confirmation
         mail_template = mails.CONFIRM_EMAIL
-        confirmation_url = '{}?logout=1'.format(confirmation_url)
+        confirmation_url = f'{confirmation_url}?logout=1'
     elif campaign:
         # Account creation confirmation: from campaign
         mail_template = campaigns.email_template_for_campaign(campaign)
@@ -871,6 +870,9 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         can_change_preferences=False,
         logo=logo if logo else settings.OSF_LOGO
     )
+
+def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
+    enqueue_postcommit_task(send_confirm_email, (user, email, renew, external_id_provider, external_id, destination), {})
 
 
 def register_user(**kwargs):
@@ -942,7 +944,7 @@ def register_user(**kwargs):
         )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-        send_confirm_email(user, email=user.username)
+        send_confirm_email_async(user, email=user.username)
         message = language.REGISTRATION_SUCCESS.format(email=user.username)
         return {'message': message}
     else:
@@ -982,17 +984,19 @@ def resend_confirmation_post(auth):
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
-        status_message = ('If there is an OSF account associated with this unconfirmed email address {0}, '
-                          'a confirmation email has been resent to it. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support.').format(clean_email)
+        status_message = (
+            f'If there is an OSF account associated with this unconfirmed email address {clean_email}, '
+            'a confirmation email has been resent to it. If you do not receive an email and believe '
+            'you should have, please contact OSF Support.'
+        )
         kind = 'success'
         if user:
             if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 try:
-                    send_confirm_email(user, clean_email, renew=True)
+                    send_confirm_email_async(user, clean_email, renew=True)
                 except KeyError:
                     # already confirmed, redirect to dashboard
-                    status_message = 'This email {0} has already been confirmed.'.format(clean_email)
+                    status_message = f'This email {clean_email} has already been confirmed.'
                     kind = 'warning'
                 user.email_last_sent = timezone.now()
                 user.save()
@@ -1056,8 +1060,8 @@ def external_login_email_post():
             # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
             # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
             # not vice versa.
-            campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
-            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
+            campaign_url = furl(campaigns.campaign_url_for(campaign)).url
+            external_campaign_url = furl(campaigns.external_campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
                 if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):
@@ -1094,7 +1098,7 @@ def external_login_email_post():
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
-            send_confirm_email(
+            send_confirm_email_async(
                 user,
                 clean_email,
                 external_id_provider=external_id_provider,
@@ -1124,7 +1128,7 @@ def external_login_email_post():
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
-            send_confirm_email(
+            send_confirm_email_async(
                 user,
                 user.username,
                 external_id_provider=external_id_provider,

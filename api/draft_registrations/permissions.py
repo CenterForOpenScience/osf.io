@@ -17,7 +17,7 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
     Need to have edit permissions on the branched from node to edit.
     """
 
-    acceptable_models = (DraftRegistration, AbstractNode, )
+    acceptable_models = (DraftRegistration, AbstractNode)
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict):
@@ -38,7 +38,7 @@ class IsAdminContributor(permissions.BasePermission):
     Need to be an admin contributor on the branched from node to make edits
     """
 
-    acceptable_models = (DraftRegistration, AbstractNode, )
+    acceptable_models = (DraftRegistration, AbstractNode)
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict):
@@ -55,7 +55,7 @@ class IsAdminContributor(permissions.BasePermission):
 
 class DraftContributorDetailPermissions(ContributorDetailPermissions):
 
-    acceptable_models = (DraftRegistration, OSFUser, DraftRegistrationContributor,)
+    acceptable_models = (DraftRegistration, OSFUser, DraftRegistrationContributor)
 
     def load_resource(self, context, view):
         return DraftRegistration.load(context['draft_id'])

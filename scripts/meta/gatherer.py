@@ -44,7 +44,7 @@ def get_pr_data(pr):
         'media_type': 'application/vnd.github.VERSION.sha',
     }
     # GET /repos/:owner/:repo/pulls/:number
-    res = requests.get('https://api.github.com/repos/centerforopenscience/osf.io/pulls/{}'.format(pr),
+    res = requests.get(f'https://api.github.com/repos/centerforopenscience/osf.io/pulls/{pr}',
                        headers=headers)
     if res.status_code == 200:
         return res.json()

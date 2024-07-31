@@ -21,7 +21,7 @@ class IsGroupManager(permissions.BasePermission):
 
 class GroupMemberManagement(permissions.BasePermission):
 
-    acceptable_models = (OSFGroup, OSFUser, )
+    acceptable_models = (OSFGroup, OSFUser)
 
     def has_object_permission(self, request, view, obj):
         if not isinstance(obj, OSFGroup):

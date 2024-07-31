@@ -1,4 +1,4 @@
-from django.conf.urls import re_path
+from django.urls import re_path
 
 from . import views
 
@@ -16,6 +16,7 @@ urlpatterns = [
     re_path(r'^(?P<preprint_id>\w+)/files/osfstorage/$', views.PreprintFilesList.as_view(), name=views.PreprintFilesList.view_name),
     re_path(r'^(?P<preprint_id>\w+)/identifiers/$', views.PreprintIdentifierList.as_view(), name=views.PreprintIdentifierList.view_name),
     re_path(r'^(?P<preprint_id>\w+)/relationships/node/$', views.PreprintNodeRelationship.as_view(), name=views.PreprintNodeRelationship.view_name),
+    re_path(r'^(?P<preprint_id>\w+)/relationships/subjects/$', views.PreprintSubjectsRelationship.as_view(), name=views.PreprintSubjectsRelationship.view_name),
     re_path(r'^(?P<preprint_id>\w+)/review_actions/$', views.PreprintActionList.as_view(), name=views.PreprintActionList.view_name),
     re_path(r'^(?P<preprint_id>\w+)/requests/$', views.PreprintRequestListCreate.as_view(), name=views.PreprintRequestListCreate.view_name),
     re_path(r'^(?P<preprint_id>\w+)/subjects/$', views.PreprintSubjectsList.as_view(), name=views.PreprintSubjectsList.view_name),

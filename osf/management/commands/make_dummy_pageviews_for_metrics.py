@@ -49,11 +49,11 @@ class Command(BaseCommand):
             label='timefilter:',
         )
 
-        date_keys = set(
+        date_keys = {
             k
             for r in results
             for k in r
-        )
+        }
         for date_key in sorted(date_keys):
             self._print_line(
                 (r.get(date_key, 0) for r in results),
@@ -64,7 +64,7 @@ class Command(BaseCommand):
         print('\t'.join((label, *map(str, lineitems))))
 
     def _generate_random_countedusage(self, n, max_age):
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.now(tz=datetime.UTC)
         for _ in range(n):
             seconds_back = random.randint(0, max_age)
             timestamp_time = now - datetime.timedelta(seconds=seconds_back)

@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-import mock
+from unittest import mock
 from addons.base.tests.base import AddonTestCase, OAuthAddonTestCaseMixin
 from addons.dropbox.models import Provider
 from addons.dropbox.tests.factories import DropboxAccountFactory
@@ -13,41 +13,41 @@ class DropboxAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     Provider = Provider
 
     def set_node_settings(self, settings):
-        super(DropboxAddonTestCase, self).set_node_settings(settings)
+        super().set_node_settings(settings)
         settings.folder = 'foo'
         settings.save()
 
 
-class MockFileMetadata(object):
+class MockFileMetadata:
 
     name = 'Prime_Numbers.txt'
     path_display = '/Homework/math/Prime_Numbers.txt'
 
 
-class MockFolderMetadata(object):
+class MockFolderMetadata:
 
     name = 'math'
     path_display = '/Homework/math'
 
 
-class MockListFolderResult(object):
+class MockListFolderResult:
 
     def __init__(self, has_more=False):
         self.entries = [MockFileMetadata(), MockFolderMetadata()]
         self.cursor = 'ZtkX9_EHj3x7PMkVuFIhwKYXEpwpLwyxp9vMKomUhllil9q7eWiAu'
         self.has_more = has_more
 
-class MockName(object):
+class MockName:
 
     display_name = 'Rain Drop, Drop Box'
 
 
-class MockFullAccount(object):
+class MockFullAccount:
 
     name = MockName()
 
 
-class MockDropbox(object):
+class MockDropbox:
 
     def files_list_folder(self,
             path,

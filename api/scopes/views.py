@@ -57,7 +57,7 @@ class ScopeList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'scopes'
     view_name = 'scope-list'
 
-    ordering = ('id', )  # default ordering
+    ordering = ('id',)  # default ordering
 
     def get_default_queryset(self):
         return ApiOAuth2Scope.objects.filter(is_public=True)

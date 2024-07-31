@@ -1,5 +1,5 @@
 import pytest
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from osf.models import RegistrationSchema
 from osf_tests.factories import DraftRegistrationFactory, RegistrationFactory

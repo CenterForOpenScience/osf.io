@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from osf.utils import workflows
@@ -10,7 +10,7 @@ from osf_tests.factories import NodeFactory, NodeRequestFactory
 class TestNodeRequestListCreate(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, project):
-        return '/{}nodes/{}/requests/'.format(API_BASE, project._id)
+        return f'/{API_BASE}nodes/{project._id}/requests/'
 
     @pytest.fixture()
     def create_payload(self):
@@ -91,7 +91,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         component = NodeFactory(parent=project, creator=second_admin)
         component.is_public = True
         project.save()
-        url = '/{}nodes/{}/requests/'.format(API_BASE, component._id)
+        url = f'/{API_BASE}nodes/{component._id}/requests/'
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
         assert component.parent_admin_contributors.count() == 1
@@ -115,7 +115,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
             request_type=workflows.RequestTypes.ACCESS.value,
             machine_state=workflows.DefaultStates.INITIAL.value
         )
-        filtered_url = '{}?filter[machine_state]=pending'.format(url)
+        filtered_url = f'{url}?filter[machine_state]=pending'
         res = app.get(filtered_url, auth=admin.auth)
         assert res.status_code == 200
         ids = [result['id'] for result in res.json['data']]
@@ -125,7 +125,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
 @pytest.mark.django_db
 class TestPreprintRequestListCreate(PreprintRequestTestMixin):
     def url(self, preprint):
-        return '/{}preprints/{}/requests/'.format(API_BASE, preprint._id)
+        return f'/{API_BASE}preprints/{preprint._id}/requests/'
 
     @pytest.fixture()
     def create_payload(self):

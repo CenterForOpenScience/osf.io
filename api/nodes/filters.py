@@ -1,5 +1,5 @@
 from copy import deepcopy
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from django.db.models import F, Q, Exists, OuterRef
 
@@ -33,7 +33,7 @@ class NodesFilterMixin(ListFilterMixin):
                         queryset = queryset.get_roots()
                         query_params = deepcopy(query_params)
                         query_params.pop(key)
-        return super(NodesFilterMixin, self).param_queryset(query_params, queryset)
+        return super().param_queryset(query_params, queryset)
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'parent':
@@ -66,7 +66,7 @@ class NodesFilterMixin(ListFilterMixin):
             )
             return preprint_query if utils.is_truthy(operation['value']) else ~preprint_query
 
-        return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
 
 class UserNodesFilterMixin(NodesFilterMixin):
@@ -81,14 +81,14 @@ class UserNodesFilterMixin(NodesFilterMixin):
             if user.is_anonymous:
                 # Anonymous users have no perms to the current node in current versions, and in
                 # older versions, will have read if node is public
-                return Q() if StrictVersion(self.request.version) < StrictVersion('2.11') and perm == permissions.READ else Q(id__in=[])
+                return Q() if Version(self.request.version) < Version('2.11') and perm == permissions.READ else Q(id__in=[])
             elif perm == permissions.READ:
                 return Q(id__in=self.build_node_list(user, permissions.READ_NODE))
             elif perm == permissions.WRITE:
                 return Q(id__in=self.build_node_list(user, permissions.WRITE_NODE))
             elif perm == permissions.ADMIN:
                 return Q(id__in=self.build_node_list(user, permissions.ADMIN_NODE))
-        return super(UserNodesFilterMixin, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
     def build_node_list(self, user, perm, with_superuser=False):
         return Node.objects.get_nodes_for_user(user, permission=perm).values_list('id', flat=True)

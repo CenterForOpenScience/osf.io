@@ -14,7 +14,7 @@ except ImportError:
 from webtest.utils import NoDefault
 from webtest_plus import TestApp
 
-class JSONAPIWrapper(object):
+class JSONAPIWrapper:
     """
     Creates wrapper with stated content_type.
     """
@@ -46,7 +46,7 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
     """
 
     def __init__(self, *args, **kwargs):
-        super(JSONAPITestApp, self).__init__(self.get_wsgi_handler(), *args, **kwargs)
+        super().__init__(self.get_wsgi_handler(), *args, **kwargs)
         self.auth = None
         self.auth_type = 'basic'
 
@@ -85,8 +85,7 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             on_template_render = partial(store_rendered_templates, data)
             template_rendered.connect(on_template_render)
 
-            response = super(JSONAPITestApp, self).do_request(req, status,
-                                                             expect_errors)
+            response = super().do_request(req, status, expect_errors)
 
             # Add any rendered template detail to the response.
             # If there was only one template rendered (the most likely case),

@@ -4,101 +4,104 @@
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
 # To install release requirements: inv requirements --release
-
-future==0.18.2
-invoke==0.15.0
-Werkzeug==1.0.0
-Flask==1.0
-gevent==1.2.2
-Mako==1.0.7
-Markdown==3.3.7
-WTForms==1.0.4
-# Fork of celery 4.1.1 with https://github.com/celery/celery/pull/4278 backported,
-# which fixes a bug that was causing stuck registrations
-# Need to pin to 4.1.1 due to https://github.com/celery/celery/issues/4355
-# TODO: Remove usage of this fork when celery/celery#4355 is resolved
-git+https://github.com/cos-forks/celery@v4.1.1+cos0
-kombu==4.2.0
-itsdangerous==1.1.0
-lxml==4.6.5
-mailchimp3==3.0.18
-nameparser==0.5.3
-bcrypt==3.1.4
-python-dateutil==2.8.1
-pytz==2017.3
-bleach==3.3.0
-blinker==1.4
-furl==0.4.92
-elasticsearch2==2.5.0  # pyup: >=2.4,<3.0 # Major version must be same as ES version
-elasticsearch==6.3.1
-google-api-python-client==1.6.4
-Babel==2.9.1
-citeproc-py==0.4.0
-boto3==1.4.7
-django-waffle==2.4.1
-pymongo==3.7.1
+wheel==0.42.0
+invoke==2.2.0
+Werkzeug==3.0.1
+Flask==3.0.2
+Mako==1.3.2
+Markdown==3.5.2
+WTForms==3.1.2
+celery==5.3.6
+kombu==5.3.5
+itsdangerous==2.1.2
+lxml==5.1.0
+mailchimp3==3.0.21
+nameparser==1.1.3
+bcrypt==4.1.2
+python-dateutil==2.9.0
+pytz==2024.1
+bleach==6.1.0
+bleach[css]==6.1.0
+pillow==10.2.0
+Markupsafe==2.1.5
+blinker==1.7.0
+furl==2.1.3
+elasticsearch2==2.5.1
+elasticsearch==6.8.2 # max version to support elasticsearch6
+elasticsearch-dsl==6.4.0 # max version to support elasticsearch6
+elastic-transport==8.13.0
+google-api-python-client==2.123.0
+google-auth==2.29.0
+Babel==2.14.0
+citeproc-py==0.6.0
+boto3==1.34.60
+django-waffle==4.1.0
+pymongo[ocsp]==3.13.0 # install to get bson module
 PyYAML==6.0.1
-tqdm==4.28.1
+tqdm==4.66.2
+email-validator==2.1.1
 # Python markdown extensions for comment emails
-git+https://github.com/Johnetordoff/mdx_del_ins.git@django-3
+markdown-del-ins==1.0.0
 
-certifi==2020.12.5
-sendgrid==1.5.13
+certifi==2024.2.2
+sendgrid==6.11.0
 
-requests>=2.21.0
-urllib3==1.26.5
-oauthlib==2.0.6
-requests-oauthlib==0.8.0
-raven==6.4.0
-django-redis==5.2.0
+requests==2.31.0
+urllib3==1.26.18 # still <2.0 because elasticseach2 lib doesn't supprort urllib3>=2.0
+oauthlib==3.2.2
+requests-oauthlib==1.3.1
+sentry-sdk[django, flask, celery]==2.2.0
+django-redis==5.4.0
 
 # API requirements
-Django==3.2.17
-djangorestframework==3.13.1
-django-cors-headers==3.10.1
+Django==4.2.13
+djangorestframework==3.15.1
+django-cors-headers==4.3.1
 djangorestframework-bulk==0.2.1
-hashids==1.2.0
-pyjwt==1.5.3
-django-celery-beat==1.1.1  # BSD 3 Clause
-django-celery-results==1.0.1
+django-bulk-update==2.2.0
+hashids==1.3.1
+pyjwt==2.8.0
+django-celery-beat==2.6.0
+django-celery-results==2.5.1
 pyjwe==1.0.0
 # Required by pyjwe and ndg-httpsclient
-# Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
-cryptography==3.3.2
-jsonschema==3.1.1
+cryptography==42.0.5
+#rpds-py==0.18.0
+jsonschema==4.21.1
+
 django-guardian==2.4.0
-dataclasses==0.8  # remove when python 3.7+
 
 # Admin requirements
-django-webpack-loader==0.5.0
-sendgrid-django==2.0.0
+# django-webpack-loader==3.1.0
+git+https://github.com/CenterForOpenScience/django-webpack-loader.git@af8438c2da909ec9f2188a6c07c9d2caad0f7e93 # branch is feature/v1-webpack-stats
+django-sendgrid-v5==1.2.3 # metadata says python 3.10 not supported, but tests pass
 
 # Analytics requirements
 keen==0.7.0
-maxminddb-geolite2==2018.308
+geoip2==4.7.0
 
 # OSF models
-django-typed-models==0.11.1
-django-storages==1.6.6
-google-cloud-storage==0.22.0  # dependency of django-storages, hard-pin to version
-django-dirtyfields==1.3.1
-django-extensions==3.2.0
-psycopg2==2.7.3 --no-binary psycopg2
-django-bulk-update==2.2.0
-
+django-typed-models==0.14.0
+django-storages==1.14.3
+google-cloud-storage==2.16.0  # dependency of django-storages, hard-pin to version
+django-dirtyfields==1.9.2
+django-extensions==3.2.3
+psycopg2==2.9.9 --no-binary psycopg2
+packaging==24.0
 # Reviews requirements
-transitions==0.8.2
+transitions==0.8.11
 
 # identifiers
-datacite==1.1.2
+datacite==1.1.3
 
 # metadata
-rdflib==5.0.0
-rdflib-jsonld==0.5.0
+rdflib==7.0.0
+packaging==24.0
 
-
+colorlog==6.8.2
 # Metrics
-git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6
+git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git@f5b9312914154e213aa01731e934c593e3434269 # branch is feature/pin-esdsl
 
 # Impact Metrics CSV Export
-djangorestframework-csv==2.1.0
+djangorestframework-csv==3.0.2
+gevent==24.2.1

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from website import settings
@@ -15,11 +12,11 @@ TEST_INDEX = 'test'
 class SearchTestCase(OsfTestCase):
 
     def tearDown(self):
-        super(SearchTestCase, self).tearDown()
+        super().tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
     def setUp(self):
-        super(SearchTestCase, self).setUp()
+        super().setUp()
         elastic_search.INDEX = TEST_INDEX
         settings.ELASTIC_INDEX = TEST_INDEX
         search.delete_index(elastic_search.INDEX)
