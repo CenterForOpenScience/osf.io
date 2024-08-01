@@ -8,7 +8,7 @@ from osf.models import Guid, Comment, BaseFileNode, SpamStatus
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
-from api.base.settings import osf_settings
+from website import settings as osf_settings
 from api.base.serializers import (
     JSONAPISerializer,
     TargetField,
