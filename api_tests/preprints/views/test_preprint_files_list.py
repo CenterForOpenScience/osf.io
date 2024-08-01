@@ -81,7 +81,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 200
 
     def test_abandoned_preprint_files(self):
-        self.preprint.machine_state = DefaultStates.INITIAL.value
+        self.preprint.machine_state = DefaultStates.INITIAL.db_name
         self.preprint.save()
 
         # Unauthenticated
@@ -268,7 +268,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 200
 
     def test_abandoned_preprint_files(self):
-        self.preprint.machine_state = DefaultStates.INITIAL.value
+        self.preprint.machine_state = DefaultStates.INITIAL.db_name
         self.preprint.save()
 
         # Unauthenticated

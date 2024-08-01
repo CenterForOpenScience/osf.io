@@ -25,10 +25,10 @@ from .user import OSFUser
 from .provider import PreprintProvider
 from .preprintlog import PreprintLog
 from .contributor import PreprintContributor
-from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
+from .mixins import Taggable, Loggable, GuardianMixin
 from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.workflows import DefaultStates, ReviewStates
+from osf.utils.workflows import DefaultStates, PreprintStates
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
@@ -44,7 +44,7 @@ from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .identifiers import IdentifierMixin, Identifier
-from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
+from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin, MachineableMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
 from framework.sentry import log_exception
@@ -55,6 +55,8 @@ from osf.exceptions import (
 )
 from django.contrib.postgres.fields import ArrayField
 from api.share.utils import update_share
+from osf.utils import notifications as notify
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,52 +65,266 @@ class PreprintManager(models.Manager):
     def get_queryset(self):
         return GuidMixinQuerySet(self.model, using=self._db)
 
-    no_user_query = Q(
-        is_published=True,
-        is_public=True,
-        deleted__isnull=True,
-        primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) \
-        & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+    no_user_query = (
+        Q(
+            is_published=True,
+            is_public=True,
+            deleted__isnull=True,
+            primary_file__isnull=False,
+            primary_file__deleted_on__isnull=True
+        ) &
+        ~Q(
+            machine_state=DefaultStates.INITIAL.db_name
+        ) &
+        (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+    )
 
-    def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
-        include_non_public = user and not user.is_anonymous and not public_only
-        if include_non_public:
-            moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider, with_superuser=False)
-            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
-            reviews_user_query = Q(is_public=True, provider__in=moderator_for)
-            if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
-                query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
-            else:
-                query = (self.no_user_query | admin_user_query | reviews_user_query)
+    def admin_user_query(self, user):
+        return Q(
+            id__in=get_objects_for_user(
+                user,
+                'admin_preprint',
+                self.filter(
+                    Q(preprintcontributor__user_id=user.id)
+                ),
+                with_superuser=False
+            )
+        )
+
+    def reviews_user_query(self, moderator_for):
+        return Q(
+            is_public=True,
+            provider__in=moderator_for
+        )
+
+    def contrib_user_query(self, user):
+        return ~Q(
+            machine_state=DefaultStates.INITIAL.value
+        ) & Q(
+            id__in=get_objects_for_user(
+                user,
+                'read_preprint',
+                self.filter(
+                    Q(preprintcontributor__user_id=user.id)
+                ),
+                with_superuser=False
+            )
+        )
+
+    def preprint_permissions_query(self, user=None, allow_contribs=True):
+        if not user or user.is_anonymous:
+            return self.no_user_query
         else:
-            moderator_for = PreprintProvider.objects.none()
-            query = self.no_user_query
+            moderator_for = get_objects_for_user(
+                user,
+                'view_submissions',
+                PreprintProvider,
+                with_superuser=False
+            )
 
-        if not moderator_for.exists():
-            query = query & Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
-        return query
+            query = self.no_user_query | self.admin_user_query(user) | self.reviews_user_query(user)
 
-    def can_view(self, base_queryset=None, user=None, allow_contribs=True, public_only=False):
+            if allow_contribs:
+                query = self.no_user_query | self.contrib_user_query(user)
+
+            if not moderator_for.exists():
+                query &= Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+            return query
+
+    def can_view(self, base_queryset=None, user=None, allow_contribs=True):
         if base_queryset is None:
             base_queryset = self
-        include_non_public = user and not public_only
-        ret = base_queryset.filter(
+
+        filtered_queryset = base_queryset.filter(
             self.preprint_permissions_query(
                 user=user,
                 allow_contribs=allow_contribs,
-                public_only=public_only,
-            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+            )
+            & Q(deleted__isnull=True)
+            & ~Q(machine_state=DefaultStates.INITIAL.value)
         )
+
         # The auth subquery currently results in duplicates returned
         # https://openscience.atlassian.net/browse/OSF-9058
         # TODO: Remove need for .distinct using correct subqueries
-        return ret.distinct('id', 'created') if include_non_public else ret
+
+        return filtered_queryset.distinct('id', 'created') if user else filtered_queryset
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
-        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
+class Preprint(DirtyFieldsMixin, GuidMixin, MachineableMixin, IdentifierMixin, BaseModel, TitleMixin, DescriptionMixin,
+               Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
+
+    @property
+    def MachineClass(self):
+        from osf.utils.machines import PreprintStateMachine
+        return PreprintStateMachine
+
+    @property
+    def States(self):
+        from osf.utils.workflows import PreprintStates
+        return PreprintStates
+
+    machine_state = models.CharField(
+        max_length=15,
+        db_index=True,
+        choices=PreprintStates.char_field_choices(),
+        default=PreprintStates.INITIAL.db_name
+    )
+
+    def _validate_state(self, ev):
+        from django.core.exceptions import ValidationError
+        if not self.primary_file:
+            raise ValidationError('Cannot transition non-initial preprint without primary file.')
+        if not self.title:
+            raise ValidationError('Cannot publish a preprint without a title')
+        if not self.subjects.exists():
+            raise ValidationError('Preprint must have at least one subject to be published.')
+
+    def _validate_submit(self, ev):
+        if not self.provider:
+            raise ValidationError('Preprint provider not specified; cannot publish.')
+        if not self.primary_file:
+            raise ValueError('Preprint doesn\'t have a primary file.')
+        if not (self.primary_file and self.primary_file.target == self):
+            raise ValueError('Preprint is not a valid preprint; cannot publish.')
+        if not self.title:
+            raise ValidationError('Cannot publish a preprint without a title')
+
+        assert self.provider.reviews_workflow
+
+    @property
+    def ever_published(self):
+        return self.actions.filter(to_state=PreprintStates.ACCEPTED.db_name.upper()).exists()
+
+    def _validate_published(self, ev):
+        if self.is_published and not self.ever_published:
+            raise ValidationError('Preprint is already published.')
+
+    def perform_accept(self, ev):
+        action = self.actions.last()
+        now = action.created if action is not None else timezone.now()
+        self.date_published = now
+        self.is_published = True
+        self.ever_public = True
+        self.save()
+
+    def perform_submit(self, ev):
+        action = self.actions.last()
+        if self.post_moderation:
+            now = action.created if action is not None else timezone.now()
+            self.date_published = now
+            self.is_published = True
+            self.ever_public = True
+        self.save()
+
+    @property
+    def pre_moderation(self):
+        from osf.utils.workflows import ModerationWorkflows
+        return self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.db_name
+
+    @property
+    def post_moderation(self):
+        from osf.utils.workflows import ModerationWorkflows
+        return self.provider.reviews_workflow == ModerationWorkflows.POST_MODERATION.db_name
+
+    def perform_withdraw(self, ev):
+        self.date_withdrawn = self.actions.last().created if self.actions.last() is not None else timezone.now()
+        self.withdrawal_justification = ev.kwargs.get('comment', '')
+
+    def notify_submit(self, ev):
+        user = ev.kwargs['user']
+        notify.notify_submit(self, user)
+        auth = Auth(user)
+        self.add_log(
+            action=PreprintLog.PUBLISHED,
+            params={
+                'preprint': self._id
+            },
+            auth=auth,
+            save=False,
+        )
+
+    def resubmission_allowed(self, ev):
+        from osf.utils.workflows import ModerationWorkflows
+        return self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.value
+
+    def notify_resubmit(self, ev):
+        notify.notify_resubmit(self, ev.kwargs['user'], self.actions.last())
+
+    def notify_accept_reject(self, ev):
+        user = ev.kwargs.get('user')
+        notify.notify_accept_reject(self, user, self.actions.last(), PreprintStates)
+
+    def notify_edit_comment(self, ev):
+        notify.notify_edit_comment(self, ev.args[0], self.actions.last())
+
+    def notify_withdraw(self, ev):
+        context = self.get_context()
+        from osf.models.action import PreprintRequestAction
+
+        context['ever_public'] = self.ever_public
+        try:
+            preprint_request_action = PreprintRequestAction.objects.get(
+                target__target__id=self.id,
+                from_state='pending',
+                to_state='accepted',
+                trigger='accept'
+            )
+            context['requester'] = preprint_request_action.target.creator
+        except PreprintRequestAction.DoesNotExist:
+            # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
+            context['force_withdrawal'] = True
+
+        if not context.get('requester'):
+            context['requester'] = ev.kwargs['user']
+
+        for contributor in self.contributors.all():
+            context['contributor'] = contributor
+            if context.get('requester', None):
+                context['is_requester'] = context['requester'].username == contributor.username
+            mails.send_mail(
+                contributor.username,
+                mails.WITHDRAWAL_REQUEST_GRANTED,
+                document_type=self.provider.preprint_word,
+                **context
+            )
+
+    def get_context(self):
+        from website.settings import OSF_SUPPORT_EMAIL, DOMAIN, OSF_CONTACT_EMAIL
+        return {
+            'domain': DOMAIN,
+            'reviewable': self,
+            'workflow': self.provider.reviews_workflow,
+            'provider_url': self.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.provider._id),
+            'provider_contact_email': self.provider.email_contact or OSF_CONTACT_EMAIL,
+            'provider_support_email': self.provider.email_support or OSF_SUPPORT_EMAIL,
+        }
+
+    def _save_transition(self, ev):
+        user = ev.kwargs['user']
+        from osf.models.action import ReviewAction
+        action = ReviewAction.objects.create(
+            target=self,
+            creator=user,
+            trigger=ev.event.name,
+            from_state=ev.transition.source.lower(),
+            to_state=ev.state.name,
+            comment=ev.kwargs.get('comment', ''),
+            auto=ev.kwargs.get('auto', False),
+        )
+
+        now = action.created if action is not None else timezone.now()
+        self.date_last_transitioned = now
+        self.save()
+        self.action = action
+
+    @property
+    def in_public_reviews_state(self):
+        from osf.utils.workflows import PUBLIC_STATES
+        public_states = PUBLIC_STATES.get(self.provider.reviews_workflow)
+        if not public_states:
+            return False
+        return self.machine_state in public_states
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
@@ -354,12 +570,18 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def verified_publishable(self):
-        return self.is_published and \
-            self.is_public and \
-            self.has_submitted_preprint and not \
-            self.deleted and not \
-            self.is_preprint_orphan and not \
-            (self.is_retracted and not self.ever_public)
+        return self.public
+
+    @property
+    def public(self):
+        if self.deleted:
+            return False
+        if self.is_retracted:
+            return False
+        if self.is_spam:
+            return False
+        if self.in_public_reviews_state:
+            return True
 
     @property
     def should_request_identifiers(self):
@@ -394,7 +616,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def has_submitted_preprint(self):
-        return self.machine_state != DefaultStates.INITIAL.value
+        return self.machine_state != DefaultStates.INITIAL.db_name
 
     @property
     def deep_url(self):
@@ -580,7 +802,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.set_privacy('public', log=False, save=False)
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.machine_state = ReviewStates.ACCEPTED.value
+            self.machine_state = PreprintStates.ACCEPTED.db_name
             self.date_last_transitioned = self.date_published
 
             # This preprint will have a tombstone page when it's withdrawn.
@@ -632,31 +854,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return None
 
     def save(self, *args, **kwargs):
-        first_save = not bool(self.pk)
-        saved_fields = self.get_dirty_fields() or []
+        saved_fields = self.get_dirty_fields()
 
-        if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
-            raise ValidationError('Cannot set "ever_public" to False')
-        if self.has_submitted_preprint and not self.primary_file:
-            raise ValidationError('Cannot save non-initial preprint without primary file.')
-
-        ret = super().save(*args, **kwargs)
-
-        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.verified_publishable):
+        if saved_fields and self.verified_publishable:
             request, user_id = get_request_and_user_id()
             request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
             if user:
                 self.check_spam(user, saved_fields, request_headers)
 
-        if first_save:
-            self._set_default_region()
-            self.update_group_permissions()
-            self._add_creator_as_contributor()
-
-        if (not first_save and 'is_published' in saved_fields) or self.is_published:
+        if saved_fields.get('is_published') or self.is_published:
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)
-        return ret
+
+        return super().save(*args, **kwargs)
 
     def update_or_enqueue_on_resource_updated(self, user_id, first_save, saved_fields):
         # Needed for ContributorMixin
@@ -870,11 +1080,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not auth.user:
             return self.verified_publishable
 
-        return (self.verified_publishable or
-            (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-            self.has_permission(auth.user, ADMIN) or
-            (self.is_contributor(auth.user) and self.has_submitted_preprint)
-        )
+        if self.is_public:
+            return True
+
+        if auth.user.has_perm('view_submissions', self.provider):
+            return True
+
+        return self.is_contributor(auth.user)
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this preprint.
@@ -890,9 +1102,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             raise ValueError('Cannot pass both `auth` and `user`')
         user = user or auth.user
 
-        return (
-            user and ((self.has_permission(user, WRITE) and self.has_submitted_preprint) or self.has_permission(user, ADMIN))
-        )
+        return user and self.has_permission(user, WRITE)
 
     def get_contributor_order(self):
         # Method needed for ContributorMixin
@@ -1269,13 +1479,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
+
 @receiver(post_save, sender=Preprint)
-def create_file_node(sender, instance, **kwargs):
-    if instance.root_folder:
-        return
-    # Note: The "root" node will always be "named" empty string
-    root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
-    root_folder.save()
+def create_file_node(sender, instance, created, **kwargs):
+    if created:
+        root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
+        root_folder.save()
+        instance._set_default_region()
+        instance.update_group_permissions()
+        instance._add_creator_as_contributor()
 
 
 class PreprintUserObjectPermission(UserObjectPermissionBase):

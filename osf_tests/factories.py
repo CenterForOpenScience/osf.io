@@ -723,28 +723,33 @@ class PreprintFactory(DjangoModelFactory):
         title = kwargs.pop('title', None) or 'Untitled'
         description = kwargs.pop('description', None) or 'None'
         is_public = kwargs.pop('is_public', True)
-        instance = target_class(provider=provider, title=title, description=description, creator=creator, node=project, is_public=is_public)
+        instance = target_class(
+            provider=provider,
+            title=title,
+            description=description,
+            creator=creator,
+            node=project,
+            is_public=is_public
+        )
+        assert instance.machine_state == 'initial'
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
-        update_task_patcher.start()
-
-        finish = kwargs.pop('finish', True)
-        set_doi = kwargs.pop('set_doi', True)
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
-        file_size = kwargs.pop('file_size', 1337)
+        instance.save()
+        assert instance.machine_state == 'initial'
 
+        file_size = kwargs.pop('file_size', 1337)
         doi = kwargs.pop('doi', None)
         license_details = kwargs.pop('license_details', None)
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.article_doi = doi
-
         user = kwargs.pop('creator', None) or instance.creator
-        instance.save()
+
+        from addons.osfstorage import settings as osfstorage_settings
 
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
@@ -752,35 +757,27 @@ class PreprintFactory(DjangoModelFactory):
             path=f'/{filename}',
             name=filename,
             materialized_path=f'/{filename}')
-
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
         preprint_file.save()
-        from addons.osfstorage import settings as osfstorage_settings
+        preprint_file.create_version(
+            user,
+            {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            },
+            {
+                'size': file_size,
+                'contentType': 'img/png'
+            }
+        ).save()
 
-        preprint_file.create_version(user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': file_size,
-            'contentType': 'img/png'
-        }).save()
-        update_task_patcher.stop()
-        if finish:
-            auth = Auth(user)
+        auth = Auth(user)
+        instance.set_primary_file(preprint_file, auth=auth, save=True)
+        instance.set_subjects(subjects, auth=auth)
+        if license_details:
+            instance.set_preprint_license(license_details, auth=auth)
+        instance.set_published(is_published, auth=auth)
 
-            instance.set_primary_file(preprint_file, auth=auth, save=True)
-            instance.set_subjects(subjects, auth=auth)
-            if license_details:
-                instance.set_preprint_license(license_details, auth=auth)
-            instance.set_published(is_published, auth=auth)
-            create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
-            mock_create_identifier = create_task_patcher.start()
-            if is_published and set_doi:
-                mock_create_identifier.side_effect = sync_set_identifiers(instance)
-            create_task_patcher.stop()
-
-        instance.save()
         return instance
 
 class TagFactory(DjangoModelFactory):
@@ -954,10 +951,10 @@ class ReviewActionFactory(DjangoModelFactory):
     class Meta:
         model = models.ReviewAction
 
-    trigger = FuzzyChoice(choices=DefaultTriggers.values())
+    trigger = FuzzyChoice(choices=DefaultTriggers.choices())
     comment = factory.Faker('text')
-    from_state = FuzzyChoice(choices=DefaultStates.values())
-    to_state = FuzzyChoice(choices=DefaultStates.values())
+    from_state = FuzzyChoice(choices=DefaultStates.choices())
+    to_state = FuzzyChoice(choices=DefaultStates.choices())
 
     target = factory.SubFactory(PreprintFactory)
     creator = factory.SubFactory(AuthUserFactory)

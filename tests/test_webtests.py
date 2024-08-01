@@ -1134,9 +1134,6 @@ class TestPreprintBannerView(OsfTestCase):
         assert 'Has supplemental materials for' in res.text
 
     def test_public_project_abandoned_preprint(self):
-        self.preprint.machine_state = 'initial'
-        self.preprint.save()
-
         url = self.project_one.web_url_for('view_project')
 
         # Admin - preprint

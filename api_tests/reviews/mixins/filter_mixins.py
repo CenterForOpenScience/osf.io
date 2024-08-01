@@ -64,7 +64,13 @@ class ReviewActionFilterMixin:
                 project=ProjectFactory(is_public=True)
             )
             for _ in range(5):
-                actions.append(ReviewActionFactory(target=preprint))
+                review_action = ReviewActionFactory(target=preprint)
+                # FuzzyChoice getter is broken
+                review_action.trigger = review_action.trigger[0]
+                review_action.from_state = review_action.from_state[0]
+                review_action.to_state = review_action.to_state[0]
+                review_action.save()
+                actions.append(review_action)
         return actions
 
     @pytest.fixture()

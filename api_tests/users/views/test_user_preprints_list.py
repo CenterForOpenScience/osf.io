@@ -303,6 +303,7 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         assert len(res.json['data']) == 0
 
     # test override, abandoned don't show up for anyone under UserPreprints
+    @pytest.mark.skip(' No more abandonsed preprints')
     def test_preprint_has_abandoned_preprint(
             self, app, user_admin_contrib, user_write_contrib, user_non_contrib,
             preprint, url):
