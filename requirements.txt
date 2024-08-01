@@ -73,7 +73,7 @@ django-guardian==2.4.0
 
 # Admin requirements
 # django-webpack-loader==3.1.0
-git+https://github.com/felliott/django-webpack-loader@feature/old-style-peanut-butter
+git+https://github.com/CenterForOpenScience/django-webpack-loader.git@af8438c2da909ec9f2188a6c07c9d2caad0f7e93 # branch is feature/v1-webpack-stats
 django-sendgrid-v5==1.2.3 # metadata says python 3.10 not supported, but tests pass
 
 # Analytics requirements
@@ -100,7 +100,7 @@ packaging==24.0
 
 colorlog==6.8.2
 # Metrics
-git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@feature/pin-esdsl
+git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git@f5b9312914154e213aa01731e934c593e3434269 # branch is feature/pin-esdsl
 
 # Impact Metrics CSV Export
 djangorestframework-csv==3.0.2

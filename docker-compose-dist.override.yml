@@ -1,5 +1,3 @@
-version: "3.4"
-
 # Additional configuration for development on services linked with osf.io
 # services:
 

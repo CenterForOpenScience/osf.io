@@ -368,13 +368,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.146"
+version = "1.34.147"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.146-py3-none-any.whl", hash = "sha256:3fd4782362bd29c192704ebf859c5c8c5189ad05719e391eefe23088434427ae"},
-    {file = "botocore-1.34.146.tar.gz", hash = "sha256:849cb8e54e042443aeabcd7822b5f2b76cb5cfe33fe3a71f91c7c069748a869c"},
+    {file = "botocore-1.34.147-py3-none-any.whl", hash = "sha256:be94a2f4874b1d1705cae2bd512c475047497379651678593acb6c61c50d91de"},
+    {file = "botocore-1.34.147.tar.gz", hash = "sha256:2e8f000b77e4ca345146cb2edab6403769a517b564f627bb084ab335417f3dbe"},
 ]
 
 [package.dependencies]
@@ -1128,8 +1128,8 @@ tests = ["factory-boy (==2.11.1)", "mock", "pytest", "pytest-django (==3.10.0)"]
 
 [package.source]
 type = "git"
-url = "https://github.com/CenterForOpenScience/django-elasticsearch-metrics"
-reference = "feature/pin-esdsl"
+url = "https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git"
+reference = "f5b9312914154e213aa01731e934c593e3434269"
 resolved_reference = "f5b9312914154e213aa01731e934c593e3434269"
 
 [[package]]
@@ -1284,7 +1284,7 @@ develop = false
 
 [package.source]
 type = "git"
-url = "https://github.com/felliott/django-webpack-loader.git"
+url = "https://github.com/CenterForOpenScience/django-webpack-loader.git"
 reference = "af8438c2da909ec9f2188a6c07c9d2caad0f7e93"
 resolved_reference = "af8438c2da909ec9f2188a6c07c9d2caad0f7e93"
 
@@ -2813,7 +2813,7 @@ requests-oauthlib = ">=0.4.2"
 [package.source]
 type = "git"
 url = "https://github.com/CenterForOpenScience/mendeley-python-sdk.git"
-reference = "feature/osf-dep-updates"
+reference = "be8a811fa6c3b105d9f5c656cabb6b1ba855ed5b"
 resolved_reference = "be8a811fa6c3b105d9f5c656cabb6b1ba855ed5b"
 
 [[package]]
@@ -5013,4 +5013,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "be88170e95e44e88a6112fae04f2bc11ba75603bedc424c01127d67b4d6c450e"
+content-hash = "78f529cdfdc2cbc64c62d3acb53e096f6a7090ade7e3ee70a232b059061ec13d"
