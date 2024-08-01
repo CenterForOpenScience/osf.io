@@ -14,7 +14,7 @@ import os
 
 from corsheaders.defaults import default_headers
 
-from website import settings as osf_settings
+from website.settings import *  # noqa: F403
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
@@ -43,32 +43,26 @@ PASSWORD_HASHERS = [
 
 AUTH_USER_MODEL = 'osf.OSFUser'
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = osf_settings.SECRET_KEY
-
 AUTHENTICATION_BACKENDS = (
     'api.base.authentication.backends.ODMBackend',
     'guardian.backends.ObjectPermissionBackend',
 )
 
+DEBUG = DEBUG_MODE
 # SECURITY WARNING: don't run with debug turned on in production!
-DEV_MODE = osf_settings.DEV_MODE
-DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
-SESSION_COOKIE_NAME = osf_settings.COOKIE_NAME
-SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
-SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
-SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
+SESSION_COOKIE_NAME = COOKIE_NAME
+SESSION_COOKIE_SECURE = SECURE_MODE
 SESSION_COOKIE_AGE = 2592000  # 30 days in seconds
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'redis'
 
 # csrf:
 CSRF_COOKIE_NAME = 'api-csrf'
-CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
-CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
+CSRF_COOKIE_SECURE = SECURE_MODE
+CSRF_COOKIE_HTTPONLY = SECURE_MODE
 
 ALLOWED_HOSTS = [
     '.osf.io',
@@ -121,7 +115,7 @@ INSTALLED_APPS = (
 )
 
 # local development using https
-if osf_settings.SECURE_MODE and DEBUG:
+if SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
 
 BULK_SETTINGS = {
@@ -202,9 +196,7 @@ REST_FRAMEWORK = {
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (
-    osf_settings.DOMAIN.rstrip('/'),
-)
+CORS_ORIGIN_WHITELIST = DOMAIN.rstrip('/'),
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
@@ -270,7 +262,7 @@ if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
     DEFAULT_FILE_STORAGE = 'api.base.storage.RequestlessURLGoogleCloudStorage'
     GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-cdn-us')
     GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
-elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
+elif DEV_MODE or DEBUG_MODE:
     DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
@@ -281,17 +273,11 @@ API_BASE = 'v2/'
 API_PRIVATE_BASE = '_/'
 STATIC_URL = '/static/'
 
-NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 
 DEBUG_TRANSACTIONS = DEBUG
 
 JWT_SECRET = b'osf_api_cas_login_jwt_secret_32b'
 JWE_SECRET = b'osf_api_cas_login_jwe_secret_32b'
-
-ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
-ENABLE_ESI = osf_settings.ENABLE_ESI
-VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
-ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
 ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward', 'boa']
