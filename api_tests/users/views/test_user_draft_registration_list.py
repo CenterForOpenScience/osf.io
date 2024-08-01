@@ -44,10 +44,6 @@ class TestUserDraftRegistrationList(AbstractDraftRegistrationTestCase):
             branched_from=project_public
         )
 
-    @pytest.fixture()
-    def url_draft_registrations(self, project_public):
-        return f'/{API_BASE}users/me/draft_registrations/'
-
     def test_unacceptable_methods(self):
         assert only_supports_methods(UserDraftRegistrations, ['GET'])
 
@@ -137,16 +133,16 @@ class TestUserDraftRegistrationList(AbstractDraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
-    def test_cannot_access_other_users_draft_registration(
-            self, app, user, other_admin, project_public,
-            draft_registration, schema):
-        url = f'/{API_BASE}users/{user._id}/draft_registrations/'
-        res = app.get(url, auth=other_admin.auth, expect_errors=True)
+    def test_cannot_access_other_users_draft_registration(self, app, user, other_admin, draft_registration, schema):
+        res = app.get(
+            f'/{API_BASE}users/{user._id}/draft_registrations/',
+            auth=other_admin.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    def test_can_access_own_draft_registrations_with_guid(
-            self, app, user, draft_registration):
-        url = f'/{API_BASE}users/{user._id}/draft_registrations/'
+    def test_can_access_own_draft_registrations_with_guid(self, app, user, draft_registration):
+        url = '/{}users/{}/draft_registrations/'.format(API_BASE, user._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1

@@ -30,8 +30,8 @@ def invisible_and_inactive_schema():
 class TestDraftRegistrationListTopLevelEndpoint:
 
     @pytest.fixture()
-    def url_draft_registrations(self, project_public):
-        return f'/{API_BASE}draft_registrations/?'
+    def url_draft_registrations(self):
+        return f'/{API_BASE}draft_registrations/'
 
     @pytest.fixture()
     def user(self):
