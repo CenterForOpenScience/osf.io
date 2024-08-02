@@ -9,7 +9,6 @@ from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
-from osf.utils import permissions as osf_permissions
 from website.util.sanitize import is_iterable_but_not_string
 from api.base.utils import get_user_auth
 
@@ -173,4 +172,4 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return resource.is_public or resource.can_view(auth)
         else:
-            return resource.has_permission(auth.user, osf_permissions.WRITE)
+            return resource.can_edit(auth)
