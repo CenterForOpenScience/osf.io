@@ -208,7 +208,7 @@ class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.Retriev
                 action=PreprintLog.FILE_UPDATED,
                 params={
                     'preprint': instance._id,
-                    'file': instance.primary_file._id
+                    'file': instance.primary_file._id,
                 },
                 auth=auth,
             )
