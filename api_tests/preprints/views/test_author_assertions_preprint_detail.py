@@ -30,7 +30,15 @@ class TestPreprintUpdateWithAuthorAssertion:
 
     @pytest.fixture()
     def preprint(self, user):
-        return PreprintFactory(creator=user)
+        """
+        Creator is not admin permission
+        """
+        preprint = PreprintFactory(creator=user)
+        admin = AuthUserFactory()
+        preprint.add_contributor(admin, ADMIN)
+        preprint.add_contributor(user, READ)
+        return preprint
+
 
     @pytest.fixture()
     def url(self, preprint):
@@ -64,13 +72,13 @@ class TestPreprintUpdateWithAuthorAssertion:
         self.assert_permission(app, url, read_contrib, {'has_coi': True}, 403)
 
     def test_update_has_coi_permission_granted_write(self, app, write_contrib, url):
-        self.assert_permission(app, url, write_contrib, {'has_coi': True}, 200)
+        self.assert_permission(app, url, write_contrib, {'has_coi': True}, 403)
 
     def test_update_has_coi_permission_granted_admin(self, app, admin_contrib, url):
         self.assert_permission(app, url, admin_contrib, {'has_coi': True}, 200)
 
     def test_update_has_coi_permission_granted_creator(self, app, user, url):
-        self.assert_permission(app, url, user, {'has_coi': True}, 200)
+        self.assert_permission(app, url, user, {'has_coi': True}, 403)
 
     # Testing permissions for updating conflict_of_interest_statement
     def test_update_conflict_of_interest_statement_permission_denied(self, app, read_contrib, url):
@@ -79,7 +87,7 @@ class TestPreprintUpdateWithAuthorAssertion:
     def test_update_conflict_of_interest_statement_permission_granted_write(self, app, write_contrib, preprint, url):
         preprint.has_coi = True
         preprint.save()
-        self.assert_permission(app, url, write_contrib, {'conflict_of_interest_statement': 'Test'}, 200)
+        self.assert_permission(app, url, write_contrib, {'conflict_of_interest_statement': 'Test'}, 403)
 
     def test_update_conflict_of_interest_statement_permission_granted_admin(self, app, admin_contrib, preprint, url):
         preprint.has_coi = True
@@ -89,20 +97,20 @@ class TestPreprintUpdateWithAuthorAssertion:
     def test_update_conflict_of_interest_statement_permission_granted_creator(self, app, user, preprint, url):
         preprint.has_coi = True
         preprint.save()
-        self.assert_permission(app, url, user, {'conflict_of_interest_statement': 'Test'}, 200)
+        self.assert_permission(app, url, user, {'conflict_of_interest_statement': 'Test'}, 403)
 
     # Testing permissions for updating has_data_links
     def test_update_has_data_links_permission_denied(self, app, read_contrib, url):
         self.assert_permission(app, url, read_contrib, {'has_data_links': 'available'}, 403)
 
     def test_update_has_data_links_permission_granted_write(self, app, write_contrib, url):
-        self.assert_permission(app, url, write_contrib, {'has_data_links': 'available'}, 200)
+        self.assert_permission(app, url, write_contrib, {'has_data_links': 'available'}, 403)
 
     def test_update_has_data_links_permission_granted_admin(self, app, admin_contrib, url):
         self.assert_permission(app, url, admin_contrib, {'has_data_links': 'available'}, 200)
 
     def test_update_has_data_links_permission_granted_creator(self, app, user, url):
-        self.assert_permission(app, url, user, {'has_data_links': 'available'}, 200)
+        self.assert_permission(app, url, user, {'has_data_links': 'available'}, 403)
 
     # Testing permissions for updating why_no_data
     def test_update_why_no_data_permission_denied(self, app, read_contrib, url):
@@ -111,7 +119,7 @@ class TestPreprintUpdateWithAuthorAssertion:
     def test_update_why_no_data_permission_granted_write(self, app, write_contrib, preprint, url):
         preprint.has_data_links = 'no'
         preprint.save()
-        self.assert_permission(app, url, write_contrib, {'why_no_data': 'My dog ate it.'}, 200)
+        self.assert_permission(app, url, write_contrib, {'why_no_data': 'My dog ate it.'}, 403)
 
     def test_update_why_no_data_permission_granted_admin(self, app, admin_contrib, preprint, url):
         preprint.has_data_links = 'no'
@@ -121,7 +129,7 @@ class TestPreprintUpdateWithAuthorAssertion:
     def test_update_why_no_data_permission_granted_creator(self, app, user, preprint, url):
         preprint.has_data_links = 'no'
         preprint.save()
-        self.assert_permission(app, url, user, {'why_no_data': 'My dog ate it.'}, 200)
+        self.assert_permission(app, url, user, {'why_no_data': 'My dog ate it.'}, 403)
 
     # Testing permissions for updating data_links
     def test_update_data_links_permission_denied(self, app, read_contrib, url):
@@ -132,7 +140,7 @@ class TestPreprintUpdateWithAuthorAssertion:
         data_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
         preprint.has_data_links = 'available'
         preprint.save()
-        self.assert_permission(app, url, write_contrib, {'data_links': data_links}, 200)
+        self.assert_permission(app, url, write_contrib, {'data_links': data_links}, 403)
 
     def test_update_data_links_permission_granted_admin(self, app, admin_contrib, preprint, url):
         data_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
@@ -144,19 +152,19 @@ class TestPreprintUpdateWithAuthorAssertion:
         data_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
         preprint.has_data_links = 'available'
         preprint.save()
-        self.assert_permission(app, url, user, {'data_links': data_links}, 200)
+        self.assert_permission(app, url, user, {'data_links': data_links}, 403)
 
-    def test_update_data_links_invalid_payload(self, app, user, url):
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'data_links': 'maformed payload'})
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+    def test_update_data_links_invalid_payload(self, app, admin_contrib, url):
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'data_links': 'maformed payload'})
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
 
-    def test_update_data_links_invalid_url(self, app, user, preprint, url):
+    def test_update_data_links_invalid_url(self, app, admin_contrib, preprint, url):
         preprint.has_data_links = 'available'
         preprint.save()
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'data_links': ['thisaintright']})
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'data_links': ['thisaintright']})
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Enter a valid URL.'
 
@@ -165,13 +173,13 @@ class TestPreprintUpdateWithAuthorAssertion:
         self.assert_permission(app, url, read_contrib, {'has_prereg_links': 'available'}, 403)
 
     def test_update_has_prereg_links_permission_granted_write(self, app, write_contrib, url):
-        self.assert_permission(app, url, write_contrib, {'has_prereg_links': 'available'}, 200)
+        self.assert_permission(app, url, write_contrib, {'has_prereg_links': 'available'}, 403)
 
     def test_update_has_prereg_links_permission_granted_admin(self, app, admin_contrib, url):
         self.assert_permission(app, url, admin_contrib, {'has_prereg_links': 'available'}, 200)
 
     def test_update_has_prereg_links_permission_granted_creator(self, app, user, url):
-        self.assert_permission(app, url, user, {'has_prereg_links': 'available'}, 200)
+        self.assert_permission(app, url, user, {'has_prereg_links': 'available'}, 403)
 
     # Testing permissions for updating prereg_links
     def test_update_prereg_links_permission_denied(self, app, read_contrib, url):
@@ -182,7 +190,7 @@ class TestPreprintUpdateWithAuthorAssertion:
         prereg_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
         preprint.has_prereg_links = 'available'
         preprint.save()
-        self.assert_permission(app, url, write_contrib, {'prereg_links': prereg_links}, 200)
+        self.assert_permission(app, url, write_contrib, {'prereg_links': prereg_links}, 403)
 
     def test_update_prereg_links_permission_granted_admin(self, app, admin_contrib, preprint, url):
         prereg_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
@@ -194,72 +202,72 @@ class TestPreprintUpdateWithAuthorAssertion:
         prereg_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
         preprint.has_prereg_links = 'available'
         preprint.save()
-        self.assert_permission(app, url, user, {'prereg_links': prereg_links}, 200)
+        self.assert_permission(app, url, user, {'prereg_links': prereg_links}, 403)
 
-    def test_update_prereg_links_invalid_payload(self, app, user, url):
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'prereg_links': 'maformed payload'})
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+    def test_update_prereg_links_invalid_payload(self, app, admin_contrib, url):
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'prereg_links': 'maformed payload'})
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
 
-    def test_update_prereg_links_invalid_url(self, app, user, preprint, url):
+    def test_update_prereg_links_invalid_url(self, app, admin_contrib, preprint, url):
         preprint.has_prereg_links = 'available'
         preprint.save()
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'prereg_links': ['thisaintright']})
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'prereg_links': ['thisaintright']})
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Enter a valid URL.'
 
-    def test_update_prereg_link_info_fail_prereg_links(self, app, user, preprint, url):
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'prereg_link_info': 'prereg_designs'})
+    def test_update_prereg_link_info_fail_prereg_links(self, app, admin_contrib, preprint, url):
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'prereg_link_info': 'prereg_designs'})
         preprint.has_prereg_links = 'no'
         preprint.save()
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot edit this field while your prereg links availability is set to false or is unanswered.'
 
-    def test_update_prereg_link_info_success(self, app, user, preprint, url):
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'prereg_link_info': 'prereg_designs'})
+    def test_update_prereg_link_info_success(self, app, admin_contrib, preprint, url):
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'prereg_link_info': 'prereg_designs'})
         preprint.has_prereg_links = 'available'
         preprint.save()
-        res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['prereg_link_info'] == 'prereg_designs'
         preprint.reload()
         assert preprint.prereg_link_info == 'prereg_designs'
         log = preprint.logs.first()
         assert log.action == PreprintLog.UPDATE_PREREG_LINKS_INFO
-        assert log.params == {'user': user._id, 'preprint': preprint._id}
+        assert log.params == {'user': admin_contrib._id, 'preprint': preprint._id}
 
-    def test_update_prereg_link_info_invalid_payload(self, app, user, url):
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'prereg_link_info': 'maformed payload'})
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+    def test_update_prereg_link_info_invalid_payload(self, app, admin_contrib, url):
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'prereg_link_info': 'maformed payload'})
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"maformed payload" is not a valid choice.'
 
-    def test_no_prereg_links_clears_links(self, app, user, preprint, url):
+    def test_no_prereg_links_clears_links(self, app, admin_contrib, preprint, url):
         preprint.has_prereg_links = 'available'
         preprint.prereg_links = ['http://example.com']
         preprint.prereg_link_info = 'prereg_analysis'
         preprint.save()
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'has_prereg_links': 'no'})
-        res = app.patch_json_api(url, update_payload, auth=user.auth)
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'has_prereg_links': 'no'})
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['has_prereg_links'] == 'no'
         assert res.json['data']['attributes']['prereg_links'] == []
         assert not res.json['data']['attributes']['prereg_link_info']
 
-    def test_no_data_links_clears_links(self, app, user, preprint, url):
+    def test_no_data_links_clears_links(self, app, admin_contrib, preprint, url):
         preprint.has_data_links = 'available'
         preprint.data_links = ['http://www.apple.com']
         preprint.save()
-        update_payload = build_preprint_update_payload(node_id=user._id, attributes={'has_data_links': 'no'})
-        res = app.patch_json_api(url, update_payload, auth=user.auth)
+        update_payload = build_preprint_update_payload(node_id=admin_contrib._id, attributes={'has_data_links': 'no'})
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['has_data_links'] == 'no'
         assert res.json['data']['attributes']['data_links'] == []
 
-    def test_sloan_updates(self, app, user, preprint, url):
+    def test_sloan_updates(self, app, admin_contrib, preprint, url):
         preprint.has_prereg_links = 'available'
         preprint.prereg_links = ['http://no-sf.io']
         preprint.prereg_link_info = 'prereg_designs'
@@ -272,10 +280,10 @@ class TestPreprintUpdateWithAuthorAssertion:
                 'prereg_links': ['http://osf.io'],
             }
         )
-        app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         logs = preprint.logs.all().values_list('action', 'params')
-        assert logs.count() == 3
-        assert logs.latest() == ('prereg_links_updated', {'user': user._id, 'preprint': preprint._id})
+        assert logs.count() == 5
+        assert logs.latest() == ('prereg_links_updated', {'user': admin_contrib._id, 'preprint': preprint._id})
 
         update_payload = build_preprint_update_payload(
             node_id=preprint._id,
@@ -284,7 +292,7 @@ class TestPreprintUpdateWithAuthorAssertion:
                 'why_no_prereg': 'My dog ate it.'
             }
         )
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['attributes']['has_prereg_links'] == 'no'
         assert res.json['data']['attributes']['why_no_prereg'] == 'My dog ate it.'
