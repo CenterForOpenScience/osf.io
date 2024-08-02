@@ -1,7 +1,5 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '3.5'
-
 volumes:
   redis_data_vol:
     external: false
