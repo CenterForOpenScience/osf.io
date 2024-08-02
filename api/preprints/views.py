@@ -222,7 +222,6 @@ class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.Retriev
                     params={'preprint': instance._id},
                     auth=auth,
                 )
-                instance.notify_user_submitted(auth.user)
 
         instance.save()
 
