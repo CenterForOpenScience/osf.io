@@ -39,7 +39,6 @@ class TestPreprintUpdateWithAuthorAssertion:
         preprint.add_contributor(user, READ)
         return preprint
 
-
     @pytest.fixture()
     def url(self, preprint):
         return f'/{API_BASE}preprints/{preprint._id}/'
