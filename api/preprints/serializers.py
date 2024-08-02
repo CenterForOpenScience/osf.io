@@ -297,10 +297,13 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         save_preprint = False
         recently_published = False
 
+        status_changed = False
+
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
             save_preprint = True
+            status_changed = True
 
         old_tags = set(preprint.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
@@ -424,6 +427,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.set_privacy('public', log=False, save=True)
 
         if save_preprint:
+            preprint.save()
+
+        if status_changed:
+            preprint.status = 'waiting_for_moderation'
             preprint.save()
 
         if recently_published:

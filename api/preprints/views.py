@@ -6,7 +6,7 @@ from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDeni
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import ReviewAction, Preprint, PreprintContributor
+from osf.models import ReviewAction, Preprint, PreprintContributor, PreprintLog
 from osf.utils.requests import check_select_for_update
 
 from api.actions.permissions import ReviewActionPermission
@@ -196,6 +196,35 @@ class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.Retriev
         res = super().get_parser_context(http_request)
         res['legacy_type_allowed'] = True
         return res
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        request = self.request
+        auth = get_user_auth(request)
+
+        if 'primary_file' in request.data:
+            instance.set_primary_file(instance.primary_file, auth)
+            instance.add_log(
+                action=PreprintLog.FILE_UPDATED,
+                params={
+                    'preprint': instance._id,
+                    'file': instance.primary_file._id
+                },
+                auth=auth,
+            )
+
+        if 'is_published' in request.data:
+            published = request.data['is_published']
+            instance.set_published(published, auth)
+            if published:
+                instance.add_log(
+                    action=PreprintLog.PUBLISHED,
+                    params={'preprint': instance._id},
+                    auth=auth,
+                )
+                instance.notify_user_submitted(auth.user)
+
+        instance.save()
 
 
 class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
