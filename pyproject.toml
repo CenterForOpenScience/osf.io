@@ -11,7 +11,7 @@ packages = [{include = "osf"}]
 python = "^3.12"
 wheel = "0.42.0"
 invoke = "2.2.0"
-Werkzeug = "3.0.1"
+Werkzeug = "3.0.3"
 Flask = "3.0.2"
 Mako = "1.3.2"
 Markdown = "3.5.2"
