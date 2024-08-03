@@ -1,5 +1,0 @@
-# Requirements for the boa add-on
-boa-api==0.1.14
-
-# Requirements for running asyncio in celery, using 3.4.1 for Python 3.6 compatibility
-asgiref==3.7.2
