@@ -8,6 +8,7 @@ from rest_framework import permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ReviewAction, Preprint, PreprintContributor, PreprintLog
 from osf.utils.requests import check_select_for_update
+from osf.utils.workflows import ApprovalStates
 
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
@@ -212,6 +213,8 @@ class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.Retriev
                 },
                 auth=auth,
             )
+            if instance.machine_state != ApprovalStates.PENDING_MODERATION.value:
+                instance.machine_state = ApprovalStates.PENDING_MODERATION.value
 
         if 'is_published' in request.data:
             published = request.data['is_published']

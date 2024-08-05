@@ -11,6 +11,7 @@ from waffle.testutils import (
 
 from osf import features
 from osf.utils.permissions import READ
+from osf.utils.workflows import ApprovalStates
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from api_tests.subjects.mixins import UpdateSubjectsMixin
@@ -479,6 +480,40 @@ class TestPreprintUpdate:
         log = preprint.logs.latest()
         assert log.action == 'file_updated'
         assert log.params.get('preprint') == preprint._id
+
+    @pytest.fixture()
+    def new_file(self, user, preprint):
+        return test_utils.create_test_preprint_file(preprint, user, filename='new_version.pdf')
+
+    def test_set_pending_moderation_on_primary_file_update(self, app, user, preprint, url, new_file):
+        relationships = {
+            'primary_file': {
+                'data': {
+                    'type': 'file',
+                    'id': new_file._id
+                }
+            }
+        }
+        update_file_payload = build_preprint_update_payload(
+            preprint._id, relationships=relationships)
+
+        # Send the update request
+        res = app.patch_json_api(url, update_file_payload, auth=user.auth)
+        assert res.status_code == 200
+
+        # Reload the preprint and verify changes
+        preprint.reload()
+        assert preprint.primary_file == new_file
+        assert preprint.machine_state == ApprovalStates.PENDING_MODERATION.value
+
+        # Verify the creation of a log entry
+        log = preprint.logs.latest()
+        assert log.action == PreprintLog.FILE_UPDATED
+        assert log.params.get('preprint') == preprint._id
+
+        # Check that the state has been updated
+        assert preprint.machine_state == ApprovalStates.PENDING_MODERATION.value
+
 
     def test_update_preprints_with_none_type(self, app, user, preprint, url):
         payload = {
