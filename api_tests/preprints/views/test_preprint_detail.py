@@ -497,21 +497,17 @@ class TestPreprintUpdate:
         update_file_payload = build_preprint_update_payload(
             preprint._id, relationships=relationships)
 
-        # Send the update request
         res = app.patch_json_api(url, update_file_payload, auth=user.auth)
         assert res.status_code == 200
 
-        # Reload the preprint and verify changes
         preprint.reload()
         assert preprint.primary_file == new_file
         assert preprint.machine_state == ApprovalStates.PENDING_MODERATION.value
 
-        # Verify the creation of a log entry
         log = preprint.logs.latest()
         assert log.action == PreprintLog.FILE_UPDATED
         assert log.params.get('preprint') == preprint._id
 
-        # Check that the state has been updated
         assert preprint.machine_state == ApprovalStates.PENDING_MODERATION.value
 
 
