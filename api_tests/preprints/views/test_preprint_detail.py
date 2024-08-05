@@ -502,13 +502,13 @@ class TestPreprintUpdate:
 
         preprint.reload()
         assert preprint.primary_file == new_file
-        assert preprint.machine_state == ApprovalStates.PENDING_MODERATION.value
+        assert int(preprint.machine_state) == ApprovalStates.PENDING_MODERATION.value
 
         log = preprint.logs.latest()
         assert log.action == PreprintLog.FILE_UPDATED
         assert log.params.get('preprint') == preprint._id
 
-        assert preprint.machine_state == ApprovalStates.PENDING_MODERATION.value
+        assert int(preprint.machine_state) == ApprovalStates.PENDING_MODERATION.value
 
     def test_update_preprints_with_none_type(self, app, user, preprint, url):
         payload = {
