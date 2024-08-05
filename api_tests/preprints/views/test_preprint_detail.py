@@ -510,7 +510,6 @@ class TestPreprintUpdate:
 
         assert preprint.machine_state == ApprovalStates.PENDING_MODERATION.value
 
-
     def test_update_preprints_with_none_type(self, app, user, preprint, url):
         payload = {
             'data': {
