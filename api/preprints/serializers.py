@@ -47,6 +47,7 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
+from osf.utils.workflows import ApprovalStates
 
 from osf.exceptions import PreprintStateError
 
@@ -430,7 +431,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.save()
 
         if status_changed:
-            preprint.status = 'waiting_for_moderation'
+            preprint.state = ApprovalStates.PENDING_MODERATION
             preprint.save()
 
         if recently_published:
