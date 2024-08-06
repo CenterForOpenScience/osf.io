@@ -543,6 +543,7 @@ function MetadataButtons() {
         field.setValue(jsonObject[field.question.qid] || '');
       });
     } catch(err) {
+      console.error(logPrefix, 'Could not paste text', err);
       $osf.growl('Error', _('Could not paste text'));
       Raven.captureMessage(_('Could not paste text'), {
         extra: {

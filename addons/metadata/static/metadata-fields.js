@@ -312,7 +312,7 @@ function createFormField(question, options, value) {
   } else if (question.format === 'singleselect') {
     formField = new SingleSelectFormField(question, options);
   } else {
-    console.error(logPrefix + 'Unknown format: ' + question.format);
+    console.warn(logPrefix + 'Unknown format: ' + question.format);
     formField = new TextFormField(question, options);
   }
   formField.create();
@@ -610,8 +610,25 @@ const SingleSelectFormField = oop.extend(FormFieldInterface, {
     return self.select.val();
   },
 
+  getDefaultValue: function() {
+    const self = this;
+    var defaultValue = null;
+    (self.question.options || []).forEach(function(opt) {
+      if (opt.default) {
+        defaultValue = opt.text === undefined ? opt : opt.text;
+      }
+    });
+    return defaultValue;
+  },
+
   setValue: function(value) {
     const self = this;
+    // assign default value if value is not in the options
+    const defaultValue = self.getDefaultValue();
+    if (!value && defaultValue) {
+      self.select.val(defaultValue);
+      return;
+    }
     self.select.val(value);
   },
 
@@ -743,7 +760,16 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     self.reset();
     var rows = [];
     if (value && typeof value === 'string') {
-      rows = JSON.parse(value);
+      if (value.trim().length === 0) {
+        rows = [];
+      } else {
+        try {
+          rows = JSON.parse(value);
+        } catch (error) {
+          console.warn('Invalid JSON: ' + value, error);
+          rows = {};
+        }
+      }
     } else {
       rows = value || [];
     }
@@ -835,7 +861,16 @@ const ObjectFormField = oop.extend(FormFieldInterface, {
     self.reset();
     var rows = value || {};
     if (value && typeof value === 'string') {
-      rows = JSON.parse(value);
+      if (value.trim().length === 0) {
+        rows = {};
+      } else {
+        try {
+          rows = JSON.parse(value);
+        } catch (error) {
+          console.warn('Invalid JSON: ' + value, error);
+          rows = {};
+        }
+      }
     }
     self.fields.forEach(function(subquestion) {
       const value = rows[subquestion.question.id];

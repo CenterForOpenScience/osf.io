@@ -97,6 +97,23 @@ def suggestion_ror(key, keyword):
     return res
 
 
+def _to_msfullname(name, lang):
+    names = []
+    if 'last' not in name:
+        raise ValueError('Invalid name: {}'.format(name))
+    names.append(name['last'])
+    if 'middle' in name:
+        names.append(name['middle'])
+    if 'first' not in name:
+        raise ValueError('Invalid name: {}'.format(name))
+    names.append(name['first'])
+    names = [n.strip() for n in names]
+    if lang == 'ja':
+        return ''.join(names)
+    names = [n for n in names if len(n) > 0]
+    return ' '.join(names[::-1])
+
+
 def suggestion_erad(key, keyword, node):
     filter_field_name = key[5:]
     filter_field = ERadRecord._meta.get_field(filter_field_name)
@@ -117,20 +134,24 @@ def suggestion_erad(key, keyword, node):
         kikan_parts = candidate.get('kenkyukikan_mei', '').split('|')
         kikan_ja = kikan_parts[0]
         kikan_en = kikan_parts[1] if len(kikan_parts) > 1 else ''
+        kenkyusha_shimei_ja = {
+            'last': ja_parts[0],
+            'middle': ''.join(ja_parts[1:-1]),
+            'first': ja_parts[-1],
+        }
+        kenkyusha_shimei_en = {
+            'last': en_parts[0] if len(en_parts) > 0 else '',
+            'middle': ''.join(en_parts[1:-1]),
+            'first': en_parts[-1] if len(en_parts) > 0 else '',
+        }
         res.append({
             'key': key,
             'value': {
                 **candidate,
-                'kenkyusha_shimei_ja': {
-                    'last': ja_parts[0],
-                    'middle': ''.join(ja_parts[1:-1]),
-                    'first': ja_parts[-1],
-                },
-                'kenkyusha_shimei_en': {
-                    'last': en_parts[0] if len(en_parts) > 0 else '',
-                    'middle': ''.join(en_parts[1:-1]),
-                    'first': en_parts[-1] if len(en_parts) > 0 else '',
-                },
+                'kenkyusha_shimei_ja': kenkyusha_shimei_ja,
+                'kenkyusha_shimei_en': kenkyusha_shimei_en,
+                'kenkyusha_shimei_ja_msfullname': _to_msfullname(kenkyusha_shimei_ja, 'ja'),
+                'kenkyusha_shimei_en_msfullname': _to_msfullname(kenkyusha_shimei_en, 'en'),
                 'kenkyukikan_mei_ja': kikan_ja,
                 'kenkyukikan_mei_en': kikan_en,
             },
@@ -170,6 +191,22 @@ def suggestion_asset(key, keyword, node):
     return res
 
 
+def _contributor_to_name_ja(user):
+    return {
+        'last': user.family_name_ja,
+        'middle': user.middle_names_ja,
+        'first': user.given_name_ja,
+    }
+
+
+def _contributor_to_name_en(user):
+    return {
+        'last': user.family_name,
+        'middle': user.middle_names,
+        'first': user.given_name,
+    }
+
+
 def suggestion_contributor(key, keyword, node):
     contributors = [
         {
@@ -190,16 +227,10 @@ def suggestion_contributor(key, keyword, node):
                 ]
                 if len(part) > 0
             ]),
-            'name-ja': {
-                'last': user.family_name_ja,
-                'middle': user.middle_names_ja,
-                'first': user.given_name_ja,
-            },
-            'name-en': {
-                'last': user.family_name,
-                'middle': user.middle_names,
-                'first': user.given_name,
-            },
+            'name-ja': _contributor_to_name_ja(user),
+            'name-en': _contributor_to_name_en(user),
+            'name-ja-msfullname': _to_msfullname(_contributor_to_name_ja(user), 'ja'),
+            'name-en-msfullname': _to_msfullname(_contributor_to_name_en(user), 'en'),
         }
         for user in node.contributors
     ]

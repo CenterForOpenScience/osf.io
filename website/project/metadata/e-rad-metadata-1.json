@@ -1,6 +1,6 @@
 {
   "name": "公的資金による研究データのメタデータ登録",
-  "version": 2,
+  "version": 3,
   "description": "公的資金による研究データのメタデータ登録",
   "pages": [
     {
@@ -709,8 +709,8 @@
                   "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
                   "autofill": {
                     "number": "kenkyusha_no",
-                    "name-ja": "kenkyusha_shimei_ja",
-                    "name-en": "kenkyusha_shimei_en"
+                    "name_ja": "kenkyusha_shimei_ja_msfullname",
+                    "name_en": "kenkyusha_shimei_en_msfullname"
                   }
                 },
                 {
@@ -718,195 +718,65 @@
                   "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
                   "autofill": {
                     "number": "erad",
-                    "name-ja": "name-ja",
-                    "name-en": "name-en"
+                    "name_ja": "name-ja-msfullname",
+                    "name_en": "name-en-msfullname"
                   }
                 }
               ]
             },
             {
-              "id": "name-ja",
+              "id": "name_ja",
               "title": "名前(日本語)|Name (Japanese)",
-              "type": "object",
+              "type": "string",
+              "format": "text",
               "required": false,
-              "required_if": "name-en",
-              "properties": [
+              "required_if": "name_en",
+              "suggestion": [
                 {
-                  "id": "last",
-                  "title": "姓|Last Name",
-                  "type": "string",
-                  "format": "text",
-                  "required": false,
-                  "space_normalization": true,
-                  "suggestion": [
-                    {
-                      "key": "erad:kenkyusha_shimei",
-                      "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                      "autofill": {
-                        "../number": "kenkyusha_no",
-                        "../name-ja": "kenkyusha_shimei_ja",
-                        "../name-en": "kenkyusha_shimei_en"
-                      }
-                    },
-                    {
-                      "key": "contributor:name",
-                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                      "autofill": {
-                        "../number": "erad",
-                        "../name-ja": "name-ja",
-                        "../name-en": "name-en"
-                      }
-                    }
-                  ]
+                  "key": "erad:kenkyusha_shimei",
+                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+                  "autofill": {
+                    "number": "kenkyusha_no",
+                    "name_ja": "kenkyusha_shimei_ja_msfullname",
+                    "name_en": "kenkyusha_shimei_en_msfullname"
+                  }
                 },
                 {
-                  "id": "middle",
-                  "title": "ミドルネーム|Middle Name",
-                  "type": "string",
-                  "format": "text",
-                  "required": false,
-                  "space_normalization": true,
-                  "suggestion": [
-                    {
-                      "key": "erad:kenkyusha_shimei",
-                      "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                      "autofill": {
-                        "../number": "kenkyusha_no",
-                        "../name-ja": "kenkyusha_shimei_ja",
-                        "../name-en": "kenkyusha_shimei_en"
-                      }
-                    },
-                    {
-                      "key": "contributor:name",
-                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                      "autofill": {
-                        "../number": "erad",
-                        "../name-ja": "name-ja",
-                        "../name-en": "name-en"
-                      }
-                    }
-                  ]
-                },
-                {
-                  "id": "first",
-                  "title": "名|First Name",
-                  "type": "string",
-                  "format": "text",
-                  "required": false,
-                  "space_normalization": true,
-                  "suggestion": [
-                    {
-                      "key": "erad:kenkyusha_shimei",
-                      "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                      "autofill": {
-                        "../number": "kenkyusha_no",
-                        "../name-ja": "kenkyusha_shimei_ja",
-                        "../name-en": "kenkyusha_shimei_en"
-                      }
-                    },
-                    {
-                      "key": "contributor:name",
-                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                      "autofill": {
-                        "../number": "erad",
-                        "../name-ja": "name-ja",
-                        "../name-en": "name-en"
-                      }
-                    }
-                  ]
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+                  "autofill": {
+                    "number": "erad",
+                    "name_ja": "name-ja-msfullname",
+                    "name_en": "name-en-msfullname"
+                  }
                 }
               ]
             },
             {
-              "id": "name-en",
+              "id": "name_en",
               "title": "Name (English)",
-              "type": "object",
+              "type": "string",
+              "format": "text",
               "required": false,
-              "required_if": "name-ja",
-              "properties": [
+              "required_if": "name_ja",
+              "suggestion": [
                 {
-                  "id": "last",
-                  "title": "Last Name",
-                  "type": "string",
-                  "format": "text",
-                  "required": false,
-                  "space_normalization": true,
-                  "suggestion": [
-                    {
-                      "key": "erad:kenkyusha_shimei",
-                      "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                      "autofill": {
-                        "../number": "kenkyusha_no",
-                        "../name-ja": "kenkyusha_shimei_ja",
-                        "../name-en": "kenkyusha_shimei_en"
-                      }
-                    },
-                    {
-                      "key": "contributor:name",
-                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                      "autofill": {
-                        "../number": "erad",
-                        "../name-ja": "name-ja",
-                        "../name-en": "name-en"
-                      }
-                    }
-                  ]
+                  "key": "erad:kenkyusha_shimei",
+                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+                  "autofill": {
+                    "number": "kenkyusha_no",
+                    "name_ja": "kenkyusha_shimei_ja_msfullname",
+                    "name_en": "kenkyusha_shimei_en_msfullname"
+                  }
                 },
                 {
-                  "id": "middle",
-                  "title": "Middle Name",
-                  "type": "string",
-                  "format": "text",
-                  "required": false,
-                  "space_normalization": true,
-                  "suggestion": [
-                    {
-                      "key": "erad:kenkyusha_shimei",
-                      "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                      "autofill": {
-                        "../number": "kenkyusha_no",
-                        "../name-ja": "kenkyusha_shimei_ja",
-                        "../name-en": "kenkyusha_shimei_en"
-                      }
-                    },
-                    {
-                      "key": "contributor:name",
-                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                      "autofill": {
-                        "../number": "erad",
-                        "../name-ja": "name-ja",
-                        "../name-en": "name-en"
-                      }
-                    }
-                  ]
-                },
-                {
-                  "id": "first",
-                  "title": "First Name",
-                  "type": "string",
-                  "format": "text",
-                  "required": false,
-                  "space_normalization": true,
-                  "suggestion": [
-                    {
-                      "key": "erad:kenkyusha_shimei",
-                      "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                      "autofill": {
-                        "../number": "kenkyusha_no",
-                        "../name-ja": "kenkyusha_shimei_ja",
-                        "../name-en": "kenkyusha_shimei_en"
-                      }
-                    },
-                    {
-                      "key": "contributor:name",
-                      "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                      "autofill": {
-                        "../number": "erad",
-                        "../name-ja": "name-ja",
-                        "../name-en": "name-en"
-                      }
-                    }
-                  ]
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+                  "autofill": {
+                    "number": "erad",
+                    "name_ja": "name-ja-msfullname",
+                    "name_en": "name-en-msfullname"
+                  }
                 }
               ]
             }
@@ -972,7 +842,8 @@
           "options": [
             {
               "text": "individual",
-              "tooltip": "個人|individual"
+              "tooltip": "個人|individual",
+              "default": true
             },
             {
               "text": "organization",
@@ -999,8 +870,8 @@
               "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
-                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                "grdm-file:data-man-name-en": "kenkyusha_shimei_en",
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
                 "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                 "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
               }
@@ -1010,8 +881,8 @@
               "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "erad",
-                "grdm-file:data-man-name-ja": "name-ja",
-                "grdm-file:data-man-name-en": "name-en"
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname"
               }
             }
           ]
@@ -1020,102 +891,33 @@
           "qid": "grdm-file:data-man-name-ja",
           "nav": "データ管理者 (日本語)",
           "title": "データ管理者 (日本語)|Data manager (Japanese)",
-          "type": "object",
+          "type": "string",
+          "format": "text",
           "required": false,
           "required_if": "grdm-file:data-man-name-en",
           "enabled_if": {
             "grdm-file:data-man-type": "individual"
           },
-          "properties": [
+          "suggestion": [
             {
-              "id": "last",
-              "title": "姓|Last Name",
-              "type": "string",
-              "format": "text",
-              "required": false,
-              "space_normalization": true,
-              "suggestion": [
-                {
-                  "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "kenkyusha_no",
-                    "../grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                    "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
-                    "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
-                    "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
-                  }
-                },
-                {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "erad",
-                    "../grdm-file:data-man-name-ja": "name-ja",
-                    "../grdm-file:data-man-name-en": "name-en"
-                  }
-                }
-              ]
+              "key": "erad:kenkyusha_shimei",
+              "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "kenkyusha_no",
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
+                "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
+                "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
+              }
             },
             {
-              "id": "middle",
-              "title": "ミドルネーム|Middle Name",
-              "type": "string",
-              "format": "text",
-              "required": false,
-              "space_normalization": true,
-              "suggestion": [
-                {
-                  "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "kenkyusha_no",
-                    "../grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                    "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
-                    "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
-                    "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
-                  }
-                },
-                {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "erad",
-                    "../grdm-file:data-man-name-ja": "name-ja",
-                    "../grdm-file:data-man-name-en": "name-en"
-                  }
-                }
-              ]
-            },
-            {
-              "id": "first",
-              "title": "名|First Name",
-              "type": "string",
-              "format": "text",
-              "required": false,
-              "space_normalization": true,
-              "suggestion": [
-                {
-                  "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "kenkyusha_no",
-                    "../grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                    "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
-                    "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
-                    "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
-                  }
-                },
-                {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "erad",
-                    "../grdm-file:data-man-name-ja": "name-ja",
-                    "../grdm-file:data-man-name-en": "name-en"
-                  }
-                }
-              ]
+              "key": "contributor:name",
+              "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname"
+              }
             }
           ]
         },
@@ -1123,102 +925,33 @@
           "qid": "grdm-file:data-man-name-en",
           "nav": "Data manager (English)",
           "title": "Data manager (English)",
-          "type": "object",
+          "type": "string",
+          "format": "text",
           "required": false,
           "required_if": "grdm-file:data-man-name-ja",
           "enabled_if": {
             "grdm-file:data-man-type": "individual"
           },
-          "properties": [
+          "suggestion": [
             {
-              "id": "last",
-              "title": "Last Name",
-              "type": "string",
-              "format": "text",
-              "required": false,
-              "space_normalization": true,
-              "suggestion": [
-                {
-                  "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "kenkyusha_no",
-                    "../grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                    "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
-                    "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
-                    "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
-                  }
-                },
-                {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "erad",
-                    "../grdm-file:data-man-name-ja": "name-ja",
-                    "../grdm-file:data-man-name-en": "name-en"
-                  }
-                }
-              ]
+              "key": "erad:kenkyusha_shimei",
+              "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "kenkyusha_no",
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
+                "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
+                "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
+              }
             },
             {
-              "id": "middle",
-              "title": "Middle Name",
-              "type": "string",
-              "format": "text",
-              "required": false,
-              "space_normalization": true,
-              "suggestion": [
-                {
-                  "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "kenkyusha_no",
-                    "../grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                    "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
-                    "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
-                    "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
-                  }
-                },
-                {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "erad",
-                    "../grdm-file:data-man-name-ja": "name-ja",
-                    "../grdm-file:data-man-name-en": "name-en"
-                  }
-                }
-              ]
-            },
-            {
-              "id": "first",
-              "title": "First Name",
-              "type": "string",
-              "format": "text",
-              "required": false,
-              "space_normalization": true,
-              "suggestion": [
-                {
-                  "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "kenkyusha_no",
-                    "../grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                    "../grdm-file:data-man-name-en": "kenkyusha_shimei_en",
-                    "../grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
-                    "../grdm-file:data-man-org-en": "kenkyukikan_mei_en"
-                  }
-                },
-                {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
-                  "autofill": {
-                    "../grdm-file:data-man-number": "erad",
-                    "../grdm-file:data-man-name-ja": "name-ja",
-                    "../grdm-file:data-man-name-en": "name-en"
-                  }
-                }
-              ]
+              "key": "contributor:name",
+              "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname"
+              }
             }
           ]
         },
@@ -1248,8 +981,8 @@
               "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
-                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                "grdm-file:data-man-name-en": "kenkyusha_shimei_en",
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
                 "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                 "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
               }
@@ -1281,8 +1014,8 @@
               "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
-                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja",
-                "grdm-file:data-man-name-en": "kenkyusha_shimei_en",
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
                 "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
                 "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
               }
