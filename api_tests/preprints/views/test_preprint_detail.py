@@ -11,7 +11,6 @@ from waffle.testutils import (
 
 from osf import features
 from osf.utils.permissions import READ
-from osf.utils.workflows import ApprovalStates
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from api_tests.subjects.mixins import UpdateSubjectsMixin
