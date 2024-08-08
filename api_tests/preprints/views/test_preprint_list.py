@@ -197,7 +197,8 @@ class TestPreprintList(ApiTestCase):
         assert res.content_type == 'application/vnd.api+json'
         relationship_link = res.json['data'][0]['relationships']['affiliated_institutions']['links']['related']['href']
         assert f'/v2/preprints/{self.preprint._id}/institutions/' in relationship_link
-
+        relationship_link = res.json['data'][0]['relationships']['affiliated_institutions']['links']['self']['href']
+        assert f'/v2/preprints/{self.preprint._id}/relationships/institutions/' in relationship_link
 
 class TestPreprintsListFiltering(PreprintsListFilteringMixin):
 
