@@ -8,7 +8,6 @@ from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
     DraftRegistrationLegacySerializer,
     DraftRegistrationDetailLegacySerializer,
-    update_institutions,
     get_license_details,
     NodeSerializer,
     NodeLicenseSerializer,
@@ -18,6 +17,7 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer,
     RegistrationSchemaRelationshipField,
 )
+from api.institutions.utils import update_institutions
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
 from osf.models import Node
