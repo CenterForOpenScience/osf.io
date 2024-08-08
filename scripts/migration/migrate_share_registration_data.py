@@ -9,7 +9,7 @@ from osf.models import Registration
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
-from website.project.tasks import update_node_share
+from api.share.utils import update_share
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def migrate(dry_run):
         count += 1
         logger.info('{}/{} - {}'.format(count, registrations_count, registration._id))
         if not dry_run:
-            update_node_share(registration)
+            update_share(registration)
         logger.info('Registration {} was sent to SHARE.'.format(registration._id))
 
 
