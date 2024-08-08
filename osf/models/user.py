@@ -55,7 +55,7 @@ from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, 
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
-from website.util.metrics import OsfSourceTags
+from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
 
@@ -1215,7 +1215,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user.set_unusable_username()
         user.set_unusable_password()
         user.update_guessed_names()
-
         return user
 
     def update_guessed_names(self):
@@ -1662,6 +1661,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'email': clean_email,
         }
         self.unclaimed_records[pid] = record
+
+        self.save()  # must save for PK to add system tags
+        self.add_system_tag(unregistered_created_source_tag(referrer_id))
+
         return record
 
     def get_unclaimed_record(self, project_id):
