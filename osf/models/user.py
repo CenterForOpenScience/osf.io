@@ -1661,6 +1661,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'email': clean_email,
         }
         self.unclaimed_records[pid] = record
+
+        self.save()  # must save for PK to add system tags
         self.add_system_tag(unregistered_created_source_tag(referrer_id))
 
         return record

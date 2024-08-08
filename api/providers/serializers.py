@@ -330,10 +330,11 @@ class ModeratorSerializer(JSONAPISerializer):
                     raise ValidationError('"full_name" is required when adding a moderator via email.')
                 user = OSFUser.create_unregistered(full_name, email=address)
                 user.add_unclaimed_record(
-                    provider, referrer=auth.user,
-                    given_name=full_name, email=address,
+                    provider,
+                    referrer=auth.user,
+                    given_name=full_name,
+                    email=address,
                 )
-                user.save()
                 claim_url = user.get_claim_url(provider._id, external=True)
                 context['claim_url'] = claim_url
             else:
