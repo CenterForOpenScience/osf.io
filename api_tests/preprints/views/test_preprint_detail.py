@@ -229,6 +229,8 @@ class TestPreprintDetail:
         assert res.status_code == 200
         relationship_link = res.json['data']['relationships']['affiliated_institutions']['links']['related']['href']
         assert f'/v2/preprints/{preprint._id}/institutions/' in relationship_link
+        relationship_link = res.json['data']['relationships']['affiliated_institutions']['links']['self']['href']
+        assert f'/v2/preprints/{preprint._id}/relationships/institutions/' in relationship_link
 
 
 @pytest.mark.django_db
