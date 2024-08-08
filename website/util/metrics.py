@@ -28,6 +28,10 @@ def campaign_source_tag(campaign_name):
     return f'source:campaign|{campaign_name}'
 
 
+def institution_source_tag(institution_id):
+    return f'source:institution|{institution_id}'
+
+
 def provider_claimed_tag(provider_id, service=None):
     if service:
         return f'claimed:provider|{service}|{provider_id}'
