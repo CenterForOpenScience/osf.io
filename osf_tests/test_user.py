@@ -177,7 +177,6 @@ class TestOSFUser:
         assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
         assert u.given_name == parsed['given_name']
-        assert f'source:unregistered_created|{email}' in u.system_tags
 
     @mock.patch('osf.models.user.OSFUser.update_search')
     def test_search_not_updated_for_unreg_users(self, update_search):
@@ -1190,6 +1189,7 @@ class TestUnregisteredUser:
         assert 'token' in data
         assert data['email'] == email
         assert data == unreg_user.get_unclaimed_record(project._primary_key)
+        assert f'source:unregistered_created|{referrer._id}' in unreg_user.system_tags
 
         # test_unreg_moderator
         data = unreg_moderator.unclaimed_records[provider._id]
@@ -1198,6 +1198,7 @@ class TestUnregisteredUser:
         assert 'token' in data
         assert data['email'] == email
         assert data == unreg_moderator.get_unclaimed_record(provider._id)
+        assert f'source:unregistered_created|{referrer._id}' in unreg_user.system_tags
 
     def test_get_claim_url(self, unreg_user, unreg_moderator, project, provider):
         # test_unreg_contrib

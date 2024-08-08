@@ -1215,8 +1215,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user.set_unusable_username()
         user.set_unusable_password()
         user.update_guessed_names()
-        user.save()  # user needs to have a primary key value before tag relationship can be used.
-        user.add_system_tag(unregistered_created_source_tag(email))
         return user
 
     def update_guessed_names(self):
@@ -1663,6 +1661,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'email': clean_email,
         }
         self.unclaimed_records[pid] = record
+        self.add_system_tag(unregistered_created_source_tag(referrer_id))
+
         return record
 
     def get_unclaimed_record(self, project_id):
