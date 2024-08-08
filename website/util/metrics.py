@@ -28,6 +28,10 @@ def campaign_source_tag(campaign_name):
     return f'source:campaign|{campaign_name}'
 
 
+def unregistered_created_source_tag(creator_email):
+    return f'source:unregistered_created|{creator_email}'
+
+
 def institution_source_tag(institution_id):
     return f'source:institution|{institution_id}'
 

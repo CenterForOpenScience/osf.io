@@ -177,6 +177,7 @@ class TestOSFUser:
         assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
         assert u.given_name == parsed['given_name']
+        assert f'source:unregistered_created|{email}' in u.system_tags
 
     @mock.patch('osf.models.user.OSFUser.update_search')
     def test_search_not_updated_for_unreg_users(self, update_search):

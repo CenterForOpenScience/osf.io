@@ -1086,7 +1086,6 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType1:
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert institution_selective_type_1 in user.get_affiliated_institutions()
-        assert f'source:institution|{institution_selective_type_1._id}' in user.system_tags
 
     def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective_type_1):
 
@@ -1109,7 +1108,6 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType1:
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert institution_selective_type_1 in user.get_affiliated_institutions()
-        assert f'source:institution|{institution_selective_type_1._id}' in user.system_tags
         assert number_of_affiliations == user.get_affiliated_institutions().count()
 
     def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective_type_1):
@@ -1177,7 +1175,6 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType2:
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert institution_selective_type_2 in user.get_affiliated_institutions()
-        assert f'source:institution|{institution_selective_type_2._id}' in user.system_tags
 
     def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective_type_2):
 
@@ -1200,7 +1197,6 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType2:
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert institution_selective_type_2 in user.get_affiliated_institutions()
-        assert f'source:institution|{institution_selective_type_2._id}' in user.system_tags
         assert number_of_affiliations == user.get_affiliated_institutions().count()
 
     def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective_type_2):
