@@ -6,11 +6,17 @@ from django.db.models import Count
 
 @user_passes_test(osf_staff_check)
 def handle_duplicate_notifications(request):
-    duplicates = NotificationSubscription.objects.values('user', 'node', 'event_name').annotate(count=Count('id')).filter(count__gt=1)
+    duplicates = (
+        NotificationSubscription.objects.values('user', 'node', 'event_name')
+        .annotate(count=Count('id'))
+        .filter(count__gt=1)
+    )
 
     detailed_duplicates = []
     for dup in duplicates:
-        notifications = NotificationSubscription.objects.filter(user=dup['user'], node=dup['node'], event_name=dup['event_name'])
+        notifications = NotificationSubscription.objects.filter(
+            user=dup['user'], node=dup['node'], event_name=dup['event_name']
+        )
         for notification in notifications:
             detailed_duplicates.append({
                 'id': notification.id,
