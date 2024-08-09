@@ -506,13 +506,13 @@ class TestPreprintWithdrawalRequests:
             creator=submitter,
             target=preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value,
+            machine_state=DefaultStates.INITIAL.db_name,
         )
         withdrawal_request.run_submit(submitter)
         return withdrawal_request
 
     def test_can_approve_withdrawal_request(self, withdrawal_request, submitter, preprint, admin):
-        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.db_name
         original_comment = withdrawal_request.comment
 
         request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
@@ -524,11 +524,11 @@ class TestPreprintWithdrawalRequests:
 
         withdrawal_request.refresh_from_db()
         withdrawal_request.target.refresh_from_db()
-        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.db_name
         assert original_comment == withdrawal_request.target.withdrawal_justification
 
     def test_can_reject_withdrawal_request(self, withdrawal_request, admin, preprint):
-        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.db_name
 
         request = RequestFactory().post(reverse('preprints:reject-withdrawal', kwargs={'guid': preprint._id}))
         request.POST = {'action': 'reject'}
@@ -539,7 +539,7 @@ class TestPreprintWithdrawalRequests:
 
         withdrawal_request.refresh_from_db()
         withdrawal_request.target.refresh_from_db()
-        assert withdrawal_request.machine_state == DefaultStates.REJECTED.value
+        assert withdrawal_request.machine_state == DefaultStates.REJECTED.db_name
         assert not withdrawal_request.target.withdrawal_justification
 
     def test_permissions_errors(self, user, submitter):
@@ -569,10 +569,10 @@ class TestPreprintWithdrawalRequests:
         assert response.status_code == 200
 
     @pytest.mark.parametrize('action, final_state', [
-        ('approve', DefaultStates.ACCEPTED.value),
-        ('reject', DefaultStates.REJECTED.value)])
+        ('approve', DefaultStates.ACCEPTED.db_name),
+        ('reject', DefaultStates.REJECTED.db_name)])
     def test_approve_reject_on_list_view(self, withdrawal_request, admin, action, final_state):
-        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.db_name
         original_comment = withdrawal_request.comment
         request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
         request.user = admin

@@ -139,7 +139,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         assert res.status_code == 404
 
     def test_abandoned_preprint_citations(self):
-        self.published_preprint.machine_state = DefaultStates.INITIAL.value
+        self.published_preprint.machine_state = DefaultStates.INITIAL.db_name
         self.published_preprint.save()
 
         # Unauthenticated
@@ -260,7 +260,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         assert res.status_code == 404
 
     def test_abandoned_preprint_citations(self):
-        self.published_preprint.machine_state = DefaultStates.INITIAL.value
+        self.published_preprint.machine_state = DefaultStates.INITIAL.db_name
         self.published_preprint.save()
 
         # Unauthenticated

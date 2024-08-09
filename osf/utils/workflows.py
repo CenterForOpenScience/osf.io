@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum, unique
+from enum import IntEnum, unique
 
 
 class ModerationEnum(IntEnum):
@@ -13,6 +13,17 @@ class ModerationEnum(IntEnum):
         return tuple((member.db_name, member.readable_value) for member in cls)
 
     @classmethod
+    def choices(cls, legacy=False, legacy_integer=False, legacy_trigger=False):
+        if legacy:
+            return tuple((member.legacy_value, str(member.legacy_value).title()) for member in cls)
+        elif legacy_integer:
+            return tuple((member.value, str(member.value)) for member in cls)
+        elif legacy_trigger:
+            return tuple((member.db_name, member.db_name.title()) for member in cls)
+        else:
+            return tuple((member.db_name, member.readable_value) for member in cls)
+
+    @classmethod
     def from_db_name(cls, state_db_name):
         return cls[state_db_name.upper()]
 
@@ -21,8 +32,17 @@ class ModerationEnum(IntEnum):
         return super().name.title().replace('_', '')
 
     @property
+    def legacy_value(self):
+        if super().name == 'NONE':
+            return None
+        return super().name.lower().replace('_', '-')
+
+    @property
     def db_name(self):
         return self.name.lower()
+
+    def __str__(self):
+        return self.db_name
 
     @classmethod
     def excluding(cls, *excluded_roles):
@@ -176,6 +196,38 @@ class SchemaResponseTriggers(ModerationEnum):
         return transition_to_trigger_mappings.get((from_state, to_state))
 
 
+class DefaultStates(ModerationEnum):
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+
+
+class PreprintStates(ModerationEnum):
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+    WITHDRAWN = 4
+    SPAM = 5
+    DELETED = 6
+
+
+class DefaultTriggers(ModerationEnum):
+    SUBMIT = 0
+    ACCEPT = 1
+    REJECT = 2
+    EDIT_COMMENT = 3
+
+
+class PreprintStateTriggers(ModerationEnum):
+    SUBMIT = 0
+    ACCEPT = 1
+    REJECT = 2
+    EDIT_COMMENT = 3
+    WITHDRAW = 4
+
+
 class CollectionSubmissionsTriggers(ModerationEnum):
     '''The acceptable 'triggers' to use with a CollectionSubmissionsAction'''
     SUBMIT = 0
@@ -186,109 +238,147 @@ class CollectionSubmissionsTriggers(ModerationEnum):
     CANCEL = 5
 
 
+class RegistrationStates(ModerationEnum):
+    INITIAL = 0
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+    WITHDRAWN = 4
+    EMBARGO = 5
+    PENDING_EMBARGO_TERMINATION = 6
+    PENDING_WITHDRAW_REQUEST = 7
+    PENDING_WITHDRAW = 8
+
+
+class ChronosSubmissionStatus(ModerationEnum):
+    DRAFT = 1
+    SUBMITTED = 2
+    ACCEPTED = 3
+    PUBLISHED = 4
+    CANCELLED = 5
+
+
 @unique
-class ChoiceEnum(Enum):
-    @classmethod
-    def choices(cls):
-        return tuple((v, str(v).title()) for v in cls.values())
+class RequestTypes(ModerationEnum):
+    ACCESS = 0
+    WITHDRAWAL = 1
 
-    @classmethod
-    def values(cls):
-        return tuple(c.value for c in cls)
-
-    @property
-    def db_name(self):
-        '''Return the value stored in the database for the enum member.
-
-        For parity with ModerationEnum.
-        '''
-        return self.value
-
-
-DEFAULT_STATES = [
-    ('INITIAL', 'initial'),
-    ('PENDING', 'pending'),
-    ('ACCEPTED', 'accepted'),
-    ('REJECTED', 'rejected'),
-]
-DEFAULT_TRIGGERS = [
-    ('SUBMIT', 'submit'),
-    ('ACCEPT', 'accept'),
-    ('REJECT', 'reject'),
-    ('EDIT_COMMENT', 'edit_comment'),
-]
-REVIEW_STATES = DEFAULT_STATES + [
-    ('WITHDRAWN', 'withdrawn'),
-]
-REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
-    ('WITHDRAW', 'withdraw')
-]
-
-REGISTRATION_STATES = REVIEW_STATES + [
-    ('EMBARGO', 'embargo'),
-    ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
-    ('PENDING_WITHDRAW_REQUEST', 'pending_withdraw_request'),
-    ('PENDING_WITHDRAW', 'pending_withdraw'),
-]
-
-DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
-ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
-RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
-DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
-ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
-
-CHRONOS_STATUS_STATES = [
-    ('DRAFT', 1),
-    ('SUBMITTED', 2),
-    ('ACCEPTED', 3),
-    ('PUBLISHED', 4),
-    ('CANCELLED', 5),
-]
-
-ChronosSubmissionStatus = ChoiceEnum('ChronosSubmissionStatus', CHRONOS_STATUS_STATES)
+@unique
+class ModerationWorkflows(ModerationEnum):
+    NONE = 0
+    PRE_MODERATION = 1
+    POST_MODERATION = 2
+    HYBRID_MODERATION = 3
 
 
 DEFAULT_TRANSITIONS = [
     {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.INITIAL.value],
-        'dest': DefaultStates.PENDING.value,
+        'trigger': 'run_submit',
+        'source': [DefaultStates.INITIAL],
+        'dest': DefaultStates.PENDING,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
     },
     {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
+        'trigger': 'run_submit',
+        'source': [DefaultStates.PENDING, DefaultStates.REJECTED],
         'conditions': 'resubmission_allowed',
-        'dest': DefaultStates.PENDING.value,
+        'dest': DefaultStates.PENDING,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
     },
     {
-        'trigger': DefaultTriggers.ACCEPT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
-        'dest': DefaultStates.ACCEPTED.value,
+        'trigger': 'run_accept',
+        'source': [DefaultStates.PENDING, DefaultStates.REJECTED],
+        'dest': DefaultStates.ACCEPTED,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': DefaultTriggers.REJECT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.ACCEPTED.value],
-        'dest': DefaultStates.REJECTED.value,
+        'trigger': 'run_reject',
+        'source': [DefaultStates.PENDING, DefaultStates.ACCEPTED],
+        'dest': DefaultStates.REJECTED,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
-        'trigger': DefaultTriggers.EDIT_COMMENT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value, DefaultStates.ACCEPTED.value],
+        'trigger': 'run_edit_comment',
+        'source': [DefaultStates.PENDING, DefaultStates.REJECTED, DefaultStates.ACCEPTED],
         'dest': '=',
         'after': ['save_action', 'save_changes', 'notify_edit_comment'],
     },
 ]
 
-REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
+PREPRINT_STATE_TRANSITIONS = [
     {
-        'trigger': ReviewTriggers.WITHDRAW.value,
-        'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
-        'dest': ReviewStates.WITHDRAWN.value,
-        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
-    }
+        'trigger': 'submit',
+        'source': [PreprintStates.INITIAL],
+        'dest': PreprintStates.PENDING,
+        'conditions': 'pre_moderation',
+        'before': ['_validate_submit'],
+        'after': ['notify_submit'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [PreprintStates.INITIAL],
+        'dest': PreprintStates.PENDING,
+        'conditions': 'post_moderation',
+        'before': ['_validate_submit'],
+        'after': ['perform_submit', 'notify_submit'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [PreprintStates.PENDING, PreprintStates.REJECTED],
+        'conditions': 'resubmission_allowed',
+        'dest': PreprintStates.PENDING,
+        'before': ['_validate_submit'],
+        'after': ['notify_resubmit'],
+    },
+    {
+        'trigger': 'accept',
+        'source': [PreprintStates.PENDING, PreprintStates.REJECTED],
+        'dest': PreprintStates.ACCEPTED,
+        'before': ['_validate_state', '_validate_published'],
+        'after': ['perform_accept', 'notify_accept_reject'],
+    },
+    {
+        'trigger': 'reject',
+        'source': [PreprintStates.PENDING, PreprintStates.ACCEPTED],
+        'dest': PreprintStates.REJECTED,
+        'before': ['_validate_state'],
+        'after': ['notify_accept_reject'],
+    },
+    {
+        'trigger': 'edit_comment',
+        'source': [PreprintStates.PENDING, PreprintStates.REJECTED, PreprintStates.ACCEPTED],
+        'dest': '=',
+        'before': [],
+        'after': [],
+    },
+    {
+        'trigger': 'withdraw',
+        'source': [PreprintStates.PENDING, PreprintStates.ACCEPTED],
+        'dest': PreprintStates.WITHDRAWN,
+        'before': ['_validate_state'],
+        'after': ['perform_withdraw', 'notify_withdraw']
+    },
+    {
+        'trigger': 'withdraw',
+        'source': [PreprintStates.PENDING, PreprintStates.ACCEPTED],
+        'dest': PreprintStates.WITHDRAWN,
+        'before': ['_validate_state'],
+        'after': ['perform_withdraw', 'notify_withdraw']
+    },
+    {
+        'trigger': 'mark_as_spam',
+        'source': ['*'],
+        'dest': PreprintStates.SPAM,
+        'before': ['_validate_state'],
+        'after': ['perform_mark_as_spam', 'notify_withdraw']
+    },
+    {
+        'trigger': 'mark_as_deleted',
+        'source': ['*'],
+        'dest': PreprintStates.DELETED,
+        'before': ['_validate_state'],
+        'after': ['perform_delete', 'notify_withdraw']
+    },
 ]
 
 APPROVAL_TRANSITIONS = [
@@ -511,7 +601,19 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
     },
 ]
 
-@unique
-class RequestTypes(ChoiceEnum):
-    ACCESS = 'access'
-    WITHDRAWAL = 'withdrawal'
+
+PUBLIC_STATES = {
+    ModerationWorkflows.NONE.value: (
+        DefaultStates.INITIAL.db_name,
+        DefaultStates.PENDING.db_name,
+        DefaultStates.ACCEPTED.db_name,
+        DefaultStates.REJECTED.db_name,
+    ),
+    ModerationWorkflows.PRE_MODERATION.value: (
+        DefaultStates.ACCEPTED.db_name,
+    ),
+    ModerationWorkflows.POST_MODERATION.value: (
+        DefaultStates.PENDING.db_name,
+        DefaultStates.ACCEPTED.db_name,
+    ),
+}

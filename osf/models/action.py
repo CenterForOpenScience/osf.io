@@ -5,8 +5,8 @@ from osf.utils.workflows import (
     ApprovalStates,
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
+    PreprintStateTriggers,
     RegistrationModerationTriggers,
     RegistrationModerationStates,
     SchemaResponseTriggers,
@@ -23,7 +23,7 @@ class BaseAction(ObjectIDMixin, BaseModel):
 
     creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
 
-    trigger = models.CharField(max_length=31, choices=DefaultTriggers.choices())
+    trigger = models.CharField(max_length=31, choices=DefaultTriggers.choices(legacy_trigger=True))
     from_state = models.CharField(max_length=31, choices=DefaultStates.choices())
     to_state = models.CharField(max_length=31, choices=DefaultStates.choices())
 
@@ -40,9 +40,9 @@ class BaseAction(ObjectIDMixin, BaseModel):
 class ReviewAction(BaseAction):
     target = models.ForeignKey('Preprint', related_name='actions', on_delete=models.CASCADE)
 
-    trigger = models.CharField(max_length=31, choices=ReviewTriggers.choices())
-    from_state = models.CharField(max_length=31, choices=ReviewStates.choices())
-    to_state = models.CharField(max_length=31, choices=ReviewStates.choices())
+    trigger = models.CharField(max_length=31, choices=PreprintStateTriggers.choices(legacy_trigger=True))
+    from_state = models.CharField(max_length=31, choices=PreprintStates.char_field_choices())
+    to_state = models.CharField(max_length=31, choices=PreprintStates.char_field_choices())
 
 
 class NodeRequestAction(BaseAction):

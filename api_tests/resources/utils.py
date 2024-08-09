@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from api.providers.workflows import Workflows as ModerationWorkflows
+from osf.utils.workflows import ModerationWorkflows
 from api_tests.utils import UserRoles
 from osf.models import Outcome
 from osf.utils.outcomes import ArtifactTypes

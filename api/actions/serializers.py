@@ -28,8 +28,8 @@ from osf.models import (
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
+    PreprintStateTriggers,
     RegistrationModerationTriggers,
     SchemaResponseTriggers,
 )
@@ -138,22 +138,21 @@ class BaseActionSerializer(JSONAPISerializer):
         return utils.absolute_reverse('actions:action-detail', kwargs={'action_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
     def create(self, validated_data):
-        trigger = validated_data.pop('trigger')
-        user = validated_data.pop('user')
-        target = validated_data.pop('target')
-        comment = validated_data.pop('comment', '')
-        permissions = validated_data.pop('permissions', '')
-        visible = validated_data.pop('visible', '')
-
+        trigger = validated_data.get('trigger')
+        user = validated_data.get('user')
+        target = validated_data.get('target')
+        comment = validated_data.get('comment', '')
+        permissions = validated_data.get('permissions', '')
+        visible = validated_data.get('visible', '')
         try:
-            if trigger == DefaultTriggers.ACCEPT.value:
-                return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
-            if trigger == DefaultTriggers.REJECT.value:
-                return target.run_reject(user, comment)
-            if trigger == DefaultTriggers.EDIT_COMMENT.value:
-                return target.run_edit_comment(user, comment)
-            if trigger == DefaultTriggers.SUBMIT.value:
-                return target.run_submit(user)
+            if trigger == DefaultTriggers.ACCEPT.db_name:
+                target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
+            if trigger == DefaultTriggers.REJECT.db_name:
+                target.run_reject(user=user, comment=comment)
+            if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
+                target.run_edit_comment(user=user, comment=comment)
+            if trigger == DefaultTriggers.SUBMIT.db_name:
+                target.run_submit(user=user, comment=comment)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
             raise Conflict(str(e))
@@ -163,6 +162,7 @@ class BaseActionSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'actions'
         abstract = True
+
 
 class ReviewActionSerializer(BaseActionSerializer):
     class Meta:
@@ -180,9 +180,9 @@ class ReviewActionSerializer(BaseActionSerializer):
     ])
 
     comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
-    trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
-    from_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
+    trigger = ser.ChoiceField(choices=PreprintStateTriggers.char_field_choices())
+    from_state = ser.ChoiceField(choices=PreprintStates.char_field_choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=PreprintStates.char_field_choices(), read_only=True)
 
     provider = RelationshipField(
         read_only=True,
@@ -211,14 +211,30 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
-        if trigger != ReviewTriggers.WITHDRAW.value:
-            return super().create(validated_data)
         user = validated_data.pop('user')
+        visible = validated_data.get('visible', '')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
+
         try:
-            return target.run_withdraw(user=user, comment=comment)
-        except InvalidTriggerError as e:
+            if trigger == DefaultTriggers.ACCEPT.db_name:
+                target.accept(user=user, comment=comment, permissions=permissions, visible=visible)
+            if trigger == DefaultTriggers.REJECT.db_name:
+                target.reject(user=user, comment=comment)
+            if trigger == DefaultTriggers.EDIT_COMMENT.db_name:
+                target.edit_comment(user=user, comment=comment)
+            if trigger == DefaultTriggers.SUBMIT.db_name:
+                target.submit(user=user, comment=comment)
+            if trigger == PreprintStateTriggers.WITHDRAW.db_name:
+                target.withdraw(user=user, comment=comment)
+
+            if not hasattr(target, 'action'):
+                valid_triggers = target.state_machine.get_triggers(target.machine_state)
+                raise InvalidTriggerError(trigger, target.machine_state, valid_triggers)
+
+            return target.action
+
+        except (InvalidTriggerError, MachineError) as e:
             # Invalid transition from the current state
             raise Conflict(str(e))
         else:

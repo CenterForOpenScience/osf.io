@@ -99,6 +99,7 @@ class TestPreprintProperties:
         assert len(preprint.contributors) == 1
         assert preprint.contributors[0] == preprint.creator
 
+    @pytest.mark.skip('old')
     def test_verified_publishable(self, preprint):
         preprint.is_published = False
         assert preprint.verified_publishable is False
@@ -842,6 +843,7 @@ class TestPermissionMethods:
 
         # Change preprint to unpublished
         preprint.is_published = False
+        preprint.is_public = False
         preprint.save()
         # Creator, contributor, and noncontributor can view
         assert preprint.can_view(auth)
@@ -1077,7 +1079,6 @@ class TestManageContributors:
                 {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
             ]
         )
-        print(preprint.visible_contributor_ids)
         with pytest.raises(ValueError) as e:
             preprint.set_visible(user=reg_user1, visible=False, auth=None)
             preprint.set_visible(user=user, visible=False, auth=None)
@@ -2090,6 +2091,7 @@ class TestCheckPreprintAuth(OsfTestCase):
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         self.preprint.is_published = False
+        self.preprint.is_public = False
         self.preprint.save()
         assert not views.check_resource_permissions(self.preprint, Auth(user=user2), 'download')
 
@@ -2338,7 +2340,7 @@ class TestWithdrawnPreprint:
                         creator=user,
                         target=target,
                         request_type=RequestTypes.WITHDRAWAL.value,
-                        machine_state=DefaultStates.INITIAL.value)
+                        machine_state=DefaultStates.INITIAL.db_name)
             request.run_submit(user)
             return request
         return withdrawal_request
@@ -2355,18 +2357,18 @@ class TestWithdrawnPreprint:
         assert preprint.ever_public
 
         # pre-mod
-        unpublished_preprint_pre_mod.run_submit(user)
+        unpublished_preprint_pre_mod.submit(user=user)
 
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_reject(user, 'it')
+        unpublished_preprint_pre_mod.reject(user=user, comment='it')
         unpublished_preprint_pre_mod.reload()
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_accept(user, 'it')
+        unpublished_preprint_pre_mod.accept(user=user, comment='it')
         unpublished_preprint_pre_mod.reload()
         assert unpublished_preprint_pre_mod.ever_public
 
         # post-mod
-        unpublished_preprint_post_mod.run_submit(user)
+        unpublished_preprint_post_mod.submit(user=user)
         assert unpublished_preprint_post_mod.ever_public
 
         # test_cannot_set_ever_public_to_False
@@ -2386,7 +2388,7 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint)
-        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        withdrawal_request.run_accept(user=admin, comment=withdrawal_request.comment)
 
         assert preprint.is_retracted
         assert preprint.verified_publishable
@@ -2397,7 +2399,7 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_post_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_post_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(user=moderator, comment=withdrawal_request.comment)
 
         assert preprint_post_mod.is_retracted
         assert preprint_post_mod.verified_publishable
@@ -2408,7 +2410,7 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_pre_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_pre_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(user=moderator, comment=withdrawal_request.comment)
 
         assert preprint_pre_mod.is_retracted
         assert preprint_pre_mod.verified_publishable

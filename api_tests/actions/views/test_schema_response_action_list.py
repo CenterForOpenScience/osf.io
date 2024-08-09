@@ -2,7 +2,7 @@ import pytest
 
 from django.utils import timezone
 
-from api.providers.workflows import Workflows as ModerationWorkflows
+from osf.utils.workflows import ModerationWorkflows
 
 from osf.models import OSFUser
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers as Triggers

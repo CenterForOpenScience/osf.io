@@ -2,7 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.providers.mixins import ProviderListViewTestBaseMixin
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
 
 
 from osf_tests.factories import (
@@ -20,7 +20,7 @@ class TestRegistrationProviderList(ProviderListViewTestBaseMixin):
     @pytest.fixture
     def moderated_provider(self):
         provider = RegistrationProviderFactory()
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
         provider.save()
         return provider
 

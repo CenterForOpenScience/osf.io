@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 import pytest
 import responses
 
-from api.providers.workflows import Workflows as ModerationWorkflows
+from osf.utils.workflows import ModerationWorkflows
 from api_tests.resources.utils import configure_test_preconditions
 from api_tests.utils import UserRoles
 from osf.models import NodeLog, OutcomeArtifact

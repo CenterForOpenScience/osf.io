@@ -1,30 +1,29 @@
 from django.utils import timezone
 from transitions import Machine, MachineError
 
-from api.providers.workflows import Workflows
+from osf.utils.workflows import ModerationWorkflows
+from osf.utils import notifications as notify
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
-from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 
 from osf.utils import permissions
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    ReviewStates,
+    PreprintStates,
     ApprovalStates,
     DEFAULT_TRANSITIONS,
-    REVIEWABLE_TRANSITIONS,
+    PREPRINT_STATE_TRANSITIONS,
     APPROVAL_TRANSITIONS,
     CollectionSubmissionStates,
     COLLECTION_SUBMISSION_TRANSITIONS,
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
-from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
+from website.settings import OSF_CONTACT_EMAIL, DOMAIN, OSF_SUPPORT_EMAIL
 
-from osf.utils import notifications as notify
 
 class BaseMachine(Machine):
 
@@ -54,7 +53,7 @@ class BaseMachine(Machine):
         super().__init__(
             states=[s.value for s in self.States],
             transitions=self.Transitions,
-            initial=self.state,
+            initial=self.machineable.machine_state,
             send_event=True,
             prepare_event=['initialize_machine'],
             ignore_invalid_triggers=True,
@@ -98,48 +97,22 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class ReviewsMachine(BaseMachine):
+class PreprintStateMachine(Machine):
     ActionClass = ReviewAction
-    States = ReviewStates
-    Transitions = REVIEWABLE_TRANSITIONS
+    States = PreprintStates
+    Transitions = PREPRINT_STATE_TRANSITIONS
 
-    def save_changes(self, ev):
-        now = self.action.created if self.action is not None else timezone.now()
-        should_publish = self.machineable.in_public_reviews_state
-        if self.machineable.is_retracted:
-            pass  # Do not alter published state
-        elif should_publish and not self.machineable.is_published:
-            if not (self.machineable.primary_file and self.machineable.primary_file.target == self.machineable):
-                raise ValueError('Preprint is not a valid preprint; cannot publish.')
-            if not self.machineable.provider:
-                raise ValueError('Preprint provider not specified; cannot publish.')
-            if not self.machineable.subjects.exists():
-                raise ValueError('Preprint must have at least one subject to be published.')
-            self.machineable.date_published = now
-            self.machineable.is_published = True
-            self.machineable.ever_public = True
-        elif not should_publish and self.machineable.is_published:
-            self.machineable.is_published = False
-        self.machineable.save()
-
-    def resubmission_allowed(self, ev):
-        return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
-
-    def perform_withdraw(self, ev):
-        self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
-        self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
-
-    def notify_submit(self, ev):
-        user = ev.kwargs.get('user')
-        notify.notify_submit(self.machineable, user)
-        auth = Auth(user)
-        self.machineable.add_log(
-            action=PreprintLog.PUBLISHED,
-            params={
-                'preprint': self.machineable._id
-            },
-            auth=auth,
-            save=False,
+    def __init__(self, model, active_state, state_property_name):
+        super().__init__(
+            model=model,
+            states=PreprintStates,
+            transitions=PREPRINT_STATE_TRANSITIONS,
+            initial=active_state,
+            model_attribute=state_property_name,
+            after_state_change='_save_transition',
+            send_event=True,
+            ignore_invalid_triggers=False,
+            queued=True,
         )
 
     def notify_resubmit(self, ev):
@@ -192,11 +165,11 @@ class NodeRequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles contributorship changes and state transitions
         """
-        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.db_name and self.action is not None:
             self.machineable.comment = self.action.comment
         self.machineable.save()
 
-        if ev.event.name == DefaultTriggers.ACCEPT.value:
+        if ev.event.name == DefaultTriggers.ACCEPT.db_name:
             if not self.machineable.target.is_contributor(self.machineable.creator):
                 contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
                 self.machineable.target.add_contributor(
@@ -235,7 +208,7 @@ class NodeRequestMachine(BaseMachine):
     def notify_accept_reject(self, ev):
         """ Notify requester that admins have approved/denied
         """
-        if ev.event.name == DefaultTriggers.REJECT.value:
+        if ev.event.name == DefaultTriggers.REJECT.db_name:
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
@@ -265,20 +238,20 @@ class PreprintRequestMachine(BaseMachine):
     def save_changes(self, ev):
         """ Handles preprint status changes and state transitions
         """
-        if ev.event.name == DefaultTriggers.EDIT_COMMENT.value and self.action is not None:
+        if ev.event.name == DefaultTriggers.EDIT_COMMENT.db_name and self.action is not None:
             self.machineable.comment = self.action.comment
-        elif ev.event.name == DefaultTriggers.SUBMIT.value:
+        elif ev.event.name == DefaultTriggers.SUBMIT.db_name:
             # If the provider is pre-moderated and target has not been through moderation, auto approve withdrawal
             if self.auto_approval_allowed():
                 self.machineable.run_accept(user=self.machineable.creator, comment=self.machineable.comment, auto=True)
-        elif ev.event.name == DefaultTriggers.ACCEPT.value:
+        elif ev.event.name == DefaultTriggers.ACCEPT.db_name:
             # If moderator accepts the withdrawal request
-            self.machineable.target.run_withdraw(user=self.action.creator, comment=self.action.comment)
+            self.machineable.target.withdraw(user=self.action.creator, comment=self.action.comment)
         self.machineable.save()
 
     def auto_approval_allowed(self):
         # Returns True if the provider is pre-moderated and the preprint is never public.
-        return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value and not self.machineable.target.ever_public
+        return self.machineable.target.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.value and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
         context = self.get_context()
@@ -286,7 +259,7 @@ class PreprintRequestMachine(BaseMachine):
             reviews_signals.email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
-        if ev.event.name == DefaultTriggers.REJECT.value:
+        if ev.event.name == DefaultTriggers.REJECT.db_name:
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
@@ -320,8 +293,8 @@ class PreprintRequestMachine(BaseMachine):
 class ApprovalsMachine(Machine):
     '''ApprovalsMachine manages state transitions for Sanction and SchemaResponses entities.
 
-    The valid machine states for a Sanction object are defined in Workflows.ApprovalStates.
-    The valid transitions between these states are defined in Workflows.APPROVAL_TRANSITIONS.
+    The valid machine states for a Sanction object are defined in ModerationWorkflows.ApprovalStates.
+    The valid transitions between these states are defined in ModerationWorkflows.APPROVAL_TRANSITIONS.
 
     The ApprovaslMachine can be used by by instantiating an ApprovalsMachine and attaching the
     desired model with the 'model' kwarg. Attached models will inherit the 'trigger' functions

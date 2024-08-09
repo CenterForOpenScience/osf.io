@@ -10,14 +10,13 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
-from api.providers.workflows import Workflows, PUBLIC_STATES
+from osf.utils.workflows import ModerationWorkflows
 from framework import status
 from framework.auth import Auth
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import (
-    InvalidTriggerError,
     ValidationValueError,
     UserStateError,
     UserNotAffiliatedError,
@@ -34,19 +33,12 @@ from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.machines import (
-    ReviewsMachine,
-    NodeRequestMachine,
-    PreprintRequestMachine,
-)
 
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
 from osf.utils.workflows import (
     DefaultStates,
-    DefaultTriggers,
-    ReviewStates,
-    ReviewTriggers,
+    PreprintStates,
 )
 
 from osf.utils.requests import get_request_and_user_id
@@ -786,116 +778,41 @@ class CommentableMixin:
 
 
 class MachineableMixin(models.Model):
-    TriggersClass = DefaultTriggers
 
     class Meta:
         abstract = True
 
-    # NOTE: machine_state should rarely/never be modified directly -- use the state transition methods below
-    machine_state = models.CharField(max_length=15, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state_machine = self.MachineClass(
+            model=self,
+            active_state=self.state,
+            state_property_name='state'
+        )
 
+    machine_state = models.CharField(
+        max_length=15,
+        db_index=True,
+        choices=DefaultStates.choices(),
+        default=DefaultStates.INITIAL.db_name
+    )
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
     @property
     def MachineClass(self):
         raise NotImplementedError()
 
-    def run_submit(self, user):
-        """Run the 'submit' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-        """
-        return self._run_transition(self.TriggersClass.SUBMIT.value, user=user)
-
-    def run_accept(self, user, comment, **kwargs):
-        """Run the 'accept' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.ACCEPT.value, user=user, comment=comment, **kwargs)
-
-    def run_reject(self, user, comment):
-        """Run the 'reject' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.REJECT.value, user=user, comment=comment)
-
-    def run_edit_comment(self, user, comment):
-        """Run the 'edit_comment' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: New comment text.
-        """
-        return self._run_transition(self.TriggersClass.EDIT_COMMENT.value, user=user, comment=comment)
-
-    def _run_transition(self, trigger, **kwargs):
-        machine = self.MachineClass(self, 'machine_state')
-        trigger_fn = getattr(machine, trigger)
-        with transaction.atomic():
-            result = trigger_fn(**kwargs)
-            action = machine.action
-            if not result or action is None:
-                valid_triggers = machine.get_triggers(self.machine_state)
-                raise InvalidTriggerError(trigger, self.machine_state, valid_triggers)
-            return action
-
-
-class NodeRequestableMixin(MachineableMixin):
-    """
-    Inherited by NodeRequest. Defines the MachineClass.
-    """
-
-    class Meta:
-        abstract = True
-
-    MachineClass = NodeRequestMachine
-
-
-class PreprintRequestableMixin(MachineableMixin):
-    """
-    Inherited by PreprintRequest. Defines the MachineClass
-    """
-
-    class Meta:
-        abstract = True
-
-    MachineClass = PreprintRequestMachine
-
-
-class ReviewableMixin(MachineableMixin):
-    """Something that may be included in a reviewed collection and is subject to a reviews workflow.
-    """
-    TriggersClass = ReviewTriggers
-
-    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
-
-    class Meta:
-        abstract = True
-
-    MachineClass = ReviewsMachine
+    @property
+    def States(self):
+        raise NotImplementedError()
 
     @property
-    def in_public_reviews_state(self):
-        public_states = PUBLIC_STATES.get(self.provider.reviews_workflow)
-        if not public_states:
-            return False
-        return self.machine_state in public_states
+    def state(self):
+        return self.States.from_db_name(self.machine_state)
 
-    def run_withdraw(self, user, comment):
-        """Run the 'withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
+    @state.setter
+    def state(self, new_state):
+        self.machine_state = new_state.db_name
 
 
 class GuardianMixin(models.Model):
@@ -958,7 +875,7 @@ class ReviewProviderMixin(GuardianMixin):
     """
 
     REVIEWABLE_RELATION_NAME = None
-    REVIEW_STATES = ReviewStates
+    REVIEW_STATES = PreprintStates
     STATE_FIELD_NAME = 'machine_state'
 
     groups = REVIEW_GROUPS
@@ -967,7 +884,7 @@ class ReviewProviderMixin(GuardianMixin):
     class Meta:
         abstract = True
 
-    reviews_workflow = models.CharField(null=True, blank=True, max_length=30, choices=Workflows.choices())
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=30, choices=ModerationWorkflows.choices(legacy=True))
     reviews_comments_private = models.BooleanField(null=True, blank=True)
     reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
@@ -1004,7 +921,7 @@ class ReviewProviderMixin(GuardianMixin):
             target__deleted__isnull=True,
         )
         qs = qs.values('machine_state').annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in DefaultStates}
+        counts = {state.db_name: 0 for state in DefaultStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 
@@ -2082,7 +1999,7 @@ class SpamOverrideMixin(SpamMixin):
             return
         if user.is_hammy:
             return
-        if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
+        if getattr(self, 'provider', False) and self.provider.reviews_workflow == ModerationWorkflows.PRE_MODERATION.value:
             return
         host = ''
         if request_headers:

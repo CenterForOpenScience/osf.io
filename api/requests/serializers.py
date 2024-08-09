@@ -116,7 +116,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 target=node,
                 creator=auth.user,
                 comment=comment,
-                machine_state=DefaultStates.INITIAL.value,
+                machine_state=DefaultStates.INITIAL.db_name,
                 request_type=request_type,
             )
             node_request.save()
@@ -145,6 +145,7 @@ class PreprintRequestSerializer(RequestSerializer):
     def get_target_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj.target._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
+
 class PreprintRequestCreateSerializer(PreprintRequestSerializer):
     request_type = ser.ChoiceField(required=True, choices=RequestTypes.choices())
 
@@ -171,7 +172,7 @@ class PreprintRequestCreateSerializer(PreprintRequestSerializer):
             target=preprint,
             creator=auth.user,
             comment=comment,
-            machine_state=DefaultStates.INITIAL.value,
+            machine_state=DefaultStates.INITIAL.db_name,
             request_type=request_type,
         )
         preprint_request.save()

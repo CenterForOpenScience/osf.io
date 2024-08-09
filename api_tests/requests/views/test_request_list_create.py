@@ -113,7 +113,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
             creator=noncontrib,
             target=project,
             request_type=workflows.RequestTypes.ACCESS.value,
-            machine_state=workflows.DefaultStates.INITIAL.value
+            machine_state=workflows.DefaultStates.INITIAL.db_name
         )
         filtered_url = f'{url}?filter[machine_state]=pending'
         res = app.get(filtered_url, auth=admin.auth)

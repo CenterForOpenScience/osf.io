@@ -305,6 +305,7 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
             preprints[1].run_submit(user)
             preprints[1].run_reject(user, 'comment')
             preprints[2].run_submit(user)
+
             return preprints
 
     @pytest.fixture

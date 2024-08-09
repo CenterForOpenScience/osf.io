@@ -43,7 +43,7 @@ class TestContributorUtils(OsfTestCase):
             creator=new_user,
             target=self.project,
             request_type=workflows.RequestTypes.ACCESS.value,
-            machine_state=workflows.DefaultStates.INITIAL.value
+            machine_state=workflows.DefaultStates.INITIAL.db_name
         )
         node_request.run_submit(new_user)
         res = utils.serialize_access_requests(self.project)
