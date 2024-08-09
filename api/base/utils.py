@@ -1,5 +1,5 @@
 from furl import furl
-from urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode, quote
+from urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from packaging.version import Version
 from hashids import Hashids
 
