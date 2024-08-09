@@ -46,7 +46,7 @@ class TestReindexingMetrics:
         return f'{settings.API_DOMAIN}_/metrics/preprints/downloads/'
 
     @pytest.mark.es
-    @pytest.mark.skipif(django_settings.CI_ENV, reason='Non-deterministic fails on ci')
+    @pytest.mark.skipif(django_settings.CI_ENV, reason='Non-deterministic fails on CI')
     def test_reindexing(self, app, url, preprint, user, admin, es6_client):
         preprint_download = PreprintDownload.record_for_preprint(
             preprint,
