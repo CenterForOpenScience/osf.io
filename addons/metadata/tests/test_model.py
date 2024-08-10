@@ -4,6 +4,7 @@ from nose.tools import *  # noqa
 import pytest
 import unittest
 
+from django.db import IntegrityError
 from osf.models import NodeLog
 from tests.base import get_default_metaschema
 from osf_tests.factories import ProjectFactory, OsfStorageFileFactory
@@ -750,3 +751,23 @@ class TestNodeSettings(unittest.TestCase):
             self.node.logs.latest().action,
             'metadata_file_added'
         )
+
+class TestFileMetadata(unittest.TestCase):
+
+    def setUp(self):
+        self.node = ProjectFactory()
+        self.node_settings = NodeSettingsFactory(owner=self.node)
+
+    def test_duplicated_file_metadata(self):
+        FileMetadata.objects.create(
+            path='osfstorage/',
+            folder=False,
+            project=self.node_settings,
+        )
+        with assert_raises(IntegrityError):
+            # Force to create duplicated metadata
+            FileMetadata.objects.create(
+                path='osfstorage/',
+                folder=False,
+                project=self.node_settings,
+            )

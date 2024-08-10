@@ -9,7 +9,7 @@ import furl
 from addons.base.models import BaseUserSettings, BaseNodeSettings
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base.utils import waterbutler_api_url_for
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
@@ -172,40 +172,43 @@ class NodeSettings(BaseNodeSettings):
 
     def set_file_metadata(self, filepath, file_metadata, auth=None):
         self._validate_file_metadata(file_metadata)
-        q = self.file_metadata.filter(deleted__isnull=True, path=filepath)
-        if not q.exists():
-            FileMetadata.objects.create(
-                creator=auth.user if auth is not None else None,
-                user=auth.user if auth is not None else None,
-                project=self,
-                path=filepath,
-                hash=file_metadata['hash'],
-                folder=file_metadata['folder'],
-                metadata=json.dumps({'items': file_metadata['items']})
-            )
-            if auth:
-                self.owner.add_log(
-                    action='metadata_file_added',
-                    params={
-                        'project': self.owner.parent_id,
-                        'node': self.owner._id,
-                        'path': filepath,
-                    },
-                    auth=auth,
+        with transaction.atomic():
+            q = self.file_metadata.filter(path=filepath)
+            if not q.exists():
+                FileMetadata.objects.create(
+                    creator=auth.user if auth is not None else None,
+                    user=auth.user if auth is not None else None,
+                    project=self,
+                    path=filepath,
+                    hash=file_metadata['hash'],
+                    folder=file_metadata['folder'],
+                    metadata=json.dumps({'items': file_metadata['items']})
                 )
-            return
-        m = q.first()
-        m.hash = file_metadata['hash']
-        m.metadata = json.dumps({'items': file_metadata['items']})
-        m.user = auth.user if auth is not None else None
-        for item in file_metadata['items']:
-            if not item['active']:
-                continue
-            self._update_draft_files(
-                item['schema'],
-                filepath,
-                item['data'])
-        m.save()
+                if auth:
+                    self.owner.add_log(
+                        action='metadata_file_added',
+                        params={
+                            'project': self.owner.parent_id,
+                            'node': self.owner._id,
+                            'path': filepath,
+                        },
+                        auth=auth,
+                    )
+                return
+            m = q.first()
+            m.hash = file_metadata['hash']
+            m.metadata = json.dumps({'items': file_metadata['items']})
+            m.user = auth.user if auth is not None else None
+            m.folder = file_metadata['folder']
+            m.deleted = None
+            for item in file_metadata['items']:
+                if not item['active']:
+                    continue
+                self._update_draft_files(
+                    item['schema'],
+                    filepath,
+                    item['data'])
+            m.save()
         if auth:
             self.owner.add_log(
                 action='metadata_file_updated',
@@ -450,7 +453,11 @@ class FileMetadata(BaseModel):
     @classmethod
     def load(cls, project_id, path, select_for_update=False):
         try:
-            return cls.objects.get(project__id=project_id, path=path) if not select_for_update else cls.objects.filter(project__id=project_id, path=path).select_for_update().get()
+            if select_for_update:
+                return cls.objects.filter(project__id=project_id, path=path, deleted__is_null=True) \
+                    .select_for_update().get()
+            else:
+                return cls.objects.get(project__id=project_id, path=path, deleted__is_null=True)
         except cls.DoesNotExist:
             return None
 
