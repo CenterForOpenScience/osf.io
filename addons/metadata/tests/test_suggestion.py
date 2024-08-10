@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 class TestSuggestion(BaseAddonTestCase, OsfTestCase):
 
     def setUp(self):
+        self.mock_fetch_metadata_asset_files = mock.patch('addons.metadata.models.fetch_metadata_asset_files')
+        self.mock_fetch_metadata_asset_files.start()
         super(TestSuggestion, self).setUp()
         self.erad = ERadRecord.objects.create(
             kenkyusha_no='0123456',
@@ -30,9 +32,10 @@ class TestSuggestion(BaseAddonTestCase, OsfTestCase):
         self.project.save()
 
     def tearDown(self):
-        super(TestSuggestion, self).tearDown()
         self.erad.delete()
         self.contributor.delete()
+        super(TestSuggestion, self).tearDown()
+        self.mock_fetch_metadata_asset_files.stop()
 
     @mock.patch('addons.metadata.suggestion.requests')
     def test_suggestion_ror(self, mock_requests):

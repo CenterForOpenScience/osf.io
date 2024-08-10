@@ -755,8 +755,13 @@ class TestNodeSettings(unittest.TestCase):
 class TestFileMetadata(unittest.TestCase):
 
     def setUp(self):
+        self.mock_fetch_metadata_asset_files = mock.patch('addons.metadata.models.fetch_metadata_asset_files')
+        self.mock_fetch_metadata_asset_files.start()
         self.node = ProjectFactory()
         self.node_settings = NodeSettingsFactory(owner=self.node)
+
+    def tearDown(self):
+        self.mock_fetch_metadata_asset_files.stop()
 
     def test_duplicated_file_metadata(self):
         FileMetadata.objects.create(
