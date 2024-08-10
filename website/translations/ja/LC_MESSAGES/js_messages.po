@@ -227,8 +227,13 @@ msgstr ""
 "[この操作が必要な理由] "
 "このブラウザでは、ボタン操作でのクリップボードの値取得が禁止されています。そのため、ショートカットキーまたはブラウザメニューの貼り付けにより明示的にクリップボード操作を指示する必要があります。"
 
-#: addons/metadata/static/metadata-fields.js:47
-#: addons/metadata/static/metadata-fields.js:220
+#: addons/metadata/static/metadata-fields.js:55
+#, python-format
+msgid "One of this field or \"%s\" field must be filled."
+msgstr "このフィールドか「%s」フィールドのいずれかを入力する必要があります。"
+
+#: addons/metadata/static/metadata-fields.js:59
+#: addons/metadata/static/metadata-fields.js:250
 msgid "This field can't be blank."
 msgstr "このフィールドは必須項目です。"
 

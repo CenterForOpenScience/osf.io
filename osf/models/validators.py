@@ -320,6 +320,7 @@ class RegistrationResponsesValidator:
         properties = {
             question.registration_response_key: self._build_question_schema(question)
             for question in questions
+            if self._build_question_schema(question) is not None
         }
 
         json_schema = {
@@ -431,6 +432,8 @@ class RegistrationResponsesValidator:
                     'type': 'string',
                     'description': question_text,
                 }
+        elif question.block_type == 'section-heading' or question.block_type == 'subsection-heading':
+            return None
 
         raise ValueError('Unexpected `block_type`: {}'.format(question.block_type))
 
