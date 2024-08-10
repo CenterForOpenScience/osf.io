@@ -308,7 +308,7 @@ class NodeSettings(BaseNodeSettings):
                 }
                 self.set_file_metadata(dest_path_child, file_metadata, auth)
             if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_REMOVED]:
-                self.delete_file_metadata(src_path_child, auth)
+                source_addon.delete_file_metadata(src_path_child, auth)
 
     def get_metadata_assets(self):
         return [

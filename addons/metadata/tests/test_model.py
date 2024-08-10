@@ -4,8 +4,9 @@ from nose.tools import *  # noqa
 import pytest
 import unittest
 
+from osf.models import NodeLog
 from tests.base import get_default_metaschema
-from osf_tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory, OsfStorageFileFactory
 
 from framework.auth import Auth
 from ..models import NodeSettings, FileMetadata
@@ -27,10 +28,17 @@ class TestNodeSettings(unittest.TestCase):
         self.node_settings = self._NodeSettingsFactory(owner=self.node)
         self.node_settings.save()
 
+        self.node_without_metadata = ProjectFactory()
+        self.node_with_metadata = ProjectFactory()
+        self.node_with_metadata_settings = NodeSettingsFactory(owner=self.node_with_metadata)
+        self.node_with_metadata_settings.save()
+
     def tearDown(self):
         super(TestNodeSettings, self).tearDown()
         self.node.delete()
         self.user.delete()
+        self.node_with_metadata.delete()
+        self.node_without_metadata.delete()
         self.mock_fetch_metadata_asset_files.stop()
 
     @mock.patch('website.search.search.update_file_metadata')
@@ -285,3 +293,460 @@ class TestNodeSettings(unittest.TestCase):
         last_log = self.node.logs.latest()
         assert_equal(last_log.action, 'metadata_file_deleted')
         assert_true(mock_update_file_metadata.called)
+
+    @mock.patch('website.search.search.update_file_metadata')
+    @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
+    def test_update_file_metadata_for_renamed(
+        self,
+        mock_resolve_urlpath,
+        mock_update_file_metadata
+    ):
+        mock_resolve_urlpath.return_value = '/testFileGUID/'
+        self.node_settings.set_file_metadata('osfstorage/testfile', {
+            'path': 'osfstorage/testfile',
+            'folder': False,
+            'hash': '1234567890',
+            'items': [
+                {
+                    'active': True,
+                    'schema': 'xxxx',
+                    'data': {
+                        'test': True,
+                    },
+                },
+            ],
+        }, auth=Auth(self.user))
+        self.node_settings.save()
+
+        self.node_settings.update_file_metadata_for(
+            NodeLog.FILE_RENAMED,
+            {
+                'source': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'testfile',
+                },
+                'destination': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'testfile2',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
+            None,
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/testfile2'),
+            {
+                'generated': False,
+                'path': 'osfstorage/testfile2',
+                'folder': False,
+                'hash': '1234567890',
+                'urlpath': '/testFileGUID/',
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    },
+                ],
+            },
+        )
+        last_log = self.node.logs.latest()
+        assert_equal(last_log.action, 'metadata_file_deleted')
+
+    @mock.patch('website.search.search.update_file_metadata')
+    @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
+    def test_update_file_metadata_for_moved_from_node_without_metadata(
+        self,
+        mock_resolve_urlpath,
+        mock_update_file_metadata
+    ):
+        mock_resolve_urlpath.return_value = '/testFileGUID/'
+        self.node_settings.save()
+
+        self.node_settings.update_file_metadata_for(
+            NodeLog.FILE_MOVED,
+            {
+                'source': {
+                    'nid': self.node_without_metadata._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'testfile',
+                },
+                'destination': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'testfile',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
+            None,
+        )
+        assert_equal(
+            self.node_without_metadata.logs.latest().action,
+            'project_created'
+        )
+        assert_equal(
+            self.node.logs.latest().action,
+            'project_created'
+        )
+
+    @mock.patch('website.search.search.update_file_metadata')
+    @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
+    def test_update_file_metadata_for_file_moved_from_node_with_metadata(
+        self,
+        mock_resolve_urlpath,
+        mock_update_file_metadata
+    ):
+        mock_resolve_urlpath.return_value = '/testFileGUID/'
+        self.node_with_metadata_settings.set_file_metadata('osfstorage/testfile', {
+            'path': 'osfstorage/testfile',
+            'folder': False,
+            'hash': '1234567890',
+            'items': [
+                {
+                    'active': True,
+                    'schema': 'xxxx',
+                    'data': {
+                        'test': True,
+                    },
+                },
+            ],
+        }, auth=Auth(self.user))
+        self.node_with_metadata_settings.save()
+
+        self.node_settings.update_file_metadata_for(
+            NodeLog.FILE_MOVED,
+            {
+                'source': {
+                    'nid': self.node_with_metadata._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'testfile',
+                },
+                'destination': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'testfile',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/testfile'),
+            None,
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
+            {
+                'generated': False,
+                'path': 'osfstorage/testfile',
+                'folder': False,
+                'hash': '1234567890',
+                'urlpath': '/testFileGUID/',
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    },
+                ],
+            },
+        )
+        last_log = self.node.logs.latest()
+        assert_equal(last_log.action, 'metadata_file_added')
+        last_log = self.node_with_metadata.logs.latest()
+        assert_equal(last_log.action, 'metadata_file_deleted')
+
+        self.node_with_metadata_settings.update_file_metadata_for(
+            NodeLog.FILE_MOVED,
+            {
+                'source': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'testfile',
+                },
+                'destination': {
+                    'nid': self.node_with_metadata._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test/testfile',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
+            None,
+        )
+        assert_equal(
+            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+            {
+                'generated': False,
+                'path': 'osfstorage/test/testfile',
+                'folder': False,
+                'hash': '1234567890',
+                'urlpath': '/testFileGUID/',
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    },
+                ],
+            },
+        )
+        last_log = self.node.logs.latest()
+        assert_equal(last_log.action, 'metadata_file_deleted')
+        last_log = self.node_with_metadata.logs.latest()
+        assert_equal(last_log.action, 'metadata_file_added')
+
+    @mock.patch('website.search.search.update_file_metadata')
+    @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
+    def test_update_file_metadata_for_folder_moved_from_node_with_metadata(
+        self,
+        mock_resolve_urlpath,
+        mock_update_file_metadata
+    ):
+        mock_resolve_urlpath.return_value = '/testFileGUID/'
+        self.node_settings.set_file_metadata('osfstorage/test/testfile', {
+            'path': 'osfstorage/test/testfile',
+            'folder': False,
+            'hash': '1234567890',
+            'items': [
+                {
+                    'active': True,
+                    'schema': 'xxxx',
+                    'data': {
+                        'test': True,
+                    },
+                },
+            ],
+        }, auth=Auth(self.user))
+        self.node_settings.save()
+
+        self.node_with_metadata_settings.update_file_metadata_for(
+            NodeLog.FILE_MOVED,
+            {
+                'source': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test/',
+                },
+                'destination': {
+                    'nid': self.node_with_metadata._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test/',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+            None,
+        )
+        assert_equal(
+            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+            {
+                'generated': False,
+                'path': 'osfstorage/test/testfile',
+                'folder': False,
+                'hash': '1234567890',
+                'urlpath': '/testFileGUID/',
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    },
+                ],
+            },
+        )
+        assert_equal(
+            self.node_with_metadata.logs.latest().action,
+            'metadata_file_added'
+        )
+        assert_equal(
+            self.node.logs.latest().action,
+            'metadata_file_deleted'
+        )
+
+        self.node_settings.update_file_metadata_for(
+            NodeLog.FILE_MOVED,
+            {
+                'source': {
+                    'nid': self.node_with_metadata._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test/',
+                },
+                'destination': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test1/test/',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+            None,
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
+            {
+                'generated': False,
+                'path': 'osfstorage/test1/test/testfile',
+                'folder': False,
+                'hash': '1234567890',
+                'urlpath': '/testFileGUID/',
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    },
+                ],
+            },
+        )
+        assert_equal(
+            self.node_with_metadata.logs.latest().action,
+            'metadata_file_deleted'
+        )
+        assert_equal(
+            self.node.logs.latest().action,
+            'metadata_file_added'
+        )
+
+    @mock.patch('website.search.search.update_file_metadata')
+    @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
+    def test_update_file_metadata_for_folder_metadata_moved_from_node_with_metadata(
+        self,
+        mock_resolve_urlpath,
+        mock_update_file_metadata
+    ):
+        mock_resolve_urlpath.return_value = '/testFileGUID/'
+        self.node_settings.set_file_metadata('osfstorage/test/', {
+            'path': 'osfstorage/test/',
+            'folder': True,
+            'hash': '1234567890',
+            'items': [
+                {
+                    'active': True,
+                    'schema': 'xxxx',
+                    'data': {
+                        'test': True,
+                    },
+                },
+            ],
+        }, auth=Auth(self.user))
+        self.node_settings.save()
+
+        self.node_with_metadata_settings.update_file_metadata_for(
+            NodeLog.FILE_MOVED,
+            {
+                'source': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test/',
+                },
+                'destination': {
+                    'nid': self.node_with_metadata._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test/',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/test/'),
+            None,
+        )
+        assert_equal(
+            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'),
+            {
+                'generated': False,
+                'path': 'osfstorage/test/',
+                'folder': True,
+                'hash': '1234567890',
+                'urlpath': '/testFileGUID/',
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    },
+                ],
+            },
+        )
+        assert_equal(
+            self.node_with_metadata.logs.latest().action,
+            'metadata_file_added'
+        )
+        assert_equal(
+            self.node.logs.latest().action,
+            'metadata_file_deleted'
+        )
+
+        self.node_settings.update_file_metadata_for(
+            NodeLog.FILE_MOVED,
+            {
+                'source': {
+                    'nid': self.node_with_metadata._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test/',
+                },
+                'destination': {
+                    'nid': self.node._id,
+                    'provider': 'osfstorage',
+                    'materialized': 'test1/test/',
+                },
+            },
+            auth=Auth(self.user)
+        )
+        assert_equal(
+            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'),
+            None,
+        )
+        assert_equal(
+            self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/'),
+            {
+                'generated': False,
+                'path': 'osfstorage/test1/test/',
+                'folder': True,
+                'hash': '1234567890',
+                'urlpath': '/testFileGUID/',
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    },
+                ],
+            },
+        )
+        assert_equal(
+            self.node_with_metadata.logs.latest().action,
+            'metadata_file_deleted'
+        )
+        assert_equal(
+            self.node.logs.latest().action,
+            'metadata_file_added'
+        )
