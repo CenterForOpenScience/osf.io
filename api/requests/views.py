@@ -92,7 +92,7 @@ class RequestDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     )
 
     required_read_scopes = [
-        CoreScopes.ALWAYS_PUBLIC
+        CoreScopes.ALWAYS_PUBLIC,
     ]  # Actual scope checks are done on subview.as_view
     required_write_scopes = [CoreScopes.NULL]
     view_category = "requests"
@@ -102,18 +102,24 @@ class RequestDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         request_id = self.kwargs["request_id"]
         if NodeRequest.objects.filter(_id=request_id).exists():
             return NodeRequestDetail.as_view()(
-                request._request, *args, **kwargs
+                request._request,
+                *args,
+                **kwargs,
             )
         elif PreprintRequest.objects.filter(_id=request_id).exists():
             return PreprintRequestDetail.as_view()(
-                request._request, *args, **kwargs
+                request._request,
+                *args,
+                **kwargs,
             )
         else:
             raise NotFound
 
 
 class NodeRequestDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, NodeRequestMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    NodeRequestMixin,
 ):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
@@ -134,7 +140,9 @@ class NodeRequestDetail(
 
 
 class PreprintRequestDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, PreprintRequestMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    PreprintRequestMixin,
 ):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
@@ -170,7 +178,9 @@ class RequestActionList(JSONAPIBaseView, generics.ListAPIView):
         request_id = self.kwargs["request_id"]
         if PreprintRequest.objects.filter(_id=request_id).exists():
             return PreprintRequestActionList.as_view()(
-                request._request, *args, **kwargs
+                request._request,
+                *args,
+                **kwargs,
             )
         else:
             raise NotFound

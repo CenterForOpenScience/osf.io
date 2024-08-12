@@ -86,7 +86,8 @@ class SchemaResponseParentPermission:
 
 
 class SchemaResponseDetailPermission(
-    SchemaResponseParentPermission, permissions.BasePermission
+    SchemaResponseParentPermission,
+    permissions.BasePermission,
 ):
     """
     Permissions for top-level `schema_response` detail endpoints.
@@ -165,7 +166,8 @@ class SchemaResponseListPermission(permissions.BasePermission):
 
 
 class SchemaResponseActionListPermission(
-    SchemaResponseParentPermission, permissions.BasePermission
+    SchemaResponseParentPermission,
+    permissions.BasePermission,
 ):
     """
     Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
@@ -179,7 +181,8 @@ class SchemaResponseActionListPermission(
 
 
 class SchemaResponseActionDetailPermission(
-    SchemaResponseParentPermission, permissions.BasePermission
+    SchemaResponseParentPermission,
+    permissions.BasePermission,
 ):
     """
     Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.

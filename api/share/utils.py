@@ -42,7 +42,7 @@ def is_qa_resource(resource):
     """
     tags = set(resource.tags.all().values_list("name", flat=True))
     has_qa_tags = bool(
-        set(settings.DO_NOT_INDEX_LIST["tags"]).intersection(tags)
+        set(settings.DO_NOT_INDEX_LIST["tags"]).intersection(tags),
     )
 
     has_qa_title = False
@@ -69,7 +69,7 @@ def _enqueue_update_share(osfresource):
     _osfguid_value = osfresource.guids.values_list("_id", flat=True).first()
     if not _osfguid_value:
         logger.warning(
-            f"update_share skipping resource that has no guids: {osfresource}"
+            f"update_share skipping resource that has no guids: {osfresource}",
         )
         return
     enqueue_task(task__update_share.s(_osfguid_value))
@@ -182,14 +182,16 @@ def _shtrove_auth_headers(osf_item):
 
 def _should_delete_indexcard(osf_item):
     if getattr(osf_item, "is_deleted", False) or getattr(
-        osf_item, "deleted", None
+        osf_item,
+        "deleted",
+        None,
     ):
         return True
     # if it quacks like BaseFileNode, look at .target instead
     _containing_item = getattr(osf_item, "target", None)
     if _containing_item:
         return not osf_item.should_update_search or _should_delete_indexcard(
-            _containing_item
+            _containing_item,
         )
     return (
         not _is_item_public(osf_item)
@@ -202,7 +204,9 @@ def _is_item_public(guid_referent) -> bool:
     if hasattr(guid_referent, "verified_publishable"):
         return guid_referent.verified_publishable  # quacks like Preprint
     return getattr(
-        guid_referent, "is_public", False
+        guid_referent,
+        "is_public",
+        False,
     )  # quacks like AbstractNode
 
 
@@ -339,7 +343,7 @@ def format_user(user):
     )
 
     person.attrs["identifiers"] = [
-        GraphNode("agentidentifier", agent=person, uri=user.absolute_url)
+        GraphNode("agentidentifier", agent=person, uri=user.absolute_url),
     ]
 
     if (
@@ -351,7 +355,7 @@ def format_user(user):
                 "agentidentifier",
                 agent=person,
                 uri=list(user.external_identity["ORCID"].keys())[0],
-            )
+            ),
         )
 
     person.attrs["related_agents"] = [
@@ -389,10 +393,12 @@ def format_subject(subject, context=None):
         uri=subject.absolute_api_v2_url,
     )
     context[subject.id].attrs["parent"] = format_subject(
-        subject.parent, context
+        subject.parent,
+        context,
     )
     context[subject.id].attrs["central_synonym"] = format_subject(
-        subject.bepress_subject, context
+        subject.bepress_subject,
+        context,
     )
     return context[subject.id]
 
@@ -496,7 +502,7 @@ def serialize_preprint(preprint, old_subjects=None):
                 "workidentifier",
                 creative_work=preprint_graph,
                 uri=f"{settings.DOI_URL_PREFIX}{doi}",
-            )
+            ),
         )
 
     if preprint.provider.domain_redirect_enabled:
@@ -505,7 +511,7 @@ def serialize_preprint(preprint, old_subjects=None):
                 "workidentifier",
                 creative_work=preprint_graph,
                 uri=preprint.absolute_url,
-            )
+            ),
         )
 
     if preprint.article_doi:
@@ -513,15 +519,17 @@ def serialize_preprint(preprint, old_subjects=None):
         related_work = GraphNode("creativework")
         to_visit.append(
             GraphNode(
-                "workrelation", subject=preprint_graph, related=related_work
-            )
+                "workrelation",
+                subject=preprint_graph,
+                related=related_work,
+            ),
         )
         to_visit.append(
             GraphNode(
                 "workidentifier",
                 creative_work=related_work,
                 uri=f"{settings.DOI_URL_PREFIX}{preprint.article_doi}",
-            )
+            ),
         )
 
     preprint_graph.attrs["tags"] = [
@@ -576,7 +584,9 @@ def format_node_lineage(child_osf_node, child_graph_node):
             uri=urljoin(settings.DOMAIN, parent_osf_node.url),
         ),
         GraphNode(
-            "ispartof", subject=child_graph_node, related=parent_graph_node
+            "ispartof",
+            subject=child_graph_node,
+            related=parent_graph_node,
         ),
         *format_node_lineage(parent_osf_node, parent_graph_node),
     ]
@@ -598,8 +608,8 @@ def serialize_registration(registration):
             "withdrawn": registration.is_retracted,
             "extra": {
                 "osf_related_resource_types": _get_osf_related_resource_types(
-                    registration
-                )
+                    registration,
+                ),
             },
         },
     )
@@ -610,11 +620,12 @@ def _get_osf_related_resource_types(registration):
     from osf.utils.outcomes import ArtifactTypes
 
     artifacts = OutcomeArtifact.objects.for_registration(registration).filter(
-        finalized=True, deleted__isnull=True
+        finalized=True,
+        deleted__isnull=True,
     )
     return {
         artifact_type.name.lower(): artifacts.filter(
-            artifact_type=artifact_type
+            artifact_type=artifact_type,
         ).exists()
         for artifact_type in ArtifactTypes.public_types()
     }
@@ -657,7 +668,7 @@ def serialize_osf_node(osf_node, additional_attrs=None):
                 "workidentifier",
                 creative_work=graph_node,
                 uri=f"{settings.DOI_URL_PREFIX}{doi}",
-            )
+            ),
         )
 
     graph_node.attrs["tags"] = [

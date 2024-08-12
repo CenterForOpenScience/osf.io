@@ -174,7 +174,7 @@ class GroupMembersList(
                     raise ValidationError("Member identifier not provided.")
                 except IndexError:
                     raise ValidationError(
-                        "Member identifier incorrectly formatted."
+                        "Member identifier incorrectly formatted.",
                     )
                 else:
                     user_ids.append(user_id)
@@ -202,18 +202,18 @@ class GroupMembersList(
                 requested_ids.append(data["id"].split("-")[1])
             except IndexError:
                 raise ValidationError(
-                    "Member identifier incorrectly formatted."
+                    "Member identifier incorrectly formatted.",
                 )
 
         resource_object_list = OSFUser.objects.filter(
-            guids___id__in=requested_ids
+            guids___id__in=requested_ids,
         )
         for resource in resource_object_list:
             self._assert_member_belongs_to_group(resource)
 
         if len(resource_object_list) != len(request_data):
             raise ValidationError(
-                {"non_field_errors": "Could not find all objects to delete."}
+                {"non_field_errors": "Could not find all objects to delete."},
             )
 
         return resource_object_list
@@ -223,7 +223,8 @@ class GroupMembersList(
         if field_name == "role":
             if operation["op"] != "eq":
                 raise InvalidFilterOperator(
-                    value=operation["op"], valid_operators=["eq"]
+                    value=operation["op"],
+                    valid_operators=["eq"],
                 )
             # operation['value'] should be 'member' or 'manager'
             role = operation["value"].lower().strip()
@@ -233,7 +234,7 @@ class GroupMembersList(
             return Q(
                 id__in=group.managers
                 if role == MANAGER
-                else group.members_only
+                else group.members_only,
             )
         return super().build_query_from_field(field_name, operation)
 
@@ -243,7 +244,9 @@ class GroupMembersList(
 
 
 class GroupMemberDetail(
-    OSFGroupMemberBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin
+    OSFGroupMemberBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    UserMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

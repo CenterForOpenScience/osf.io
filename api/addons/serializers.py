@@ -9,7 +9,8 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
         @staticmethod
         def get_type(request):
             return get_kebab_snake_case_field(
-                request.version, "node-addon-folders"
+                request.version,
+                "node-addon-folders",
             )
 
     id = ser.CharField(read_only=True)
@@ -23,7 +24,7 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
         {
             "children": "get_absolute_url",
             "root": "get_root_folder",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -52,7 +53,7 @@ class AddonSerializer(JSONAPISerializer):
     filterable_fields = frozenset(
         [
             "categories",
-        ]
+        ],
     )
 
     class Meta:

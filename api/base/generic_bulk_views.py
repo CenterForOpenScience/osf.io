@@ -25,7 +25,7 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
         if is_bulk_request(request):
             if not request.data:
                 raise ValidationError(
-                    "Request must contain array of resource identifier objects."
+                    "Request must contain array of resource identifier objects.",
                 )
 
         response = super().create(request, *args, **kwargs)
@@ -58,7 +58,7 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
         """
         if not request.data:
             raise ValidationError(
-                "Request must contain array of resource identifier objects."
+                "Request must contain array of resource identifier objects.",
             )
 
         response = super().bulk_update(request, *args, **kwargs)
@@ -90,7 +90,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             else getattr(model_cls, "primary_identifier_name", "_id")
         )
         resource_object_list = model_cls.objects.filter(
-            Q(**{f"{column_name}__in": requested_ids})
+            Q(**{f"{column_name}__in": requested_ids}),
         )
 
         for resource in resource_object_list:
@@ -99,7 +99,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         if resource_object_list.count() != len(request_data):
             raise ValidationError(
-                {"non_field_errors": "Could not find all objects to delete."}
+                {"non_field_errors": "Could not find all objects to delete."},
             )
 
         return [
@@ -131,7 +131,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         if hasattr(request, "query_params") and "id" in request.query_params:
             if hasattr(request, "data") and len(request.data) > 0:
                 raise Conflict(
-                    "A bulk DELETE can only have a body or query parameters, not both."
+                    "A bulk DELETE can only have a body or query parameters, not both.",
                 )
 
             ids = request.query_params["id"].split(",")
@@ -143,11 +143,11 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
                     data.append({"type": request_type, "id": id})
             else:
                 raise ValidationError(
-                    "Type query parameter is also required for a bulk DELETE using query parameters."
+                    "Type query parameter is also required for a bulk DELETE using query parameters.",
                 )
         elif not request.data:
             raise ValidationError(
-                "Request must contain array of resource identifier objects."
+                "Request must contain array of resource identifier objects.",
             )
         else:
             data = request.data
@@ -165,21 +165,24 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         object_type = get_meta_type(self.serializer_class, self.request)
 
         resource_object_list = self.get_requested_resources(
-            request=request, request_data=data
+            request=request,
+            request_data=data,
         )
 
         for item in data:
             item_type = item["type"]
             if item_type != object_type:
                 raise Conflict(
-                    "Type needs to match type expected at this endpoint."
+                    "Type needs to match type expected at this endpoint.",
                 )
 
         if not self.allow_bulk_destroy_resources(user, resource_object_list):
             raise PermissionDenied
 
         skip_uneditable = self.bulk_destroy_skip_uneditable(
-            resource_object_list, user, object_type
+            resource_object_list,
+            user,
+            object_type,
         )
         if skip_uneditable:
             skipped = skip_uneditable["skipped"]
@@ -187,7 +190,8 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             if skipped:
                 self.perform_bulk_destroy(allowed)
                 return Response(
-                    status=status.HTTP_200_OK, data={"errors": skipped}
+                    status=status.HTTP_200_OK,
+                    data={"errors": skipped},
                 )
 
         self.perform_bulk_destroy(resource_object_list)

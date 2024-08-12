@@ -23,7 +23,7 @@ class IsRegistriesModerationMetricsUser(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         if user.system_tags.filter(
-            name="registries_moderation_metrics"
+            name="registries_moderation_metrics",
         ).exists():
             return True
         return False

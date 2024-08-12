@@ -85,12 +85,12 @@ class UserSerializer(JSONAPISerializer):
             "middle_names",
             "family_name",
             "id",
-        ]
+        ],
     )
     writeable_method_fields = frozenset(
         [
             "accepted_terms_of_service",
-        ]
+        ],
     )
 
     non_anonymized_fields = [
@@ -126,30 +126,33 @@ class UserSerializer(JSONAPISerializer):
             required=False,
             allow_blank=True,
             help_text="For bibliographic citations",
-        )
+        ),
     )
     date_registered = HideIfDisabled(VersionedDateTimeField(read_only=True))
     active = HideIfDisabled(
-        ser.BooleanField(read_only=True, source="is_active")
+        ser.BooleanField(read_only=True, source="is_active"),
     )
     timezone = HideIfDisabled(
         ser.CharField(
-            required=False, help_text="User's timezone, e.g. 'Etc/UTC"
-        )
+            required=False,
+            help_text="User's timezone, e.g. 'Etc/UTC",
+        ),
     )
     locale = HideIfDisabled(
-        ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'")
+        ser.CharField(
+            required=False, help_text="User's locale, e.g.  'en_US'"
+        ),
     )
     social = SocialField(required=False, min_version="2.10")
     employment = JSONAPIListField(required=False, source="jobs")
     education = JSONAPIListField(required=False, source="schools")
     allow_indexing = ShowIfCurrentUser(
-        ser.BooleanField(required=False, allow_null=True)
+        ser.BooleanField(required=False, allow_null=True),
     )
     can_view_reviews = ShowIfCurrentUser(
         ser.SerializerMethodField(
-            help_text="Whether the current user has the `view_submissions` permission to ANY reviews provider."
-        )
+            help_text="Whether the current user has the `view_submissions` permission to ANY reviews provider.",
+        ),
     )
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
@@ -259,26 +262,31 @@ class UserSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context["request"])
         if obj != auth.user:
             return Node.objects.get_nodes_for_user(
-                auth.user, base_queryset=default_queryset, include_public=True
+                auth.user,
+                base_queryset=default_queryset,
+                include_public=True,
             ).count()
         return default_queryset.count()
 
     def get_registration_count(self, obj):
         auth = get_user_auth(self.context["request"])
         user_registration = default_node_list_queryset(
-            model_cls=Registration
+            model_cls=Registration,
         ).filter(contributor__user__id=obj.id)
         return user_registration.can_view(
-            user=auth.user, private_link=auth.private_link
+            user=auth.user,
+            private_link=auth.private_link,
         ).count()
 
     def get_preprint_count(self, obj):
         auth_user = get_user_auth(self.context["request"]).user
         user_preprints_query = Preprint.objects.filter(
-            _contributors__guids___id=obj._id
+            _contributors__guids___id=obj._id,
         ).exclude(machine_state="initial")
         return Preprint.objects.can_view(
-            user_preprints_query, auth_user, allow_contribs=False
+            user_preprints_query,
+            auth_user,
+            allow_contribs=False,
         ).count()
 
     def get_institutions_count(self, obj):
@@ -288,12 +296,13 @@ class UserSerializer(JSONAPISerializer):
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(
-            group__user=obj, permission__codename="view_submissions"
+            group__user=obj,
+            permission__codename="view_submissions",
         )
         return (
             group_qs.exists()
             or obj.abstractprovideruserobjectpermission_set.filter(
-                permission__codename="view_submissions"
+                permission__codename="view_submissions",
             )
             or []
         )
@@ -342,7 +351,7 @@ class UserSerializer(JSONAPISerializer):
                     instance.accepted_terms_of_service = timezone.now()
             elif "default_region" == attr:
                 user_settings = instance._settings_model(
-                    "osfstorage"
+                    "osfstorage",
                 ).objects.get(owner=instance)
                 user_settings.default_region_id = value
                 user_settings.save()
@@ -358,13 +367,14 @@ class UserSerializer(JSONAPISerializer):
         except ValidationError as e:
             raise InvalidModelValueError(e)
         if set(validated_data.keys()).intersection(
-            set(OSFUser.SPAM_USER_PROFILE_FIELDS.keys())
+            set(OSFUser.SPAM_USER_PROFILE_FIELDS.keys()),
         ):
             request_headers = string_type_request_headers(
-                self.context["request"]
+                self.context["request"],
             )
             instance.check_spam(
-                saved_fields=validated_data, request_headers=request_headers
+                saved_fields=validated_data,
+                request_headers=request_headers,
             )
 
         return instance
@@ -382,7 +392,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "accounts": "account_links",
-        }
+        },
     )
 
     class Meta:
@@ -458,7 +468,7 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
         {
             "self": "get_self_url",
             "html": "get_related_url",
-        }
+        },
     )
 
     def get_self_url(self, obj):
@@ -499,7 +509,7 @@ class UserIdentitiesSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -544,7 +554,8 @@ class UserSettingsSerializer(JSONAPISerializer):
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
     deactivation_requested = ser.BooleanField(
-        source="requested_deactivation", required=False
+        source="requested_deactivation",
+        required=False,
     )
     contacted_deactivation = ser.BooleanField(required=False, read_only=True)
     secret = ser.SerializerMethodField(read_only=True)
@@ -581,7 +592,7 @@ class UserSettingsSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "export": "get_export_link",
-        }
+        },
     )
 
     def get_export_link(self, obj):
@@ -617,10 +628,12 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
     two_factor_enabled = ser.BooleanField(write_only=True, required=False)
     two_factor_verification = ser.IntegerField(write_only=True, required=False)
     subscribe_osf_general_email = ser.BooleanField(
-        read_only=False, required=False
+        read_only=False,
+        required=False,
     )
     subscribe_osf_help_email = ser.BooleanField(
-        read_only=False, required=False
+        read_only=False,
+        required=False,
     )
 
     # Keys represent field names values represent the human readable names stored in DB.
@@ -650,13 +663,13 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
     def verify_two_factor(self, instance, value, two_factor_addon):
         if not two_factor_addon:
             raise exceptions.ValidationError(
-                detail="Two-factor authentication is not enabled."
+                detail="Two-factor authentication is not enabled.",
             )
         if two_factor_addon.verify_code(value):
             two_factor_addon.is_confirmed = True
         else:
             raise exceptions.PermissionDenied(
-                detail="The two-factor verification code you provided is invalid."
+                detail="The two-factor verification code you provided is invalid.",
             )
         two_factor_addon.save()
 
@@ -692,7 +705,13 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
 class UserEmail:
     def __init__(
-        self, email_id, address, confirmed, verified, primary, is_merge=False
+        self,
+        email_id,
+        address,
+        confirmed,
+        verified,
+        primary,
+        is_merge=False,
     ):
         self.id = email_id
         self.address = address
@@ -708,7 +727,7 @@ class UserEmailsSerializer(JSONAPISerializer):
             "confirmed",
             "verified",
             "primary",
-        ]
+        ],
     )
 
     id = IDField(read_only=True)
@@ -732,7 +751,7 @@ class UserEmailsSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "resend_confirmation": "get_resend_confirmation_url",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -767,7 +786,7 @@ class UserEmailsSerializer(JSONAPISerializer):
             or address in user.emails.all().values_list("address", flat=True)
         ):
             raise Conflict(
-                f"This user already has registered with the email address {address}"
+                f"This user already has registered with the email address {address}",
             )
         try:
             token = user.add_unconfirmed_email(address)
@@ -780,7 +799,7 @@ class UserEmailsSerializer(JSONAPISerializer):
             raise exceptions.ValidationError(e.args[0])
         except BlockedEmailError:
             raise exceptions.ValidationError(
-                "This email address domain is blocked."
+                "This email address domain is blocked.",
             )
 
         return UserEmail(
@@ -801,13 +820,13 @@ class UserEmailsSerializer(JSONAPISerializer):
             user.save()
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError(
-                "You cannot set an unconfirmed email address as your primary email address."
+                "You cannot set an unconfirmed email address as your primary email address.",
             )
 
         if verified and not instance.verified:
             if not instance.confirmed:
                 raise exceptions.ValidationError(
-                    "You cannot verify an email address that has not been confirmed by a user."
+                    "You cannot verify an email address that has not been confirmed by a user.",
                 )
             user.confirm_email(token=instance.id, merge=instance.is_merge)
             instance.verified = True
@@ -821,5 +840,5 @@ class UserEmailsSerializer(JSONAPISerializer):
 
 class UserNodeSerializer(NodeSerializer):
     filterable_fields = NodeSerializer.filterable_fields | {
-        "current_user_permissions"
+        "current_user_permissions",
     }

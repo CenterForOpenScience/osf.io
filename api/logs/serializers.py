@@ -37,7 +37,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
         user = self.context["request"].user
         node_title = obj["node"]["title"]
         node = AbstractNode.load(obj["node"]["_id"]) or Preprint.load(
-            obj["node"]["_id"]
+            obj["node"]["_id"],
         )
         if not user.is_authenticated:
             if node.is_public:
@@ -134,7 +134,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         pointer = obj.get("pointer", None)
         if pointer:
             pointer_node = AbstractNode.objects.get(
-                guids___id=pointer["id"], guids___id__isnull=False
+                guids___id=pointer["id"],
+                guids___id__isnull=False,
             )
             if not pointer_node.is_deleted:
                 if pointer_node.is_public or (
@@ -192,7 +193,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                         "family_name": user.family_name,
                         "unregistered_name": unregistered_name,
                         "active": user.is_active,
-                    }
+                    },
                 )
 
             # Add unregistered contributor data
@@ -208,7 +209,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                         "middle_names": guessed_names["middle_names"],
                         "family_name": guessed_names["family_name"],
                         "active": False,
-                    }
+                    },
                 )
 
         return contributor_info
@@ -293,9 +294,11 @@ class NodeLogSerializer(JSONAPISerializer):
 
     def get_params(self, obj):
         if obj.action == "osf_storage_folder_created" and obj.params.get(
-            "urls"
+            "urls",
         ):
             obj.params.pop("urls")
         return NodeLogParamsSerializer(
-            obj.params, context=self.context, read_only=True
+            obj.params,
+            context=self.context,
+            read_only=True,
         ).data

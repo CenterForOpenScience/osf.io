@@ -28,12 +28,12 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             "date_modified",
             "revision_justification",
             "reviews_state",
-        ]
+        ],
     )
     writeable_method_fields = frozenset(
         [
             "revision_responses",
-        ]
+        ],
     )
 
     non_anonymized_fields = frozenset(
@@ -49,14 +49,15 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             "revision_justification",
             "revision_responses",
             "updated_response_keys",
-        ]
+        ],
     )
 
     id = ser.CharField(source="_id", required=True, allow_null=True)
     type = TypeField()
     date_created = VersionedDateTimeField(source="created", required=False)
     date_submitted = VersionedDateTimeField(
-        source="submitted_timestamp", required=False
+        source="submitted_timestamp",
+        required=False,
     )
     date_modified = VersionedDateTimeField(source="modified", required=False)
     revision_justification = ser.CharField(required=False, allow_blank=True)
@@ -128,7 +129,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         )
         if not registration.updatable:
             raise Conflict(
-                detail=f"Registration with guid {registration._id} cannot be updated."
+                detail=f"Registration with guid {registration._id} cannot be updated.",
             )
 
         initiator = self.context["request"].user
@@ -145,7 +146,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             # Value Error when no schema provided
             except ValueError:
                 raise ValidationError(
-                    f"Resource {registration._id} must specify a schema"
+                    f"Resource {registration._id} must specify a schema",
                 )
 
         try:

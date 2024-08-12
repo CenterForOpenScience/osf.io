@@ -19,7 +19,7 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset(
         [
             "category",
-        ]
+        ],
     )
 
     category = ser.SerializerMethodField()
@@ -71,7 +71,7 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
         if validated_data.get("category", None) == "doi":
             if node.get_identifier("doi"):
                 raise exceptions.ValidationError(
-                    "A DOI already exists for this resource."
+                    "A DOI already exists for this resource.",
                 )
             try:
                 identifiers = get_or_create_identifiers(node)
@@ -93,7 +93,7 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
             return node.identifiers.get(category="doi")
         else:
             raise exceptions.ValidationError(
-                "You can only mint a DOI, not a different type of identifier."
+                "You can only mint a DOI, not a different type of identifier.",
             )
 
 

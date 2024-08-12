@@ -9,7 +9,8 @@ def cors_allow_institution_domains(sender, request, *args, **kwargs):
             in [
                 h.strip()
                 for h in request.META.get(
-                    "HTTP_ACCESS_CONTROL_REQUEST_HEADERS", ""
+                    "HTTP_ACCESS_CONTROL_REQUEST_HEADERS",
+                    "",
                 ).split(",")
             ]
         ):

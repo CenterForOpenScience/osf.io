@@ -158,7 +158,9 @@ class PreprintList(
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
         queryset = self.preprints_queryset(
-            Preprint.objects.all(), auth_user, public_only=public_only
+            Preprint.objects.all(),
+            auth_user,
+            public_only=public_only,
         )
         # Use get_metrics_queryset to return an queryset with annotated metrics
         # iff ?metrics query param is present
@@ -173,7 +175,11 @@ class PreprintList(
 
     # overrides PreprintMetricsViewMixin
     def get_annotated_queryset_with_metrics(
-        self, queryset, metric_class, metric_name, after
+        self,
+        queryset,
+        metric_class,
+        metric_name,
+        after,
     ):
         return metric_class.get_top_by_count(
             qs=queryset,
@@ -244,7 +250,9 @@ class PreprintDetail(
 
 
 class PreprintNodeRelationship(
-    JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateAPIView,
+    PreprintMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -283,7 +291,9 @@ class PreprintNodeRelationship(
 
 
 class PreprintCitationDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    PreprintMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_list)."""
 
@@ -310,7 +320,9 @@ class PreprintCitationDetail(
 
 
 class PreprintCitationStyleDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    PreprintMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_read)."""
 
@@ -394,7 +406,7 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
     # overrides IdentifierList
     def get_object(self, check_object_permissions=True):
         return self.get_preprint(
-            check_object_permissions=check_object_permissions
+            check_object_permissions=check_object_permissions,
         )
 
 
@@ -418,7 +430,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
     def get_default_queryset(self):
         preprint = self.get_preprint()
         return preprint.preprintcontributor_set.all().prefetch_related(
-            "user__guids"
+            "user__guids",
         )
 
     # overrides NodeContributorsList
@@ -475,7 +487,7 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
             return preprint.preprintcontributor_set.get(user=user)
         except PreprintContributor.DoesNotExist:
             raise NotFound(
-                f"{user} cannot be found in the list of contributors."
+                f"{user} cannot be found in the list of contributors.",
             )
 
     def get_serializer_context(self):
@@ -545,7 +557,7 @@ class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
 
     def get_resource(self, check_object_permissions=True):
         return self.get_preprint(
-            check_object_permissions=check_object_permissions
+            check_object_permissions=check_object_permissions,
         )
 
     def get_object(self):
@@ -559,7 +571,10 @@ class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
 
 
 class PreprintActionList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
+    PreprintMixin,
 ):
     """Action List *Read-only*
 
@@ -644,7 +659,7 @@ class PreprintActionList(
     # overrides ListFilterMixin
     def get_default_queryset(self):
         return get_review_actions_queryset().filter(
-            target_id=self.get_preprint().id
+            target_id=self.get_preprint().id,
         )
 
     # overrides ListAPIView
@@ -698,7 +713,9 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
 
     def get_resource(self):
         return get_object_or_error(
-            Preprint, self.kwargs["preprint_id"], self.request
+            Preprint,
+            self.kwargs["preprint_id"],
+            self.request,
         )
 
 

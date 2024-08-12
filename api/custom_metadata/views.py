@@ -15,7 +15,8 @@ from .serializers import (
 
 
 class CustomFileMetadataDetail(
-    JSONAPIBaseView, rest_framework.generics.RetrieveUpdateAPIView
+    JSONAPIBaseView,
+    rest_framework.generics.RetrieveUpdateAPIView,
 ):
     permission_classes = (
         CustomMetadataPermission,
@@ -43,7 +44,8 @@ class CustomFileMetadataDetail(
 
 
 class CustomItemMetadataDetail(
-    JSONAPIBaseView, rest_framework.generics.RetrieveUpdateAPIView
+    JSONAPIBaseView,
+    rest_framework.generics.RetrieveUpdateAPIView,
 ):
     permission_classes = (
         CustomMetadataPermission,

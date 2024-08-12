@@ -6,7 +6,9 @@ app_name = "osf"
 
 urlpatterns = [
     re_path(
-        r"^$", views.RegionList.as_view(), name=views.RegionList.view_name
+        r"^$",
+        views.RegionList.as_view(),
+        name=views.RegionList.view_name,
     ),
     re_path(
         r"^(?P<region_id>[-\w]+)/$",

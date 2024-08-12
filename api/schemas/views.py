@@ -20,7 +20,9 @@ from api.schemas.serializers import (
 
 
 class RegistrationSchemaList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list)."""
 
@@ -125,7 +127,9 @@ class RegistrationSchemaBlocks(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         schema_id = self.kwargs.get("schema_id")
         schema = get_object_or_error(
-            RegistrationSchema, schema_id, self.request
+            RegistrationSchema,
+            schema_id,
+            self.request,
         )
         return schema.schema_blocks.all()
 

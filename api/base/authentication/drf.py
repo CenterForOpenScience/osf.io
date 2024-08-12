@@ -42,7 +42,7 @@ def drf_get_session_from_cookie(cookie_val):
     """
     try:
         session_key = ensure_str(
-            itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
+            itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val),
         )
     except itsdangerous.BadSignature:
         return None
@@ -119,7 +119,7 @@ def created_by_external_idp_and_unconfirmed(user):
                 for each in list(user.external_identity.values())
             ],
             [],
-        )
+        ),
     )
 
 
@@ -186,7 +186,8 @@ class OSFBasicAuthentication(BasicAuthentication):
         user_auth_tuple = super().authenticate(request)
         if user_auth_tuple is not None:
             self.authenticate_twofactor_credentials(
-                user_auth_tuple[0], request
+                user_auth_tuple[0],
+                request,
             )
         return user_auth_tuple
 
@@ -205,7 +206,7 @@ class OSFBasicAuthentication(BasicAuthentication):
 
         if userid and not user:
             raise exceptions.AuthenticationFailed(
-                _("Invalid username/password.")
+                _("Invalid username/password."),
             )
         elif userid is None or not password:
             raise exceptions.NotAuthenticated()
@@ -234,7 +235,7 @@ class OSFBasicAuthentication(BasicAuthentication):
                 raise TwoFactorRequiredError()
             if not two_factor.verify_code(otp):
                 raise exceptions.AuthenticationFailed(
-                    _("Invalid two-factor authentication OTP code.")
+                    _("Invalid two-factor authentication OTP code."),
                 )
 
     def authenticate_header(self, request):
@@ -266,18 +267,18 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
             cas_auth_response = client.profile(auth_token)
         except cas.CasHTTPError:
             raise exceptions.NotAuthenticated(
-                _("User provided an invalid OAuth2 access token")
+                _("User provided an invalid OAuth2 access token"),
             )
 
         if cas_auth_response.authenticated is False:
             raise exceptions.NotAuthenticated(
-                _("CAS server failed to authenticate this token")
+                _("CAS server failed to authenticate this token"),
             )
 
         user = OSFUser.load(cas_auth_response.user)
         if not user:
             raise exceptions.AuthenticationFailed(
-                _("Could not find the user associated with this token")
+                _("Could not find the user associated with this token"),
             )
 
         check_user(user)

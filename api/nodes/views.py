@@ -208,7 +208,7 @@ class NodeMixin:
         if self.kwargs.get("is_embedded") is True:
             # If this is an embedded request, the node might be cached somewhere
             node = self.request.parents[Node].get(
-                self.kwargs[self.node_lookup_url_kwarg]
+                self.kwargs[self.node_lookup_url_kwarg],
             )
 
         node_id = node_id or self.kwargs[self.node_lookup_url_kwarg]
@@ -216,7 +216,7 @@ class NodeMixin:
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id)
                 .annotate(
-                    region=F("addons_osfstorage_node_settings__region___id")
+                    region=F("addons_osfstorage_node_settings__region___id"),
                 )
                 .exclude(region=None),
                 request=self.request,
@@ -240,7 +240,7 @@ class DraftMixin:
 
         if not draft.branched_from._id == node_id:
             raise ValidationError(
-                "This draft registration is not created from the given node."
+                "This draft registration is not created from the given node.",
             )
 
     def check_resource_permissions(self, resource):
@@ -259,7 +259,7 @@ class DraftMixin:
         if self.request.method not in drf_permissions.SAFE_METHODS:
             if draft.registered_node and not draft.registered_node.is_deleted:
                 raise PermissionDenied(
-                    "This draft has already been registered and cannot be modified."
+                    "This draft has already been registered and cannot be modified.",
                 )
 
         else:
@@ -267,7 +267,7 @@ class DraftMixin:
                 redirect_url = draft.registered_node.absolute_api_v2_url
                 self.headers["location"] = redirect_url
                 raise PermanentlyMovedError(
-                    detail="Draft has already been registered"
+                    detail="Draft has already been registered",
                 )
 
         if check_object_permissions:
@@ -309,7 +309,8 @@ class NodeList(
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         return default_node_list_permission_queryset(
-            user=self.request.user, model_cls=Node
+            user=self.request.user,
+            model_cls=Node,
         )
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
@@ -318,16 +319,18 @@ class NodeList(
         if is_bulk_request(self.request):
             auth = get_user_auth(self.request)
             nodes = Node.objects.filter(
-                guids___id__in=[node["id"] for node in self.request.data]
+                guids___id__in=[node["id"] for node in self.request.data],
             )
 
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(
-                self.request.query_params.get("skip_uneditable", False)
+                self.request.query_params.get("skip_uneditable", False),
             ):
                 return Node.objects.get_nodes_for_user(
-                    auth.user, WRITE_NODE, nodes
+                    auth.user,
+                    WRITE_NODE,
+                    nodes,
                 )
 
             for node in nodes:
@@ -359,12 +362,12 @@ class NodeList(
                 )
             except Region.DoesNotExist:
                 raise InvalidQueryStringError(
-                    f"Region {region_id} is invalid."
+                    f"Region {region_id} is invalid.",
                 )
             context.update(
                 {
                     "region_id": region_id,
-                }
+                },
             )
         return context
 
@@ -383,14 +386,17 @@ class NodeList(
         """User must have admin permissions to delete nodes."""
         if is_truthy(self.request.query_params.get("skip_uneditable", False)):
             return any(
-                [node.has_permission(user, ADMIN) for node in resource_list]
+                [node.has_permission(user, ADMIN) for node in resource_list],
             )
         return all(
-            [node.has_permission(user, ADMIN) for node in resource_list]
+            [node.has_permission(user, ADMIN) for node in resource_list],
         )
 
     def bulk_destroy_skip_uneditable(
-        self, resource_object_list, user, object_type
+        self,
+        resource_object_list,
+        user,
+        object_type,
     ):
         """
         If skip_uneditable=True in query_params, skip the resources for which the user does not have
@@ -400,7 +406,7 @@ class NodeList(
         skipped = []
 
         if not is_truthy(
-            self.request.query_params.get("skip_uneditable", False)
+            self.request.query_params.get("skip_uneditable", False),
         ):
             return None
 
@@ -421,12 +427,12 @@ class NodeList(
                     child__is_deleted=False,
                 )
                 .exclude(
-                    Q(child__in=resource_object_list) | Q(is_node_link=True)
+                    Q(child__in=resource_object_list) | Q(is_node_link=True),
                 )
                 .exists()
             ):
                 raise ValidationError(
-                    "Any child components must be deleted prior to deleting this project."
+                    "Any child components must be deleted prior to deleting this project.",
                 )
 
         for node in resource_object_list:
@@ -484,7 +490,7 @@ class NodeDetail(
             and Node.objects.get_children(node, active=True).exists()
         ):
             raise ValidationError(
-                "Any child components must be deleted prior to deleting this project."
+                "Any child components must be deleted prior to deleting this project.",
             )
 
         try:
@@ -495,7 +501,7 @@ class NodeDetail(
     def get_renderer_context(self):
         context = super().get_renderer_context()
         show_counts = is_truthy(
-            self.request.query_params.get("related_counts", False)
+            self.request.query_params.get("related_counts", False),
         )
         if show_counts:
             node = self.get_object()
@@ -568,11 +574,11 @@ class NodeContributorsList(
                     contrib_ids.append(item["id"].split("-")[1])
                 except AttributeError:
                     raise ValidationError(
-                        "Contributor identifier not provided."
+                        "Contributor identifier not provided.",
                     )
                 except IndexError:
                     raise ValidationError(
-                        "Contributor identifier incorrectly formatted."
+                        "Contributor identifier incorrectly formatted.",
                     )
             queryset = queryset.filter(user__guids___id__in=contrib_ids)
         return queryset
@@ -588,7 +594,7 @@ class NodeContributorsList(
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError(
-                "Must have at least one registered admin contributor"
+                "Must have at least one registered admin contributor",
             )
 
     # Overrides BulkDestroyJSONAPIView
@@ -599,11 +605,11 @@ class NodeContributorsList(
                 requested_ids.append(data["id"].split("-")[1])
             except IndexError:
                 raise ValidationError(
-                    "Contributor identifier incorrectly formatted."
+                    "Contributor identifier incorrectly formatted.",
                 )
 
         resource_object_list = OSFUser.objects.filter(
-            guids___id__in=requested_ids
+            guids___id__in=requested_ids,
         )
         for resource in resource_object_list:
             if getattr(resource, "is_deleted", None):
@@ -611,7 +617,7 @@ class NodeContributorsList(
 
         if len(resource_object_list) != len(request_data):
             raise ValidationError(
-                {"non_field_errors": "Could not find all objects to delete."}
+                {"non_field_errors": "Could not find all objects to delete."},
             )
 
         return resource_object_list
@@ -657,7 +663,7 @@ class NodeContributorDetail(
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError(
-                "Must have at least one registered admin contributor"
+                "Must have at least one registered admin contributor",
             )
 
     def get_serializer_context(self):
@@ -668,7 +674,10 @@ class NodeContributorDetail(
 
 
 class NodeImplicitContributorsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    NodeMixin,
 ):
     permission_classes = (
         AdminOrPublic,
@@ -703,7 +712,10 @@ class NodeImplicitContributorsList(
 
 
 class NodeContributorsAndGroupMembersList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    NodeMixin,
 ):
     permission_classes = (
         AdminOrPublic,
@@ -761,7 +773,9 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
 
 class NodeDraftRegistrationsList(
-    JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    NodeMixin,
 ):
     """
     The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
@@ -791,7 +805,7 @@ class NodeDraftRegistrationsList(
 
     def get_serializer_class(self):
         if Version(getattr(self.request, "version", "2.0")) >= Version(
-            DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION
+            DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION,
         ):
             return DraftRegistrationSerializer
         return DraftRegistrationLegacySerializer
@@ -803,7 +817,9 @@ class NodeDraftRegistrationsList(
 
 
 class NodeDraftRegistrationDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    DraftMixin,
 ):
     """
     The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
@@ -830,7 +846,7 @@ class NodeDraftRegistrationDetail(
 
     def get_serializer_class(self):
         if Version(getattr(self.request, "version", "2.0")) >= Version(
-            DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION
+            DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION,
         ):
             return DraftRegistrationDetailSerializer
         return DraftRegistrationDetailLegacySerializer
@@ -844,7 +860,10 @@ class NodeDraftRegistrationDetail(
 
 
 class NodeRegistrationsList(
-    JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    NodeMixin,
+    DraftMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_registrations_list)."""
 
@@ -885,7 +904,8 @@ class NodeRegistrationsList(
         """Create a registration from a draft."""
         # On creation, make sure that current user is the creator
         draft_id = self.request.data.get(
-            "draft_registration", None
+            "draft_registration",
+            None,
         ) or self.request.data.get("draft_registration_id", None)
         draft = self.get_draft(draft_id)
         try:
@@ -896,7 +916,9 @@ class NodeRegistrationsList(
 
 
 class NodeChildrenList(
-    BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin
+    BaseChildrenList,
+    bulk_views.ListBulkCreateJSONAPIView,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_children_list)."""
 
@@ -921,13 +943,13 @@ class NodeChildrenList(
                 )
             except Region.DoesNotExist:
                 raise InvalidQueryStringError(
-                    f"Region {region__id} is invalid."
+                    f"Region {region__id} is invalid.",
                 )
 
         context.update(
             {
                 "region_id": id,
-            }
+            },
         )
         return context
 
@@ -961,7 +983,9 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
 
 class NodeCitationStyleDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_read)."""
 
@@ -1108,7 +1132,9 @@ class NodeLinksList(
 
 
 class NodeLinksDetail(
-    BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, NodeMixin
+    BaseNodeLinksDetail,
+    generics.RetrieveDestroyAPIView,
+    NodeMixin,
 ):
     """Node Link details. *Writeable*.
 
@@ -1189,7 +1215,10 @@ class NodeLinksDetail(
 
 
 class NodeForksList(
-    JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodesFilterMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    NodeMixin,
+    NodesFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_forks_list)."""
 
@@ -1217,7 +1246,7 @@ class NodeForksList(
         all_forks = (
             self.get_node()
             .forks.annotate(
-                region=F("addons_osfstorage_node_settings__region___id")
+                region=F("addons_osfstorage_node_settings__region___id"),
             )
             .exclude(region=None)
             .exclude(type="osf.registration")
@@ -1275,15 +1304,18 @@ class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         node = self.get_node()
         auth = get_user_auth(self.request)
         node_relation_subquery = node._parents.filter(
-            is_node_link=True
+            is_node_link=True,
         ).values_list("parent", flat=True)
         return Node.objects.filter(
-            id__in=Subquery(node_relation_subquery), is_deleted=False
+            id__in=Subquery(node_relation_subquery),
+            is_deleted=False,
         ).can_view(user=auth.user, private_link=auth.private_link)
 
 
 class NodeLinkedByRegistrationsList(
-    JSONAPIBaseView, generics.ListAPIView, NodeMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    NodeMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1305,10 +1337,11 @@ class NodeLinkedByRegistrationsList(
         node = self.get_node()
         auth = get_user_auth(self.request)
         node_relation_subquery = node._parents.filter(
-            is_node_link=True
+            is_node_link=True,
         ).values_list("parent", flat=True)
         return Registration.objects.filter(
-            id__in=Subquery(node_relation_subquery), retraction__isnull=True
+            id__in=Subquery(node_relation_subquery),
+            retraction__isnull=True,
         ).can_view(user=auth.user, private_link=auth.private_link)
 
 
@@ -1325,7 +1358,8 @@ class NodeFilesList(
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, "target"),
         base_permissions.PermissionWithGetter(
-            ReadOnlyIfRegistration, "target"
+            ReadOnlyIfRegistration,
+            "target",
         ),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
@@ -1349,7 +1383,9 @@ class NodeFilesList(
 
     def get_resource(self):
         return get_object_or_error(
-            AbstractNode, self.kwargs["node_id"], self.request
+            AbstractNode,
+            self.kwargs["node_id"],
+            self.request,
         )
 
     # overrides FilterMixin
@@ -1408,12 +1444,13 @@ class NodeFilesList(
         if "info" in self.request.query_params and path.endswith("/"):
             resource = self.get_resource()
             base_class = BaseFileNode.resolve_class(
-                provider, BaseFileNode.FOLDER
+                provider,
+                BaseFileNode.FOLDER,
             )
             queryset = base_class.objects.filter(
                 target_object_id=resource.id,
                 target_content_type=ContentType.objects.get_for_model(
-                    resource
+                    resource,
                 ),
                 _path=path,
             )
@@ -1423,13 +1460,16 @@ class NodeFilesList(
         return queryset.annotate(
             date_modified=file_annotations.DATE_MODIFIED,
             **file_annotations.make_show_as_unviewed_annotations(
-                self.request.user
+                self.request.user,
             ),
         )
 
 
 class NodeFileDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    WaterButlerMixin,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_read)."""
 
@@ -1437,7 +1477,8 @@ class NodeFileDetail(
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, "target"),
         base_permissions.PermissionWithGetter(
-            ReadOnlyIfRegistration, "target"
+            ReadOnlyIfRegistration,
+            "target",
         ),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
@@ -1483,7 +1524,9 @@ class NodeGroupsBase(JSONAPIBaseView, NodeMixin, OSFGroupMixin):
 
 
 class NodeGroupsList(
-    NodeGroupsBase, generics.ListCreateAPIView, ListFilterMixin
+    NodeGroupsBase,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_list)"""
 
@@ -1509,13 +1552,13 @@ class NodeGroupsList(
             node = self.get_node()
             try:
                 groups_with_perm_ids = node.get_osf_groups_with_perms(
-                    operation["value"]
+                    operation["value"],
                 ).values_list("id", flat=True)
             except ValueError:
                 raise ValidationError(
                     "{} is not a filterable permission.".format(
-                        operation["value"]
-                    )
+                        operation["value"],
+                    ),
                 )
             return Q(id__in=groups_with_perm_ids)
 
@@ -1563,7 +1606,7 @@ class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
         group = self.get_osf_group(self.kwargs.get("group_id"))
         if not group.get_permission_to_node(node):
             raise NotFound(
-                f"Group {group._id} does not have permissions to node {node._id}."
+                f"Group {group._id} does not have permissions to node {node._id}.",
             )
         return group
 
@@ -1687,7 +1730,10 @@ class NodeAddonDetail(
 
 
 class NodeAddonFolderList(
-    JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    NodeMixin,
+    AddonSettingsMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addons_folders_list)."""
 
@@ -1716,7 +1762,7 @@ class NodeAddonFolderList(
             raise JSONAPIException(
                 detail="This addon is enabled but an account has not been imported from your user settings",
                 meta={
-                    "link": f"{API_BASE}users/me/addons/{node_addon.config.short_name}/accounts/"
+                    "link": f"{API_BASE}users/me/addons/{node_addon.config.short_name}/accounts/",
                 },
             )
 
@@ -1725,7 +1771,7 @@ class NodeAddonFolderList(
 
         if not hasattr(node_addon, "get_folders"):
             raise EndpointNotImplementedError(
-                "Endpoint not yet implemented for this addon"
+                "Endpoint not yet implemented for this addon",
             )
 
         #  Convert v1 errors to v2 as much as possible.
@@ -1761,7 +1807,9 @@ class NodeStorageProvider:
 
 
 class NodeStorageProvidersList(
-    JSONAPIBaseView, generics.ListAPIView, NodeMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list)."""
 
@@ -1783,7 +1831,9 @@ class NodeStorageProvidersList(
 
     def get_provider_item(self, storage_addon):
         return NodeStorageProvider(
-            self.get_node(), storage_addon.config.short_name, storage_addon
+            self.get_node(),
+            storage_addon.config.short_name,
+            storage_addon,
         )
 
     def get_queryset(self):
@@ -1795,7 +1845,9 @@ class NodeStorageProvidersList(
 
 
 class NodeStorageProviderDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_read)."""
 
@@ -1818,7 +1870,10 @@ class NodeStorageProviderDetail(
 
 
 class NodeLogList(
-    JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    NodeMixin,
+    ListFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_logs_list)."""
 
@@ -1853,7 +1908,10 @@ class NodeLogList(
 
 
 class NodeCommentsList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_comments_list)."""
 
@@ -1876,7 +1934,8 @@ class NodeCommentsList(
 
     def get_default_queryset(self):
         return Comment.objects.filter(
-            node=self.get_node(), root_target__isnull=False
+            node=self.get_node(),
+            root_target__isnull=False,
         )
 
     # Hook to make filtering on 'target' work
@@ -1910,7 +1969,10 @@ class NodeCommentsList(
 
 
 class NodeInstitutionsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_institutions_list)."""
 
@@ -2042,11 +2104,12 @@ class NodeInstitutionsRelationship(
         for val in data:
             if val["id"] in current_insts:
                 if not user.is_affiliated_with_institution(
-                    current_insts[val["id"]]
+                    current_insts[val["id"]],
                 ) and not node.has_permission(user, ADMIN):
                     raise PermissionDenied
                 node.remove_affiliated_institution(
-                    inst=current_insts[val["id"]], user=user
+                    inst=current_insts[val["id"]],
+                    user=user,
                 )
         node.save()
 
@@ -2132,7 +2195,10 @@ class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
 
 
 class NodeWikiList(
-    JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    NodeMixin,
+    ListFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_wikis_list)."""
 
@@ -2258,7 +2324,8 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
 
 
 class NodeLinkedRegistrationsRelationship(
-    LinkedRegistrationsRelationship, NodeMixin
+    LinkedRegistrationsRelationship,
+    NodeMixin,
 ):
     """Relationship Endpoint for Node -> Linked Registration relationships
 
@@ -2410,7 +2477,10 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
 
 
 class NodeViewOnlyLinksList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_view_only_links_list)."""
 
@@ -2438,7 +2508,9 @@ class NodeViewOnlyLinksList(
 
 
 class NodeViewOnlyLinkDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    NodeMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_view_only_links_read)."""
 
@@ -2464,7 +2536,8 @@ class NodeViewOnlyLinkDetail(
     def get_object(self):
         try:
             return self.get_node().private_links.get(
-                _id=self.kwargs["link_id"], is_deleted=False
+                _id=self.kwargs["link_id"],
+                is_deleted=False,
             )
         except PrivateLink.DoesNotExist:
             raise NotFound
@@ -2509,7 +2582,10 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
 
 
 class NodePreprintsList(
-    JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    NodeMixin,
+    PreprintFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_preprints_list)."""
 
@@ -2620,7 +2696,10 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
 
 
 class NodeCedarMetadataRecordsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    NodeMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -2638,7 +2717,7 @@ class NodeCedarMetadataRecordsList(
     def get_default_queryset(self):
         self.get_node()
         node_records = CedarMetadataRecord.objects.filter(
-            guid___id=self.kwargs["node_id"]
+            guid___id=self.kwargs["node_id"],
         )
         user_auth = get_user_auth(self.request)
         record_ids = [

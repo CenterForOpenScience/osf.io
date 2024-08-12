@@ -63,7 +63,7 @@ class JSONAPIParser(JSONParser):
         if not target_type:
             raise JSONAPIException(
                 source={
-                    "pointer": f"data/relationships/{related_resource}/data/type"
+                    "pointer": f"data/relationships/{related_resource}/data/type",
                 },
                 detail=NO_TYPE_ERROR,
             )
@@ -93,7 +93,7 @@ class JSONAPIParser(JSONParser):
         if not data:
             raise JSONAPIException(
                 source={
-                    "pointer": f"data/relationships/{related_resource}/data"
+                    "pointer": f"data/relationships/{related_resource}/data",
                 },
                 detail=NO_DATA_ERROR,
             )
@@ -136,12 +136,14 @@ class JSONAPIParser(JSONParser):
         if is_list and request_method == "DELETE":
             if object_id is None:
                 raise JSONAPIException(
-                    source={"pointer": "/data/id"}, detail=NO_ID_ERROR
+                    source={"pointer": "/data/id"},
+                    detail=NO_ID_ERROR,
                 )
 
             if type_required and object_type is None:
                 raise JSONAPIException(
-                    source={"pointer": "/data/type"}, detail=NO_TYPE_ERROR
+                    source={"pointer": "/data/type"},
+                    detail=NO_TYPE_ERROR,
                 )
 
         attributes = resource_object.get("attributes")
@@ -170,7 +172,9 @@ class JSONAPIParser(JSONParser):
         Parses the incoming bytestream as JSON and returns the resulting data.
         """
         result = super().parse(
-            stream, media_type=media_type, parser_context=parser_context
+            stream,
+            media_type=media_type,
+            parser_context=parser_context,
         )
 
         if not isinstance(result, dict):
@@ -181,17 +185,19 @@ class JSONAPIParser(JSONParser):
             if is_bulk_request(parser_context["request"]):
                 if not isinstance(data, list):
                     raise ParseError(
-                        'Expected a list of items but got type "dict".'
+                        'Expected a list of items but got type "dict".',
                     )
 
                 data_collection = []
                 data_collection.extend(
                     [
                         self.flatten_data(
-                            data_object, parser_context, is_list=True
+                            data_object,
+                            parser_context,
+                            is_list=True,
                         )
                         for data_object in data
-                    ]
+                    ],
                 )
 
                 return data_collection
@@ -203,14 +209,15 @@ class JSONAPIParser(JSONParser):
 
         else:
             raise JSONAPIException(
-                source={"pointer": "/data"}, detail=NO_DATA_ERROR
+                source={"pointer": "/data"},
+                detail=NO_DATA_ERROR,
             )
 
     def flatten_multiple_relationships(self, parser, relationships):
         rel = {}
         for resource in relationships:
             ret = super(parser, self).flatten_relationships(
-                {resource: relationships[resource]}
+                {resource: relationships[resource]},
             )
             if isinstance(ret, list):
                 rel[resource] = []
@@ -300,12 +307,14 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
 
             if id_ is None:
                 raise JSONAPIException(
-                    source={"pointer": "/data/id"}, detail=NO_ID_ERROR
+                    source={"pointer": "/data/id"},
+                    detail=NO_ID_ERROR,
                 )
 
             if type_required and type_ is None:
                 raise JSONAPIException(
-                    source={"pointer": "/data/type"}, detail=NO_TYPE_ERROR
+                    source={"pointer": "/data/type"},
+                    detail=NO_TYPE_ERROR,
                 )
 
             return data
@@ -314,7 +323,7 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
 
 
 class JSONAPIOnetoOneRelationshipParserForRegularJSON(
-    JSONAPIOnetoOneRelationshipParser
+    JSONAPIOnetoOneRelationshipParser,
 ):
     """
     Allows same processing as JSONAPIRelationshipParser to occur for requests with application/json media type.
@@ -331,12 +340,13 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
 
     def flatten_relationships(self, relationships):
         return self.flatten_multiple_relationships(
-            JSONAPIMultipleRelationshipsParser, relationships
+            JSONAPIMultipleRelationshipsParser,
+            relationships,
         )
 
 
 class JSONAPIMultipleRelationshipsParserForRegularJSON(
-    JSONAPIParserForRegularJSON
+    JSONAPIParserForRegularJSON,
 ):
     """
     Allows same processing as JSONAPIMultipleRelationshipsParser to occur for requests with application/json media type.
@@ -344,7 +354,8 @@ class JSONAPIMultipleRelationshipsParserForRegularJSON(
 
     def flatten_relationships(self, relationships):
         return self.flatten_multiple_relationships(
-            JSONAPIMultipleRelationshipsParserForRegularJSON, relationships
+            JSONAPIMultipleRelationshipsParserForRegularJSON,
+            relationships,
         )
 
 
@@ -354,7 +365,9 @@ class HMACSignedParser(JSONParser):
         Parses the incoming bytestream as JSON. Validates the 'signature' in the payload then returns the resulting data.
         """
         data = super().parse(
-            stream, media_type=media_type, parser_context=parser_context
+            stream,
+            media_type=media_type,
+            parser_context=parser_context,
         )
 
         try:
@@ -380,7 +393,9 @@ class SearchParser(JSONAPIParser):
         except KeyError:
             raise ImproperlyConfigured('SearchParser requires "view" context.')
         data = super().parse(
-            stream, media_type=media_type, parser_context=parser_context
+            stream,
+            media_type=media_type,
+            parser_context=parser_context,
         )
         if not data:
             raise JSONAPIException(detail="Invalid Payload")
@@ -398,7 +413,7 @@ class SearchParser(JSONAPIParser):
                     sort.lstrip("-"): {
                         "order": "desc" if sort.startswith("-") else "asc",
                     },
-                }
+                },
             ]
 
         try:
@@ -414,7 +429,7 @@ class SearchParser(JSONAPIParser):
                             "fields": view.search_fields,
                         },
                     },
-                }
+                },
             )
 
         if any(data.values()):
@@ -423,10 +438,10 @@ class SearchParser(JSONAPIParser):
                 if val is not None:
                     if isinstance(val, list):
                         res["query"]["bool"]["filter"].append(
-                            {"terms": {key: val}}
+                            {"terms": {key: val}},
                         )
                     else:
                         res["query"]["bool"]["filter"].append(
-                            {"term": {key: val}}
+                            {"term": {key: val}},
                         )
         return res

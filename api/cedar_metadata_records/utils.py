@@ -7,7 +7,8 @@ logger = logging.getLogger(__name__)
 
 def get_guids_related_view(obj):
     assert isinstance(
-        obj, CedarMetadataRecord
+        obj,
+        CedarMetadataRecord,
     ), "object must be a CedarMetadataRecord"
     referent = obj.guid.referent
     if isinstance(referent, Node):
@@ -22,7 +23,8 @@ def get_guids_related_view(obj):
 
 def get_guids_related_view_kwargs(obj):
     assert isinstance(
-        obj, CedarMetadataRecord
+        obj,
+        CedarMetadataRecord,
     ), "object must be a CedarMetadataRecord"
     referent = obj.guid.referent
     if isinstance(referent, (Node, Registration)):

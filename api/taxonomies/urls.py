@@ -6,7 +6,9 @@ app_name = "osf"
 
 urlpatterns = [
     re_path(
-        r"^$", views.TaxonomyList.as_view(), name=views.TaxonomyList.view_name
+        r"^$",
+        views.TaxonomyList.as_view(),
+        name=views.TaxonomyList.view_name,
     ),
     re_path(
         r"^(?P<taxonomy_id>\w+)/$",

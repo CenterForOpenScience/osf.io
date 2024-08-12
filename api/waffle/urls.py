@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     re_path(
-        r"^$", views.WaffleList.as_view(), name=views.WaffleList.view_name
+        r"^$",
+        views.WaffleList.as_view(),
+        name=views.WaffleList.view_name,
     ),
 ]

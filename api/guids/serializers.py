@@ -93,7 +93,7 @@ class GuidSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "html": "get_absolute_html_url",
-        }
+        },
     )
 
     def get_type(self, guid):
@@ -133,7 +133,8 @@ class GuidSerializer(JSONAPISerializer):
                     get_referent_view(obj),
                     kwargs={
                         "version": self.context["view"].kwargs.get(
-                            "version", "2"
+                            "version",
+                            "2",
                         ),
                         **view_kwargs,
                     },

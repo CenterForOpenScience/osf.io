@@ -34,7 +34,7 @@ class WikiSerializer(JSONAPISerializer):
         [
             "name",
             "date_modified",
-        ]
+        ],
     )
 
     id = IDField(source="_id", read_only=True)
@@ -48,10 +48,10 @@ class WikiSerializer(JSONAPISerializer):
     date_modified = VersionedDateTimeField(source="modified", read_only=True)
     content_type = ser.SerializerMethodField()
     current_user_can_comment = ser.SerializerMethodField(
-        help_text="Whether the current user is allowed to post comments"
+        help_text="Whether the current user is allowed to post comments",
     )
     extra = ser.SerializerMethodField(
-        help_text="Additional metadata about this wiki"
+        help_text="Additional metadata about this wiki",
     )
 
     user = RelationshipField(
@@ -64,7 +64,7 @@ class WikiSerializer(JSONAPISerializer):
         {
             "info": Link("wikis:wiki-detail", kwargs={"wiki_id": "<_id>"}),
             "download": "get_wiki_content",
-        }
+        },
     )
 
     class Meta:
@@ -151,12 +151,15 @@ class NodeWikiSerializer(WikiSerializer):
 
         if WikiPage.objects.get_for_node(node, name):
             raise Conflict(
-                f"A wiki page with the name '{name}' already exists."
+                f"A wiki page with the name '{name}' already exists.",
             )
 
         try:
             wiki_page = WikiPage.objects.create_for_node(
-                node, name, content, auth
+                node,
+                name,
+                content,
+                auth,
             )
         except (
             NameInvalidError,
@@ -225,7 +228,7 @@ class WikiVersionSerializer(JSONAPISerializer):
         {
             "self": "self_url",
             "download": "get_wiki_content",
-        }
+        },
     )
 
     def self_url(self, obj):

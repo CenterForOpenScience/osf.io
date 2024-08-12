@@ -70,7 +70,7 @@ init_app(set_backends=True, routes=False, attach_request_handlers=False)
 api_settings.load_origins_whitelist()
 django_settings.CORS_ORIGIN_WHITELIST = list(
     set(django_settings.CORS_ORIGIN_WHITELIST)
-    | set(api_settings.ORIGINS_WHITELIST)
+    | set(api_settings.ORIGINS_WHITELIST),
 )
 
 application = get_wsgi_application()

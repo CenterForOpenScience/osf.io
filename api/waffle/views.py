@@ -74,14 +74,14 @@ class WaffleList(JSONAPIBaseView, generics.ListAPIView):
             )
             switches = (
                 Switch.objects.filter(
-                    name__in=query_params["switches"].split(",")
+                    name__in=query_params["switches"].split(","),
                 )
                 if "switches" in query_params
                 else []
             )
             samples = (
                 Sample.objects.filter(
-                    name__in=query_params["samples"].split(",")
+                    name__in=query_params["samples"].split(","),
                 )
                 if "samples" in query_params
                 else []
@@ -93,5 +93,5 @@ class WaffleList(JSONAPIBaseView, generics.ListAPIView):
                     Flag.objects.all(),
                     Switch.objects.all(),
                     Sample.objects.all(),
-                )
+                ),
             )

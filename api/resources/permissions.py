@@ -40,7 +40,8 @@ class ResourcesPermission:
             return proxy_object.is_public or proxy_object.can_view(auth)
 
         return proxy_object.has_permission(
-            auth.user, self.REQUIRED_PERMISSIONS[request.method]
+            auth.user,
+            self.REQUIRED_PERMISSIONS[request.method],
         )
 
 
@@ -54,7 +55,8 @@ class ResourceListPermission(ResourcesPermission, permissions.BasePermission):
 
 
 class ResourceDetailPermission(
-    ResourcesPermission, permissions.BasePermission
+    ResourcesPermission,
+    permissions.BasePermission,
 ):
     """Permissions for the top-level ResourcesDetail endpoint.
 
@@ -65,7 +67,8 @@ class ResourceDetailPermission(
 
 
 class RegistrationResourceListPermission(
-    ResourcesPermission, permissions.BasePermission
+    ResourcesPermission,
+    permissions.BasePermission,
 ):
     """Permissions for the Registration's ResourceList relationship endpoint.
 

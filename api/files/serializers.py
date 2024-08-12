@@ -53,7 +53,7 @@ from api.base.versioning import get_kebab_snake_case_field
 
 class CheckoutField(ser.HyperlinkedRelatedField):
     default_error_messages = {
-        "invalid_data": "Checkout must be either the current user or null"
+        "invalid_data": "Checkout must be either the current user or null",
     }
     json_api_link = True  # serializes to a links object
 
@@ -107,7 +107,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
                     self.display_value(item),
                 )
                 for item in queryset
-            ]
+            ],
         )
 
     def get_queryset(self):
@@ -202,7 +202,7 @@ class BaseFileSerializer(JSONAPISerializer):
             "provider",
             "last_touched",
             "tags",
-        ]
+        ],
     )
     id = IDField(source="_id", read_only=True)
     type = TypeField()
@@ -222,7 +222,8 @@ class BaseFileSerializer(JSONAPISerializer):
         help_text="The unique path used to reference this object",
     )
     size = ser.SerializerMethodField(
-        read_only=True, help_text="The size of this file at this version"
+        read_only=True,
+        help_text="The size of this file at this version",
     )
     provider = ser.CharField(
         read_only=True,
@@ -243,14 +244,16 @@ class BaseFileSerializer(JSONAPISerializer):
         allow_null=True,
     )
     date_created = ser.SerializerMethodField(
-        read_only=True, help_text="Timestamp when the file was created"
+        read_only=True,
+        help_text="Timestamp when the file was created",
     )
     extra = ser.SerializerMethodField(
-        read_only=True, help_text="Additional metadata about this file"
+        read_only=True,
+        help_text="Additional metadata about this file",
     )
     tags = JSONAPIListField(child=FileTagField(), required=False)
     current_user_can_comment = ser.SerializerMethodField(
-        help_text="Whether the current user is allowed to post comments"
+        help_text="Whether the current user is allowed to post comments",
     )
     current_version = ser.IntegerField(
         help_text="Latest file version",
@@ -268,7 +271,7 @@ class BaseFileSerializer(JSONAPISerializer):
         related_view=lambda node: disambiguate_files_related_view(node),
         view_lambda_argument="target",
         related_view_kwargs=lambda filenode: disambiguate_files_related_view_kwargs(
-            filenode
+            filenode,
         ),
         kind="folder",
     )
@@ -296,7 +299,7 @@ class BaseFileSerializer(JSONAPISerializer):
             "render": "get_render_link",
             "html": "absolute_url",
             "new_folder": WaterbutlerLink(must_be_folder=True, kind="folder"),
-        }
+        },
     )
 
     def absolute_url(self, obj):
@@ -314,8 +317,8 @@ class BaseFileSerializer(JSONAPISerializer):
             if obj.provider == "dataverse":
                 url.add(
                     query_params={
-                        "version": obj.history[-1]["extra"]["datasetVersion"]
-                    }
+                        "version": obj.history[-1]["extra"]["datasetVersion"],
+                    },
                 )
             return url.url
 
@@ -324,7 +327,7 @@ class BaseFileSerializer(JSONAPISerializer):
             return get_file_download_link(
                 obj,
                 view_only=self.context["request"].query_params.get(
-                    "view_only"
+                    "view_only",
                 ),
             )
 
@@ -408,12 +411,13 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def update(self, file, validated_data):
         assert isinstance(
-            file, BaseFileNode
+            file,
+            BaseFileNode,
         ), "Instance must be a BaseFileNode"
         if "tags" in validated_data:
             if file.provider != "osfstorage":
                 raise Conflict(
-                    f"File service provider {file.provider} does not support tags on the OSF."
+                    f"File service provider {file.provider} does not support tags on the OSF.",
                 )
             auth = get_user_auth(self.context["request"])
             file.update_tags(set(validated_data.pop("tags", [])), auth=auth)
@@ -421,7 +425,7 @@ class BaseFileSerializer(JSONAPISerializer):
         if "checkout" in validated_data:
             if isinstance(file.target, Registration):
                 raise ValidationError(
-                    "Registration files are static and cannot be checked in or out."
+                    "Registration files are static and cannot be checked in or out.",
                 )
             user = self.context["request"].user
             file.check_in_or_out(user, validated_data.pop("checkout"))
@@ -496,7 +500,7 @@ class OsfStorageFileSerializer(FileSerializer):
             "size",
             "provider",
             "tags",
-        ]
+        ],
     )
 
 
@@ -514,7 +518,8 @@ class FileDetailSerializer(FileSerializer):
         data = super().to_representation(value)
         view = self.context["view"]
         data["data"]["links"]["self"] = absolute_reverse(
-            f"{view.view_category}:{view.view_name}", kwargs=view.kwargs
+            f"{view.view_category}:{view.view_name}",
+            kwargs=view.kwargs,
         )
         guid = Guid.load(view.kwargs["file_id"])
         if guid:
@@ -542,14 +547,16 @@ class FileVersionSerializer(JSONAPISerializer):
             "size",
             "identifier",
             "content_type",
-        ]
+        ],
     )
     id = ser.CharField(read_only=True, source="identifier")
     size = ser.IntegerField(
-        read_only=True, help_text="The size of this file at this version"
+        read_only=True,
+        help_text="The size of this file at this version",
     )
     content_type = ser.CharField(
-        read_only=True, help_text="The mime type of this file at this verison"
+        read_only=True,
+        help_text="The mime type of this file at this verison",
     )
     date_created = VersionedDateTimeField(
         source="created",
@@ -563,7 +570,7 @@ class FileVersionSerializer(JSONAPISerializer):
             "html": "absolute_url",
             "download": "get_download_link",
             "render": "get_render_link",
-        }
+        },
     )
 
     def get_name(self, obj):
@@ -599,7 +606,7 @@ class FileVersionSerializer(JSONAPISerializer):
                 fobj.path.lstrip("/"),
             ),
             query={
-                fobj.version_identifier: obj.identifier
+                fobj.version_identifier: obj.identifier,
             },  # TODO this can probably just be changed to revision or version
         ).url
 
@@ -619,7 +626,9 @@ class FileVersionSerializer(JSONAPISerializer):
         download_url = self.get_download_link(obj)
 
         return get_file_render_link(
-            mfr_url, download_url, version=obj.identifier
+            mfr_url,
+            download_url,
+            version=obj.identifier,
         )
 
 

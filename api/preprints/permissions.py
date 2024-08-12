@@ -28,7 +28,8 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
                     or (
                         obj.is_public
                         and auth.user.has_perm(
-                            "view_submissions", obj.provider
+                            "view_submissions",
+                            obj.provider,
                         )
                     )
                     or obj.has_permission(auth.user, osf_permissions.ADMIN)
@@ -41,7 +42,7 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
         else:
             if not obj.has_permission(auth.user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(
-                    detail="User must be an admin to make these preprint edits."
+                    detail="User must be an admin to make these preprint edits.",
                 )
             return True
 
@@ -58,7 +59,7 @@ class PreprintPublishedOrWrite(PreprintPublishedOrAdmin):
         else:
             if not obj.has_permission(auth.user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(
-                    detail="User must have admin or write permissions to the preprint."
+                    detail="User must have admin or write permissions to the preprint.",
                 )
             return True
 
@@ -149,7 +150,7 @@ class ModeratorIfNeverPublicWithdrawn(permissions.BasePermission):
             if request.method not in permissions.SAFE_METHODS:
                 # Withdrawn preprints should not be editable
                 raise exceptions.PermissionDenied(
-                    detail="Withdrawn preprints may not be edited"
+                    detail="Withdrawn preprints may not be edited",
                 )
             return True
         raise exceptions.NotFound

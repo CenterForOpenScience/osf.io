@@ -78,7 +78,9 @@ class WikiMixin:
 
 
 class WikiDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    WikiMixin,
 ):
     """Details about a specific wiki.
 

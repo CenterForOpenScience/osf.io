@@ -22,7 +22,7 @@ class SchemaSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -47,7 +47,7 @@ class RegistrationSchemaBlockSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     schema = RelationshipField(
@@ -76,7 +76,8 @@ class RegistrationSchemaSerializer(SchemaSerializer):
         @staticmethod
         def get_type(request):
             return get_kebab_snake_case_field(
-                request.version, "registration-schemas"
+                request.version,
+                "registration-schemas",
             )
 
 
@@ -85,7 +86,8 @@ class FileMetadataSchemaSerializer(SchemaSerializer):
         @staticmethod
         def get_type(request):
             return get_kebab_snake_case_field(
-                request.version, "file-metadata-schemas"
+                request.version,
+                "file-metadata-schemas",
             )
 
 

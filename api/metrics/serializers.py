@@ -38,7 +38,9 @@ class PageviewInfoSerializer(ser.Serializer):
     page_url = ser.URLField(max_length=4095, required=True)
     page_title = ser.CharField(max_length=4095, required=False)
     referer_url = ser.URLField(
-        max_length=4095, required=False, allow_blank=True
+        max_length=4095,
+        required=False,
+        allow_blank=True,
     )
     route_name = ser.CharField(max_length=4095, required=False)
 
@@ -62,7 +64,7 @@ class CountedAuthUsageSerializer(ser.Serializer):
         no_page_url = not data.get("pageview_info", {}).get("page_url")
         if no_guid and no_page_url:
             raise ser.ValidationError(
-                f"Either item_guid or pageview_info.page_url is required({data})"
+                f"Either item_guid or pageview_info.page_url is required({data})",
             )
         return data
 

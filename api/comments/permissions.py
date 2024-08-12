@@ -8,7 +8,8 @@ from osf.models import AbstractNode, Comment
 class CanCommentOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, (AbstractNode, Comment)
+            obj,
+            (AbstractNode, Comment),
         ), f"obj must be a Node or Comment, got {obj}"
         auth = get_user_auth(request)
         if isinstance(obj, Comment):
@@ -41,7 +42,8 @@ class CommentReportsPermissions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, (Comment, CommentReport)
+            obj,
+            (Comment, CommentReport),
         ), f"obj must be a Comment or Comment Report, got {obj}"
         auth = get_user_auth(request)
         if isinstance(obj, Comment):

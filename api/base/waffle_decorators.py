@@ -64,7 +64,9 @@ def require_sample(sample_name):
 def check_waffle_object(fn, instance_type, instance_name):
     def check_waffle_object(*args, **kwargs):
         if waffle_feature_is_active(
-            args[0].request, instance_type, instance_name
+            args[0].request,
+            instance_type,
+            instance_name,
         ):
             return fn(*args, **kwargs)
         else:

@@ -106,7 +106,8 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
 
     def __init__(self, *args, **kwargs):
         assert issubclass(
-            self.provider_class, AbstractProvider
+            self.provider_class,
+            AbstractProvider,
         ), "Class must be subclass of AbstractProvider"
         super().__init__(*args, **kwargs)
 
@@ -114,7 +115,7 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
         subscription_id = self.kwargs["subscription_id"]
         if self.kwargs.get("provider_id"):
             provider = self.provider_class.objects.get(
-                _id=self.kwargs.get("provider_id")
+                _id=self.kwargs.get("provider_id"),
             )
             try:
                 obj = NotificationSubscription.objects.get(
@@ -146,7 +147,7 @@ class PreprintProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
 
 
 class RegistrationProviderSubscriptionDetail(
-    AbstractProviderSubscriptionDetail
+    AbstractProviderSubscriptionDetail,
 ):
     provider_class = RegistrationProvider
     serializer_class = RegistrationSubscriptionSerializer

@@ -21,7 +21,7 @@ def validate_user_json(value, json_schema):
     except ValidationError as e:
         if len(e.path) > 1:
             raise InvalidModelValueError(
-                f"For '{e.path[-1]}' the field value {e.message}"
+                f"For '{e.path[-1]}' the field value {e.message}",
             )
         raise InvalidModelValueError(e.message)
     except SchemaError as e:
@@ -34,17 +34,21 @@ def validate_dates(info):
     for history in info:
         if history.get("startYear"):
             start_date = datetime.date(
-                history["startYear"], history.get("startMonth", 1), 1
+                history["startYear"],
+                history.get("startMonth", 1),
+                1,
             )
 
         if not history.get("ongoing"):
             if history.get("endYear"):
                 end_date = datetime.date(
-                    history["endYear"], history.get("endMonth", 1), 1
+                    history["endYear"],
+                    history.get("endMonth", 1),
+                    1,
                 )
 
                 if history.get("startYear"):
                     if (end_date - start_date).days <= 0:
                         raise InvalidModelValueError(
-                            detail="End date must be greater than or equal to the start date."
+                            detail="End date must be greater than or equal to the start date.",
                         )

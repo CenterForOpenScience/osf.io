@@ -19,7 +19,7 @@ class MeetingSerializer(JSONAPISerializer):
         [
             "name",
             "location",
-        ]
+        ],
     )
 
     id = IDField(source="endpoint", read_only=True)
@@ -48,7 +48,7 @@ class MeetingSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "html": "get_absolute_html_url",
-        }
+        },
     )
 
     def format_submission_email(self, obj, submission_field):
@@ -64,7 +64,8 @@ class MeetingSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            "meetings:meeting-detail", kwargs={"meeting_id": obj.endpoint}
+            "meetings:meeting-detail",
+            kwargs={"meeting_id": obj.endpoint},
         )
 
     def get_submissions_count(self, obj):
@@ -83,7 +84,7 @@ class MeetingSubmissionSerializer(NodeSerializer):
             "title",
             "meeting_category",
             "author_name",
-        ]
+        ],
     )
 
     author_name = ser.SerializerMethodField()
@@ -101,12 +102,12 @@ class MeetingSubmissionSerializer(NodeSerializer):
             "self": "get_absolute_url",
             "html": "get_absolute_html_url",
             "download": "get_download_link",
-        }
+        },
     )
 
     def get_author(self, obj):
         contrib_queryset = obj.contributor_set.filter(visible=True).order_by(
-            "_order"
+            "_order",
         )
         if contrib_queryset:
             return contrib_queryset.first().user

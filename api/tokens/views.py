@@ -57,7 +57,8 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         return ApiOAuth2PersonalToken.objects.filter(
-            owner=self.request.user, is_active=True
+            owner=self.request.user,
+            is_active=True,
         )
 
     # overrides ListAPIView
@@ -120,7 +121,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
             obj.deactivate(save=True)
         except cas.CasHTTPError:
             raise APIException(
-                "Could not revoke tokens; please try again later"
+                "Could not revoke tokens; please try again later",
             )
 
     def perform_update(self, serializer):

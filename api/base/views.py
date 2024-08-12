@@ -64,10 +64,14 @@ from waffle import sample_is_active
 class JSONAPIBaseView(generics.GenericAPIView):
     def __init__(self, **kwargs):
         assert getattr(
-            self, "view_name", None
+            self,
+            "view_name",
+            None,
         ), "Must specify view_name on view."
         assert getattr(
-            self, "view_category", None
+            self,
+            "view_category",
+            None,
         ), "Must specify view_category on view."
         self.view_fqn = ":".join([self.view_category, self.view_name])
         super().__init__(**kwargs)
@@ -86,7 +90,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
         def partial(item):
             # resolve must be implemented on the field
             v, view_args, view_kwargs = field.resolve(
-                item, field_name, self.request
+                item,
+                field_name,
+                self.request,
             )
             if not v:
                 return None
@@ -103,7 +109,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 {
                     "request": request,
                     "is_embedded": True,
-                }
+                },
             )
 
             # Setup a view ourselves to avoid all the junk DRF throws in
@@ -149,7 +155,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
                     page = view.paginate_queryset(
-                        getattr(queryset, "_results_cache", None) or queryset
+                        getattr(queryset, "_results_cache", None) or queryset,
                     )
 
                     ret = ser.to_representation(page or queryset)
@@ -180,12 +186,13 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = []
         else:
             embeds = self.request.query_params.getlist(
-                "embed"
+                "embed",
             ) or self.request.query_params.getlist("embed[]")
 
         fields_check = self.get_serializer_class()._declared_fields.copy()
         serializer_class_type = get_meta_type(
-            self.serializer_class, self.request
+            self.serializer_class,
+            self.request,
         )
         if f"fields[{serializer_class_type}]" in self.request.query_params:
             # Check only requested and mandatory fields
@@ -218,7 +225,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
         for embed in embeds:
             embed_field = fields_check.get(embed)
             embeds_partials[embed] = self._get_embed_partial(
-                embed, embed_field
+                embed,
+                embed_field,
             )
 
         context.update(
@@ -226,15 +234,16 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 "enable_esi": (
                     utils.is_truthy(
                         self.request.query_params.get(
-                            "esi", django_settings.ENABLE_ESI
-                        )
+                            "esi",
+                            django_settings.ENABLE_ESI,
+                        ),
                     )
                     and self.request.accepted_renderer.media_type
                     in django_settings.ESI_MEDIA_TYPES
                 ),
                 "embed": embeds_partials,
                 "envelope": self.request.query_params.get("envelope", "data"),
-            }
+            },
         )
         return context
 
@@ -330,7 +339,8 @@ class LinkedNodesRelationship(
             "data": [
                 pointer
                 for pointer in object.linked_nodes.filter(
-                    is_deleted=False, type="osf.node"
+                    is_deleted=False,
+                    type="osf.node",
                 )
                 if pointer.can_view(auth)
             ],
@@ -449,7 +459,8 @@ class LinkedRegistrationsRelationship(
             "data": [
                 pointer
                 for pointer in object.linked_nodes.filter(
-                    is_deleted=False, type="osf.registration"
+                    is_deleted=False,
+                    type="osf.registration",
                 )
                 if pointer.can_view(auth)
             ],
@@ -472,8 +483,9 @@ class LinkedRegistrationsRelationship(
                 # flake8: noqa
                 raise NotFound(
                     detail='Pointer with id "{}" not found in pointers list'.format(
-                        val["id"], collection
-                    )
+                        val["id"],
+                        collection,
+                    ),
                 )
 
     def create(self, *args, **kwargs):
@@ -508,7 +520,7 @@ def root(request, format=None, **kwargs):
         if sample_is_active(name)
     ]
     switches = list(
-        Switch.objects.filter(active=True).values_list("name", flat=True)
+        Switch.objects.filter(active=True).values_list("name", flat=True),
     )
 
     kwargs = request.parser_context["kwargs"]
@@ -523,22 +535,28 @@ def root(request, format=None, **kwargs):
             "nodes": utils.absolute_reverse("nodes:node-list", kwargs=kwargs),
             "users": utils.absolute_reverse("users:user-list", kwargs=kwargs),
             "collections": utils.absolute_reverse(
-                "collections:collection-list", kwargs=kwargs
+                "collections:collection-list",
+                kwargs=kwargs,
             ),
             "registrations": utils.absolute_reverse(
-                "registrations:registration-list", kwargs=kwargs
+                "registrations:registration-list",
+                kwargs=kwargs,
             ),
             "institutions": utils.absolute_reverse(
-                "institutions:institution-list", kwargs=kwargs
+                "institutions:institution-list",
+                kwargs=kwargs,
             ),
             "licenses": utils.absolute_reverse(
-                "licenses:license-list", kwargs=kwargs
+                "licenses:license-list",
+                kwargs=kwargs,
             ),
             "schemas": utils.absolute_reverse(
-                "schemas:registration-schema-list", kwargs=kwargs
+                "schemas:registration-schema-list",
+                kwargs=kwargs,
             ),
             "addons": utils.absolute_reverse(
-                "addons:addon-list", kwargs=kwargs
+                "addons:addon-list",
+                kwargs=kwargs,
             ),
         },
     }
@@ -558,7 +576,7 @@ def status_check(request, format=None, **kwargs):
             "maintenance": MaintenanceStateSerializer(maintenance).data
             if maintenance
             else None,
-        }
+        },
     )
 
 
@@ -621,12 +639,14 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             return node.contributor_set.get(user=user)
         except Contributor.DoesNotExist:
             raise NotFound(
-                f"{user} cannot be found in the list of contributors."
+                f"{user} cannot be found in the list of contributors.",
             )
 
 
 class BaseContributorList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     ordering = ("-user__modified",)
 
@@ -645,11 +665,11 @@ class BaseContributorList(
                     contrib_ids.append(item["id"].split("-")[1])
                 except AttributeError:
                     raise ValidationError(
-                        "Contributor identifier not provided."
+                        "Contributor identifier not provided.",
                     )
                 except IndexError:
                     raise ValidationError(
-                        "Contributor identifier incorrectly formatted."
+                        "Contributor identifier incorrectly formatted.",
                     )
             queryset[:] = [
                 contrib for contrib in queryset if contrib._id in contrib_ids
@@ -665,7 +685,8 @@ class BaseContributorList(
         if field_name == "permission":
             if operation["op"] != "eq":
                 raise InvalidFilterOperator(
-                    value=operation["op"], valid_operators=["eq"]
+                    value=operation["op"],
+                    valid_operators=["eq"],
                 )
             # operation['value'] should be 'admin', 'write', or 'read'
             query_val = operation["value"].lower().strip()
@@ -677,27 +698,31 @@ class BaseContributorList(
                 # If read, return all contributors
                 return Q(
                     user_id__in=resource.contributors.values_list(
-                        "id", flat=True
-                    )
+                        "id",
+                        flat=True,
+                    ),
                 )
             elif query_val == WRITE:
                 # If write, return members of write and admin groups, both groups have write perms
                 return Q(
                     user_id__in=(
                         resource.get_group(WRITE).user_set.values_list(
-                            "id", flat=True
+                            "id",
+                            flat=True,
                         )
                         | resource.get_group(ADMIN).user_set.values_list(
-                            "id", flat=True
+                            "id",
+                            flat=True,
                         )
-                    )
+                    ),
                 )
             elif query_val == ADMIN:
                 # If admin, return only members of admin group
                 return Q(
                     user_id__in=resource.get_group(ADMIN).user_set.values_list(
-                        "id", flat=True
-                    )
+                        "id",
+                        flat=True,
+                    ),
                 )
         return super().build_query_from_field(field_name, operation)
 
@@ -804,8 +829,8 @@ class WaterButlerMixin:
                     {
                         "_history__0__extra__datasetVersion": attrs["extra"][
                             "datasetVersion"
-                        ]
-                    }
+                        ],
+                    },
                 )
 
             try:
@@ -813,7 +838,9 @@ class WaterButlerMixin:
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
                 file_obj = base_class(
-                    target=node, _path=_path, provider=base_class._provider
+                    target=node,
+                    _path=_path,
+                    provider=base_class._provider,
                 )
                 objs_to_create[base_class].append(file_obj)
             else:
@@ -829,7 +856,7 @@ class WaterButlerMixin:
 
         # stuff list into QuerySet
         return BaseFileNode.objects.filter(
-            id__in=[item.id for item in file_objs]
+            id__in=[item.id for item in file_objs],
         )
 
     def get_file_node_from_wb_resp(self, item):
@@ -841,7 +868,8 @@ class WaterButlerMixin:
             if attrs["kind"] == "folder"
             else BaseFileNode.FILE,
         ).get_or_create(
-            self.get_node(check_object_permissions=False), attrs["path"]
+            self.get_node(check_object_permissions=False),
+            attrs["path"],
         )
 
         file_node.update(None, attrs, user=self.request.user)
@@ -860,10 +888,17 @@ class WaterButlerMixin:
         return self.get_node(check_object_permissions=check_object_permissions)
 
     def get_file_object(
-        self, target, path, provider, check_object_permissions=True
+        self,
+        target,
+        path,
+        provider,
+        check_object_permissions=True,
     ):
         obj = get_file_object(
-            target=target, path=path, provider=provider, request=self.request
+            target=target,
+            path=path,
+            provider=provider,
+            request=self.request,
         )
         if provider == "osfstorage":
             if check_object_permissions:
@@ -889,13 +924,16 @@ class DeprecatedView(JSONAPIBaseView):
         if Version(version) > Version(self.max_version):
             self.is_deprecated = True
             raise NotFound(
-                detail=f"This route has been deprecated. It was last available in version {self.max_version}"
+                detail=f"This route has been deprecated. It was last available in version {self.max_version}",
             )
         return version, scheme
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(
-            request, response, *args, **kwargs
+            request,
+            response,
+            *args,
+            **kwargs,
         )
         if self.is_deprecated:
             # Already has the error message

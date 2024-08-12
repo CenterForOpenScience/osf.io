@@ -67,10 +67,11 @@ class TokenHasScope(permissions.BasePermission):
                     "required_read_scopes attribute",
                 )
             assert is_iterable_but_not_string(
-                view.required_read_scopes
+                view.required_read_scopes,
             ), "The required_read_scopes must be an iterable of CoreScopes"
             if view.required_read_scopes and isinstance(
-                view.required_read_scopes[0], tuple
+                view.required_read_scopes[0],
+                tuple,
             ):
                 raise ImproperlyConfigured(
                     "TokenHasScope requires the view to define the "
@@ -88,10 +89,11 @@ class TokenHasScope(permissions.BasePermission):
                     "required_write_scopes attribute",
                 )
             assert is_iterable_but_not_string(
-                view.required_read_scopes
+                view.required_read_scopes,
             ), "The required_write_scopes must be an iterable of CoreScopes"
             if view.required_write_scopes and isinstance(
-                view.required_write_scopes[0], tuple
+                view.required_write_scopes[0],
+                tuple,
             ):
                 raise ImproperlyConfigured(
                     "TokenHasScope requires the view to define the "
@@ -153,7 +155,8 @@ class OwnerOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         """Not applied to all members of a queryset"""
         assert isinstance(
-            obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)
+            obj,
+            (ApiOAuth2Application, ApiOAuth2PersonalToken),
         ), f"obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {obj}"
         return obj.owner.id == request.user.id
 

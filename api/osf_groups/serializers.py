@@ -22,7 +22,7 @@ class GroupSerializer(JSONAPISerializer):
     filterable_fields = frozenset(
         [
             "name",
-        ]
+        ],
     )
 
     non_anonymized_fields = [
@@ -38,7 +38,7 @@ class GroupSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -54,7 +54,8 @@ class GroupSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         group = OSFGroup(
-            creator=validated_data["creator"], name=validated_data["name"]
+            creator=validated_data["creator"],
+            name=validated_data["name"],
         )
         group.save()
         return group
@@ -84,12 +85,12 @@ class GroupMemberSerializer(JSONAPISerializer):
         [
             "role",
             "full_name",
-        ]
+        ],
     )
     writeable_method_fields = frozenset(
         [
             "role",
-        ]
+        ],
     )
     non_anonymized_fields = [
         "type",
@@ -110,7 +111,7 @@ class GroupMemberSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_role(self, user):
@@ -118,7 +119,8 @@ class GroupMemberSerializer(JSONAPISerializer):
 
     def get_unregistered_member(self, obj):
         unclaimed_records = obj.unclaimed_records.get(
-            self.context["group"]._id, None
+            self.context["group"]._id,
+            None,
         )
         if unclaimed_records:
             return unclaimed_records.get("name", None)
@@ -134,7 +136,7 @@ class GroupMemberSerializer(JSONAPISerializer):
         role = validated_data.get("role", default_role)
         if role not in GROUP_ROLES:
             raise exceptions.ValidationError(
-                f"{role} is not a valid role; choose manager or member."
+                f"{role} is not a valid role; choose manager or member.",
             )
         return role
 
@@ -169,7 +171,8 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
         User serializer endpoints should be used to edit user's full_name.
         """
         return GroupMemberSerializer(
-            instance=instance, context=self.context
+            instance=instance,
+            context=self.context,
         ).data
 
     def get_user_object(self, user_id, group):
@@ -177,11 +180,11 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
             user = OSFUser.load(user_id)
             if not user:
                 raise exceptions.NotFound(
-                    detail=f"User with id {user_id} not found."
+                    detail=f"User with id {user_id} not found.",
                 )
             if group.has_permission(user, "member"):
                 raise exceptions.ValidationError(
-                    detail="User is already a member of this group."
+                    detail="User is already a member of this group.",
                 )
             return user
         return user_id
@@ -200,11 +203,14 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
             else:
                 if not full_name or not email:
                     raise exceptions.ValidationError(
-                        detail="You must provide a full_name/email combination to add an unconfirmed member."
+                        detail="You must provide a full_name/email combination to add an unconfirmed member.",
                     )
                 else:
                     user = group.add_unregistered_member(
-                        full_name, email, auth, role
+                        full_name,
+                        email,
+                        auth,
+                        role,
                     )
         except ValueError as e:
             raise exceptions.ValidationError(detail=str(e))

@@ -35,7 +35,9 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         """
         url = remove_query_param(self.request.build_absolute_uri(url), "_")
         paginated_url = replace_query_param(
-            url, self.page_query_param, page_number
+            url,
+            self.page_query_param,
+            page_number,
         )
 
         if page_number == 1:
@@ -91,13 +93,13 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                                             "per_page",
                                             self.page.paginator.per_page,
                                         ),
-                                    ]
+                                    ],
                                 ),
                             ),
-                        ]
+                        ],
                     ),
                 ),
-            ]
+            ],
         )
 
     def get_response_dict(self, data, url):
@@ -110,7 +112,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                         [
                             ("total", self.page.paginator.count),
                             ("per_page", self.page.paginator.per_page),
-                        ]
+                        ],
                     ),
                 ),
                 (
@@ -122,10 +124,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                             ("last", self.get_last_real_link(url)),
                             ("prev", self.get_previous_real_link(url)),
                             ("next", self.get_next_real_link(url)),
-                        ]
+                        ],
                     ),
                 ),
-            ]
+            ],
         )
 
     def get_paginated_response(self, data):
@@ -146,7 +148,8 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
         if self.request.version < "2.1":
             response_dict = self.get_response_dict_deprecated(
-                data, reversed_url
+                data,
+                reversed_url,
             )
         else:
             response_dict = self.get_response_dict(data, reversed_url)
@@ -227,7 +230,9 @@ class CommentPagination(JSONAPIPagination):
                 root_target = Guid.load(target_id)
                 if root_target:
                     page = getattr(
-                        root_target.referent, "root_target_page", None
+                        root_target.referent,
+                        "root_target_page",
+                        None,
                     )
                     if page:
                         if not len(data):
@@ -386,13 +391,13 @@ class SearchPagination(JSONAPIPagination):
                                             "total",
                                             self.get_search_field_total(field),
                                         ),
-                                    ]
+                                    ],
                                 ),
                             ),
-                        ]
+                        ],
                     ),
                 ),
-            ]
+            ],
         )
 
     def get_response_dict(self, data, url):
@@ -422,7 +427,8 @@ class SearchPagination(JSONAPIPagination):
                                 (
                                     "registrations",
                                     self.get_search_field(
-                                        "registration", query
+                                        "registration",
+                                        query,
                                     ),
                                 ),
                                 (
@@ -432,10 +438,11 @@ class SearchPagination(JSONAPIPagination):
                                 (
                                     "institutions",
                                     self.get_search_field(
-                                        "institution", query
+                                        "institution",
+                                        query,
                                     ),
                                 ),
-                            ]
+                            ],
                         ),
                     ),
                     (
@@ -444,7 +451,7 @@ class SearchPagination(JSONAPIPagination):
                             [
                                 ("total", self.page.paginator.count),
                                 ("per_page", self.page.paginator.per_page),
-                            ]
+                            ],
                         ),
                     ),
                     (
@@ -456,10 +463,10 @@ class SearchPagination(JSONAPIPagination):
                                 ("last", self.get_last_real_link(url)),
                                 ("prev", self.get_previous_real_link(url)),
                                 ("next", self.get_next_real_link(url)),
-                            ]
+                            ],
                         ),
                     ),
-                ]
+                ],
             )
 
     def get_response_dict_deprecated(self, data, url):
@@ -489,7 +496,8 @@ class SearchPagination(JSONAPIPagination):
                                 (
                                     "registrations",
                                     self.get_search_field(
-                                        "registration", query
+                                        "registration",
+                                        query,
                                     ),
                                 ),
                                 (
@@ -499,10 +507,11 @@ class SearchPagination(JSONAPIPagination):
                                 (
                                     "institutions",
                                     self.get_search_field(
-                                        "institution", query
+                                        "institution",
+                                        query,
                                     ),
                                 ),
-                            ]
+                            ],
                         ),
                     ),
                     (
@@ -525,11 +534,11 @@ class SearchPagination(JSONAPIPagination):
                                                 "per_page",
                                                 self.page.paginator.per_page,
                                             ),
-                                        ]
+                                        ],
                                     ),
                                 ),
-                            ]
+                            ],
                         ),
                     ),
-                ]
+                ],
             )

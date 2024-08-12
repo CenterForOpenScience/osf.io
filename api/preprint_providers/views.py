@@ -6,7 +6,8 @@ from api.providers import views
 
 
 class DeprecatedPreprintProviderList(
-    DeprecatedView, views.PreprintProviderList
+    DeprecatedView,
+    views.PreprintProviderList,
 ):
     max_version = "2.7"
     view_category = "preprint_providers"
@@ -15,7 +16,8 @@ class DeprecatedPreprintProviderList(
 
 
 class DeprecatedPreprintProviderDetail(
-    DeprecatedView, views.PreprintProviderDetail
+    DeprecatedView,
+    views.PreprintProviderDetail,
 ):
     max_version = "2.7"
     view_category = "preprint_providers"
@@ -24,40 +26,46 @@ class DeprecatedPreprintProviderDetail(
 
 
 class DeprecatedPreprintProviderPreprintList(
-    DeprecatedView, views.PreprintProviderPreprintList
+    DeprecatedView,
+    views.PreprintProviderPreprintList,
 ):
     view_category = "preprint_providers"
     max_version = "2.7"
 
 
 class DeprecatedPreprintProviderTaxonomies(
-    DeprecatedView, views.PreprintProviderTaxonomies
+    DeprecatedView,
+    views.PreprintProviderTaxonomies,
 ):
     view_category = "preprint_providers"
     max_version = "2.7"
 
 
 class DeprecatedPreprintProviderHighlightedSubjectList(
-    DeprecatedView, views.PreprintProviderHighlightedSubjectList
+    DeprecatedView,
+    views.PreprintProviderHighlightedSubjectList,
 ):
     view_category = "preprint_providers"
     max_version = "2.7"
 
 
 class DeprecatedPreprintProviderLicenseList(
-    DeprecatedView, views.PreprintProviderLicenseList
+    DeprecatedView,
+    views.PreprintProviderLicenseList,
 ):
     view_category = "preprint_providers"
     max_version = "2.7"
 
 
 class DeprecatedPreprintProviderModeratorsList(
-    DeprecatedView, views.PreprintProviderModeratorsList
+    DeprecatedView,
+    views.PreprintProviderModeratorsList,
 ):
     max_version = "2.7"
 
 
 class DeprecatedPreprintProviderModeratorsDetail(
-    DeprecatedView, views.PreprintProviderModeratorsDetail
+    DeprecatedView,
+    views.PreprintProviderModeratorsDetail,
 ):
     max_version = "2.7"

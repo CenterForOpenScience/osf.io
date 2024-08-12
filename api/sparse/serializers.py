@@ -22,13 +22,13 @@ class SparseNodeSerializer(NodeSerializer):
             "root",
             "parent",
             "contributors",
-        ]
+        ],
     )
     links = LinksField(
         {
             "self": "get_absolute_url",  # self links will break ember data unless we make a specific sparse detail serializer
             "html": "get_absolute_html_url",
-        }
+        },
     )
     detail = RelationshipField(
         related_view="nodes:node-detail",
@@ -113,14 +113,14 @@ class SparseRegistrationSerializer(RegistrationSerializer):
             "root",
             "tags",
             "title",
-        ]
+        ],
     )
 
     links = LinksField(
         {
             "self": "get_absolute_url",  # self links will break ember data unless we make a specific sparse detail serializer
             "html": "get_absolute_html_url",
-        }
+        },
     )
     detail = RelationshipField(
         related_view="registrations:registration-detail",

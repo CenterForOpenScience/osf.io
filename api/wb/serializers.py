@@ -71,19 +71,21 @@ class WaterbutlerMetadataSerializer(ser.Serializer):
 
         try:
             return self.context["view"].perform_file_action(
-                source, destination, name
+                source,
+                destination,
+                name,
             )
         except IntegrityError:
             raise exceptions.ValidationError(
-                "File already exists with this name."
+                "File already exists with this name.",
             )
         except file_exceptions.FileNodeCheckedOutError:
             raise exceptions.ValidationError(
-                "Cannot move file as it is checked out."
+                "Cannot move file as it is checked out.",
             )
         except file_exceptions.FileNodeIsPrimaryFile:
             raise exceptions.ValidationError(
-                "Cannot move file as it is the primary file of preprint."
+                "Cannot move file as it is the primary file of preprint.",
             )
 
     class Meta:

@@ -30,7 +30,9 @@ from osf.external.chronos.tasks import update_submissions_status_async
 
 
 class ChronosJournalList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -72,14 +74,16 @@ class ChronosJournalDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         try:
             return ChronosJournal.objects.get(
-                journal_id=self.kwargs["journal_id"]
+                journal_id=self.kwargs["journal_id"],
             )
         except ChronosJournal.DoesNotExist:
             raise NotFound
 
 
 class ChronosSubmissionList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -109,10 +113,10 @@ class ChronosSubmissionList(
     def get_default_queryset(self):
         user = get_user_auth(self.request).user
         preprint_contributors = Preprint.load(
-            self.kwargs["preprint_id"]
+            self.kwargs["preprint_id"],
         )._contributors
         queryset = ChronosSubmission.objects.filter(
-            preprint__guids___id=self.kwargs["preprint_id"]
+            preprint__guids___id=self.kwargs["preprint_id"],
         )
 
         # Get the list of stale submissions and queue a task to update them
@@ -121,7 +125,7 @@ class ChronosSubmissionList(
         ).values_list("id", flat=True)
         if len(update_list_id) > 0:
             enqueue_task(
-                update_submissions_status_async.s(list(update_list_id))
+                update_submissions_status_async.s(list(update_list_id)),
             )
 
         # If the user is a contributor on this preprint, show all submissions
@@ -168,14 +172,14 @@ class ChronosSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     def get_object(self):
         try:
             submission = ChronosSubmission.objects.get(
-                publication_id=self.kwargs["submission_id"]
+                publication_id=self.kwargs["submission_id"],
             )
         except ChronosSubmission.DoesNotExist:
             raise NotFound
         else:
             if submission.modified < chronos_submission_stale_time():
                 enqueue_task(
-                    update_submissions_status_async.s([submission.id])
+                    update_submissions_status_async.s([submission.id]),
                 )
             self.check_object_permissions(self.request, submission)
             return submission

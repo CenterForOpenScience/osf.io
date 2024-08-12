@@ -13,14 +13,18 @@ class SubmissionOnPreprintPublishedOrAdmin(permissions.BasePermission):
         if not preprint:
             raise exceptions.NotFound
         return PreprintPublishedOrAdmin().has_object_permission(
-            request, view, preprint
+            request,
+            view,
+            preprint,
         )
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, ChronosSubmission):
             obj = obj.preprint
         return PreprintPublishedOrAdmin().has_object_permission(
-            request, view, obj
+            request,
+            view,
+            obj,
         )
 
 
@@ -28,7 +32,7 @@ class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, ChronosSubmission):
             submission = ChronosSubmission.objects.get(
-                publication_id=view.kwargs.get("submission_id", None)
+                publication_id=view.kwargs.get("submission_id", None),
             )
             auth = get_user_auth(request)
 
@@ -41,7 +45,7 @@ class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
             if request.method == "GET":
                 # Preprints don't have group membership - hence "is_contributor" usage
                 is_preprint_contributor = obj.preprint.is_contributor(
-                    auth.user
+                    auth.user,
                 )
                 user_has_perm = (
                     is_preprint_contributor
@@ -55,7 +59,8 @@ class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
             # Because only preprint admins can update a submission
             if request.method in ["PATCH", "PUT"]:
                 is_preprint_admin = obj.preprint.has_permission(
-                    auth.user, osf_permissions.ADMIN
+                    auth.user,
+                    osf_permissions.ADMIN,
                 )
                 user_has_perm = is_preprint_admin
                 if not user_has_perm:

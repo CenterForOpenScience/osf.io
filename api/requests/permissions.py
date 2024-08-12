@@ -111,10 +111,12 @@ class PreprintRequestPermission(drf_permissions.BasePermission):
             or trigger == DefaultTriggers.SUBMIT.value
         )
         is_preprint_admin = preprint.has_permission(
-            auth.user, osf_permissions.ADMIN
+            auth.user,
+            osf_permissions.ADMIN,
         )
         is_moderator = auth.user.has_perm(
-            "withdraw_submissions", preprint.provider
+            "withdraw_submissions",
+            preprint.provider,
         )
         has_view_permission = is_requester or is_preprint_admin or is_moderator
 

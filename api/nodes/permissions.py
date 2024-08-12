@@ -237,7 +237,8 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
             # If deleting an OSF group from a node, you either need admin perms
             # or you need to be an OSF group manager
             return node.has_permission(
-                auth.user, osf_permissions.ADMIN
+                auth.user,
+                osf_permissions.ADMIN,
             ) or obj.has_permission(auth.user, "manage")
         else:
             return node.has_permission(auth.user, osf_permissions.ADMIN)
@@ -250,10 +251,10 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         parent_node = AbstractNode.load(
-            request.parser_context["kwargs"]["node_id"]
+            request.parser_context["kwargs"]["node_id"],
         )
         pointer_node = NodeRelation.load(
-            request.parser_context["kwargs"]["node_link_id"]
+            request.parser_context["kwargs"]["node_link_id"],
         ).child
         if request.method in permissions.SAFE_METHODS:
             has_parent_auth = parent_node.can_view(auth)
@@ -286,8 +287,8 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
                 if not node or node.is_collection:
                     raise exceptions.NotFound(
                         detail='Node with id "{}" was not found'.format(
-                            pointer["id"]
-                        )
+                            pointer["id"],
+                        ),
                     )
                 pointer_nodes.append(node)
             has_pointer_auth = True
@@ -301,10 +302,10 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
 class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         node_link = NodeRelation.load(
-            request.parser_context["kwargs"]["node_link_id"]
+            request.parser_context["kwargs"]["node_link_id"],
         )
         node = AbstractNode.load(
-            request.parser_context["kwargs"][view.node_lookup_url_kwarg]
+            request.parser_context["kwargs"][view.node_lookup_url_kwarg],
         )
         auth = get_user_auth(request)
         if request.method == "DELETE" and node.is_registration:
@@ -342,7 +343,7 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
 
         if not isinstance(obj, AbstractNode):
             obj = AbstractNode.load(
-                request.parser_context["kwargs"][view.node_lookup_url_kwarg]
+                request.parser_context["kwargs"][view.node_lookup_url_kwarg],
             )
         assert_resource_type(obj, self.acceptable_models)
         if obj.is_registration:

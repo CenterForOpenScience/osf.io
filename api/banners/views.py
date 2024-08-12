@@ -64,7 +64,9 @@ class BannerMedia(JSONAPIBaseView):
 
     def get_object(self):
         return get_object_or_error(
-            BannerImage, Q(filename=self.kwargs.get("filename")), self.request
+            BannerImage,
+            Q(filename=self.kwargs.get("filename")),
+            self.request,
         )
 
     def get(self, request, *args, **kwargs):

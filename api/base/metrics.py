@@ -26,7 +26,7 @@ class MetricsViewMixin:
 
     # Adapted from FilterMixin.QUERY_PATTERN
     METRICS_QUERY_PATTERN = re.compile(
-        r"^metrics\[(?P<metric_name>((?:,*\s*\w+)*))\]$"
+        r"^metrics\[(?P<metric_name>((?:,*\s*\w+)*))\]$",
     )
     TIMEDELTA_MAP = {
         "daily": timedelta(hours=24),
@@ -45,15 +45,19 @@ class MetricsViewMixin:
     @property
     def metric_map(self):
         raise NotImplementedError(
-            "MetricsViewMixin sublcasses must define a metric_map class variable."
+            "MetricsViewMixin sublcasses must define a metric_map class variable.",
         )
 
     def get_annotated_queryset_with_metrics(
-        self, queryset, metric_class, metric_name, after
+        self,
+        queryset,
+        metric_class,
+        metric_name,
+        after,
     ):
         """Return a queryset annotated with metrics. Use for list endpoints that expose metrics."""
         raise NotImplementedError(
-            "MetricsViewMixin subclasses must define get_annotated_queryset_with_metrics()."
+            "MetricsViewMixin subclasses must define get_annotated_queryset_with_metrics().",
         )
 
     def add_metric_to_object(self, obj, metric_class, metric_name, after):
@@ -61,7 +65,7 @@ class MetricsViewMixin:
         Return the modified object.
         """
         raise NotImplementedError(
-            "MetricsViewMixin subclasses must define add_metric_to_object()."
+            "MetricsViewMixin subclasses must define add_metric_to_object().",
         )
 
     @property
@@ -74,7 +78,7 @@ class MetricsViewMixin:
     @property
     def metrics_requested(self):
         return waffle.switch_is_active(
-            features.ELASTICSEARCH_METRICS
+            features.ELASTICSEARCH_METRICS,
         ) and bool(self.parse_metric_query_params(self.request.query_params))
 
     # Adapted from FilterMixin.parse_query_params
@@ -105,7 +109,7 @@ class MetricsViewMixin:
         This is used to share code between add_metric_to_object and get_metrics_queryset.
         """
         metrics_requested = self.parse_metric_query_params(
-            self.request.query_params
+            self.request.query_params,
         )
         if metrics_requested:
             metric_map = self.metric_map
@@ -126,7 +130,10 @@ class MetricsViewMixin:
                 else:
                     after = timezone.now() - self.TIMEDELTA_MAP[period]
                 queryset_or_obj = method(
-                    queryset_or_obj, metric_class, metric, after
+                    queryset_or_obj,
+                    metric_class,
+                    metric,
+                    after,
                 )
         return queryset_or_obj
 
@@ -137,7 +144,8 @@ class MetricsViewMixin:
     def get_metrics_queryset(self, queryset):
         """Helper method used for list views."""
         return self._add_metrics(
-            queryset, method=self.get_annotated_queryset_with_metrics
+            queryset,
+            method=self.get_annotated_queryset_with_metrics,
         )
 
     # Override get_default_queryset for convenience

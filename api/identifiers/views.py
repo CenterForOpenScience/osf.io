@@ -26,7 +26,9 @@ from osf.models import Node, Registration, Preprint, Identifier
 
 
 class IdentifierList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
 ):
     permission_classes = (
         IsPublic,

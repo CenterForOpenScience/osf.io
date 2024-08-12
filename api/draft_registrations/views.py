@@ -76,7 +76,8 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 
 
 class DraftRegistrationDetail(
-    NodeDraftRegistrationDetail, DraftRegistrationMixin
+    NodeDraftRegistrationDetail,
+    DraftRegistrationMixin,
 ):
     permission_classes = (
         ContributorOrPublic,
@@ -114,7 +115,8 @@ class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
 
 
 class DraftInstitutionsRelationship(
-    NodeInstitutionsRelationship, DraftRegistrationMixin
+    NodeInstitutionsRelationship,
+    DraftRegistrationMixin,
 ):
     permission_classes = (
         ContributorOrPublic,
@@ -148,7 +150,8 @@ class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
 
 
 class DraftSubjectsRelationship(
-    SubjectRelationshipBaseView, DraftRegistrationMixin
+    SubjectRelationshipBaseView,
+    DraftRegistrationMixin,
 ):
     permission_classes = (
         ContributorOrPublic,
@@ -167,7 +170,7 @@ class DraftSubjectsRelationship(
     def get_resource(self, check_object_permissions=True):
         # Overrides SubjectRelationshipBaseView
         return self.get_draft(
-            check_object_permissions=check_object_permissions
+            check_object_permissions=check_object_permissions,
         )
 
 
@@ -191,7 +194,7 @@ class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
         # Overrides NodeContributorsList
         draft = self.get_draft()
         return draft.draftregistrationcontributor_set.all().prefetch_related(
-            "user__guids"
+            "user__guids",
         )
 
     # overrides NodeContributorsList
@@ -239,11 +242,11 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
         self.check_object_permissions(self.request, user)
         try:
             return draft_registration.draftregistrationcontributor_set.get(
-                user=user
+                user=user,
             )
         except DraftRegistrationContributor.DoesNotExist:
             raise exceptions.NotFound(
-                f"{user} cannot be found in the list of contributors."
+                f"{user} cannot be found in the list of contributors.",
             )
 
     def get_serializer_context(self):
@@ -260,7 +263,7 @@ class DraftBibliographicContributorsList(DraftContributorsList):
         # Overrides NodeContributorsList
         draft = self.get_draft()
         return draft.draftregistrationcontributor_set.filter(
-            visible=True
+            visible=True,
         ).prefetch_related("user__guids")
 
     # Override to prevent use DraftRegistrationContributorsCreateSerializer, this endpoint is read-only

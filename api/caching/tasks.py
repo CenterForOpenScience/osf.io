@@ -29,7 +29,7 @@ def get_bannable_urls(instance):
 
     if not hasattr(instance, "absolute_api_v2_url"):
         logger.warning(
-            f"Tried to ban {instance.__class__}:{instance} but it didn't have a absolute_api_v2_url method"
+            f"Tried to ban {instance.__class__}:{instance} but it didn't have a absolute_api_v2_url method",
         )
         return [], ""
 
@@ -46,7 +46,7 @@ def get_bannable_urls(instance):
         if isinstance(instance, Comment):
             try:
                 parsed_target_url = urlparse(
-                    instance.target.referent.absolute_api_v2_url
+                    instance.target.referent.absolute_api_v2_url,
                 )
             except AttributeError:
                 # some referents don't have an absolute_api_v2_url
@@ -63,7 +63,7 @@ def get_bannable_urls(instance):
 
             try:
                 parsed_root_target_url = urlparse(
-                    instance.root_target.referent.absolute_api_v2_url
+                    instance.root_target.referent.absolute_api_v2_url,
                 )
             except AttributeError:
                 # some root_targets don't have an absolute_api_v2_url
@@ -150,7 +150,9 @@ def update_storage_usage_cache(target_id, target_guid, per_page=500000):
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
     storage_usage_cache.set(
-        key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT
+        key,
+        storage_usage_total,
+        settings.STORAGE_USAGE_CACHE_TIMEOUT,
     )
 
 
@@ -212,7 +214,7 @@ def update_storage_usage_with_size(payload):
 
     elif action in "move":
         source_node = AbstractNode.load(
-            payload["source"]["nid"]
+            payload["source"]["nid"],
         )  # Getting the 'from' node
 
         source_provider = payload["source"]["provider"]
@@ -229,10 +231,12 @@ def update_storage_usage_with_size(payload):
             source_node_usage = max(source_node_usage - target_file_size, 0)
 
             key = cache_settings.STORAGE_USAGE_KEY.format(
-                target_id=source_node._id
+                target_id=source_node._id,
             )
             storage_usage_cache.set(
-                key, source_node_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT
+                key,
+                source_node_usage,
+                settings.STORAGE_USAGE_CACHE_TIMEOUT,
             )
 
         current_usage += target_file_size
@@ -244,5 +248,7 @@ def update_storage_usage_with_size(payload):
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_node._id)
     storage_usage_cache.set(
-        key, current_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT
+        key,
+        current_usage,
+        settings.STORAGE_USAGE_CACHE_TIMEOUT,
     )

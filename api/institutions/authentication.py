@@ -139,7 +139,7 @@ class InstitutionAuthentication(BaseAuthentication):
             jwe.exceptions.MalformedData,
         ):
             raise AuthenticationFailed(
-                detail="InstitutionSsoRequestNotAuthorized"
+                detail="InstitutionSsoRequestNotAuthorized",
             )
 
         # Load institution and user data
@@ -189,7 +189,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 logger.error(message)
                 sentry.log_message(message)
                 raise PermissionDenied(
-                    detail="InstitutionSsoSelectiveLoginDenied"
+                    detail="InstitutionSsoSelectiveLoginDenied",
                 )
             # Selective SSO: login allowed
             logger.info(
@@ -236,7 +236,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     f'sso_email={sso_email}, sso_identity={sso_identity}]',
                 )
                 secondary_institution = Institution.load(
-                    secondary_institution_id
+                    secondary_institution_id,
                 )
                 if not secondary_institution:
                     # Log errors and inform Sentry but do not raise an exception if OSF fails
@@ -303,7 +303,7 @@ class InstitutionAuthentication(BaseAuthentication):
             try:
                 drf.check_user(user)
                 logger.info(
-                    f"Institution SSO: user status - active {sso_user_info}"
+                    f"Institution SSO: user status - active {sso_user_info}",
                 )
             except exceptions.UnclaimedAccountError:
                 # Unclaimed user (i.e. a user that has been added as an unregistered contributor)
@@ -313,7 +313,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 # contributor. Thus, a random usable password must be assigned during activation.
                 new_password_required = True
                 logger.warning(
-                    f"Institution SSO: user status - unclaimed contributor {sso_user_info}"
+                    f"Institution SSO: user status - unclaimed contributor {sso_user_info}",
                 )
             except exceptions.UnconfirmedAccountError:
                 if user.has_usable_password():
@@ -325,7 +325,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     # (if he is not the real person) can not access the account after activation.
                     new_password_required = True
                     logger.warning(
-                        f"Institution SSO: user status - unconfirmed user {sso_user_info}"
+                        f"Institution SSO: user status - unconfirmed user {sso_user_info}",
                     )
                 else:
                     # Login take-over has not been implemented for unconfirmed user created via
@@ -337,7 +337,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     sentry.log_message(message)
                     logger.error(message)
                     raise PermissionDenied(
-                        detail="InstitutionSsoAccountInactive"
+                        detail="InstitutionSsoAccountInactive",
                     )
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
@@ -392,7 +392,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 domain=DOMAIN,
                 osf_support_email=OSF_SUPPORT_EMAIL,
                 storage_flag_is_active=waffle.flag_is_active(
-                    request, features.STORAGE_I18N
+                    request,
+                    features.STORAGE_I18N,
                 ),
             )
 
@@ -417,7 +418,7 @@ class InstitutionAuthentication(BaseAuthentication):
             duplicate_user.remove_sso_identity_from_affiliation(institution)
             if secondary_institution:
                 duplicate_user.remove_sso_identity_from_affiliation(
-                    secondary_institution
+                    secondary_institution,
                 )
             send_mail(
                 to_addr=user.username,
@@ -456,7 +457,7 @@ class InstitutionAuthentication(BaseAuthentication):
             ):
                 try:
                     user_settings.default_region = institution_region_list.get(
-                        institutionstorageregion__is_preferred=True
+                        institutionstorageregion__is_preferred=True,
                     )
                     user_settings.save()
                 except Region.DoesNotExist:

@@ -49,11 +49,12 @@ class ReviewableCountsRelationshipField(RelationshipField):
 
         # Make counts opt-in
         show_counts = utils.is_truthy(
-            self.context["request"].query_params.get("related_counts", False)
+            self.context["request"].query_params.get("related_counts", False),
         )
         # Only include counts on detail routes
         is_detail = self.context.get("view") and not isinstance(
-            self.context["view"], generics.ListAPIView
+            self.context["view"],
+            generics.ListAPIView,
         )
         # Weird hack to avoid being called twice
         # get_meta_information is called with both self.related_meta and self.self_meta.
@@ -113,7 +114,7 @@ class BaseActionSerializer(JSONAPISerializer):
             "date_created",
             "date_modified",
             "target",
-        ]
+        ],
     )
 
     id = ser.CharField(source="_id", read_only=True)
@@ -121,11 +122,15 @@ class BaseActionSerializer(JSONAPISerializer):
     trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
     comment = ser.CharField(
-        max_length=65535, required=False, allow_blank=True, allow_null=True
+        max_length=65535,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
     )
 
     from_state = ser.ChoiceField(
-        choices=DefaultStates.choices(), read_only=True
+        choices=DefaultStates.choices(),
+        read_only=True,
     )
     to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
 
@@ -187,7 +192,8 @@ class BaseActionSerializer(JSONAPISerializer):
             raise Conflict(str(e))
         else:
             raise JSONAPIAttributeException(
-                attribute="trigger", detail="Invalid trigger."
+                attribute="trigger",
+                detail="Invalid trigger.",
             )
 
     class Meta:
@@ -209,15 +215,16 @@ class ReviewActionSerializer(BaseActionSerializer):
             "date_modified",
             "provider",
             "target",
-        ]
+        ],
     )
 
     comment = HideIfProviderCommentsPrivate(
-        ser.CharField(max_length=65535, required=False)
+        ser.CharField(max_length=65535, required=False),
     )
     trigger = ser.ChoiceField(choices=ReviewTriggers.choices())
     from_state = ser.ChoiceField(
-        choices=ReviewStates.choices(), read_only=True
+        choices=ReviewStates.choices(),
+        read_only=True,
     )
     to_state = ser.ChoiceField(choices=ReviewStates.choices(), read_only=True)
 
@@ -260,7 +267,8 @@ class ReviewActionSerializer(BaseActionSerializer):
             raise Conflict(str(e))
         else:
             raise JSONAPIAttributeException(
-                attribute="trigger", detail="Invalid trigger."
+                attribute="trigger",
+                detail="Invalid trigger.",
             )
 
 
@@ -277,7 +285,8 @@ class NodeRequestActionSerializer(BaseActionSerializer):
     )
 
     permissions = ser.ChoiceField(
-        choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False
+        choices=permissions.API_CONTRIBUTOR_PERMISSIONS,
+        required=False,
     )
     visible = ser.BooleanField(default=True, required=False)
 
@@ -300,11 +309,12 @@ class RegistrationActionSerializer(BaseActionSerializer):
         type_ = "review-actions"
 
     permissions = ser.ChoiceField(
-        choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False
+        choices=permissions.API_CONTRIBUTOR_PERMISSIONS,
+        required=False,
     )
     visible = ser.BooleanField(default=True, required=False)
     trigger = ser.ChoiceField(
-        choices=RegistrationModerationTriggers.char_field_choices()
+        choices=RegistrationModerationTriggers.char_field_choices(),
     )
 
     target = TargetRelationshipField(
@@ -347,7 +357,8 @@ class RegistrationActionSerializer(BaseActionSerializer):
                 )
             else:
                 raise JSONAPIAttributeException(
-                    attribute="trigger", detail="Invalid trigger."
+                    attribute="trigger",
+                    detail="Invalid trigger.",
                 )
         except InvalidTriggerError:
             # Invalid transition from the current state
@@ -362,15 +373,15 @@ class RegistrationActionSerializer(BaseActionSerializer):
             )
         except PermissionsError:
             raise PermissionDenied(
-                "You do not have permission to perform this trigger at this time"
+                "You do not have permission to perform this trigger at this time",
             )
         except ValueError:
             raise PermissionDenied(
-                "You do not have permission to perform this trigger at this time"
+                "You do not have permission to perform this trigger at this time",
             )
         except MachineError:
             raise PermissionDenied(
-                "You do not have permission to perform this trigger at this time"
+                "You do not have permission to perform this trigger at this time",
             )
 
         target.refresh_from_db()
@@ -395,11 +406,12 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         type_ = "schema-response-actions"
 
     permissions = ser.ChoiceField(
-        choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False
+        choices=permissions.API_CONTRIBUTOR_PERMISSIONS,
+        required=False,
     )
     visible = ser.BooleanField(default=True, required=False)
     trigger = ser.ChoiceField(
-        choices=SchemaResponseTriggers.char_field_choices()
+        choices=SchemaResponseTriggers.char_field_choices(),
     )
 
     target = TargetRelationshipField(
@@ -423,7 +435,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
                 required_approvers = [
                     user.id
                     for user, node in target.parent.get_admin_contributors_recursive(
-                        unique_users=True
+                        unique_users=True,
                     )
                 ]
                 target.submit(
@@ -441,7 +453,8 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
                 target.reject(user=user, comment=comment)
             else:
                 raise JSONAPIAttributeException(
-                    attribute="trigger", detail="Invalid trigger."
+                    attribute="trigger",
+                    detail="Invalid trigger.",
                 )
         except PermissionsError as exc:
             raise PermissionDenied(exc)

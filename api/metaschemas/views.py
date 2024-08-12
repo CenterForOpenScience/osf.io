@@ -7,7 +7,8 @@ from api.schemas.serializers import (
 
 
 class DeprecatedRegistrationMetaSchemaList(
-    DeprecatedView, views.RegistrationSchemaList
+    DeprecatedView,
+    views.RegistrationSchemaList,
 ):
     max_version = "2.8"
     view_category = "registration-metaschemas"
@@ -16,7 +17,8 @@ class DeprecatedRegistrationMetaSchemaList(
 
 
 class DeprecatedRegistrationMetaSchemaDetail(
-    DeprecatedView, views.RegistrationSchemaDetail
+    DeprecatedView,
+    views.RegistrationSchemaDetail,
 ):
     max_version = "2.8"
     view_category = "registration-metaschemas"
@@ -34,7 +36,8 @@ class DeprecatedMetaSchemasList(DeprecatedView, views.RegistrationSchemaList):
 
 
 class DeprecatedMetaSchemaDetail(
-    DeprecatedView, views.RegistrationSchemaDetail
+    DeprecatedView,
+    views.RegistrationSchemaDetail,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read)."""
 

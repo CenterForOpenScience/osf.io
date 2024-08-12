@@ -71,7 +71,7 @@ class CedarMetadataRecordDetail(JSONAPIBaseView, RetrieveUpdateDestroyAPIView):
     def get_object(self):
         try:
             record = CedarMetadataRecord.objects.get(
-                _id=self.kwargs["record_id"]
+                _id=self.kwargs["record_id"],
             )
         except CedarMetadataRecord.DoesNotExist:
             raise NotFound
@@ -98,7 +98,7 @@ class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
     def get_object(self):
         try:
             record = CedarMetadataRecord.objects.get(
-                _id=self.kwargs["record_id"]
+                _id=self.kwargs["record_id"],
             )
         except CedarMetadataRecord.DoesNotExist:
             raise NotFound
@@ -114,6 +114,6 @@ class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
         return Response(
             record.metadata,
             headers={
-                "Content-Disposition": f"attachment; filename={file_name}"
+                "Content-Disposition": f"attachment; filename={file_name}",
             },
         )

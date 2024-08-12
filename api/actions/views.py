@@ -101,7 +101,7 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         ):
             # No permissions allow for viewing RequestActions yet
             raise PermissionDenied(
-                "You do not have permission to view this Action"
+                "You do not have permission to view this Action",
             )
 
         # Query all Action classes that aren't deleted
@@ -110,8 +110,9 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             for action_subclass in BaseAction.__subclasses__()
         ] + [
             CollectionSubmissionAction.objects.filter(
-                _id=action_id, deleted__isnull=True
-            )
+                _id=action_id,
+                deleted__isnull=True,
+            ),
         ]
         if action_querysets:
             action = [
@@ -132,7 +133,9 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class ReviewActionListCreate(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
 ):
     """List of review actions viewable by this user
 
@@ -219,7 +222,9 @@ class ReviewActionListCreate(
     # overrides ListFilterMixin
     def get_default_queryset(self):
         provider_queryset = get_objects_for_user(
-            self.request.user, "view_actions", PreprintProvider
+            self.request.user,
+            "view_actions",
+            PreprintProvider,
         )
         return get_review_actions_queryset().filter(
             target__node__is_public=True,
@@ -232,7 +237,9 @@ class ReviewActionListCreate(
 
 
 class NodeRequestActionCreate(
-    JSONAPIBaseView, generics.CreateAPIView, NodeRequestMixin
+    JSONAPIBaseView,
+    generics.CreateAPIView,
+    NodeRequestMixin,
 ):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
@@ -261,7 +268,9 @@ class NodeRequestActionCreate(
 
 
 class PreprintRequestActionCreate(
-    JSONAPIBaseView, generics.CreateAPIView, PreprintRequestMixin
+    JSONAPIBaseView,
+    generics.CreateAPIView,
+    PreprintRequestMixin,
 ):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,

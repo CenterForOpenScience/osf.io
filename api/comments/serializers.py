@@ -37,7 +37,7 @@ class CommentSerializer(JSONAPISerializer):
             "date_modified",
             "page",
             "target",
-        ]
+        ],
     )
 
     id = IDField(source="_id", read_only=True)
@@ -64,22 +64,24 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = VersionedDateTimeField(source="modified", read_only=True)
     modified = ser.BooleanField(source="edited", read_only=True, default=False)
     deleted = ser.BooleanField(
-        read_only=True, source="is_deleted", default=False
+        read_only=True,
+        source="is_deleted",
+        default=False,
     )
     is_abuse = ser.SerializerMethodField(
-        help_text="If the comment has been reported or confirmed."
+        help_text="If the comment has been reported or confirmed.",
     )
     is_ham = ser.SerializerMethodField(
-        help_text="Comment has been confirmed as ham."
+        help_text="Comment has been confirmed as ham.",
     )
     has_report = ser.SerializerMethodField(
-        help_text="If the user reported this comment."
+        help_text="If the user reported this comment.",
     )
     has_children = ser.SerializerMethodField(
-        help_text="Whether this comment has any replies."
+        help_text="Whether this comment has any replies.",
     )
     can_edit = ser.SerializerMethodField(
-        help_text="Whether the current user can edit this comment."
+        help_text="Whether the current user can edit this comment.",
     )
 
     # LinksField.to_representation adds link to "self"
@@ -98,7 +100,8 @@ class CommentSerializer(JSONAPISerializer):
         if user.is_anonymous:
             return False
         return user._id in obj.reports and not obj.reports[user._id].get(
-            "retracted", True
+            "retracted",
+            True,
         )
 
     def get_is_abuse(self, obj):
@@ -142,7 +145,7 @@ class CommentSerializer(JSONAPISerializer):
                     comment.undelete(auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied(
-                        "Not authorized to undelete this comment."
+                        "Not authorized to undelete this comment.",
                     )
             elif (
                 validated_data.get("is_deleted", None) is True
@@ -152,7 +155,7 @@ class CommentSerializer(JSONAPISerializer):
                     comment.delete(auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied(
-                        "Not authorized to delete this comment."
+                        "Not authorized to delete this comment.",
                     )
             elif "get_content" in validated_data:
                 content = validated_data.pop("get_content")
@@ -160,7 +163,7 @@ class CommentSerializer(JSONAPISerializer):
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied(
-                        "Not authorized to edit this comment."
+                        "Not authorized to edit this comment.",
                     )
                 except ModelValidationError as err:
                     raise ValidationError(err.messages[0])
@@ -170,7 +173,7 @@ class CommentSerializer(JSONAPISerializer):
         if not getattr(obj.referent, "target_type", None):
             raise InvalidModelValueError(
                 source={
-                    "pointer": "/data/relationships/target/links/related/meta/type"
+                    "pointer": "/data/relationships/target/links/related/meta/type",
                 },
                 detail="Invalid comment target type.",
             )
@@ -210,7 +213,7 @@ class NodeCommentSerializer(CommentSerializer):
 
 class CommentCreateSerializer(CommentSerializer):
     target_type = ser.SerializerMethodField(
-        method_name="get_validated_target_type"
+        method_name="get_validated_target_type",
     )
 
     def get_validated_target_type(self, obj):
@@ -221,7 +224,7 @@ class CommentCreateSerializer(CommentSerializer):
             raise Conflict(
                 detail=(
                     f'The target resource has a type of "{expected_target_type}", but you set the json body\'s type field to "{target_type}".  You probably need to change the type field to match the target resource\'s type.'
-                )
+                ),
             )
         return target_type
 
@@ -236,7 +239,7 @@ class CommentCreateSerializer(CommentSerializer):
             and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE
         ):
             raise ValueError(
-                "Comments are not supported for this file provider."
+                "Comments are not supported for this file provider.",
             )
         return target
 
@@ -259,7 +262,7 @@ class CommentCreateSerializer(CommentSerializer):
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:
             raise PermissionDenied(
-                "Not authorized to comment on this project."
+                "Not authorized to comment on this project.",
             )
         except ModelValidationError as err:
             raise ValidationError(err.messages[0])
@@ -303,7 +306,8 @@ class CommentReportSerializer(JSONAPISerializer):
         @staticmethod
         def get_type(request):
             return get_kebab_snake_case_field(
-                request.version, "comment-reports"
+                request.version,
+                "comment-reports",
             )
 
     def get_absolute_url(self, obj):
@@ -324,7 +328,8 @@ class CommentReportSerializer(JSONAPISerializer):
         user = self.context["request"].user
         comment = self.context["view"].get_comment()
         if user._id in comment.reports and not comment.reports[user._id].get(
-            "retracted", True
+            "retracted",
+            True,
         ):
             raise ValidationError("Comment already reported.")
         try:
@@ -338,7 +343,7 @@ class CommentReportSerializer(JSONAPISerializer):
         comment = self.context["view"].get_comment()
         if user._id != comment_report._id:
             raise ValidationError(
-                "You cannot report a comment on behalf of another user."
+                "You cannot report a comment on behalf of another user.",
             )
         try:
             comment.report_abuse(user, save=True, **validated_data)

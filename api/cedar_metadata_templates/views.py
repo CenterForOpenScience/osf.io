@@ -14,7 +14,9 @@ from osf.models import CedarMetadataTemplate
 
 
 class CedarMetadataTemplateList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -56,7 +58,7 @@ class CedarMetadataTemplateDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         try:
             return CedarMetadataTemplate.objects.get(
-                _id=self.kwargs["template_id"]
+                _id=self.kwargs["template_id"],
             )
         except CedarMetadataTemplate.DoesNotExist:
             raise NotFound

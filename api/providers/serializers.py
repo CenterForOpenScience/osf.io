@@ -54,7 +54,7 @@ class ProviderSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "external_url": "get_external_url",
-        }
+        },
     )
 
     subjects = TypedRelationshipField(
@@ -66,7 +66,7 @@ class ProviderSerializer(JSONAPISerializer):
         related_view="providers:highlighted-subject-list",
         related_view_kwargs={"provider_id": "<_id>"},
         related_meta={
-            "has_highlighted_subjects": "get_has_highlighted_subjects"
+            "has_highlighted_subjects": "get_has_highlighted_subjects",
         },
     )
     access_requests_enabled = ShowIfVersion(
@@ -89,7 +89,7 @@ class ProviderSerializer(JSONAPISerializer):
             related_view="providers:highlighted-taxonomy-list",
             related_view_kwargs={"provider_id": "<_id>"},
             related_meta={
-                "has_highlighted_subjects": "get_has_highlighted_subjects"
+                "has_highlighted_subjects": "get_has_highlighted_subjects",
             },
         ),
         min_version="2.0",
@@ -141,7 +141,8 @@ class CollectionProviderSerializer(ProviderSerializer):
         related_view_kwargs={"provider_id": "<_id>"},
     )
     reviews_workflow = ser.ChoiceField(
-        choices=Workflows.choices(), read_only=True
+        choices=Workflows.choices(),
+        read_only=True,
     )
 
     subscriptions = RelationshipField(
@@ -158,7 +159,7 @@ class CollectionProviderSerializer(ProviderSerializer):
             "domain_redirect_enabled",
             "id",
             "name",
-        ]
+        ],
     )
 
 
@@ -195,11 +196,12 @@ class RegistrationProviderSerializer(ProviderSerializer):
             "name",
             "reviews_workflow",
             "permissions",
-        ]
+        ],
     )
 
     reviews_workflow = ser.ChoiceField(
-        choices=Workflows.choices(), read_only=True
+        choices=Workflows.choices(),
+        read_only=True,
     )
     reviews_comments_anonymous = ser.BooleanField(read_only=True)
     allow_updates = ser.BooleanField(read_only=True)
@@ -219,7 +221,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
         {
             "self": "get_absolute_url",
             "external_url": "get_external_url",
-        }
+        },
     )
 
 
@@ -240,13 +242,13 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
             "reviews_workflow",
             "permissions",
             "advertise_on_discover_page",
-        ]
+        ],
     )
     available_metrics = frozenset(
         [
             "downloads",
             "views",
-        ]
+        ],
     )
 
     preprint_word = ser.CharField(read_only=True, allow_null=True)
@@ -264,7 +266,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
             "self": "get_absolute_url",
             "preprints": "get_preprints_url",
             "external_url": "get_external_url",
-        }
+        },
     )
 
     preprints = ReviewableCountsRelationshipField(
@@ -313,8 +315,8 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
             if data.get(field) is None:
                 raise ValidationError(
                     "All reviews fields must be set at once: `{}`".format(
-                        "`, `".join(required_fields)
-                    )
+                        "`, `".join(required_fields),
+                    ),
                 )
         return data
 
@@ -336,7 +338,7 @@ class ModeratorSerializer(JSONAPISerializer):
             "full_name",
             "id",
             "permission_group",
-        ]
+        ],
     )
 
     id = IDField(source="_id", required=False, allow_null=True)
@@ -350,7 +352,9 @@ class ModeratorSerializer(JSONAPISerializer):
     )
     permission_group = ser.CharField(required=True)
     email = ser.EmailField(
-        required=False, write_only=True, validators=[validate_email]
+        required=False,
+        write_only=True,
+        validators=[validate_email],
     )
 
     user = RelationshipField(
@@ -363,7 +367,7 @@ class ModeratorSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_provider(self, obj):
@@ -396,7 +400,7 @@ class ModeratorSerializer(JSONAPISerializer):
                 full_name = validated_data.pop("fullname", "")
                 if not full_name:
                     raise ValidationError(
-                        '"full_name" is required when adding a moderator via email.'
+                        '"full_name" is required when adding a moderator via email.',
                     )
                 user = OSFUser.create_unregistered(full_name, email=address)
                 user.add_unclaimed_record(
@@ -452,7 +456,9 @@ class ModeratorSerializer(JSONAPISerializer):
 
         try:
             provider.remove_from_group(
-                instance, instance.permission_group, unsubscribe=False
+                instance,
+                instance.permission_group,
+                unsubscribe=False,
             )
         except ValueError as e:
             raise ValidationError(str(e))

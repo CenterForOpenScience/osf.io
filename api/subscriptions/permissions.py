@@ -6,7 +6,8 @@ from osf.models.notifications import NotificationSubscription
 class IsSubscriptionOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, NotificationSubscription
+            obj,
+            NotificationSubscription,
         ), f"obj must be a NotificationSubscription; got {obj}"
         user_id = request.user.id
         return (

@@ -72,11 +72,13 @@ def render_citation(node, style="apa"):
             bib_style = CitationStylesStyle(parent_path, validate=False)
         else:
             raise ValueError(
-                f"Unable to find a dependent or independent parent style related to {style}.csl"
+                f"Unable to find a dependent or independent parent style related to {style}.csl",
             )
 
     bibliography = CitationStylesBibliography(
-        bib_style, bib_source, formatter.plain
+        bib_style,
+        bib_source,
+        formatter.plain,
     )
 
     citation = Citation([CitationItem(node._id)])
@@ -193,7 +195,8 @@ def mla_reformat(node, cit):
     # handle more than one contributor but less than 5 contributors
     elif contributors_list_length == 2:
         first_one = mla_name(
-            process_name(node, contributors_list[0]), initial=True
+            process_name(node, contributors_list[0]),
+            initial=True,
         )
         last_one = mla_name(process_name(node, contributors_list[-1]))
         new_mla = first_one.rstrip(",") + ", and " + last_one
@@ -208,7 +211,8 @@ def mla_reformat(node, cit):
 
 def remove_extra_period_after_right_quotation(cit):
     return cit.replace(
-        "”.", "”"
+        "”.",
+        "”",
     )  # watch out these double quotes are “ \xe2\x80\x9c not normal "s
 
 
@@ -216,7 +220,8 @@ def chicago_reformat(node, cit):
     cit = remove_extra_period_after_right_quotation(cit)
     issued = node.csl.get("issued")
     new_csl = cit.split(
-        str(issued["date-parts"][0][0]) if issued else "n.d.", 1
+        str(issued["date-parts"][0][0]) if issued else "n.d.",
+        1,
     )
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
@@ -231,7 +236,8 @@ def chicago_reformat(node, cit):
     # handle more than one contributor but less than 8 contributors
     elif contributors_list_length in range(1, 8):
         first_one = mla_name(
-            process_name(node, contributors_list[0]), initial=True
+            process_name(node, contributors_list[0]),
+            initial=True,
         ).rstrip(",")
         rest_ones = [
             mla_name(process_name(node, x)) for x in contributors_list[1:-1]
@@ -245,7 +251,8 @@ def chicago_reformat(node, cit):
     # handle 8 or more contributors
     else:
         new_chi = mla_name(
-            process_name(node, contributors_list[0]), initial=True
+            process_name(node, contributors_list[0]),
+            initial=True,
         ).rstrip(", ")
         name_list = [
             mla_name(process_name(node, x)) for x in contributors_list[1:7]

@@ -44,12 +44,13 @@ class SubjectSerializer(JSONAPISerializer):
             "text",
             "parent",
             "id",
-        ]
+        ],
     )
     id = ser.CharField(source="_id", required=True)
     text = ser.CharField(max_length=200)
     taxonomy_name = ser.CharField(
-        source="provider.share_title", read_only=True
+        source="provider.share_title",
+        read_only=True,
     )
 
     parent = RelationshipField(
@@ -67,7 +68,7 @@ class SubjectSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -97,7 +98,7 @@ class SubjectsRelationshipSerializer(BaseAPISerializer, UpdateSubjectsMixin):
         {
             "self": "get_self_url",
             "html": "get_related_url",
-        }
+        },
     )
 
     def get_self_url(self, obj):
@@ -127,6 +128,8 @@ class SubjectsRelationshipSerializer(BaseAPISerializer, UpdateSubjectsMixin):
         user = self.context["request"].user
         auth = Auth(user if not user.is_anonymous else None)
         self.update_subjects(
-            resource, self.format_subjects(validated_data["data"]), auth
+            resource,
+            self.format_subjects(validated_data["data"]),
+            auth,
         )
         return self.make_instance_obj(resource)

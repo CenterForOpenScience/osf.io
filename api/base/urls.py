@@ -8,7 +8,7 @@ from api.base import versioning
 from api.providers.views import RegistrationBulkCreate
 
 default_version = versioning.decimal_version_to_url_path(
-    settings.REST_FRAMEWORK["DEFAULT_VERSION"]
+    settings.REST_FRAMEWORK["DEFAULT_VERSION"],
 )
 
 # Please keep URLs alphabetized for auto-generated documentation
@@ -74,7 +74,8 @@ urlpatterns = [
                     include("api.actions.urls", namespace="actions"),
                 ),
                 re_path(
-                    r"^addons/", include("api.addons.urls", namespace="addons")
+                    r"^addons/",
+                    include("api.addons.urls", namespace="addons"),
                 ),
                 re_path(
                     r"^alerts/",
@@ -85,7 +86,8 @@ urlpatterns = [
                     include("api.applications.urls", namespace="applications"),
                 ),
                 re_path(
-                    r"^brands/", include("api.brands.urls", namespace="brands")
+                    r"^brands/",
+                    include("api.brands.urls", namespace="brands"),
                 ),
                 re_path(
                     r"^citations/",
@@ -152,14 +154,16 @@ urlpatterns = [
                     ),
                 ),
                 re_path(
-                    r"^files/", include("api.files.urls", namespace="files")
+                    r"^files/",
+                    include("api.files.urls", namespace="files"),
                 ),
                 re_path(
                     r"^groups/",
                     include("api.osf_groups.urls", namespace="groups"),
                 ),
                 re_path(
-                    r"^guids/", include("api.guids.urls", namespace="guids")
+                    r"^guids/",
+                    include("api.guids.urls", namespace="guids"),
                 ),
                 re_path(
                     r"^identifiers/",
@@ -183,7 +187,8 @@ urlpatterns = [
                     include("api.schemas.urls", namespace="schemas"),
                 ),
                 re_path(
-                    r"^nodes/", include("api.nodes.urls", namespace="nodes")
+                    r"^nodes/",
+                    include("api.nodes.urls", namespace="nodes"),
                 ),
                 re_path(
                     r"^preprints/",
@@ -207,7 +212,8 @@ urlpatterns = [
                 re_path(
                     r"^registrations/",
                     include(
-                        "api.registrations.urls", namespace="registrations"
+                        "api.registrations.urls",
+                        namespace="registrations",
                     ),
                 ),
                 re_path(
@@ -220,7 +226,8 @@ urlpatterns = [
                 re_path(
                     r"^requests/",
                     include(
-                        ("api.requests.urls", "requests"), namespace="requests"
+                        ("api.requests.urls", "requests"),
+                        namespace="requests",
                     ),
                 ),
                 re_path(
@@ -228,13 +235,16 @@ urlpatterns = [
                     include("api.resources.urls", namespace="resources"),
                 ),
                 re_path(
-                    r"^scopes/", include("api.scopes.urls", namespace="scopes")
+                    r"^scopes/",
+                    include("api.scopes.urls", namespace="scopes"),
                 ),
                 re_path(
-                    r"^search/", include("api.search.urls", namespace="search")
+                    r"^search/",
+                    include("api.search.urls", namespace="search"),
                 ),
                 re_path(
-                    r"^sparse/", include("api.sparse.urls", namespace="sparse")
+                    r"^sparse/",
+                    include("api.sparse.urls", namespace="sparse"),
                 ),
                 re_path(
                     r"^subjects/",
@@ -243,7 +253,8 @@ urlpatterns = [
                 re_path(
                     r"^subscriptions/",
                     include(
-                        "api.subscriptions.urls", namespace="subscriptions"
+                        "api.subscriptions.urls",
+                        namespace="subscriptions",
                     ),
                 ),
                 re_path(
@@ -252,19 +263,23 @@ urlpatterns = [
                 ),
                 re_path(r"^test/", include("api.test.urls", namespace="test")),
                 re_path(
-                    r"^tokens/", include("api.tokens.urls", namespace="tokens")
+                    r"^tokens/",
+                    include("api.tokens.urls", namespace="tokens"),
                 ),
                 re_path(
-                    r"^users/", include("api.users.urls", namespace="users")
+                    r"^users/",
+                    include("api.users.urls", namespace="users"),
                 ),
                 re_path(
                     r"^view_only_links/",
                     include(
-                        "api.view_only_links.urls", namespace="view-only-links"
+                        "api.view_only_links.urls",
+                        namespace="view-only-links",
                     ),
                 ),
                 re_path(
-                    r"^wikis/", include("api.wikis.urls", namespace="wikis")
+                    r"^wikis/",
+                    include("api.wikis.urls", namespace="wikis"),
                 ),
                 re_path(
                     r"^schema_responses/",

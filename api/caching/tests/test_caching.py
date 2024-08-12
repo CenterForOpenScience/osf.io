@@ -226,7 +226,7 @@ class TestVarnish(DbTestCase):
 
         node_id = create_response.json()["data"]["id"]
         new_title = "{} -- But Changed!".format(
-            create_response.json()["data"]["attributes"]["title"]
+            create_response.json()["data"]["attributes"]["title"],
         )
 
         response = requests.get(

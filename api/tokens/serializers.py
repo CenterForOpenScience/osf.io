@@ -65,7 +65,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "html": "absolute_url",
-        }
+        },
     )
 
     def get_owner(self, obj):
@@ -95,7 +95,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         scopes = validate_requested_scopes(validated_data.pop("scopes", None))
         if not scopes:
             raise exceptions.ValidationError(
-                "Cannot create a token without scopes."
+                "Cannot create a token without scopes.",
             )
         instance = ApiOAuth2PersonalToken(**validated_data)
         try:
@@ -110,11 +110,12 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         scopes = validate_requested_scopes(validated_data.pop("scopes", None))
         assert isinstance(
-            instance, ApiOAuth2PersonalToken
+            instance,
+            ApiOAuth2PersonalToken,
         ), "instance must be an ApiOAuth2PersonalToken"
 
         instance.deactivate(
-            save=False
+            save=False,
         )  # This will cause CAS to revoke the existing token but still allow it to be used in the future, new scopes will be updated properly at that time.
         instance.reload()
 
@@ -134,7 +135,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
 
 
 class ApiOAuth2PersonalTokenWritableSerializer(
-    ApiOAuth2PersonalTokenSerializer
+    ApiOAuth2PersonalTokenSerializer,
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -143,7 +144,8 @@ class ApiOAuth2PersonalTokenWritableSerializer(
         # Dynamically overriding scopes field for early versions to make scopes writable via an attribute
         if not expect_scopes_as_relationships(request):
             self.fields["scopes"] = ser.CharField(
-                write_only=True, required=False
+                write_only=True,
+                required=False,
             )
 
     def to_representation(self, obj, envelope="data"):
@@ -154,7 +156,8 @@ class ApiOAuth2PersonalTokenWritableSerializer(
         """
         context = self.context
         return ApiOAuth2PersonalTokenSerializer(
-            instance=obj, context=context
+            instance=obj,
+            context=context,
         ).data
 
 
@@ -165,7 +168,7 @@ def expect_scopes_as_relationships(request):
     Now that scopes are an m2m field with tokens, later versions of the serializer represent scopes as relationships.
     """
     return Version(getattr(request, "version", "2.0")) >= Version(
-        SCOPES_RELATIONSHIP_VERSION
+        SCOPES_RELATIONSHIP_VERSION,
     )
 
 
@@ -191,7 +194,7 @@ def validate_requested_scopes(data):
         raise exceptions.NotFound(
             "Scope names must be one of: {}.".format(
                 ", ".join(
-                    ApiOAuth2Scope.objects.values_list("name", flat=True)
+                    ApiOAuth2Scope.objects.values_list("name", flat=True),
                 ),
             ),
         )

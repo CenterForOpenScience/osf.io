@@ -65,12 +65,13 @@ class OSFOrderingFilter(OrderingFilter):
                 order_fields = tuple([field.lstrip("-") for field in ordering])
                 distinct_fields = queryset.query.distinct_fields
                 queryset.query.distinct_fields = tuple(
-                    set(distinct_fields + order_fields)
+                    set(distinct_fields + order_fields),
                 )
             return super().filter_queryset(request, queryset, view)
         elif isinstance(ordering, (list, tuple)):
             sorted_list = sorted(
-                queryset, key=cmp_to_key(sort_multiple(ordering))
+                queryset,
+                key=cmp_to_key(sort_multiple(ordering)),
             )
             return sorted_list
         else:
@@ -95,7 +96,7 @@ class OSFOrderingFilter(OrderingFilter):
 
         # This will not allow any serializer fields with nested related fields to be sorted on
         for field_name, field in serializer_class(
-            context={"request": request}
+            context={"request": request},
         ).fields.items():
             if (
                 not getattr(field, "write_only", False)
@@ -103,7 +104,8 @@ class OSFOrderingFilter(OrderingFilter):
                 and field_name != field.source
             ):
                 field_to_source_mapping[field_name] = field.source.replace(
-                    ".", "_"
+                    ".",
+                    "_",
                 )
 
         return field_to_source_mapping
@@ -118,7 +120,10 @@ class OSFOrderingFilter(OrderingFilter):
         :returns array of source fields for sorting.
         """
         valid_fields = super().remove_invalid_fields(
-            queryset, fields, view, request
+            queryset,
+            fields,
+            view,
+            request,
         )
         if not valid_fields:
             for invalid_field in fields:
@@ -126,7 +131,8 @@ class OSFOrderingFilter(OrderingFilter):
                 invalid_field = invalid_field.lstrip("-")
 
                 field_source_mapping = self.get_serializer_source_field(
-                    view, request
+                    view,
+                    request,
                 )
                 source_field = field_source_mapping.get(invalid_field, None)
                 if source_field:
@@ -165,7 +171,7 @@ class FilterMixin:
     """View mixin with helper functions for filtering."""
 
     QUERY_PATTERN = re.compile(
-        r"^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$"
+        r"^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$",
     )
     FILTER_FIELDS = re.compile(r"(?:,*\s*(\w+)+)")
 
@@ -182,7 +188,7 @@ class FilterMixin:
 
     DATE_FIELDS = (ser.DateTimeField, ser.DateField)
     DATETIME_PATTERN = re.compile(
-        r"^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?)$"
+        r"^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?)$",
     )
 
     COMPARISON_OPERATORS = ("gt", "gte", "lt", "lte")
@@ -216,14 +222,16 @@ class FilterMixin:
         serializer = self.get_serializer()
         if field_name not in serializer.fields:
             raise InvalidFilterError(
-                detail=f"'{field_name}' is not a valid field for this endpoint."
+                detail=f"'{field_name}' is not a valid field for this endpoint.",
             )
         if field_name not in getattr(serializer, "filterable_fields", set()):
             raise InvalidFilterFieldError(parameter="filter", value=field_name)
         field = serializer.fields[field_name]
         # You cannot filter on deprecated fields.
         if isinstance(field, ShowIfVersion) and utils.is_deprecated(
-            self.request.version, field.min_version, field.max_version
+            self.request.version,
+            field.min_version,
+            field.max_version,
         ):
             raise InvalidFilterFieldError(parameter="filter", value=field_name)
         return field
@@ -239,11 +247,12 @@ class FilterMixin:
         if op not in set(
             self.MATCH_OPERATORS
             + self.COMPARISON_OPERATORS
-            + self.DEFAULT_OPERATORS
+            + self.DEFAULT_OPERATORS,
         ):
             valid_operators = self._get_valid_operators(field)
             raise InvalidFilterOperator(
-                value=op, valid_operators=valid_operators
+                value=op,
+                valid_operators=valid_operators,
             )
         if op in self.COMPARISON_OPERATORS:
             if not isinstance(field, self.COMPARABLE_FIELDS):
@@ -325,7 +334,7 @@ class FilterMixin:
                 for field_name in field_names:
                     field = self._get_field_or_error(field_name)
                     op = match_dict.get("op") or self._get_default_operator(
-                        field
+                        field,
                     )
                     self._validate_operator(field, field_name, op)
 
@@ -338,9 +347,12 @@ class FilterMixin:
                         query.get(key).update(
                             {
                                 field_name: self._parse_date_param(
-                                    field, source_field_name, op, value
+                                    field,
+                                    source_field_name,
+                                    op,
+                                    value,
                                 ),
-                            }
+                            },
                         )
                     elif not isinstance(value, int) and source_field_name in [
                         "_id",
@@ -353,11 +365,12 @@ class FilterMixin:
                                 field_name: {
                                     "op": "in",
                                     "value": self.bulk_get_values(
-                                        value, field
+                                        value,
+                                        field,
                                     ),
                                     "source_field_name": source_field_name,
                                 },
-                            }
+                            },
                         )
                     elif (
                         not isinstance(value, int)
@@ -368,15 +381,19 @@ class FilterMixin:
                                 field_name: {
                                     "op": op,
                                     "value": self.bulk_get_values(
-                                        value, field
+                                        value,
+                                        field,
                                     ),
                                     "source_field_name": source_field_name,
                                 },
-                            }
+                            },
                         )
                     elif self.should_parse_special_query_params(field_name):
                         query = self.parse_special_query_params(
-                            field_name, key, value, query
+                            field_name,
+                            key,
+                            value,
+                            query,
                         )
                     else:
                         query.get(key).update(
@@ -386,10 +403,12 @@ class FilterMixin:
                                     "value": self.convert_value(value, field),
                                     "source_field_name": source_field_name,
                                 },
-                            }
+                            },
                         )
                     self.postprocess_query_param(
-                        key, field_name, query[key][field_name]
+                        key,
+                        field_name,
+                        query[key][field_name],
                     )
 
         return query
@@ -461,7 +480,8 @@ class FilterMixin:
                 value = None
             return value
         elif isinstance(field, self.LIST_FIELDS) or isinstance(
-            (getattr(field, "field", None)), self.LIST_FIELDS
+            (getattr(field, "field", None)),
+            self.LIST_FIELDS,
         ):
             if value == "null":
                 value = []
@@ -505,7 +525,8 @@ class ListFilterMixin(FilterMixin):
         default_queryset = self.get_default_queryset()
         if not self.kwargs.get("is_embedded") and self.request.query_params:
             param_queryset = self.param_queryset(
-                self.request.query_params, default_queryset
+                self.request.query_params,
+                default_queryset,
             )
             return param_queryset
         else:
@@ -525,7 +546,9 @@ class ListFilterMixin(FilterMixin):
                     if isinstance(queryset, list):
                         for operation in operations:
                             queryset = self.get_filtered_queryset(
-                                field_name, operation, queryset
+                                field_name,
+                                operation,
+                                queryset,
                             )
                     else:
                         sub_query_parts.append(
@@ -533,7 +556,8 @@ class ListFilterMixin(FilterMixin):
                                 operator.and_,
                                 [
                                     self.build_query_from_field(
-                                        field_name, operation
+                                        field_name,
+                                        operation,
                                     )
                                     for operation in operations
                                 ],
@@ -555,7 +579,8 @@ class ListFilterMixin(FilterMixin):
             return ~Q(**{query_field_name: operation["value"]})
         elif operation["op"] != "eq":
             query_field_name = "{}__{}".format(
-                query_field_name, operation["op"]
+                query_field_name,
+                operation["op"],
             )
             return Q(**{query_field_name: operation["value"]})
         return Q(**{query_field_name: operation["value"]})
@@ -651,12 +676,13 @@ class ListFilterMixin(FilterMixin):
                     item
                     for item in default_queryset
                     if self.FILTERS[params["op"]](
-                        getattr(item, source_field_name, None), params["value"]
+                        getattr(item, source_field_name, None),
+                        params["value"],
                     )
                 ]
             except TypeError:
                 raise InvalidFilterValue(
-                    detail="Could not apply filter to specified field"
+                    detail="Could not apply filter to specified field",
                 )
 
         return return_val
@@ -688,7 +714,11 @@ class PreprintFilterMixin(ListFilterMixin):
             self.postprocess_subject_query_param(operation)
 
     def preprints_queryset(
-        self, base_queryset, auth_user, allow_contribs=True, public_only=False
+        self,
+        base_queryset,
+        auth_user,
+        allow_contribs=True,
+        public_only=False,
     ):
         return Preprint.objects.can_view(
             base_queryset=base_queryset,

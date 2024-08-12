@@ -34,7 +34,9 @@ from osf.utils.workflows import ApprovalStates
 
 
 class SchemaResponseList(
-    JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView
+    JSONAPIBaseView,
+    ListFilterMixin,
+    generics.ListCreateAPIView,
 ):
     permission_classes = (
         SchemaResponseListPermission,
@@ -67,7 +69,7 @@ class SchemaResponseList(
             )
             .exclude(
                 Q(
-                    parent_is_public__isnull=True
+                    parent_is_public__isnull=True,
                 ),  # Withdrawn or deleted parent, always exclude
             )
             .filter(
@@ -79,7 +81,7 @@ class SchemaResponseList(
             )
             .annotate(
                 is_pending_current_user_approval=annotations.is_pending_current_user_approval(
-                    user
+                    user,
                 ),
                 is_original_response=annotations.IS_ORIGINAL_RESPONSE,
             )
@@ -95,7 +97,8 @@ class SchemaResponseList(
 
 
 class SchemaResponseDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
 ):
     permission_classes = (
         SchemaResponseDetailPermission,
@@ -117,7 +120,7 @@ class SchemaResponseDetail(
             _id=self.kwargs["schema_response_id"],
         ).annotate(
             is_pending_current_user_approval=annotations.is_pending_current_user_approval(
-                user
+                user,
             ),
             is_original_response=annotations.IS_ORIGINAL_RESPONSE,
         )
@@ -135,7 +138,9 @@ class SchemaResponseDetail(
 
 
 class SchemaResponseActionList(
-    JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView
+    JSONAPIBaseView,
+    ListFilterMixin,
+    generics.ListCreateAPIView,
 ):
     permission_classes = (
         SchemaResponseActionListPermission,

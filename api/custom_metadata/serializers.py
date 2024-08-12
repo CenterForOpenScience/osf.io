@@ -18,7 +18,7 @@ class AlwaysRequiredCharField(ser.CharField):
     def __init__(self, *args, **kwargs):
         if not kwargs.get("required", True):
             raise ValueError(
-                "AlwaysRequiredCharField does not accept required=False"
+                "AlwaysRequiredCharField does not accept required=False",
             )
         super().__init__(*args, **kwargs, required=True)
 
@@ -95,7 +95,7 @@ class CustomItemMetadataSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     class Meta:
@@ -129,7 +129,8 @@ class CustomFileMetadataSerializer(CustomItemMetadataSerializer):
 
     title = ser.CharField(required=False, allow_blank=True)  # TODO: max-length
     description = ser.CharField(
-        required=False, allow_blank=True
+        required=False,
+        allow_blank=True,
     )  # TODO: max-length
 
     class Meta:

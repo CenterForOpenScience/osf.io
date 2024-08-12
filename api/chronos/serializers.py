@@ -119,7 +119,9 @@ class ChronosSubmissionCreateSerializer(ChronosSubmissionSerializer):
         submitter = validated_data.pop("submitter")
         try:
             return ChronosClient().submit_manuscript(
-                journal=journal, preprint=preprint, submitter=submitter
+                journal=journal,
+                preprint=preprint,
+                submitter=submitter,
             )
         except ValueError as e:
             raise Conflict(e)

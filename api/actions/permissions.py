@@ -42,15 +42,18 @@ class ReviewActionPermission(drf_permissions.BasePermission):
         if request.method in drf_permissions.SAFE_METHODS:
             # Moderators and node contributors can view actions
             is_node_contributor = target is not None and target.has_permission(
-                auth.user, osf_permissions.READ
+                auth.user,
+                osf_permissions.READ,
             )
             return is_node_contributor or auth.user.has_perm(
-                "view_actions", provider
+                "view_actions",
+                provider,
             )
         else:
             # Moderators and node admins can trigger state changes.
             is_node_admin = target is not None and target.has_permission(
-                auth.user, osf_permissions.ADMIN
+                auth.user,
+                osf_permissions.ADMIN,
             )
             if not (
                 is_node_admin
@@ -64,5 +67,6 @@ class ReviewActionPermission(drf_permissions.BasePermission):
             trigger = serializer.validated_data.get("trigger")
             permission = TRIGGER_PERMISSIONS[trigger]
             return permission is None or request.user.has_perm(
-                permission, target.provider
+                permission,
+                target.provider,
             )

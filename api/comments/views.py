@@ -55,7 +55,9 @@ class CommentMixin:
 
 
 class CommentDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    CommentMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/comments_read)."""
 
@@ -97,12 +99,14 @@ class CommentDetail(
                 instance.delete(auth, save=True)
             except PermissionsError:
                 raise PermissionDenied(
-                    "Not authorized to delete this comment."
+                    "Not authorized to delete this comment.",
                 )
 
 
 class CommentReportsList(
-    JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    CommentMixin,
 ):
     """List of reports made for a comment. *Writeable*.
 
@@ -180,14 +184,18 @@ class CommentReportsList(
         serialized_reports = []
         if user_id in reports:
             report = CommentReport(
-                user_id, reports[user_id]["category"], reports[user_id]["text"]
+                user_id,
+                reports[user_id]["category"],
+                reports[user_id]["text"],
             )
             serialized_reports.append(report)
         return serialized_reports
 
 
 class CommentReportDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    CommentMixin,
 ):
     """Details about a specific comment report. *Writeable*.
 
@@ -270,16 +278,18 @@ class CommentReportDetail(
 
         if reporter_id != user_id:
             raise PermissionDenied(
-                "Not authorized to comment on this project."
+                "Not authorized to comment on this project.",
             )
 
         if reporter_id in reports:
             return CommentReport(
-                user_id, reports[user_id]["category"], reports[user_id]["text"]
+                user_id,
+                reports[user_id]["category"],
+                reports[user_id]["text"],
             )
         else:
             raise Gone(
-                detail="The requested comment report is no longer available."
+                detail="The requested comment report is no longer available.",
             )
 
     # overrides RetrieveUpdateDestroyAPIView

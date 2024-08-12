@@ -7,7 +7,11 @@ class MetricsCSVRenderer(CSVRenderer):
     """
 
     def render(
-        self, data, media_type=None, renderer_context={}, writer_opts=None
+        self,
+        data,
+        media_type=None,
+        renderer_context={},
+        writer_opts=None,
     ):
         """
         Overwrites CSVRenderer.render() to create a CSV with the data dictionary

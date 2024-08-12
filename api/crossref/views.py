@@ -29,13 +29,13 @@ class ParseCrossRefConfirmation(APIView):
 
     def post(self, request):
         crossref_email_content = lxml.etree.fromstring(
-            request.POST["body-plain"].encode()
+            request.POST["body-plain"].encode(),
         )
         status = crossref_email_content.get(
-            "status"
+            "status",
         ).lower()  # from element doi_batch_diagnostic
         record_count = int(
-            crossref_email_content.find("batch_data/record_count").text
+            crossref_email_content.find("batch_data/record_count").text,
         )
         records = crossref_email_content.xpath("//record_diagnostic")
         dois_processed = 0
@@ -60,7 +60,8 @@ class ParseCrossRefConfirmation(APIView):
                     elif "possible preprint/vor pair" not in msg.lower():
                         # Directly updates the identifier
                         preprint.set_identifier_value(
-                            category="doi", value=doi
+                            category="doi",
+                            value=doi,
                         )
 
                     dois_processed += 1
@@ -75,11 +76,13 @@ class ParseCrossRefConfirmation(APIView):
                         in record.find("msg").text
                     ):
                         logger.warning(
-                            "Related publication DOI does not exist, sending metadata again without it..."
+                            "Related publication DOI does not exist, sending metadata again without it...",
                         )
                         client = preprint.get_doi_client()
                         client.create_identifier(
-                            preprint, category="doi", include_relation=False
+                            preprint,
+                            category="doi",
+                            include_relation=False,
                         )
                     # This error occurs when a single preprint is being updated several times in a row with the same metadata [#PLAT-944]
                     elif (
@@ -91,7 +94,7 @@ class ParseCrossRefConfirmation(APIView):
                     else:
                         unexpected_errors = True
             logger.info(
-                f"Creation success email received from CrossRef for preprints: {guids}"
+                f"Creation success email received from CrossRef for preprints: {guids}",
             )
 
         if dois_processed != record_count or status != "completed":
@@ -104,7 +107,7 @@ class ParseCrossRefConfirmation(APIView):
                     email_content=request.POST["body-plain"],
                 )
                 logger.error(
-                    f"Error submitting metadata for batch_id {batch_id} with CrossRef, email sent to help desk"
+                    f"Error submitting metadata for batch_id {batch_id} with CrossRef, email sent to help desk",
                 )
 
         return HttpResponse("Mail received", status=200)

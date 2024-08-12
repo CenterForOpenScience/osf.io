@@ -30,7 +30,9 @@ class FileMetadataView(APIView):
             raise NotFound
         target = guid.referent
         if getattr(target, "is_registration", False) and not getattr(
-            target, "archiving", False
+            target,
+            "archiving",
+            False,
         ):
             raise ValidationError("Registrations cannot be changed.")
         return target
@@ -45,7 +47,8 @@ class FileMetadataView(APIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(
-            data=request.data, context=self.get_serializer_context()
+            data=request.data,
+            context=self.get_serializer_context(),
         )
         if serializer.is_valid():
             source = serializer.validated_data.pop("source")
@@ -59,7 +62,8 @@ class FileMetadataView(APIView):
 
             try:
                 dest_parent = OsfStorageFolder.get(
-                    destination.get("parent"), dest_target
+                    destination.get("parent"),
+                    dest_target,
                 )
             except OsfStorageFolder.DoesNotExist:
                 raise NotFound

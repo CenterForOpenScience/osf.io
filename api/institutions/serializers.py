@@ -25,7 +25,7 @@ class InstitutionSerializer(JSONAPISerializer):
             "id",
             "name",
             "auth_url",
-        ]
+        ],
     )
 
     name = ser.CharField(read_only=True)
@@ -40,7 +40,7 @@ class InstitutionSerializer(JSONAPISerializer):
         {
             "self": "get_api_url",
             "html": "get_absolute_html_url",
-        }
+        },
     )
 
     nodes = RelationshipField(
@@ -113,7 +113,7 @@ class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
         {
             "self": "get_self_url",
             "html": "get_related_url",
-        }
+        },
     )
 
     def get_self_url(self, obj):
@@ -136,14 +136,14 @@ class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
             if not node:
                 raise exceptions.NotFound(
                     detail='Node with id "{}" was not found'.format(
-                        node_dict["_id"]
-                    )
+                        node_dict["_id"],
+                    ),
                 )
             if not node.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(
                     detail="Write permission on node {} required".format(
-                        node_dict["_id"]
-                    )
+                        node_dict["_id"],
+                    ),
                 )
             if not node.is_affiliated_with_institution(inst):
                 node.add_affiliated_institution(inst, user, save=True)
@@ -171,7 +171,7 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
         {
             "self": "get_self_url",
             "html": "get_related_url",
-        }
+        },
     )
 
     def get_self_url(self, obj):
@@ -194,14 +194,14 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
             if not registration:
                 raise exceptions.NotFound(
                     detail='Registration with id "{}" was not found'.format(
-                        registration_dict["_id"]
-                    )
+                        registration_dict["_id"],
+                    ),
                 )
             if not registration.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(
                     detail="Write permission on registration {} required".format(
-                        registration_dict["_id"]
-                    )
+                        registration_dict["_id"],
+                    ),
                 )
             if not registration.is_affiliated_with_institution(inst):
                 registration.add_affiliated_institution(inst, user, save=True)
@@ -212,7 +212,7 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
 
         return {
             "data": list(
-                inst.nodes.filter(is_deleted=False, type="osf.registration")
+                inst.nodes.filter(is_deleted=False, type="osf.registration"),
             ),
             "self": inst,
         }
@@ -230,7 +230,7 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -282,7 +282,7 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     filterable_fields = frozenset(
@@ -290,7 +290,7 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
             "id",
             "name",
             "number_of_users",
-        ]
+        ],
     )
 
     def get_absolute_url(self, obj):
@@ -312,10 +312,12 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
     id = IDField(source="user_id", read_only=True)
     user_name = ser.CharField(read_only=True)
     public_projects = ser.IntegerField(
-        source="public_project_count", read_only=True
+        source="public_project_count",
+        read_only=True,
     )
     private_projects = ser.IntegerField(
-        source="private_project_count", read_only=True
+        source="private_project_count",
+        read_only=True,
     )
     department = ser.CharField(read_only=True)
 
@@ -327,7 +329,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     filterable_fields = frozenset(
@@ -337,7 +339,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
             "public_projects",
             "private_projects",
             "department",
-        ]
+        ],
     )
 
     def get_absolute_url(self, obj):

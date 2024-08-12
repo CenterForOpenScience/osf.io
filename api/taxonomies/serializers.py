@@ -39,7 +39,7 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
     writeable_method_fields = frozenset(
         [
             "subjects",
-        ]
+        ],
     )
 
     def __init__(self, *args, **kwargs):
@@ -129,7 +129,7 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
         :return bool: Subjects should be serialized as relationships
         """
         return Version(getattr(request, "version", "2.0")) >= Version(
-            subjects_as_relationships_version
+            subjects_as_relationships_version,
         )
 
 
@@ -144,7 +144,7 @@ class TaxonomySerializer(JSONAPISerializer):
             "parents",
             "parent",
             "id",
-        ]
+        ],
     )
     id = ser.CharField(source="_id", required=True)
     text = ser.CharField(max_length=200)
@@ -162,7 +162,7 @@ class TaxonomySerializer(JSONAPISerializer):
         {
             "parents": "get_parent_urls",
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_child_count(self, obj):

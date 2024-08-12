@@ -8,5 +8,6 @@ class IsAuthenticatedOrReadOnlyForSearch(IsAuthenticatedOrReadOnly):
         if not isinstance(view, BaseSearchView):
             return False
         return request.method == "POST" or super().has_permission(
-            request, view
+            request,
+            view,
         )

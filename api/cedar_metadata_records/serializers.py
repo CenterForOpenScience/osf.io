@@ -55,7 +55,7 @@ class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
         source="guid",
         related_view=lambda record: get_guids_related_view(record),
         related_view_kwargs=lambda record: get_guids_related_view_kwargs(
-            record
+            record,
         ),
         read_only=True,
     )
@@ -70,7 +70,7 @@ class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "metadata_download": "get_metadata_download_link",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -105,7 +105,7 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsBaseSerializer):
         source="guid",
         related_view=lambda record: get_guids_related_view(record),
         related_view_kwargs=lambda record: get_guids_related_view_kwargs(
-            record
+            record,
         ),
         read_only=False,
         required=True,
@@ -141,7 +141,7 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsBaseSerializer):
             raise InvalidModelValueError(detail=e.messages[0])
         except IntegrityError:
             raise JSONAPIException(
-                detail=f"Cedar metadata record already exists: guid=[{guid._id}], template=[{template._id}]"
+                detail=f"Cedar metadata record already exists: guid=[{guid._id}], template=[{template._id}]",
             )
         return record
 
@@ -158,7 +158,7 @@ class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
         source="guid",
         related_view=lambda record: get_guids_related_view(record),
         related_view_kwargs=lambda record: get_guids_related_view_kwargs(
-            record
+            record,
         ),
         read_only=True,
     )

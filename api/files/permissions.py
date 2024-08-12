@@ -10,7 +10,8 @@ from osf.utils.workflows import DefaultStates
 class CheckedOutOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, BaseFileNode
+            obj,
+            BaseFileNode,
         ), f"obj must be a BaseFileNode, got {obj}"
 
         if request.method in permissions.SAFE_METHODS:
@@ -30,7 +31,8 @@ class CheckedOutOrAdmin(permissions.BasePermission):
 class IsPreprintFile(PreprintPublishedOrAdmin):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, BaseFileNode
+            obj,
+            BaseFileNode,
         ), f"obj must be a BaseFileNode, got {obj}"
         if (
             hasattr(obj.target, "primary_file")

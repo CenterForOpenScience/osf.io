@@ -152,12 +152,18 @@ class PreprintMetricMixin(JSONAPIBaseView):
 
         search = self.metric.search(after=start_datetime)
         search = search.filter(
-            "range", timestamp={"gte": start_datetime, "lt": end_datetime}
+            "range",
+            timestamp={"gte": start_datetime, "lt": end_datetime},
         )
         search.aggs.bucket(
-            "dates", "date_histogram", field="timestamp", interval=interval
+            "dates",
+            "date_histogram",
+            field="timestamp",
+            interval=interval,
         ).bucket("preprints", "terms", field="preprint_id").metric(
-            "total", "sum", field="count"
+            "total",
+            "sum",
+            field="count",
         )
         search = self.add_search(search, query_params, **kwargs)
         response = self.execute_search(search)
@@ -178,7 +184,7 @@ class PreprintMetricMixin(JSONAPIBaseView):
         except RequestError as e:
             if e.args:
                 raise ValidationError(
-                    e.info["error"]["root_cause"][0]["reason"]
+                    e.info["error"]["root_cause"][0]["reason"],
                 )
             raise ValidationError("Malformed elasticsearch query.")
 
@@ -235,7 +241,7 @@ class RawMetricsView(GenericAPIView):
         connection = get_connection()
         url_path = kwargs["url_path"]
         return JsonResponse(
-            connection.transport.perform_request("GET", f"/{url_path}")
+            connection.transport.perform_request("GET", f"/{url_path}"),
         )
 
     @require_switch(ENABLE_RAW_METRICS)
@@ -245,8 +251,10 @@ class RawMetricsView(GenericAPIView):
         body = json.loads(request.body)
         return JsonResponse(
             connection.transport.perform_request(
-                "POST", f"/{url_path}", body=body
-            )
+                "POST",
+                f"/{url_path}",
+                body=body,
+            ),
         )
 
     @require_switch(ENABLE_RAW_METRICS)
@@ -256,8 +264,10 @@ class RawMetricsView(GenericAPIView):
         body = json.loads(request.body)
         return JsonResponse(
             connection.transport.perform_request(
-                "PUT", f"/{url_path}", body=body
-            )
+                "PUT",
+                f"/{url_path}",
+                body=body,
+            ),
         )
 
 
@@ -345,14 +355,15 @@ class RecentReportList(JSONAPIBaseView):
                         {
                             "title": "unknown report name",
                             "detail": f'unknown report: "{report_name}"',
-                        }
+                        },
                     ],
                 },
                 status=404,
             )
         is_daily = issubclass(report_class, reports.DailyReport)
         days_back = request.GET.get(
-            "days_back", self.DEFAULT_DAYS_BACK if is_daily else None
+            "days_back",
+            self.DEFAULT_DAYS_BACK if is_daily else None,
         )
         is_monthly = issubclass(report_class, reports.MonthlyReport)
 
@@ -364,7 +375,7 @@ class RecentReportList(JSONAPIBaseView):
             range_field_name = "report_yearmonth"
         else:
             raise ValueError(
-                f"report class must subclass DailyReport or MonthlyReport: {report_class}"
+                f"report class must subclass DailyReport or MonthlyReport: {report_class}",
             )
         range_filter = parse_date_range(request.GET, is_monthly=is_monthly)
         search_recent = (
@@ -374,7 +385,8 @@ class RecentReportList(JSONAPIBaseView):
         )
         if days_back:
             search_recent.filter(
-                "range", report_date={"gte": f"now/d-{days_back}d"}
+                "range",
+                report_date={"gte": f"now/d-{days_back}d"},
             )
 
         report_date_range = parse_date_range(request.GET)
@@ -415,11 +427,12 @@ class CountedAuthUsageView(JSONAPIBaseView):
         session_id, user_is_authenticated = self._get_session_id(
             request,
             client_session_id=serializer.validated_data.get(
-                "client_session_id"
+                "client_session_id",
             ),
         )
         serializer.save(
-            session_id=session_id, user_is_authenticated=user_is_authenticated
+            session_id=session_id,
+            user_is_authenticated=user_is_authenticated,
         )
         return HttpResponse(status=201)
 
@@ -493,10 +506,11 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
 
     def _run_query(self, node_guid, timespan):
         query_dict = self._build_query_payload(
-            node_guid, NodeAnalyticsQuery.Timespan(timespan)
+            node_guid,
+            NodeAnalyticsQuery.Timespan(timespan),
         )
         analytics_search = CountedAuthUsage.search().update_from_dict(
-            query_dict
+            query_dict,
         )
         return analytics_search.execute()
 
@@ -610,7 +624,7 @@ class UserVisitsQuery(JSONAPIBaseView):
                     )
                 else:
                     raise Exception(
-                        f'Unsupported timeframe format: "{timeframe}"'
+                        f'Unsupported timeframe format: "{timeframe}"',
                     )
                 report_date = {"gte": f"now/d-{days_back}d"}
         elif request.GET.get("timeframeStart"):
@@ -633,7 +647,7 @@ class UserVisitsQuery(JSONAPIBaseView):
     def _run_query(self, timespan):
         query_dict = self._build_query_payload(timespan)
         analytics_search = CountedAuthUsage.search().update_from_dict(
-            query_dict
+            query_dict,
         )
         return analytics_search.execute()
 
@@ -673,7 +687,8 @@ class UniqueUserVisitsQuery(UserVisitsQuery):
     def _build_query_payload(self, timespan):
         payload = super()._build_query_payload(timespan)
         payload["query"]["bool"]["filter"].insert(
-            0, {"term": {"user_is_authenticated": True}}
+            0,
+            {"term": {"user_is_authenticated": True}},
         )
         return payload
 

@@ -120,7 +120,9 @@ class ProviderMixin:
 
 
 class GenericProviderList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -170,7 +172,11 @@ class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
 
     # overrides PreprintMetricsViewMixin
     def get_annotated_queryset_with_metrics(
-        self, queryset, metric_class, metric_name, after
+        self,
+        queryset,
+        metric_class,
+        metric_name,
+        after,
     ):
         return metric_class.get_top_by_count(
             qs=queryset,
@@ -185,7 +191,8 @@ class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
         context = super().get_renderer_context()
         context["meta"] = {
             "whitelisted_providers": WhitelistedSHAREPreprintProvider.objects.all().values_list(
-                "provider_name", flat=True
+                "provider_name",
+                flat=True,
             ),
         }
         return context
@@ -194,7 +201,8 @@ class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
         if field_name == "permissions":
             if operation["op"] != "eq":
                 raise InvalidFilterOperator(
-                    value=operation["op"], valid_operators=["eq"]
+                    value=operation["op"],
+                    valid_operators=["eq"],
                 )
             auth = get_user_auth(self.request)
             auth_user = getattr(auth, "user", None)
@@ -206,12 +214,15 @@ class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
             if not set(permissions).issubset(set(perm_options)):
                 valid_permissions = ", ".join(perm_options)
                 raise InvalidFilterValue(
-                    f"Invalid permission! Valid values are: {valid_permissions}"
+                    f"Invalid permission! Valid values are: {valid_permissions}",
                 )
             return Q(
                 id__in=get_objects_for_user(
-                    auth_user, permissions, PreprintProvider, any_perm=True
-                )
+                    auth_user,
+                    permissions,
+                    PreprintProvider,
+                    any_perm=True,
+                ),
             )
 
         return super().build_query_from_field(field_name, operation)
@@ -267,7 +278,7 @@ class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
     def perform_update(self, serializer):
         if serializer.instance.is_reviewed:
             raise Conflict(
-                "Reviews settings may be set only once. Contact support@osf.io if you need to update them."
+                "Reviews settings may be set only once. Contact support@osf.io if you need to update them.",
             )
         super().perform_update(serializer)
 
@@ -289,7 +300,8 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         parent = self.request.query_params.get(
-            "filter[parents]", None
+            "filter[parents]",
+            None,
         ) or self.request.query_params.get("filter[parent]", None)
         provider = get_object_or_error(
             self.provider_class,
@@ -301,7 +313,7 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
             if parent == "null":
                 return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(
-                provider.all_subjects.filter(parent___id=parent)
+                provider.all_subjects.filter(parent___id=parent),
             )
         return optimize_subject_query(provider.all_subjects)
 
@@ -318,7 +330,8 @@ class CollectionProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
 
 
 class RegistrationProviderTaxonomies(
-    DeprecatedView, GenericProviderTaxonomies
+    DeprecatedView,
+    GenericProviderTaxonomies,
 ):
     """
     To be deprecated: In favor of RegistrationProviderSubjects
@@ -357,7 +370,7 @@ class BaseProviderSubjects(SubjectList):
             if parent == "null":
                 return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(
-                provider.all_subjects.filter(parent___id=parent)
+                provider.all_subjects.filter(parent___id=parent),
             )
         return optimize_subject_query(provider.all_subjects)
 
@@ -382,7 +395,8 @@ class PreprintProviderSubjects(BaseProviderSubjects):
 
 
 class GenericProviderHighlightedTaxonomyList(
-    JSONAPIBaseView, generics.ListAPIView
+    JSONAPIBaseView,
+    generics.ListAPIView,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -407,13 +421,14 @@ class GenericProviderHighlightedTaxonomyList(
         )
         return optimize_subject_query(
             Subject.objects.filter(
-                id__in=[s.id for s in provider.highlighted_subjects]
-            ).order_by("text")
+                id__in=[s.id for s in provider.highlighted_subjects],
+            ).order_by("text"),
         )
 
 
 class CollectionProviderHighlightedTaxonomyList(
-    DeprecatedView, GenericProviderHighlightedTaxonomyList
+    DeprecatedView,
+    GenericProviderHighlightedTaxonomyList,
 ):
     """
     To be deprecated: In favor of CollectionProviderHighlightedSubjectList
@@ -426,7 +441,8 @@ class CollectionProviderHighlightedTaxonomyList(
 
 
 class RegistrationProviderHighlightedTaxonomyList(
-    DeprecatedView, GenericProviderHighlightedTaxonomyList
+    DeprecatedView,
+    GenericProviderHighlightedTaxonomyList,
 ):
     """
     To be deprecated: In favor of RegistrationProviderHighlightedSubjectList
@@ -439,7 +455,8 @@ class RegistrationProviderHighlightedTaxonomyList(
 
 
 class PreprintProviderHighlightedTaxonomyList(
-    DeprecatedView, GenericProviderHighlightedTaxonomyList
+    DeprecatedView,
+    GenericProviderHighlightedTaxonomyList,
 ):
     """
     To be deprecated: In favor of PreprintProviderHighlightedSubjectList
@@ -452,28 +469,28 @@ class PreprintProviderHighlightedTaxonomyList(
 
 
 class GenericProviderHighlightedSubjectList(
-    GenericProviderHighlightedTaxonomyList
+    GenericProviderHighlightedTaxonomyList,
 ):
     view_name = "highlighted-subject-list"
     serializer_class = SubjectSerializer
 
 
 class CollectionProviderHighlightedSubjectList(
-    GenericProviderHighlightedSubjectList
+    GenericProviderHighlightedSubjectList,
 ):
     view_category = "collection-providers"
     provider_class = CollectionProvider
 
 
 class RegistrationProviderHighlightedSubjectList(
-    GenericProviderHighlightedSubjectList
+    GenericProviderHighlightedSubjectList,
 ):
     view_category = "registration-providers"
     provider_class = RegistrationProvider
 
 
 class PreprintProviderHighlightedSubjectList(
-    GenericProviderHighlightedSubjectList
+    GenericProviderHighlightedSubjectList,
 ):
     view_category = "preprint-providers"
     provider_class = PreprintProvider
@@ -503,7 +520,7 @@ class GenericProviderLicenseList(LicenseList):
 
         if provider.default_license:
             licenses |= NodeLicense.objects.filter(
-                id=provider.default_license.id
+                id=provider.default_license.id,
             )
 
         # Since default_license could also be in acceptable_licenses, filtering
@@ -529,7 +546,10 @@ class PreprintProviderLicenseList(GenericProviderLicenseList):
 
 
 class PreprintProviderPreprintList(
-    JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    PreprintFilterMixin,
+    ProviderMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list)."""
 
@@ -567,7 +587,7 @@ class PreprintProviderPreprintList(
     def get_renderer_context(self):
         context = super().get_renderer_context()
         show_counts = is_truthy(
-            self.request.query_params.get("meta[reviews_state_counts]", False)
+            self.request.query_params.get("meta[reviews_state_counts]", False),
         )
         if show_counts:
             # TODO don't duplicate the above
@@ -582,7 +602,10 @@ class PreprintProviderPreprintList(
 
 
 class CollectionProviderSubmissionList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = CollectionProvider
     permission_classes = (
@@ -618,15 +641,19 @@ class CollectionProviderSubmissionList(
         provider = self.get_provider()
         if provider and provider.primary_collection:
             return serializer.save(
-                creator=user, collection=provider.primary_collection
+                creator=user,
+                collection=provider.primary_collection,
             )
         raise ValidationError(
-            f"Provider {provider.name} has no primary collection to submit to."
+            f"Provider {provider.name} has no primary collection to submit to.",
         )
 
 
 class RegistrationProviderSubmissionList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = RegistrationProvider
     permission_classes = (
@@ -667,15 +694,19 @@ class RegistrationProviderSubmissionList(
         )
         if provider and provider.primary_collection:
             return serializer.save(
-                creator=user, collection=provider.primary_collection
+                creator=user,
+                collection=provider.primary_collection,
             )
         raise ValidationError(
-            f"Provider {provider.name} has no primary collection to submit to."
+            f"Provider {provider.name} has no primary collection to submit to.",
         )
 
 
 class PreprintProviderWithdrawRequestList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = PreprintProvider
     permission_classes = (
@@ -702,7 +733,9 @@ class PreprintProviderWithdrawRequestList(
     def get_renderer_context(self):
         context = super().get_renderer_context()
         if is_truthy(
-            self.request.query_params.get("meta[requests_state_counts]", False)
+            self.request.query_params.get(
+                "meta[requests_state_counts]", False
+            ),
         ):
             auth = get_user_auth(self.request)
             auth_user = getattr(auth, "user", None)
@@ -773,7 +806,9 @@ class ProviderModeratorsList(
 
 
 class ProviderModeratorsDetail(
-    ModeratorMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
+    ModeratorMixin,
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticated,
@@ -799,8 +834,9 @@ class ProviderModeratorsDetail(
             perm_group = (
                 user.groups.filter(
                     name__contains=self.provider_type.group_format.format(
-                        self=provider, group=""
-                    )
+                        self=provider,
+                        group="",
+                    ),
                 )
                 .order_by("name")
                 .first()
@@ -815,7 +851,8 @@ class ProviderModeratorsDetail(
     def perform_destroy(self, instance):
         try:
             self.get_provider().remove_from_group(
-                instance, instance.permission_group
+                instance,
+                instance.permission_group,
             )
         except ValueError as e:
             raise ValidationError(str(e))
@@ -864,7 +901,10 @@ class RegistrationProviderModeratorsDetail(ProviderModeratorsDetail):
 
 
 class RegistrationProviderSchemaList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = RegistrationProvider
     permission_classes = (
@@ -885,7 +925,8 @@ class RegistrationProviderSchemaList(
             provider.default_schema.id if provider.default_schema else None
         )
         schemas = provider.schemas.get_latest_versions(
-            request=self.request, invisible=True
+            request=self.request,
+            invisible=True,
         ).filter(active=True)
         if not default_schema_id:
             return schemas
@@ -903,7 +944,10 @@ class RegistrationProviderSchemaList(
 
 
 class RegistrationProviderRegistrationList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = RegistrationProvider
     permission_classes = (
@@ -940,7 +984,7 @@ class RegistrationProviderRegistrationList(
     def get_renderer_context(self):
         context = super().get_renderer_context()
         if is_truthy(
-            self.request.query_params.get("meta[reviews_state_counts]", False)
+            self.request.query_params.get("meta[reviews_state_counts]", False),
         ):
             provider = self.get_provider()
             context["meta"] = {
@@ -950,7 +994,10 @@ class RegistrationProviderRegistrationList(
 
 
 class RegistrationProviderRequestList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = RegistrationProvider
     permission_classes = (
@@ -977,7 +1024,10 @@ class RegistrationProviderRequestList(
 
 
 class RegistrationProviderActionList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = RegistrationProvider
 
@@ -1005,7 +1055,10 @@ class RegistrationProviderActionList(
 
 
 class CollectionProviderActionList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    ProviderMixin,
 ):
     provider_class = RegistrationProvider
 
@@ -1055,7 +1108,9 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
     def put(self, request, *args, **kwargs):
         provider_id = kwargs["provider_id"]
         provider = get_object_or_error(
-            RegistrationProvider, provider_id, request
+            RegistrationProvider,
+            provider_id,
+            request,
         )
         if not provider.allow_bulk_uploads:
             return JsonResponse(
@@ -1083,7 +1138,7 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
 
         file_md5 = self.get_hash(file_obj)
         if RegistrationBulkUploadJob.objects.filter(
-            payload_hash=file_md5
+            payload_hash=file_md5,
         ).exists():
             return JsonResponse(
                 {"errors": [{"type": "bulkUploadJobExists"}]},
@@ -1108,8 +1163,8 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
                             "type": "invalidColumnId",
                             "invalidHeaders": invalid_headers,
                             "missingHeaders": missing_headers,
-                        }
-                    ]
+                        },
+                    ],
                 },
                 status=400,
                 content_type="application/vnd.api+json; application/json",
@@ -1124,8 +1179,8 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
                         {
                             "type": "duplicateColumnId",
                             "duplicateHeaders": duplicate_headers,
-                        }
-                    ]
+                        },
+                    ],
                 },
                 status=400,
                 content_type="application/vnd.api+json; application/json",
@@ -1152,14 +1207,20 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
         parsed = upload.get_parsed()
         enqueue_task(
             prepare_for_registration_bulk_creation.s(
-                file_md5, user_id, provider_id, parsed, dry_run=False
-            )
+                file_md5,
+                user_id,
+                provider_id,
+                parsed,
+                dry_run=False,
+            ),
         )
         return Response(status=204)
 
 
 class PreprintProviderCitationStylesView(
-    JSONAPIBaseView, generics.ListAPIView, ProviderMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ProviderMixin,
 ):
     """
     View to list all citation styles for a specific PreprintProvider.

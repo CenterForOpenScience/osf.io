@@ -13,7 +13,8 @@ def get_resource_object_member(error_key, context):
     from api.base.serializers import RelationshipField
 
     field = context["view"].serializer_class._declared_fields.get(
-        error_key, None
+        error_key,
+        None,
     )
     if field:
         return (
@@ -67,20 +68,26 @@ def dict_error_formatting(errors, context, index=None):
                         "detail": reason,
                     }
                     for reason in error_description
-                ]
+                ],
             )
         elif error_key == "non_field_errors":
             formatted_error_list.extend(
-                [{"detail": description for description in error_description}]
+                [{"detail": description for description in error_description}],
             )
         elif isinstance(error_description, list):
             for error in error_description:
                 formatted_error_list += format_validators_errors(
-                    error, error_key, context, index
+                    error,
+                    error_key,
+                    context,
+                    index,
                 )
         else:
             formatted_error_list += format_validators_errors(
-                error_description, error_key, context, index
+                error_description,
+                error_key,
+                context,
+                index,
             )
 
     return formatted_error_list
@@ -96,7 +103,7 @@ def format_validators_errors(error_description, error_key, context, index):
                     + error_key,
                 },
                 "detail": error_description,
-            }
+            },
         )
     else:
         for key, value in error_description.items():
@@ -106,7 +113,7 @@ def format_validators_errors(error_description, error_key, context, index):
                         "pointer": f"/data/{index}{get_resource_object_member(error_key, context)}/{error_key}/{key}",
                     },
                     "detail": value,
-                }
+                },
             )
 
     return errors
@@ -147,7 +154,7 @@ def json_api_exception_handler(exc, context):
                         "meta": exc.meta or {},
                         "status": str(exc.status_code),
                     },
-                ]
+                ],
             )
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, context, index=None))
@@ -157,7 +164,7 @@ def json_api_exception_handler(exc, context):
             for index, error in enumerate(message):
                 if isinstance(error, dict):
                     errors.extend(
-                        dict_error_formatting(error, context, index=index)
+                        dict_error_formatting(error, context, index=index),
                     )
                 else:
                     errors.append({"detail": error})
@@ -171,7 +178,7 @@ def format_validation_error(e):
     error_list = []
     for key, value in e.message_dict.items():
         error_list.append(
-            f"There was an issue with the {key} field. {value[0]}"
+            f"There was an issue with the {key} field. {value[0]}",
         )
     return error_list
 
@@ -309,7 +316,7 @@ class InvalidFilterComparisonType(JSONAPIParameterException):
     """Raised when client tries to filter on a field that is not a date or number type"""
 
     default_detail = _(
-        "Comparison operators are only supported for dates and numbers."
+        "Comparison operators are only supported for dates and numbers.",
     )
     status_code = http_status.HTTP_400_BAD_REQUEST
 
@@ -318,7 +325,7 @@ class InvalidFilterMatchType(JSONAPIParameterException):
     """Raised when client tries to do a match filter on a field that is not a string or a list"""
 
     default_detail = _(
-        "Match operators are only supported for strings and lists."
+        "Match operators are only supported for strings and lists.",
     )
     status_code = http_status.HTTP_400_BAD_REQUEST
 
@@ -327,7 +334,7 @@ class InvalidFilterFieldError(JSONAPIParameterException):
     """Raised when client tries to filter on a field that is not supported"""
 
     default_detail = _(
-        "Query contained one or more filters for invalid fields."
+        "Query contained one or more filters for invalid fields.",
     )
     status_code = http_status.HTTP_400_BAD_REQUEST
 
@@ -350,21 +357,21 @@ class UnclaimedAccountError(APIException):
 class DeactivatedAccountError(APIException):
     status_code = 400
     default_detail = _(
-        "Making API requests with credentials associated with a deactivated account is not allowed."
+        "Making API requests with credentials associated with a deactivated account is not allowed.",
     )
 
 
 class MergedAccountError(APIException):
     status_code = 400
     default_detail = _(
-        "Making API requests with credentials associated with a merged account is not allowed."
+        "Making API requests with credentials associated with a merged account is not allowed.",
     )
 
 
 class InvalidAccountError(APIException):
     status_code = 400
     default_detail = _(
-        "Making API requests with credentials associated with an invalid account is not allowed."
+        "Making API requests with credentials associated with an invalid account is not allowed.",
     )
 
 
@@ -395,7 +402,7 @@ class NonDescendantNodeError(APIException):
 
     status_code = 400
     default_detail = _(
-        "The node {0} cannot be affiliated with this View Only Link because the node you're trying to affiliate is not descended from the node that the View Only Link is attached to."
+        "The node {0} cannot be affiliated with this View Only Link because the node you're trying to affiliate is not descended from the node that the View Only Link is attached to.",
     )
 
     def __init__(self, node_id, detail=None):

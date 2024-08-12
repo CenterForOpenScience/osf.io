@@ -61,7 +61,7 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         if not self.is_allowed_version(version):
             raise drf_exceptions.NotFound(invalid_version_message)
         if get_major_version(version) == get_major_version(
-            self.default_version
+            self.default_version,
         ):
             return self.default_version
         return version
@@ -97,7 +97,10 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         return version
 
     def validate_pinned_versions(
-        self, url_path_version, header_version, query_parameter_version
+        self,
+        url_path_version,
+        header_version,
+        query_parameter_version,
     ):
         url_path_major_version = get_major_version(url_path_version)
         header_major_version = (
@@ -143,13 +146,16 @@ class BaseVersioning(drf_versioning.BaseVersioning):
 
         header_version = self.get_header_version(request, major_version)
         query_parameter_version = self.get_query_param_version(
-            request, major_version
+            request,
+            major_version,
         )
 
         version = url_path_version
         if header_version or query_parameter_version:
             self.validate_pinned_versions(
-                url_path_version, header_version, query_parameter_version
+                url_path_version,
+                header_version,
+                query_parameter_version,
             )
             version = (
                 header_version if header_version else query_parameter_version
@@ -170,12 +176,13 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         url_path_version = self.get_url_path_version(kwargs)
         major_version = get_major_version(url_path_version)
         query_parameter_version = self.get_query_param_version(
-            request, major_version
+            request,
+            major_version,
         )
 
         kwargs = {} if (kwargs is None) else kwargs
         kwargs[self.version_param] = decimal_version_to_url_path(
-            url_path_version
+            url_path_version,
         )
         query_kwargs = (
             {"version": query_parameter_version}

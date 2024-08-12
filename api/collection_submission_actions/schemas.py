@@ -1,7 +1,7 @@
 from osf.utils.workflows import CollectionSubmissionStates
 
 regex_or = "^" + ("|^").join(
-    [state.db_name for state in CollectionSubmissionStates]
+    [state.db_name for state in CollectionSubmissionStates],
 )
 
 """ Payload for creating a schema response """

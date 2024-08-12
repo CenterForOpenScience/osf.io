@@ -47,7 +47,10 @@ class MetricsReportsCsvRenderer(renderers.BaseRenderer):
     CSV_DIALECT = csv.excel
 
     def render(
-        self, json_response, accepted_media_type=None, renderer_context=None
+        self,
+        json_response,
+        accepted_media_type=None,
+        renderer_context=None,
     ):
         serialized_reports = (
             jsonapi_resource["attributes"]

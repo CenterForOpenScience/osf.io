@@ -27,7 +27,8 @@ class CanDeleteModerator(drf_permissions.BasePermission):
         auth = get_user_auth(request)
         provider = view.get_provider()
         return auth.user.has_perm(
-            "remove_moderator", provider
+            "remove_moderator",
+            provider,
         ) or auth.user._id == view.kwargs.get("moderator_id", "")
 
 

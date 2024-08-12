@@ -47,7 +47,7 @@ class CollectionSerializer(JSONAPISerializer):
             "title",
             "date_created",
             "date_modified",
-        ]
+        ],
     )
 
     id = IDField(source="_id", read_only=True)
@@ -57,7 +57,9 @@ class CollectionSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source="created", read_only=True)
     date_modified = VersionedDateTimeField(source="modified", read_only=True)
     bookmarks = ser.BooleanField(
-        read_only=False, default=False, source="is_bookmark_collection"
+        read_only=False,
+        default=False,
+        source="is_bookmark_collection",
     )
     is_promoted = ser.BooleanField(read_only=True, default=False)
     is_public = ser.BooleanField(read_only=False, default=False)
@@ -175,7 +177,8 @@ class CollectionSerializer(JSONAPISerializer):
         registration_ids = obj.active_guids.all().values_list("_id", flat=True)
         return (
             Registration.objects.filter(
-                guids___id__in=registration_ids, is_deleted=False
+                guids___id__in=registration_ids,
+                is_deleted=False,
             )
             .can_view(user=auth.user, private_link=auth.private_link)
             .count()
@@ -196,20 +199,21 @@ class CollectionSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.messages[0])
         except IntegrityError:
             raise ser.ValidationError(
-                "Each user cannot have more than one Bookmark collection."
+                "Each user cannot have more than one Bookmark collection.",
             )
         return node
 
     def update(self, collection, validated_data):
         """Update instance with the validated data."""
         assert isinstance(
-            collection, Collection
+            collection,
+            Collection,
         ), "collection must be a Collection"
         if validated_data:
             for key, value in validated_data.items():
                 if key == "title" and collection.is_bookmark_collection:
                     raise InvalidModelValueError(
-                        "Bookmark collections cannot be renamed."
+                        "Bookmark collections cannot be renamed.",
                     )
                 setattr(collection, key, value)
         try:
@@ -228,7 +232,8 @@ class CollectionDetailSerializer(CollectionSerializer):
 
 
 class CollectionSubmissionSerializer(
-    TaxonomizableSerializerMixin, JSONAPISerializer
+    TaxonomizableSerializerMixin,
+    JSONAPISerializer,
 ):
     class Meta:
         type_ = "collection-submissions"
@@ -243,11 +248,13 @@ class CollectionSubmissionSerializer(
             "reviews_state",
             "subjects",
             "status",
-        ]
+        ],
     )
     id = IDField(source="guid._id", read_only=True)
     reviews_state = EnumField(
-        CollectionSubmissionStates, source="machine_state", required=False
+        CollectionSubmissionStates,
+        source="machine_state",
+        required=False,
     )
     type = TypeField()
 
@@ -344,7 +351,8 @@ class CollectionSubmissionSerializer(
 
 
 class LegacyCollectionSubmissionSerializer(
-    TaxonomizableSerializerMixin, JSONAPISerializer
+    TaxonomizableSerializerMixin,
+    JSONAPISerializer,
 ):
     class Meta:
         type_ = "collected-metadata"
@@ -358,11 +366,13 @@ class LegacyCollectionSubmissionSerializer(
             "reviews_state",
             "subjects",
             "status",
-        ]
+        ],
     )
     id = IDField(source="guid._id", read_only=True)
     reviews_state = EnumField(
-        CollectionSubmissionStates, source="machine_state", required=False
+        CollectionSubmissionStates,
+        source="machine_state",
+        required=False,
     )
     type = TypeField()
 
@@ -482,11 +492,13 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
             )
         ):
             raise exceptions.PermissionDenied(
-                "Must have write permission on either collection or collected object to collect."
+                "Must have write permission on either collection or collected object to collect.",
             )
         try:
             obj = collection.collect_object(
-                guid.referent, creator, **validated_data
+                guid.referent,
+                creator,
+                **validated_data,
             )
         except ValidationError as e:
             raise InvalidModelValueError(e.message)
@@ -502,7 +514,7 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
 
 
 class LegacyCollectionSubmissionCreateSerializer(
-    LegacyCollectionSubmissionSerializer
+    LegacyCollectionSubmissionSerializer,
 ):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
@@ -530,11 +542,13 @@ class LegacyCollectionSubmissionCreateSerializer(
             )
         ):
             raise exceptions.PermissionDenied(
-                "Must have write permission on either collection or collected object to collect."
+                "Must have write permission on either collection or collected object to collect.",
             )
         try:
             obj = collection.collect_object(
-                guid.referent, creator, **validated_data
+                guid.referent,
+                creator,
+                **validated_data,
             )
         except ValidationError as e:
             raise InvalidModelValueError(e.message)
@@ -612,7 +626,8 @@ class CollectedAbstractNodeRelationshipSerializer:
         auth = get_user_auth(self.context["request"])
 
         add, remove = self.get_pointers_to_add_remove(
-            pointers=instance["data"], new_pointers=validated_data["data"]
+            pointers=instance["data"],
+            new_pointers=validated_data["data"],
         )
 
         for pointer in remove:
@@ -628,7 +643,8 @@ class CollectedAbstractNodeRelationshipSerializer:
         collection = instance["self"]
 
         add, remove = self.get_pointers_to_add_remove(
-            pointers=instance["data"], new_pointers=validated_data["data"]
+            pointers=instance["data"],
+            new_pointers=validated_data["data"],
         )
 
         if not len(add):
@@ -640,7 +656,7 @@ class CollectedAbstractNodeRelationshipSerializer:
             except ValidationError as e:
                 raise InvalidModelValueError(
                     source={
-                        "pointer": "/data/relationships/node_links/data/id"
+                        "pointer": "/data/relationships/node_links/data/id",
                     },
                     detail=f"Target Node {node._id} generated error: {e.message}.",
                 )
@@ -671,8 +687,9 @@ class CollectedPreprintsRelationshipSerializer(
         return {
             "data": list(
                 self.context["view"].collection_preprints(
-                    obj, user=get_user_auth(self.context["request"]).user
-                )
+                    obj,
+                    user=get_user_auth(self.context["request"]).user,
+                ),
             ),
             "self": obj,
         }

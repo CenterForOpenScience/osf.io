@@ -93,7 +93,9 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class InstitutionDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    InstitutionMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_detail)."""
 
@@ -116,7 +118,10 @@ class InstitutionDetail(
 
 
 class InstitutionNodeList(
-    JSONAPIBaseView, generics.ListAPIView, InstitutionMixin, NodesFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    InstitutionMixin,
+    NodesFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_node_list)."""
 
@@ -143,11 +148,15 @@ class InstitutionNodeList(
         institution = self.get_institution()
         return (
             institution.nodes.filter(
-                is_public=True, is_deleted=False, type="osf.node"
+                is_public=True,
+                is_deleted=False,
+                type="osf.node",
             )
             .select_related("node_license")
             .prefetch_related(
-                "contributor_set__user__guids", "root__guids", "tags"
+                "contributor_set__user__guids",
+                "root__guids",
+                "tags",
             )
             .annotate(region=F("addons_osfstorage_node_settings__region___id"))
         )
@@ -160,7 +169,10 @@ class InstitutionNodeList(
 
 
 class InstitutionUserList(
-    JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin
+    JSONAPIBaseView,
+    ListFilterMixin,
+    generics.ListAPIView,
+    InstitutionMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list)."""
 
@@ -305,7 +317,8 @@ class InstitutionRegistrationsRelationship(
         inst = self.get_institution()
         auth = get_user_auth(self.request)
         registrations = inst.nodes.filter(
-            is_deleted=False, type="osf.registration"
+            is_deleted=False,
+            type="osf.registration",
         ).can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             "data": registrations,
@@ -323,13 +336,14 @@ class InstitutionRegistrationsRelationship(
             registration = Registration.load(id_)
             if not registration.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(
-                    detail=f"Write permission on registration {id_} required"
+                    detail=f"Write permission on registration {id_} required",
                 )
             registrations.append(registration)
 
         for registration in registrations:
             registration.remove_affiliated_institution(
-                inst=instance["self"], user=user
+                inst=instance["self"],
+                user=user,
             )
             registration.save()
 
@@ -408,7 +422,8 @@ class InstitutionNodesRelationship(
         inst = self.get_institution()
         auth = get_user_auth(self.request)
         nodes = inst.nodes.filter(is_deleted=False, type="osf.node").can_view(
-            user=auth.user, private_link=auth.private_link
+            user=auth.user,
+            private_link=auth.private_link,
         )
         ret = {
             "data": nodes,
@@ -426,13 +441,14 @@ class InstitutionNodesRelationship(
             node = Node.load(id_)
             if not node.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(
-                    detail=f"Write permission on node {id_} required"
+                    detail=f"Write permission on node {id_} required",
                 )
             nodes.append(node)
 
         for node in nodes:
             node.remove_affiliated_institution(
-                inst=instance["self"], user=user
+                inst=instance["self"],
+                user=user,
             )
             node.save()
 
@@ -445,7 +461,9 @@ class InstitutionNodesRelationship(
 
 
 class InstitutionSummaryMetrics(
-    JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    InstitutionMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -466,13 +484,16 @@ class InstitutionSummaryMetrics(
         institution = self.get_institution()
         return (
             InstitutionProjectCounts.get_latest_institution_project_document(
-                institution
+                institution,
             )
         )
 
 
 class InstitutionImpactList(
-    JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin
+    JSONAPIBaseView,
+    ListFilterMixin,
+    generics.ListAPIView,
+    InstitutionMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -517,7 +538,9 @@ class InstitutionImpactList(
         return search
 
     def _make_elasticsearch_results_filterable(
-        self, search, **kwargs
+        self,
+        search,
+        **kwargs,
     ) -> MockQueryset:
         """
         Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
@@ -565,10 +588,11 @@ class InstitutionDepartmentList(InstitutionImpactList):
     def get_default_queryset(self):
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_department_counts(
-            institution
+            institution,
         )
         return self._make_elasticsearch_results_filterable(
-            search, id=institution._id
+            search,
+            id=institution._id,
         )
 
 
@@ -601,8 +625,10 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     def get_default_queryset(self):
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_current_user_metrics(
-            institution
+            institution,
         )
         return self._make_elasticsearch_results_filterable(
-            search, id=institution._id, department=DEFAULT_ES_NULL_VALUE
+            search,
+            id=institution._id,
+            department=DEFAULT_ES_NULL_VALUE,
         )

@@ -31,7 +31,7 @@ class SubjectMixin:
 
         try:
             subject = optimize_subject_query(Subject.objects).get(
-                _id=subject_id
+                _id=subject_id,
             )
         except ObjectDoesNotExist:
             raise NotFound
@@ -43,7 +43,9 @@ class SubjectMixin:
 
 
 class BaseResourceSubjectsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     permission_classes = ()
 
@@ -64,7 +66,8 @@ class BaseResourceSubjectsList(
 
 
 class SubjectRelationshipBaseView(
-    JSONAPIBaseView, generics.RetrieveUpdateAPIView
+    JSONAPIBaseView,
+    generics.RetrieveUpdateAPIView,
 ):
     """Relationship Endpoint for Resource -> Subjects Relationship
 
@@ -168,7 +171,10 @@ class SubjectDetail(JSONAPIBaseView, generics.RetrieveAPIView, SubjectMixin):
 
 
 class SubjectChildrenList(
-    JSONAPIBaseView, generics.ListAPIView, SubjectMixin, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    SubjectMixin,
+    ListFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/subject_children_list)."""
 

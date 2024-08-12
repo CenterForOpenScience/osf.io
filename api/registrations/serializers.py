@@ -92,14 +92,16 @@ class RegistrationSerializer(NodeSerializer):
             "has_materials",
             "has_papers",
             "has_supplements",
-        ]
+        ],
     )
 
     ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source="moderation_state", read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(
-        required=False, allow_blank=True, allow_null=True
+        required=False,
+        allow_blank=True,
+        allow_null=True,
     )
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
@@ -109,22 +111,25 @@ class RegistrationSerializer(NodeSerializer):
         help_text="Choices: " + category_choices_string,
     )
     date_modified = VersionedDateTimeField(
-        source="last_logged", read_only=True
+        source="last_logged",
+        read_only=True,
     )
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source="is_fork"))
     collection = HideIfWithdrawal(
-        ser.BooleanField(read_only=True, source="is_collection")
+        ser.BooleanField(read_only=True, source="is_collection"),
     )
     access_requests_enabled = HideIfWithdrawal(
-        ser.BooleanField(read_only=True)
+        ser.BooleanField(read_only=True),
     )
     node_license = HideIfWithdrawal(
-        NodeLicenseSerializer(required=False, source="license")
+        NodeLicenseSerializer(required=False, source="license"),
     )
     tags = HideIfWithdrawal(
         ValuesListField(
-            attr_name="name", child=ser.CharField(), required=False
-        )
+            attr_name="name",
+            child=ser.CharField(),
+            required=False,
+        ),
     )
     article_doi = ser.CharField(required=False, allow_null=True)
     public = HideIfWithdrawal(
@@ -160,7 +165,7 @@ class RegistrationSerializer(NodeSerializer):
         ),
     )
     embargoed = HideIfWithdrawal(
-        ser.BooleanField(read_only=True, source="is_embargoed")
+        ser.BooleanField(read_only=True, source="is_embargoed"),
     )
     pending_registration_approval = HideIfWithdrawal(
         ser.BooleanField(
@@ -195,11 +200,11 @@ class RegistrationSerializer(NodeSerializer):
     )
     embargo_end_date = HideIfWithdrawal(
         ser.SerializerMethodField(
-            help_text="When the embargo on this registration will be lifted."
+            help_text="When the embargo on this registration will be lifted.",
         ),
     )
     custom_citation = HideIfWithdrawal(
-        ser.CharField(allow_blank=True, required=False)
+        ser.CharField(allow_blank=True, required=False),
     )
 
     withdrawal_justification = ser.CharField(read_only=True)
@@ -219,22 +224,22 @@ class RegistrationSerializer(NodeSerializer):
 
     # Populated via annnotation
     revision_state = HideIfWithdrawal(
-        ser.CharField(read_only=True, required=False)
+        ser.CharField(read_only=True, required=False),
     )
     has_data = HideIfWithdrawal(
-        ser.BooleanField(read_only=True, required=False)
+        ser.BooleanField(read_only=True, required=False),
     )
     has_analytic_code = HideIfWithdrawal(
-        ser.BooleanField(read_only=True, required=False)
+        ser.BooleanField(read_only=True, required=False),
     )
     has_materials = HideIfWithdrawal(
-        ser.BooleanField(read_only=True, required=False)
+        ser.BooleanField(read_only=True, required=False),
     )
     has_papers = HideIfWithdrawal(
-        ser.BooleanField(read_only=True, required=False)
+        ser.BooleanField(read_only=True, required=False),
     )
     has_supplements = HideIfWithdrawal(
-        ser.BooleanField(read_only=True, required=False)
+        ser.BooleanField(read_only=True, required=False),
     )
 
     registration_supplement = ser.SerializerMethodField()
@@ -525,7 +530,7 @@ class RegistrationSerializer(NodeSerializer):
         RelationshipField(
             related_view="schema_responses:schema-responses-detail",
             related_view_kwargs={
-                "schema_response_id": "get_original_response_id"
+                "schema_response_id": "get_original_response_id",
             },
         ),
     )
@@ -534,7 +539,7 @@ class RegistrationSerializer(NodeSerializer):
         RelationshipField(
             related_view="schema_responses:schema-responses-detail",
             related_view_kwargs={
-                "schema_response_id": "get_latest_response_id"
+                "schema_response_id": "get_latest_response_id",
             },
         ),
     )
@@ -586,7 +591,8 @@ class RegistrationSerializer(NodeSerializer):
         ).first()
         if latest_approved_response is not None:
             return self.anonymize_fields(
-                obj, latest_approved_response.all_responses
+                obj,
+                latest_approved_response.all_responses,
             )
 
         if obj.registration_responses:
@@ -644,7 +650,7 @@ class RegistrationSerializer(NodeSerializer):
         from meta_values.
         """
         cleaned_registered_meta = strip_registered_meta_comments(
-            list(obj.registered_meta.values())[0]
+            list(obj.registered_meta.values())[0],
         )
         return self.anonymize_fields(obj, cleaned_registered_meta)
 
@@ -692,7 +698,8 @@ class RegistrationSerializer(NodeSerializer):
         is_moderator = False
         if registration.provider:
             is_moderator = user.has_perm(
-                "accept_submissions", registration.provider
+                "accept_submissions",
+                registration.provider,
             )
 
         # Fail if non-moderator tries to edit provider_specific_metadata
@@ -727,10 +734,12 @@ class RegistrationSerializer(NodeSerializer):
 
     def retract_registration(self, registration, validated_data, user):
         is_pending_retraction = validated_data.pop(
-            "is_pending_retraction", None
+            "is_pending_retraction",
+            None,
         )
         withdrawal_justification = validated_data.pop(
-            "withdrawal_justification", None
+            "withdrawal_justification",
+            None,
         )
         if withdrawal_justification and not is_pending_retraction:
             raise exceptions.ValidationError(
@@ -739,22 +748,24 @@ class RegistrationSerializer(NodeSerializer):
         if is_truthy(is_pending_retraction):
             if registration.is_pending_retraction:
                 raise exceptions.ValidationError(
-                    "This registration is already pending withdrawal."
+                    "This registration is already pending withdrawal.",
                 )
             try:
                 retraction = registration.retract_registration(
-                    user, withdrawal_justification, save=True
+                    user,
+                    withdrawal_justification,
+                    save=True,
                 )
             except NodeStateError as err:
                 raise exceptions.ValidationError(str(err))
             retraction.ask(
                 registration.get_active_contributors_recursive(
-                    unique_users=True
-                )
+                    unique_users=True,
+                ),
             )
         elif is_pending_retraction is not None:
             raise exceptions.ValidationError(
-                "You cannot set is_pending_withdrawal to False."
+                "You cannot set is_pending_withdrawal to False.",
             )
 
     def update(self, registration, validated_data):
@@ -767,7 +778,8 @@ class RegistrationSerializer(NodeSerializer):
             self.update_registration_tags(registration, validated_data, auth)
         if "custom_citation" in validated_data:
             registration.update_custom_citation(
-                validated_data.pop("custom_citation"), auth
+                validated_data.pop("custom_citation"),
+                auth,
             )
         if "license_type" in validated_data or "license" in validated_data:
             license_details = get_license_details(registration, validated_data)
@@ -792,7 +804,7 @@ class RegistrationSerializer(NodeSerializer):
         if "is_public" in validated_data:
             if validated_data.get("is_public") is False:
                 raise exceptions.ValidationError(
-                    "Registrations can only be turned from private to public."
+                    "Registrations can only be turned from private to public.",
                 )
         if "provider_specific_metadata" in validated_data:
             try:
@@ -824,7 +836,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
     def expect_cleaner_attributes(self, request):
         return Version(getattr(request, "version", "2.0")) >= Version(
-            CREATE_REGISTRATION_FIELD_CHANGE_VERSION
+            CREATE_REGISTRATION_FIELD_CHANGE_VERSION,
         )
 
     def __init__(self, *args, **kwargs):
@@ -833,23 +845,29 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         # required fields defined here for the different versions
         if self.expect_cleaner_attributes(request):
             self.fields["draft_registration_id"] = ser.CharField(
-                write_only=True
+                write_only=True,
             )
         else:
             self.fields["draft_registration"] = ser.CharField(write_only=True)
 
     # For newer versions
     embargo_end_date = VersionedDateTimeField(
-        write_only=True, allow_null=True, default=None
+        write_only=True,
+        allow_null=True,
+        default=None,
     )
     included_node_ids = ser.ListField(write_only=True, required=False)
     # For older versions
     lift_embargo = VersionedDateTimeField(
-        write_only=True, default=None, input_formats=["%Y-%m-%dT%H:%M:%S"]
+        write_only=True,
+        default=None,
+        input_formats=["%Y-%m-%dT%H:%M:%S"],
     )
     children = ser.ListField(write_only=True, required=False)
     registration_choice = ser.ChoiceField(
-        write_only=True, required=False, choices=["immediate", "embargo"]
+        write_only=True,
+        required=False,
+        choices=["immediate", "embargo"],
     )
 
     users = RelationshipField(
@@ -904,7 +922,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         auth = get_user_auth(self.context["request"])
         draft = validated_data.pop("draft", None)
         registration_choice = self.get_registration_choice_by_version(
-            validated_data
+            validated_data,
         )
         embargo_lifted = self.get_embargo_end_date_by_version(validated_data)
 
@@ -914,7 +932,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             child_nodes = Node.objects.filter(guids___id__in=children)
             if child_nodes.count() != len(children):
                 raise exceptions.ValidationError(
-                    "Some child nodes could not be found."
+                    "Some child nodes could not be found.",
                 )
 
         # Second check that metadata doesn't have files that are not in the child nodes being registered.
@@ -938,7 +956,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         if registration_choice == "embargo":
             if not embargo_lifted:
                 raise exceptions.ValidationError(
-                    "lift_embargo must be specified."
+                    "lift_embargo must be specified.",
                 )
             embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
             try:
@@ -963,7 +981,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         for qid in file_qids:
             for file_response in draft.registration_responses.get(qid, []):
                 if not self._is_attached_file_valid(
-                    file_response, registering
+                    file_response,
+                    registering,
                 ):
                     orphan_files.append(file_response)
 
@@ -985,14 +1004,14 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         """
         try:
             attached_file = OsfStorageFile.objects.get(
-                _id=file_metadata["file_id"]
+                _id=file_metadata["file_id"],
             )
         except OsfStorageFile.DoesNotExist:
             return False
 
         # Confirm that the file has the expected name
         normalized_file_name = normalize_unicode_filenames(
-            file_metadata["file_name"]
+            file_metadata["file_name"],
         )
         if attached_file.name not in normalized_file_name:
             return False

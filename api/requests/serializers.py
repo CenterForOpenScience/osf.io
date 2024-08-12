@@ -27,14 +27,18 @@ class RequestSerializer(JSONAPISerializer):
             "created",
             "id",
             "target",
-        ]
+        ],
     )
     id = ser.CharField(source="_id", read_only=True)
     request_type = ser.ChoiceField(
-        read_only=True, required=False, choices=RequestTypes.choices()
+        read_only=True,
+        required=False,
+        choices=RequestTypes.choices(),
     )
     machine_state = ser.ChoiceField(
-        read_only=True, required=False, choices=DefaultStates.choices()
+        read_only=True,
+        required=False,
+        choices=DefaultStates.choices(),
     )
     comment = ser.CharField(required=False, allow_blank=True, max_length=65535)
     created = VersionedDateTimeField(read_only=True)
@@ -52,7 +56,7 @@ class RequestSerializer(JSONAPISerializer):
         {
             "self": "get_absolute_url",
             "target": "get_target_url",
-        }
+        },
     )
 
     @property
@@ -125,7 +129,8 @@ class RegistrationRequestSerializer(RequestSerializer):
 
 class NodeRequestCreateSerializer(NodeRequestSerializer):
     request_type = ser.ChoiceField(
-        required=True, choices=RequestTypes.choices()
+        required=True,
+        choices=RequestTypes.choices(),
     )
 
     def create(self, validated_data):
@@ -137,11 +142,11 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             node = self.context["view"].get_target()
         except exceptions.PermissionDenied:
             node = self.context["view"].get_target(
-                check_object_permissions=False
+                check_object_permissions=False,
             )
             if auth.user in node.contributors:
                 raise exceptions.PermissionDenied(
-                    "You cannot request access to a node you contribute to."
+                    "You cannot request access to a node you contribute to.",
                 )
             raise
 
@@ -150,7 +155,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
 
         if request_type != RequestTypes.ACCESS.value:
             raise exceptions.ValidationError(
-                "You must specify a valid request_type."
+                "You must specify a valid request_type.",
             )
 
         try:
@@ -164,7 +169,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             node_request.save()
         except IntegrityError:
             raise Conflict(
-                f"Users may not have more than one {request_type} request per node."
+                f"Users may not have more than one {request_type} request per node.",
             )
         node_request.run_submit(auth.user)
         return node_request
@@ -201,7 +206,8 @@ class PreprintRequestSerializer(RequestSerializer):
 
 class PreprintRequestCreateSerializer(PreprintRequestSerializer):
     request_type = ser.ChoiceField(
-        required=True, choices=RequestTypes.choices()
+        required=True,
+        choices=RequestTypes.choices(),
     )
 
     def create(self, validated_data):
@@ -223,12 +229,12 @@ class PreprintRequestCreateSerializer(PreprintRequestSerializer):
             request_type=request_type,
         ).exists():
             raise Conflict(
-                f"Users may not have more than one {request_type} request per preprint."
+                f"Users may not have more than one {request_type} request per preprint.",
             )
 
         if request_type != RequestTypes.WITHDRAWAL.value:
             raise exceptions.ValidationError(
-                "You must specify a valid request_type."
+                "You must specify a valid request_type.",
             )
 
         preprint_request = PreprintRequest.objects.create(

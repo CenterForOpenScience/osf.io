@@ -34,9 +34,13 @@ if (
         "HASHIDS_SALT",
     ):
         assert getattr(local, setting, None) and getattr(
-            local, setting, None
+            local,
+            setting,
+            None,
         ) != getattr(
-            defaults, setting, None
+            defaults,
+            setting,
+            None,
         ), f"{setting} must be specified in local.py when DEV_MODE is False"
 
 
@@ -47,7 +51,7 @@ def load_origins_whitelist():
     institution_origins = tuple(
         f"https://{domain.lower()}"
         for domain in itertools.chain(
-            *Institution.objects.values_list("domains", flat=True)
+            *Institution.objects.values_list("domains", flat=True),
         )
     )
 

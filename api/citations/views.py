@@ -11,7 +11,9 @@ from osf.models.citation import CitationStyle
 
 
 class CitationStyleList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/citations_styles_list)."""
 
@@ -53,7 +55,9 @@ class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_object(self):
         cit = get_object_or_error(
-            CitationStyle, self.kwargs["citation_id"], self.request
+            CitationStyle,
+            self.kwargs["citation_id"],
+            self.request,
         )
         self.check_object_permissions(self.request, cit)
         return cit

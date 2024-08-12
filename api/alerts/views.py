@@ -32,7 +32,9 @@ class DismissedAlertDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         try:
             obj = get_object_or_error(
-                DismissedAlert, Q(_id=self.kwargs["_id"]), self.request
+                DismissedAlert,
+                Q(_id=self.kwargs["_id"]),
+                self.request,
             )
         except DismissedAlert.DoesNotExist:
             raise NotFound
@@ -40,7 +42,9 @@ class DismissedAlertDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class DismissedAlertList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
 ):
     """List of Dismissed Alerts.
     ###Creating New Dismissed Alert

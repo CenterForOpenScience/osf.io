@@ -17,7 +17,7 @@ from corsheaders.defaults import default_headers
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 )
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -350,7 +350,8 @@ CACHES = {
     "redis": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": os.environ.get(
-            "REDIS_HOST", "redis://192.168.168.167:6379"
+            "REDIS_HOST",
+            "redis://192.168.168.167:6379",
         ),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",

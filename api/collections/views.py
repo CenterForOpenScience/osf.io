@@ -191,7 +191,8 @@ class CollectionList(
         user = self.request.user
         if not user.is_anonymous:
             return Collection.objects.filter(
-                creator=user, deleted__isnull=True
+                creator=user,
+                deleted__isnull=True,
             )
         return Collection.objects.filter(is_public=True, deleted__isnull=True)
 
@@ -202,7 +203,7 @@ class CollectionList(
             auth = get_user_auth(self.request)
             collection_ids = [coll["id"] for coll in self.request.data]
             collections = Collection.objects.filter(
-                guids___id__in=collection_ids
+                guids___id__in=collection_ids,
             )
             checker = ObjectPermissionChecker(auth.user)
             for collection in collections:
@@ -247,7 +248,9 @@ class CollectionList(
 
 
 class CollectionDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    CollectionMixin,
 ):
     """Details about Organizer Collections. *Writeable*.
 
@@ -376,7 +379,7 @@ class CollectionSubmissionList(
                 date_created=F("created"),
                 title=Subquery(
                     AbstractNode.objects.filter(
-                        guids___id=OuterRef("guid___id")
+                        guids___id=OuterRef("guid___id"),
                     ).values_list("title", flat=True),
                     output_field=CharField(),
                 ),
@@ -430,7 +433,9 @@ class LegacyCollectionSubmissionList(
 
 
 class CollectionSubmissionDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    CollectionMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -477,7 +482,9 @@ class CollectionSubmissionDetail(
 
 
 class LegacyCollectionSubmissionDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    CollectionMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -524,7 +531,8 @@ class LegacyCollectionSubmissionDetail(
 
 
 class CollectionSubmissionSubjectsList(
-    BaseResourceSubjectsList, CollectionMixin
+    BaseResourceSubjectsList,
+    CollectionMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects)."""
 
@@ -544,7 +552,8 @@ class CollectionSubmissionSubjectsList(
 
 
 class CollectionSubmissionSubjectsRelationshipList(
-    SubjectRelationshipBaseView, CollectionMixin
+    SubjectRelationshipBaseView,
+    CollectionMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects_relationship)."""
 
@@ -629,7 +638,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
         node_ids = (
             self.get_collection()
             .active_guids.filter(
-                content_type_id=ContentType.objects.get_for_model(Node).id
+                content_type_id=ContentType.objects.get_for_model(Node).id,
             )
             .values_list("object_id", flat=True)
         )
@@ -866,7 +875,7 @@ class NodeLinksList(
         collection = self.get_collection()
         if instance.collection != collection:
             raise ValidationError(
-                f"Resource [{instance.guid._id}] is not part of collection {collection._id}"
+                f"Resource [{instance.guid._id}] is not part of collection {collection._id}",
             )
 
         instance.remove(
@@ -886,7 +895,9 @@ class NodeLinksList(
 
 
 class NodeLinksDetail(
-    JSONAPIBaseView, generics.RetrieveDestroyAPIView, CollectionMixin
+    JSONAPIBaseView,
+    generics.RetrieveDestroyAPIView,
+    CollectionMixin,
 ):
     """Node Link details. *Writeable*.
 
@@ -959,7 +970,8 @@ class NodeLinksDetail(
         pointer = self.get_object()
         try:
             collection.remove_object(
-                pointer.guid.referent, get_user_auth(request=self.request)
+                pointer.guid.referent,
+                get_user_auth(request=self.request),
             )
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(str(err))
@@ -967,7 +979,8 @@ class NodeLinksDetail(
 
 
 class CollectionLinkedNodesRelationship(
-    LinkedNodesRelationship, CollectionMixin
+    LinkedNodesRelationship,
+    CollectionMixin,
 ):
     """Relationship Endpoint for Collection -> Linked Node relationships
 
@@ -1073,7 +1086,8 @@ class CollectionLinkedNodesRelationship(
         for val in data:
             if val["id"] in current_pointers:
                 collection.remove_object(
-                    current_pointers[val["id"]], get_user_auth(self.request)
+                    current_pointers[val["id"]],
+                    get_user_auth(self.request),
                 )
 
 
@@ -1105,7 +1119,7 @@ class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship):
 
 
 class CollectionLinkedRegistrationsRelationship(
-    CollectionLinkedNodesRelationship
+    CollectionLinkedNodesRelationship,
 ):
     """Relationship Endpoint for Collection -> Linked Registration relationships
 

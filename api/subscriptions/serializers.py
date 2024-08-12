@@ -38,7 +38,7 @@ class SubscriptionSerializer(JSONAPISerializer):
         [
             "id",
             "event_name",
-        ]
+        ],
     )
 
     id = ser.CharField(source="_id", read_only=True)
@@ -47,7 +47,7 @@ class SubscriptionSerializer(JSONAPISerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     class Meta:

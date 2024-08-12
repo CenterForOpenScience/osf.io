@@ -67,7 +67,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
     links = LinksField(
         {
             "self": "get_self_url",
-        }
+        },
     )
 
     def get_self_url(self, obj):

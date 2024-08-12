@@ -11,7 +11,7 @@ class CollectionSubmissionActionsListPermission(permissions.BasePermission):
             raise exceptions.MethodNotAllowed(request.method)
 
         node_id, collection_id = view.kwargs["collection_submission_id"].split(
-            "-"
+            "-",
         )
         obj = get_object_or_error(
             CollectionSubmission.objects.filter(
@@ -29,7 +29,8 @@ class CollectionSubmissionActionsListPermission(permissions.BasePermission):
             return True
         else:
             is_moderator = auth.user and auth.user.has_perm(
-                "view_submissions", obj.collection.provider
+                "view_submissions",
+                obj.collection.provider,
             )
             return (
                 obj.guid.referent.has_permission(auth.user, READ)

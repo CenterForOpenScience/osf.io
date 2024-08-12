@@ -13,7 +13,10 @@ from framework.auth.oauth_scopes import CoreScopes
 
 
 class TaxonomyList(
-    DeprecatedView, JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    DeprecatedView,
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_list)."""
 
@@ -72,7 +75,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         try:
             return optimize_subject_query(Subject.objects).get(
-                _id=self.kwargs["taxonomy_id"]
+                _id=self.kwargs["taxonomy_id"],
             )
         except ObjectDoesNotExist:
             raise NotFound

@@ -14,7 +14,7 @@ class LicenseSerializer(JSONAPISerializer):
         [
             "name",
             "id",
-        ]
+        ],
     )
 
     id = IDField(source="_id", read_only=True)

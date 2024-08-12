@@ -13,7 +13,9 @@ class JSONRendererWithESISupport(JSONRenderer):
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         initial_rendering = super().render(
-            data, accepted_media_type, renderer_context
+            data,
+            accepted_media_type,
+            renderer_context,
         )
         augmented_rendering = re.sub(
             r'"<esi:include src=\\"(.*?)\\"\/>"',

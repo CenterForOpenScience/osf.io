@@ -35,7 +35,10 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
     from_state = EnumField(CollectionSubmissionStates, required=False)
     to_state = EnumField(CollectionSubmissionStates, required=False)
     comment = ser.CharField(
-        max_length=65535, required=False, allow_blank=True, allow_null=True
+        max_length=65535,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
     )
     date_created = VersionedDateTimeField(source="created", read_only=True)
     date_modified = VersionedDateTimeField(source="modified", read_only=True)
@@ -103,7 +106,8 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
                 collection_submission.cancel(user=user, comment=comment)
             else:
                 raise JSONAPIAttributeException(
-                    attribute="trigger", detail="Invalid trigger."
+                    attribute="trigger",
+                    detail="Invalid trigger.",
                 )
         except PermissionsError as exc:
             raise PermissionDenied(exc)

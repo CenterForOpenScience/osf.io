@@ -19,7 +19,9 @@ from osf.models import CollectionSubmission
 
 
 class CollectionSubmissionActionsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
 ):
     permission_classes = (
         CollectionSubmissionActionsListPermission,
@@ -37,7 +39,7 @@ class CollectionSubmissionActionsList(
 
     def get_default_queryset(self):
         node_id, collection_id = self.kwargs["collection_submission_id"].split(
-            "-"
+            "-",
         )
 
         return get_object_or_error(

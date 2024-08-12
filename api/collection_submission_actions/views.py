@@ -23,7 +23,8 @@ from osf.models import CollectionSubmissionAction
 
 
 class CollectionSubmissionActionDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
 ):
     permission_classes = (
         CollectionReadOrPublic,

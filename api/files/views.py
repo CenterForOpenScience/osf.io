@@ -57,7 +57,9 @@ class FileMixin:
             )
         except NotFound:
             obj = utils.get_object_or_error(
-                Guid, self.kwargs[self.file_lookup_url_kwarg], self.request
+                Guid,
+                self.kwargs[self.file_lookup_url_kwarg],
+                self.request,
             ).referent
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
@@ -68,11 +70,12 @@ class FileMixin:
             raise Gone(detail="The requested file is no longer available")
 
         if getattr(obj.target, "is_quickfiles", False) and getattr(
-            obj.target, "creator"
+            obj.target,
+            "creator",
         ):
             if obj.target.creator.is_disabled:
                 raise Gone(
-                    detail="This user has been deactivated and their quickfiles are no longer available."
+                    detail="This user has been deactivated and their quickfiles are no longer available.",
                 )
 
         if check_permissions:
@@ -194,14 +197,16 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     def get_object(self):
         self.file = self.get_file()
         maybe_version = self.file.get_version(
-            self.kwargs[self.version_lookup_url_kwarg]
+            self.kwargs[self.version_lookup_url_kwarg],
         )
 
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, self.file)
         return utils.get_object_or_error(
-            FileVersion, getattr(maybe_version, "_id", ""), self.request
+            FileVersion,
+            getattr(maybe_version, "_id", ""),
+            self.request,
         )
 
     def get_serializer_context(self):
@@ -211,7 +216,10 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
 
 class FileCedarMetadataRecordsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, FileMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    FileMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

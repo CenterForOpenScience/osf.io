@@ -6,7 +6,9 @@ app_name = "osf"
 
 urlpatterns = [
     re_path(
-        r"^$", views.LicenseList.as_view(), name=views.LicenseList.view_name
+        r"^$",
+        views.LicenseList.as_view(),
+        name=views.LicenseList.view_name,
     ),
     re_path(
         r"^(?P<license_id>\w+)/$",

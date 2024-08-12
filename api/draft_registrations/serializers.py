@@ -45,7 +45,8 @@ class NodeRelationshipField(RelationshipField):
 
 
 class DraftRegistrationSerializer(
-    DraftRegistrationLegacySerializer, TaxonomizableSerializerMixin
+    DraftRegistrationLegacySerializer,
+    TaxonomizableSerializerMixin,
 ):
     """
     New DraftRegistrationSerializer - instead of the node_id being provided in the URL, an optional
@@ -56,12 +57,14 @@ class DraftRegistrationSerializer(
 
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ", ".join(
-        [f"'{choice[0]}'" for choice in category_choices]
+        [f"'{choice[0]}'" for choice in category_choices],
     )
 
     title = ser.CharField(required=False, allow_blank=True)
     description = ser.CharField(
-        required=False, allow_blank=True, allow_null=True
+        required=False,
+        allow_blank=True,
+        allow_null=True,
     )
 
     category = ser.ChoiceField(
@@ -70,14 +73,16 @@ class DraftRegistrationSerializer(
         help_text="Choices: " + category_choices_string,
     )
     tags = ValuesListField(
-        attr_name="name", child=ser.CharField(), required=False
+        attr_name="name",
+        child=ser.CharField(),
+        required=False,
     )
     node_license = NodeLicenseSerializer(required=False, source="license")
 
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     affiliated_institutions = RelationshipField(
@@ -175,7 +180,8 @@ class DraftRegistrationSerializer(
 
 
 class DraftRegistrationDetailSerializer(
-    DraftRegistrationSerializer, DraftRegistrationDetailLegacySerializer
+    DraftRegistrationSerializer,
+    DraftRegistrationDetailLegacySerializer,
 ):
     """
     Overrides DraftRegistrationLegacySerializer to make id required.
@@ -194,7 +200,7 @@ class DraftRegistrationDetailSerializer(
     links = LinksField(
         {
             "self": "get_self_url",
-        }
+        },
     )
 
     def get_self_url(self, obj):
@@ -259,7 +265,7 @@ class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):
     links = LinksField(
         {
             "self": "get_absolute_url",
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -278,7 +284,8 @@ class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):
 
 
 class DraftRegistrationContributorsCreateSerializer(
-    NodeContributorsCreateSerializer, DraftRegistrationContributorsSerializer
+    NodeContributorsCreateSerializer,
+    DraftRegistrationContributorsSerializer,
 ):
     """
     Overrides DraftRegistrationContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
@@ -293,7 +300,8 @@ class DraftRegistrationContributorsCreateSerializer(
 
 
 class DraftRegistrationContributorDetailSerializer(
-    NodeContributorDetailSerializer, DraftRegistrationContributorsSerializer
+    NodeContributorDetailSerializer,
+    DraftRegistrationContributorsSerializer,
 ):
     """
     Overrides NodeContributorDetailSerializer to set the draft registration instead of the node

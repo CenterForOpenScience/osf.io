@@ -151,7 +151,7 @@ class RegistrationMixin(NodeMixin):
     def get_node(self, check_object_permissions=True, **annotations):
         guid = self.kwargs[self.node_lookup_url_kwarg]
         node = Registration.objects.filter(guids___id=guid).annotate(
-            **annotations
+            **annotations,
         )
 
         try:
@@ -161,7 +161,7 @@ class RegistrationMixin(NodeMixin):
 
         if node.deleted:
             raise Gone(
-                detail="The requested registration is no longer available."
+                detail="The requested registration is no longer available.",
             )
 
         if check_object_permissions:
@@ -237,16 +237,18 @@ class RegistrationList(
             registrations = Registration.objects.filter(
                 guids___id__in=[
                     registration["id"] for registration in self.request.data
-                ]
+                ],
             )
 
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(
-                self.request.query_params.get("skip_uneditable", False)
+                self.request.query_params.get("skip_uneditable", False),
             ):
                 return Registration.objects.get_nodes_for_user(
-                    auth.user, WRITE_NODE, registrations
+                    auth.user,
+                    WRITE_NODE,
+                    registrations,
                 )
 
             for registration in registrations:
@@ -272,7 +274,8 @@ class RegistrationList(
     def perform_create(self, serializer):
         """Create a registration from a draft."""
         draft_id = self.request.data.get(
-            "draft_registration", None
+            "draft_registration",
+            None,
         ) or self.request.data.get("draft_registration_id", None)
         draft = self.get_draft(draft_id)
         user = get_user_auth(self.request).user
@@ -334,7 +337,7 @@ class RegistrationDetail(
     def get_serializer_context(self):
         context = super().get_serializer_context()
         show_counts = is_truthy(
-            self.request.query_params.get("related_counts", False)
+            self.request.query_params.get("related_counts", False),
         )
         if show_counts:
             registration = self.get_object()
@@ -345,7 +348,9 @@ class RegistrationDetail(
 
 
 class RegistrationContributorsList(
-    BaseContributorList, RegistrationMixin, UserMixin
+    BaseContributorList,
+    RegistrationMixin,
+    UserMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_list)."""
 
@@ -371,7 +376,9 @@ class RegistrationContributorsList(
 
 
 class RegistrationContributorDetail(
-    BaseContributorDetail, RegistrationMixin, UserMixin
+    BaseContributorDetail,
+    RegistrationMixin,
+    UserMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read)."""
 
@@ -391,7 +398,8 @@ class RegistrationContributorDetail(
 
 
 class RegistrationBibliographicContributorsList(
-    NodeBibliographicContributorsList, RegistrationMixin
+    NodeBibliographicContributorsList,
+    RegistrationMixin,
 ):
     pagination_class = NodeContributorPagination
     serializer_class = RegistrationContributorsSerializer
@@ -401,7 +409,10 @@ class RegistrationBibliographicContributorsList(
 
 
 class RegistrationImplicitContributorsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    RegistrationMixin,
 ):
     permission_classes = (
         AdminOrPublic,
@@ -430,7 +441,9 @@ class RegistrationImplicitContributorsList(
 
 
 class RegistrationChildrenList(
-    BaseChildrenList, generics.ListAPIView, RegistrationMixin
+    BaseChildrenList,
+    generics.ListAPIView,
+    RegistrationMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_children_list)."""
 
@@ -454,7 +467,8 @@ class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
 
 
 class RegistrationCitationStyleDetail(
-    NodeCitationStyleDetail, RegistrationMixin
+    NodeCitationStyleDetail,
+    RegistrationMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_citation_read)."""
 
@@ -493,7 +507,8 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
 
 
 class RegistrationStorageProvidersList(
-    NodeStorageProvidersList, RegistrationMixin
+    NodeStorageProvidersList,
+    RegistrationMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_providers_list)."""
 
@@ -647,7 +662,8 @@ class RegistrationLinkedByNodesList(NodeLinkedByNodesList, RegistrationMixin):
 
 
 class RegistrationLinkedByRegistrationsList(
-    NodeLinkedByRegistrationsList, RegistrationMixin
+    NodeLinkedByRegistrationsList,
+    RegistrationMixin,
 ):
     view_category = "registrations"
     view_name = "registration-linked-by-registrations"
@@ -695,7 +711,8 @@ class RegistrationSubjectsList(NodeSubjectsList, RegistrationMixin):
 
 
 class RegistrationSubjectsRelationship(
-    NodeSubjectsRelationship, RegistrationMixin
+    NodeSubjectsRelationship,
+    RegistrationMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_subjects_relationship)."""
 
@@ -707,7 +724,8 @@ class RegistrationSubjectsRelationship(
 
 
 class RegistrationInstitutionsRelationship(
-    NodeInstitutionsRelationship, RegistrationMixin
+    NodeInstitutionsRelationship,
+    RegistrationMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_institutions_relationship)."""
 
@@ -738,7 +756,9 @@ class RegistrationLinkedNodesList(LinkedNodesList, RegistrationMixin):
 
 
 class RegistrationLinkedNodesRelationship(
-    JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    RegistrationMixin,
 ):
     """Relationship Endpoint for Nodes -> Linked Node relationships
 
@@ -786,7 +806,9 @@ class RegistrationLinkedNodesRelationship(
 
 
 class RegistrationLinkedRegistrationsRelationship(
-    JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    RegistrationMixin,
 ):
     """Relationship Endpoint for Registration -> Linked Registration relationships. *Read-only*
 
@@ -820,7 +842,8 @@ class RegistrationLinkedRegistrationsRelationship(
             "data": [
                 linked_registration
                 for linked_registration in node.linked_nodes.filter(
-                    is_deleted=False, type="osf.registration"
+                    is_deleted=False,
+                    type="osf.registration",
                 ).exclude(type="osf.collection")
                 if linked_registration.can_view(auth)
             ],
@@ -831,7 +854,8 @@ class RegistrationLinkedRegistrationsRelationship(
 
 
 class RegistrationLinkedRegistrationsList(
-    NodeLinkedRegistrationsList, RegistrationMixin
+    NodeLinkedRegistrationsList,
+    RegistrationMixin,
 ):
     """List of registrations linked to this registration. *Read-only*.
 
@@ -913,7 +937,8 @@ class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
 
 
 class RegistrationViewOnlyLinkDetail(
-    NodeViewOnlyLinkDetail, RegistrationMixin
+    NodeViewOnlyLinkDetail,
+    RegistrationMixin,
 ):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_view_only_links_read)."""
 
@@ -931,7 +956,10 @@ class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
 
 
 class RegistrationActionList(
-    JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, ProviderMixin
+    JSONAPIBaseView,
+    ListFilterMixin,
+    generics.ListCreateAPIView,
+    ProviderMixin,
 ):
     provider_class = RegistrationProvider
 
@@ -978,7 +1006,7 @@ class RegistrationActionList(
 
         if not target.provider.is_reviewed:
             raise Conflict(
-                f"{target.provider.name} is an umoderated provider. If you believe this is an error, contact OSF Support."
+                f"{target.provider.name} is an umoderated provider. If you believe this is an error, contact OSF Support.",
             )
 
         serializer.save(user=self.request.user)
@@ -1015,7 +1043,10 @@ class RegistrationRequestList(
 
 
 class RegistrationSchemaResponseList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    RegistrationMixin,
 ):
     required_read_scopes = [CoreScopes.READ_SCHEMA_RESPONSES]
     required_write_scopes = [CoreScopes.NULL]
@@ -1049,7 +1080,7 @@ class RegistrationSchemaResponseList(
         all_responses = registration.root.schema_responses.annotate(
             is_pending_current_user_approval=(
                 schema_response_annotations.is_pending_current_user_approval(
-                    user
+                    user,
                 )
             ),
             is_original_response=schema_response_annotations.IS_ORIGINAL_RESPONSE,
@@ -1073,7 +1104,7 @@ class RegistrationSchemaResponseList(
                 ],
             )
         return all_responses.filter(
-            reviews_state=ApprovalStates.APPROVED.db_name
+            reviews_state=ApprovalStates.APPROVED.db_name,
         )
 
     def get_queryset(self):
@@ -1081,7 +1112,10 @@ class RegistrationSchemaResponseList(
 
 
 class RegistrationResourceList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    RegistrationMixin,
 ):
     permission_classes = (
         RegistrationResourceListPermission,
@@ -1108,7 +1142,7 @@ class RegistrationResourceList(
     def get_default_queryset(self):
         root_registration = self.get_node()
         return OutcomeArtifact.objects.for_registration(
-            root_registration
+            root_registration,
         ).filter(
             finalized=True,
             deleted__isnull=True,
@@ -1122,7 +1156,10 @@ class RegistrationResourceList(
 
 
 class RegistrationCedarMetadataRecordsList(
-    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    ListFilterMixin,
+    RegistrationMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1140,7 +1177,7 @@ class RegistrationCedarMetadataRecordsList(
     def get_default_queryset(self):
         self.get_node()
         registration_records = CedarMetadataRecord.objects.filter(
-            guid___id=self.kwargs["node_id"]
+            guid___id=self.kwargs["node_id"],
         )
         user_auth = get_user_auth(self.request)
         record_ids = [

@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 class CedarMetadataRecordPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, CedarMetadataRecord
+            obj,
+            CedarMetadataRecord,
         ), "obj must be a CedarMetadataRecord"
         auth = get_user_auth(request)
 
@@ -26,6 +27,6 @@ class CedarMetadataRecordPermission(permissions.BasePermission):
             if not obj.is_published:
                 return permission_source.can_edit(auth)
             return permission_source.is_public or permission_source.can_view(
-                auth
+                auth,
             )
         return permission_source.can_edit(auth)

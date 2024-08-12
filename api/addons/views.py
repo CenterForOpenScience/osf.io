@@ -22,7 +22,10 @@ class AddonSettingsMixin:
     """
 
     def get_addon_settings(
-        self, provider=None, fail_if_absent=True, check_object_permissions=True
+        self,
+        provider=None,
+        fail_if_absent=True,
+        check_object_permissions=True,
     ):
         owner = None
         provider = provider or self.kwargs["provider"]
@@ -61,7 +64,7 @@ class AddonSettingsMixin:
                 authorizer = addon_settings.user_settings.owner
             if authorizer and authorizer != self.request.user:
                 raise PermissionDenied(
-                    "Must be addon authorizer to list folders"
+                    "Must be addon authorizer to list folders",
                 )
 
         return addon_settings
@@ -119,8 +122,8 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                                         field_name,
                                         operation,
                                         list(default_queryset),
-                                    )
-                                )
+                                    ),
+                                ),
                             )
                         else:
                             sub_query = sub_query.intersection(
@@ -129,8 +132,8 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                                         field_name,
                                         operation,
                                         list(default_queryset),
-                                    )
-                                )
+                                    ),
+                                ),
                             )
 
                 queryset = sub_query.intersection(queryset)

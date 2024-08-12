@@ -22,7 +22,8 @@ class CurrentUser(permissions.BasePermission):
     def has_permission(self, request, view):
         requested_user = view.get_user()
         assert isinstance(
-            requested_user, OSFUser
+            requested_user,
+            OSFUser,
         ), f"obj must be a User, got {requested_user}"
         return requested_user == request.user
 
@@ -49,7 +50,8 @@ class ClaimUserPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         claimed_user = view.get_user(check_permissions=False)
         assert isinstance(
-            claimed_user, OSFUser
+            claimed_user,
+            OSFUser,
         ), f"obj must be a User, got {claimed_user}"
         return not claimed_user.is_registered
 

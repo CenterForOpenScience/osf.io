@@ -6,7 +6,9 @@ app_name = "osf"
 
 urlpatterns = [
     re_path(
-        r"^$", views.MeetingList.as_view(), name=views.MeetingList.view_name
+        r"^$",
+        views.MeetingList.as_view(),
+        name=views.MeetingList.view_name,
     ),
     re_path(
         r"^(?P<meeting_id>\w+)/$",

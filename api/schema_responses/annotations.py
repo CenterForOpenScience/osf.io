@@ -46,6 +46,7 @@ def user_is_contributor(user):
     """Construct a subquery to determine if user is a contributor to the parent Registration"""
     return Exists(
         Contributor.objects.filter(
-            user__id=user.id, node__id=OuterRef("object_id")
-        )
+            user__id=user.id,
+            node__id=OuterRef("object_id"),
+        ),
     )

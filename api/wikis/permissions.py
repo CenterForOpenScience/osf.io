@@ -19,12 +19,13 @@ class ContributorOrPublic(permissions.BasePermission):
 class ContributorOrPublicWikiVersion(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, WikiVersion
+            obj,
+            WikiVersion,
         ), f"obj must be a WikiVersion, got {obj}"
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.wiki_page.node.is_public or obj.wiki_page.node.can_view(
-                auth
+                auth,
             )
         return obj.wiki_page.node.can_edit(auth)
 
@@ -41,7 +42,8 @@ class ExcludeWithdrawals(permissions.BasePermission):
 class ExcludeWithdrawalsWikiVersion(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, WikiVersion
+            obj,
+            WikiVersion,
         ), f"obj must be a WikiVersion, got {obj}"
         node = obj.wiki_page.node
         if node and node.is_retracted:

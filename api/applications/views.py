@@ -41,7 +41,9 @@ class ApplicationMixin:
 
 
 class ApplicationList(
-    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+    JSONAPIBaseView,
+    generics.ListCreateAPIView,
+    ListFilterMixin,
 ):
     """
     Get a list of API applications (eg OAuth2) that the user has registered
@@ -69,7 +71,8 @@ class ApplicationList(
 
     def get_default_queryset(self):
         return ApiOAuth2Application.objects.filter(
-            owner=self.request.user, is_active=True
+            owner=self.request.user,
+            is_active=True,
         )
 
     # overrides ListAPIView
@@ -83,7 +86,9 @@ class ApplicationList(
 
 
 class ApplicationDetail(
-    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ApplicationMixin
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    ApplicationMixin,
 ):
     """
     Get information about a specific API application (eg OAuth2) that the user has registered
@@ -120,7 +125,7 @@ class ApplicationDetail(
             obj.deactivate(save=True)
         except cas.CasHTTPError:
             raise APIException(
-                "Could not revoke application auth tokens; please try again later"
+                "Could not revoke application auth tokens; please try again later",
             )
 
     def perform_update(self, serializer):
@@ -131,7 +136,9 @@ class ApplicationDetail(
 
 
 class ApplicationReset(
-    DeprecatedView, generics.CreateAPIView, ApplicationMixin
+    DeprecatedView,
+    generics.CreateAPIView,
+    ApplicationMixin,
 ):
     """
     Resets client secret of a specific API application (eg OAuth2) that the user has registered

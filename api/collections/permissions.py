@@ -30,7 +30,8 @@ class CollectionReadOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
         if auth.user and auth.user.has_perm(
-            "view_submissions", obj.target.collection.provider
+            "view_submissions",
+            obj.target.collection.provider,
         ):
             return True
         elif obj.target.guid.referent.can_view(auth):
@@ -65,7 +66,8 @@ class ReadOnlyIfCollectedRegistration(permissions.BasePermission):
 class CanSubmitToCollectionOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, (CollectionSubmission, Collection, CollectionProvider)
+            obj,
+            (CollectionSubmission, Collection, CollectionProvider),
         ), f"obj must be a Collection or CollectionSubmission, got {obj}"
         if isinstance(obj, CollectionSubmission):
             obj = obj.collection
@@ -108,12 +110,14 @@ class CanUpdateDeleteCollectionSubmissionOrPublic(permissions.BasePermission):
             )
         elif request.method in ["PUT", "PATCH"]:
             return obj.guid.referent.has_permission(
-                auth.user, WRITE
+                auth.user,
+                WRITE,
             ) or auth.user.has_perm("write_collection", collection)
         elif request.method == "DELETE":
             # Restricted to collection and project admins.
             return obj.guid.referent.has_permission(
-                auth.user, ADMIN
+                auth.user,
+                ADMIN,
             ) or auth.user.has_perm("admin_collection", collection)
         return False
 
@@ -123,36 +127,40 @@ class CollectionWriteOrPublicForPointers(permissions.BasePermission):
     # Will only work for refs that point to AbstractNodes/Collections
     def has_object_permission(self, request, view, obj):
         assert isinstance(
-            obj, (CollectionSubmission, Collection)
+            obj,
+            (CollectionSubmission, Collection),
         ), f"obj must be an Collection or CollectionSubmission, got {obj}"
         auth = get_user_auth(request)
         collection = Collection.load(
-            request.parser_context["kwargs"]["node_id"]
+            request.parser_context["kwargs"]["node_id"],
         )
         pointer_node = collection.collectionsubmission_set.get(
-            guid___id=request.parser_context["kwargs"]["node_link_id"]
+            guid___id=request.parser_context["kwargs"]["node_link_id"],
         ).guid.referent
         if request.method in permissions.SAFE_METHODS:
             has_collection_auth = auth.user and auth.user.has_perm(
-                "read_collection", collection
+                "read_collection",
+                collection,
             )
             if isinstance(pointer_node, AbstractNode):
                 has_pointer_auth = pointer_node.can_view(auth)
             elif isinstance(pointer_node, Collection):
                 has_pointer_auth = auth.user and auth.user.has_perm(
-                    "read_collection", pointer_node
+                    "read_collection",
+                    pointer_node,
                 )
             public = pointer_node.is_public
             has_auth = public or (has_collection_auth and has_pointer_auth)
             return has_auth
         else:
             return auth.user and auth.user.has_perm(
-                "write_collection", collection
+                "write_collection",
+                collection,
             )
 
 
 class CollectionWriteOrPublicForRelationshipPointers(
-    permissions.BasePermission
+    permissions.BasePermission,
 ):
     # Adapted from ContributorOrPublicForRelationshipPointers
     def has_object_permission(self, request, view, obj):
@@ -160,7 +168,8 @@ class CollectionWriteOrPublicForRelationshipPointers(
         auth = get_user_auth(request)
         collection = obj["self"]
         has_collection_auth = auth.user and auth.user.has_perm(
-            "write_collection", collection
+            "write_collection",
+            collection,
         )
 
         if request.method in permissions.SAFE_METHODS:
@@ -174,13 +183,13 @@ class CollectionWriteOrPublicForRelationshipPointers(
         pointer_objects = []
         for pointer in request.data.get("data", []):
             obj = AbstractNode.load(pointer["id"]) or Preprint.load(
-                pointer["id"]
+                pointer["id"],
             )
             if not obj:
                 raise NotFound(
                     detail='Node with id "{}" was not found'.format(
-                        pointer["id"]
-                    )
+                        pointer["id"],
+                    ),
                 )
             pointer_objects.append(obj)
         has_pointer_auth = True
@@ -203,11 +212,12 @@ class CollectionSubmissionActionListPermission(permissions.BasePermission):
         auth = get_user_auth(request)
         provider = collection_submission.collection.provider
         is_moderator = bool(
-            auth.user and auth.user.has_perm("accept_submissions", provider)
+            auth.user and auth.user.has_perm("accept_submissions", provider),
         )
         return (
             collection_submission.guid.referent.has_permission(
-                auth.user, ADMIN
+                auth.user,
+                ADMIN,
             )
             or is_moderator
         )

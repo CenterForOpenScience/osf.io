@@ -58,13 +58,16 @@ class SparseNodeList(SparseNodeMixin, NodeList):
 
 
 class SparseLinkedNodesList(
-    RegistrationMixin, SparseNodeMixin, LinkedNodesList
+    RegistrationMixin,
+    SparseNodeMixin,
+    LinkedNodesList,
 ):
     pass
 
 
 class SparseLinkedRegistrationsList(
-    SparseRegistrationMixin, RegistrationLinkedRegistrationsList
+    SparseRegistrationMixin,
+    RegistrationLinkedRegistrationsList,
 ):
     pass
 
@@ -90,7 +93,8 @@ class SparseRegistrationList(SparseRegistrationMixin, RegistrationList):
 
 
 class SparseRegistrationChildrenList(
-    SparseRegistrationMixin, RegistrationChildrenList
+    SparseRegistrationMixin,
+    RegistrationChildrenList,
 ):
     pass
 

@@ -17,13 +17,13 @@ class NodesFilterMixin(ListFilterMixin):
         auth_user = utils.get_user_auth(self.request)
         if "filter[preprint]" in query_params:
             query = Preprint.objects.preprint_permissions_query(
-                user=auth_user.user
+                user=auth_user.user,
             )
             subquery = Preprint.objects.filter(
-                query & Q(deleted__isnull=True) & Q(node=OuterRef("pk"))
+                query & Q(deleted__isnull=True) & Q(node=OuterRef("pk")),
             )
             queryset = default_queryset.annotate(
-                preprints_exist=Exists(subquery)
+                preprints_exist=Exists(subquery),
             )
         else:
             queryset = default_queryset
@@ -56,7 +56,8 @@ class NodesFilterMixin(ListFilterMixin):
                         display_name="parent",
                     )
                     node_ids = NodeRelation.objects.filter(
-                        parent=parent, is_node_link=False
+                        parent=parent,
+                        is_node_link=False,
                     ).values_list("child_id", flat=True)
                     return Q(id__in=node_ids)
             elif operation["op"] == "ne":
@@ -66,12 +67,13 @@ class NodesFilterMixin(ListFilterMixin):
                 # TODO: support this case in the future:
                 # else filter[parent][ne]=<nid>
                 raise InvalidFilterValue(
-                    detail='Only "null" is accepted as valid input to "filter[parent][ne]"'
+                    detail='Only "null" is accepted as valid input to "filter[parent][ne]"',
                 )
             else:
                 # filter[parent][gte]=''
                 raise InvalidFilterOperator(
-                    value=operation["op"], valid_operators=["eq", "ne"]
+                    value=operation["op"],
+                    valid_operators=["eq", "ne"],
                 )
 
         if field_name == "root":
@@ -118,19 +120,20 @@ class UserNodesFilterMixin(NodesFilterMixin):
                 )
             elif perm == permissions.READ:
                 return Q(
-                    id__in=self.build_node_list(user, permissions.READ_NODE)
+                    id__in=self.build_node_list(user, permissions.READ_NODE),
                 )
             elif perm == permissions.WRITE:
                 return Q(
-                    id__in=self.build_node_list(user, permissions.WRITE_NODE)
+                    id__in=self.build_node_list(user, permissions.WRITE_NODE),
                 )
             elif perm == permissions.ADMIN:
                 return Q(
-                    id__in=self.build_node_list(user, permissions.ADMIN_NODE)
+                    id__in=self.build_node_list(user, permissions.ADMIN_NODE),
                 )
         return super().build_query_from_field(field_name, operation)
 
     def build_node_list(self, user, perm, with_superuser=False):
         return Node.objects.get_nodes_for_user(
-            user, permission=perm
+            user,
+            permission=perm,
         ).values_list("id", flat=True)

@@ -48,7 +48,9 @@ class DraftNodeMixin:
 
 
 class DraftNodeDetail(
-    JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin
+    JSONAPIBaseView,
+    generics.RetrieveAPIView,
+    DraftNodeMixin,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -69,7 +71,9 @@ class DraftNodeDetail(
 
 
 class DraftNodeDraftRegistrationsList(
-    JSONAPIBaseView, generics.ListAPIView, DraftNodeMixin
+    JSONAPIBaseView,
+    generics.ListAPIView,
+    DraftNodeMixin,
 ):
     permission_classes = (
         IsAdminContributor,
@@ -107,7 +111,8 @@ class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
 
 
 class DraftNodeStorageProviderDetail(
-    DraftNodeMixin, NodeStorageProviderDetail
+    DraftNodeMixin,
+    NodeStorageProviderDetail,
 ):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

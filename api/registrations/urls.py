@@ -200,5 +200,5 @@ if settings.DEV_MODE:
                 views.RegistrationRegistrationsList.as_view(),
                 name=views.RegistrationRegistrationsList.view_name,
             ),
-        ]
+        ],
     )

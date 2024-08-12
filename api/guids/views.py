@@ -46,7 +46,8 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_serializer_class(self):
         if not self.should_resolve(self.request) or self.kwargs.get(
-            "is_embedded", False
+            "is_embedded",
+            False,
         ):
             return self.serializer_class
         return None

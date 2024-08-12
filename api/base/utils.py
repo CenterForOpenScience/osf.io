@@ -80,7 +80,9 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     relative_url = reverse(view_name, kwargs=kwargs)
 
     url = website_util.api_v2_url(
-        relative_url, params=query_kwargs, base_prefix=""
+        relative_url,
+        params=query_kwargs,
+        base_prefix="",
     )
     return url
 
@@ -125,7 +127,8 @@ def get_object_or_error(
             else:
                 # fall back to modmcompatiblity's load method since we don't know their PIN
                 obj = model_cls.load(
-                    query_or_pk, select_for_update=select_for_update
+                    query_or_pk,
+                    select_for_update=select_for_update,
                 )
     else:
         # they passed a query
@@ -179,7 +182,7 @@ def get_object_or_error(
             raise Gone
         else:
             raise Gone(
-                detail=f"The requested {display_name} is no longer available."
+                detail=f"The requested {display_name} is no longer available.",
             )
     return obj
 
@@ -207,7 +210,8 @@ def default_node_list_permission_queryset(user, model_cls, **annotations):
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
     # Django's alaising will break and the resulting QS will be empty and you will be sad.
     qs = default_node_permission_queryset(
-        user, model_cls
+        user,
+        model_cls,
     ) & default_node_list_queryset(model_cls)
     if annotations:
         qs = qs.annotate(**annotations)
@@ -225,7 +229,8 @@ def extend_querystring_params(url, params):
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():
         return extend_querystring_params(
-            url, {key: request.query_params.get(key)}
+            url,
+            {key: request.query_params.get(key)},
         )
     return url
 
@@ -239,7 +244,7 @@ def has_admin_scope(request):
     cookie = request.COOKIES.get(website_settings.COOKIE_NAME)
     if cookie:
         return bool(
-            request.session and request.session.get("auth_user_id", None)
+            request.session and request.session.get("auth_user_id", None),
         )
 
     token = request.auth
@@ -247,7 +252,7 @@ def has_admin_scope(request):
         return False
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(
-        normalize_scopes(token.attributes["accessTokenScope"])
+        normalize_scopes(token.attributes["accessTokenScope"]),
     )
 
 
@@ -270,10 +275,10 @@ def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
         raise NotImplementedError("Must specify min or max version.")
     min_version_deprecated = min_version and Version(
-        request_version
+        request_version,
     ) < Version(str(min_version))
     max_version_deprecated = max_version and Version(
-        request_version
+        request_version,
     ) > Version(str(max_version))
     if min_version_deprecated or max_version_deprecated:
         return True
@@ -281,7 +286,12 @@ def is_deprecated(request_version, min_version=None, max_version=None):
 
 
 def waterbutler_api_url_for(
-    node_id, provider, path="/", _internal=False, base_url=None, **kwargs
+    node_id,
+    provider,
+    path="/",
+    _internal=False,
+    base_url=None,
+    **kwargs,
 ):
     assert path.startswith("/"), "Path must always start with /"
     if provider != "osfstorage":
@@ -290,7 +300,7 @@ def waterbutler_api_url_for(
     url = furl(
         website_settings.WATERBUTLER_INTERNAL_URL
         if _internal
-        else (base_url or website_settings.WATERBUTLER_URL)
+        else (base_url or website_settings.WATERBUTLER_URL),
     )
     segments = [
         "v1",
@@ -322,7 +332,8 @@ def assert_resource_type(obj, resource_tuple):
 
     a_or_an = "an" if error_message[0].lower() in "aeiou" else "a"
     assert isinstance(
-        obj, resource_tuple
+        obj,
+        resource_tuple,
     ), f"obj must be {a_or_an} {error_message}; got {obj}"
 
 

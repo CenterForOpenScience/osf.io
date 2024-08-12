@@ -42,7 +42,7 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
         {
             "html": "absolute_url",
             "reset": "reset_url",
-        }
+        },
     )
 
     def absolute_url(self, obj):
@@ -144,7 +144,8 @@ class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(
-            instance, ApiOAuth2Application
+            instance,
+            ApiOAuth2Application,
         ), "instance must be an ApiOAuth2Application"
         client_secret = validated_data.pop("client_secret", None)
         if client_secret == "":
@@ -160,7 +161,7 @@ class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
 
 
 class ApiOAuth2ApplicationResetSerializer(
-    ApiOAuth2ApplicationDetailSerializer
+    ApiOAuth2ApplicationDetailSerializer,
 ):
     def absolute_url(self, obj):
         obj = ApiOAuth2Application.objects.get(client_id=obj["client_id"])

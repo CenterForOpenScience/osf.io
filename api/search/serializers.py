@@ -24,7 +24,8 @@ class SearchSerializer(JSONAPISerializer):
             if data.is_registration:
                 serializer = RegistrationSerializer(data, context=self.context)
                 return RegistrationSerializer.to_representation(
-                    serializer, data
+                    serializer,
+                    data,
                 )
             serializer = NodeSerializer(data, context=self.context)
             return NodeSerializer.to_representation(serializer, data)
@@ -43,10 +44,12 @@ class SearchSerializer(JSONAPISerializer):
 
         if isinstance(data, CollectionSubmission):
             serializer = CollectionSubmissionSerializer(
-                data, context=self.context
+                data,
+                context=self.context,
             )
             return CollectionSubmissionSerializer.to_representation(
-                serializer, data
+                serializer,
+                data,
             )
 
         return None

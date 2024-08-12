@@ -63,8 +63,9 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         page_size = min(
             int(
                 self.request.query_params.get(
-                    "page[size]", REST_FRAMEWORK["PAGE_SIZE"]
-                )
+                    "page[size]",
+                    REST_FRAMEWORK["PAGE_SIZE"],
+                ),
             ),
             MAX_PAGE_SIZE,
         )

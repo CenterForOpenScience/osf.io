@@ -6,7 +6,9 @@ app_name = "osf"
 
 urlpatterns = [
     re_path(
-        r"^$", views.PreprintList.as_view(), name=views.PreprintList.view_name
+        r"^$",
+        views.PreprintList.as_view(),
+        name=views.PreprintList.view_name,
     ),
     re_path(
         r"^(?P<preprint_id>\w+)/$",
