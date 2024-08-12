@@ -114,6 +114,7 @@ webtest-plus = "1.0.0"
 Faker = "23.2.1"
 schema = "0.7.4"
 responses = "0.25.0"
+ruff = "0.5.5"
 
 # Syntax checking
 flake8 = "7.0.0"
@@ -169,3 +170,17 @@ uwsgi = "2.0.24"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+# Set the maximum line length to 79.
+line-length = 79
+exclude = [".venv", "requirements-dev.txt", "requirements.txt", ".txt", ".git", ".yaml", ".toml", "Dockerfile"]
+extend-exclude = ["migrations"]
+
+[tool.ruff.lint]
+# Add the `line-too-long` rule to the enforced rule set. By default, Ruff omits rules that
+# overlap with the use of a formatter, like Black, but we can override this behavior by
+# explicitly adding the rule.
+extend-select = ["E501"]
+
