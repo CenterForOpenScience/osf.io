@@ -114,7 +114,7 @@ webtest-plus = "1.0.0"
 Faker = "23.2.1"
 schema = "0.7.4"
 responses = "0.25.0"
-ruff = "0.5.5"
+ruff = "0.5.7"
 
 # Syntax checking
 flake8 = "7.0.0"

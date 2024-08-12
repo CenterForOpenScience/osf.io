@@ -106,4 +106,4 @@ git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git@f5b
 djangorestframework-csv==3.0.2
 gevent==24.2.1
 
-ruff == 0.5.5
+ruff == 0.5.7
