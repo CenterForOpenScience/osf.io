@@ -21,6 +21,7 @@ RUN apk add --no-cache --virtual .run-deps \
     libpq-dev \
     libffi \
     libev \
+    libev-dev \
     libevent \
     && yarn global add bower \
     && mkdir -p /var/www \
