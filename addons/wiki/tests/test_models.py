@@ -10,12 +10,12 @@ from tests.base import OsfTestCase, fake
 
 pytestmark = pytest.mark.django_db
 
+
 # from website/addons/wiki/tests/test_wiki.py
 class TestWikiPageModel:
-
     @pytest.mark.enable_implicit_clean
     def test_page_name_cannot_be_greater_than_100_characters(self):
-        bad_name = 'a' * 101
+        bad_name = "a" * 101
         page = WikiPage(page_name=bad_name)
         with pytest.raises(NameMaximumLengthError):
             page.save()
@@ -23,34 +23,33 @@ class TestWikiPageModel:
     def test_is_current_with_single_version(self):
         user = UserFactory()
         node = NodeFactory()
-        page = WikiPage(page_name='foo', node=node)
+        page = WikiPage(page_name="foo", node=node)
         page.save()
-        version = page.update(user=user, content='hello')
+        version = page.update(user=user, content="hello")
         assert version.is_current is True
 
     def test_is_current_with_multiple_versions(self):
         user = UserFactory()
         node = NodeFactory()
-        page = WikiPage(page_name='foo', node=node)
+        page = WikiPage(page_name="foo", node=node)
         page.save()
-        ver1 = page.update(user=user, content='draft1')
-        ver2 = page.update(user=user, content='draft2')
+        ver1 = page.update(user=user, content="draft1")
+        ver2 = page.update(user=user, content="draft2")
         assert ver1.is_current is False
         assert ver2.is_current is True
 
     def test_is_current_deleted_page(self):
         user = UserFactory()
         node = NodeFactory()
-        page = WikiPage(page_name='foo', node=node)
+        page = WikiPage(page_name="foo", node=node)
         page.save()
-        ver1 = page.update(user=user, content='draft1')
+        ver1 = page.update(user=user, content="draft1")
         page.deleted = datetime.datetime(2017, 1, 1, 1, 00, tzinfo=pytz.utc)
         page.save()
         assert ver1.is_current is False
 
 
 class TestWikiPage(OsfTestCase):
-
     def setUp(self):
         super().setUp()
         self.user = UserFactory()
@@ -59,30 +58,32 @@ class TestWikiPage(OsfTestCase):
 
     def test_wiki_factory(self):
         wiki = WikiFactory()
-        assert wiki.page_name == 'home'
+        assert wiki.page_name == "home"
         assert bool(wiki.user)
         assert bool(wiki.node)
 
     def test_wiki_version_factory(self):
         version = WikiVersionFactory()
         assert version.identifier == 1
-        assert version.content == 'First draft of wiki'
+        assert version.content == "First draft of wiki"
         assert bool(version.user)
         assert bool(version.wiki_page)
 
     def test_url(self):
-        assert self.wiki.url == f'{self.project.url}wiki/home/'
+        assert self.wiki.url == f"{self.project.url}wiki/home/"
 
     def test_url_for_wiki_page_name_with_spaces(self):
-        wiki = WikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
-        url = f'{self.project.url}wiki/{wiki.page_name}/'
+        wiki = WikiFactory(
+            user=self.user, node=self.project, page_name="Test Wiki"
+        )
+        url = f"{self.project.url}wiki/{wiki.page_name}/"
         assert wiki.url == url
 
     def test_url_for_wiki_page_name_with_special_characters(self):
         wiki = WikiFactory(user=self.user, node=self.project)
-        wiki.page_name = 'Wiki!@#$%^&*()+'
+        wiki.page_name = "Wiki!@#$%^&*()+"
         wiki.save()
-        url = f'{self.project.url}wiki/{wiki.page_name}/'
+        url = f"{self.project.url}wiki/{wiki.page_name}/"
         assert wiki.url == url
 
     # Regression test for an issue on prod:
@@ -96,10 +97,14 @@ class TestWikiPage(OsfTestCase):
     def test_current_version_number_with_non_contiguous_version_numbers(self):
         wiki = WikiFactory()
         for i in range(1, 9):
-            WikiVersion(wiki_page=wiki, identifier=i, content=fake.sentence()).save()
+            WikiVersion(
+                wiki_page=wiki, identifier=i, content=fake.sentence()
+            ).save()
         for i in range(2, 6):
-            WikiVersion(wiki_page=wiki, identifier=i, content=fake.sentence()).save()
+            WikiVersion(
+                wiki_page=wiki, identifier=i, content=fake.sentence()
+            ).save()
         assert wiki.current_version_number == 5
-        latest_version = wiki.versions.order_by('-created')[0]
+        latest_version = wiki.versions.order_by("-created")[0]
         assert latest_version.is_current
         assert wiki.get_version(5) == latest_version

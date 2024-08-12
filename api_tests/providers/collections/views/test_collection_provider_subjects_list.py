@@ -16,11 +16,11 @@ class TestProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return f'/{API_BASE}providers/collections/{provider_1._id}/taxonomies/?page[size]=15&'
+        return f"/{API_BASE}providers/collections/{provider_1._id}/taxonomies/?page[size]=15&"
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return f'/{API_BASE}providers/collections/{provider_2._id}/taxonomies/?page[size]=15&'
+        return f"/{API_BASE}providers/collections/{provider_2._id}/taxonomies/?page[size]=15&"
 
 
 class TestProviderHighlightedTaxonomies(ProviderHighlightedSubjectsMixin):
@@ -28,7 +28,7 @@ class TestProviderHighlightedTaxonomies(ProviderHighlightedSubjectsMixin):
 
     @pytest.fixture()
     def url(self, provider):
-        return f'/{API_BASE}providers/collections/{provider._id}/taxonomies/highlighted/'
+        return f"/{API_BASE}providers/collections/{provider._id}/taxonomies/highlighted/"
 
 
 class TestCustomTaxonomy(ProviderCustomTaxonomyMixin):
@@ -36,7 +36,7 @@ class TestCustomTaxonomy(ProviderCustomTaxonomyMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}providers/collections/{}/taxonomies/'
+        return "/{}providers/collections/{}/taxonomies/"
 
 
 class TestProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
@@ -44,11 +44,11 @@ class TestProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return f'/{API_BASE}providers/collections/{provider_1._id}/subjects/?page[size]=15&'
+        return f"/{API_BASE}providers/collections/{provider_1._id}/subjects/?page[size]=15&"
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return f'/{API_BASE}providers/collections/{provider_2._id}/subjects/?page[size]=15&'
+        return f"/{API_BASE}providers/collections/{provider_2._id}/subjects/?page[size]=15&"
 
 
 class TestProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
@@ -56,7 +56,7 @@ class TestProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
 
     @pytest.fixture()
     def url(self, provider):
-        return f'/{API_BASE}providers/collections/{provider._id}/subjects/highlighted/'
+        return f"/{API_BASE}providers/collections/{provider._id}/subjects/highlighted/"
 
 
 class TestCustomSubjects(ProviderCustomSubjectMixin):
@@ -64,4 +64,4 @@ class TestCustomSubjects(ProviderCustomSubjectMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}providers/collections/{}/subjects/'
+        return "/{}providers/collections/{}/subjects/"

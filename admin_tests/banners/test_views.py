@@ -22,29 +22,30 @@ pytestmark = pytest.mark.django_db
 def date():
     return timezone.now()
 
+
 @pytest.fixture()
 def today_banner():
     return ScheduledBannerFactory()
 
+
 @pytest.fixture()
 def tomorrow_banner(date):
-    return ScheduledBannerFactory(
-        start_date=date + timedelta(days=1)
-    )
+    return ScheduledBannerFactory(start_date=date + timedelta(days=1))
+
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def req(user):
-    req = RequestFactory().get('/fake_path')
+    req = RequestFactory().get("/fake_path")
     req.user = user
     return req
 
 
 class TestBannerList:
-
     @pytest.fixture()
     def plain_view(self):
         return views.BannerList
@@ -65,15 +66,17 @@ class TestBannerList:
         view.object_list = view.get_queryset()
         data = view.get_context_data()
         assert type(data) is dict
-        assert len(data['banners']), 2
-        assert type(data['banners'][0]) is ScheduledBanner
+        assert len(data["banners"]), 2
+        assert type(data["banners"][0]) is ScheduledBanner
 
     def test_no_user_permissions_raises_error(self, req, plain_view):
         with pytest.raises(PermissionDenied):
             plain_view.as_view()(req)
 
     def test_correct_view_permissions(self, req, user, plain_view):
-        view_permission = Permission.objects.get(codename='view_scheduledbanner')
+        view_permission = Permission.objects.get(
+            codename="view_scheduledbanner"
+        )
         user.user_permissions.add(view_permission)
         user.save()
 
@@ -81,9 +84,8 @@ class TestBannerList:
         assert res.status_code == 200
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 class TestBannerDisplay:
-
     @pytest.fixture()
     def plain_view(self):
         return views.BannerDisplay
@@ -102,15 +104,21 @@ class TestBannerDisplay:
     def test_context_data(self, view, today_banner):
         data = view.get_context_data()
         assert type(data) is dict
-        assert type(data['banner']) is dict
-        assert data['banner']['name'] == today_banner.name
+        assert type(data["banner"]) is dict
+        assert data["banner"]["name"] == today_banner.name
 
-    def test_no_user_permissions_raises_error(self, req, plain_view, today_banner):
+    def test_no_user_permissions_raises_error(
+        self, req, plain_view, today_banner
+    ):
         with pytest.raises(PermissionDenied):
             plain_view.as_view()(req, banner_id=today_banner.id)
 
-    def test_correct_view_permissions(self, req, user, plain_view, today_banner):
-        view_permission = Permission.objects.get(codename='view_scheduledbanner')
+    def test_correct_view_permissions(
+        self, req, user, plain_view, today_banner
+    ):
+        view_permission = Permission.objects.get(
+            codename="view_scheduledbanner"
+        )
         user.user_permissions.add(view_permission)
         user.save()
 
@@ -118,9 +126,8 @@ class TestBannerDisplay:
         assert res.status_code == 200
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 class TestDeleteBanner:
-
     @pytest.fixture()
     def plain_view(self):
         return views.DeleteBanner
@@ -133,23 +140,27 @@ class TestDeleteBanner:
 
     def test_delete(self, view, req):
         res = view.delete(req)
-        assert res.url == '/banners/'
+        assert res.url == "/banners/"
         assert res.status_code == 302
 
-    def test_no_user_permissions_raises_error(self, req, plain_view, today_banner):
+    def test_no_user_permissions_raises_error(
+        self, req, plain_view, today_banner
+    ):
         with pytest.raises(PermissionDenied):
             plain_view.as_view()(req, banner_id=today_banner.id)
 
     def test_correct_permissions(self, req, user, plain_view, today_banner):
-        delete_permission = Permission.objects.get(codename='delete_scheduledbanner')
+        delete_permission = Permission.objects.get(
+            codename="delete_scheduledbanner"
+        )
         user.user_permissions.add(delete_permission)
         user.save()
 
         res = plain_view.as_view()(req, banner_id=today_banner.id)
         assert res.status_code == 200
 
-class TestCreateBanner:
 
+class TestCreateBanner:
     @pytest.fixture()
     def plain_view(self):
         return views.CreateBanner
@@ -159,7 +170,9 @@ class TestCreateBanner:
             plain_view.as_view()(req)
 
     def test_correct_view_permissions(self, req, user, plain_view):
-        change_permission = Permission.objects.get(codename='change_scheduledbanner')
+        change_permission = Permission.objects.get(
+            codename="change_scheduledbanner"
+        )
         user.user_permissions.add(change_permission)
         user.save()
 

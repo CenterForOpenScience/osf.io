@@ -20,16 +20,16 @@ def update_mailchimp_email():
 
 
 class Command(BaseCommand):
-    help = '''Backfills users that might have updated their email and not had it updated in mailchimp'''
+    help = """Backfills users that might have updated their email and not had it updated in mailchimp"""
 
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info(f'Script started time: {script_start_time}')
+        logger.info(f"Script started time: {script_start_time}")
 
         users_updated = update_mailchimp_email()
 
         script_finish_time = datetime.datetime.now()
-        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f"Script finished time: {script_finish_time}")
         script_runtime = script_finish_time - script_start_time
-        logger.info(f'Run time {script_runtime}')
-        logger.info(f'{users_updated} Users updated in mailchimp')
+        logger.info(f"Run time {script_runtime}")
+        logger.info(f"{users_updated} Users updated in mailchimp")

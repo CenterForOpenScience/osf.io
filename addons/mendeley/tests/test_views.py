@@ -12,21 +12,32 @@ from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.mendeley.serializer import MendeleySerializer
 
 
-API_URL = 'https://api.mendeley.com'
+API_URL = "https://api.mendeley.com"
 pytestmark = pytest.mark.django_db
 
-class TestAuthViews(MendeleyTestCase, views.OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
+
+class TestAuthViews(
+    MendeleyTestCase, views.OAuthAddonAuthViewsTestCaseMixin, OsfTestCase
+):
     pass
 
-class TestConfigViews(MendeleyTestCase, views.OAuthCitationAddonConfigViewsTestCaseMixin, OsfTestCase):
+
+class TestConfigViews(
+    MendeleyTestCase,
+    views.OAuthCitationAddonConfigViewsTestCaseMixin,
+    OsfTestCase,
+):
     folder = MockFolder()
     Serializer = MendeleySerializer
     client = Mendeley
     citationsProvider = MendeleyCitationsProvider
-    foldersApiUrl = urljoin(API_URL, 'folders')
-    documentsApiUrl = urljoin(API_URL, 'documents')
+    foldersApiUrl = urljoin(API_URL, "folders")
+    documentsApiUrl = urljoin(API_URL, "documents")
     mockResponses = mock_responses
 
-    @mock.patch('addons.mendeley.models.NodeSettings._fetch_folder_name', mock.PropertyMock(return_value='Fake Name'))
+    @mock.patch(
+        "addons.mendeley.models.NodeSettings._fetch_folder_name",
+        mock.PropertyMock(return_value="Fake Name"),
+    )
     def test_deauthorize_node(self):
         super().test_deauthorize_node()

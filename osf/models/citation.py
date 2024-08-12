@@ -10,7 +10,7 @@ class CitationStyle(BaseModel):
     These are parsed from .csl files, so that metadata fields can be indexed.
     """
 
-    primary_identifier_name = '_id'
+    primary_identifier_name = "_id"
 
     # The name of the citation file, sans extension
     _id = models.CharField(max_length=255, db_index=True)
@@ -22,21 +22,23 @@ class CitationStyle(BaseModel):
     date_parsed = NonNaiveDateTimeField(default=timezone.now)
 
     short_title = models.CharField(max_length=2048, null=True, blank=True)
-    summary = models.CharField(max_length=4200, null=True, blank=True)  # longest value was 3,812 8/23/2016
+    summary = models.CharField(
+        max_length=4200, null=True, blank=True
+    )  # longest value was 3,812 8/23/2016
     has_bibliography = models.BooleanField(default=False)
     parent_style = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        ordering = ['_id']
+        ordering = ["_id"]
 
     def to_json(self):
         return {
-            'id': self._id,
-            'title': self.title,
-            'short_title': self.short_title,
-            'summary': self.summary,
-            'has_bibliography': self.has_bibliography,
-            'parent_style': self.parent_style
+            "id": self._id,
+            "title": self.title,
+            "short_title": self.short_title,
+            "summary": self.summary,
+            "has_bibliography": self.has_bibliography,
+            "parent_style": self.parent_style,
         }
 
     @property
@@ -44,7 +46,7 @@ class CitationStyle(BaseModel):
         return self.parent_style is not None
 
     def __str__(self):
-        return f'{self.title} ({self._id})'
+        return f"{self.title} ({self._id})"
 
     def __repr__(self):
-        return f'{self.title} ({self._id})'
+        return f"{self.title} ({self._id})"

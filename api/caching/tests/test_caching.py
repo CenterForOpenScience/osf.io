@@ -15,21 +15,22 @@ from tests.base import DbTestCase
 # import datadiff
 # from datadiff import tools
 
+
 class TestVarnish(DbTestCase):
-    local_varnish_base_url = f'{django_settings.VARNISH_SERVERS[0]}/v2/'
-    local_python_base_url = 'http://localhost:8000/v2/'
+    local_varnish_base_url = f"{django_settings.VARNISH_SERVERS[0]}/v2/"
+    local_python_base_url = "http://localhost:8000/v2/"
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         username = uuid.uuid4()
         cls.user = OSFUser.create_confirmed(
-            username=f'{str(username)}@mail.com',
-            password='password',
-            fullname='Mocha Test User',
+            username=f"{str(username)}@mail.com",
+            password="password",
+            fullname="Mocha Test User",
         )
         cls.user.save()
-        cls.authorization = HTTPBasicAuth(cls.user.username, 'password')
+        cls.authorization = HTTPBasicAuth(cls.user.username, "password")
 
         small = 5
         large = 10
@@ -50,49 +51,55 @@ class TestVarnish(DbTestCase):
         number_of_users = random.randint(1, 11)
 
         for i in range(number_of_projects):
-            name = ''
+            name = ""
             create_fake_project(
-                cls.user, number_of_users,
-                random.choice(['public', 'private']),
-                components, name, number_of_tags, None, False,
+                cls.user,
+                number_of_users,
+                random.choice(["public", "private"]),
+                components,
+                name,
+                number_of_tags,
+                None,
+                False,
             )
 
-    @unittest.skipIf(not django_settings.ENABLE_VARNISH, 'Varnish is disabled')
+    @unittest.skipIf(not django_settings.ENABLE_VARNISH, "Varnish is disabled")
     def test_compare_python_responses_to_varnish_responses(self):
         querystrings = dict(
             nodes=[
-                'comments',
-                'children',
-                'files',
-                'registrations',
-                'contributors',
-                'node_links',
-                'root',
+                "comments",
+                "children",
+                "files",
+                "registrations",
+                "contributors",
+                "node_links",
+                "root",
             ],
             users=[
-                'nodes',
+                "nodes",
             ],
             registrations=[
-                'comments',
-                'children',
-                'files',
-                'registrations',
-                'contributors',
-                'node_links',
-                'root',
-                'registrations',
-                'registered_by',
-                'registered_from',
+                "comments",
+                "children",
+                "files",
+                "registrations",
+                "contributors",
+                "node_links",
+                "root",
+                "registrations",
+                "registered_by",
+                "registered_from",
             ],
         )
 
-        querystring_suffix = 'page[size]=10&format=jsonapi&sort=_id'
+        querystring_suffix = "page[size]=10&format=jsonapi&sort=_id"
 
         data_dict = dict(
             nodes=dict(),
             users=dict(),
             comments=dict(),
-            registrations=dict(), )
+            registrations=dict(),
+        )
 
         python_data = copy.deepcopy(data_dict)
         python_authed_data = copy.deepcopy(data_dict)
@@ -103,13 +110,17 @@ class TestVarnish(DbTestCase):
             embed_values.sort()
             original_embed_values = embed_values
             while len(embed_values) > 0:
-                generated_qs = '&embed='.join(embed_values)
-                python_url = '{}{}/?embed={}&{}&esi=false'.format(
-                    self.local_python_base_url, key, generated_qs,
+                generated_qs = "&embed=".join(embed_values)
+                python_url = "{}{}/?embed={}&{}&esi=false".format(
+                    self.local_python_base_url,
+                    key,
+                    generated_qs,
                     querystring_suffix,
                 )
-                varnish_url = '{}{}/?embed={}&{}&esi=true'.format(
-                    self.local_varnish_base_url, key, generated_qs,
+                varnish_url = "{}{}/?embed={}&{}&esi=true".format(
+                    self.local_varnish_base_url,
+                    key,
+                    generated_qs,
                     querystring_suffix,
                 )
                 python_resp = requests.get(python_url, timeout=120)
@@ -127,7 +138,7 @@ class TestVarnish(DbTestCase):
                 )
 
                 python_data[key][
-                    '_'.join(
+                    "_".join(
                         embed_values,
                     )
                 ] = python_resp.json()
@@ -137,7 +148,7 @@ class TestVarnish(DbTestCase):
                 )
 
                 python_authed_data[key][
-                    '_'.join(
+                    "_".join(
                         embed_values,
                     )
                 ] = python_authed_resp.json()
@@ -147,7 +158,7 @@ class TestVarnish(DbTestCase):
                 )
 
                 varnish_data[key][
-                    '_'.join(
+                    "_".join(
                         embed_values,
                     )
                 ] = varnish_resp.json()
@@ -157,7 +168,7 @@ class TestVarnish(DbTestCase):
                 )
 
                 varnish_authed_data[key][
-                    '_'.join(
+                    "_".join(
                         embed_values,
                     )
                 ] = varnish_authed_resp.json()
@@ -181,96 +192,113 @@ class TestVarnish(DbTestCase):
         if embed_keys is None:
             embed_keys = list()
 
-        if 'errors' in data.keys():
+        if "errors" in data.keys():
             return
-        for item in data['data']:  # all these should be lists.
-            if 'embeds' in item.keys():
-                item__embed_keys = item['embeds'].keys()
+        for item in data["data"]:  # all these should be lists.
+            if "embeds" in item.keys():
+                item__embed_keys = item["embeds"].keys()
                 item__embed_keys.sort()
                 embed_keys.sort()
-                assert item__embed_keys == embed_keys, 'Embed key mismatch: \n{}\n{}'.format(
+                assert (
+                    item__embed_keys == embed_keys
+                ), "Embed key mismatch: \n{}\n{}".format(
                     item__embed_keys,
                     embed_keys,
                 )
 
-    @unittest.skipIf(not django_settings.ENABLE_VARNISH, 'Varnish is disabled')
+    @unittest.skipIf(not django_settings.ENABLE_VARNISH, "Varnish is disabled")
     def test_cache_invalidation(self):
         payload = dict(
             data=dict(
-                type='nodes',
+                type="nodes",
                 attributes=dict(
-                    title='Awesome Test Node Title',
-                    category='project',
+                    title="Awesome Test Node Title",
+                    category="project",
                 ),
             ),
         )
         create_response = requests.post(
-            f'{self.local_python_base_url}nodes/',
+            f"{self.local_python_base_url}nodes/",
             json=payload,
             auth=self.authorization,
         )
-        assert create_response.ok, 'Failed to create node'
+        assert create_response.ok, "Failed to create node"
 
-        node_id = create_response.json()['data']['id']
-        new_title = '{} -- But Changed!'.format(create_response.json()['data']['attributes']['title'])
+        node_id = create_response.json()["data"]["id"]
+        new_title = "{} -- But Changed!".format(
+            create_response.json()["data"]["attributes"]["title"]
+        )
 
         response = requests.get(
-            '{}/v2/nodes/{}/?format=jsonapi&esi=true&embed=comments&embed=children&embed=files&embed=registrations&embed=contributors&embed=node_links&embed=parent'.format(
-                django_settings.VARNISH_SERVERS[0], node_id,
+            "{}/v2/nodes/{}/?format=jsonapi&esi=true&embed=comments&embed=children&embed=files&embed=registrations&embed=contributors&embed=node_links&embed=parent".format(
+                django_settings.VARNISH_SERVERS[0],
+                node_id,
             ),
             timeout=120,
             auth=self.authorization,
         )
-        assert response.ok, 'Your request failed.'
+        assert response.ok, "Your request failed."
 
         new_data_object = dict(data=dict())
-        new_data_object['data']['id'] = node_id
-        new_data_object['data']['type'] = 'nodes'
-        new_data_object['data']['attributes'] = dict(
+        new_data_object["data"]["id"] = node_id
+        new_data_object["data"]["type"] = "nodes"
+        new_data_object["data"]["attributes"] = dict(
             title=new_title,
-            category='',
+            category="",
         )
 
         individual_response_before_update = requests.get(
-            '{}/v2/nodes/{}/'.format(
+            "{}/v2/nodes/{}/".format(
                 django_settings.VARNISH_SERVERS[0],
                 node_id,
             ),
             auth=self.authorization,
         )
 
-        assert individual_response_before_update.ok, 'Individual request failed.'
+        assert (
+            individual_response_before_update.ok
+        ), "Individual request failed."
 
         individual_response_before_update = requests.get(
-            '{}/v2/nodes/{}/'.format(
+            "{}/v2/nodes/{}/".format(
                 django_settings.VARNISH_SERVERS[0],
                 node_id,
             ),
             auth=self.authorization,
         )
 
-        assert individual_response_before_update.ok, 'Individual request failed.'
+        assert (
+            individual_response_before_update.ok
+        ), "Individual request failed."
 
-        assert individual_response_before_update.headers['x-cache'] == 'HIT', 'Request never made it to cache'
+        assert (
+            individual_response_before_update.headers["x-cache"] == "HIT"
+        ), "Request never made it to cache"
 
         update_response = requests.put(
-            f'{django_settings.VARNISH_SERVERS[0]}/v2/nodes/{node_id}/',
-            json=new_data_object, auth=self.authorization,
+            f"{django_settings.VARNISH_SERVERS[0]}/v2/nodes/{node_id}/",
+            json=new_data_object,
+            auth=self.authorization,
         )
 
-        assert update_response.ok, 'Your update request failed. {}'.format(
+        assert update_response.ok, "Your update request failed. {}".format(
             update_response.text,
         )
 
         individual_response = requests.get(
-            '{}/v2/nodes/{}/'.format(
-                django_settings.VARNISH_SERVERS[0], node_id,
+            "{}/v2/nodes/{}/".format(
+                django_settings.VARNISH_SERVERS[0],
+                node_id,
             ),
             auth=self.authorization,
         )
 
-        assert individual_response.ok, 'Your individual node request failed. {}'.format(
+        assert (
+            individual_response.ok
+        ), "Your individual node request failed. {}".format(
             individual_response.json(),
         )
 
-        assert individual_response.headers['x-cache'] == 'MISS', 'Request got a cache hit.'
+        assert (
+            individual_response.headers["x-cache"] == "MISS"
+        ), "Request got a cache hit."

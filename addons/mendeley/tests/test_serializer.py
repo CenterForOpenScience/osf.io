@@ -1,4 +1,5 @@
 """Serializer tests for the Mendeley addon."""
+
 import pytest
 
 from addons.base.tests.serializers import CitationAddonSerializerTestSuiteMixin
@@ -10,9 +11,11 @@ from tests.base import OsfTestCase
 
 pytestmark = pytest.mark.django_db
 
-class TestMendeleySerializer(CitationAddonSerializerTestSuiteMixin, OsfTestCase):
 
-    addon_short_name = 'mendeley'
+class TestMendeleySerializer(
+    CitationAddonSerializerTestSuiteMixin, OsfTestCase
+):
+    addon_short_name = "mendeley"
 
     Serializer = MendeleySerializer
     ExternalAccountFactory = MendeleyAccountFactory

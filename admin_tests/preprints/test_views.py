@@ -16,7 +16,6 @@ from osf_tests.factories import (
     PreprintRequestFactory,
     NodeFactory,
     SubjectFactory,
-
 )
 from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
@@ -41,20 +40,21 @@ def user():
 
 @pytest.fixture()
 def req(user):
-    req = RequestFactory().get('/fake_path')
+    req = RequestFactory().get("/fake_path")
     req.user = user
     return req
 
 
 def patch_messages(request):
     from django.contrib.messages.storage.fallback import FallbackStorage
-    setattr(request, 'session', 'session')
+
+    setattr(request, "session", "session")
     messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    setattr(request, "_messages", messages)
 
-@pytest.mark.urls('admin.base.urls')
+
+@pytest.mark.urls("admin.base.urls")
 class TestPreprintView:
-
     @pytest.fixture()
     def plain_view(self):
         return views.PreprintView
@@ -98,56 +98,81 @@ class TestPreprintView:
         res = view.get_object()
         assert isinstance(res, Preprint)
 
-    def test_no_user_permissions_raises_error(self, user, preprint, plain_view):
-        request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
+    def test_no_user_permissions_raises_error(
+        self, user, preprint, plain_view
+    ):
+        request = RequestFactory().get(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id})
+        )
         request.user = user
         with pytest.raises(PermissionDenied):
             plain_view.as_view()(request, guid=preprint._id)
 
-    def test_get_flagged_spam(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
-        request = RequestFactory().get(reverse('preprints:flagged-spam'))
+    def test_get_flagged_spam(
+        self,
+        superuser,
+        preprint,
+        ham_preprint,
+        spam_preprint,
+        flagged_preprint,
+    ):
+        request = RequestFactory().get(reverse("preprints:flagged-spam"))
         request.user = superuser
         response = views.PreprintFlaggedSpamList.as_view()(request)
         assert response.status_code == 200
 
-        response_ids = [res._id for res in response.context_data['preprints']]
-        assert preprint._id not in response.context_data['preprints'][0]._id
-        assert len(response.context_data['preprints']) == 1
+        response_ids = [res._id for res in response.context_data["preprints"]]
+        assert preprint._id not in response.context_data["preprints"][0]._id
+        assert len(response.context_data["preprints"]) == 1
         assert flagged_preprint._id in response_ids
         assert ham_preprint._id not in response_ids
         assert spam_preprint._id not in response_ids
         assert preprint._id not in response_ids
 
-    def test_get_known_spam(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
-        request = RequestFactory().get(reverse('preprints:known-spam'))
+    def test_get_known_spam(
+        self,
+        superuser,
+        preprint,
+        ham_preprint,
+        spam_preprint,
+        flagged_preprint,
+    ):
+        request = RequestFactory().get(reverse("preprints:known-spam"))
         request.user = superuser
         response = views.PreprintKnownSpamList.as_view()(request)
         assert response.status_code == 200
 
-        response_ids = [res._id for res in response.context_data['preprints']]
-        assert preprint._id not in response.context_data['preprints'][0]._id
-        assert len(response.context_data['preprints']) == 1
+        response_ids = [res._id for res in response.context_data["preprints"]]
+        assert preprint._id not in response.context_data["preprints"][0]._id
+        assert len(response.context_data["preprints"]) == 1
         assert flagged_preprint._id not in response_ids
         assert ham_preprint._id not in response_ids
         assert spam_preprint._id in response_ids
         assert preprint._id not in response_ids
 
-    def test_get_known_ham(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
-        request = RequestFactory().get(reverse('preprints:known-ham'))
+    def test_get_known_ham(
+        self,
+        superuser,
+        preprint,
+        ham_preprint,
+        spam_preprint,
+        flagged_preprint,
+    ):
+        request = RequestFactory().get(reverse("preprints:known-ham"))
         request.user = superuser
         response = views.PreprintKnownHamList.as_view()(request)
         assert response.status_code == 200
 
-        response_ids = [res._id for res in response.context_data['preprints']]
-        assert preprint._id not in response.context_data['preprints'][0]._id
-        assert len(response.context_data['preprints']) == 1
+        response_ids = [res._id for res in response.context_data["preprints"]]
+        assert preprint._id not in response.context_data["preprints"][0]._id
+        assert len(response.context_data["preprints"]) == 1
         assert flagged_preprint._id not in response_ids
         assert ham_preprint._id in response_ids
         assert spam_preprint._id not in response_ids
         assert preprint._id not in response_ids
 
     def test_confirm_spam(self, flagged_preprint, superuser, mock_akismet):
-        request = RequestFactory().post('/fake_path')
+        request = RequestFactory().post("/fake_path")
         request.user = superuser
 
         view = views.PreprintConfirmSpamView()
@@ -162,7 +187,7 @@ class TestPreprintView:
         assert not flagged_preprint.is_public
 
     def test_confirm_ham(self, preprint, superuser, mock_akismet):
-        request = RequestFactory().post('/fake_path')
+        request = RequestFactory().post("/fake_path")
         request.user = superuser
 
         view = views.PreprintConfirmHamView()
@@ -173,26 +198,32 @@ class TestPreprintView:
         assert preprint.spam_status == SpamStatus.HAM
         assert preprint.is_public
 
-    def test_valid_but_insufficient_view_permissions(self, user, preprint, plain_view):
-        view_permission = Permission.objects.get(codename='view_preprint')
+    def test_valid_but_insufficient_view_permissions(
+        self, user, preprint, plain_view
+    ):
+        view_permission = Permission.objects.get(codename="view_preprint")
         user.user_permissions.add(view_permission)
         user.save()
 
-        request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
+        request = RequestFactory().get(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id})
+        )
         request.user = user
 
         with pytest.raises(PermissionDenied):
             plain_view.as_view()(request, guid=preprint._id)
 
     def test_change_preprint_provider(self, user, preprint, plain_view):
-        change_permission = Permission.objects.get(codename='change_preprint')
-        view_permission = Permission.objects.get(codename='view_preprint')
+        change_permission = Permission.objects.get(codename="change_preprint")
+        view_permission = Permission.objects.get(codename="view_preprint")
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)
         user.save()
 
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
-        request.POST = {'provider': preprint.provider.id}
+        request = RequestFactory().post(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id})
+        )
+        request.POST = {"provider": preprint.provider.id}
         request.user = user
 
         view = plain_view.as_view()
@@ -209,12 +240,12 @@ class TestPreprintView:
 
     @pytest.fixture
     def provider_osf(self):
-        return PreprintProviderFactory(_id='osf')
+        return PreprintProviderFactory(_id="osf")
 
     @pytest.fixture
     def preprint_user(self, user):
-        change_permission = Permission.objects.get(codename='change_preprint')
-        view_permission = Permission.objects.get(codename='view_preprint')
+        change_permission = Permission.objects.get(codename="change_preprint")
+        view_permission = Permission.objects.get(codename="view_preprint")
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)
         return user
@@ -227,18 +258,29 @@ class TestPreprintView:
     def subject_one(self, provider_one):
         return SubjectFactory(provider=provider_one)
 
-    def test_change_preprint_provider_subjects_custom_taxonomies(self, plain_view, preprint_user, provider_one, provider_two, subject_one):
-        """ Testing that subjects are changed when providers are changed between two custom taxonomies.
-        """
+    def test_change_preprint_provider_subjects_custom_taxonomies(
+        self,
+        plain_view,
+        preprint_user,
+        provider_one,
+        provider_two,
+        subject_one,
+    ):
+        """Testing that subjects are changed when providers are changed between two custom taxonomies."""
 
-        subject_two = SubjectFactory(provider=provider_two, bepress_subject=subject_one.bepress_subject)
+        subject_two = SubjectFactory(
+            provider=provider_two, bepress_subject=subject_one.bepress_subject
+        )
 
         preprint = PreprintFactory(
             subjects=[[subject_one._id]],
             provider=provider_one,
-            creator=preprint_user
+            creator=preprint_user,
         )
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}), data={'provider': provider_two.id})
+        request = RequestFactory().post(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id}),
+            data={"provider": provider_two.id},
+        )
         request.user = preprint_user
         response = plain_view.as_view()(request, guid=preprint._id)
 
@@ -247,15 +289,29 @@ class TestPreprintView:
         assert preprint.provider == provider_two
         assert subject_two in preprint.subjects.all()
 
-    def test_change_preprint_provider_subjects_from_osf(self, plain_view, preprint_user, provider_one, provider_osf, subject_osf):
-        """ Testing that subjects are changed when a provider is changed from osf using the bepress subject id of the new subject.
-        """
+    def test_change_preprint_provider_subjects_from_osf(
+        self,
+        plain_view,
+        preprint_user,
+        provider_one,
+        provider_osf,
+        subject_osf,
+    ):
+        """Testing that subjects are changed when a provider is changed from osf using the bepress subject id of the new subject."""
 
-        subject_two = SubjectFactory(provider=provider_one,
-            bepress_subject=subject_osf)
+        subject_two = SubjectFactory(
+            provider=provider_one, bepress_subject=subject_osf
+        )
 
-        preprint = PreprintFactory(subjects=[[subject_osf._id]], provider=provider_osf, creator=preprint_user)
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}), data={'provider': provider_one.id})
+        preprint = PreprintFactory(
+            subjects=[[subject_osf._id]],
+            provider=provider_osf,
+            creator=preprint_user,
+        )
+        request = RequestFactory().post(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id}),
+            data={"provider": provider_one.id},
+        )
         request.user = preprint_user
         response = plain_view.as_view()(request, guid=preprint._id)
 
@@ -264,16 +320,30 @@ class TestPreprintView:
         assert preprint.provider == provider_one
         assert subject_two in preprint.subjects.all()
 
-    def test_change_preprint_provider_subjects_to_osf(self, plain_view, preprint_user, provider_one, provider_osf, subject_osf):
-        """ Testing that subjects are changed when providers are changed to osf using the bepress subject id of the old subject
-        """
+    def test_change_preprint_provider_subjects_to_osf(
+        self,
+        plain_view,
+        preprint_user,
+        provider_one,
+        provider_osf,
+        subject_osf,
+    ):
+        """Testing that subjects are changed when providers are changed to osf using the bepress subject id of the old subject"""
 
-        subject_one = SubjectFactory(provider=provider_one,
-            bepress_subject=subject_osf)
+        subject_one = SubjectFactory(
+            provider=provider_one, bepress_subject=subject_osf
+        )
 
-        preprint = PreprintFactory(subjects=[[subject_one._id]], provider=provider_one, creator=preprint_user)
+        preprint = PreprintFactory(
+            subjects=[[subject_one._id]],
+            provider=provider_one,
+            creator=preprint_user,
+        )
 
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}), data={'provider': provider_osf.id})
+        request = RequestFactory().post(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id}),
+            data={"provider": provider_osf.id},
+        )
         request.user = preprint_user
         response = plain_view.as_view()(request, guid=preprint._id)
 
@@ -282,19 +352,32 @@ class TestPreprintView:
         assert preprint.provider == provider_osf
         assert subject_osf in preprint.subjects.all()
 
-    def test_change_preprint_provider_subjects_problem_subject(self, plain_view, preprint_user, provider_one, provider_osf, subject_osf):
-        """ Testing that subjects are changed when providers are changed and theres no related mapping between subjects, the old subject stays in place.
-        """
+    def test_change_preprint_provider_subjects_problem_subject(
+        self,
+        plain_view,
+        preprint_user,
+        provider_one,
+        provider_osf,
+        subject_osf,
+    ):
+        """Testing that subjects are changed when providers are changed and theres no related mapping between subjects, the old subject stays in place."""
 
-        preprint = PreprintFactory(subjects=[[subject_osf._id]], provider=provider_osf, creator=preprint_user)
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}), data={'provider': provider_one.id})
+        preprint = PreprintFactory(
+            subjects=[[subject_osf._id]],
+            provider=provider_osf,
+            creator=preprint_user,
+        )
+        request = RequestFactory().post(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id}),
+            data={"provider": provider_one.id},
+        )
         request.user = preprint_user
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
-        setattr(request, 'session', 'session')
+        setattr(request, "session", "session")
         messages = FallbackStorage(request)
-        setattr(request, '_messages', messages)
+        setattr(request, "_messages", messages)
 
         response = plain_view.as_view()(request, guid=preprint._id)
 
@@ -303,17 +386,30 @@ class TestPreprintView:
         assert preprint.provider == provider_one
         assert subject_osf in preprint.subjects.all()
 
-    def test_change_preprint_provider_subjects_change_permissions(self, plain_view, preprint_user, provider_one, provider_osf, subject_osf):
-        """ Testing that subjects are changed when providers are changed and theres no related mapping between subjects, the old subject stays in place.
-        """
+    def test_change_preprint_provider_subjects_change_permissions(
+        self,
+        plain_view,
+        preprint_user,
+        provider_one,
+        provider_osf,
+        subject_osf,
+    ):
+        """Testing that subjects are changed when providers are changed and theres no related mapping between subjects, the old subject stays in place."""
         auth_user = AuthUserFactory()
-        change_permission = Permission.objects.get(codename='change_preprint')
-        view_permission = Permission.objects.get(codename='view_preprint')
+        change_permission = Permission.objects.get(codename="change_preprint")
+        view_permission = Permission.objects.get(codename="view_preprint")
         auth_user.user_permissions.add(change_permission)
         auth_user.user_permissions.add(view_permission)
 
-        preprint = PreprintFactory(subjects=[[subject_osf._id]], provider=provider_osf, creator=preprint_user)
-        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}), data={'provider': provider_one.id})
+        preprint = PreprintFactory(
+            subjects=[[subject_osf._id]],
+            provider=provider_osf,
+            creator=preprint_user,
+        )
+        request = RequestFactory().post(
+            reverse("preprints:preprint", kwargs={"guid": preprint._id}),
+            data={"provider": provider_one.id},
+        )
         request.user = auth_user
 
         patch_messages(request)
@@ -326,14 +422,13 @@ class TestPreprintView:
         assert subject_osf in preprint.subjects.all()
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 @pytest.mark.enable_implicit_clean
 class TestPreprintReindex:
-
     def test_reindex_preprint_share(self, preprint, req, mock_update_share):
-        preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
+        preprint.provider.access_token = "totally real access token I bought from a guy wearing a trenchcoat in the summer"
         preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
@@ -344,7 +439,7 @@ class TestPreprintReindex:
         mock_update_share.assert_called_once_with(preprint)
         assert AdminLogEntry.objects.count() == count + 1
 
-    @mock.patch('website.search.search.update_preprint')
+    @mock.patch("website.search.search.update_preprint")
     def test_reindex_preprint_elastic(self, mock_update_search, preprint, req):
         count = AdminLogEntry.objects.count()
         view = views.PreprintReindexElastic()
@@ -360,12 +455,15 @@ class TestPreprintDeleteView(AdminTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
-        self.request = RequestFactory().post('/fake_path')
+        self.request = RequestFactory().post("/fake_path")
         self.plain_view = views.PreprintDeleteView
-        self.view = setup_log_view(self.plain_view(), self.request,
-                                   guid=self.preprint._id)
+        self.view = setup_log_view(
+            self.plain_view(), self.request, guid=self.preprint._id
+        )
 
-        self.url = reverse('preprints:remove', kwargs={'guid': self.preprint._id})
+        self.url = reverse(
+            "preprints:remove", kwargs={"guid": self.preprint._id}
+        )
 
     def test_remove_preprint(self):
         count = AdminLogEntry.objects.count()
@@ -394,17 +492,17 @@ class TestRemoveContributor(AdminTestCase):
         self.preprint.add_contributor(self.user_2)
         self.preprint.save()
         self.view = views.PreprintRemoveContributorView
-        self.request = RequestFactory().post('/fake_path')
-        self.url = reverse('preprints:remove-user', kwargs={'guid': self.preprint._id, 'user_id': self.user._id})
+        self.request = RequestFactory().post("/fake_path")
+        self.url = reverse(
+            "preprints:remove-user",
+            kwargs={"guid": self.preprint._id, "user_id": self.user._id},
+        )
 
     def test_remove_contributor(self):
         user_id = self.user_2.id
         preprint_id = self.preprint._id
         view = setup_log_view(
-            self.view(),
-            self.request,
-            guid=preprint_id,
-            user_id=user_id
+            self.view(), self.request, guid=preprint_id, user_id=user_id
         )
         view.post(self.request)
         assert not self.preprint.contributors.filter(id=user_id)
@@ -415,7 +513,7 @@ class TestRemoveContributor(AdminTestCase):
             self.view(),
             self.request,
             guid=self.preprint._id,
-            user_id=self.user_2.id
+            user_id=self.user_2.id,
         )
         count = AdminLogEntry.objects.count()
         view.post(self.request)
@@ -423,19 +521,37 @@ class TestRemoveContributor(AdminTestCase):
         assert AdminLogEntry.objects.count() == count + 1
 
     def test_do_not_remove_last_admin(self):
-        assert len(list(self.preprint.get_admin_contributors(self.preprint.contributors))) == 1
+        assert (
+            len(
+                list(
+                    self.preprint.get_admin_contributors(
+                        self.preprint.contributors
+                    )
+                )
+            )
+            == 1
+        )
         view = setup_log_view(
             self.view(),
             self.request,
             guid=self.preprint._id,
-            user_id=self.user.id
+            user_id=self.user.id,
         )
         count = AdminLogEntry.objects.count()
         patch_messages(self.request)
         view.post(self.request)
         self.preprint.reload()  # Reloads instance to show that nothing was removed
         assert len(list(self.preprint.contributors)) == 2
-        assert len(list(self.preprint.get_admin_contributors(self.preprint.contributors))) == 1
+        assert (
+            len(
+                list(
+                    self.preprint.get_admin_contributors(
+                        self.preprint.contributors
+                    )
+                )
+            )
+            == 1
+        )
         assert AdminLogEntry.objects.count() == count
 
     def test_no_log(self):
@@ -443,18 +559,19 @@ class TestRemoveContributor(AdminTestCase):
             self.view(),
             self.request,
             guid=self.preprint._id,
-            user_id=self.user_2.id
+            user_id=self.user_2.id,
         )
         view.post(self.request)
-        assert self.preprint.logs.latest().action != PreprintLog.CONTRIB_REMOVED
+        assert (
+            self.preprint.logs.latest().action != PreprintLog.CONTRIB_REMOVED
+        )
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 @pytest.mark.django_db
 class TestPreprintConfirmHamSpamViews:
-
     def test_confirm_preprint_as_ham(self, mock_akismet):
-        request = RequestFactory().post('/fake_path')
+        request = RequestFactory().post("/fake_path")
         user = AuthUserFactory()
         preprint = PreprintFactory(creator=user)
         view = views.PreprintConfirmHamView()
@@ -465,7 +582,7 @@ class TestPreprintConfirmHamSpamViews:
         assert preprint.spam_status == 4
 
     def test_confirm_preprint_as_spam(self, mock_akismet):
-        request = RequestFactory().post('/fake_path')
+        request = RequestFactory().post("/fake_path")
         user = AuthUserFactory()
         preprint = PreprintFactory(creator=user)
         assert preprint.is_public
@@ -478,9 +595,8 @@ class TestPreprintConfirmHamSpamViews:
         assert not preprint.is_public
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 class TestPreprintWithdrawalRequests:
-
     @pytest.fixture()
     def submitter(self):
         return AuthUserFactory()
@@ -488,7 +604,7 @@ class TestPreprintWithdrawalRequests:
     @pytest.fixture()
     def admin(self):
         admin = AuthUserFactory()
-        osf_admin = Group.objects.get(name='osf_admin')
+        osf_admin = Group.objects.get(name="osf_admin")
         admin.groups.add(osf_admin)
         return admin
 
@@ -511,30 +627,49 @@ class TestPreprintWithdrawalRequests:
         withdrawal_request.run_submit(submitter)
         return withdrawal_request
 
-    def test_can_approve_withdrawal_request(self, withdrawal_request, submitter, preprint, admin):
+    def test_can_approve_withdrawal_request(
+        self, withdrawal_request, submitter, preprint, admin
+    ):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
 
-        request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
-        request.POST = {'action': 'approve'}
+        request = RequestFactory().post(
+            reverse(
+                "preprints:approve-withdrawal", kwargs={"guid": preprint._id}
+            )
+        )
+        request.POST = {"action": "approve"}
         request.user = admin
 
-        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        response = views.PreprintApproveWithdrawalRequest.as_view()(
+            request, guid=preprint._id
+        )
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
         withdrawal_request.target.refresh_from_db()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
-        assert original_comment == withdrawal_request.target.withdrawal_justification
+        assert (
+            original_comment
+            == withdrawal_request.target.withdrawal_justification
+        )
 
-    def test_can_reject_withdrawal_request(self, withdrawal_request, admin, preprint):
+    def test_can_reject_withdrawal_request(
+        self, withdrawal_request, admin, preprint
+    ):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
 
-        request = RequestFactory().post(reverse('preprints:reject-withdrawal', kwargs={'guid': preprint._id}))
-        request.POST = {'action': 'reject'}
+        request = RequestFactory().post(
+            reverse(
+                "preprints:reject-withdrawal", kwargs={"guid": preprint._id}
+            )
+        )
+        request.POST = {"action": "reject"}
         request.user = admin
 
-        response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
+        response = views.PreprintRejectWithdrawalRequest.as_view()(
+            request, guid=preprint._id
+        )
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -544,37 +679,56 @@ class TestPreprintWithdrawalRequests:
 
     def test_permissions_errors(self, user, submitter):
         # with auth, no permissions
-        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+        request = RequestFactory().get(
+            reverse("preprints:withdrawal-requests")
+        )
         request.user = user
         with pytest.raises(PermissionDenied):
             views.PreprintWithdrawalRequestList.as_view()(request)
 
         # request submitter
-        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+        request = RequestFactory().get(
+            reverse("preprints:withdrawal-requests")
+        )
         request.user = submitter
         with pytest.raises(PermissionDenied):
             views.PreprintWithdrawalRequestList.as_view()(request)
 
         # no auth
-        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+        request = RequestFactory().get(
+            reverse("preprints:withdrawal-requests")
+        )
         request.user = AnonymousUser()
         with pytest.raises(PermissionDenied):
             views.PreprintWithdrawalRequestList.as_view()(request)
 
-    def test_osf_admin_has_correct_view_permissions(self, withdrawal_request, admin):
-        request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
+    def test_osf_admin_has_correct_view_permissions(
+        self, withdrawal_request, admin
+    ):
+        request = RequestFactory().get(
+            reverse("preprints:withdrawal-requests")
+        )
 
         request.user = admin
         response = views.PreprintWithdrawalRequestList.as_view()(request)
         assert response.status_code == 200
 
-    @pytest.mark.parametrize('action, final_state', [
-        ('approve', DefaultStates.ACCEPTED.value),
-        ('reject', DefaultStates.REJECTED.value)])
-    def test_approve_reject_on_list_view(self, withdrawal_request, admin, action, final_state):
+    @pytest.mark.parametrize(
+        "action, final_state",
+        [
+            ("approve", DefaultStates.ACCEPTED.value),
+            ("reject", DefaultStates.REJECTED.value),
+        ],
+    )
+    def test_approve_reject_on_list_view(
+        self, withdrawal_request, admin, action, final_state
+    ):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
-        request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
+        request = RequestFactory().post(
+            reverse("preprints:withdrawal-requests"),
+            {"action": action, withdrawal_request.id: ["on"]},
+        )
         request.user = admin
 
         response = views.PreprintWithdrawalRequestList.as_view()(request)
@@ -585,7 +739,10 @@ class TestPreprintWithdrawalRequests:
 
         assert withdrawal_request.machine_state == final_state
 
-        if action == 'approve':
-            assert original_comment == withdrawal_request.target.withdrawal_justification
+        if action == "approve":
+            assert (
+                original_comment
+                == withdrawal_request.target.withdrawal_justification
+            )
         else:
             assert not withdrawal_request.target.withdrawal_justification

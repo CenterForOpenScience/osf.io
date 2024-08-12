@@ -9,14 +9,20 @@ from osf.utils.permissions import READ, WRITE, ADMIN
 
 
 class RegistrationBulkUploadRow(BaseModel):
-    """Defines a database table that stores information about to-be-created (draft) registrations.
-    """
+    """Defines a database table that stores information about to-be-created (draft) registrations."""
 
     # The bulk upload to which this registration belongs
-    upload = models.ForeignKey('RegistrationBulkUploadJob', blank=False, null=True, on_delete=models.CASCADE)
+    upload = models.ForeignKey(
+        "RegistrationBulkUploadJob",
+        blank=False,
+        null=True,
+        on_delete=models.CASCADE,
+    )
 
     # The draft registration that have been successfully created
-    draft_registration = models.ForeignKey('DraftRegistration', blank=True, null=True, on_delete=models.CASCADE)
+    draft_registration = models.ForeignKey(
+        "DraftRegistration", blank=True, null=True, on_delete=models.CASCADE
+    )
 
     # A flag that indicates whether the draft registration has been created
     is_completed = models.BooleanField(default=False)
@@ -25,16 +31,26 @@ class RegistrationBulkUploadRow(BaseModel):
     is_picked_up = models.BooleanField(default=False)
 
     # The raw text string of a row in the CSV template
-    csv_raw = models.TextField(default='', blank=False, null=False)
+    csv_raw = models.TextField(default="", blank=False, null=False)
 
     # The parsed version of the above raw text string.
     # TODO: add a comment here for the expected format of the value
     csv_parsed = DateTimeAwareJSONField(default=dict, blank=False, null=False)
 
-    row_hash = models.CharField(default='', blank=False, null=False, unique=True, max_length=255)
+    row_hash = models.CharField(
+        default="", blank=False, null=False, unique=True, max_length=255
+    )
 
     @classmethod
-    def create(cls, upload, csv_raw, csv_parsed, draft_registration=None, is_completed=False, is_picked_up=False):
+    def create(
+        cls,
+        upload,
+        csv_raw,
+        csv_parsed,
+        draft_registration=None,
+        is_completed=False,
+        is_picked_up=False,
+    ):
         registration_row = cls(
             upload=upload,
             draft_registration=draft_registration,
@@ -64,10 +80,16 @@ class RegistrationBulkUploadRow(BaseModel):
 
 
 class RegistrationBulkUploadContributors:
-    """A helper class of which an instance contains parsed data about contributors per registration row.
-    """
+    """A helper class of which an instance contains parsed data about contributors per registration row."""
 
-    def __init__(self, admin_set, read_only_set, read_write_set, author_set, contributor_list):
+    def __init__(
+        self,
+        admin_set,
+        read_only_set,
+        read_write_set,
+        author_set,
+        contributor_list,
+    ):
         self.contributor_list = contributor_list
         self.admin_set = admin_set
         self.read_write_set = read_write_set
@@ -85,4 +107,6 @@ class RegistrationBulkUploadContributors:
         elif email in self.read_only_set:
             return READ
         else:
-            raise RegistrationBulkCreationContributorError(error=f'{email} does not have a permission')
+            raise RegistrationBulkCreationContributorError(
+                error=f"{email} does not have a permission"
+            )

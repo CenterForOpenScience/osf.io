@@ -14,104 +14,102 @@ from admin.meetings.serializers import serialize_meeting
 
 
 class MeetingListView(PermissionRequiredMixin, ListView):
-    template_name = 'meetings/list.html'
+    template_name = "meetings/list.html"
     paginate_by = 10
     paginate_orphans = 1
-    context_object_name = 'meeting'
-    permission_required = 'osf.view_conference'
+    context_object_name = "meeting"
+    permission_required = "osf.view_conference"
     raise_exception = True
 
     def get_queryset(self):
-        return Conference.objects.all().order_by('name')
+        return Conference.objects.all().order_by("name")
 
     def get_context_data(self, **kwargs):
-        queryset = kwargs.pop('object_list', self.object_list)
+        queryset = kwargs.pop("object_list", self.object_list)
         page_size = self.get_paginate_by(queryset)
         paginator, page, queryset, is_paginated = self.paginate_queryset(
             queryset, page_size
         )
-        kwargs.setdefault('meetings', list(map(serialize_meeting, queryset)))
-        kwargs.setdefault('page', page)
+        kwargs.setdefault("meetings", list(map(serialize_meeting, queryset)))
+        kwargs.setdefault("page", page)
         return super().get_context_data(**kwargs)
 
 
 class MeetingFormView(PermissionRequiredMixin, FormView):
-    template_name = 'meetings/detail.html'
+    template_name = "meetings/detail.html"
     form_class = MeetingForm
-    permission_required = 'osf.change_conference'
+    permission_required = "osf.change_conference"
     raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
-        endpoint = kwargs.get('endpoint')
+        endpoint = kwargs.get("endpoint")
         try:
             self.conf = Conference.get_by_endpoint(endpoint, active=False)
         except ConferenceError:
-            raise Http404('Meeting with endpoint "{}" not found'.format(
-                endpoint
-            ))
+            raise Http404(
+                'Meeting with endpoint "{}" not found'.format(endpoint)
+            )
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        kwargs.setdefault('endpoint', self.kwargs.get('endpoint'))
+        kwargs.setdefault("endpoint", self.kwargs.get("endpoint"))
         return super().get_context_data(**kwargs)
 
     def get_initial(self):
         self.initial = serialize_meeting(self.conf)
-        self.initial.setdefault('edit', True)
+        self.initial.setdefault("edit", True)
         return super().get_initial()
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
-        if 'admins' in form.changed_data:
-            admin_users = get_admin_users(data.get('admins'))
+        if "admins" in form.changed_data:
+            admin_users = get_admin_users(data.get("admins"))
             self.conf.admins.set(admin_users)
-        self.conf.name = data.get('name')
-        self.conf.info_url = data.get('info_url')
-        self.conf.logo_url = data.get('logo_url')
-        self.conf.is_meeting = data.get('is_meeting')
-        self.conf.active = data.get('active')
-        self.conf.public_projects = data.get('public_projects')
-        self.conf.poster = data.get('poster')
-        self.conf.talk = data.get('talk')
-        self.conf.location = data.get('location')
-        self.conf.start_date = data.get('start_date')
-        self.conf.end_date = data.get('end_date')
-        self.conf.auto_check_spam = data.get('auto_check_spam')
+        self.conf.name = data.get("name")
+        self.conf.info_url = data.get("info_url")
+        self.conf.logo_url = data.get("logo_url")
+        self.conf.is_meeting = data.get("is_meeting")
+        self.conf.active = data.get("active")
+        self.conf.public_projects = data.get("public_projects")
+        self.conf.poster = data.get("poster")
+        self.conf.talk = data.get("talk")
+        self.conf.location = data.get("location")
+        self.conf.start_date = data.get("start_date")
+        self.conf.end_date = data.get("end_date")
+        self.conf.auto_check_spam = data.get("auto_check_spam")
         self.conf.field_names.update(custom_fields)
         self.conf.save()
         return super().form_valid(form)
 
     @property
     def success_url(self):
-        return reverse('meetings:detail',
-                       kwargs={'endpoint': self.kwargs.get('endpoint')})
+        return reverse(
+            "meetings:detail", kwargs={"endpoint": self.kwargs.get("endpoint")}
+        )
 
 
 class MeetingCreateFormView(PermissionRequiredMixin, FormView):
-    template_name = 'meetings/create.html'
+    template_name = "meetings/create.html"
     form_class = MeetingForm
-    permission_required = ('osf.view_conference', 'osf.change_conference')
+    permission_required = ("osf.view_conference", "osf.change_conference")
     raise_exception = True
 
     def get_initial(self):
         self.initial.update(DEFAULT_FIELD_NAMES)
-        self.initial.setdefault('edit', False)
+        self.initial.setdefault("edit", False)
         return super().get_initial()
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
-        endpoint = data.pop('endpoint')
-        self.kwargs.setdefault('endpoint', endpoint)
+        endpoint = data.pop("endpoint")
+        self.kwargs.setdefault("endpoint", endpoint)
         # Form validation already checks emails for existence
-        admin_users = get_admin_users(data.pop('admins'))
+        admin_users = get_admin_users(data.pop("admins"))
         # Note - Mongo was OK with having this in the payload, but Postgres is not
         # This edit variable was unused in the past, but keeping it in case we want to use it in the future.
-        data.pop('edit')
+        data.pop("edit")
         # Form validation already catches if a conference endpoint exists
-        new_conf = Conference(
-            endpoint=endpoint,
-            **data
-        )
+        new_conf = Conference(endpoint=endpoint, **data)
         new_conf.save()
         new_conf.admins.add(*admin_users)
         new_conf.field_names.update(custom_fields)
@@ -119,8 +117,9 @@ class MeetingCreateFormView(PermissionRequiredMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('meetings:detail',
-                       kwargs={'endpoint': self.kwargs.get('endpoint')})
+        return reverse(
+            "meetings:detail", kwargs={"endpoint": self.kwargs.get("endpoint")}
+        )
 
 
 def get_custom_fields(data):

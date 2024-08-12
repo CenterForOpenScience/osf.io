@@ -10,7 +10,7 @@ def is_iterable(obj):
 
 def is_iterable_but_not_string(obj):
     """Return True if ``obj`` is an iterable object that isn't a string."""
-    return is_iterable(obj) and not hasattr(obj, 'strip')
+    return is_iterable(obj) and not hasattr(obj, "strip")
 
 
 def strip_html(unclean: str | bytes, tags: set[str] = None):
@@ -28,16 +28,20 @@ def strip_html(unclean: str | bytes, tags: set[str] = None):
         tags = set()
 
     if unclean is None:
-        return ''
+        return ""
     elif isinstance(unclean, dict) or isinstance(unclean, list):
-        return sanitize_html(str(unclean), strip=True, tags=set(), attributes=[], styles=set())
+        return sanitize_html(
+            str(unclean), strip=True, tags=set(), attributes=[], styles=set()
+        )
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
     # If it's not a string and not an iterable (string, list, dict, return unclean)
     elif not isinstance(unclean, str) and not is_iterable(unclean):
         return unclean
     else:
-        return sanitize_html(unclean, strip=True, tags=tags, attributes=[], styles=set())
+        return sanitize_html(
+            unclean, strip=True, tags=tags, attributes=[], styles=set()
+        )
 
 
 # TODO: Remove unescape_entities when mako html safe comes in
@@ -54,19 +58,21 @@ def unescape_entities(value, safe=None):
     :return: A string or list or dict without html escape characters
     """
     safe_characters = {
-        '&amp;': '&',
+        "&amp;": "&",
     }
 
     if safe and isinstance(safe, dict):
         safe_characters.update(safe)
 
     if isinstance(value, dict):
-        return {key: unescape_entities(value, safe=safe_characters) for (key, value) in value.items()}
+        return {
+            key: unescape_entities(value, safe=safe_characters)
+            for (key, value) in value.items()
+        }
 
     if is_iterable_but_not_string(value):
         return [
-            unescape_entities(each, safe=safe_characters)
-            for each in value
+            unescape_entities(each, safe=safe_characters) for each in value
         ]
     if isinstance(value, str):
         for escape_sequence, character in safe_characters.items():
@@ -85,7 +91,9 @@ def safe_json(value):
     :param value: A string to be converted
     :return: A JSON-formatted string that explicitly escapes forward slashes when needed
     """
-    return json.dumps(value).replace('</', '<\\/')  # Fix injection of closing markup in strings
+    return json.dumps(value).replace(
+        "</", "<\\/"
+    )  # Fix injection of closing markup in strings
 
 
 """
@@ -94,7 +102,7 @@ def safe_json(value):
 """
 
 
-def is_a11y(value_one, value_two='#FFFFFF', min_ratio=1 / 3):
+def is_a11y(value_one, value_two="#FFFFFF", min_ratio=1 / 3):
     """
     Compares two colors and determines if they are above the minimum
     contrast ratio. The default is 1 / 3, which is the contrast ratio for
@@ -114,9 +122,13 @@ def is_a11y(value_one, value_two='#FFFFFF', min_ratio=1 / 3):
     color_luminance_two = calculate_luminance(color_rgb_two)
 
     if color_luminance_one > color_luminance_two:
-        contrast_ratio = (color_luminance_two + 0.05) / (color_luminance_one + 0.05)
+        contrast_ratio = (color_luminance_two + 0.05) / (
+            color_luminance_one + 0.05
+        )
     else:
-        contrast_ratio = (color_luminance_one + 0.05) / (color_luminance_two + 0.05)
+        contrast_ratio = (color_luminance_one + 0.05) / (
+            color_luminance_two + 0.05
+        )
 
     if contrast_ratio < min_ratio:
         return True
@@ -126,7 +138,7 @@ def is_a11y(value_one, value_two='#FFFFFF', min_ratio=1 / 3):
 
 def hex_to_rgb(value):
     color = value[1:]
-    return tuple(int(color[i: i + 2], 16) for i in range(0, 6, 6 // 3))
+    return tuple(int(color[i : i + 2], 16) for i in range(0, 6, 6 // 3))
 
 
 def calculate_luminance(rgb_color):

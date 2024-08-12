@@ -9,9 +9,11 @@ from osf_tests.factories import (
     ProjectFactory,
 )
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.fixture()
 def user_two():
@@ -39,9 +41,11 @@ class TestPreprintNodeRelationship:
 
     @pytest.fixture()
     def url(self, preprint):
-        return f'/{API_BASE}preprints/{preprint._id}/relationships/node/'
+        return f"/{API_BASE}preprints/{preprint._id}/relationships/node/"
 
-    def test_preprint_node_relationship_get(self, app, user, user_two, preprint, supplemental_project, url):
+    def test_preprint_node_relationship_get(
+        self, app, user, user_two, preprint, supplemental_project, url
+    ):
         # For testing purposes
         preprint.is_published = False
         preprint.save()
@@ -56,8 +60,8 @@ class TestPreprintNodeRelationship:
 
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data'] is None
+        assert res.content_type == "application/vnd.api+json"
+        assert res.json["data"] is None
 
         preprint.is_published = True
         preprint.node = supplemental_project
@@ -65,30 +69,36 @@ class TestPreprintNodeRelationship:
 
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data']['type'] == 'linked_preprint_nodes'
-        assert res.json['data']['id'] == supplemental_project._id
-        assert url in res.json['links']['self']
+        assert res.json["data"]["type"] == "linked_preprint_nodes"
+        assert res.json["data"]["id"] == supplemental_project._id
+        assert url in res.json["links"]["self"]
 
-        res = app.get(f'{url}?version=2.13', auth=user.auth)
+        res = app.get(f"{url}?version=2.13", auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data']['type'] == 'nodes'
-        assert res.json['data']['id'] == supplemental_project._id
-        assert url in res.json['links']['self']
+        assert res.json["data"]["type"] == "nodes"
+        assert res.json["data"]["id"] == supplemental_project._id
+        assert url in res.json["links"]["self"]
 
         # No permission to the supplemental node
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
-        assert res.json['data'] is None
+        assert res.json["data"] is None
 
-    def test_preprint_node_relationship_create(self, app, user, preprint, supplemental_project, url):
+    def test_preprint_node_relationship_create(
+        self, app, user, preprint, supplemental_project, url
+    ):
         res = app.post_json_api(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 405
 
-    def test_preprint_node_relationship_delete(self, app, user, preprint, supplemental_project, url):
+    def test_preprint_node_relationship_delete(
+        self, app, user, preprint, supplemental_project, url
+    ):
         res = app.delete_json_api(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 405
 
-    def test_preprint_node_relationship_update(self, app, user, user_two, preprint, supplemental_project, url):
+    def test_preprint_node_relationship_update(
+        self, app, user, user_two, preprint, supplemental_project, url
+    ):
         preprint.node = supplemental_project
         preprint.save()
 
@@ -107,24 +117,41 @@ class TestPreprintNodeRelationship:
         assert res.status_code == 403
 
         # write-contributor
-        preprint.update_contributor(user_two, WRITE, True, auth=Auth(user), save=True)
-        res = app.patch_json_api(url, {'data': None}, auth=user_two.auth, expect_errors=True)
+        preprint.update_contributor(
+            user_two, WRITE, True, auth=Auth(user), save=True
+        )
+        res = app.patch_json_api(
+            url, {"data": None}, auth=user_two.auth, expect_errors=True
+        )
         assert res.status_code == 200
-        assert res.json['data'] is None
-        assert url in res.json['links']['self']
+        assert res.json["data"] is None
+        assert url in res.json["links"]["self"]
         preprint.reload()
         assert preprint.node is None
 
         # attempting to add supplemental relationship through this endpoint
-        res = app.patch_json_api(url, {'data': {'id': supplemental_project._id, 'type': 'linked_preprint_nodes'}}, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(
+            url,
+            {
+                "data": {
+                    "id": supplemental_project._id,
+                    "type": "linked_preprint_nodes",
+                }
+            },
+            auth=user.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Data must be null. This endpoint can only be used to unset the supplemental project.'
+        assert (
+            res.json["errors"][0]["detail"]
+            == "Data must be null. This endpoint can only be used to unset the supplemental project."
+        )
         preprint.reload()
         assert preprint.node is None
 
         # attempting to patch with empty payload
         res = app.patch_json_api(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data.'
+        assert res.json["errors"][0]["detail"] == "Request must include /data."
         preprint.reload()
         assert preprint.node is None

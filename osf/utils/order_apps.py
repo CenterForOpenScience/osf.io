@@ -21,8 +21,8 @@ def sort_dependencies(app_list):
         for model in model_list:
             models.add(model)
             # Add any explicitly defined dependencies
-            if hasattr(model, 'natural_key'):
-                deps = getattr(model.natural_key, 'dependencies', [])
+            if hasattr(model, "natural_key"):
+                deps = getattr(model.natural_key, "dependencies", [])
                 if deps:
                     deps = [apps.get_model(app_label, dep) for dep in deps]
             else:
@@ -31,9 +31,12 @@ def sort_dependencies(app_list):
             # Now add a dependency for any FK relation with a model that
             # defines a natural key
             for field in model._meta.fields:
-                if hasattr(field.rel, 'to'):
+                if hasattr(field.rel, "to"):
                     rel_model = field.rel.to
-                    if hasattr(rel_model, 'natural_key') and rel_model != model:
+                    if (
+                        hasattr(rel_model, "natural_key")
+                        and rel_model != model
+                    ):
                         deps.append(rel_model)
             # Also add a dependency for any simple M2M relation with a model
             # that defines a natural key.  M2M relations with explicit through
@@ -41,7 +44,10 @@ def sort_dependencies(app_list):
             for field in model._meta.many_to_many:
                 if field.rel.through._meta.auto_created:
                     rel_model = field.rel.to
-                    if hasattr(rel_model, 'natural_key') and rel_model != model:
+                    if (
+                        hasattr(rel_model, "natural_key")
+                        and rel_model != model
+                    ):
                         deps.append(rel_model)
 
             model_dependencies.append((model, deps))
@@ -66,7 +72,9 @@ def sort_dependencies(app_list):
             # on the final model list, or not on the original serialization list,
             # then we've found another model with all it's dependencies satisfied.
             found = True
-            for candidate in ((d not in models or d in model_list) for d in deps):
+            for candidate in (
+                (d not in models or d in model_list) for d in deps
+            ):
                 if not candidate:
                     found = False
             if found:
@@ -75,9 +83,14 @@ def sort_dependencies(app_list):
             else:
                 skipped.append((model, deps))
         if not changed:
-            raise Exception("Can't resolve dependencies for %s in serialized app list." %
-                ', '.join(f'{model._meta.app_label}.{model._meta.object_name}'
-                for model, deps in sorted(skipped, key=lambda obj: obj[0].__name__))
+            raise Exception(
+                "Can't resolve dependencies for %s in serialized app list."
+                % ", ".join(
+                    f"{model._meta.app_label}.{model._meta.object_name}"
+                    for model, deps in sorted(
+                        skipped, key=lambda obj: obj[0].__name__
+                    )
+                )
             )
         model_dependencies = skipped
 
@@ -91,7 +104,7 @@ def get_ordered_models():
 
     for app_label, model_tuples in all_models.items():
         # short circuit, we only get osf apps for now
-        if not ('osf' in app_label or 'addons' in app_label):
+        if not ("osf" in app_label or "addons" in app_label):
             continue
         for model_name, model_class in model_tuples.items():
             if app_label not in model_mapping.keys():
@@ -99,6 +112,16 @@ def get_ordered_models():
             model_mapping[app_label].append(model_class)
 
     ordered_list_of_models = sort_dependencies(model_mapping)
-    allowed_models = list(itertools.chain(*[application.get_models(include_auto_created=False) for application in apps.get_app_configs() if 'addons' in application.label or 'osf' in application.label]))
+    allowed_models = list(
+        itertools.chain(
+            *[
+                application.get_models(include_auto_created=False)
+                for application in apps.get_app_configs()
+                if "addons" in application.label or "osf" in application.label
+            ]
+        )
+    )
 
-    return [model for model in ordered_list_of_models if model in allowed_models]
+    return [
+        model for model in ordered_list_of_models if model in allowed_models
+    ]

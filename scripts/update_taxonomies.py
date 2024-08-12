@@ -17,59 +17,75 @@ logging.basicConfig(level=logging.INFO)
 
 # OSF preprint provider used for initial subject creation
 OSF_PROVIDER_DATA = {
-    '_id': 'osf',
-    'name': 'Open Science Framework',
-    'domain': settings.DOMAIN,
-    'domain_redirect_enabled': False,
-    'default_license': 'CC0 1.0 Universal',
-    'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
+    "_id": "osf",
+    "name": "Open Science Framework",
+    "domain": settings.DOMAIN,
+    "domain_redirect_enabled": False,
+    "default_license": "CC0 1.0 Universal",
+    "licenses_acceptable": [
+        "CC0 1.0 Universal",
+        "CC-By Attribution 4.0 International",
+        "No license",
+    ],
 }
 
+
 def update_taxonomies(filename):
-    Subject = apps.get_model('osf.Subject')
-    PreprintProvider = apps.get_model('osf.PreprintProvider')
+    Subject = apps.get_model("osf.Subject")
+    PreprintProvider = apps.get_model("osf.PreprintProvider")
     try:
-        bepress_provider = PreprintProvider.objects.get(_id='osf')
+        bepress_provider = PreprintProvider.objects.get(_id="osf")
     except PreprintProvider.DoesNotExist:
         bepress_provider, _ = update_or_create(OSF_PROVIDER_DATA)
     # Flat taxonomy is stored locally, read in here
     with open(
-        os.path.join(
-            settings.APP_PATH,
-            'website', 'static', filename
-        )
+        os.path.join(settings.APP_PATH, "website", "static", filename)
     ) as fp:
         taxonomy = json.load(fp)
 
-        for subject_path in taxonomy.get('data'):
-            subjects = subject_path.split('_')
+        for subject_path in taxonomy.get("data"):
+            subjects = subject_path.split("_")
             text = subjects[-1]
 
             # Search for parent subject, get id if it exists
             parent = None
             if len(subjects) > 1:
-                parent, created_p = Subject.objects.get_or_create(text=subjects[-2], provider=bepress_provider)
+                parent, created_p = Subject.objects.get_or_create(
+                    text=subjects[-2], provider=bepress_provider
+                )
                 if created_p:
-                    logger.info(f'Created parent "{parent.text}":{parent._id} for subject {text}')
-            logger.info('Getting or creating Subject "{}"{}'.format(
-                text,
-                f' with parent {parent.text}:{parent._id}' if parent else ''
-            ))
-            subject, _ = Subject.objects.get_or_create(text=text, provider=bepress_provider)
+                    logger.info(
+                        f'Created parent "{parent.text}":{parent._id} for subject {text}'
+                    )
+            logger.info(
+                'Getting or creating Subject "{}"{}'.format(
+                    text,
+                    f" with parent {parent.text}:{parent._id}"
+                    if parent
+                    else "",
+                )
+            )
+            subject, _ = Subject.objects.get_or_create(
+                text=text, provider=bepress_provider
+            )
             if parent and not subject.parent:
-                logger.info(f'Adding parent "{parent.text}":{parent._id} to Subject "{subject.text}":{subject._id}')
+                logger.info(
+                    f'Adding parent "{parent.text}":{parent._id} to Subject "{subject.text}":{subject._id}'
+                )
                 subject.parent = parent
                 subject.save()
 
+
 def main():
     init_app(set_backends=True, routes=False)
-    dry_run = '--dry' in sys.argv
+    dry_run = "--dry" in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
-        update_taxonomies('bepress_taxonomy.json')
+        update_taxonomies("bepress_taxonomy.json")
         if dry_run:
-            raise RuntimeError('Dry run, transaction rolled back')
+            raise RuntimeError("Dry run, transaction rolled back")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

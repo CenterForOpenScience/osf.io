@@ -22,11 +22,9 @@ def paginated_progressbar(queryset, page_size, function):
 
 
 def reindex_quickfiles():
-    nodes = Node.objects.filter(
-        logs__action=NodeLog.MIGRATED_QUICK_FILES
-    )
+    nodes = Node.objects.filter(logs__action=NodeLog.MIGRATED_QUICK_FILES)
 
-    file_ids = nodes.values_list('files__id', flat=True)
+    file_ids = nodes.values_list("files__id", flat=True)
 
     files_to_reindex = OsfStorageFileNode.objects.filter(id__in=file_ids)
     paginated_progressbar(files_to_reindex, PAGE_SIZE, update_file)
@@ -39,5 +37,6 @@ class Command(BaseCommand):
     """
     Reindex all Quickfiles files that were moved during migration. h/t to erinspace who's code old I'm cribbing here.
     """
+
     def handle(self, *args, **options):
         reindex_quickfiles()

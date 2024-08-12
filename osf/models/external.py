@@ -8,7 +8,12 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 from flask import request
-from oauthlib.oauth2 import AccessDeniedError, InvalidGrantError, TokenExpiredError, MissingTokenError
+from oauthlib.oauth2 import (
+    AccessDeniedError,
+    InvalidGrantError,
+    TokenExpiredError,
+    MissingTokenError,
+)
 from requests.exceptions import HTTPError as RequestsHTTPError
 from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from requests_oauthlib import OAuth1Session, OAuth2Session
@@ -55,7 +60,9 @@ class ExternalAccount(ObjectIDMixin, BaseModel):
     refresh_token = EncryptedTextField(blank=True, null=True)
     date_last_refreshed = NonNaiveDateTimeField(blank=True, null=True)
     expires_at = NonNaiveDateTimeField(blank=True, null=True)
-    scopes = ArrayField(models.CharField(max_length=128), default=list, blank=True)
+    scopes = ArrayField(
+        models.CharField(max_length=128), default=list, blank=True
+    )
 
     # The `name` of the service
     # This lets us query for only accounts on a particular provider
@@ -74,8 +81,9 @@ class ExternalAccount(ObjectIDMixin, BaseModel):
     profile_url = EncryptedTextField(blank=True, null=True)
 
     def __repr__(self):
-        return '<ExternalAccount: {}/{}>'.format(self.provider,
-                                                 self.provider_id)
+        return "<ExternalAccount: {}/{}>".format(
+            self.provider, self.provider_id
+        )
 
     def _natural_key(self):
         if self.pk:
@@ -84,7 +92,10 @@ class ExternalAccount(ObjectIDMixin, BaseModel):
 
     class Meta:
         unique_together = [
-            ('provider', 'provider_id',)
+            (
+                "provider",
+                "provider_id",
+            )
         ]
 
 
@@ -125,9 +136,9 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         self.account = account
 
     def __repr__(self):
-        return '<{name}: {status}>'.format(
+        return "<{name}: {status}>".format(
             name=self.__class__.__name__,
-            status=self.account.provider_id if self.account else 'anonymous'
+            status=self.account.provider_id if self.account else "anonymous",
         )
 
     @property
@@ -147,8 +158,8 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         """
         current_session = get_session()
         # create a dict on the session object if it's not already there
-        if current_session.get('oauth_states', None) is None:
-            current_session['oauth_states'] = {}
+        if current_session.get("oauth_states", None) is None:
+            current_session["oauth_states"] = {}
 
         if self._oauth_version == OAUTH2:
             # Quirk: Some time between 2019/05/31 and 2019/06/04, Bitbucket's OAuth2 API no longer
@@ -160,9 +171,9 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
                 redirect_uri = None
             else:
                 redirect_uri = web_url_for(
-                    'oauth_callback',
+                    "oauth_callback",
                     service_name=self.short_name,
-                    _absolute=True
+                    _absolute=True,
                 )
             # build the URL
             oauth = OAuth2Session(
@@ -174,7 +185,7 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
             url, state = oauth.authorization_url(self.auth_url_base)
 
             # save state token to the session for confirmation in the callback
-            current_session['oauth_states'][self.short_name] = {'state': state}
+            current_session["oauth_states"][self.short_name] = {"state": state}
 
         elif self._oauth_version == OAUTH1:
             # get a request token
@@ -187,9 +198,9 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
             response = oauth.fetch_request_token(self.request_token_url)
 
             # store them in the session for use in the callback
-            current_session['oauth_states'][self.short_name] = {
-                'token': response.get('oauth_token'),
-                'secret': response.get('oauth_token_secret'),
+            current_session["oauth_states"][self.short_name] = {
+                "token": response.get("oauth_token"),
+                "secret": response.get("oauth_token_secret"),
             }
 
             url = oauth.authorization_url(self.auth_url_base)
@@ -236,36 +247,38 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         to the OSF after authenticating on the external service.
         """
         current_session = get_session()
-        if 'error' in request.args:
+        if "error" in request.args:
             return False
 
         # make sure the user has temporary credentials for this provider
         try:
-            cached_credentials = current_session['oauth_states'][self.short_name]
+            cached_credentials = current_session["oauth_states"][
+                self.short_name
+            ]
         except KeyError:
-            raise PermissionsError('OAuth flow not recognized.')
+            raise PermissionsError("OAuth flow not recognized.")
 
         if self._oauth_version == OAUTH1:
-            request_token = request.args.get('oauth_token')
+            request_token = request.args.get("oauth_token")
 
             # make sure this is the same user that started the flow
-            if cached_credentials.get('token') != request_token:
-                raise PermissionsError('Request token does not match')
+            if cached_credentials.get("token") != request_token:
+                raise PermissionsError("Request token does not match")
 
             response = OAuth1Session(
                 client_key=self.client_id,
                 client_secret=self.client_secret,
-                resource_owner_key=cached_credentials.get('token'),
-                resource_owner_secret=cached_credentials.get('secret'),
-                verifier=request.args.get('oauth_verifier'),
+                resource_owner_key=cached_credentials.get("token"),
+                resource_owner_secret=cached_credentials.get("secret"),
+                verifier=request.args.get("oauth_verifier"),
             ).fetch_access_token(self.callback_url)
 
         elif self._oauth_version == OAUTH2:
-            state = request.args.get('state')
+            state = request.args.get("state")
 
             # make sure this is the same user that started the flow
-            if cached_credentials.get('state') != state:
-                raise PermissionsError('Request token does not match')
+            if cached_credentials.get("state") != state:
+                raise PermissionsError("Request token does not match")
 
             try:
                 # Quirk: Similarly to the `oauth2/authorize` endpoint, the `oauth2/access_token`
@@ -275,9 +288,9 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
                     redirect_uri = None
                 else:
                     redirect_uri = web_url_for(
-                        'oauth_callback',
+                        "oauth_callback",
                         service_name=self.short_name,
-                        _absolute=True
+                        _absolute=True,
                     )
                 response = OAuth2Session(
                     self.client_id,
@@ -286,7 +299,7 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
                     self.callback_url,
                     include_client_id=True,
                     client_secret=self.client_secret,
-                    code=request.args.get('code'),
+                    code=request.args.get("code"),
                 )
             except (MissingTokenError, RequestsHTTPError, CustomOAuth2Error):
                 raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -301,25 +314,25 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         current_session = get_session()
         self.account, created = ExternalAccount.objects.get_or_create(
             provider=self.short_name,
-            provider_id=info['provider_id'],
+            provider_id=info["provider_id"],
         )
 
         # ensure that provider_name is correct
         self.account.provider_name = self.name
         # required
-        self.account.oauth_key = info['key']
+        self.account.oauth_key = info["key"]
 
         # only for OAuth1
-        self.account.oauth_secret = info.get('secret')
+        self.account.oauth_secret = info.get("secret")
 
         # only for OAuth2
-        self.account.expires_at = info.get('expires_at')
-        self.account.refresh_token = info.get('refresh_token')
+        self.account.expires_at = info.get("expires_at")
+        self.account.refresh_token = info.get("refresh_token")
         self.account.date_last_refreshed = timezone.now()
 
         # additional information
-        self.account.display_name = info.get('display_name')
-        self.account.profile_url = info.get('profile_url')
+        self.account.display_name = info.get("display_name")
+        self.account.profile_url = info.get("profile_url")
 
         self.account.save()
 
@@ -328,8 +341,8 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
             user.external_accounts.add(self.account)
             user.save()
 
-        if self.short_name in current_session.get('oauth_states', {}):
-            del current_session['oauth_states'][self.short_name]
+        if self.short_name in current_session.get("oauth_states", {}):
+            del current_session["oauth_states"][self.short_name]
             current_session.save()
 
         return True
@@ -340,34 +353,34 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         This should not be over-ridden in subclasses.
         """
         if self._oauth_version == OAUTH1:
-            key = data.get('oauth_token')
-            secret = data.get('oauth_token_secret')
+            key = data.get("oauth_token")
+            secret = data.get("oauth_token_secret")
 
             values = {}
 
             if key:
-                values['key'] = key
+                values["key"] = key
             if secret:
-                values['secret'] = secret
+                values["secret"] = secret
 
             return values
 
         elif self._oauth_version == OAUTH2:
-            key = data.get('access_token')
-            refresh_token = data.get('refresh_token')
-            expires_at = data.get('expires_at')
-            scopes = data.get('scope')
+            key = data.get("access_token")
+            refresh_token = data.get("refresh_token")
+            expires_at = data.get("expires_at")
+            scopes = data.get("scope")
 
             values = {}
 
             if key:
-                values['key'] = key
+                values["key"] = key
             if scopes:
-                values['scope'] = scopes
+                values["scope"] = scopes
             if refresh_token:
-                values['refresh_token'] = refresh_token
+                values["refresh_token"] = refresh_token
             if expires_at:
-                values['expires_at'] = dt.datetime.fromtimestamp(
+                values["expires_at"] = dt.datetime.fromtimestamp(
                     float(expires_at)
                 )
 
@@ -389,8 +402,14 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         """
         pass
 
-    def refresh_oauth_key(self, force=False, extra=None, resp_auth_token_key='access_token',
-                          resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
+    def refresh_oauth_key(
+        self,
+        force=False,
+        extra=None,
+        resp_auth_token_key="access_token",
+        resp_refresh_token_key="refresh_token",
+        resp_expiry_fn=None,
+    ):
         """Handles the refreshing of an oauth_key for account associated with this provider.
            Not all addons need to use this, as some do not have oauth_keys that expire.
 
@@ -423,29 +442,26 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
             return False
 
         resp_expiry_fn = resp_expiry_fn or (
-            lambda x: timezone.now() + timezone.timedelta(seconds=float(x['expires_in']))
+            lambda x: timezone.now()
+            + timezone.timedelta(seconds=float(x["expires_in"]))
         )
 
         client = OAuth2Session(
             self.client_id,
             token={
-                'access_token': self.account.oauth_key,
-                'refresh_token': self.account.refresh_token,
-                'token_type': 'Bearer',
-                'expires_in': '-30',
-            }
+                "access_token": self.account.oauth_key,
+                "refresh_token": self.account.refresh_token,
+                "token_type": "Bearer",
+                "expires_in": "-30",
+            },
         )
 
-        extra.update({
-            'client_id': self.client_id,
-            'client_secret': self.client_secret
-        })
+        extra.update(
+            {"client_id": self.client_id, "client_secret": self.client_secret}
+        )
 
         try:
-            token = client.refresh_token(
-                self.auto_refresh_url,
-                **extra
-            )
+            token = client.refresh_token(self.auto_refresh_url, **extra)
         except (AccessDeniedError, InvalidGrantError, TokenExpiredError):
             if not force:
                 return False
@@ -466,7 +482,9 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         return bool: True if needs_refresh
         """
         if self.refresh_time and self.account.expires_at:
-            return (self.account.expires_at - timezone.now()).total_seconds() < self.refresh_time
+            return (
+                self.account.expires_at - timezone.now()
+            ).total_seconds() < self.refresh_time
         return False
 
     @property
@@ -477,17 +495,19 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
         return bool: True if cannot be refreshed
         """
         if self.expiry_time and self.account.expires_at:
-            return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
+            return (
+                timezone.now() - self.account.expires_at
+            ).total_seconds() > self.expiry_time
         return False
 
 
 class BasicAuthProviderMixin:
     """
-        Providers utilizing BasicAuth can utilize this class to implement the
-        storage providers framework by subclassing this mixin. This provides
-        a translation between the oauth parameters and the BasicAuth parameters.
+    Providers utilizing BasicAuth can utilize this class to implement the
+    storage providers framework by subclassing this mixin. This provides
+    a translation between the oauth parameters and the BasicAuth parameters.
 
-        The password here is kept decrypted by default.
+    The password here is kept decrypted by default.
     """
 
     def __init__(self, account=None, host=None, username=None, password=None):
@@ -499,10 +519,10 @@ class BasicAuthProviderMixin:
                 display_name=username,
                 oauth_key=password,
                 oauth_secret=host,
-                provider_id=f'{host}:{username}',
+                provider_id=f"{host}:{username}",
                 profile_url=host,
                 provider=self.short_name,
-                provider_name=self.name
+                provider_name=self.name,
             )
         else:
             self.account = None

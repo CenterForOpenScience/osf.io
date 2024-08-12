@@ -7,19 +7,26 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
 from api.nodes.serializers import NodeSerializer, JSONAPISerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer, ViewOnlyLinkNodesSerializer
+from api.view_only_links.serializers import (
+    ViewOnlyLinkDetailSerializer,
+    ViewOnlyLinkNodesSerializer,
+)
 
 from osf.models import PrivateLink
 from osf.utils.permissions import ADMIN
 
+
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_read).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_read)."""
+
     permission_classes = (
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -30,11 +37,11 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = ViewOnlyLinkDetailSerializer
 
-    view_category = 'view-only-links'
-    view_name = 'view-only-link-detail'
+    view_category = "view-only-links"
+    view_name = "view-only-link-detail"
 
     def get_object(self):
-        link_id = self.kwargs['link_id']
+        link_id = self.kwargs["link_id"]
         view_only_link = PrivateLink.load(link_id)
         user = get_user_auth(self.request).user
 
@@ -49,8 +56,8 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_node_list).
-        """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_node_list)."""
+
     permission_classes = (
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -61,14 +68,14 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = NodeSerializer
 
-    view_category = 'view-only-links'
-    view_name = 'view-only-link-nodes'
+    view_category = "view-only-links"
+    view_name = "view-only-link-nodes"
 
-    ordering = ('-modified',)
+    ordering = ("-modified",)
 
     def get_serializer_class(self):
-        if 'link_id' in self.kwargs:
-            view_only_link = PrivateLink.load(self.kwargs['link_id'])
+        if "link_id" in self.kwargs:
+            view_only_link = PrivateLink.load(self.kwargs["link_id"])
             node = view_only_link.nodes.first()
             if node.is_registration:
                 return RegistrationSerializer
@@ -77,7 +84,7 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
             return JSONAPISerializer
 
     def get_queryset(self):
-        link_id = self.kwargs['link_id']
+        link_id = self.kwargs["link_id"]
         view_only_link = PrivateLink.load(link_id)
         user = get_user_auth(self.request).user
 
@@ -90,7 +97,11 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
         return nodes
 
 
-class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView):
+class ViewOnlyLinkNodesRelationships(
+    JSONAPIBaseView,
+    generics.RetrieveUpdateDestroyAPIView,
+    generics.CreateAPIView,
+):
     """
     Relationship Endpoint for VOL -> Nodes Relationship
 
@@ -129,6 +140,7 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
         This requires admin permissions on all nodes to be associated with this view only link.
 
     """
+
     permission_classes = (
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -138,17 +150,20 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
     required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
 
     serializer_class = ViewOnlyLinkNodesSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
+    parser_classes = (
+        JSONAPIRelationshipParser,
+        JSONAPIRelationshipParserForRegularJSON,
+    )
 
-    view_category = 'view-only-links'
-    view_name = 'view-only-link-nodes-relationships'
+    view_category = "view-only-links"
+    view_name = "view-only-link-nodes-relationships"
 
     def get_object(self):
-        link_id = self.kwargs['link_id']
+        link_id = self.kwargs["link_id"]
         view_only_link = PrivateLink.load(link_id)
         return {
-            'data': view_only_link.nodes.all(),
-            'self': view_only_link,
+            "data": view_only_link.nodes.all(),
+            "self": view_only_link,
         }
 
     def create(self, *args, **kwargs):

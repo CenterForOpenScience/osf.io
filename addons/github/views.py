@@ -1,4 +1,5 @@
 """Views for the node settings page."""
+
 from dateutil.parser import parse as dateparse
 from rest_framework import status as http_status
 import logging
@@ -17,55 +18,50 @@ from addons.github.utils import verify_hook_signature, MESSAGES
 from osf.models import NodeLog
 from osf.utils.permissions import WRITE
 from website.project.decorators import (
-    must_have_addon, must_be_addon_authorizer,
-    must_have_permission, must_not_be_registration,
-    must_be_contributor_or_public, must_be_valid_project,
+    must_have_addon,
+    must_be_addon_authorizer,
+    must_have_permission,
+    must_not_be_registration,
+    must_be_contributor_or_public,
+    must_be_valid_project,
 )
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('github3').setLevel(logging.WARNING)
-logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
+logging.getLogger("github3").setLevel(logging.WARNING)
+logging.getLogger("requests.packages.urllib3.connectionpool").setLevel(
+    logging.WARNING
+)
 
-SHORT_NAME = 'github'
-FULL_NAME = 'GitHub'
+SHORT_NAME = "github"
+FULL_NAME = "GitHub"
 
 ############
 # Generics #
 ############
 
-github_account_list = generic_views.account_list(
-    SHORT_NAME,
-    GitHubSerializer
-)
+github_account_list = generic_views.account_list(SHORT_NAME, GitHubSerializer)
 
-github_import_auth = generic_views.import_auth(
-    SHORT_NAME,
-    GitHubSerializer
-)
+github_import_auth = generic_views.import_auth(SHORT_NAME, GitHubSerializer)
 
-github_get_config = generic_views.get_config(
-    SHORT_NAME,
-    GitHubSerializer
-)
+github_get_config = generic_views.get_config(SHORT_NAME, GitHubSerializer)
 
-github_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
-)
+github_deauthorize_node = generic_views.deauthorize_node(SHORT_NAME)
 
 #################
 # Special Cased #
 #################
 
+
 @must_not_be_registration
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(SHORT_NAME, "user")
+@must_have_addon(SHORT_NAME, "node")
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_permission(WRITE)
 def github_set_config(auth, **kwargs):
-    node_settings = kwargs.get('node_addon', None)
-    node = kwargs.get('node', None)
-    user_settings = kwargs.get('user_addon', None)
+    node_settings = kwargs.get("node_addon", None)
+    node = kwargs.get("node", None)
+    user_settings = kwargs.get("user_addon", None)
 
     try:
         if not node:
@@ -76,8 +72,8 @@ def github_set_config(auth, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Parse request
-    github_user_name = request.json.get('github_user', '')
-    github_repo_name = request.json.get('github_repo', '')
+    github_user_name = request.json.get("github_user", "")
+    github_repo_name = request.json.get("github_repo", "")
 
     if not github_user_name or not github_repo_name:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -88,23 +84,20 @@ def github_set_config(auth, **kwargs):
     if repo is None:
         if user_settings:
             message = (
-                'Cannot access repo. Either the repo does not exist '
-                'or your account does not have permission to view it.'
+                "Cannot access repo. Either the repo does not exist "
+                "or your account does not have permission to view it."
             )
         else:
-            message = (
-                'Cannot access repo.'
-            )
-        return {'message': message}, http_status.HTTP_400_BAD_REQUEST
+            message = "Cannot access repo."
+        return {"message": message}, http_status.HTTP_400_BAD_REQUEST
 
     changed = (
-        github_user_name != node_settings.user or
-        github_repo_name != node_settings.repo
+        github_user_name != node_settings.user
+        or github_repo_name != node_settings.repo
     )
 
     # Update hooks
     if changed:
-
         # Delete existing hook, if any
         node_settings.delete_hook()
 
@@ -114,14 +107,14 @@ def github_set_config(auth, **kwargs):
 
         # Log repo select
         node.add_log(
-            action='github_repo_linked',
+            action="github_repo_linked",
             params={
-                'project': node.parent_id,
-                'node': node._id,
-                'github': {
-                    'user': github_user_name,
-                    'repo': github_repo_name,
-                }
+                "project": node.parent_id,
+                "node": node._id,
+                "github": {
+                    "user": github_user_name,
+                    "repo": github_repo_name,
+                },
             },
             auth=auth,
         )
@@ -134,12 +127,12 @@ def github_set_config(auth, **kwargs):
 
     return {}
 
-@must_be_contributor_or_public
-@must_have_addon('github', 'node')
-def github_download_starball(node_addon, **kwargs):
 
-    archive = kwargs.get('archive', 'tar')
-    ref = request.args.get('sha', 'master')
+@must_be_contributor_or_public
+@must_have_addon("github", "node")
+def github_download_starball(node_addon, **kwargs):
+    archive = kwargs.get("archive", "tar")
+    ref = request.args.get("sha", "master")
 
     connection = GitHubClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
@@ -152,47 +145,51 @@ def github_download_starball(node_addon, **kwargs):
 
     return resp
 
+
 #########
 # HGrid #
 #########
 
+
 @must_be_contributor_or_public
-@must_have_addon('github', 'node')
+@must_have_addon("github", "node")
 def github_root_folder(*args, **kwargs):
     """View function returning the root container for a GitHub repo. In
     contrast to other add-ons, this is exposed via the API for GitHub to
     accommodate switching between branches and commits.
 
     """
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
+    node_settings = kwargs["node_addon"]
+    auth = kwargs["auth"]
     data = request.args.to_dict()
 
     return github_hgrid_data(node_settings, auth=auth, **data)
+
 
 #########
 # Repos #
 #########
 
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
+
+@must_have_addon(SHORT_NAME, "user")
+@must_have_addon(SHORT_NAME, "node")
 @must_be_addon_authorizer(SHORT_NAME)
 def github_folder_list(node_addon, **kwargs):
-    """ Returns all repos for user.
-    """
+    """Returns all repos for user."""
 
     return node_addon.get_folders()
 
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
+
+@must_have_addon(SHORT_NAME, "user")
+@must_have_addon(SHORT_NAME, "node")
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_permission(WRITE)
 def github_create_repo(**kwargs):
-    repo_name = request.json.get('name')
+    repo_name = request.json.get("name")
     if not repo_name:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    node_settings = kwargs['node_addon']
+    node_settings = kwargs["node_addon"]
     connection = GitHubClient(external_account=node_settings.external_account)
 
     try:
@@ -202,17 +199,28 @@ def github_create_repo(**kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return {
-        'user': repo.owner.login,
-        'repo': repo.name,
+        "user": repo.owner.login,
+        "repo": repo.name,
     }
+
 
 #########
 # Hooks #
 #########
 
+
 # TODO: Refactor using NodeLogger
-def add_hook_log(node, github, action, path, date, committer, include_urls=False,
-                 sha=None, save=False):
+def add_hook_log(
+    node,
+    github,
+    action,
+    path,
+    date,
+    committer,
+    include_urls=False,
+    sha=None,
+    save=False,
+):
     """Add log event for commit from webhook payload.
 
     :param node: Node to add logs to
@@ -226,29 +234,31 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
 
     """
     github_data = {
-        'user': github.user,
-        'repo': github.repo,
+        "user": github.user,
+        "repo": github.repo,
     }
 
     urls = {}
 
     if include_urls:
         # TODO: Move to helper function
-        url = node.web_url_for('addon_view_or_download_file', path=path, provider=SHORT_NAME)
+        url = node.web_url_for(
+            "addon_view_or_download_file", path=path, provider=SHORT_NAME
+        )
 
         urls = {
-            'view': f'{url}?ref={sha}',
-            'download': f'{url}?action=download&ref={sha}'
+            "view": f"{url}?ref={sha}",
+            "download": f"{url}?action=download&ref={sha}",
         }
 
     node.add_log(
         action=action,
         params={
-            'project': node.parent_id,
-            'node': node._id,
-            'path': path,
-            'github': github_data,
-            'urls': urls,
+            "project": node.parent_id,
+            "node": node._id,
+            "path": path,
+            "github": github_data,
+            "urls": urls,
         },
         auth=None,
         foreign_user=committer,
@@ -259,11 +269,9 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_addon('github', 'node')
+@must_have_addon("github", "node")
 def github_hook_callback(node_addon, **kwargs):
-    """Add logs for commits from outside OSF.
-
-    """
+    """Add logs for commits from outside OSF."""
     if request.json is None:
         return {}
 
@@ -274,37 +282,52 @@ def github_hook_callback(node_addon, **kwargs):
         request.headers,
     )
 
-    node = kwargs['node'] or kwargs['project']
+    node = kwargs["node"] or kwargs["project"]
 
     payload = request.json
 
-    for commit in payload.get('commits', []):
-
+    for commit in payload.get("commits", []):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        if commit['message'] and commit['message'] in MESSAGES.values():
+        if commit["message"] and commit["message"] in MESSAGES.values():
             continue
 
-        _id = commit['id']
-        date = dateparse(commit['timestamp'])
-        committer = commit['committer']['name']
+        _id = commit["id"]
+        date = dateparse(commit["timestamp"])
+        committer = commit["committer"]["name"]
 
         # Add logs
-        for path in commit.get('added', []):
+        for path in commit.get("added", []):
             add_hook_log(
-                node, node_addon, 'github_' + NodeLog.FILE_ADDED,
-                path, date, committer, include_urls=True, sha=_id,
+                node,
+                node_addon,
+                "github_" + NodeLog.FILE_ADDED,
+                path,
+                date,
+                committer,
+                include_urls=True,
+                sha=_id,
             )
-        for path in commit.get('modified', []):
+        for path in commit.get("modified", []):
             add_hook_log(
-                node, node_addon, 'github_' + NodeLog.FILE_UPDATED,
-                path, date, committer, include_urls=True, sha=_id,
+                node,
+                node_addon,
+                "github_" + NodeLog.FILE_UPDATED,
+                path,
+                date,
+                committer,
+                include_urls=True,
+                sha=_id,
             )
-        for path in commit.get('removed', []):
+        for path in commit.get("removed", []):
             add_hook_log(
-                node, node_addon, 'github_' + NodeLog.FILE_REMOVED,
-                path, date, committer,
+                node,
+                node_addon,
+                "github_" + NodeLog.FILE_REMOVED,
+                path,
+                date,
+                committer,
             )
 
     node.save()

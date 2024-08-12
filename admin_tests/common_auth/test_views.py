@@ -18,10 +18,10 @@ class TestRegisterUser(AdminTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.data = {
-            'osf_id': 'abc12',
+            "osf_id": "abc12",
         }
         self.view = RegisterUser()
-        self.request = RequestFactory().post('fake_path')
+        self.request = RequestFactory().post("fake_path")
 
     def test_osf_id_invalid(self):
         form = UserRegistrationForm(data=self.data)
@@ -30,7 +30,7 @@ class TestRegisterUser(AdminTestCase):
         with pytest.raises(Http404):
             view.form_valid(form)
 
-    @mock.patch('admin.common_auth.views.messages.success')
+    @mock.patch("admin.common_auth.views.messages.success")
     def test_add_user(self, mock_save):
         count = OSFUser.objects.count()
         self.data.update(osf_id=self.user._id)

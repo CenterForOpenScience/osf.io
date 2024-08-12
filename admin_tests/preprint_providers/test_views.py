@@ -14,7 +14,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     PreprintFactory,
     SubjectFactory,
-    ProviderAssetFileFactory
+    ProviderAssetFileFactory,
 )
 from osf.models import PreprintProvider, NodeLicense
 from admin_tests.utilities import setup_form_view, setup_user_view
@@ -42,7 +42,7 @@ def user():
 
 @pytest.fixture()
 def req(user):
-    req = RequestFactory().get('/fake_path')
+    req = RequestFactory().get("/fake_path")
     req.user = user
     return req
 
@@ -54,37 +54,50 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         self.user.save()
 
         self.preprint_provider = PreprintProviderFactory()
-        asset_file = ProviderAssetFileFactory(name='square_color_no_transparent')
+        asset_file = ProviderAssetFileFactory(
+            name="square_color_no_transparent"
+        )
         self.preprint_provider.asset_files.add(asset_file)
         self.preprint_provider.save()
 
-        self.request = RequestFactory().get('/fake_path')
+        self.request = RequestFactory().get("/fake_path")
         self.view = views.ShareSourcePreprintProvider()
-        self.view = setup_user_view(self.view, self.request, user=self.user,
-                                    preprint_provider_id=self.preprint_provider.id)
+        self.view = setup_user_view(
+            self.view,
+            self.request,
+            user=self.user,
+            preprint_provider_id=self.preprint_provider.id,
+        )
 
-        self.mock_prepend = mock.patch.object(website.settings, 'SHARE_PROVIDER_PREPEND', 'testenv')
+        self.mock_prepend = mock.patch.object(
+            website.settings, "SHARE_PROVIDER_PREPEND", "testenv"
+        )
 
     @responses.activate
-    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    @mock.patch("api.share.utils.settings.SHARE_ENABLED", True)
     def test_update_share_token_and_source(self):
-        token = 'tokennethbranagh'
-        source_name = 'sir'
+        token = "tokennethbranagh"
+        source_name = "sir"
         responses.add(
-            responses.POST, 'https://share.osf.io/api/v2/sources/',
-            body=json.dumps({
-                'data': {
-                    'attributes': {
-                        'longTitle': source_name,
+            responses.POST,
+            "https://share.osf.io/api/v2/sources/",
+            body=json.dumps(
+                {
+                    "data": {
+                        "attributes": {
+                            "longTitle": source_name,
+                        },
                     },
-                },
-                'included': [{
-                    'attributes': {
-                        'token': token,
-                    },
-                    'type': 'ShareUser',
-                }]
-            })
+                    "included": [
+                        {
+                            "attributes": {
+                                "token": token,
+                            },
+                            "type": "ShareUser",
+                        }
+                    ],
+                }
+            ),
         )
 
         self.view.get(self.request)
@@ -94,27 +107,34 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         assert self.preprint_provider.share_source == source_name
 
     @responses.activate
-    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    @mock.patch("api.share.utils.settings.SHARE_ENABLED", True)
     def test_update_share_token_and_source_prefix(self):
         with self.mock_prepend:
-            token = 'tokennethbranagh'
+            token = "tokennethbranagh"
             responses.add(
-                responses.POST, 'https://share.osf.io/api/v2/sources/',
-                body=json.dumps({
-                    'data': {
-                        'attributes': {
-                            'homePage': self.preprint_provider.external_url,
-                            'longTitle': f'testenv_{self.preprint_provider.name}',
-                            'iconUrl': self.preprint_provider.get_asset_url('square_color_no_transparent')
-                        }
-                    },
-                    'included': [{
-                        'attributes': {
-                            'token': token,
+                responses.POST,
+                "https://share.osf.io/api/v2/sources/",
+                body=json.dumps(
+                    {
+                        "data": {
+                            "attributes": {
+                                "homePage": self.preprint_provider.external_url,
+                                "longTitle": f"testenv_{self.preprint_provider.name}",
+                                "iconUrl": self.preprint_provider.get_asset_url(
+                                    "square_color_no_transparent"
+                                ),
+                            }
                         },
-                        'type': 'ShareUser',
-                    }]
-                })
+                        "included": [
+                            {
+                                "attributes": {
+                                    "token": token,
+                                },
+                                "type": "ShareUser",
+                            }
+                        ],
+                    }
+                ),
             )
 
             self.view.get(self.request)
@@ -122,9 +142,15 @@ class TestShareSourcePreprintProvider(AdminTestCase):
 
             request_body = json.loads(responses.calls[-1].request.body)
 
-            assert request_body['data']['attributes']['longTitle'] == f'testenv_{self.preprint_provider.name}'
+            assert (
+                request_body["data"]["attributes"]["longTitle"]
+                == f"testenv_{self.preprint_provider.name}"
+            )
             assert self.preprint_provider.access_token == token
-            assert self.preprint_provider.share_source == f'testenv_{self.preprint_provider.name}'
+            assert (
+                self.preprint_provider.share_source
+                == f"testenv_{self.preprint_provider.name}"
+            )
 
 
 class TestPreprintProviderChangeForm(AdminTestCase):
@@ -134,73 +160,83 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         self.user = AuthUserFactory()
         self.preprint_provider = PreprintProviderFactory()
 
-        self.request = RequestFactory().get('/fake_path')
+        self.request = RequestFactory().get("/fake_path")
         self.request.user = self.user
         self.view = views.PreprintProviderChangeForm()
-        self.view = setup_form_view(self.view, self.request, form=PreprintProviderForm())
+        self.view = setup_form_view(
+            self.view, self.request, form=PreprintProviderForm()
+        )
 
-        self.parent_1 = SubjectFactory(provider=PreprintProviderFactory(_id='osf'))
+        self.parent_1 = SubjectFactory(
+            provider=PreprintProviderFactory(_id="osf")
+        )
         self.child_1 = SubjectFactory(parent=self.parent_1)
         self.child_2 = SubjectFactory(parent=self.parent_1)
         self.grandchild_1 = SubjectFactory(parent=self.child_1)
 
-        self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+        self.view.kwargs = {"preprint_provider_id": self.preprint_provider.id}
 
     def test_get_context_data(self):
         self.view.object = self.preprint_provider
         res = self.view.get_context_data()
         assert isinstance(res, dict)
-        assert isinstance(res['import_form'], ImportFileForm)
+        assert isinstance(res["import_form"], ImportFileForm)
 
     def test_preprint_provider_form(self):
         formatted_rule = [[[self.parent_1._id], True]]
 
         new_data = {
-            '_id': 'newname',
-            'name': 'New Name',
-            'share_publish_type': 'Preprint',
-            'subjects_chosen': '{}, {}, {}, {}'.format(
-                self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
+            "_id": "newname",
+            "name": "New Name",
+            "share_publish_type": "Preprint",
+            "subjects_chosen": "{}, {}, {}, {}".format(
+                self.parent_1.id,
+                self.child_1.id,
+                self.child_2.id,
+                self.grandchild_1.id,
             ),
-            'type': 'osf.preprintprovider',
-            'toplevel_subjects': [self.parent_1.id],
-            'subjects_acceptable': '[]',
-            'preprint_word': 'preprint'
+            "type": "osf.preprintprovider",
+            "toplevel_subjects": [self.parent_1.id],
+            "subjects_acceptable": "[]",
+            "preprint_word": "preprint",
         }
         form = PreprintProviderForm(data=new_data)
         assert form.is_valid()
 
         new_provider = form.save()
-        assert new_provider.name == new_data['name']
+        assert new_provider.name == new_data["name"]
         assert new_provider.subjects_acceptable == formatted_rule
 
     # TODO: bleach for some reason replaces <pre> with /n instead of sanitizing it
     def test_html_fields_are_stripped(self):
         new_data = {
-            '_id': 'newname',
-            'name': 'New Name',
-            'share_publish_type': 'Preprint',
-            'subjects_chosen': '{}, {}, {}, {}'.format(
-                self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
+            "_id": "newname",
+            "name": "New Name",
+            "share_publish_type": "Preprint",
+            "subjects_chosen": "{}, {}, {}, {}".format(
+                self.parent_1.id,
+                self.child_1.id,
+                self.child_2.id,
+                self.grandchild_1.id,
             ),
-            'type': 'osf.preprintprovider',
-            'toplevel_subjects': [self.parent_1.id],
-            'subjects_acceptable': '[]',
-            'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
-            'description': '<span>Open Preprints <code>Open</code> Science<script></script></span>',
-            'footer_links': '<p>Xiv: <script>Support</script> | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>',
-            'preprint_word': 'preprint'
+            "type": "osf.preprintprovider",
+            "toplevel_subjects": [self.parent_1.id],
+            "subjects_acceptable": "[]",
+            "advisory_board": '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
+            "description": "<span>Open Preprints <code>Open</code> Science<script></script></span>",
+            "footer_links": '<p>Xiv: <script>Support</script> | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>',
+            "preprint_word": "preprint",
         }
 
-        stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
-        stripped_description = '<span>Open Preprints Open Science</span>'
+        stripped_advisory_board = "<div><ul><li>Bill Nye</li></ul></div>"
+        stripped_description = "<span>Open Preprints Open Science</span>"
         stripped_footer_links = '<p>Xiv: Support | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>'
 
         form = PreprintProviderForm(data=new_data)
         assert form.is_valid()
 
         new_provider = form.save()
-        assert new_provider.name == new_data['name']
+        assert new_provider.name == new_data["name"]
         assert new_provider.description == stripped_description
         assert new_provider.footer_links == stripped_footer_links
         assert new_provider.advisory_board == stripped_advisory_board
@@ -214,113 +250,130 @@ class TestPreprintProviderExportImport(AdminTestCase):
         self.user = AuthUserFactory()
         self.preprint_provider = PreprintProviderFactory()
 
-        self.request = RequestFactory().get('/fake_path')
+        self.request = RequestFactory().get("/fake_path")
         self.view = views.ExportPreprintProvider()
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
-        self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+        self.view.kwargs = {"preprint_provider_id": self.preprint_provider.id}
 
-        self.import_request = RequestFactory().get('/fake_path')
+        self.import_request = RequestFactory().get("/fake_path")
         self.import_view = views.ImportPreprintProvider()
-        self.import_view = setup_user_view(self.import_view, self.import_request, user=self.user)
+        self.import_view = setup_user_view(
+            self.import_view, self.import_request, user=self.user
+        )
 
-        self.preprint_provider.licenses_acceptable.add(*[NodeLicense.objects.get(license_id='NONE')])
+        self.preprint_provider.licenses_acceptable.add(
+            *[NodeLicense.objects.get(license_id="NONE")]
+        )
         self.subject = SubjectFactory(provider=self.preprint_provider)
 
     def test_post(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
-        assert content_dict['fields']['type'] == 'osf.preprintprovider'
-        assert content_dict['fields']['name'] == self.preprint_provider.name
-        assert res.__getitem__('content-type') == 'text/json'
+        assert content_dict["fields"]["type"] == "osf.preprintprovider"
+        assert content_dict["fields"]["name"] == self.preprint_provider.name
+        assert res.__getitem__("content-type") == "text/json"
 
     def test_certain_fields_not_included(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
         for field in views.FIELDS_TO_NOT_IMPORT_EXPORT:
-            assert field not in content_dict['fields'].keys()
+            assert field not in content_dict["fields"].keys()
 
     def test_export_to_import_new_provider(self):
-        update_taxonomies('test_bepress_taxonomy.json')
+        update_taxonomies("test_bepress_taxonomy.json")
 
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
-        content_dict['fields']['_id'] = 'new_id'
-        content_dict['fields']['name'] = 'Awesome New Name'
+        content_dict["fields"]["_id"] = "new_id"
+        content_dict["fields"]["name"] = "Awesome New Name"
         data = StringIO(json.dumps(content_dict))
-        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
+        self.import_request.FILES["file"] = InMemoryUploadedFile(
+            data, None, "data", "application/json", 500, None, {}
+        )
 
         res = self.import_view.post(self.import_request)
 
-        provider_id = ''.join([i for i in res.url if i.isdigit()])
+        provider_id = "".join([i for i in res.url if i.isdigit()])
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         assert res.status_code == 302
-        assert new_provider._id == 'new_id'
-        assert new_provider.name == 'Awesome New Name'
+        assert new_provider._id == "new_id"
+        assert new_provider.name == "Awesome New Name"
         assert new_provider.subjects.all().count() == 1
         assert new_provider.licenses_acceptable.all().count() == 1
         assert new_provider.subjects.all()[0].text == self.subject.text
-        assert new_provider.licenses_acceptable.all()[0].license_id == 'NONE'
+        assert new_provider.licenses_acceptable.all()[0].license_id == "NONE"
 
     def test_export_to_import_new_provider_with_models_out_of_sync(self):
-        update_taxonomies('test_bepress_taxonomy.json')
+        update_taxonomies("test_bepress_taxonomy.json")
 
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
-        content_dict['fields']['_id'] = 'new_id'
-        content_dict['fields']['name'] = 'Awesome New Name'
-        content_dict['fields']['new_field'] = 'this is a new field, not in the model'
-        del content_dict['fields']['description']  # this is a old field, removed from the model JSON
+        content_dict["fields"]["_id"] = "new_id"
+        content_dict["fields"]["name"] = "Awesome New Name"
+        content_dict["fields"]["new_field"] = (
+            "this is a new field, not in the model"
+        )
+        del content_dict["fields"][
+            "description"
+        ]  # this is a old field, removed from the model JSON
 
         data = StringIO(json.dumps(content_dict))
-        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
+        self.import_request.FILES["file"] = InMemoryUploadedFile(
+            data, None, "data", "application/json", 500, None, {}
+        )
 
         res = self.import_view.post(self.import_request)
 
-        provider_id = ''.join([i for i in res.url if i.isdigit()])
+        provider_id = "".join([i for i in res.url if i.isdigit()])
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         assert res.status_code == 302
-        assert new_provider._id == 'new_id'
-        assert new_provider.name == 'Awesome New Name'
+        assert new_provider._id == "new_id"
+        assert new_provider.name == "Awesome New Name"
 
     def test_update_provider_existing_subjects(self):
         # If there are existing subjects for a provider, imported subjects are ignored
-        self.import_view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+        self.import_view.kwargs = {
+            "preprint_provider_id": self.preprint_provider.id
+        }
 
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
-        new_subject_data = {'include': [], 'exclude': []}
-        new_subject_data['custom'] = {
-            'TestSubject1': {
-                'parent': '',
-                'bepress': 'Law'
-            }
+        new_subject_data = {"include": [], "exclude": []}
+        new_subject_data["custom"] = {
+            "TestSubject1": {"parent": "", "bepress": "Law"}
         }
 
-        content_dict['fields']['subjects'] = json.dumps(new_subject_data)
-        content_dict['fields']['licenses_acceptable'] = ['CCBY']
+        content_dict["fields"]["subjects"] = json.dumps(new_subject_data)
+        content_dict["fields"]["licenses_acceptable"] = ["CCBY"]
         data = StringIO(json.dumps(content_dict))
-        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
+        self.import_request.FILES["file"] = InMemoryUploadedFile(
+            data, None, "data", "application/json", 500, None, {}
+        )
 
         res = self.import_view.post(self.import_request)
 
-        new_provider_id = int(''.join([i for i in res.url if i.isdigit()]))
+        new_provider_id = int("".join([i for i in res.url if i.isdigit()]))
 
         assert res.status_code == 302
         assert new_provider_id == self.preprint_provider.id
         assert self.preprint_provider.subjects.all().count() == 1
         assert self.preprint_provider.licenses_acceptable.all().count() == 1
-        assert self.preprint_provider.subjects.all()[0].text == self.subject.text
-        assert self.preprint_provider.licenses_acceptable.all()[0].license_id == 'CCBY'
+        assert (
+            self.preprint_provider.subjects.all()[0].text == self.subject.text
+        )
+        assert (
+            self.preprint_provider.licenses_acceptable.all()[0].license_id
+            == "CCBY"
+        )
 
 
 class TestPreprintProviderList(ProviderListMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return PreprintProviderFactory
@@ -336,7 +389,6 @@ class TestPreprintProviderList(ProviderListMixinBase):
 
 
 class TestPreprintProviderDisplay(ProviderDisplayMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return PreprintProviderFactory
@@ -353,12 +405,11 @@ class TestPreprintProviderDisplay(ProviderDisplayMixinBase):
     def view(self, req, provider):
         plain_view = views.PreprintProviderDisplay()
         view = setup_view(plain_view, req)
-        view.kwargs = {'preprint_provider_id': provider.id}
+        view.kwargs = {"preprint_provider_id": provider.id}
         return view
 
 
 class TestCreateRegistrationProvider(CreateProviderMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return PreprintProviderFactory
@@ -367,12 +418,11 @@ class TestCreateRegistrationProvider(CreateProviderMixinBase):
     def view(self, req, provider):
         plain_view = views.CreatePreprintProvider()
         view = setup_form_view(plain_view, req, form=PreprintProviderForm())
-        view.kwargs = {f'{provider.readable_type}_provider_id': provider.id}
+        view.kwargs = {f"{provider.readable_type}_provider_id": provider.id}
         return view
 
 
 class TestDeletePreprintProvider(DeleteProviderMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return PreprintProviderFactory
@@ -381,7 +431,7 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
     def view(self, req, provider):
         view = views.DeletePreprintProvider()
         view = setup_view(view, req)
-        view.kwargs = {'preprint_provider_id': provider.id}
+        view.kwargs = {"preprint_provider_id": provider.id}
         return view
 
     @pytest.fixture()
@@ -394,27 +444,36 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
         provider.save()
         return provider
 
-    def test_cannot_delete_if_preprints_present(self, req, view, preprint, provider_with_preprint):
+    def test_cannot_delete_if_preprints_present(
+        self, req, view, preprint, provider_with_preprint
+    ):
         redirect = view.delete(req)
-        assert redirect.url == f'/preprint_providers/{provider_with_preprint.id}/cannot_delete/'
+        assert (
+            redirect.url
+            == f"/preprint_providers/{provider_with_preprint.id}/cannot_delete/"
+        )
         assert redirect.status_code == 302
 
     def test_delete_provider_with_no_preprints(self, req, view):
         redirect = view.delete(req)
-        assert redirect.url == '/preprint_providers/'
+        assert redirect.url == "/preprint_providers/"
         assert redirect.status_code == 302
 
-    def test_cannot_get_if_preprints_present(self, req, view, preprint, provider_with_preprint):
+    def test_cannot_get_if_preprints_present(
+        self, req, view, preprint, provider_with_preprint
+    ):
         redirect = view.get(req)
-        assert redirect.url == f'/preprint_providers/{provider_with_preprint.id}/cannot_delete/'
+        assert (
+            redirect.url
+            == f"/preprint_providers/{provider_with_preprint.id}/cannot_delete/"
+        )
         assert redirect.status_code == 302
 
 
 class TestProcessCustomTaxonomy(ProcessCustomTaxonomyMixinBase):
-
     @pytest.fixture(autouse=True)
     def osf_provider(self):
-        return PreprintProviderFactory(_id='osf')
+        return PreprintProviderFactory(_id="osf")
 
     @pytest.fixture()
     def provider_factory(self):

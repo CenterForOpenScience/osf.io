@@ -17,6 +17,7 @@ Usage: ::
     mails.send_mail('foo@bar.com', mails.CONFIRM_EMAIL, user=user)
 
 """
+
 import os
 import logging
 import waffle
@@ -29,18 +30,16 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
-EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
+EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, "emails")
 
 _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
 )
 
-HTML_EXT = '.html.mako'
+HTML_EXT = ".html.mako"
 
-DISABLED_MAILS = [
-    'welcome',
-    'welcome_osf4i'
-]
+DISABLED_MAILS = ["welcome", "welcome_osf4i"]
+
 
 class Mail:
     """An email object.
@@ -76,9 +75,18 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(
-        to_addr, mail, from_addr=None, mailer=None, celery=True,
-        username=None, password=None, callback=None, attachment_name=None,
-        attachment_content=None, **context):
+    to_addr,
+    mail,
+    from_addr=None,
+    mailer=None,
+    celery=True,
+    username=None,
+    password=None,
+    callback=None,
+    attachment_name=None,
+    attachment_content=None,
+    **context,
+):
     """Send an email from the OSF.
     Example: ::
 
@@ -95,7 +103,10 @@ def send_mail(
     .. note:
          Uses celery if available
     """
-    if waffle.switch_is_active(features.DISABLE_ENGAGEMENT_EMAILS) and mail.engagement:
+    if (
+        waffle.switch_is_active(features.DISABLE_ENGAGEMENT_EMAILS)
+        and mail.engagement
+    ):
         return False
 
     from_addr = from_addr or settings.FROM_EMAIL
@@ -104,8 +115,10 @@ def send_mail(
     message = mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
-    logger.debug('Sending email...')
-    logger.debug(f'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}')
+    logger.debug("Sending email...")
+    logger.debug(
+        f"To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}"
+    )
 
     kwargs = dict(
         from_addr=from_addr,
@@ -121,13 +134,13 @@ def send_mail(
         attachment_content=attachment_content,
     )
 
-    logger.debug('Preparing to send...')
+    logger.debug("Preparing to send...")
     if settings.USE_EMAIL:
         if settings.USE_CELERY and celery:
-            logger.debug('Sending via celery...')
+            logger.debug("Sending via celery...")
             return mailer.apply_async(kwargs=kwargs, link=callback)
         else:
-            logger.debug('Sending without celery')
+            logger.debug("Sending without celery")
             ret = mailer(**kwargs)
             if callback:
                 callback()
@@ -142,447 +155,434 @@ def get_english_article(word):
     :param word: the word immediately after the article
     :return: 'a' or 'an'
     """
-    return 'a' + ('n' if word[0].lower() in 'aeiou' else '')
+    return "a" + ("n" if word[0].lower() in "aeiou" else "")
 
 
 # Predefined Emails
 
-TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
+TEST = Mail("test", subject="A test email to ${name}", categories=["test"])
 
 # Emails for first-time login through external identity providers.
 EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
-    'external_confirm_create',
-    subject='OSF Account Verification'
+    "external_confirm_create", subject="OSF Account Verification"
 )
 
-FORK_COMPLETED = Mail(
-    'fork_completed',
-    subject='Your fork has completed'
-)
+FORK_COMPLETED = Mail("fork_completed", subject="Your fork has completed")
 
-FORK_FAILED = Mail(
-    'fork_failed',
-    subject='Your fork has failed'
-)
+FORK_FAILED = Mail("fork_failed", subject="Your fork has failed")
 
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
-    'external_confirm_link',
-    subject='OSF Account Verification'
+    "external_confirm_link", subject="OSF Account Verification"
 )
 EXTERNAL_LOGIN_LINK_SUCCESS = Mail(
-    'external_confirm_success',
-    subject='OSF Account Verification Success'
+    "external_confirm_success", subject="OSF Account Verification Success"
 )
 
 # Sign up confirmation emails for OSF, native campaigns and branded campaigns
 INITIAL_CONFIRM_EMAIL = Mail(
-    'initial_confirm',
-    subject='OSF Account Verification'
+    "initial_confirm", subject="OSF Account Verification"
 )
-CONFIRM_EMAIL = Mail(
-    'confirm',
-    subject='Add a new email to your OSF account'
-)
+CONFIRM_EMAIL = Mail("confirm", subject="Add a new email to your OSF account")
 CONFIRM_EMAIL_ERPC = Mail(
-    'confirm_erpc',
-    subject='OSF Account Verification, Election Research Preacceptance Competition'
+    "confirm_erpc",
+    subject="OSF Account Verification, Election Research Preacceptance Competition",
 )
 CONFIRM_EMAIL_AGU_CONFERENCE_2023 = Mail(
-    'confirm_agu_conference_2023',
-    subject='OSF Account Verification, from the American Geophysical Union Conference'
+    "confirm_agu_conference_2023",
+    subject="OSF Account Verification, from the American Geophysical Union Conference",
 )
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
-    f'confirm_preprints_{name}',
-    subject=f'OSF Account Verification, {provider}'
+    f"confirm_preprints_{name}",
+    subject=f"OSF Account Verification, {provider}",
 )
 CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
-    'confirm_registries_osf',
-    subject='OSF Account Verification, OSF Registries'
+    "confirm_registries_osf",
+    subject="OSF Account Verification, OSF Registries",
 )
 CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
-    'confirm_moderation',
-    subject=f'OSF Account Verification, {provider.name}'
+    "confirm_moderation", subject=f"OSF Account Verification, {provider.name}"
 )
 
 # Merge account, add or remove email confirmation emails.
-CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+CONFIRM_MERGE = Mail("confirm_merge", subject="Confirm account merge")
 COLLECTION_SUBMISSION_REJECTED = lambda collection, node: Mail(
-    'collection_submission_rejected',
-    subject=f'{node.title} was not accepted into {collection.title}'
+    "collection_submission_rejected",
+    subject=f"{node.title} was not accepted into {collection.title}",
 )
 COLLECTION_SUBMISSION_SUBMITTED = lambda submitter, node: Mail(
-    'collection_submission_submitted',
-    subject=f'{submitter.fullname} has requested to add {node.title} to a collection'
+    "collection_submission_submitted",
+    subject=f"{submitter.fullname} has requested to add {node.title} to a collection",
 )
 COLLECTION_SUBMISSION_ACCEPTED = lambda collection, node: Mail(
-    'collection_submission_accepted',
-    subject=f'{node.title} was accepted into {collection.title}'
+    "collection_submission_accepted",
+    subject=f"{node.title} was accepted into {collection.title}",
 )
 COLLECTION_SUBMISSION_REMOVED_MODERATOR = lambda collection, node: Mail(
-    'collection_submission_removed_moderator',
-    subject=f'{node.title} was removed from {collection.title}'
+    "collection_submission_removed_moderator",
+    subject=f"{node.title} was removed from {collection.title}",
 )
 COLLECTION_SUBMISSION_REMOVED_ADMIN = lambda collection, node: Mail(
-    'collection_submission_removed_admin',
-    subject=f'{node.title} was removed from {collection.title}'
+    "collection_submission_removed_admin",
+    subject=f"{node.title} was removed from {collection.title}",
 )
 COLLECTION_SUBMISSION_REMOVED_PRIVATE = lambda collection, node: Mail(
-    'collection_submission_removed_private',
-    subject=f'{node.title} was removed from {collection.title}'
+    "collection_submission_removed_private",
+    subject=f"{node.title} was removed from {collection.title}",
 )
 COLLECTION_SUBMISSION_CANCEL = lambda collection, node: Mail(
-    'collection_submission_cancel',
-    subject=f'Request to add {node.title} to {collection.title} was canceled'
+    "collection_submission_cancel",
+    subject=f"Request to add {node.title} to {collection.title} was canceled",
 )
 
-PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
+PRIMARY_EMAIL_CHANGED = Mail(
+    "primary_email_changed", subject="Primary email changed"
+)
 
 
 # Contributor added confirmation emails
 INVITE_DEFAULT = Mail(
-    'invite_default',
-    subject='You have been added as a contributor to an OSF project.'
+    "invite_default",
+    subject="You have been added as a contributor to an OSF project.",
 )
 INVITE_OSF_PREPRINT = Mail(
-    'invite_preprints_osf',
-    subject='You have been added as a contributor to an OSF preprint.'
+    "invite_preprints_osf",
+    subject="You have been added as a contributor to an OSF preprint.",
 )
 INVITE_PREPRINT = lambda provider: Mail(
-    'invite_preprints',
-    subject=f'You have been added as a contributor to {get_english_article(provider.name)} {provider.name} {provider.preprint_word}.'
+    "invite_preprints",
+    subject=f"You have been added as a contributor to {get_english_article(provider.name)} {provider.name} {provider.preprint_word}.",
 )
 INVITE_DRAFT_REGISTRATION = Mail(
-    'invite_draft_registration',
-    subject='You have a new registration draft'
+    "invite_draft_registration", subject="You have a new registration draft"
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
-    'contributor_added_default',
-    subject='You have been added as a contributor to an OSF project.'
+    "contributor_added_default",
+    subject="You have been added as a contributor to an OSF project.",
 )
 CONTRIBUTOR_ADDED_OSF_PREPRINT = Mail(
-    'contributor_added_preprints_osf',
-    subject='You have been added as a contributor to an OSF preprint.'
+    "contributor_added_preprints_osf",
+    subject="You have been added as a contributor to an OSF preprint.",
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda provider: Mail(
-    'contributor_added_preprints',
-    subject=f'You have been added as a contributor to {get_english_article(provider.name)} {provider.name} {provider.preprint_word}.'
+    "contributor_added_preprints",
+    subject=f"You have been added as a contributor to {get_english_article(provider.name)} {provider.name} {provider.preprint_word}.",
 )
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
-    'contributor_added_preprint_node_from_osf',
-    subject='You have been added as a contributor to an OSF project.'
+    "contributor_added_preprint_node_from_osf",
+    subject="You have been added as a contributor to an OSF project.",
 )
 CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
-    'contributor_added_draft_registration',
-    subject='You have a new registration draft.'
+    "contributor_added_draft_registration",
+    subject="You have a new registration draft.",
 )
 MODERATOR_ADDED = lambda provider: Mail(
-    'moderator_added',
-    subject=f'You have been added as a moderator for {provider.name}'
+    "moderator_added",
+    subject=f"You have been added as a moderator for {provider.name}",
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
-    'contributor_added_access_request',
-    subject='Your access request to an OSF project has been approved'
+    "contributor_added_access_request",
+    subject="Your access request to an OSF project has been approved",
 )
-FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
-FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
+FORWARD_INVITE = Mail(
+    "forward_invite", subject="Please forward to ${fullname}"
+)
+FORWARD_INVITE_REGISTERED = Mail(
+    "forward_invite_registered", subject="Please forward to ${fullname}"
+)
 
-FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
-FORGOT_PASSWORD_INSTITUTION = Mail('forgot_password_institution', subject='Set Password')
-PASSWORD_RESET = Mail('password_reset', subject='Your OSF password has been reset')
-PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
-PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
+FORGOT_PASSWORD = Mail("forgot_password", subject="Reset Password")
+FORGOT_PASSWORD_INSTITUTION = Mail(
+    "forgot_password_institution", subject="Set Password"
+)
+PASSWORD_RESET = Mail(
+    "password_reset", subject="Your OSF password has been reset"
+)
+PENDING_VERIFICATION = Mail(
+    "pending_invite", subject="Your account is almost ready!"
+)
+PENDING_VERIFICATION_REGISTERED = Mail(
+    "pending_registered", subject="Received request to be a contributor"
+)
 
-REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
-REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
+REQUEST_EXPORT = Mail("support_request", subject="[via OSF] Export Request")
+REQUEST_DEACTIVATION = Mail(
+    "support_request", subject="[via OSF] Deactivation Request"
+)
 
-REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via OSF] OSF account deactivated')
+REQUEST_DEACTIVATION_COMPLETE = Mail(
+    "request_deactivation_complete",
+    subject="[via OSF] OSF account deactivated",
+)
 
-SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
+SPAM_USER_BANNED = Mail(
+    "spam_user_banned", subject="[OSF] Account flagged as spam"
+)
 SPAM_FILES_DETECTED = Mail(
-    'spam_files_detected',
-    subject='[auto] Spam files audit'
+    "spam_files_detected", subject="[auto] Spam files audit"
 )
 
 CONFERENCE_SUBMITTED = Mail(
-    'conference_submitted',
-    subject='Project created on OSF',
+    "conference_submitted",
+    subject="Project created on OSF",
 )
 CONFERENCE_INACTIVE = Mail(
-    'conference_inactive',
-    subject='OSF Error: Conference inactive',
+    "conference_inactive",
+    subject="OSF Error: Conference inactive",
 )
 CONFERENCE_FAILED = Mail(
-    'conference_failed',
-    subject='OSF Error: No files attached',
+    "conference_failed",
+    subject="OSF Error: No files attached",
 )
 
 DIGEST = Mail(
-    'digest', subject='OSF Notifications',
-    categories=['notifications', 'notifications-digest']
+    "digest",
+    subject="OSF Notifications",
+    categories=["notifications", "notifications-digest"],
 )
 
 DIGEST_REVIEWS_MODERATORS = Mail(
-    'digest_reviews_moderators',
-    subject='Recent submissions to ${provider_name}',
+    "digest_reviews_moderators",
+    subject="Recent submissions to ${provider_name}",
 )
 
 TRANSACTIONAL = Mail(
-    'transactional', subject='OSF: ${subject}',
-    categories=['notifications', 'notifications-transactional']
+    "transactional",
+    subject="OSF: ${subject}",
+    categories=["notifications", "notifications-transactional"],
 )
 
 # Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
-    'pending_retraction_admin',
-    subject='Withdrawal pending for one of your registrations.'
+    "pending_retraction_admin",
+    subject="Withdrawal pending for one of your registrations.",
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
-    'pending_retraction_non_admin',
-    subject='Withdrawal pending for one of your registrations.'
+    "pending_retraction_non_admin",
+    subject="Withdrawal pending for one of your registrations.",
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
-    'pending_retraction_non_admin',
-    subject='Withdrawal pending for one of your projects.'
+    "pending_retraction_non_admin",
+    subject="Withdrawal pending for one of your projects.",
 )
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
-    'pending_embargo_admin',
-    subject='Admin decision pending for one of your registrations.'
+    "pending_embargo_admin",
+    subject="Admin decision pending for one of your registrations.",
 )
 PENDING_EMBARGO_NON_ADMIN = Mail(
-    'pending_embargo_non_admin',
-    subject='Admin decision pending for one of your registrations.'
+    "pending_embargo_non_admin",
+    subject="Admin decision pending for one of your registrations.",
 )
 # Registration related Mail Objects
 PENDING_REGISTRATION_ADMIN = Mail(
-    'pending_registration_admin',
-    subject='Admin decision pending for one of your registrations.'
+    "pending_registration_admin",
+    subject="Admin decision pending for one of your registrations.",
 )
 PENDING_REGISTRATION_NON_ADMIN = Mail(
-    'pending_registration_non_admin',
-    subject='Admin decision pending for one of your registrations.'
+    "pending_registration_non_admin",
+    subject="Admin decision pending for one of your registrations.",
 )
 PENDING_EMBARGO_TERMINATION_ADMIN = Mail(
-    'pending_embargo_termination_admin',
-    subject='Request to end an embargo early for one of your registrations.'
+    "pending_embargo_termination_admin",
+    subject="Request to end an embargo early for one of your registrations.",
 )
 PENDING_EMBARGO_TERMINATION_NON_ADMIN = Mail(
-    'pending_embargo_termination_non_admin',
-    subject='Request to end an embargo early for one of your projects.'
+    "pending_embargo_termination_non_admin",
+    subject="Request to end an embargo early for one of your projects.",
 )
 
 FILE_OPERATION_SUCCESS = Mail(
-    'file_operation_success',
-    subject='Your ${action} has finished',
+    "file_operation_success",
+    subject="Your ${action} has finished",
 )
 FILE_OPERATION_FAILED = Mail(
-    'file_operation_failed',
-    subject='Your ${action} has failed',
+    "file_operation_failed",
+    subject="Your ${action} has failed",
 )
 
-UNESCAPE = '<% from osf.utils.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
-PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
+UNESCAPE = "<% from osf.utils.sanitize import unescape_entities %> ${unescape_entities(src.title)}"
+PROBLEM_REGISTERING = "Problem registering " + UNESCAPE
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
-    'archive_size_exceeded_desk',
-    subject=PROBLEM_REGISTERING
+    "archive_size_exceeded_desk", subject=PROBLEM_REGISTERING
 )
 ARCHIVE_SIZE_EXCEEDED_USER = Mail(
-    'archive_size_exceeded_user',
-    subject=PROBLEM_REGISTERING
+    "archive_size_exceeded_user", subject=PROBLEM_REGISTERING
 )
 
 ARCHIVE_COPY_ERROR_DESK = Mail(
-    'archive_copy_error_desk',
-    subject=PROBLEM_REGISTERING
+    "archive_copy_error_desk", subject=PROBLEM_REGISTERING
 )
 ARCHIVE_COPY_ERROR_USER = Mail(
-    'archive_copy_error_user',
-    subject=PROBLEM_REGISTERING
-
+    "archive_copy_error_user", subject=PROBLEM_REGISTERING
 )
 ARCHIVE_FILE_NOT_FOUND_DESK = Mail(
-    'archive_file_not_found_desk',
-    subject=PROBLEM_REGISTERING
+    "archive_file_not_found_desk", subject=PROBLEM_REGISTERING
 )
 ARCHIVE_FILE_NOT_FOUND_USER = Mail(
-    'archive_file_not_found_user',
-    subject='Registration failed because of altered files'
+    "archive_file_not_found_user",
+    subject="Registration failed because of altered files",
 )
 
 ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
-    'archive_uncaught_error_desk',
-    subject=PROBLEM_REGISTERING
+    "archive_uncaught_error_desk", subject=PROBLEM_REGISTERING
 )
 
 ARCHIVE_REGISTRATION_STUCK_DESK = Mail(
-    'archive_registration_stuck_desk',
-    subject='[auto] Stuck registrations audit'
+    "archive_registration_stuck_desk",
+    subject="[auto] Stuck registrations audit",
 )
 
 ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
-    'archive_uncaught_error_user',
-    subject=PROBLEM_REGISTERING
+    "archive_uncaught_error_user", subject=PROBLEM_REGISTERING
 )
 
 ARCHIVE_SUCCESS = Mail(
-    'archive_success',
-    subject='Registration of ' + UNESCAPE + ' complete'
+    "archive_success", subject="Registration of " + UNESCAPE + " complete"
 )
 
-WELCOME = Mail(
-    'welcome',
-    subject='Welcome to OSF',
-    engagement=True
-)
+WELCOME = Mail("welcome", subject="Welcome to OSF", engagement=True)
 
 WELCOME_OSF4I = Mail(
-    'welcome_osf4i',
-    subject='Welcome to OSF',
-    engagement=True
+    "welcome_osf4i", subject="Welcome to OSF", engagement=True
 )
 
 DUPLICATE_ACCOUNTS_OSF4I = Mail(
-    'duplicate_accounts_sso_osf4i',
-    subject='Duplicate OSF Accounts'
+    "duplicate_accounts_sso_osf4i", subject="Duplicate OSF Accounts"
 )
 
 ADD_SSO_EMAIL_OSF4I = Mail(
-    'add_sso_email_osf4i',
-    subject='Your OSF Account Email Address'
+    "add_sso_email_osf4i", subject="Your OSF Account Email Address"
 )
 
-EMPTY = Mail('empty', subject='${subject}')
+EMPTY = Mail("empty", subject="${subject}")
 
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(
-    'reviews_submission_confirmation',
-    subject='Confirmation of your submission to ${provider_name}'
+    "reviews_submission_confirmation",
+    subject="Confirmation of your submission to ${provider_name}",
 )
 
 ACCESS_REQUEST_SUBMITTED = Mail(
-    'access_request_submitted',
-    subject='An OSF user has requested access to your ${node.project_or_component}'
+    "access_request_submitted",
+    subject="An OSF user has requested access to your ${node.project_or_component}",
 )
 
 ACCESS_REQUEST_DENIED = Mail(
-    'access_request_rejected',
-    subject='Your access request to an OSF project has been declined'
+    "access_request_rejected",
+    subject="Your access request to an OSF project has been declined",
 )
 
 CROSSREF_ERROR = Mail(
-    'crossref_doi_error',
-    subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
+    "crossref_doi_error",
+    subject="There was an error creating a DOI for preprint(s). batch_id: ${batch_id}",
 )
 
 CROSSREF_DOIS_PENDING = Mail(
-    'crossref_doi_pending',
-    subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
+    "crossref_doi_pending",
+    subject="There are ${pending_doi_count} preprints with crossref DOI pending.",
 )
 
 WITHDRAWAL_REQUEST_GRANTED = Mail(
-    'withdrawal_request_granted',
-    subject='Your ${document_type} has been withdrawn',
+    "withdrawal_request_granted",
+    subject="Your ${document_type} has been withdrawn",
 )
 
 GROUP_MEMBER_ADDED = Mail(
-    'group_member_added',
-    subject='You have been added as a ${permission} of the group ${group_name}',
+    "group_member_added",
+    subject="You have been added as a ${permission} of the group ${group_name}",
 )
 
 GROUP_MEMBER_UNREGISTERED_ADDED = Mail(
-    'group_member_unregistered_added',
-    subject='You have been added as a ${permission} of the group ${group_name}',
+    "group_member_unregistered_added",
+    subject="You have been added as a ${permission} of the group ${group_name}",
 )
 
 GROUP_ADDED_TO_NODE = Mail(
-    'group_added_to_node',
-    subject='Your group, ${group_name}, has been added to an OSF Project'
+    "group_added_to_node",
+    subject="Your group, ${group_name}, has been added to an OSF Project",
 )
 
 WITHDRAWAL_REQUEST_DECLINED = Mail(
-    'withdrawal_request_declined',
-    subject='Your withdrawal request has been declined',
+    "withdrawal_request_declined",
+    subject="Your withdrawal request has been declined",
 )
 
 TOU_NOTIF = Mail(
-    'tou_notif',
-    subject='Updated Terms of Use for COS Websites and Services',
+    "tou_notif",
+    subject="Updated Terms of Use for COS Websites and Services",
 )
 
 STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
-    'storage_cap_exceeded_announcement',
-    subject='Action Required to avoid disruption to your OSF project',
+    "storage_cap_exceeded_announcement",
+    subject="Action Required to avoid disruption to your OSF project",
 )
 
 INSTITUTION_DEACTIVATION = Mail(
-    'institution_deactivation',
-    subject='Your OSF login has changed - here\'s what you need to know!'
+    "institution_deactivation",
+    subject="Your OSF login has changed - here's what you need to know!",
 )
 
 REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
-    'registration_bulk_upload_product_owner',
-    subject='Registry Could Not Bulk Upload Registrations'
+    "registration_bulk_upload_product_owner",
+    subject="Registry Could Not Bulk Upload Registrations",
 )
 
 REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = Mail(
-    'registration_bulk_upload_success_all',
-    subject='Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+    "registration_bulk_upload_success_all",
+    subject="Registrations Successfully Bulk Uploaded to your Community's Registry",
 )
 
 REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = Mail(
-    'registration_bulk_upload_success_partial',
-    subject='Some Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+    "registration_bulk_upload_success_partial",
+    subject="Some Registrations Successfully Bulk Uploaded to your Community's Registry",
 )
 
 REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
-    'registration_bulk_upload_failure_all',
-    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+    "registration_bulk_upload_failure_all",
+    subject="Registrations Were Not Bulk Uploaded to your Community's Registry",
 )
 
 REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = Mail(
-    'registration_bulk_upload_failure_duplicates',
-    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+    "registration_bulk_upload_failure_duplicates",
+    subject="Registrations Were Not Bulk Uploaded to your Community's Registry",
 )
 
 REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
-    'registration_bulk_upload_unexpected_failure',
-    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+    "registration_bulk_upload_unexpected_failure",
+    subject="Registrations Were Not Bulk Uploaded to your Community's Registry",
 )
 
 SCHEMA_RESPONSE_INITIATED = Mail(
-    'updates_initiated',
-    subject='Updates for ${resource_type} ${title} are in progress'
+    "updates_initiated",
+    subject="Updates for ${resource_type} ${title} are in progress",
 )
 
 
 SCHEMA_RESPONSE_SUBMITTED = Mail(
-    'updates_pending_approval',
-    subject='Updates for ${resource_type} ${title} are pending Admin approval'
+    "updates_pending_approval",
+    subject="Updates for ${resource_type} ${title} are pending Admin approval",
 )
 
 
 SCHEMA_RESPONSE_APPROVED = Mail(
-    'updates_approved',
-    subject='The updates for ${resource_type} ${title} have been approved'
+    "updates_approved",
+    subject="The updates for ${resource_type} ${title} have been approved",
 )
 
 
 SCHEMA_RESPONSE_REJECTED = Mail(
-    'updates_rejected',
-    subject='The updates for ${resource_type} ${title} were not accepted'
+    "updates_rejected",
+    subject="The updates for ${resource_type} ${title} were not accepted",
 )
 
 QUICKFILES_MIGRATED = Mail(
-    'quickfiles_migrated',
-    subject='Your Quick Files have moved'
+    "quickfiles_migrated", subject="Your Quick Files have moved"
 )
 
 ADDONS_BOA_JOB_COMPLETE = Mail(
-    'addons_boa_job_complete',
-    subject='Your Boa job has completed'
+    "addons_boa_job_complete", subject="Your Boa job has completed"
 )
 
 ADDONS_BOA_JOB_FAILURE = Mail(
-    'addons_boa_job_failure',
-    subject='Your Boa job has failed'
+    "addons_boa_job_failure", subject="Your Boa job has failed"
 )

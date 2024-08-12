@@ -2,25 +2,21 @@ import pytest
 
 from osf_tests.factories import (
     RegistrationFactory,
-    RegistrationProviderFactory
+    RegistrationProviderFactory,
 )
 
-from osf.models import (
-    RegistrationSchema,
-    RegistrationProvider
-)
+from osf.models import RegistrationSchema, RegistrationProvider
 
 from osf.management.commands.move_egap_regs_to_provider import (
-    main as move_egap_regs
+    main as move_egap_regs,
 )
 
 
 @pytest.mark.django_db
 class TestEGAPMoveToProvider:
-
     @pytest.fixture()
     def egap_provider(self):
-        return RegistrationProviderFactory(_id='egap')
+        return RegistrationProviderFactory(_id="egap")
 
     @pytest.fixture()
     def non_egap_provider(self):
@@ -29,10 +25,8 @@ class TestEGAPMoveToProvider:
     @pytest.fixture()
     def egap_reg(self):
         egap_schema = RegistrationSchema.objects.filter(
-            name='EGAP Registration'
-        ).order_by(
-            '-schema_version'
-        )[0]
+            name="EGAP Registration"
+        ).order_by("-schema_version")[0]
         cos = RegistrationProvider.get_default()
         return RegistrationFactory(schema=egap_schema, provider=cos)
 
@@ -40,7 +34,9 @@ class TestEGAPMoveToProvider:
     def egap_non_reg(self, non_egap_provider):
         return RegistrationFactory(provider=non_egap_provider)
 
-    def test_move_to_provider(self, egap_provider, egap_reg, non_egap_provider, egap_non_reg):
+    def test_move_to_provider(
+        self, egap_provider, egap_reg, non_egap_provider, egap_non_reg
+    ):
         assert egap_reg.provider != egap_provider
         assert egap_non_reg.provider != egap_provider
 

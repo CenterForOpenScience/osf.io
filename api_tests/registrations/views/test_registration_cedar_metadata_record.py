@@ -9,7 +9,6 @@ fake = Faker()
 
 @pytest.mark.django_db
 class TesRegistrationCedarMetadataRecord:
-
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
@@ -24,7 +23,11 @@ class TesRegistrationCedarMetadataRecord:
 
     @pytest.fixture()
     def cedar_template_json(self):
-        return {'t_key_1': 't_value_1', 't_key_2': 't_value_2', 't_key_3': 't_value_3'}
+        return {
+            "t_key_1": "t_value_1",
+            "t_key_2": "t_value_2",
+            "t_key_3": "t_value_3",
+        }
 
     @pytest.fixture()
     def cedar_template(self, cedar_template_json):
@@ -48,10 +51,16 @@ class TesRegistrationCedarMetadataRecord:
 
     @pytest.fixture()
     def cedar_record_metadata_json(self):
-        return {'rm_key_1': 'rm_value_1', 'rm_key_2': 'rm_value_2', 'rm_key_3': 'rm_value_3'}
+        return {
+            "rm_key_1": "rm_value_1",
+            "rm_key_2": "rm_value_2",
+            "rm_key_3": "rm_value_3",
+        }
 
     @pytest.fixture()
-    def cedar_record_for_registration(self, registration, cedar_template, cedar_record_metadata_json):
+    def cedar_record_for_registration(
+        self, registration, cedar_template, cedar_record_metadata_json
+    ):
         return CedarMetadataRecord.objects.create(
             guid=registration.guids.first(),
             template=cedar_template,
@@ -60,7 +69,9 @@ class TesRegistrationCedarMetadataRecord:
         )
 
     @pytest.fixture()
-    def cedar_draft_record_for_registration(self, registration, cedar_draft_template, cedar_record_metadata_json):
+    def cedar_draft_record_for_registration(
+        self, registration, cedar_draft_template, cedar_record_metadata_json
+    ):
         return CedarMetadataRecord.objects.create(
             guid=registration.guids.first(),
             template=cedar_draft_template,

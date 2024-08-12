@@ -9,7 +9,6 @@ from osf_tests.factories import (
 
 @pytest.mark.django_db
 class TestInstitutionUsersList:
-
     def test_return_all_users(self, app):
         institution = InstitutionFactory()
 
@@ -21,12 +20,12 @@ class TestInstitutionUsersList:
         user_two.add_or_update_affiliated_institution(institution)
         user_two.save()
 
-        url = f'/{API_BASE}institutions/{institution._id}/users/'
+        url = f"/{API_BASE}institutions/{institution._id}/users/"
         res = app.get(url)
 
         assert res.status_code == 200
 
-        ids = [each['id'] for each in res.json['data']]
-        assert len(res.json['data']) == 2
+        ids = [each["id"] for each in res.json["data"]]
+        assert len(res.json["data"]) == 2
         assert user_one._id in ids
         assert user_two._id in ids

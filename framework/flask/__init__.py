@@ -15,9 +15,9 @@ app = Flask(
 )
 
 # Pull debug mode from settings
-app.config['DEBUG'] = settings.DEBUG_MODE
-app.config['SENTRY_TAGS'] = {'App': 'web'}
-app.config['SENTRY_RELEASE'] = settings.VERSION
+app.config["DEBUG"] = settings.DEBUG_MODE
+app.config["SENTRY_TAGS"] = {"App": "web"}
+app.config["SENTRY_RELEASE"] = settings.VERSION
 
 
 def rm_handler(app, handler_name, func, key=None):
@@ -27,7 +27,7 @@ def rm_handler(app, handler_name, func, key=None):
     :param func: Handler function to attach
     :param key: Blueprint name
     """
-    handler_funcs_name = f'{handler_name}_funcs'
+    handler_funcs_name = f"{handler_name}_funcs"
     handler_funcs = getattr(app, handler_funcs_name)
     try:
         handler_funcs.get(key, []).remove(func)
@@ -58,7 +58,7 @@ def add_handler(app, handler_name, func, key=None):
 
     """
     handler_adder = getattr(app, handler_name)
-    handler_funcs_name = f'{handler_name}_funcs'
+    handler_funcs_name = f"{handler_name}_funcs"
     handler_funcs = getattr(app, handler_funcs_name)
     if func not in handler_funcs.get(key, []):
         handler_adder(func)
@@ -84,9 +84,9 @@ def redirect(location, code=302):
     flask.redirect to ensure the correct behavior of view-only
     links.
     """
-    view_only = request.args.get('view_only', '')
+    view_only = request.args.get("view_only", "")
     if view_only:
         url = furl(location)
-        url.args['view_only'] = view_only
+        url.args["view_only"] = view_only
         location = url.url
     return flask_redirect(location, code=code)

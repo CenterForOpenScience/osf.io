@@ -1,5 +1,10 @@
 from django.conf import settings as api_settings
-from django.middleware.csrf import _get_new_csrf_string, _mask_cipher_secret, _check_token_format, CSRF_SECRET_LENGTH
+from django.middleware.csrf import (
+    _get_new_csrf_string,
+    _mask_cipher_secret,
+    _check_token_format,
+    CSRF_SECRET_LENGTH,
+)
 from framework.auth.core import get_current_user_id
 from flask import request, g
 
@@ -10,6 +15,7 @@ def _sanitize_token(token):
     if len(token) == CSRF_SECRET_LENGTH:
         return _mask_cipher_secret(token)
     return token
+
 
 # Mostly a port of django.middleware.csrf.CsrfMiddleware._get_token
 # with the session bits removed
@@ -30,7 +36,7 @@ def _get_token():
 def before_request():
     # Reuse token if already set
     csrf_token = _get_token()
-    if not csrf_token or g.get('csrf_cookie_needs_reset', False):
+    if not csrf_token or g.get("csrf_cookie_needs_reset", False):
         csrf_token = _mask_cipher_secret(_get_new_csrf_string())
     # Store csrf_token on g so that it can be used in
     # server-rendered forms
@@ -59,6 +65,6 @@ def after_request(resp):
 
 
 handlers = {
-    'before_request': before_request,
-    'after_request': after_request,
+    "before_request": before_request,
+    "after_request": after_request,
 }

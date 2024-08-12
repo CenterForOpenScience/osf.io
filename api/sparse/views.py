@@ -1,5 +1,8 @@
 from rest_framework.exceptions import MethodNotAllowed
-from api.sparse.serializers import SparseNodeSerializer, SparseRegistrationSerializer
+from api.sparse.serializers import (
+    SparseNodeSerializer,
+    SparseRegistrationSerializer,
+)
 from api.nodes.views import (
     NodeDetail,
     NodeChildrenList,
@@ -19,7 +22,7 @@ from api.users.views import UserNodes, UserRegistrations
 
 
 class BaseSparseMixin:
-    view_category = 'sparse'
+    view_category = "sparse"
     serializer_class = None
 
     # overrides NodeList because these endpoints don't allow writing
@@ -54,11 +57,15 @@ class SparseNodeList(SparseNodeMixin, NodeList):
     pass
 
 
-class SparseLinkedNodesList(RegistrationMixin, SparseNodeMixin, LinkedNodesList):
+class SparseLinkedNodesList(
+    RegistrationMixin, SparseNodeMixin, LinkedNodesList
+):
     pass
 
 
-class SparseLinkedRegistrationsList(SparseRegistrationMixin, RegistrationLinkedRegistrationsList):
+class SparseLinkedRegistrationsList(
+    SparseRegistrationMixin, RegistrationLinkedRegistrationsList
+):
     pass
 
 
@@ -82,7 +89,9 @@ class SparseRegistrationList(SparseRegistrationMixin, RegistrationList):
     pass
 
 
-class SparseRegistrationChildrenList(SparseRegistrationMixin, RegistrationChildrenList):
+class SparseRegistrationChildrenList(
+    SparseRegistrationMixin, RegistrationChildrenList
+):
     pass
 
 

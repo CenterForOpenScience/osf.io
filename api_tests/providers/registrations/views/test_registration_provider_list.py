@@ -15,7 +15,7 @@ class TestRegistrationProviderList(ProviderListViewTestBaseMixin):
 
     @pytest.fixture()
     def url(self, request):
-        return f'/{API_BASE}providers/registrations/'
+        return f"/{API_BASE}providers/registrations/"
 
     @pytest.fixture
     def moderated_provider(self):
@@ -24,9 +24,11 @@ class TestRegistrationProviderList(ProviderListViewTestBaseMixin):
         provider.save()
         return provider
 
-    def test_reviews_workflow_filter(self, app, user, provider_one, moderated_provider, url):
-        filter_url = url + '?filter[reviews_workflow]=pre-moderation'
+    def test_reviews_workflow_filter(
+        self, app, user, provider_one, moderated_provider, url
+    ):
+        filter_url = url + "?filter[reviews_workflow]=pre-moderation"
         resp = app.get(filter_url, auth=user.auth)
 
-        assert len(resp.json['data']) == 1
-        assert resp.json['data'][0]['id'] == moderated_provider._id
+        assert len(resp.json["data"]) == 1
+        assert resp.json["data"][0]["id"] == moderated_provider._id

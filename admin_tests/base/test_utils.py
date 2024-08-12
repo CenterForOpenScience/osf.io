@@ -12,7 +12,12 @@ from django.http import QueryDict
 
 from tests.base import AdminTestCase
 
-from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory, PreprintFactory
+from osf_tests.factories import (
+    SubjectFactory,
+    UserFactory,
+    RegistrationFactory,
+    PreprintFactory,
+)
 
 from osf.models import Subject, OSFUser, Collection, Embargo
 from osf.models.provider import rules_to_subjects
@@ -21,13 +26,13 @@ from osf.admin import OSFUserAdmin
 
 
 import logging
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 pytestmark = pytest.mark.django_db
 
 
 class TestSubjectRules(AdminTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -55,22 +60,16 @@ class TestSubjectRules(AdminTestCase):
         assert rules_returned == rules_ideal
 
     def test_two_toplevel_subjects(self):
-        subjects_selected = [
-            self.parent_one,
-            self.parent_two
-        ]
+        subjects_selected = [self.parent_one, self.parent_two]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [
             [[self.parent_one._id], False],
-            [[self.parent_two._id], False]
+            [[self.parent_two._id], False],
         ]
         assert rules_returned == rules_ideal
 
     def test_one_child(self):
-        subjects_selected = [
-            self.parent_one,
-            self.child_one_1
-        ]
+        subjects_selected = [self.parent_one, self.child_one_1]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id, self.child_one_1._id], False]]
         assert rules_returned == rules_ideal
@@ -92,7 +91,7 @@ class TestSubjectRules(AdminTestCase):
             self.child_one_1,
             self.grandchild_one_1,
             self.grandchild_one_2,
-            self.child_one_2
+            self.child_one_2,
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id], True]]
@@ -102,21 +101,29 @@ class TestSubjectRules(AdminTestCase):
         subjects_selected = [
             self.parent_one,
             self.child_one_1,
-            self.grandchild_one_1
+            self.grandchild_one_1,
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [
-            [[self.parent_one._id, self.child_one_1._id, self.grandchild_one_1._id], False]
+            [
+                [
+                    self.parent_one._id,
+                    self.child_one_1._id,
+                    self.grandchild_one_1._id,
+                ],
+                False,
+            ]
         ]
         assert rules_returned == rules_ideal
 
     def test_rules_to_subjects(self):
-        rules = [
-            [[self.parent_one._id, self.child_one_1._id], False]
-        ]
-        subject_queryset_ideal = Subject.objects.filter(Q(id=self.parent_one.id) | Q(id=self.child_one_1.id))
+        rules = [[[self.parent_one._id, self.child_one_1._id], False]]
+        subject_queryset_ideal = Subject.objects.filter(
+            Q(id=self.parent_one.id) | Q(id=self.child_one_1.id)
+        )
         returned_subjects = rules_to_subjects(rules)
         assert list(subject_queryset_ideal) == list(returned_subjects)
+
 
 class TestNodeChanges(AdminTestCase):
     def setUp(self):
@@ -124,16 +131,23 @@ class TestNodeChanges(AdminTestCase):
         self.registration = RegistrationFactory(is_public=True)
         self.user = UserFactory()
         self.user.is_staff = True
-        self.user.groups.add(Group.objects.get(name='osf_admin'))
+        self.user.groups.add(Group.objects.get(name="osf_admin"))
         self.user.save()
 
-        self.date_valid = self.registration.registered_date + datetime.timedelta(days=365)
-        self.date_valid2 = self.registration.registered_date + datetime.timedelta(days=375)
-        self.date_too_late = self.registration.registered_date + datetime.timedelta(days=1825)
-        self.date_too_soon = self.registration.registered_date + datetime.timedelta(days=-1)
+        self.date_valid = (
+            self.registration.registered_date + datetime.timedelta(days=365)
+        )
+        self.date_valid2 = (
+            self.registration.registered_date + datetime.timedelta(days=375)
+        )
+        self.date_too_late = (
+            self.registration.registered_date + datetime.timedelta(days=1825)
+        )
+        self.date_too_soon = (
+            self.registration.registered_date + datetime.timedelta(days=-1)
+        )
 
     def test_change_embargo_date(self):
-
         assert not self.registration.embargo
         assert self.registration.is_public
         assert Embargo.objects.count() == 0
@@ -143,7 +157,9 @@ class TestNodeChanges(AdminTestCase):
         # Create an embargo from a registration with none
         change_embargo_date(self.registration, self.user, self.date_valid)
         delta = datetime.timedelta(days=1)
-        assert abs(self.registration.embargo.end_date - self.date_valid) <= delta
+        assert (
+            abs(self.registration.embargo.end_date - self.date_valid) <= delta
+        )
         assert Embargo.objects.count() == 1
 
         # Make sure once embargo is set, registration is made private
@@ -152,26 +168,37 @@ class TestNodeChanges(AdminTestCase):
 
         # Update an embargo end date
         change_embargo_date(self.registration, self.user, self.date_valid2)
-        assert abs(self.registration.embargo.end_date - self.date_valid2) <= delta
+        assert (
+            abs(self.registration.embargo.end_date - self.date_valid2) <= delta
+        )
         assert Embargo.objects.count() == 1
 
         # Test invalid dates
         with pytest.raises(ValidationError):
-            change_embargo_date(self.registration, self.user, self.date_too_late)
+            change_embargo_date(
+                self.registration, self.user, self.date_too_late
+            )
         with pytest.raises(ValidationError):
-            change_embargo_date(self.registration, self.user, self.date_too_soon)
+            change_embargo_date(
+                self.registration, self.user, self.date_too_soon
+            )
 
         # Test that checks user has permission
         with pytest.raises(PermissionDenied):
-            change_embargo_date(self.registration, UserFactory(), self.date_valid)
+            change_embargo_date(
+                self.registration, UserFactory(), self.date_valid
+            )
 
-        assert abs(self.registration.embargo.end_date - self.date_valid2) <= delta
+        assert (
+            abs(self.registration.embargo.end_date - self.date_valid2) <= delta
+        )
         assert Embargo.objects.count() == 1
 
         assert not self.registration.is_public
 
 
 site = AdminSite()
+
 
 class TestGroupCollectionsPreprints:
     @pytest.mark.enable_bookmark_creation
@@ -181,7 +208,7 @@ class TestGroupCollectionsPreprints:
 
     @pytest.fixture()
     def admin_url(self, user):
-        return f'/admin/osf/osfuser/{user.id}/change/'
+        return f"/admin/osf/osfuser/{user.id}/change/"
 
     @pytest.fixture()
     def preprint(self, user):
@@ -204,22 +231,30 @@ class TestGroupCollectionsPreprints:
         return OSFUserAdmin(OSFUser, site)
 
     @pytest.mark.enable_bookmark_creation
-    def test_admin_app_formfield_collections(self, preprint, user, get_request, osf_user_admin):
-        """ Testing OSFUserAdmin.formfield_many_to_many.
+    def test_admin_app_formfield_collections(
+        self, preprint, user, get_request, osf_user_admin
+    ):
+        """Testing OSFUserAdmin.formfield_many_to_many.
         This should not return any bookmark collections or preprint groups, even if the user is a member.
         """
 
-        formfield = (osf_user_admin.formfield_for_manytomany(OSFUser.groups.field, request=get_request))
+        formfield = osf_user_admin.formfield_for_manytomany(
+            OSFUser.groups.field, request=get_request
+        )
         queryset = formfield.queryset
 
-        collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert (collections_group not in queryset)
+        collections_group = Collection.objects.filter(
+            creator=user, is_bookmark_collection=True
+        )[0].get_group("admin")
+        assert collections_group not in queryset
 
-        assert (preprint.get_group('admin') not in queryset)
+        assert preprint.get_group("admin") not in queryset
 
     @pytest.mark.enable_bookmark_creation
-    def test_admin_app_save_related_collections(self, post_request, osf_user_admin, user, preprint):
-        """ Testing OSFUserAdmin.save_related
+    def test_admin_app_save_related_collections(
+        self, post_request, osf_user_admin, user, preprint
+    ):
+        """Testing OSFUserAdmin.save_related
         This should maintain the bookmark collections and preprint groups the user is a member of
         even though they aren't explicitly returned by the form.
         """
@@ -233,19 +268,23 @@ class TestGroupCollectionsPreprints:
         # By setting the field to '{}', this makes the form valid and resolves JSON errors.
 
         for field in post_form.errors.keys():
-            if field == 'groups':
-                data_dict['groups'] = []
+            if field == "groups":
+                data_dict["groups"] = []
             else:
-                data_dict[field] = '{}'
+                data_dict[field] = "{}"
         post_form = form(data_dict, instance=user)
-        assert (post_form.is_valid())
+        assert post_form.is_valid()
         post_form.save(commit=False)
-        qdict = QueryDict('', mutable=True)
+        qdict = QueryDict("", mutable=True)
         qdict.update(data_dict)
         post_request.POST = qdict
-        osf_user_admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
+        osf_user_admin.save_related(
+            request=post_request, form=post_form, formsets=[], change=True
+        )
 
-        collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert (collections_group in user.groups.all())
+        collections_group = Collection.objects.filter(
+            creator=user, is_bookmark_collection=True
+        )[0].get_group("admin")
+        assert collections_group in user.groups.all()
 
-        assert (preprint.get_group('admin') in user.groups.all())
+        assert preprint.get_group("admin") in user.groups.all()

@@ -21,11 +21,16 @@ from api.base.utils import get_user_auth, is_deprecated, assert_resource_type
 
 
 class ContributorOrPublic(permissions.BasePermission):
-
-    acceptable_models = (AbstractNode, NodeRelation, Preprint, DraftRegistration)
+    acceptable_models = (
+        AbstractNode,
+        NodeRelation,
+        Preprint,
+        DraftRegistration,
+    )
 
     def has_object_permission(self, request, view, obj):
         from api.nodes.views import NodeStorageProvider
+
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
         if isinstance(obj, NodeStorageProvider):
@@ -33,7 +38,7 @@ class ContributorOrPublic(permissions.BasePermission):
         if isinstance(obj, DraftNode):
             obj = obj.registered_draft.first()
         if isinstance(obj, dict):
-            obj = obj.get('self', None)
+            obj = obj.get("self", None)
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
 
@@ -44,7 +49,6 @@ class ContributorOrPublic(permissions.BasePermission):
 
 
 class IsPublic(permissions.BasePermission):
-
     acceptable_models = (AbstractNode,)
 
     def has_object_permission(self, request, view, obj):
@@ -71,6 +75,7 @@ class IsAdminContributor(permissions.BasePermission):
     admin contributor to make changes.  Admin group membership
     is not sufficient.
     """
+
     acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
@@ -83,7 +88,6 @@ class IsAdminContributor(permissions.BasePermission):
 
 
 class EditIfPublic(permissions.BasePermission):
-
     acceptable_models = (AbstractNode,)
 
     def has_object_permission(self, request, view, obj):
@@ -113,14 +117,14 @@ class AdminDeletePermissions(permissions.BasePermission):
         """
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
-        if request.method == 'DELETE':
+        if request.method == "DELETE":
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
         return True
 
 
 class IsContributorOrGroupMember(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, AbstractNode), f'obj must be an Node, got {obj}'
+        assert isinstance(obj, AbstractNode), f"obj must be an Node, got {obj}"
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_contributor_or_group_member(auth.user)
@@ -129,12 +133,17 @@ class IsContributorOrGroupMember(permissions.BasePermission):
 
 
 class AdminOrPublic(permissions.BasePermission):
-
-    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration)
+    acceptable_models = (
+        AbstractNode,
+        OSFUser,
+        Institution,
+        BaseAddonSettings,
+        DraftRegistration,
+    )
 
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, dict) and 'self' in obj:
-            obj = obj['self']
+        if isinstance(obj, dict) and "self" in obj:
+            obj = obj["self"]
 
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
@@ -144,8 +153,8 @@ class AdminOrPublic(permissions.BasePermission):
         else:
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
-class AdminContributorOrPublic(permissions.BasePermission):
 
+class AdminContributorOrPublic(permissions.BasePermission):
     acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
@@ -161,27 +170,28 @@ class AdminContributorOrPublic(permissions.BasePermission):
 
 
 class ExcludeWithdrawals(permissions.BasePermission):
-
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Node):
             node = obj
         else:
-            context = request.parser_context['kwargs']
+            context = request.parser_context["kwargs"]
             node = AbstractNode.load(context[view.node_lookup_url_kwarg])
         if node.is_retracted:
             return False
         return True
+
 
 class ReadOnlyIfWithdrawn(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Node):
             node = obj
         else:
-            context = request.parser_context['kwargs']
+            context = request.parser_context["kwargs"]
             node = AbstractNode.load(context[view.node_lookup_url_kwarg])
         if node.is_retracted:
             return request.method in permissions.SAFE_METHODS
         return True
+
 
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
@@ -194,13 +204,16 @@ class ContributorDetailPermissions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
-        context = request.parser_context['kwargs']
+        context = request.parser_context["kwargs"]
         resource = self.load_resource(context, view)
-        user = OSFUser.load(context['user_id'])
+        user = OSFUser.load(context["user_id"])
         if request.method in permissions.SAFE_METHODS:
             return resource.is_public or resource.can_view(auth)
-        elif request.method == 'DELETE':
-            return resource.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
+        elif request.method == "DELETE":
+            return (
+                resource.has_permission(auth.user, osf_permissions.ADMIN)
+                or auth.user == user
+            )
         else:
             return resource.has_permission(auth.user, osf_permissions.ADMIN)
 
@@ -217,26 +230,31 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
-        node = self.load_resource(request.parser_context['kwargs'], view)
+        node = self.load_resource(request.parser_context["kwargs"], view)
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
-        elif request.method == 'DELETE':
+        elif request.method == "DELETE":
             # If deleting an OSF group from a node, you either need admin perms
             # or you need to be an OSF group manager
-            return node.has_permission(auth.user, osf_permissions.ADMIN) or obj.has_permission(auth.user, 'manage')
+            return node.has_permission(
+                auth.user, osf_permissions.ADMIN
+            ) or obj.has_permission(auth.user, "manage")
         else:
             return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
-
     acceptable_models = (AbstractNode, NodeRelation)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
-        parent_node = AbstractNode.load(request.parser_context['kwargs']['node_id'])
-        pointer_node = NodeRelation.load(request.parser_context['kwargs']['node_link_id']).child
+        parent_node = AbstractNode.load(
+            request.parser_context["kwargs"]["node_id"]
+        )
+        pointer_node = NodeRelation.load(
+            request.parser_context["kwargs"]["node_link_id"]
+        ).child
         if request.method in permissions.SAFE_METHODS:
             has_parent_auth = parent_node.can_view(auth)
             has_pointer_auth = pointer_node.can_view(auth)
@@ -249,25 +267,28 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
 
 
 class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
-
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
         auth = get_user_auth(request)
-        parent_node = obj['self']
+        parent_node = obj["self"]
 
         if request.method in permissions.SAFE_METHODS:
             return parent_node.can_view(auth)
-        elif request.method == 'DELETE':
+        elif request.method == "DELETE":
             return parent_node.can_edit(auth)
         else:
             has_parent_auth = parent_node.can_edit(auth)
             if not has_parent_auth:
                 return False
             pointer_nodes = []
-            for pointer in request.data.get('data', []):
-                node = AbstractNode.load(pointer['id'])
+            for pointer in request.data.get("data", []):
+                node = AbstractNode.load(pointer["id"])
                 if not node or node.is_collection:
-                    raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(pointer['id']))
+                    raise exceptions.NotFound(
+                        detail='Node with id "{}" was not found'.format(
+                            pointer["id"]
+                        )
+                    )
                 pointer_nodes.append(node)
             has_pointer_auth = True
             for pointer in pointer_nodes:
@@ -278,18 +299,21 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
 
 
 class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
-
     def has_object_permission(self, request, view, obj):
-        node_link = NodeRelation.load(request.parser_context['kwargs']['node_link_id'])
-        node = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
+        node_link = NodeRelation.load(
+            request.parser_context["kwargs"]["node_link_id"]
+        )
+        node = AbstractNode.load(
+            request.parser_context["kwargs"][view.node_lookup_url_kwarg]
+        )
         auth = get_user_auth(request)
-        if request.method == 'DELETE' and node.is_registration:
+        if request.method == "DELETE" and node.is_registration:
             raise exceptions.MethodNotAllowed(method=request.method)
         if node.is_collection or node.is_registration:
             raise exceptions.NotFound
         if node != node_link.parent:
             raise exceptions.NotFound
-        if request.method == 'DELETE' and not node.can_edit(auth):
+        if request.method == "DELETE" and not node.can_edit(auth):
             return False
         return True
 
@@ -298,7 +322,7 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
         auth = get_user_auth(request)
-        node = obj['self']
+        node = obj["self"]
 
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
@@ -317,7 +341,9 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
             return True
 
         if not isinstance(obj, AbstractNode):
-            obj = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
+            obj = AbstractNode.load(
+                request.parser_context["kwargs"][view.node_lookup_url_kwarg]
+            )
         assert_resource_type(obj, self.acceptable_models)
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
@@ -325,7 +351,6 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
 
 
 class WriteAdmin(permissions.BasePermission):
-
     acceptable_models = (AbstractNode,)
 
     def has_object_permission(self, request, view, obj):
@@ -334,7 +359,6 @@ class WriteAdmin(permissions.BasePermission):
 
 
 class ShowIfVersion(permissions.BasePermission):
-
     def __init__(self, min_version, max_version, deprecated_message):
         super().__init__()
         self.min_version = min_version
@@ -348,9 +372,8 @@ class ShowIfVersion(permissions.BasePermission):
 
 
 class NodeLinksShowIfVersion(ShowIfVersion):
-
     def __init__(self):
-        min_version = '2.0'
-        max_version = '2.0'
-        deprecated_message = 'This feature is deprecated as of version 2.1'
+        min_version = "2.0"
+        max_version = "2.0"
+        deprecated_message = "This feature is deprecated as of version 2.1"
         super().__init__(min_version, max_version, deprecated_message)

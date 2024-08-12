@@ -5,16 +5,16 @@ from website.search import elastic_search
 import website.search.search as search
 
 
-TEST_INDEX = 'test'
+TEST_INDEX = "test"
 
 
 @requires_search
 class SearchTestCase(OsfTestCase):
-
     def tearDown(self):
         super().tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
+
     def setUp(self):
         super().setUp()
         elastic_search.INDEX = TEST_INDEX

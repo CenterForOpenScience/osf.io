@@ -42,7 +42,9 @@ def fake_user_counts(days_back):
 
 def fake_preprint_counts(days_back):
     yesterday = date.today() - timedelta(days=1)
-    provider_keys = PreprintProvider.objects.all().values_list('_id', flat=True)
+    provider_keys = PreprintProvider.objects.all().values_list(
+        "_id", flat=True
+    )
     for day_delta in range(days_back):
         for provider_key in provider_keys:
             preprint_count = randint(100, 5000) * (days_back - day_delta)
@@ -56,7 +58,7 @@ def fake_preprint_counts(days_back):
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         if not settings.DEBUG:
-            raise NotImplementedError('fake_reports requires DEBUG mode')
+            raise NotImplementedError("fake_reports requires DEBUG mode")
         fake_user_counts(1000)
         fake_preprint_counts(1000)
         # TODO: more reports

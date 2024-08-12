@@ -2,14 +2,17 @@ import jwe
 
 from website import settings
 
-SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'), settings.SENSITIVE_DATA_SALT.encode('utf-8'))
+SENSITIVE_DATA_KEY = jwe.kdf(
+    settings.SENSITIVE_DATA_SECRET.encode("utf-8"),
+    settings.SENSITIVE_DATA_SALT.encode("utf-8"),
+)
 
 
 def ensure_bytes(value):
     """Helper function to ensure all inputs are encoded to the proper value utf-8 value regardless of input type"""
     if isinstance(value, bytes):
         return value
-    return value.encode('utf-8')
+    return value.encode("utf-8")
 
 
 def encrypt(value):

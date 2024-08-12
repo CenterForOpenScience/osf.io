@@ -10,11 +10,10 @@ from admin.subjects.views import SubjectListView, SubjectUpdateView
 
 
 class TestSubjectListView(AdminTestCase):
-
     def setUp(self):
         self.subject = SubjectFactory()
         self.plain_view = SubjectListView
-        self.url = reverse('subjects:list')
+        self.url = reverse("subjects:list")
 
     def test_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
@@ -27,7 +26,7 @@ class TestSubjectListView(AdminTestCase):
     def test_correct_view_permissions(self):
         user = AuthUserFactory()
 
-        view_permission = Permission.objects.get(codename='view_subject')
+        view_permission = Permission.objects.get(codename="view_subject")
         user.user_permissions.add(view_permission)
         user.save()
 
@@ -39,11 +38,10 @@ class TestSubjectListView(AdminTestCase):
 
 
 class TestSubjectUpdateView(AdminTestCase):
-
     def setUp(self):
         self.subject = SubjectFactory()
         self.plain_view = SubjectUpdateView
-        self.url = reverse('subjects:update', kwargs={'pk': self.subject.pk})
+        self.url = reverse("subjects:update", kwargs={"pk": self.subject.pk})
 
     def test_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
@@ -55,7 +53,7 @@ class TestSubjectUpdateView(AdminTestCase):
 
     def test_correct_view_permissions(self):
         user = AuthUserFactory()
-        edit_permission = Permission.objects.get(codename='change_subject')
+        edit_permission = Permission.objects.get(codename="change_subject")
         user.user_permissions.add(edit_permission)
         user.save()
 

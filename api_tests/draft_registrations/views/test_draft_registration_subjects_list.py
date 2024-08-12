@@ -7,9 +7,12 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 
+
 class TestDraftRegistrationSubjectsList(SubjectsListMixin):
     @pytest.fixture()
-    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+    def resource(
+        self, user_admin_contrib, user_write_contrib, user_read_contrib
+    ):
         # Overrides SubjectsListMixin
         draft = DraftRegistrationFactory(initiator=user_admin_contrib)
         draft.add_contributor(user_write_contrib, permissions=WRITE)
@@ -20,4 +23,4 @@ class TestDraftRegistrationSubjectsList(SubjectsListMixin):
     @pytest.fixture()
     def url(self, resource):
         # Overrides SubjectsListMixin
-        return f'/{API_BASE}draft_registrations/{resource._id}/subjects/'
+        return f"/{API_BASE}draft_registrations/{resource._id}/subjects/"

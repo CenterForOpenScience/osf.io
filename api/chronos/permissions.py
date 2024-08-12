@@ -9,21 +9,27 @@ from osf.utils import permissions as osf_permissions
 
 class SubmissionOnPreprintPublishedOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
-        preprint = Preprint.load(view.kwargs.get('preprint_id', None))
+        preprint = Preprint.load(view.kwargs.get("preprint_id", None))
         if not preprint:
             raise exceptions.NotFound
-        return PreprintPublishedOrAdmin().has_object_permission(request, view, preprint)
+        return PreprintPublishedOrAdmin().has_object_permission(
+            request, view, preprint
+        )
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, ChronosSubmission):
             obj = obj.preprint
-        return PreprintPublishedOrAdmin().has_object_permission(request, view, obj)
+        return PreprintPublishedOrAdmin().has_object_permission(
+            request, view, obj
+        )
 
 
 class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, ChronosSubmission):
-            submission = ChronosSubmission.objects.get(publication_id=view.kwargs.get('submission_id', None))
+            submission = ChronosSubmission.objects.get(
+                publication_id=view.kwargs.get("submission_id", None)
+            )
             auth = get_user_auth(request)
 
             is_submission_accepted = submission.status == 3
@@ -32,17 +38,25 @@ class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
             user_has_perm = False
             # If the request is a GET, then check whether the user is a CONTRIBUTOR
             # Because it is okay for us to show contributors detail of all submissions of this preprint
-            if request.method == 'GET':
+            if request.method == "GET":
                 # Preprints don't have group membership - hence "is_contributor" usage
-                is_preprint_contributor = obj.preprint.is_contributor(auth.user)
-                user_has_perm = is_preprint_contributor or is_submission_published or is_submission_accepted
+                is_preprint_contributor = obj.preprint.is_contributor(
+                    auth.user
+                )
+                user_has_perm = (
+                    is_preprint_contributor
+                    or is_submission_published
+                    or is_submission_accepted
+                )
                 if not user_has_perm:
                     raise exceptions.NotFound
 
             # However if the request is a PATCH or PUT, check whether the user is an ADMIN of this preprint
             # Because only preprint admins can update a submission
-            if request.method in ['PATCH', 'PUT']:
-                is_preprint_admin = obj.preprint.has_permission(auth.user, osf_permissions.ADMIN)
+            if request.method in ["PATCH", "PUT"]:
+                is_preprint_admin = obj.preprint.has_permission(
+                    auth.user, osf_permissions.ADMIN
+                )
                 user_has_perm = is_preprint_admin
                 if not user_has_perm:
                     raise exceptions.PermissionDenied

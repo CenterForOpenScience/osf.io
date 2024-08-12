@@ -11,10 +11,9 @@ from api.brands.serializers import BrandSerializer
 
 
 class BrandMixin:
-    """Mixin with convenience method get_brand
-    """
+    """Mixin with convenience method get_brand"""
 
-    brand_lookup_url_kwarg = 'brand_id'
+    brand_lookup_url_kwarg = "brand_id"
 
     def get_brand(self):
         brand_id = self.kwargs[self.brand_lookup_url_kwarg]
@@ -22,7 +21,7 @@ class BrandMixin:
         # This conditional intended to be temporary until we can address issues that are causing brand_id to be
         # stringified IRL but not in the test app. Remove this comment if test app does no longer gives false positive
         # for this function when registration provider with `.brand is None` is embedded or issue is conclusively fixed.
-        if self.kwargs.get('is_embedded') and brand_id == 'None':
+        if self.kwargs.get("is_embedded") and brand_id == "None":
             raise NotFound
 
         try:
@@ -34,8 +33,8 @@ class BrandMixin:
 
 
 class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_list).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_list)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -46,10 +45,10 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
     model_class = Brand
 
     serializer_class = BrandSerializer
-    view_category = 'brands'
-    view_name = 'brand-list'
+    view_category = "brands"
+    view_name = "brand-list"
 
-    ordering = ('name',)
+    ordering = ("name",)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -57,8 +56,8 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
 
 
 class BrandDetail(JSONAPIBaseView, generics.RetrieveAPIView, BrandMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/subjects_read).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/subjects_read)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -69,8 +68,8 @@ class BrandDetail(JSONAPIBaseView, generics.RetrieveAPIView, BrandMixin):
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'brands'
-    view_name = 'brand-detail'
+    view_category = "brands"
+    view_name = "brand-detail"
 
     def get_object(self):
         return self.get_brand()

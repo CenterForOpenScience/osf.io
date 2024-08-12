@@ -15,9 +15,15 @@ def obj_gen(targets):
     for u_id, n_dict in targets.items():
         try:
             u = OSFUser.load(u_id)
-            priv = [n for n in [Node.load(n_id) for n_id in n_dict.get('private', [])] if not n.is_public]
+            priv = [
+                n
+                for n in [
+                    Node.load(n_id) for n_id in n_dict.get("private", [])
+                ]
+                if not n.is_public
+            ]
             pub = []
-            for n_id in n_dict.get('public', []):
+            for n_id in n_dict.get("public", []):
                 # Add previously-public nodes to private list, as 50>5.
                 # Do not do the reverse.
                 n = Node.load(n_id)
@@ -27,11 +33,12 @@ def obj_gen(targets):
                     priv.append(n)
             yield u, pub, priv
         except Exception:
-            logger.error(f'Unknown exception handling {u_id}, skipping')
+            logger.error(f"Unknown exception handling {u_id}, skipping")
+
 
 def main(json_file, dry=False):
     if not json_file:
-        logger.info('No file detected, exiting.')
+        logger.info("No file detected, exiting.")
         return
     targets = json.load(json_file)
     errors = []
@@ -51,28 +58,26 @@ def main(json_file, dry=False):
                 except Exception:
                     errors.append(user._id)
             else:
-                logger.info(f'[Dry] Would mail {user._id}')
+                logger.info(f"[Dry] Would mail {user._id}")
         p_bar.update()
     p_bar.close()
-    logger.info(f'Complete. Errors mailing: {errors}')
+    logger.info(f"Complete. Errors mailing: {errors}")
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            '--dry',
-            dest='dry',
-            action='store_true',
-            help='Dry run'
+            "--dry", dest="dry", action="store_true", help="Dry run"
         )
         parser.add_argument(
-            '--json',
-            dest='json_file',
+            "--json",
+            dest="json_file",
             type=open,
-            help='Path of the json input',
+            help="Path of the json input",
         )
 
     def handle(self, *args, **options):
-        json_file = options.get('json_file', None)
-        dry = options.get('dry', None)
+        json_file = options.get("json_file", None)
+        dry = options.get("dry", None)
         main(json_file, dry)

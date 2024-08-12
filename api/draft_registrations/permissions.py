@@ -9,6 +9,7 @@ from osf.models import (
 )
 from api.nodes.permissions import ContributorDetailPermissions
 
+
 class IsContributorOrAdminContributor(permissions.BasePermission):
     """
     Need to be a contributor on the branched from node to view.
@@ -19,7 +20,7 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict):
-            obj = obj.get('self', None)
+            obj = obj.get("self", None)
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if not auth:
@@ -29,6 +30,7 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
             return obj.is_contributor(auth.user)
         else:
             return obj.can_edit(auth)
+
 
 class IsAdminContributor(permissions.BasePermission):
     """
@@ -40,7 +42,7 @@ class IsAdminContributor(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict):
-            obj = obj.get('self', None)
+            obj = obj.get("self", None)
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if not auth.user:
@@ -51,9 +53,13 @@ class IsAdminContributor(permissions.BasePermission):
         else:
             return obj.is_admin_contributor(auth.user)
 
-class DraftContributorDetailPermissions(ContributorDetailPermissions):
 
-    acceptable_models = (DraftRegistration, OSFUser, DraftRegistrationContributor)
+class DraftContributorDetailPermissions(ContributorDetailPermissions):
+    acceptable_models = (
+        DraftRegistration,
+        OSFUser,
+        DraftRegistrationContributor,
+    )
 
     def load_resource(self, context, view):
-        return DraftRegistration.load(context['draft_id'])
+        return DraftRegistration.load(context["draft_id"])

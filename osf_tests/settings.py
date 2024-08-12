@@ -2,7 +2,7 @@
 from api.base.settings import *  # noqa: F401,F403
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
-#DATABASES = {
+# DATABASES = {
 #    'default': {
 #        'CONN_MAX_AGE': 0,
 #        'ENGINE': 'osf.db.backends.postgresql',
@@ -13,11 +13,9 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 #        'USER': '',
 #        'ATOMIC_REQUESTS': True,
 #    }
-#}
+# }
 SITE_ID = 1
 # SECRET_KEY = 'not very secret in tests'
-PASSWORD_HASHERS = (
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-)
+PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
 
 TEST_ENV = True

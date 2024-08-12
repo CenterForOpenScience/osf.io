@@ -4,34 +4,32 @@ from osf.models import Institution
 
 
 class IsPreprintMetricsUser(permissions.BasePermission):
-
     def has_permission(self, request, view):
         user = request.user
-        if user.system_tags.filter(name='preprint_metrics').exists():
+        if user.system_tags.filter(name="preprint_metrics").exists():
             return True
         return False
 
 
 class IsRawMetricsUser(permissions.BasePermission):
-
     def has_permission(self, request, view):
         user = request.user
-        if user.system_tags.filter(name='raw_es6').exists():
+        if user.system_tags.filter(name="raw_es6").exists():
             return True
         return False
 
 
 class IsRegistriesModerationMetricsUser(permissions.BasePermission):
-
     def has_permission(self, request, view):
         user = request.user
-        if user.system_tags.filter(name='registries_moderation_metrics').exists():
+        if user.system_tags.filter(
+            name="registries_moderation_metrics"
+        ).exists():
             return True
         return False
 
 
 class IsInstitutionalMetricsUser(permissions.BasePermission):
-
     acceptable_models = (Institution,)
 
     def has_object_permission(self, request, view, obj):
@@ -39,7 +37,7 @@ class IsInstitutionalMetricsUser(permissions.BasePermission):
         assert_resource_type(obj, self.acceptable_models)
         if not user:
             return False
-        if user.has_perm('view_institutional_metrics', obj):
+        if user.has_perm("view_institutional_metrics", obj):
             return True
         return False
 

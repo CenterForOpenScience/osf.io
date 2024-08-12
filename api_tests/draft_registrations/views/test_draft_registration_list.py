@@ -4,7 +4,7 @@ import pytest
 from framework.auth.core import Auth
 from api_tests.nodes.views.test_node_draft_registration_list import (
     TestDraftRegistrationList,
-    TestDraftRegistrationCreate
+    TestDraftRegistrationCreate,
 )
 from api.base.settings.defaults import API_BASE
 
@@ -15,7 +15,7 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     AuthUserFactory,
-    InstitutionFactory
+    InstitutionFactory,
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
@@ -31,7 +31,7 @@ def invisible_and_inactive_schema():
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return f'/{API_BASE}draft_registrations/?'
+        return f"/{API_BASE}draft_registrations/?"
 
     # Overrides TestDraftRegistrationList
     def test_osf_group_with_admin_permissions_can_view(self):
@@ -40,31 +40,35 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
 
     # Overrides TestDraftRegistrationList
     def test_cannot_view_draft_list(
-            self, app, user_write_contrib, project_public,
-            user_read_contrib, user_non_contrib, draft_registration,
-            url_draft_registrations, group, group_mem):
-
+        self,
+        app,
+        user_write_contrib,
+        project_public,
+        user_read_contrib,
+        user_non_contrib,
+        draft_registration,
+        url_draft_registrations,
+        group,
+        group_mem,
+    ):
         # test_read_only_contributor_can_view_draft_list
-        res = app.get(
-            url_draft_registrations,
-            auth=user_read_contrib.auth)
+        res = app.get(url_draft_registrations, auth=user_read_contrib.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json["data"]) == 1
 
         #   test_read_write_contributor_can_view_draft_list
-        res = app.get(
-            url_draft_registrations,
-            auth=user_write_contrib.auth)
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json["data"]) == 1
 
         #   test_logged_in_non_contributor_can_view_draft_list
         res = app.get(
             url_draft_registrations,
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 200
-        assert len(res.json['data']) == 0
+        assert len(res.json["data"]) == 0
 
         #   test_unauthenticated_user_cannot_view_draft_list
         res = app.get(url_draft_registrations, expect_errors=True)
@@ -72,39 +76,35 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
 
 
 class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
-
     # Overrides `url_draft_registrations` in `TestDraftRegistrationCreate`
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return f'/{API_BASE}draft_registrations/?'
+        return f"/{API_BASE}draft_registrations/?"
 
     # Overrides `payload` in TestDraftRegistrationCreate`
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider, project_public):
         return {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
-                        'data': {
-                            'type': 'registration_schema',
-                            'id': metaschema_open_ended._id
+            "data": {
+                "type": "draft_registrations",
+                "attributes": {},
+                "relationships": {
+                    "registration_schema": {
+                        "data": {
+                            "type": "registration_schema",
+                            "id": metaschema_open_ended._id,
                         }
                     },
-                    'branched_from': {
-                        'data': {
-                            'type': 'nodes',
-                            'id': project_public._id
+                    "branched_from": {
+                        "data": {"type": "nodes", "id": project_public._id}
+                    },
+                    "provider": {
+                        "data": {
+                            "type": "registration-providers",
+                            "id": provider._id,
                         }
                     },
-                    'provider': {
-                        'data': {
-                            'type': 'registration-providers',
-                            'id': provider._id,
-                        }
-                    }
-                }
+                },
             }
         }
 
@@ -122,145 +122,200 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     @pytest.fixture()
     def payload_alt(self, payload, provider_alt):
         new_payload = payload.copy()
-        new_payload['data']['relationships']['provider']['data']['id'] = provider_alt._id
+        new_payload["data"]["relationships"]["provider"]["data"]["id"] = (
+            provider_alt._id
+        )
         return new_payload
 
     # Overrides TestDraftRegistrationList
-    def test_cannot_create_draft_errors(self, app, user, payload_alt, project_public, url_draft_registrations):
+    def test_cannot_create_draft_errors(
+        self, app, user, payload_alt, project_public, url_draft_registrations
+    ):
         #   test_cannot_create_draft_from_a_registration
         registration = RegistrationFactory(
-            project=project_public, creator=user)
-        payload_alt['data']['relationships']['branched_from']['data']['id'] = registration._id
+            project=project_public, creator=user
+        )
+        payload_alt["data"]["relationships"]["branched_from"]["data"]["id"] = (
+            registration._id
+        )
         res = app.post_json_api(
-            url_draft_registrations, payload_alt, auth=user.auth,
-            expect_errors=True)
+            url_draft_registrations,
+            payload_alt,
+            auth=user.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 404
 
-    #   test_cannot_create_draft_from_deleted_node
+        #   test_cannot_create_draft_from_deleted_node
         project = ProjectFactory(is_public=True, creator=user)
         project.is_deleted = True
         project.save()
-        payload_alt['data']['relationships']['branched_from']['data']['id'] = project._id
+        payload_alt["data"]["relationships"]["branched_from"]["data"]["id"] = (
+            project._id
+        )
         res = app.post_json_api(
-            url_draft_registrations, payload_alt,
-            auth=user.auth, expect_errors=True)
+            url_draft_registrations,
+            payload_alt,
+            auth=user.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 410
-        assert res.json['errors'][0]['detail'] == 'The requested node is no longer available.'
+        assert (
+            res.json["errors"][0]["detail"]
+            == "The requested node is no longer available."
+        )
 
-    #   test_cannot_create_draft_from_collection
+        #   test_cannot_create_draft_from_collection
         collection = CollectionFactory(creator=user)
-        payload_alt['data']['relationships']['branched_from']['data']['id'] = collection._id
+        payload_alt["data"]["relationships"]["branched_from"]["data"]["id"] = (
+            collection._id
+        )
         res = app.post_json_api(
-            url_draft_registrations, payload_alt, auth=user.auth,
-            expect_errors=True)
+            url_draft_registrations,
+            payload_alt,
+            auth=user.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 404
 
-    def test_draft_registration_attributes_copied_from_node(self, app, project_public,
-            url_draft_registrations, user, payload_alt):
-
+    def test_draft_registration_attributes_copied_from_node(
+        self, app, project_public, url_draft_registrations, user, payload_alt
+    ):
         write_contrib = AuthUserFactory()
         read_contrib = AuthUserFactory()
 
-        GPL3 = NodeLicense.objects.get(license_id='GPL3')
+        GPL3 = NodeLicense.objects.get(license_id="GPL3")
         project_public.set_node_license(
             {
-                'id': GPL3.license_id,
-                'year': '1998',
-                'copyrightHolders': ['Grapes McGee']
+                "id": GPL3.license_id,
+                "year": "1998",
+                "copyrightHolders": ["Grapes McGee"],
             },
             auth=Auth(user),
-            save=True
+            save=True,
         )
 
         project_public.add_contributor(write_contrib, WRITE)
         project_public.add_contributor(read_contrib, READ)
 
-        res = app.post_json_api(url_draft_registrations, payload_alt, auth=write_contrib.auth, expect_errors=True)
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload_alt,
+            auth=write_contrib.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 201
-        res = app.post_json_api(url_draft_registrations, payload_alt, auth=read_contrib.auth, expect_errors=True)
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload_alt,
+            auth=read_contrib.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
-        res = app.post_json_api(url_draft_registrations, payload_alt, auth=user.auth)
+        res = app.post_json_api(
+            url_draft_registrations, payload_alt, auth=user.auth
+        )
         assert res.status_code == 201
-        attributes = res.json['data']['attributes']
-        assert attributes['title'] == project_public.title
-        assert attributes['description'] == project_public.description
-        assert attributes['category'] == project_public.category
-        assert set(attributes['tags']) == {tag.name for tag in project_public.tags.all()}
-        assert attributes['node_license']['year'] == '1998'
-        assert attributes['node_license']['copyright_holders'] == ['Grapes McGee']
+        attributes = res.json["data"]["attributes"]
+        assert attributes["title"] == project_public.title
+        assert attributes["description"] == project_public.description
+        assert attributes["category"] == project_public.category
+        assert set(attributes["tags"]) == {
+            tag.name for tag in project_public.tags.all()
+        }
+        assert attributes["node_license"]["year"] == "1998"
+        assert attributes["node_license"]["copyright_holders"] == [
+            "Grapes McGee"
+        ]
 
-        relationships = res.json['data']['relationships']
+        relationships = res.json["data"]["relationships"]
 
-        assert 'affiliated_institutions' in relationships
-        assert 'subjects' in relationships
-        assert 'contributors' in relationships
+        assert "affiliated_institutions" in relationships
+        assert "subjects" in relationships
+        assert "contributors" in relationships
 
     def test_cannot_create_draft(
-            self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib,
-            project_public, payload_alt, group,
-            url_draft_registrations, group_mem):
-
+        self,
+        app,
+        user_write_contrib,
+        user_read_contrib,
+        user_non_contrib,
+        project_public,
+        payload_alt,
+        group,
+        url_draft_registrations,
+        group_mem,
+    ):
         #   test_write_only_contributor_cannot_create_draft
         assert user_write_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=user_write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 201
 
-    #   test_read_only_contributor_cannot_create_draft
+        #   test_read_only_contributor_cannot_create_draft
         assert user_read_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=user_read_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
-    #   test_non_authenticated_user_cannot_create_draft
+        #   test_non_authenticated_user_cannot_create_draft
         res = app.post_json_api(
-            url_draft_registrations,
-            payload_alt, expect_errors=True)
+            url_draft_registrations, payload_alt, expect_errors=True
+        )
         assert res.status_code == 401
 
-    #   test_logged_in_non_contributor_cannot_create_draft
+        #   test_logged_in_non_contributor_cannot_create_draft
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
-    #   test_group_admin_cannot_create_draft
+        #   test_group_admin_cannot_create_draft
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=group_mem.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 201
 
-    #   test_group_write_contrib_cannot_create_draft
+        #   test_group_write_contrib_cannot_create_draft
         project_public.remove_osf_group(group)
         project_public.add_osf_group(group, WRITE)
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=group_mem.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 201
 
     def test_create_project_based_draft_does_not_email_initiator(
-            self, app, user, url_draft_registrations, payload):
-        post_url = url_draft_registrations + 'embed=branched_from&embed=initiator'
-        with mock.patch.object(mails, 'send_mail') as mock_send_mail:
+        self, app, user, url_draft_registrations, payload
+    ):
+        post_url = (
+            url_draft_registrations + "embed=branched_from&embed=initiator"
+        )
+        with mock.patch.object(mails, "send_mail") as mock_send_mail:
             app.post_json_api(post_url, payload, auth=user.auth)
 
         assert not mock_send_mail.called
 
-    def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
+    def test_affiliated_institutions_are_copied_from_node_no_institutions(
+        self, app, user, url_draft_registrations, payload
+    ):
         """
         Draft registrations that are based on projects get those project's user institutional affiliation,
         those "no-project" registrations inherit the user's institutional affiliation.
@@ -269,17 +324,21 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         draft registration has no institutional affiliation from the user or the node.
         """
         project = ProjectFactory(is_public=True, creator=user)
-        payload['data']['relationships']['branched_from']['data']['id'] = project._id
+        payload["data"]["relationships"]["branched_from"]["data"]["id"] = (
+            project._id
+        )
         res = app.post_json_api(
             url_draft_registrations,
             payload,
             auth=user.auth,
         )
         assert res.status_code == 201
-        draft_registration = DraftRegistration.load(res.json['data']['id'])
+        draft_registration = DraftRegistration.load(res.json["data"]["id"])
         assert not draft_registration.affiliated_institutions.exists()
 
-    def test_affiliated_institutions_are_copied_from_node(self, app, user, url_draft_registrations, payload):
+    def test_affiliated_institutions_are_copied_from_node(
+        self, app, user, url_draft_registrations, payload
+    ):
         """
         Draft registrations that are based on projects get those project's user institutional affiliation,
         those "no-project" registrations inherit the user's institutional affiliation.
@@ -291,17 +350,23 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
 
         project = ProjectFactory(is_public=True, creator=user)
         project.affiliated_institutions.add(institution)
-        payload['data']['relationships']['branched_from']['data']['id'] = project._id
+        payload["data"]["relationships"]["branched_from"]["data"]["id"] = (
+            project._id
+        )
         res = app.post_json_api(
             url_draft_registrations,
             payload,
             auth=user.auth,
         )
         assert res.status_code == 201
-        draft_registration = DraftRegistration.load(res.json['data']['id'])
-        assert list(draft_registration.affiliated_institutions.all()) == list(project.affiliated_institutions.all())
+        draft_registration = DraftRegistration.load(res.json["data"]["id"])
+        assert list(draft_registration.affiliated_institutions.all()) == list(
+            project.affiliated_institutions.all()
+        )
 
-    def test_affiliated_institutions_are_copied_from_user(self, app, user, url_draft_registrations, payload):
+    def test_affiliated_institutions_are_copied_from_user(
+        self, app, user, url_draft_registrations, payload
+    ):
         """
         Draft registrations that are based on projects get those project's user institutional affiliation,
         those "no-project" registrations inherit the user's institutional affiliation.
@@ -309,49 +374,69 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         institution = InstitutionFactory()
         user.add_or_update_affiliated_institution(institution)
 
-        del payload['data']['relationships']['branched_from']
+        del payload["data"]["relationships"]["branched_from"]
         res = app.post_json_api(
             url_draft_registrations,
             payload,
             auth=user.auth,
         )
         assert res.status_code == 201
-        draft_registration = DraftRegistration.load(res.json['data']['id'])
-        assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
+        draft_registration = DraftRegistration.load(res.json["data"]["id"])
+        assert list(draft_registration.affiliated_institutions.all()) == list(
+            user.get_affiliated_institutions()
+        )
 
 
 class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
     @pytest.fixture()
     def url_draft_registrations(self):
-        return f'/{API_BASE}draft_registrations/?'
+        return f"/{API_BASE}draft_registrations/?"
 
     # Overrides TestDraftRegistrationList
     def test_admin_can_create_draft(
-            self, app, user, url_draft_registrations,
-            payload, metaschema_open_ended):
-        url = f'{url_draft_registrations}embed=branched_from&embed=initiator'
+        self,
+        app,
+        user,
+        url_draft_registrations,
+        payload,
+        metaschema_open_ended,
+    ):
+        url = f"{url_draft_registrations}embed=branched_from&embed=initiator"
         res = app.post_json_api(url, payload, auth=user.auth)
 
         assert res.status_code == 201
-        data = res.json['data']
-        assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
-        assert data['attributes']['registration_metadata'] == {}
-        assert data['relationships']['provider']['links']['related']['href'] == \
-               f'{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default__id}/'
+        data = res.json["data"]
+        assert (
+            metaschema_open_ended._id
+            in data["relationships"]["registration_schema"]["links"][
+                "related"
+            ]["href"]
+        )
+        assert data["attributes"]["registration_metadata"] == {}
+        assert (
+            data["relationships"]["provider"]["links"]["related"]["href"]
+            == f"{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default__id}/"
+        )
 
-        assert data['embeds']['branched_from']['data']['id'] == DraftRegistration.objects.get(_id=data['id']).branched_from._id
-        assert data['embeds']['initiator']['data']['id'] == user._id
+        assert (
+            data["embeds"]["branched_from"]["data"]["id"]
+            == DraftRegistration.objects.get(_id=data["id"]).branched_from._id
+        )
+        assert data["embeds"]["initiator"]["data"]["id"] == user._id
 
-        draft = DraftRegistration.load(data['id'])
+        draft = DraftRegistration.load(data["id"])
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
     def test_create_no_project_draft_emails_initiator(
-            self, app, user, url_draft_registrations, payload):
-        post_url = url_draft_registrations + 'embed=branched_from&embed=initiator'
+        self, app, user, url_draft_registrations, payload
+    ):
+        post_url = (
+            url_draft_registrations + "embed=branched_from&embed=initiator"
+        )
 
         # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
-        with mock.patch.object(mails, 'send_mail') as mock_send_mail:
+        with mock.patch.object(mails, "send_mail") as mock_send_mail:
             resp = app.post_json_api(post_url, payload, auth=user.auth)
         assert mock_send_mail.called
 
@@ -359,54 +444,75 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         # Instead, mock.call_args[0] is positional args, mock.call_args[1] is kwargs
         # (note, this is compatible with later versions)
         mock_send_kwargs = mock_send_mail.call_args[1]
-        assert mock_send_kwargs['mail'] == mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
-        assert mock_send_kwargs['user'] == user
-        assert mock_send_kwargs['node'] == DraftRegistration.load(resp.json['data']['id'])
+        assert (
+            mock_send_kwargs["mail"]
+            == mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+        )
+        assert mock_send_kwargs["user"] == user
+        assert mock_send_kwargs["node"] == DraftRegistration.load(
+            resp.json["data"]["id"]
+        )
 
-    def test_create_draft_with_provider(self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider):
-        res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
+    def test_create_draft_with_provider(
+        self,
+        app,
+        user,
+        url_draft_registrations,
+        non_default_provider,
+        payload_with_non_default_provider,
+    ):
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload_with_non_default_provider,
+            auth=user.auth,
+        )
         assert res.status_code == 201
-        data = res.json['data']
-        assert data['relationships']['provider']['links']['related']['href'] == \
-               f'{settings.API_DOMAIN}v2/providers/registrations/{non_default_provider._id}/'
+        data = res.json["data"]
+        assert (
+            data["relationships"]["provider"]["links"]["related"]["href"]
+            == f"{settings.API_DOMAIN}v2/providers/registrations/{non_default_provider._id}/"
+        )
 
-        draft = DraftRegistration.load(data['id'])
+        draft = DraftRegistration.load(data["id"])
         assert draft.provider == non_default_provider
 
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft(
-            self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib,
-            project_public, payload, group,
-            url_draft_registrations, group_mem):
-
+        self,
+        app,
+        user_write_contrib,
+        user_read_contrib,
+        user_non_contrib,
+        project_public,
+        payload,
+        group,
+        url_draft_registrations,
+        group_mem,
+    ):
         #   test_write_contrib (no node supplied, so any logged in user can create)
         assert user_write_contrib in project_public.contributors.all()
         res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_write_contrib.auth)
+            url_draft_registrations, payload, auth=user_write_contrib.auth
+        )
         assert res.status_code == 201
 
-    #   test_read_only (no node supplied, so any logged in user can create)
+        #   test_read_only (no node supplied, so any logged in user can create)
         assert user_read_contrib in project_public.contributors.all()
         res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_read_contrib.auth)
+            url_draft_registrations, payload, auth=user_read_contrib.auth
+        )
         assert res.status_code == 201
 
-    #   test_non_authenticated_user_cannot_create_draft
+        #   test_non_authenticated_user_cannot_create_draft
         res = app.post_json_api(
-            url_draft_registrations,
-            payload, expect_errors=True)
+            url_draft_registrations, payload, expect_errors=True
+        )
         assert res.status_code == 401
 
-    #   test_logged_in_non_contributor (no node supplied, so any logged in user can create)
+        #   test_logged_in_non_contributor (no node supplied, so any logged in user can create)
         res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_non_contrib.auth)
+            url_draft_registrations, payload, auth=user_non_contrib.auth
+        )
         assert res.status_code == 201
 
     # Overrides TestDraftRegistrationList
@@ -414,31 +520,35 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         # The original test assumes a node is being passed in
         return
 
-    def test_draft_registration_attributes_not_copied_from_node(self, app, project_public,
-            url_draft_registrations, user, payload):
-
-        GPL3 = NodeLicense.objects.get(license_id='GPL3')
+    def test_draft_registration_attributes_not_copied_from_node(
+        self, app, project_public, url_draft_registrations, user, payload
+    ):
+        GPL3 = NodeLicense.objects.get(license_id="GPL3")
         project_public.set_node_license(
             {
-                'id': GPL3.license_id,
-                'year': '1998',
-                'copyrightHolders': ['Grapes McGee']
+                "id": GPL3.license_id,
+                "year": "1998",
+                "copyrightHolders": ["Grapes McGee"],
             },
             auth=Auth(user),
-            save=True
+            save=True,
         )
 
-        res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
+        res = app.post_json_api(
+            url_draft_registrations, payload, auth=user.auth
+        )
         assert res.status_code == 201
-        attributes = res.json['data']['attributes']
-        assert attributes['title'] == ''
-        assert attributes['description'] != project_public.description
-        assert attributes['category'] != project_public.category
-        assert set(attributes['tags']) != {tag.name for tag in project_public.tags.all()}
-        assert attributes['node_license'] is None
+        attributes = res.json["data"]["attributes"]
+        assert attributes["title"] == ""
+        assert attributes["description"] != project_public.description
+        assert attributes["category"] != project_public.category
+        assert set(attributes["tags"]) != {
+            tag.name for tag in project_public.tags.all()
+        }
+        assert attributes["node_license"] is None
 
-        relationships = res.json['data']['relationships']
+        relationships = res.json["data"]["relationships"]
 
-        assert 'affiliated_institutions' in relationships
-        assert 'subjects' in relationships
-        assert 'contributors' in relationships
+        assert "affiliated_institutions" in relationships
+        assert "subjects" in relationships
+        assert "contributors" in relationships

@@ -7,18 +7,17 @@ from osf_tests.factories import SubjectFactory
 
 @pytest.mark.django_db
 class TestSubject:
-
     @pytest.fixture(autouse=True)
     def subject(self):
-        return SubjectFactory(text='A')
+        return SubjectFactory(text="A")
 
     @pytest.fixture(autouse=True)
     def subject_other(self):
-        return SubjectFactory(text='Other Sub')
+        return SubjectFactory(text="Other Sub")
 
     @pytest.fixture(autouse=True)
     def subject_a(self):
-        return SubjectFactory(text='Z')
+        return SubjectFactory(text="Z")
 
     @pytest.fixture(autouse=True)
     def subject_child_one(self, subject):
@@ -30,33 +29,52 @@ class TestSubject:
 
     @pytest.fixture()
     def url_subject_list(self):
-        return f'/{API_BASE}subjects/'
+        return f"/{API_BASE}subjects/"
 
     @pytest.fixture()
     def url_subject_detail(self, subject):
-        return f'/{API_BASE}subjects/{subject._id}/'
+        return f"/{API_BASE}subjects/{subject._id}/"
 
-    def test_get_subject_detail(self, app, url_subject_detail, subject, subject_child_one, subject_child_two):
-        res = app.get(url_subject_detail + f'?version={subjects_as_relationships_version}&related_counts=children')
-        data = res.json['data']
-        assert data['attributes']['text'] == subject.text
-        assert 'children' in data['relationships']
-        assert 'parent' in data['relationships']
-        assert data['relationships']['parent']['data'] is None
-        assert data['relationships']['children']['links']['related']['meta']['count'] == 2
-        assert data['links']['iri'] == subject.get_semantic_iri()
+    def test_get_subject_detail(
+        self,
+        app,
+        url_subject_detail,
+        subject,
+        subject_child_one,
+        subject_child_two,
+    ):
+        res = app.get(
+            url_subject_detail
+            + f"?version={subjects_as_relationships_version}&related_counts=children"
+        )
+        data = res.json["data"]
+        assert data["attributes"]["text"] == subject.text
+        assert "children" in data["relationships"]
+        assert "parent" in data["relationships"]
+        assert data["relationships"]["parent"]["data"] is None
+        assert (
+            data["relationships"]["children"]["links"]["related"]["meta"][
+                "count"
+            ]
+            == 2
+        )
+        assert data["links"]["iri"] == subject.get_semantic_iri()
 
         # Follow children link
-        children_link = data['relationships']['children']['links']['related']['href']
+        children_link = data["relationships"]["children"]["links"]["related"][
+            "href"
+        ]
         res = app.get(children_link)
-        data = res.json['data']
+        data = res.json["data"]
 
         assert len(data) == 2
-        children = [child['id'] for child in data]
+        children = [child["id"] for child in data]
         assert subject_child_one._id in children
         assert subject_child_two._id in children
 
         # Follow child's parent link
-        parent_link = data[0]['relationships']['parent']['links']['related']['href']
+        parent_link = data[0]["relationships"]["parent"]["links"]["related"][
+            "href"
+        ]
         res = app.get(parent_link)
-        assert res.json['data']['id'] == subject._id
+        assert res.json["data"]["id"] == subject._id

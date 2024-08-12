@@ -1,10 +1,10 @@
-'''
+"""
 This module defines the Outcome model and its custom manager.
 
 Outcomes serve as a way to collect metadata about a research effort and to aggregate Identifiers
 used to share data or provide context for a that research effort, along with some additional metadata
 stored in the OutcomeArtifact through table.
-'''
+"""
 
 from django.db import models
 from django.utils.functional import cached_property
@@ -23,22 +23,33 @@ NODE_LOGS_FOR_OUTCOME_ACTION = {
 
 
 class OutcomeManager(models.Manager):
-
-    def for_registration(self, registration, identifier_type='doi', create=False, **kwargs):
-        registration_identifier = registration.get_identifier(category=identifier_type)
+    def for_registration(
+        self, registration, identifier_type="doi", create=False, **kwargs
+    ):
+        registration_identifier = registration.get_identifier(
+            category=identifier_type
+        )
         if not registration_identifier:
-            raise NoPIDError(f'Provided registration has no PID of type {identifier_type}')
+            raise NoPIDError(
+                f"Provided registration has no PID of type {identifier_type}"
+            )
 
-        primary_artifact = registration_identifier.artifact_metadata.filter(
-            artifact_type=ArtifactTypes.PRIMARY.value
-        ).order_by('-created').first()
+        primary_artifact = (
+            registration_identifier.artifact_metadata.filter(
+                artifact_type=ArtifactTypes.PRIMARY.value
+            )
+            .order_by("-created")
+            .first()
+        )
         if primary_artifact:
             return primary_artifact.outcome
         elif not create:
             return None
 
         new_outcome = self.create(**kwargs)
-        new_outcome.copy_editable_fields(registration, include_contributors=False)
+        new_outcome.copy_editable_fields(
+            registration, include_contributors=False
+        )
         new_outcome.artifact_metadata.create(
             identifier=registration_identifier,
             artifact_type=ArtifactTypes.PRIMARY,
@@ -64,25 +75,31 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
 
     # These override the fields inherited from EditableField Mixin
     # This is required to avoid collisions with the related_name
-    affiliated_institutions = models.ManyToManyField('Institution', related_name='outcomes')
+    affiliated_institutions = models.ManyToManyField(
+        "Institution", related_name="outcomes"
+    )
     node_license = models.ForeignKey(
-        'NodeLicenseRecord',
-        related_name='outcomes',
+        "NodeLicenseRecord",
+        related_name="outcomes",
         on_delete=models.SET_NULL,
         null=True,
-        blank=True
+        blank=True,
     )
 
-    artifacts = models.ManyToManyField('osf.Identifier', through='osf.OutcomeArtifact')
+    artifacts = models.ManyToManyField(
+        "osf.Identifier", through="osf.OutcomeArtifact"
+    )
 
     objects = OutcomeManager()
 
     @cached_property
     def primary_osf_resource(self):
-        return self.artifact_metadata.get(artifact_type=ArtifactTypes.PRIMARY).identifier.referent
+        return self.artifact_metadata.get(
+            artifact_type=ArtifactTypes.PRIMARY
+        ).identifier.referent
 
     def artifact_updated(self, action, artifact, api_request, **log_params):
-        nodelog_params = {'artifact_id': artifact._id, **log_params}
+        nodelog_params = {"artifact_id": artifact._id, **log_params}
         self.primary_osf_resource.related_resource_updated(
             log_action=NODE_LOGS_FOR_OUTCOME_ACTION.get(action),
             api_request=api_request,

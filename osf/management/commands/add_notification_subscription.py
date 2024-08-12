@@ -5,6 +5,7 @@
 import logging
 
 import django
+
 django.setup()
 
 from django.core.management.base import BaseCommand
@@ -19,15 +20,24 @@ logger = logging.getLogger(__name__)
 
 def add_reviews_notification_setting(notification_type, state=None):
     if state:
-        OSFUser = state.get_model('osf', 'OSFUser')
-        NotificationSubscription = state.get_model('osf', 'NotificationSubscription')
+        OSFUser = state.get_model("osf", "OSFUser")
+        NotificationSubscription = state.get_model(
+            "osf", "NotificationSubscription"
+        )
     else:
         from osf.models import OSFUser, NotificationSubscription
 
-    active_users = OSFUser.objects.filter(date_confirmed__isnull=False).exclude(date_disabled__isnull=False).exclude(is_active=False).order_by('id')
+    active_users = (
+        OSFUser.objects.filter(date_confirmed__isnull=False)
+        .exclude(date_disabled__isnull=False)
+        .exclude(is_active=False)
+        .order_by("id")
+    )
     total_active_users = active_users.count()
 
-    logger.info(f'About to add a global_reviews setting for {total_active_users} users.')
+    logger.info(
+        f"About to add a global_reviews setting for {total_active_users} users."
+    )
 
     total_created = 0
     for user in active_users.iterator():
@@ -35,43 +45,56 @@ def add_reviews_notification_setting(notification_type, state=None):
 
         subscription = NotificationSubscription.load(user_subscription_id)
         if not subscription:
-            logger.info(f'No {notification_type} subscription found for user {user._id}. Subscribing...')
-            subscription = NotificationSubscription(_id=user_subscription_id, owner=user, event_name=notification_type)
+            logger.info(
+                f"No {notification_type} subscription found for user {user._id}. Subscribing..."
+            )
+            subscription = NotificationSubscription(
+                _id=user_subscription_id,
+                owner=user,
+                event_name=notification_type,
+            )
             subscription.save()  # Need to save in order to access m2m fields
-            subscription.add_user_to_subscription(user, 'email_transactional')
+            subscription.add_user_to_subscription(user, "email_transactional")
         else:
-            logger.info(f'User {user._id} already has a {notification_type} subscription')
+            logger.info(
+                f"User {user._id} already has a {notification_type} subscription"
+            )
         total_created += 1
 
-    logger.info(f'Added subscriptions for {total_created}/{total_active_users} users')
+    logger.info(
+        f"Added subscriptions for {total_created}/{total_active_users} users"
+    )
 
 
 class Command(BaseCommand):
     """
     Add subscription to all active users for given notification type.
     """
+
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            '--dry',
-            action='store_true',
-            dest='dry_run',
-            help='Run migration and roll back changes to db',
+            "--dry",
+            action="store_true",
+            dest="dry_run",
+            help="Run migration and roll back changes to db",
         )
 
         parser.add_argument(
-            '--notification',
+            "--notification",
             type=str,
             required=True,
-            help='Notification type to subscribe users to',
+            help="Notification type to subscribe users to",
         )
 
     def handle(self, *args, **options):
-        dry_run = options.get('dry_run', False)
-        state = options.get('state', None)
+        dry_run = options.get("dry_run", False)
+        state = options.get("state", None)
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            add_reviews_notification_setting(notification_type=options['notification'], state=state)
+            add_reviews_notification_setting(
+                notification_type=options["notification"], state=state
+            )
             if dry_run:
-                raise RuntimeError('Dry run, transaction rolled back.')
+                raise RuntimeError("Dry run, transaction rolled back.")

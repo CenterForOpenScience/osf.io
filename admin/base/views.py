@@ -10,7 +10,7 @@ from admin.base.utils import osf_staff_check
 @user_passes_test(osf_staff_check)
 def home(request):
     context = {}
-    return render(request, 'home.html', context)
+    return render(request, "home.html", context)
 
 
 class GuidView(DetailView):
@@ -20,5 +20,7 @@ class GuidView(DetailView):
         except ObjectDoesNotExist:
             return page_not_found(
                 request,
-                AttributeError(f'resource with id "{kwargs.get("guid") or kwargs.get("id")}" not found.')
+                AttributeError(
+                    f'resource with id "{kwargs.get("guid") or kwargs.get("id")}" not found.'
+                ),
             )

@@ -1,4 +1,5 @@
 """Serializer tests for the GitLab addon."""
+
 from unittest import mock
 import pytest
 
@@ -10,9 +11,9 @@ from addons.gitlab.serializer import GitLabSerializer
 
 pytestmark = pytest.mark.django_db
 
-class TestGitLabSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 
-    addon_short_name = 'gitlab'
+class TestGitLabSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
+    addon_short_name = "gitlab"
 
     Serializer = GitLabSerializer
     ExternalAccountFactory = GitLabAccountFactory
@@ -25,7 +26,7 @@ class TestGitLabSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 
     def setUp(self):
         super().setUp()
-        self.mock_api_user = mock.patch('addons.gitlab.api.GitLabClient.user')
+        self.mock_api_user = mock.patch("addons.gitlab.api.GitLabClient.user")
         self.mock_api_user.return_value = mock.Mock()
         self.mock_api_user.start()
 
@@ -36,14 +37,14 @@ class TestGitLabSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
     def test_serialize_acccount(self):
         ea = self.ExternalAccountFactory()
         expected = {
-            'id': ea._id,
-            'provider_id': ea.provider_id,
-            'provider_name': ea.provider_name,
-            'provider_short_name': ea.provider,
-            'display_name': ea.display_name,
-            'profile_url': ea.profile_url,
-            'nodes': [],
-            'host': ea.oauth_secret,
-            'host_url': ea.oauth_secret,
+            "id": ea._id,
+            "provider_id": ea.provider_id,
+            "provider_name": ea.provider_name,
+            "provider_short_name": ea.provider,
+            "display_name": ea.display_name,
+            "profile_url": ea.profile_url,
+            "nodes": [],
+            "host": ea.oauth_secret,
+            "host_url": ea.oauth_secret,
         }
         assert self.ser.serialize_account(ea) == expected

@@ -18,7 +18,7 @@ def flag_is_active(request, flag_name):
     """
     # Waffle does not enjoy NoneTypes as user values.
     request.user = _get_current_user() or MockUser()
-    request.COOKIES = getattr(request, 'cookies', None)
+    request.COOKIES = getattr(request, "cookies", None)
     return waffle.flag_is_active(request, flag_name)
 
 

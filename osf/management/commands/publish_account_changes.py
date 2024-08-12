@@ -7,34 +7,40 @@ from osf.external.messages.celery_publishers import (
 )
 
 actions_to_functions = {
-    'deactivate': publish_deactivated_user,
-    'reactivate': publish_reactivate_user,
-    'merge': publish_merged_user,
+    "deactivate": publish_deactivated_user,
+    "reactivate": publish_reactivate_user,
+    "merge": publish_merged_user,
 }
 
 
 class Command(BaseCommand):
-    help = 'Sends a message to manage a user state, for test purposes only.'
+    help = "Sends a message to manage a user state, for test purposes only."
 
     def add_arguments(self, parser):
-        parser.add_argument('user_guid', type=str, help='use the guid of the user to post.')
+        parser.add_argument(
+            "user_guid", type=str, help="use the guid of the user to post."
+        )
         # Adding a new argument to specify the action to perform
         parser.add_argument(
-            'action',
+            "action",
             type=str,
-            help='The action to perform on the user (deactivate, reactivate, merge).',
-            choices=['deactivate', 'reactivate', 'merge']
+            help="The action to perform on the user (deactivate, reactivate, merge).",
+            choices=["deactivate", "reactivate", "merge"],
         )
 
     def handle(self, *args, **options):
-        user_guid = options['user_guid']
+        user_guid = options["user_guid"]
         user = OSFUser.load(user_guid)
-        action = options['action']
+        action = options["action"]
 
         # Using a mapping of action to function to simplify the control flow
 
         if action in actions_to_functions:
             actions_to_functions[action](user)  # Call the appropriate function
-            self.stdout.write(self.style.SUCCESS(f'Successfully {action} message for user: {user._id}'))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Successfully {action} message for user: {user._id}"
+                )
+            )
         else:
-            self.stdout.write(self.style.ERROR('Invalid action specified.'))
+            self.stdout.write(self.style.ERROR("Invalid action specified."))

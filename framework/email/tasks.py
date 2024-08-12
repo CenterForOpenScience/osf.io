@@ -71,18 +71,27 @@ def send_email(
         )
 
 
-def _send_with_smtp(from_addr, to_addr, subject, message, ttls=True, login=True, username=None, password=None):
+def _send_with_smtp(
+    from_addr,
+    to_addr,
+    subject,
+    message,
+    ttls=True,
+    login=True,
+    username=None,
+    password=None,
+):
     username = username or settings.MAIL_USERNAME
     password = password or settings.MAIL_PASSWORD
 
     if login and (username is None or password is None):
-        logger.error('Mail username and password not set; skipping send.')
+        logger.error("Mail username and password not set; skipping send.")
         return
 
-    msg = MIMEText(message, 'html', _charset='utf-8')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = to_addr
+    msg = MIMEText(message, "html", _charset="utf-8")
+    msg["Subject"] = subject
+    msg["From"] = from_addr
+    msg["To"] = to_addr
 
     s = smtplib.SMTP(settings.MAIL_SERVER)
     s.ehlo()
@@ -111,34 +120,42 @@ def _send_with_sendgrid(
     client=None,
 ):
     if (
-        settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST
+        settings.SENDGRID_WHITELIST_MODE
+        and to_addr in settings.SENDGRID_EMAIL_WHITELIST
     ) or settings.SENDGRID_WHITELIST_MODE is False:
         client = client or SendGridAPIClient(settings.SENDGRID_API_KEY)
-        mail = Mail(from_email=from_addr, html_content=message, to_emails=to_addr, subject=subject)
+        mail = Mail(
+            from_email=from_addr,
+            html_content=message,
+            to_emails=to_addr,
+            subject=subject,
+        )
         if categories:
             mail.category = [Category(x) for x in categories]
         if attachment_name and attachment_content:
             content_bytes = _content_to_bytes(attachment_content)
             content_bytes = FileContent(b64encode(content_bytes).decode())
-            attachment = Attachment(file_content=content_bytes, file_name=attachment_name)
+            attachment = Attachment(
+                file_content=content_bytes, file_name=attachment_name
+            )
             mail.add_attachment(attachment)
 
         response = client.send(mail)
         if response.status_code >= 400:
             sentry.log_message(
-                f'{response.status_code} error response from sendgrid.'
-                f'from_addr:  {from_addr}\n'
-                f'to_addr:  {to_addr}\n'
-                f'subject:  {subject}\n'
-                'mimetype:  html\n'
-                f'message:  {response.body[:30]}\n'
-                f'categories:  {categories}\n'
-                f'attachment_name:  {attachment_name}\n'
+                f"{response.status_code} error response from sendgrid."
+                f"from_addr:  {from_addr}\n"
+                f"to_addr:  {to_addr}\n"
+                f"subject:  {subject}\n"
+                "mimetype:  html\n"
+                f"message:  {response.body[:30]}\n"
+                f"categories:  {categories}\n"
+                f"attachment_name:  {attachment_name}\n"
             )
         return response.status_code < 400
     else:
         sentry.log_message(
-            f'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {to_addr}.'
+            f"SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {to_addr}."
         )
 
 

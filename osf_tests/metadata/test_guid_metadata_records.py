@@ -8,62 +8,93 @@ from api_tests.utils import create_test_file
 
 GOOD_FUNDING_INFOS = (
     [],
-    [{
-        'funder_name': 'hey',
-        'funder_identifier': 'look:',
-        'funder_identifier_type': 'ROR',
-        'award_number': 'string',
-        'award_uri': 'http://is.example',
-        'award_title': 'valid!',
-    }],
-    [{
-        'funder_name': 'just the name is good enough',
-    }],
-    [{
-        'funder_name': 'just',
-    }, {
-        'funder_name': 'the',
-    }, {
-        'funder_name': 'name',
-    }, {
-        'funder_name': 'is',
-    }, {
-        'funder_name': 'good',
-    }, {
-        'funder_name': 'enough',
-    }],
-    [{
-        'funder_name': 'NIH probably',
-        'funder_identifier': 'https://doi.org/10.blah/deeblah',
-        'funder_identifier_type': 'Crossref Funder ID',
-        'award_number': '27',
-        'award_uri': 'https://awards.example/twenty-seven',
-        'award_title': 'Award Twentyseven',
-    }, {
-        'funder_name': 'NSF probably',
-        'funder_identifier': 'https://doi.org/10.blah/dooblah',
-        'funder_identifier_type': 'Crossref Funder ID',
-        'award_number': '28',
-        'award_uri': 'https://awards.example/twenty-eight',
-        'award_title': 'Award Twentyeight',
-    }, {
-        'funder_name': 'Mx. Moneypockets',
-        'award_number': '10000000',
-        'award_uri': 'https://moneypockets.example/millions',
-        'award_title': 'Because i said so',
-    }]
+    [
+        {
+            "funder_name": "hey",
+            "funder_identifier": "look:",
+            "funder_identifier_type": "ROR",
+            "award_number": "string",
+            "award_uri": "http://is.example",
+            "award_title": "valid!",
+        }
+    ],
+    [
+        {
+            "funder_name": "just the name is good enough",
+        }
+    ],
+    [
+        {
+            "funder_name": "just",
+        },
+        {
+            "funder_name": "the",
+        },
+        {
+            "funder_name": "name",
+        },
+        {
+            "funder_name": "is",
+        },
+        {
+            "funder_name": "good",
+        },
+        {
+            "funder_name": "enough",
+        },
+    ],
+    [
+        {
+            "funder_name": "NIH probably",
+            "funder_identifier": "https://doi.org/10.blah/deeblah",
+            "funder_identifier_type": "Crossref Funder ID",
+            "award_number": "27",
+            "award_uri": "https://awards.example/twenty-seven",
+            "award_title": "Award Twentyseven",
+        },
+        {
+            "funder_name": "NSF probably",
+            "funder_identifier": "https://doi.org/10.blah/dooblah",
+            "funder_identifier_type": "Crossref Funder ID",
+            "award_number": "28",
+            "award_uri": "https://awards.example/twenty-eight",
+            "award_title": "Award Twentyeight",
+        },
+        {
+            "funder_name": "Mx. Moneypockets",
+            "award_number": "10000000",
+            "award_uri": "https://moneypockets.example/millions",
+            "award_title": "Because i said so",
+        },
+    ],
 )
 
 BAD_FUNDING_INFOS = (
     [{}],
-    [{'missing': 'there is one required field'}],
-    [{'funder_name': 'ok', 'unknown': 'bad'}],
-    [{'funder_name': 'see award_number should be a string', 'award_number': 7}],
-    [{'funder_name': 'this one is ok, but the empty object next in the array is not'}, {}],
-    [{'funder_name': 'bad funder_identifier_type', 'funder_identifier_type': 'something'}],
+    [{"missing": "there is one required field"}],
+    [{"funder_name": "ok", "unknown": "bad"}],
+    [
+        {
+            "funder_name": "see award_number should be a string",
+            "award_number": 7,
+        }
+    ],
+    [
+        {
+            "funder_name": "this one is ok, but the empty object next in the array is not"
+        },
+        {},
+    ],
+    [
+        {
+            "funder_name": "bad funder_identifier_type",
+            "funder_identifier_type": "something",
+        }
+    ],
     # TODO: consider installing the package that will make jsonschema validate format='uri'
     # [{'funder_name': 'bad award_uri', 'award_uri': 'not a uri'}],
 )
+
 
 @pytest.mark.django_db
 class TestGuidMetadataRecord:

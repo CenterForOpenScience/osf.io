@@ -12,10 +12,10 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
     template_version = models.PositiveIntegerField()
 
     class Meta:
-        unique_together = ('cedar_id', 'template_version')
+        unique_together = ("cedar_id", "template_version")
 
     def __unicode__(self):
-        return f'(name=[{self.schema_name}], version=[{self.template_version}], id=[{self.cedar_id}])'
+        return f"(name=[{self.schema_name}], version=[{self.template_version}], id=[{self.cedar_id}])"
 
     def get_semantic_iri(self):
         return self.cedar_id
@@ -25,17 +25,20 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
 
 
 class CedarMetadataRecord(ObjectIDMixin, BaseModel):
-
-    guid = models.ForeignKey('Guid', on_delete=models.CASCADE, related_name='cedar_metadata_records')
-    template = models.ForeignKey('CedarMetadataTemplate', on_delete=models.CASCADE)
+    guid = models.ForeignKey(
+        "Guid", on_delete=models.CASCADE, related_name="cedar_metadata_records"
+    )
+    template = models.ForeignKey(
+        "CedarMetadataTemplate", on_delete=models.CASCADE
+    )
     metadata = DateTimeAwareJSONField(default=dict)
     is_published = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('guid', 'template')
+        unique_together = ("guid", "template")
 
     def __unicode__(self):
-        return f'(guid=[{self.guid._id}], template=[{self.template._id}])'
+        return f"(guid=[{self.guid._id}], template=[{self.template._id}])"
 
     def get_template_semantic_iri(self):
         return self.template.get_semantic_iri()

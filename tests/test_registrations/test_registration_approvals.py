@@ -1,17 +1,20 @@
-
 from unittest import mock
 
 import pytest
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
-    NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory,
-    UnconfirmedUserFactory
+    NodeFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    UserFactory,
+    UnconfirmedUserFactory,
 )
 
 from framework.exceptions import PermissionsError
 from osf.exceptions import (
-    InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
+    InvalidSanctionRejectionToken,
+    InvalidSanctionApprovalToken,
+    NodeStateError,
 )
 from osf.utils import tokens
 from osf.models.sanctions import (
@@ -24,9 +27,7 @@ from framework.auth import Auth
 from osf.models import Contributor, SpamStatus
 from osf.utils.permissions import ADMIN
 
-DUMMY_TOKEN = tokens.encode({
-    'dummy': 'token'
-})
+DUMMY_TOKEN = tokens.encode({"dummy": "token"})
 
 
 class RegistrationApprovalModelTestCase(OsfTestCase):
@@ -38,20 +39,25 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
     def test__require_approval_saves_approval(self):
         initial_count = RegistrationApproval.objects.all().count()
-        self.registration._initiate_approval(
-            self.user
-        )
+        self.registration._initiate_approval(self.user)
         assert RegistrationApproval.objects.all().count() == initial_count + 1
 
-    def test__initiate_approval_does_not_create_tokens_for_unregistered_admin(self):
+    def test__initiate_approval_does_not_create_tokens_for_unregistered_admin(
+        self,
+    ):
         unconfirmed_user = UnconfirmedUserFactory()
-        Contributor.objects.create(node=self.registration, user=unconfirmed_user)
-        self.registration.add_permission(unconfirmed_user, ADMIN, save=True)
-        assert Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission == ADMIN
-
-        approval = self.registration._initiate_approval(
-            self.user
+        Contributor.objects.create(
+            node=self.registration, user=unconfirmed_user
         )
+        self.registration.add_permission(unconfirmed_user, ADMIN, save=True)
+        assert (
+            Contributor.objects.get(
+                node=self.registration, user=unconfirmed_user
+            ).permission
+            == ADMIN
+        )
+
+        approval = self.registration._initiate_approval(self.user)
         assert self.user._id in approval.approval_state
         assert unconfirmed_user._id not in approval.approval_state
 
@@ -63,10 +69,14 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         grandchild_admin = UserFactory()
 
         project = ProjectFactory(creator=project_admin)
-        project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
+        project.add_contributor(
+            project_non_admin, auth=Auth(project.creator), save=True
+        )
 
         child = NodeFactory(creator=child_admin, parent=project)
-        child.add_contributor(child_non_admin, auth=Auth(child.creator), save=True)
+        child.add_contributor(
+            child_non_admin, auth=Auth(child.creator), save=True
+        )
 
         grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
 
@@ -88,15 +98,15 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             self.registration.require_approval(self.user)
 
     def test_invalid_approval_token_raises_InvalidSanctionApprovalToken(self):
-        self.registration.require_approval(
-            self.user
-        )
+        self.registration.require_approval(self.user)
         self.registration.save()
         assert self.registration.is_pending_registration
 
-        invalid_approval_token = 'not a real token'
+        invalid_approval_token = "not a real token"
         with pytest.raises(InvalidSanctionApprovalToken):
-            self.registration.registration_approval.approve(user=self.user, token=invalid_approval_token)
+            self.registration.registration_approval.approve(
+                user=self.user, token=invalid_approval_token
+            )
         assert self.registration.is_pending_registration
 
     def test_non_admin_approval_token_raises_PermissionsError(self):
@@ -107,79 +117,124 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_registration
 
-        approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
+        approval_token = (
+            self.registration.registration_approval.approval_state[
+                self.user._id
+            ]["approval_token"]
+        )
         with pytest.raises(PermissionsError):
-            self.registration.registration_approval.approve(user=non_admin, token=approval_token)
+            self.registration.registration_approval.approve(
+                user=non_admin, token=approval_token
+            )
         assert self.registration.is_pending_registration
 
     def test_approval_adds_to_parent_projects_log(self):
         initial_project_logs = self.registration.registered_from.logs.count()
-        self.registration.require_approval(
-            self.user
-        )
+        self.registration.require_approval(self.user)
         self.registration.save()
 
-        approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
-        self.registration.registration_approval.approve(user=self.user, token=approval_token)
+        approval_token = (
+            self.registration.registration_approval.approval_state[
+                self.user._id
+            ]["approval_token"]
+        )
+        self.registration.registration_approval.approve(
+            user=self.user, token=approval_token
+        )
         # adds initiated, approved, and registered logs
-        assert self.registration.registered_from.logs.count() == initial_project_logs + 3
+        assert (
+            self.registration.registered_from.logs.count()
+            == initial_project_logs + 3
+        )
 
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
         Contributor.objects.create(node=self.registration, user=admin2)
         self.registration.add_permission(admin2, ADMIN, save=True)
-        self.registration.require_approval(
-            self.user
-        )
+        self.registration.require_approval(self.user)
         self.registration.save()
 
         # First admin approves
-        approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
-        self.registration.registration_approval.approve(user=self.user, token=approval_token)
+        approval_token = (
+            self.registration.registration_approval.approval_state[
+                self.user._id
+            ]["approval_token"]
+        )
+        self.registration.registration_approval.approve(
+            user=self.user, token=approval_token
+        )
         assert self.registration.is_pending_registration
-        num_of_approvals = sum([val['has_approved'] for val in self.registration.registration_approval.approval_state.values()])
+        num_of_approvals = sum(
+            [
+                val["has_approved"]
+                for val in self.registration.registration_approval.approval_state.values()
+            ]
+        )
         assert num_of_approvals == 1
 
         # Second admin approves
-        approval_token = self.registration.registration_approval.approval_state[admin2._id]['approval_token']
-        self.registration.registration_approval.approve(user=admin2, token=approval_token)
+        approval_token = (
+            self.registration.registration_approval.approval_state[admin2._id][
+                "approval_token"
+            ]
+        )
+        self.registration.registration_approval.approve(
+            user=admin2, token=approval_token
+        )
         assert not self.registration.is_pending_registration
-        num_of_approvals = sum([val['has_approved'] for val in self.registration.registration_approval.approval_state.values()])
+        num_of_approvals = sum(
+            [
+                val["has_approved"]
+                for val in self.registration.registration_approval.approval_state.values()
+            ]
+        )
         assert num_of_approvals == 2
 
-    def test_invalid_rejection_token_raises_InvalidSanctionRejectionToken(self):
-        self.registration.require_approval(
-            self.user
-        )
+    def test_invalid_rejection_token_raises_InvalidSanctionRejectionToken(
+        self,
+    ):
+        self.registration.require_approval(self.user)
         self.registration.save()
         assert self.registration.is_pending_registration
         with pytest.raises(InvalidSanctionRejectionToken):
-            self.registration.registration_approval.reject(user=self.user, token=fake.sentence())
+            self.registration.registration_approval.reject(
+                user=self.user, token=fake.sentence()
+            )
         assert self.registration.is_pending_registration
 
     def test_non_admin_rejection_token_raises_PermissionsError(self):
         non_admin = UserFactory()
-        self.registration.require_approval(
-            self.user
-        )
+        self.registration.require_approval(self.user)
         self.registration.save()
         assert self.registration.is_pending_registration
 
-        rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+        rejection_token = (
+            self.registration.registration_approval.approval_state[
+                self.user._id
+            ]["rejection_token"]
+        )
         with pytest.raises(PermissionsError):
-            self.registration.registration_approval.reject(user=non_admin, token=rejection_token)
+            self.registration.registration_approval.reject(
+                user=non_admin, token=rejection_token
+            )
         assert self.registration.is_pending_registration
 
     def test_one_disapproval_cancels_registration_approval(self):
-        self.registration.require_approval(
-            self.user
-        )
+        self.registration.require_approval(self.user)
         self.registration.save()
         assert self.registration.is_pending_registration
 
-        rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
-        self.registration.registration_approval.reject(user=self.user, token=rejection_token)
-        assert self.registration.registration_approval.state == Sanction.REJECTED
+        rejection_token = (
+            self.registration.registration_approval.approval_state[
+                self.user._id
+            ]["rejection_token"]
+        )
+        self.registration.registration_approval.reject(
+            user=self.user, token=rejection_token
+        )
+        assert (
+            self.registration.registration_approval.state == Sanction.REJECTED
+        )
         assert not self.registration.is_pending_registration
 
     def test_disapproval_adds_to_parent_projects_log(self):
@@ -187,57 +242,72 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.registration.require_approval(self.user)
         self.registration.save()
 
-        rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+        rejection_token = (
+            self.registration.registration_approval.approval_state[
+                self.user._id
+            ]["rejection_token"]
+        )
         registered_from = self.registration.registered_from
-        self.registration.registration_approval.reject(user=self.user, token=rejection_token)
+        self.registration.registration_approval.reject(
+            user=self.user, token=rejection_token
+        )
         # Logs: Created, registered, embargo initiated, embargo cancelled
         assert registered_from.logs.count() == initial_project_logs + 2
 
-    def test_cancelling_registration_approval_deletes_parent_registration(self):
-        self.registration.require_approval(
-            self.user
-        )
+    def test_cancelling_registration_approval_deletes_parent_registration(
+        self,
+    ):
+        self.registration.require_approval(self.user)
         self.registration.save()
 
-        rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
-        self.registration.registration_approval.reject(user=self.user, token=rejection_token)
+        rejection_token = (
+            self.registration.registration_approval.approval_state[
+                self.user._id
+            ]["rejection_token"]
+        )
+        self.registration.registration_approval.reject(
+            user=self.user, token=rejection_token
+        )
         self.registration.reload()
-        assert self.registration.registration_approval.state == Sanction.REJECTED
+        assert (
+            self.registration.registration_approval.state == Sanction.REJECTED
+        )
         assert self.registration.is_deleted
 
-    def test_cancelling_registration_approval_deletes_component_registrations(self):
+    def test_cancelling_registration_approval_deletes_component_registrations(
+        self,
+    ):
         component = NodeFactory(
-            creator=self.user,
-            parent=self.project,
-            title='Component'
+            creator=self.user, parent=self.project, title="Component"
         )
-        NodeFactory(
-            creator=self.user,
-            parent=component,
-            title='Subcomponent'
-        )
+        NodeFactory(creator=self.user, parent=component, title="Subcomponent")
         project_registration = RegistrationFactory(project=self.project)
         component_registration = project_registration._nodes.first()
         subcomponent_registration = component_registration._nodes.first()
-        project_registration.require_approval(
-            self.user
-        )
+        project_registration.require_approval(self.user)
         project_registration.save()
 
-        rejection_token = project_registration.registration_approval.approval_state[self.user._id]['rejection_token']
-        project_registration.registration_approval.reject(user=self.user, token=rejection_token)
+        rejection_token = (
+            project_registration.registration_approval.approval_state[
+                self.user._id
+            ]["rejection_token"]
+        )
+        project_registration.registration_approval.reject(
+            user=self.user, token=rejection_token
+        )
         project_registration.reload()
         component_registration.reload()
         subcomponent_registration.reload()
-        assert project_registration.registration_approval.state == Sanction.REJECTED
+        assert (
+            project_registration.registration_approval.state
+            == Sanction.REJECTED
+        )
         assert project_registration.is_deleted
         assert component_registration.is_deleted
         assert subcomponent_registration.is_deleted
 
     def test_new_registration_is_pending_registration(self):
-        self.registration.require_approval(
-            self.user
-        )
+        self.registration.require_approval(self.user)
         self.registration.save()
         assert self.registration.is_pending_registration
 
@@ -246,37 +316,45 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.registration.external_registration = True
         self.registration.save()
 
-        contributors = self.project.get_active_contributors_recursive(unique_users=True)
+        contributors = self.project.get_active_contributors_recursive(
+            unique_users=True
+        )
 
         assert self.registration.external_registration
         assert self.registration.registration_approval.should_suppress_emails
 
         # Tests email suppression for on_complete_notify_initiator
         self.registration.require_approval(
-            self.user,
-            notify_initiator_on_complete=True
+            self.user, notify_initiator_on_complete=True
         )
         self.registration.save()
-        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify_initiator:
+        with mock.patch.object(
+            SanctionCallbackMixin, "_notify_initiator"
+        ) as mock_notify_initiator:
             self.registration.registration_approval.accept()
         assert mock_notify_initiator.call_count == 0
 
         # Tests email suppression for ask()
-        with mock.patch.object(EmailApprovableSanction, '_notify_authorizer') as mock_notify_authorizer:
+        with mock.patch.object(
+            EmailApprovableSanction, "_notify_authorizer"
+        ) as mock_notify_authorizer:
             self.registration.sanction.ask(contributors)
         assert mock_notify_authorizer.call_count == 0
 
-        with mock.patch.object(EmailApprovableSanction, '_notify_non_authorizer') as mock_notify_non_authorizer:
+        with mock.patch.object(
+            EmailApprovableSanction, "_notify_non_authorizer"
+        ) as mock_notify_non_authorizer:
             self.registration.sanction.ask(contributors)
         assert mock_notify_non_authorizer.call_count == 0
 
     def test_on_complete_notify_initiator(self):
         self.registration.require_approval(
-            self.user,
-            notify_initiator_on_complete=True
+            self.user, notify_initiator_on_complete=True
         )
         self.registration.save()
-        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(
+            SanctionCallbackMixin, "_notify_initiator"
+        ) as mock_notify:
             self.registration.registration_approval.accept()
         assert mock_notify.call_count == 1
 
@@ -286,21 +364,26 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         grandchild_admin = UserFactory()
 
         project = ProjectFactory(creator=project_admin, is_public=False)
-        child = NodeFactory(creator=child_admin, parent=project, is_public=False)
-        grandchild = NodeFactory(creator=grandchild_admin, parent=child, is_public=False)  # noqa
+        child = NodeFactory(
+            creator=child_admin, parent=project, is_public=False
+        )
+        grandchild = NodeFactory(
+            creator=grandchild_admin, parent=child, is_public=False
+        )  # noqa
 
         registration = RegistrationFactory(project=project)
-        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator'):
+        with mock.patch.object(SanctionCallbackMixin, "_notify_initiator"):
             registration.registration_approval.accept()
 
     def test_accept_raises_error_if_project_is_spam(self):
         self.registration.require_approval(
-            self.user,
-            notify_initiator_on_complete=True
+            self.user, notify_initiator_on_complete=True
         )
         self.registration.spam_status = SpamStatus.FLAGGED
         self.registration.save()
-        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(
+            SanctionCallbackMixin, "_notify_initiator"
+        ) as mock_notify:
             with pytest.raises(NodeStateError):
                 self.registration.registration_approval.accept()
         assert mock_notify.call_count == 0

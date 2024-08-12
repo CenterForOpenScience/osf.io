@@ -12,7 +12,7 @@ class Brand(BaseModel):
         permissions = (
             # Clashes with built-in permissions
             # ('view_brand', 'Can view brand details'),
-            ('modify_brand', 'Can modify brands'),
+            ("modify_brand", "Can modify brands"),
         )
 
     name = models.CharField(max_length=30, blank=True, null=True)
@@ -25,4 +25,4 @@ class Brand(BaseModel):
     secondary_color = models.CharField(max_length=7)
 
     def __str__(self):
-        return f'{self.name} ({self.id})'
+        return f"{self.name} ({self.id})"

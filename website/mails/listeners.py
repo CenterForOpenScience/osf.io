@@ -16,22 +16,32 @@ def queue_no_addon_email(user):
     `settings.NO_ADDON_WAIT_TIME` months of signing up for the OSF.
     """
     from osf.models.queued_mail import queue_mail, NO_ADDON
+
     queue_mail(
         to_addr=user.username,
         mail=NO_ADDON,
         send_at=timezone.now() + settings.NO_ADDON_WAIT_TIME,
         user=user,
-        fullname=user.fullname
+        fullname=user.fullname,
     )
+
 
 @project_signals.privacy_set_public.connect
 def queue_first_public_project_email(user, node, meeting_creation):
     """Queue and email after user has made their first
     non-OSF4M project public.
     """
-    from osf.models.queued_mail import queue_mail, QueuedMail, NEW_PUBLIC_PROJECT_TYPE, NEW_PUBLIC_PROJECT
+    from osf.models.queued_mail import (
+        queue_mail,
+        QueuedMail,
+        NEW_PUBLIC_PROJECT_TYPE,
+        NEW_PUBLIC_PROJECT,
+    )
+
     if not meeting_creation:
-        sent_mail = QueuedMail.objects.filter(user=user, email_type=NEW_PUBLIC_PROJECT_TYPE)
+        sent_mail = QueuedMail.objects.filter(
+            user=user, email_type=NEW_PUBLIC_PROJECT_TYPE
+        )
         if not sent_mail.exists():
             queue_mail(
                 to_addr=user.username,
@@ -44,11 +54,13 @@ def queue_first_public_project_email(user, node, meeting_creation):
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
             )
 
+
 @conference_signals.osf4m_user_created.connect
 def queue_osf4m_welcome_email(user, conference, node):
     """Queue an email once a new user is created for OSF Meetings"""
     from osf.models.queued_mail import queue_mail, WELCOME_OSF4M
-    root = (node.get_addon('osfstorage')).get_root()
+
+    root = (node.get_addon("osfstorage")).get_root()
     root_children = [child for child in root.children if child.is_file]
     queue_mail(
         to_addr=user.username,

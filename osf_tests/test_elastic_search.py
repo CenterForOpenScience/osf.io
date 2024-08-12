@@ -31,27 +31,35 @@ from tests.test_features import requires_search
 from tests.utils import run_celery_tasks
 from osf.utils.workflows import CollectionSubmissionStates
 
-TEST_INDEX = 'test'
+TEST_INDEX = "test"
+
 
 def query(term, raw=False):
-    results = search.search(build_query(term), index=elastic_search.INDEX, raw=raw)
+    results = search.search(
+        build_query(term), index=elastic_search.INDEX, raw=raw
+    )
     return results
+
 
 def query_collections(name):
     term = f'category:collectionSubmission AND "{name}"'
     return query(term, raw=True)
 
+
 def query_user(name):
     term = f'category:user AND "{name}"'
     return query(term)
+
 
 def query_file(name):
     term = f'category:file AND "{name}"'
     return query(term)
 
+
 def query_tag_file(name):
     term = f'category:file AND (tags:u"{name}")'
     return query(term)
+
 
 def retry_assertion(interval=0.3, retries=3):
     def test_wrapper(func):
@@ -65,21 +73,28 @@ def retry_assertion(interval=0.3, retries=3):
             except AssertionError as e:
                 if retries:
                     time.sleep(t_interval)
-                    retry_assertion(interval=t_interval, retries=t_retries - 1)(func)(*args, **kwargs)
+                    retry_assertion(
+                        interval=t_interval, retries=t_retries - 1
+                    )(func)(*args, **kwargs)
                 else:
                     raise e
+
         return wrapped
+
     return test_wrapper
 
+
 def create_file_version(file, user):
-    file.create_version(user, {
-        'object': '06d80e',
-        'service': 'cloud',
-        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-    }, {
-        'size': 7,
-        'contentType': 'img/png'
-    }).save()
+    file.create_version(
+        user,
+        {
+            "object": "06d80e",
+            "service": "cloud",
+            osfstorage_settings.WATERBUTLER_RESOURCE: "osf",
+        },
+        {"size": 7, "contentType": "img/png"},
+    ).save()
+
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
@@ -89,30 +104,63 @@ class TestCollectionsSearch(OsfTestCase):
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
-        self.user = factories.UserFactory(fullname='Salif Keita')
-        self.node_private = factories.NodeFactory(creator=self.user, title='Salif Keita: Madan', is_public=False)
-        self.node_public = factories.NodeFactory(creator=self.user, title='Salif Keita: Yamore', is_public=True)
-        self.node_one = factories.NodeFactory(creator=self.user, title='Salif Keita: Mandjou', is_public=True)
-        self.node_two = factories.NodeFactory(creator=self.user, title='Salif Keita: Tekere', is_public=True)
-        self.reg_private = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=False, archive=True)
-        self.reg_public = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True, archive=True)
-        self.reg_one = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True, archive=True)
+        self.user = factories.UserFactory(fullname="Salif Keita")
+        self.node_private = factories.NodeFactory(
+            creator=self.user, title="Salif Keita: Madan", is_public=False
+        )
+        self.node_public = factories.NodeFactory(
+            creator=self.user, title="Salif Keita: Yamore", is_public=True
+        )
+        self.node_one = factories.NodeFactory(
+            creator=self.user, title="Salif Keita: Mandjou", is_public=True
+        )
+        self.node_two = factories.NodeFactory(
+            creator=self.user, title="Salif Keita: Tekere", is_public=True
+        )
+        self.reg_private = factories.RegistrationFactory(
+            title="Salif Keita: Madan",
+            creator=self.user,
+            is_public=False,
+            archive=True,
+        )
+        self.reg_public = factories.RegistrationFactory(
+            title="Salif Keita: Madan",
+            creator=self.user,
+            is_public=True,
+            archive=True,
+        )
+        self.reg_one = factories.RegistrationFactory(
+            title="Salif Keita: Madan",
+            creator=self.user,
+            is_public=True,
+            archive=True,
+        )
         self.provider = factories.CollectionProviderFactory()
         self.reg_provider = factories.RegistrationProviderFactory()
-        self.collection_one = factories.CollectionFactory(creator=self.user, is_public=True, provider=self.provider)
-        self.collection_public = factories.CollectionFactory(creator=self.user, is_public=True, provider=self.provider)
-        self.collection_private = factories.CollectionFactory(creator=self.user, is_public=False, provider=self.provider)
-        self.reg_collection = factories.CollectionFactory(creator=self.user, provider=self.reg_provider, is_public=True)
-        self.reg_collection_private = factories.CollectionFactory(creator=self.user, provider=self.reg_provider, is_public=False)
+        self.collection_one = factories.CollectionFactory(
+            creator=self.user, is_public=True, provider=self.provider
+        )
+        self.collection_public = factories.CollectionFactory(
+            creator=self.user, is_public=True, provider=self.provider
+        )
+        self.collection_private = factories.CollectionFactory(
+            creator=self.user, is_public=False, provider=self.provider
+        )
+        self.reg_collection = factories.CollectionFactory(
+            creator=self.user, provider=self.reg_provider, is_public=True
+        )
+        self.reg_collection_private = factories.CollectionFactory(
+            creator=self.user, provider=self.reg_provider, is_public=False
+        )
 
     def test_only_public_collections_submissions_are_searchable(self):
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         self.collection_public.collect_object(self.node_private, self.user)
         self.reg_collection.collect_object(self.reg_private, self.user)
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         assert not self.node_one.collection_submissions.filter(
@@ -136,49 +184,49 @@ class TestCollectionsSearch(OsfTestCase):
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 3
 
         self.collection_private.collect_object(self.node_two, self.user)
         self.reg_collection_private.collect_object(self.reg_one, self.user)
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 3
 
     def test_index_on_submission_privacy_changes(self):
         # test_submissions_turned_private_are_deleted_from_index
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         self.collection_public.collect_object(self.node_one, self.user)
         self.collection_one.collect_object(self.node_one, self.user)
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 2
 
         with run_celery_tasks():
             self.node_one.is_public = False
             self.node_one.save()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         # test_submissions_turned_public_are_added_to_index
         self.collection_public.collect_object(self.node_private, self.user)
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         with run_celery_tasks():
             self.node_private.is_public = True
             self.node_private.save()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 1
 
     def test_index_on_collection_privacy_changes(self):
         # test_submissions_of_collection_turned_private_are_removed_from_index
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         self.collection_public.collect_object(self.node_one, self.user)
@@ -186,7 +234,7 @@ class TestCollectionsSearch(OsfTestCase):
         self.collection_public.collect_object(self.node_public, self.user)
         self.reg_collection.collect_object(self.reg_public, self.user)
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 4
 
         with run_celery_tasks():
@@ -195,7 +243,7 @@ class TestCollectionsSearch(OsfTestCase):
             self.reg_collection.is_public = False
             self.reg_collection.save()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         # test_submissions_of_collection_turned_public_are_added_to_index
@@ -217,7 +265,7 @@ class TestCollectionsSearch(OsfTestCase):
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         with run_celery_tasks():
@@ -226,11 +274,11 @@ class TestCollectionsSearch(OsfTestCase):
             self.reg_collection.is_public = True
             self.reg_collection.save()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 4
 
     def test_collection_submissions_are_removed_from_index_on_delete(self):
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
         self.collection_public.collect_object(self.node_one, self.user)
@@ -238,7 +286,7 @@ class TestCollectionsSearch(OsfTestCase):
         self.collection_public.collect_object(self.node_public, self.user)
         self.reg_collection.collect_object(self.reg_public, self.user)
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 4
         self.collection_public.delete()
         self.reg_collection.delete()
@@ -246,7 +294,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert self.collection_public.deleted
         assert self.reg_collection.deleted
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
     def test_removed_submission_are_removed_from_index(self):
@@ -259,7 +307,7 @@ class TestCollectionsSearch(OsfTestCase):
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 2
 
         self.collection_public.remove_object(self.node_one, Auth(self.user))
@@ -271,338 +319,380 @@ class TestCollectionsSearch(OsfTestCase):
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
 
-        docs = query_collections('Salif Keita')['results']
+        docs = query_collections("Salif Keita")["results"]
         assert len(docs) == 0
 
     def test_collection_submission_doc_structure(self):
         self.collection_public.collect_object(self.node_one, self.user)
-        docs = query_collections('Keita')['results']
-        assert docs[0]['_source']['title'] == self.node_one.title
+        docs = query_collections("Keita")["results"]
+        assert docs[0]["_source"]["title"] == self.node_one.title
         with run_celery_tasks():
-            self.node_one.title = 'Keita Royal Family of Mali'
+            self.node_one.title = "Keita Royal Family of Mali"
             self.node_one.save()
-        docs = query_collections('Keita')['results']
-        assert docs[0]['_source']['title'] == self.node_one.title
-        assert docs[0]['_source']['abstract'] == self.node_one.description
-        assert docs[0]['_source']['contributors'][0]['url'] == self.user.url
-        assert docs[0]['_source']['contributors'][0]['fullname'] == self.user.fullname
-        assert docs[0]['_source']['url'] == self.node_one.url
-        assert docs[0]['_source']['id'] == '{}-{}'.format(self.node_one._id,
-            self.node_one.collection_submissions[0].collection._id)
-        assert docs[0]['_source']['category'] == 'collectionSubmission'
+        docs = query_collections("Keita")["results"]
+        assert docs[0]["_source"]["title"] == self.node_one.title
+        assert docs[0]["_source"]["abstract"] == self.node_one.description
+        assert docs[0]["_source"]["contributors"][0]["url"] == self.user.url
+        assert (
+            docs[0]["_source"]["contributors"][0]["fullname"]
+            == self.user.fullname
+        )
+        assert docs[0]["_source"]["url"] == self.node_one.url
+        assert docs[0]["_source"]["id"] == "{}-{}".format(
+            self.node_one._id,
+            self.node_one.collection_submissions[0].collection._id,
+        )
+        assert docs[0]["_source"]["category"] == "collectionSubmission"
 
     def test_search_updated_after_id_change(self):
-        self.provider.primary_collection.collect_object(self.node_one, self.node_one.creator)
+        self.provider.primary_collection.collect_object(
+            self.node_one, self.node_one.creator
+        )
         with run_celery_tasks():
             self.node_one.save()
-        term = f'provider:{self.provider._id}'
-        docs = search.search(build_query(term), index=elastic_search.INDEX, raw=True)
-        assert len(docs['results']) == 1
-        self.provider._id = 'new_id'
+        term = f"provider:{self.provider._id}"
+        docs = search.search(
+            build_query(term), index=elastic_search.INDEX, raw=True
+        )
+        assert len(docs["results"]) == 1
+        self.provider._id = "new_id"
         self.provider.save()
-        docs = query('provider:new_id', raw=True)['results']
+        docs = query("provider:new_id", raw=True)["results"]
         assert len(docs) == 1
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestUserUpdate(OsfTestCase):
-
     def setUp(self):
         super().setUp()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-        self.user = factories.UserFactory(fullname='David Bowie')
+        self.user = factories.UserFactory(fullname="David Bowie")
 
     def test_new_user(self):
         # Verify that user has been added to Elastic Search
-        docs = query_user(self.user.fullname)['results']
+        docs = query_user(self.user.fullname)["results"]
         assert len(docs) == 1
 
     def test_new_user_unconfirmed(self):
         user = factories.UnconfirmedUserFactory()
-        docs = query_user(user.fullname)['results']
+        docs = query_user(user.fullname)["results"]
         assert len(docs) == 0
         token = user.get_confirmation_token(user.username)
         user.confirm_email(token)
         user.save()
-        docs = query_user(user.fullname)['results']
+        docs = query_user(user.fullname)["results"]
         assert len(docs) == 1
 
     @retry_assertion
     def test_change_name(self):
         # Add a user, change her name, and verify that only the new name is
         # found in search.
-        user = factories.UserFactory(fullname='Barry Mitchell')
+        user = factories.UserFactory(fullname="Barry Mitchell")
         fullname_original = user.fullname
         user.fullname = user.fullname[::-1]
         user.save()
 
-        docs_original = query_user(fullname_original)['results']
+        docs_original = query_user(fullname_original)["results"]
         assert len(docs_original) == 0
 
-        docs_current = query_user(user.fullname)['results']
+        docs_current = query_user(user.fullname)["results"]
         assert len(docs_current) == 1
 
     def test_disabled_user(self):
         # Test that disabled users are not in search index
 
-        user = factories.UserFactory(fullname='Bettie Page')
+        user = factories.UserFactory(fullname="Bettie Page")
         user.save()
 
         # Ensure user is in search index
-        assert len(query_user(user.fullname)['results']) == 1
+        assert len(query_user(user.fullname)["results"]) == 1
 
         # Disable the user
         user.is_disabled = True
         user.save()
 
         # Ensure user is not in search index
-        assert len(query_user(user.fullname)['results']) == 0
+        assert len(query_user(user.fullname)["results"]) == 0
 
     def test_merged_user(self):
-        user = factories.UserFactory(fullname='Annie Lennox')
-        merged_user = factories.UserFactory(fullname='Lisa Stansfield')
+        user = factories.UserFactory(fullname="Annie Lennox")
+        merged_user = factories.UserFactory(fullname="Lisa Stansfield")
         user.save()
         merged_user.save()
-        assert len(query_user(user.fullname)['results']) == 1
-        assert len(query_user(merged_user.fullname)['results']) == 1
+        assert len(query_user(user.fullname)["results"]) == 1
+        assert len(query_user(merged_user.fullname)["results"]) == 1
 
         user.merge_user(merged_user)
 
-        assert len(query_user(user.fullname)['results']) == 1
-        assert len(query_user(merged_user.fullname)['results']) == 0
+        assert len(query_user(user.fullname)["results"]) == 1
+        assert len(query_user(merged_user.fullname)["results"]) == 0
 
     def test_employment(self):
-        user = factories.UserFactory(fullname='Helga Finn')
+        user = factories.UserFactory(fullname="Helga Finn")
         user.save()
-        institution = 'Finn\'s Fine Filers'
+        institution = "Finn's Fine Filers"
 
-        docs = query_user(institution)['results']
+        docs = query_user(institution)["results"]
         assert len(docs) == 0
-        user.jobs.append({
-            'institution': institution,
-            'title': 'The Big Finn',
-        })
+        user.jobs.append(
+            {
+                "institution": institution,
+                "title": "The Big Finn",
+            }
+        )
         user.save()
 
-        docs = query_user(institution)['results']
+        docs = query_user(institution)["results"]
         assert len(docs) == 1
 
     def test_education(self):
-        user = factories.UserFactory(fullname='Henry Johnson')
+        user = factories.UserFactory(fullname="Henry Johnson")
         user.save()
-        institution = 'Henry\'s Amazing School!!!'
+        institution = "Henry's Amazing School!!!"
 
-        docs = query_user(institution)['results']
+        docs = query_user(institution)["results"]
         assert len(docs) == 0
-        user.schools.append({
-            'institution': institution,
-            'degree': 'failed all classes',
-        })
+        user.schools.append(
+            {
+                "institution": institution,
+                "degree": "failed all classes",
+            }
+        )
         user.save()
 
-        docs = query_user(institution)['results']
+        docs = query_user(institution)["results"]
         assert len(docs) == 1
 
     def test_name_fields(self):
-        names = ['Bill Nye', 'William', 'the science guy', 'Sanford', 'the Great']
+        names = [
+            "Bill Nye",
+            "William",
+            "the science guy",
+            "Sanford",
+            "the Great",
+        ]
         user = factories.UserFactory(fullname=names[0])
         user.given_name = names[1]
         user.middle_names = names[2]
         user.family_name = names[3]
         user.suffix = names[4]
         user.save()
-        docs = [query_user(name)['results'] for name in names]
+        docs = [query_user(name)["results"] for name in names]
         assert sum(map(len, docs)) == len(docs)  # 1 result each
-        assert all([user._id == doc[0]['id'] for doc in docs])
+        assert all([user._id == doc[0]["id"] for doc in docs])
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestProject(OsfTestCase):
-
     def setUp(self):
         super().setUp()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-        self.user = factories.UserFactory(fullname='John Deacon')
-        self.project = factories.ProjectFactory(title='Red Special', creator=self.user)
+        self.user = factories.UserFactory(fullname="John Deacon")
+        self.project = factories.ProjectFactory(
+            title="Red Special", creator=self.user
+        )
 
     def test_new_project_private(self):
         # Verify that a private project is not present in Elastic Search.
-        docs = query(self.project.title)['results']
+        docs = query(self.project.title)["results"]
         assert len(docs) == 0
 
     def test_make_public(self):
         # Make project public, and verify that it is present in Elastic
         # Search.
         with run_celery_tasks():
-            self.project.set_privacy('public')
-        docs = query(self.project.title)['results']
+            self.project.set_privacy("public")
+        docs = query(self.project.title)["results"]
         assert len(docs) == 1
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestOSFGroup(OsfTestCase):
-
     def setUp(self):
         with run_celery_tasks():
             super().setUp()
             search.delete_index(elastic_search.INDEX)
             search.create_index(elastic_search.INDEX)
-            self.user = factories.UserFactory(fullname='John Deacon')
-            self.user_two = factories.UserFactory(fullname='Grapes McGee')
+            self.user = factories.UserFactory(fullname="John Deacon")
+            self.user_two = factories.UserFactory(fullname="Grapes McGee")
             self.group = OSFGroup(
-                name='Cornbread',
+                name="Cornbread",
                 creator=self.user,
             )
             self.group.save()
-            self.project = factories.ProjectFactory(is_public=True, creator=self.user, title='Biscuits')
+            self.project = factories.ProjectFactory(
+                is_public=True, creator=self.user, title="Biscuits"
+            )
             self.project.save()
 
     def test_create_osf_group(self):
-        title = 'Butter'
+        title = "Butter"
         group = OSFGroup(name=title, creator=self.user)
         group.save()
-        docs = query(title)['results']
+        docs = query(title)["results"]
         assert len(docs) == 1
 
     def test_set_group_name(self):
-        title = 'Eggs'
+        title = "Eggs"
         self.group.set_group_name(title)
         self.group.save()
-        docs = query(title)['results']
+        docs = query(title)["results"]
         assert len(docs) == 1
 
-        docs = query('Cornbread')['results']
+        docs = query("Cornbread")["results"]
         assert len(docs) == 0
 
     def test_add_member(self):
         self.group.make_member(self.user_two)
-        docs = query(f'category:group AND "{self.user_two.fullname}"')['results']
+        docs = query(f'category:group AND "{self.user_two.fullname}"')[
+            "results"
+        ]
         assert len(docs) == 1
 
         self.group.make_manager(self.user_two)
-        docs = query(f'category:group AND "{self.user_two.fullname}"')['results']
+        docs = query(f'category:group AND "{self.user_two.fullname}"')[
+            "results"
+        ]
         assert len(docs) == 1
 
         self.group.remove_member(self.user_two)
-        docs = query(f'category:group AND "{self.user_two.fullname}"')['results']
+        docs = query(f'category:group AND "{self.user_two.fullname}"')[
+            "results"
+        ]
         assert len(docs) == 0
 
     def test_connect_to_node(self):
         self.project.add_osf_group(self.group)
-        docs = query(f'category:project AND "{self.group.name}"')['results']
+        docs = query(f'category:project AND "{self.group.name}"')["results"]
         assert len(docs) == 1
 
         self.project.remove_osf_group(self.group)
-        docs = query(f'category:project AND "{self.group.name}"')['results']
+        docs = query(f'category:project AND "{self.group.name}"')["results"]
         assert len(docs) == 0
 
     def test_remove_group(self):
         group_name = self.group.name
         self.project.add_osf_group(self.group)
-        docs = query(f'category:project AND "{group_name}"')['results']
+        docs = query(f'category:project AND "{group_name}"')["results"]
         assert len(docs) == 1
 
         self.group.remove_group()
-        docs = query(f'category:project AND "{group_name}"')['results']
+        docs = query(f'category:project AND "{group_name}"')["results"]
         assert len(docs) == 0
-        docs = query(group_name)['results']
+        docs = query(group_name)["results"]
         assert len(docs) == 0
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestPreprint(OsfTestCase):
-
     def setUp(self):
         with run_celery_tasks():
             super().setUp()
             search.delete_index(elastic_search.INDEX)
             search.create_index(elastic_search.INDEX)
-            self.user = factories.UserFactory(fullname='John Deacon')
+            self.user = factories.UserFactory(fullname="John Deacon")
             self.preprint = Preprint(
-                title='Red Special',
-                description='We are the champions',
+                title="Red Special",
+                description="We are the champions",
                 creator=self.user,
-                provider=factories.PreprintProviderFactory()
+                provider=factories.PreprintProviderFactory(),
             )
             self.preprint.save()
             self.file = OsfStorageFile.create(
                 target=self.preprint,
-                path='/panda.txt',
-                name='panda.txt',
-                materialized_path='/panda.txt')
+                path="/panda.txt",
+                name="panda.txt",
+                materialized_path="/panda.txt",
+            )
             self.file.save()
             create_file_version(self.file, self.user)
             self.published_preprint = factories.PreprintFactory(
                 creator=self.user,
-                title='My Fairy King',
-                description='Under pressure',
+                title="My Fairy King",
+                description="Under pressure",
             )
 
     def test_new_preprint_unsubmitted(self):
         # Verify that an unsubmitted preprint is not present in Elastic Search.
-        title = 'Apple'
+        title = "Apple"
         self.preprint.title = title
         self.preprint.save()
-        docs = query(title)['results']
+        docs = query(title)["results"]
         assert len(docs) == 0
 
     def test_new_preprint_unpublished(self):
         # Verify that an unpublished preprint is not present in Elastic Search.
-        title = 'Banana'
-        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False, title=title)
+        title = "Banana"
+        self.preprint = factories.PreprintFactory(
+            creator=self.user, is_published=False, title=title
+        )
         assert self.preprint.title == title
-        docs = query(title)['results']
+        docs = query(title)["results"]
         assert len(docs) == 0
 
     def test_unsubmitted_preprint_primary_file(self):
         # Unpublished preprint's primary_file not showing up in Elastic Search
-        title = 'Cantaloupe'
+        title = "Cantaloupe"
         self.preprint.title = title
-        self.preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
+        self.preprint.set_primary_file(
+            self.file, auth=Auth(self.user), save=True
+        )
         assert self.preprint.title == title
-        docs = query(title)['results']
+        docs = query(title)["results"]
         assert len(docs) == 0
 
     def test_publish_preprint(self):
-        title = 'Date'
-        self.preprint = factories.PreprintFactory(creator=self.user, is_published=False, title=title)
-        self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
+        title = "Date"
+        self.preprint = factories.PreprintFactory(
+            creator=self.user, is_published=False, title=title
+        )
+        self.preprint.set_published(
+            True, auth=Auth(self.preprint.creator), save=True
+        )
         assert self.preprint.title == title
-        docs = query(title)['results']
+        docs = query(title)["results"]
         # Both preprint and primary_file showing up in Elastic
         assert len(docs) == 2
 
     def test_preprint_title_change(self):
         title_original = self.published_preprint.title
-        new_title = 'New preprint title'
-        self.published_preprint.set_title(new_title, auth=Auth(self.user), save=True)
-        docs = query('category:preprint AND ' + title_original)['results']
+        new_title = "New preprint title"
+        self.published_preprint.set_title(
+            new_title, auth=Auth(self.user), save=True
+        )
+        docs = query("category:preprint AND " + title_original)["results"]
         assert len(docs) == 0
 
-        docs = query('category:preprint AND ' + new_title)['results']
+        docs = query("category:preprint AND " + new_title)["results"]
         assert len(docs) == 1
 
     def test_preprint_description_change(self):
         description_original = self.published_preprint.description
-        new_abstract = 'My preprint abstract'
-        self.published_preprint.set_description(new_abstract, auth=Auth(self.user), save=True)
-        docs = query(self.published_preprint.title)['results']
-        docs = query('category:preprint AND ' + description_original)['results']
+        new_abstract = "My preprint abstract"
+        self.published_preprint.set_description(
+            new_abstract, auth=Auth(self.user), save=True
+        )
+        docs = query(self.published_preprint.title)["results"]
+        docs = query("category:preprint AND " + description_original)[
+            "results"
+        ]
         assert len(docs) == 0
 
-        docs = query('category:preprint AND ' + new_abstract)['results']
+        docs = query("category:preprint AND " + new_abstract)["results"]
         assert len(docs) == 1
 
     def test_set_preprint_private(self):
         # Not currently an option for users, but can be used for spam
-        self.published_preprint.set_privacy('private', auth=Auth(self.user), save=True)
-        docs = query(self.published_preprint.title)['results']
+        self.published_preprint.set_privacy(
+            "private", auth=Auth(self.user), save=True
+        )
+        docs = query(self.published_preprint.title)["results"]
         # Both preprint and primary_file showing up in Elastic
         assert len(docs) == 0
 
@@ -610,236 +700,268 @@ class TestPreprint(OsfTestCase):
         # Only primary_file should be in index, if primary_file is changed, other files are removed from index.
         self.file = OsfStorageFile.create(
             target=self.published_preprint,
-            path='/panda.txt',
-            name='panda.txt',
-            materialized_path='/panda.txt')
+            path="/panda.txt",
+            name="panda.txt",
+            materialized_path="/panda.txt",
+        )
         self.file.save()
         create_file_version(self.file, self.user)
-        self.published_preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
-        docs = query(self.published_preprint.title)['results']
+        self.published_preprint.set_primary_file(
+            self.file, auth=Auth(self.user), save=True
+        )
+        docs = query(self.published_preprint.title)["results"]
         assert len(docs) == 2
-        assert docs[1]['name'] == self.file.name
+        assert docs[1]["name"] == self.file.name
 
     def test_set_license(self):
         license_details = {
-            'id': 'NONE',
-            'year': '2015',
-            'copyrightHolders': ['Iron Man']
+            "id": "NONE",
+            "year": "2015",
+            "copyrightHolders": ["Iron Man"],
         }
-        title = 'Elderberry'
+        title = "Elderberry"
         self.published_preprint.title = title
-        self.published_preprint.set_preprint_license(license_details, Auth(self.user), save=True)
+        self.published_preprint.set_preprint_license(
+            license_details, Auth(self.user), save=True
+        )
         assert self.published_preprint.title == title
-        docs = query(title)['results']
+        docs = query(title)["results"]
         assert len(docs) == 2
-        assert docs[0]['license']['copyright_holders'][0] == 'Iron Man'
-        assert docs[0]['license']['name'] == 'No license'
+        assert docs[0]["license"]["copyright_holders"][0] == "Iron Man"
+        assert docs[0]["license"]["name"] == "No license"
 
     def test_add_tags(self):
-
-        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+        tags = ["stonecoldcrazy", "just a poor boy", "from-a-poor-family"]
 
         for tag in tags:
-            docs = query(f'tags:"{tag}"')['results']
+            docs = query(f'tags:"{tag}"')["results"]
             assert len(docs) == 0
             self.published_preprint.add_tag(tag, Auth(self.user), save=True)
 
         for tag in tags:
-            docs = query(f'tags:"{tag}"')['results']
+            docs = query(f'tags:"{tag}"')["results"]
             assert len(docs) == 1
 
     def test_remove_tag(self):
-
-        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+        tags = ["stonecoldcrazy", "just a poor boy", "from-a-poor-family"]
 
         for tag in tags:
             self.published_preprint.add_tag(tag, Auth(self.user), save=True)
             self.published_preprint.remove_tag(tag, Auth(self.user), save=True)
-            docs = query(f'tags:"{tag}"')['results']
+            docs = query(f'tags:"{tag}"')["results"]
             assert len(docs) == 0
 
     def test_add_contributor(self):
         # Add a contributor, then verify that project is found when searching
         # for contributor.
-        user2 = factories.UserFactory(fullname='Adam Lambert')
+        user2 = factories.UserFactory(fullname="Adam Lambert")
 
-        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')["results"]
         assert len(docs) == 0
         # with run_celery_tasks():
         self.published_preprint.add_contributor(user2, save=True)
 
-        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')["results"]
         assert len(docs) == 1
 
     def test_remove_contributor(self):
         # Add and remove a contributor, then verify that project is not found
         # when searching for contributor.
-        user2 = factories.UserFactory(fullname='Brian May')
+        user2 = factories.UserFactory(fullname="Brian May")
 
         self.published_preprint.add_contributor(user2, save=True)
         self.published_preprint.remove_contributor(user2, Auth(self.user))
 
-        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')["results"]
         assert len(docs) == 0
 
     def test_hide_contributor(self):
-        user2 = factories.UserFactory(fullname='Brian May')
+        user2 = factories.UserFactory(fullname="Brian May")
         self.published_preprint.add_contributor(user2)
         self.published_preprint.set_visible(user2, False, save=True)
-        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')["results"]
         assert len(docs) == 0
         self.published_preprint.set_visible(user2, True, save=True)
-        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')["results"]
         assert len(docs) == 1
 
     def test_move_contributor(self):
-        user2 = factories.UserFactory(fullname='Brian May')
+        user2 = factories.UserFactory(fullname="Brian May")
         self.published_preprint.add_contributor(user2, save=True)
-        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')["results"]
         assert len(docs) == 1
-        docs[0]['contributors'][0]['fullname'] == self.user.fullname
-        docs[0]['contributors'][1]['fullname'] == user2.fullname
+        docs[0]["contributors"][0]["fullname"] == self.user.fullname
+        docs[0]["contributors"][1]["fullname"] == user2.fullname
         self.published_preprint.move_contributor(user2, Auth(self.user), 0)
-        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')["results"]
         assert len(docs) == 1
-        docs[0]['contributors'][0]['fullname'] == user2.fullname
-        docs[0]['contributors'][1]['fullname'] == self.user.fullname
+        docs[0]["contributors"][0]["fullname"] == user2.fullname
+        docs[0]["contributors"][1]["fullname"] == self.user.fullname
 
     def test_tag_aggregation(self):
-        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+        tags = ["stonecoldcrazy", "just a poor boy", "from-a-poor-family"]
 
         for tag in tags:
             self.published_preprint.add_tag(tag, Auth(self.user), save=True)
 
-        docs = query(self.published_preprint.title)['tags']
+        docs = query(self.published_preprint.title)["tags"]
         assert len(docs) == 3
         for doc in docs:
-            assert doc['key'] in tags
+            assert doc["key"] in tags
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestNodeSearch(OsfTestCase):
-
     def setUp(self):
         super().setUp()
         with run_celery_tasks():
-            self.node = factories.ProjectFactory(is_public=True, title='node')
-            self.public_child = factories.ProjectFactory(parent=self.node, is_public=True, title='public_child')
-            self.private_child = factories.ProjectFactory(parent=self.node, title='private_child')
-            self.public_subchild = factories.ProjectFactory(parent=self.private_child, is_public=True)
+            self.node = factories.ProjectFactory(is_public=True, title="node")
+            self.public_child = factories.ProjectFactory(
+                parent=self.node, is_public=True, title="public_child"
+            )
+            self.private_child = factories.ProjectFactory(
+                parent=self.node, title="private_child"
+            )
+            self.public_subchild = factories.ProjectFactory(
+                parent=self.private_child, is_public=True
+            )
             self.node.node_license = factories.NodeLicenseRecordFactory()
             self.node.save()
 
-        self.query = 'category:project & category:component'
+        self.query = "category:project & category:component"
 
     @retry_assertion()
     def test_node_license_added_to_search(self):
-        docs = query(self.query)['results']
-        node = [d for d in docs if d['title'] == self.node.title][0]
-        assert 'license' in node
-        assert node['license']['id'] == self.node.node_license.license_id
+        docs = query(self.query)["results"]
+        node = [d for d in docs if d["title"] == self.node.title][0]
+        assert "license" in node
+        assert node["license"]["id"] == self.node.node_license.license_id
 
-    @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
+    @unittest.skip(
+        "Elasticsearch latency seems to be causing theses tests to fail randomly."
+    )
     @retry_assertion(retries=10)
     def test_node_license_propogates_to_children(self):
-        docs = query(self.query)['results']
-        child = [d for d in docs if d['title'] == self.public_child.title][0]
-        assert 'license' in child
-        assert child['license'].get('id') == self.node.node_license.license_id
-        child = [d for d in docs if d['title'] == self.public_subchild.title][0]
-        assert 'license' in child
-        assert child['license'].get('id') == self.node.node_license.license_id
+        docs = query(self.query)["results"]
+        child = [d for d in docs if d["title"] == self.public_child.title][0]
+        assert "license" in child
+        assert child["license"].get("id") == self.node.node_license.license_id
+        child = [d for d in docs if d["title"] == self.public_subchild.title][
+            0
+        ]
+        assert "license" in child
+        assert child["license"].get("id") == self.node.node_license.license_id
 
-    @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
+    @unittest.skip(
+        "Elasticsearch latency seems to be causing theses tests to fail randomly."
+    )
     @retry_assertion(retries=10)
     def test_node_license_updates_correctly(self):
-        other_license = NodeLicense.objects.get(name='MIT License')
-        new_license = factories.NodeLicenseRecordFactory(node_license=other_license)
+        other_license = NodeLicense.objects.get(name="MIT License")
+        new_license = factories.NodeLicenseRecordFactory(
+            node_license=other_license
+        )
         self.node.node_license = new_license
         self.node.save()
-        docs = query(self.query)['results']
+        docs = query(self.query)["results"]
         for doc in docs:
-            assert doc['license'].get('id') == new_license.license_id
+            assert doc["license"].get("id") == new_license.license_id
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestRegistrationRetractions(OsfTestCase):
-
     def setUp(self):
         super().setUp()
-        self.user = factories.UserFactory(fullname='Doug Bogie')
-        self.title = 'Red Special'
+        self.user = factories.UserFactory(fullname="Doug Bogie")
+        self.title = "Red Special"
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory(
             title=self.title,
-            description='',
+            description="",
             creator=self.user,
             is_public=True,
         )
-        self.registration = factories.RegistrationFactory(project=self.project, is_public=True)
+        self.registration = factories.RegistrationFactory(
+            project=self.project, is_public=True
+        )
 
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    @mock.patch(
+        "osf.models.registrations.Registration.archiving",
+        mock.PropertyMock(return_value=False),
+    )
     def test_retraction_is_searchable(self):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
         self.registration.retraction.save()
         self.registration.save()
         self.registration.retraction._on_complete(self.user)
-        docs = query('category:registration AND ' + self.title)['results']
+        docs = query("category:registration AND " + self.title)["results"]
         assert len(docs) == 1
 
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    @mock.patch(
+        "osf.models.registrations.Registration.archiving",
+        mock.PropertyMock(return_value=False),
+    )
     def test_pending_retraction_wiki_content_is_searchable(self):
         # Add unique string to wiki
-        wiki_content = {'home': 'public retraction test'}
+        wiki_content = {"home": "public retraction test"}
         for key, value in wiki_content.items():
-            docs = query(value)['results']
+            docs = query(value)["results"]
             assert len(docs) == 0
             with run_celery_tasks():
-                WikiPage.objects.create_for_node(self.registration, key, value, self.consolidate_auth)
+                WikiPage.objects.create_for_node(
+                    self.registration, key, value, self.consolidate_auth
+                )
             # Query and ensure unique string shows up
-            docs = query(value)['results']
+            docs = query(value)["results"]
             assert len(docs) == 1
 
         # Query and ensure registration does show up
-        docs = query('category:registration AND ' + self.title)['results']
+        docs = query("category:registration AND " + self.title)["results"]
         assert len(docs) == 1
 
         # Retract registration
-        self.registration.retract_registration(self.user, '')
+        self.registration.retract_registration(self.user, "")
         with run_celery_tasks():
             self.registration.save()
             self.registration.reload()
 
         # Query and ensure unique string in wiki doesn't show up
-        docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
+        docs = query(
+            'category:registration AND "{}"'.format(wiki_content["home"])
+        )["results"]
         assert len(docs) == 1
 
         # Query and ensure registration does show up
-        docs = query('category:registration AND ' + self.title)['results']
+        docs = query("category:registration AND " + self.title)["results"]
         assert len(docs) == 1
 
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    @mock.patch(
+        "osf.models.registrations.Registration.archiving",
+        mock.PropertyMock(return_value=False),
+    )
     def test_retraction_wiki_content_is_not_searchable(self):
         # Add unique string to wiki
-        wiki_content = {'home': 'public retraction test'}
+        wiki_content = {"home": "public retraction test"}
         for key, value in wiki_content.items():
-            docs = query(value)['results']
+            docs = query(value)["results"]
             assert len(docs) == 0
             with run_celery_tasks():
-                WikiPage.objects.create_for_node(self.registration, key, value, self.consolidate_auth)
+                WikiPage.objects.create_for_node(
+                    self.registration, key, value, self.consolidate_auth
+                )
             # Query and ensure unique string shows up
-            docs = query(value)['results']
+            docs = query(value)["results"]
             assert len(docs) == 1
 
         # Query and ensure registration does show up
-        docs = query('category:registration AND ' + self.title)['results']
+        docs = query("category:registration AND " + self.title)["results"]
         assert len(docs) == 1
 
         # Retract registration
-        self.registration.retract_registration(self.user, '')
+        self.registration.retract_registration(self.user, "")
         self.registration.retraction.state = Retraction.APPROVED
         with run_celery_tasks():
             self.registration.retraction.save()
@@ -847,146 +969,145 @@ class TestRegistrationRetractions(OsfTestCase):
             self.registration.update_search()
 
         # Query and ensure unique string in wiki doesn't show up
-        docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
+        docs = query(
+            'category:registration AND "{}"'.format(wiki_content["home"])
+        )["results"]
         assert len(docs) == 0
 
         # Query and ensure registration does show up
-        docs = query('category:registration AND ' + self.title)['results']
+        docs = query("category:registration AND " + self.title)["results"]
         assert len(docs) == 1
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestPublicNodes(OsfTestCase):
-
     def setUp(self):
         with run_celery_tasks():
             super().setUp()
-            self.user = factories.UserFactory(fullname='Doug Bogie')
-            self.title = 'Red Special'
+            self.user = factories.UserFactory(fullname="Doug Bogie")
+            self.title = "Red Special"
             self.consolidate_auth = Auth(user=self.user)
             self.project = factories.ProjectFactory(
                 title=self.title,
-                description='',
+                description="",
                 creator=self.user,
                 is_public=True,
             )
             self.component = factories.NodeFactory(
                 parent=self.project,
-                description='',
+                description="",
                 title=self.title,
                 creator=self.user,
-                is_public=True
+                is_public=True,
             )
             self.registration = factories.RegistrationFactory(
                 title=self.title,
-                description='',
+                description="",
                 creator=self.user,
                 is_public=True,
             )
             self.registration.archive_job.target_addons.clear()
-            self.registration.archive_job.status = 'SUCCESS'
+            self.registration.archive_job.status = "SUCCESS"
             self.registration.archive_job.save()
 
     def test_make_private(self):
         # Make project public, then private, and verify that it is not present
         # in search.
         with run_celery_tasks():
-            self.project.set_privacy('private')
-        docs = query('category:project AND ' + self.title)['results']
+            self.project.set_privacy("private")
+        docs = query("category:project AND " + self.title)["results"]
         assert len(docs) == 0
 
         with run_celery_tasks():
-            self.component.set_privacy('private')
-        docs = query('category:component AND ' + self.title)['results']
+            self.component.set_privacy("private")
+        docs = query("category:component AND " + self.title)["results"]
         assert len(docs) == 0
 
     def test_search_node_partial(self):
-        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        self.project.set_title("Blue Rider-Express", self.consolidate_auth)
         with run_celery_tasks():
             self.project.save()
-        find = query('Blue')['results']
+        find = query("Blue")["results"]
         assert len(find) == 1
 
     def test_search_node_partial_with_sep(self):
-        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        self.project.set_title("Blue Rider-Express", self.consolidate_auth)
         with run_celery_tasks():
             self.project.save()
-        find = query('Express')['results']
+        find = query("Express")["results"]
         assert len(find) == 1
 
     def test_search_node_not_name(self):
-        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        self.project.set_title("Blue Rider-Express", self.consolidate_auth)
         with run_celery_tasks():
             self.project.save()
-        find = query('Green Flyer-Slow')['results']
+        find = query("Green Flyer-Slow")["results"]
         assert len(find) == 0
 
     def test_public_parent_title(self):
-        self.project.set_title('hello &amp; world', self.consolidate_auth)
+        self.project.set_title("hello &amp; world", self.consolidate_auth)
         with run_celery_tasks():
             self.project.save()
-        docs = query('category:component AND ' + self.title)['results']
+        docs = query("category:component AND " + self.title)["results"]
         assert len(docs) == 1
-        assert docs[0]['parent_title'] == 'hello & world'
-        assert docs[0]['parent_url']
+        assert docs[0]["parent_title"] == "hello & world"
+        assert docs[0]["parent_url"]
 
     def test_make_parent_private(self):
         # Make parent of component, public, then private, and verify that the
         # component still appears but doesn't link to the parent in search.
         with run_celery_tasks():
-            self.project.set_privacy('private')
-        docs = query('category:component AND ' + self.title)['results']
+            self.project.set_privacy("private")
+        docs = query("category:component AND " + self.title)["results"]
         assert len(docs) == 1
-        assert not docs[0]['parent_title']
-        assert not docs[0]['parent_url']
+        assert not docs[0]["parent_title"]
+        assert not docs[0]["parent_url"]
 
     def test_delete_project(self):
         with run_celery_tasks():
             self.component.remove_node(self.consolidate_auth)
-        docs = query('category:component AND ' + self.title)['results']
+        docs = query("category:component AND " + self.title)["results"]
         assert len(docs) == 0
 
         with run_celery_tasks():
             self.project.remove_node(self.consolidate_auth)
-        docs = query('category:project AND ' + self.title)['results']
+        docs = query("category:project AND " + self.title)["results"]
         assert len(docs) == 0
 
     def test_change_title(self):
         title_original = self.project.title
         with run_celery_tasks():
             self.project.set_title(
-                'Blue Ordinary', self.consolidate_auth, save=True
+                "Blue Ordinary", self.consolidate_auth, save=True
             )
 
-        docs = query('category:project AND ' + title_original)['results']
+        docs = query("category:project AND " + title_original)["results"]
         assert len(docs) == 0
 
-        docs = query('category:project AND ' + self.project.title)['results']
+        docs = query("category:project AND " + self.project.title)["results"]
         assert len(docs) == 1
 
     def test_add_tags(self):
-
-        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+        tags = ["stonecoldcrazy", "just a poor boy", "from-a-poor-family"]
 
         with run_celery_tasks():
             for tag in tags:
-                docs = query(f'tags:"{tag}"')['results']
+                docs = query(f'tags:"{tag}"')["results"]
                 assert len(docs) == 0
                 self.project.add_tag(tag, self.consolidate_auth, save=True)
 
         for tag in tags:
-            docs = query(f'tags:"{tag}"')['results']
+            docs = query(f'tags:"{tag}"')["results"]
             assert len(docs) == 1
 
     def test_remove_tag(self):
-
-        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+        tags = ["stonecoldcrazy", "just a poor boy", "from-a-poor-family"]
 
         for tag in tags:
             self.project.add_tag(tag, self.consolidate_auth, save=True)
             self.project.remove_tag(tag, self.consolidate_auth, save=True)
-            docs = query(f'tags:"{tag}"')['results']
+            docs = query(f'tags:"{tag}"')["results"]
             assert len(docs) == 0
 
     def test_update_wiki(self):
@@ -994,85 +1115,86 @@ class TestPublicNodes(OsfTestCase):
         searching for wiki text.
 
         """
-        wiki_content = {
-            'home': 'Hammer to fall',
-            'swag': '#YOLO'
-        }
+        wiki_content = {"home": "Hammer to fall", "swag": "#YOLO"}
         for key, value in wiki_content.items():
-            docs = query(value)['results']
+            docs = query(value)["results"]
             assert len(docs) == 0
             with run_celery_tasks():
-                WikiPage.objects.create_for_node(self.project, key, value, self.consolidate_auth)
-            docs = query(value)['results']
+                WikiPage.objects.create_for_node(
+                    self.project, key, value, self.consolidate_auth
+                )
+            docs = query(value)["results"]
             assert len(docs) == 1
 
     def test_clear_wiki(self):
         # Add wiki text to page, then delete, then verify that project is not
         # found when searching for wiki text.
-        wiki_content = 'Hammer to fall'
-        wp = WikiPage.objects.create_for_node(self.project, 'home', wiki_content, self.consolidate_auth)
+        wiki_content = "Hammer to fall"
+        wp = WikiPage.objects.create_for_node(
+            self.project, "home", wiki_content, self.consolidate_auth
+        )
 
         with run_celery_tasks():
-            wp.update(self.user, '')
+            wp.update(self.user, "")
 
-        docs = query(wiki_content)['results']
+        docs = query(wiki_content)["results"]
         assert len(docs) == 0
 
     def test_add_contributor(self):
         # Add a contributor, then verify that project is found when searching
         # for contributor.
-        user2 = factories.UserFactory(fullname='Adam Lambert')
+        user2 = factories.UserFactory(fullname="Adam Lambert")
 
-        docs = query(f'category:project AND "{user2.fullname}"')['results']
+        docs = query(f'category:project AND "{user2.fullname}"')["results"]
         assert len(docs) == 0
         with run_celery_tasks():
             self.project.add_contributor(user2, save=True)
 
-        docs = query(f'category:project AND "{user2.fullname}"')['results']
+        docs = query(f'category:project AND "{user2.fullname}"')["results"]
         assert len(docs) == 1
 
     def test_remove_contributor(self):
         # Add and remove a contributor, then verify that project is not found
         # when searching for contributor.
-        user2 = factories.UserFactory(fullname='Brian May')
+        user2 = factories.UserFactory(fullname="Brian May")
 
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.consolidate_auth)
 
-        docs = query(f'category:project AND "{user2.fullname}"')['results']
+        docs = query(f'category:project AND "{user2.fullname}"')["results"]
         assert len(docs) == 0
 
     def test_hide_contributor(self):
-        user2 = factories.UserFactory(fullname='Brian May')
+        user2 = factories.UserFactory(fullname="Brian May")
         self.project.add_contributor(user2)
         with run_celery_tasks():
             self.project.set_visible(user2, False, save=True)
-        docs = query(f'category:project AND "{user2.fullname}"')['results']
+        docs = query(f'category:project AND "{user2.fullname}"')["results"]
         assert len(docs) == 0
         with run_celery_tasks():
             self.project.set_visible(user2, True, save=True)
-        docs = query(f'category:project AND "{user2.fullname}"')['results']
+        docs = query(f'category:project AND "{user2.fullname}"')["results"]
         assert len(docs) == 1
 
     def test_wrong_order_search(self):
-        title_parts = self.title.split(' ')
+        title_parts = self.title.split(" ")
         title_parts.reverse()
-        title_search = ' '.join(title_parts)
+        title_search = " ".join(title_parts)
 
-        docs = query(title_search)['results']
+        docs = query(title_search)["results"]
         assert len(docs) == 3
 
     def test_tag_aggregation(self):
-        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
+        tags = ["stonecoldcrazy", "just a poor boy", "from-a-poor-family"]
 
         with run_celery_tasks():
             for tag in tags:
                 self.project.add_tag(tag, self.consolidate_auth, save=True)
 
-        docs = query(self.title)['tags']
+        docs = query(self.title)["tags"]
         assert len(docs) == 3
         for doc in docs:
-            assert doc['key'] in tags
+            assert doc["key"] in tags
 
 
 @pytest.mark.enable_search
@@ -1081,10 +1203,10 @@ class TestAddContributor(OsfTestCase):
     # Tests of the search.search_contributor method
 
     def setUp(self):
-        self.name1 = 'Roger1 Taylor1'
-        self.name2 = 'John2 Deacon2'
-        self.name3 = 'j\xc3\xb3ebert3 Smith3'
-        self.name4 = 'B\xc3\xb3bbert4 Jones4'
+        self.name1 = "Roger1 Taylor1"
+        self.name2 = "John2 Deacon2"
+        self.name3 = "j\xc3\xb3ebert3 Smith3"
+        self.name4 = "B\xc3\xb3bbert4 Jones4"
 
         with run_celery_tasks():
             super().setUp()
@@ -1094,93 +1216,96 @@ class TestAddContributor(OsfTestCase):
     def test_unreg_users_dont_show_in_search(self):
         unreg = factories.UnregUserFactory()
         contribs = search.search_contributor(unreg.fullname)
-        assert len(contribs['users']) == 0
+        assert len(contribs["users"]) == 0
 
     def test_unreg_users_do_show_on_projects(self):
         with run_celery_tasks():
-            unreg = factories.UnregUserFactory(fullname='Robert Paulson')
+            unreg = factories.UnregUserFactory(fullname="Robert Paulson")
             self.project = factories.ProjectFactory(
-                title='Glamour Rock',
+                title="Glamour Rock",
                 creator=unreg,
                 is_public=True,
             )
-        results = query(unreg.fullname)['results']
+        results = query(unreg.fullname)["results"]
         assert len(results) == 1
 
     def test_search_fullname(self):
         # Searching for full name yields exactly one result.
         contribs = search.search_contributor(self.name1)
-        assert len(contribs['users']) == 1
+        assert len(contribs["users"]) == 1
 
         contribs = search.search_contributor(self.name2)
-        assert len(contribs['users']) == 0
+        assert len(contribs["users"]) == 0
 
     def test_search_firstname(self):
         # Searching for first name yields exactly one result.
-        contribs = search.search_contributor(self.name1.split(' ')[0])
-        assert len(contribs['users']) == 1
+        contribs = search.search_contributor(self.name1.split(" ")[0])
+        assert len(contribs["users"]) == 1
 
-        contribs = search.search_contributor(self.name2.split(' ')[0])
-        assert len(contribs['users']) == 0
+        contribs = search.search_contributor(self.name2.split(" ")[0])
+        assert len(contribs["users"]) == 0
 
     def test_search_partial(self):
         # Searching for part of first name yields exactly one
         # result.
-        contribs = search.search_contributor(self.name1.split(' ')[0][:-1])
-        assert len(contribs['users']) == 1
+        contribs = search.search_contributor(self.name1.split(" ")[0][:-1])
+        assert len(contribs["users"]) == 1
 
-        contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
-        assert len(contribs['users']) == 0
+        contribs = search.search_contributor(self.name2.split(" ")[0][:-1])
+        assert len(contribs["users"]) == 0
 
     def test_search_fullname_special_character(self):
         # Searching for a fullname with a special character yields
         # exactly one result.
         contribs = search.search_contributor(self.name3)
-        assert len(contribs['users']) == 1
+        assert len(contribs["users"]) == 1
 
         contribs = search.search_contributor(self.name4)
-        assert len(contribs['users']) == 0
+        assert len(contribs["users"]) == 0
 
     def test_search_firstname_special_charcter(self):
         # Searching for a first name with a special character yields
         # exactly one result.
-        contribs = search.search_contributor(self.name3.split(' ')[0])
-        assert len(contribs['users']) == 1
+        contribs = search.search_contributor(self.name3.split(" ")[0])
+        assert len(contribs["users"]) == 1
 
-        contribs = search.search_contributor(self.name4.split(' ')[0])
-        assert len(contribs['users']) == 0
+        contribs = search.search_contributor(self.name4.split(" ")[0])
+        assert len(contribs["users"]) == 0
 
     def test_search_partial_special_character(self):
         # Searching for a partial name with a special character yields
         # exctly one result.
-        contribs = search.search_contributor(self.name3.split(' ')[0][:-1])
-        assert len(contribs['users']) == 1
+        contribs = search.search_contributor(self.name3.split(" ")[0][:-1])
+        assert len(contribs["users"]) == 1
 
-        contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
-        assert len(contribs['users']) == 0
+        contribs = search.search_contributor(self.name4.split(" ")[0][:-1])
+        assert len(contribs["users"]) == 0
 
     def test_search_profile(self):
-        orcid = '123456'
+        orcid = "123456"
         user = factories.UserFactory()
-        user.social['orcid'] = orcid
+        user.social["orcid"] = orcid
         user.save()
         contribs = search.search_contributor(orcid)
-        assert len(contribs['users']) == 1
-        assert len(contribs['users'][0]['social']) == 1
-        assert contribs['users'][0]['social']['orcid'] == user.social_links['orcid']
+        assert len(contribs["users"]) == 1
+        assert len(contribs["users"][0]["social"]) == 1
+        assert (
+            contribs["users"][0]["social"]["orcid"]
+            == user.social_links["orcid"]
+        )
 
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestProjectSearchResults(OsfTestCase):
     def setUp(self):
-        self.singular = 'Spanish Inquisition'
-        self.plural = 'Spanish Inquisitions'
-        self.possessive = 'Spanish\'s Inquisition'
+        self.singular = "Spanish Inquisition"
+        self.plural = "Spanish Inquisitions"
+        self.possessive = "Spanish's Inquisition"
 
         with run_celery_tasks():
             super().setUp()
-            self.user = factories.UserFactory(fullname='Doug Bogie')
+            self.user = factories.UserFactory(fullname="Doug Bogie")
 
             self.project_singular = factories.ProjectFactory(
                 title=self.singular,
@@ -1201,7 +1326,7 @@ class TestProjectSearchResults(OsfTestCase):
             )
 
             self.project_unrelated = factories.ProjectFactory(
-                title='Cardinal Richelieu',
+                title="Cardinal Richelieu",
                 creator=self.user,
                 is_public=True,
             )
@@ -1210,42 +1335,42 @@ class TestProjectSearchResults(OsfTestCase):
         # Verify searching for singular term includes singular,
         # possessive and plural versions in results.
         time.sleep(1)
-        results = query(self.singular)['results']
+        results = query(self.singular)["results"]
         assert len(results) == 3
 
     def test_plural_query(self):
         # Verify searching for singular term includes singular,
         # possessive and plural versions in results.
-        results = query(self.plural)['results']
+        results = query(self.plural)["results"]
         assert len(results) == 3
 
     def test_possessive_query(self):
         # Verify searching for possessive term includes singular,
         # possessive and plural versions in results.
-        results = query(self.possessive)['results']
+        results = query(self.possessive)["results"]
         assert len(results) == 3
 
 
 def job(**kwargs):
     keys = [
-        'title',
-        'institution',
-        'department',
-        'location',
-        'startMonth',
-        'startYear',
-        'endMonth',
-        'endYear',
-        'ongoing',
+        "title",
+        "institution",
+        "department",
+        "location",
+        "startMonth",
+        "startYear",
+        "endMonth",
+        "endYear",
+        "ongoing",
     ]
     job = {}
     for key in keys:
-        if key[-5:] == 'Month':
-            job[key] = kwargs.get(key, 'December')
-        elif key[-4:] == 'Year':
-            job[key] = kwargs.get(key, '2000')
+        if key[-5:] == "Month":
+            job[key] = kwargs.get(key, "December")
+        elif key[-4:] == "Year":
+            job[key] = kwargs.get(key, "2000")
         else:
-            job[key] = kwargs.get(key, f'test_{key}')
+            job[key] = kwargs.get(key, f"test_{key}")
     return job
 
 
@@ -1255,25 +1380,42 @@ class TestUserSearchResults(OsfTestCase):
     def setUp(self):
         with run_celery_tasks():
             super().setUp()
-            self.user_one = factories.UserFactory(jobs=[job(institution='Oxford'),
-                                                        job(institution='Star Fleet')],
-                                                  fullname='Date Soong')
+            self.user_one = factories.UserFactory(
+                jobs=[
+                    job(institution="Oxford"),
+                    job(institution="Star Fleet"),
+                ],
+                fullname="Date Soong",
+            )
 
-            self.user_two = factories.UserFactory(jobs=[job(institution='Grapes la Picard'),
-                                                        job(institution='Star Fleet')],
-                                                  fullname='Jean-Luc Picard')
+            self.user_two = factories.UserFactory(
+                jobs=[
+                    job(institution="Grapes la Picard"),
+                    job(institution="Star Fleet"),
+                ],
+                fullname="Jean-Luc Picard",
+            )
 
-            self.user_three = factories.UserFactory(jobs=[job(institution='Star Fleet'),
-                                                      job(institution='Federation Medical')],
-                                                    fullname='Beverly Crusher')
+            self.user_three = factories.UserFactory(
+                jobs=[
+                    job(institution="Star Fleet"),
+                    job(institution="Federation Medical"),
+                ],
+                fullname="Beverly Crusher",
+            )
 
-            self.user_four = factories.UserFactory(jobs=[job(institution='Star Fleet')],
-                                                   fullname='William Riker')
+            self.user_four = factories.UserFactory(
+                jobs=[job(institution="Star Fleet")], fullname="William Riker"
+            )
 
-            self.user_five = factories.UserFactory(jobs=[job(institution='Traveler intern'),
-                                                         job(institution='Star Fleet Academy'),
-                                                         job(institution='Star Fleet Intern')],
-                                                   fullname='Wesley Crusher')
+            self.user_five = factories.UserFactory(
+                jobs=[
+                    job(institution="Traveler intern"),
+                    job(institution="Star Fleet Academy"),
+                    job(institution="Star Fleet Intern"),
+                ],
+                fullname="Wesley Crusher",
+            )
 
             for i in range(25):
                 factories.UserFactory(jobs=[job()])
@@ -1288,20 +1430,20 @@ class TestUserSearchResults(OsfTestCase):
             self.user_two,
             self.user_three,
             self.user_four,
-            self.user_five
+            self.user_five,
         ]
 
-    @unittest.skip('Cannot guarentee always passes')
+    @unittest.skip("Cannot guarentee always passes")
     def test_current_job_first_in_results(self):
-        results = query_user('Star Fleet')['results']
-        result_names = [r['names']['fullname'] for r in results]
+        results = query_user("Star Fleet")["results"]
+        result_names = [r["names"]["fullname"] for r in results]
         current_starfleet_names = [u.fullname for u in self.current_starfleet]
         for name in result_names[:2]:
             assert name in current_starfleet_names
 
     def test_had_job_in_results(self):
-        results = query_user('Star Fleet')['results']
-        result_names = [r['names']['fullname'] for r in results]
+        results = query_user("Star Fleet")["results"]
+        result_names = [r["names"]["fullname"] for r in results]
         were_starfleet_names = [u.fullname for u in self.were_starfleet]
         for name in result_names:
             assert name in were_starfleet_names
@@ -1314,24 +1456,24 @@ class TestSearchExceptions(OsfTestCase):
 
     @classmethod
     def setUpClass(cls):
-        logging.getLogger('website.project.model').setLevel(logging.CRITICAL)
+        logging.getLogger("website.project.model").setLevel(logging.CRITICAL)
         super().setUpClass()
-        if settings.SEARCH_ENGINE == 'elastic':
+        if settings.SEARCH_ENGINE == "elastic":
             cls._client = search.search_engine.CLIENT
             search.search_engine.CLIENT = None
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        if settings.SEARCH_ENGINE == 'elastic':
+        if settings.SEARCH_ENGINE == "elastic":
             search.search_engine.CLIENT = cls._client
 
     @requires_search
     def test_connection_error(self):
         # Ensures that saving projects/users doesn't break as a result of connection errors
-        self.user = factories.UserFactory(fullname='Doug Bogie')
+        self.user = factories.UserFactory(fullname="Doug Bogie")
         self.project = factories.ProjectFactory(
-            title='Tom Sawyer',
+            title="Tom Sawyer",
             creator=self.user,
             is_public=True,
         )
@@ -1355,207 +1497,273 @@ class TestSearchMigration(OsfTestCase):
         self.es = search.search_engine.CLIENT
         search.delete_index(settings.ELASTIC_INDEX)
         search.create_index(settings.ELASTIC_INDEX)
-        self.user = factories.UserFactory(fullname='David Bowie')
+        self.user = factories.UserFactory(fullname="David Bowie")
         self.project = factories.ProjectFactory(
-            title=settings.ELASTIC_INDEX,
-            creator=self.user,
-            is_public=True
+            title=settings.ELASTIC_INDEX, creator=self.user, is_public=True
         )
-        self.preprint = factories.PreprintFactory(
-            creator=self.user
-        )
+        self.preprint = factories.PreprintFactory(creator=self.user)
 
     def test_first_migration_no_remove(self):
-        migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.application)
+        migrate(
+            delete=False,
+            remove=False,
+            index=settings.ELASTIC_INDEX,
+            app=self.app.application,
+        )
         var = self.es.indices.get_aliases()
-        assert list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0] == settings.ELASTIC_INDEX
+        assert (
+            list(var[settings.ELASTIC_INDEX + "_v1"]["aliases"].keys())[0]
+            == settings.ELASTIC_INDEX
+        )
 
     def test_multiple_migrations_no_remove(self):
         for n in range(1, 21):
-            migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.application)
+            migrate(
+                delete=False,
+                remove=False,
+                index=settings.ELASTIC_INDEX,
+                app=self.app.application,
+            )
             var = self.es.indices.get_aliases()
-            assert list(var[settings.ELASTIC_INDEX + f'_v{n}']['aliases'].keys())[0] == settings.ELASTIC_INDEX
+            assert (
+                list(var[settings.ELASTIC_INDEX + f"_v{n}"]["aliases"].keys())[
+                    0
+                ]
+                == settings.ELASTIC_INDEX
+            )
 
     def test_first_migration_with_remove(self):
-        migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.application)
+        migrate(
+            delete=False,
+            remove=True,
+            index=settings.ELASTIC_INDEX,
+            app=self.app.application,
+        )
         var = self.es.indices.get_aliases()
-        assert list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0] == settings.ELASTIC_INDEX
+        assert (
+            list(var[settings.ELASTIC_INDEX + "_v1"]["aliases"].keys())[0]
+            == settings.ELASTIC_INDEX
+        )
 
     def test_multiple_migrations_with_remove(self):
         for n in range(1, 21, 2):
-            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.application)
+            migrate(
+                delete=False,
+                remove=True,
+                index=settings.ELASTIC_INDEX,
+                app=self.app.application,
+            )
             var = self.es.indices.get_aliases()
-            assert list(var[settings.ELASTIC_INDEX + f'_v{n}']['aliases'].keys())[0] == settings.ELASTIC_INDEX
+            assert (
+                list(var[settings.ELASTIC_INDEX + f"_v{n}"]["aliases"].keys())[
+                    0
+                ]
+                == settings.ELASTIC_INDEX
+            )
 
-            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.application)
+            migrate(
+                delete=False,
+                remove=True,
+                index=settings.ELASTIC_INDEX,
+                app=self.app.application,
+            )
             var = self.es.indices.get_aliases()
-            assert list(var[settings.ELASTIC_INDEX + f'_v{n + 1}']['aliases'].keys())[0] == settings.ELASTIC_INDEX
-            assert not var.get(settings.ELASTIC_INDEX + f'_v{n}')
+            assert (
+                list(
+                    var[settings.ELASTIC_INDEX + f"_v{n + 1}"][
+                        "aliases"
+                    ].keys()
+                )[0]
+                == settings.ELASTIC_INDEX
+            )
+            assert not var.get(settings.ELASTIC_INDEX + f"_v{n}")
 
     def test_migration_institutions(self):
-        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.application)
+        migrate(
+            delete=True, index=settings.ELASTIC_INDEX, app=self.app.application
+        )
         count_query = {}
-        count_query['aggregations'] = {
-            'counts': {
-                'terms': {
-                    'field': '_type',
+        count_query["aggregations"] = {
+            "counts": {
+                "terms": {
+                    "field": "_type",
                 }
             }
         }
         institution_bucket_found = False
-        res = self.es.search(index=settings.ELASTIC_INDEX, doc_type=None, search_type='count', body=count_query)
-        for bucket in res['aggregations']['counts']['buckets']:
-            if bucket['key'] == 'institution':
+        res = self.es.search(
+            index=settings.ELASTIC_INDEX,
+            doc_type=None,
+            search_type="count",
+            body=count_query,
+        )
+        for bucket in res["aggregations"]["counts"]["buckets"]:
+            if bucket["key"] == "institution":
                 institution_bucket_found = True
 
         assert institution_bucket_found is True
 
     def test_migration_collections(self):
         provider = factories.CollectionProviderFactory()
-        collection_one = factories.CollectionFactory(is_public=True, provider=provider)
-        collection_two = factories.CollectionFactory(is_public=True, provider=provider)
-        node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
+        collection_one = factories.CollectionFactory(
+            is_public=True, provider=provider
+        )
+        collection_two = factories.CollectionFactory(
+            is_public=True, provider=provider
+        )
+        node = factories.NodeFactory(
+            creator=self.user, title="Ali Bomaye", is_public=True
+        )
         collection_one.collect_object(node, self.user)
         collection_two.collect_object(node, self.user)
         assert node.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
 
-        docs = query_collections('*')['results']
+        docs = query_collections("*")["results"]
         assert len(docs) == 2
 
-        docs = query_collections('Bomaye')['results']
+        docs = query_collections("Bomaye")["results"]
         assert len(docs) == 2
 
         count_query = {}
-        count_query['aggregations'] = {
-            'counts': {
-                'terms': {
-                    'field': '_type',
+        count_query["aggregations"] = {
+            "counts": {
+                "terms": {
+                    "field": "_type",
                 }
             }
         }
 
-        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.application)
+        migrate(
+            delete=True, index=settings.ELASTIC_INDEX, app=self.app.application
+        )
 
-        docs = query_collections('*')['results']
+        docs = query_collections("*")["results"]
         assert len(docs) == 2
 
-        docs = query_collections('Bomaye')['results']
+        docs = query_collections("Bomaye")["results"]
         assert len(docs) == 2
 
-        res = self.es.search(index=settings.ELASTIC_INDEX, doc_type='collectionSubmission', search_type='count', body=count_query)
-        assert res['hits']['total'] == 2
+        res = self.es.search(
+            index=settings.ELASTIC_INDEX,
+            doc_type="collectionSubmission",
+            search_type="count",
+            body=count_query,
+        )
+        assert res["hits"]["total"] == 2
+
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestSearchFiles(OsfTestCase):
-
     def setUp(self):
         super().setUp()
-        self.user = factories.UserFactory(fullname='David Bowie')
-        self.node = factories.ProjectFactory(is_public=True, title='Otis', creator=self.user)
-        self.osf_storage = self.node.get_addon('osfstorage')
+        self.user = factories.UserFactory(fullname="David Bowie")
+        self.node = factories.ProjectFactory(
+            is_public=True, title="Otis", creator=self.user
+        )
+        self.osf_storage = self.node.get_addon("osfstorage")
         self.root = self.osf_storage.get_root()
 
     def test_search_file(self):
-        file_ = self.root.append_file('Shake.wav')
+        file_ = self.root.append_file("Shake.wav")
         create_file_version(file_, self.user)
-        find = query_file('Shake.wav')['results']
+        find = query_file("Shake.wav")["results"]
         assert len(find) == 1
 
     def test_search_file_name_without_separator(self):
-        file_ = self.root.append_file('Shake.wav')
+        file_ = self.root.append_file("Shake.wav")
         create_file_version(file_, self.user)
-        find = query_file('Shake')['results']
+        find = query_file("Shake")["results"]
         assert len(find) == 1
 
     def test_delete_file(self):
-        file_ = self.root.append_file('I\'ve Got Dreams To Remember.wav')
+        file_ = self.root.append_file("I've Got Dreams To Remember.wav")
         create_file_version(file_, self.user)
-        find = query_file('I\'ve Got Dreams To Remember.wav')['results']
+        find = query_file("I've Got Dreams To Remember.wav")["results"]
         assert len(find) == 1
         file_.delete()
-        find = query_file('I\'ve Got Dreams To Remember.wav')['results']
+        find = query_file("I've Got Dreams To Remember.wav")["results"]
         assert len(find) == 0
 
     def test_add_tag(self):
-        file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
+        file_ = self.root.append_file("That's How Strong My Love Is.mp3")
         create_file_version(file_, self.user)
-        tag = Tag(name='Redding')
+        tag = Tag(name="Redding")
         tag.save()
         file_.tags.add(tag)
         file_.save()
-        find = query_tag_file('Redding')['results']
+        find = query_tag_file("Redding")["results"]
         assert len(find) == 1
 
     def test_remove_tag(self):
-        file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
+        file_ = self.root.append_file("I've Been Loving You Too Long.mp3")
         create_file_version(file_, self.user)
-        tag = Tag(name='Blue')
+        tag = Tag(name="Blue")
         tag.save()
         file_.tags.add(tag)
         file_.save()
-        find = query_tag_file('Blue')['results']
+        find = query_tag_file("Blue")["results"]
         assert len(find) == 1
         file_.tags.remove(tag)
         file_.save()
-        find = query_tag_file('Blue')['results']
+        find = query_tag_file("Blue")["results"]
         assert len(find) == 0
 
     def test_make_node_private(self):
-        file_ = self.root.append_file('Change_Gonna_Come.wav')
+        file_ = self.root.append_file("Change_Gonna_Come.wav")
         create_file_version(file_, self.user)
-        find = query_file('Change_Gonna_Come.wav')['results']
+        find = query_file("Change_Gonna_Come.wav")["results"]
         assert len(find) == 1
         self.node.is_public = False
         with run_celery_tasks():
             self.node.save()
-        find = query_file('Change_Gonna_Come.wav')['results']
+        find = query_file("Change_Gonna_Come.wav")["results"]
         assert len(find) == 0
 
     def test_make_private_node_public(self):
         self.node.is_public = False
         self.node.save()
-        file_ = self.root.append_file('Try a Little Tenderness.flac')
+        file_ = self.root.append_file("Try a Little Tenderness.flac")
         create_file_version(file_, self.user)
-        find = query_file('Try a Little Tenderness.flac')['results']
+        find = query_file("Try a Little Tenderness.flac")["results"]
         assert len(find) == 0
         self.node.is_public = True
         with run_celery_tasks():
             self.node.save()
-        find = query_file('Try a Little Tenderness.flac')['results']
+        find = query_file("Try a Little Tenderness.flac")["results"]
         assert len(find) == 1
 
     def test_delete_node(self):
-        node = factories.ProjectFactory(is_public=True, title='The Soul Album')
-        osf_storage = node.get_addon('osfstorage')
+        node = factories.ProjectFactory(is_public=True, title="The Soul Album")
+        osf_storage = node.get_addon("osfstorage")
         root = osf_storage.get_root()
-        file_ = root.append_file('The Dock of the Bay.mp3')
+        file_ = root.append_file("The Dock of the Bay.mp3")
         create_file_version(file_, self.user)
-        find = query_file('The Dock of the Bay.mp3')['results']
+        find = query_file("The Dock of the Bay.mp3")["results"]
         assert len(find) == 1
         node.is_deleted = True
         with run_celery_tasks():
             node.save()
-        find = query_file('The Dock of the Bay.mp3')['results']
+        find = query_file("The Dock of the Bay.mp3")["results"]
         assert len(find) == 0
 
     def test_file_download_url_guid(self):
-        file_ = self.root.append_file('Timber.mp3')
+        file_ = self.root.append_file("Timber.mp3")
         create_file_version(file_, self.user)
         file_guid = file_.get_guid(create=True)
         file_.save()
-        find = query_file('Timber.mp3')['results']
-        assert find[0]['guid_url'] == f'/{file_guid._id}/'
+        find = query_file("Timber.mp3")["results"]
+        assert find[0]["guid_url"] == f"/{file_guid._id}/"
 
     def test_file_download_url_no_guid(self):
-        file_ = self.root.append_file('Timber.mp3')
+        file_ = self.root.append_file("Timber.mp3")
         create_file_version(file_, self.user)
         path = file_.path
-        deep_url = f'/{file_.target._id}/files/osfstorage{path}/'
-        find = query_file('Timber.mp3')['results']
-        assert file_.path != ''
+        deep_url = f"/{file_.target._id}/files/osfstorage{path}/"
+        find = query_file("Timber.mp3")["results"]
+        assert file_.path != ""
         assert file_.path == path
-        assert find[0]['guid_url'] is None
-        assert find[0]['deep_url'] == deep_url
+        assert find[0]["guid_url"] is None
+        assert find[0]["deep_url"] == deep_url

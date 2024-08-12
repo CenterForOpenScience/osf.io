@@ -4,77 +4,77 @@ from addons.s3 import views
 
 
 api_routes = {
-    'rules': [
+    "rules": [
         Rule(
             [
-                '/settings/s3/accounts/',
+                "/settings/s3/accounts/",
             ],
-            'post',
+            "post",
             views.s3_add_user_account,
             json_renderer,
         ),
         Rule(
             [
-                '/settings/s3/accounts/',
+                "/settings/s3/accounts/",
             ],
-            'get',
+            "get",
             views.s3_account_list,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/s3/settings/',
-                '/project/<pid>/node/<nid>/s3/settings/',
+                "/project/<pid>/s3/settings/",
+                "/project/<pid>/node/<nid>/s3/settings/",
             ],
-            'put',
+            "put",
             views.s3_set_config,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/s3/settings/',
-                '/project/<pid>/node/<nid>/s3/settings/',
+                "/project/<pid>/s3/settings/",
+                "/project/<pid>/node/<nid>/s3/settings/",
             ],
-            'get',
+            "get",
             views.s3_get_config,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/s3/user-auth/',
-                '/project/<pid>/node/<nid>/s3/user-auth/',
+                "/project/<pid>/s3/user-auth/",
+                "/project/<pid>/node/<nid>/s3/user-auth/",
             ],
-            'put',
+            "put",
             views.s3_import_auth,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/s3/user-auth/',
-                '/project/<pid>/node/<nid>/s3/user-auth/',
+                "/project/<pid>/s3/user-auth/",
+                "/project/<pid>/node/<nid>/s3/user-auth/",
             ],
-            'delete',
+            "delete",
             views.s3_deauthorize_node,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/s3/buckets/',
-                '/project/<pid>/node/<nid>/s3/buckets/',
+                "/project/<pid>/s3/buckets/",
+                "/project/<pid>/node/<nid>/s3/buckets/",
             ],
-            'get',
+            "get",
             views.s3_folder_list,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/s3/newbucket/',
-                '/project/<pid>/node/<nid>/s3/newbucket/',
+                "/project/<pid>/s3/newbucket/",
+                "/project/<pid>/node/<nid>/s3/newbucket/",
             ],
-            'post',
+            "post",
             views.create_bucket,
-            json_renderer
+            json_renderer,
         ),
     ],
-    'prefix': '/api/v1',
+    "prefix": "/api/v1",
 }

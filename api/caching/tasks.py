@@ -23,18 +23,21 @@ def get_varnish_servers():
 
 def get_bannable_urls(instance):
     from osf.models import Comment
+
     bannable_urls = []
     parsed_absolute_url = {}
 
-    if not hasattr(instance, 'absolute_api_v2_url'):
-        logger.warning(f'Tried to ban {instance.__class__}:{instance} but it didn\'t have a absolute_api_v2_url method')
-        return [], ''
+    if not hasattr(instance, "absolute_api_v2_url"):
+        logger.warning(
+            f"Tried to ban {instance.__class__}:{instance} but it didn't have a absolute_api_v2_url method"
+        )
+        return [], ""
 
     for host in get_varnish_servers():
         # add instance url
         varnish_parsed_url = urlparse(host)
         parsed_absolute_url = urlparse(instance.absolute_api_v2_url)
-        url_string = '{scheme}://{netloc}{path}.*'.format(
+        url_string = "{scheme}://{netloc}{path}.*".format(
             scheme=varnish_parsed_url.scheme,
             netloc=varnish_parsed_url.netloc,
             path=parsed_absolute_url.path,
@@ -42,14 +45,16 @@ def get_bannable_urls(instance):
         bannable_urls.append(url_string)
         if isinstance(instance, Comment):
             try:
-                parsed_target_url = urlparse(instance.target.referent.absolute_api_v2_url)
+                parsed_target_url = urlparse(
+                    instance.target.referent.absolute_api_v2_url
+                )
             except AttributeError:
                 # some referents don't have an absolute_api_v2_url
                 # I'm looking at you NodeWikiPage
                 # Note: NodeWikiPage has been deprecated. Is this an issue with WikiPage/WikiVersion?
                 pass
             else:
-                url_string = '{scheme}://{netloc}{path}.*'.format(
+                url_string = "{scheme}://{netloc}{path}.*".format(
                     scheme=varnish_parsed_url.scheme,
                     netloc=varnish_parsed_url.netloc,
                     path=parsed_target_url.path,
@@ -57,12 +62,14 @@ def get_bannable_urls(instance):
                 bannable_urls.append(url_string)
 
             try:
-                parsed_root_target_url = urlparse(instance.root_target.referent.absolute_api_v2_url)
+                parsed_root_target_url = urlparse(
+                    instance.root_target.referent.absolute_api_v2_url
+                )
             except AttributeError:
                 # some root_targets don't have an absolute_api_v2_url
                 pass
             else:
-                url_string = '{scheme}://{netloc}{path}.*'.format(
+                url_string = "{scheme}://{netloc}{path}.*".format(
                     scheme=varnish_parsed_url.scheme,
                     netloc=varnish_parsed_url.netloc,
                     path=parsed_root_target_url.path,
@@ -83,13 +90,16 @@ def ban_url(instance):
         for url_to_ban in set(bannable_urls):
             try:
                 response = requests.request(
-                    'BAN', url_to_ban, timeout=timeout, headers=dict(
+                    "BAN",
+                    url_to_ban,
+                    timeout=timeout,
+                    headers=dict(
                         Host=hostname,
                     ),
                 )
             except Exception as ex:
                 logger.error(
-                    'Banning {} failed: {}'.format(
+                    "Banning {} failed: {}".format(
                         url_to_ban,
                         ex.message,
                     ),
@@ -97,14 +107,14 @@ def ban_url(instance):
             else:
                 if not response.ok:
                     logger.error(
-                        'Banning {} failed: {}'.format(
+                        "Banning {} failed: {}".format(
                             url_to_ban,
                             response.text,
                         ),
                     )
                 else:
                     logger.info(
-                        'Banning {} succeeded'.format(
+                        "Banning {} succeeded".format(
                             url_to_ban,
                         ),
                     )
@@ -139,72 +149,100 @@ def update_storage_usage_cache(target_id, target_guid, per_page=500000):
             offset += count
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
-    storage_usage_cache.set(key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+    storage_usage_cache.set(
+        key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT
+    )
 
 
 def update_storage_usage(target):
-    Preprint = apps.get_model('osf.preprint')
+    Preprint = apps.get_model("osf.preprint")
 
-    if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
-        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id), {}, celery=True)
+    if (
+        settings.ENABLE_STORAGE_USAGE_CACHE
+        and not isinstance(target, Preprint)
+        and not target.is_quickfiles
+    ):
+        enqueue_postcommit_task(
+            update_storage_usage_cache,
+            (target.id, target._id),
+            {},
+            celery=True,
+        )
+
 
 def update_storage_usage_with_size(payload):
-    BaseFileNode = apps.get_model('osf.basefilenode')
-    AbstractNode = apps.get_model('osf.abstractnode')
+    BaseFileNode = apps.get_model("osf.basefilenode")
+    AbstractNode = apps.get_model("osf.abstractnode")
 
-    metadata = payload.get('metadata') or payload.get('destination')
+    metadata = payload.get("metadata") or payload.get("destination")
 
-    if not metadata.get('nid'):
+    if not metadata.get("nid"):
         return
-    target_node = AbstractNode.load(metadata['nid'])
+    target_node = AbstractNode.load(metadata["nid"])
 
     if target_node.is_quickfiles:
         return
 
-    action = payload['action']
-    provider = metadata.get('provider', 'osfstorage')
+    action = payload["action"]
+    provider = metadata.get("provider", "osfstorage")
 
-    target_file_id = metadata['path'].replace('/', '')
-    target_file_size = metadata.get('sizeInt', 0)
+    target_file_id = metadata["path"].replace("/", "")
+    target_file_size = metadata.get("sizeInt", 0)
 
-    if target_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+    if (
+        target_node.storage_limit_status
+        is settings.StorageLimits.NOT_CALCULATED
+    ):
         return update_storage_usage(target_node)
 
     current_usage = target_node.storage_usage
     target_file = BaseFileNode.load(target_file_id)
 
-    if target_file and action in ['copy', 'delete', 'move']:
+    if target_file and action in ["copy", "delete", "move"]:
+        target_file_size = (
+            target_file.versions.aggregate(Sum("size"))["size__sum"]
+            or target_file_size
+        )
 
-        target_file_size = target_file.versions.aggregate(Sum('size'))['size__sum'] or target_file_size
-
-    if action in ['create', 'update', 'copy'] and provider == 'osfstorage':
+    if action in ["create", "update", "copy"] and provider == "osfstorage":
         current_usage += target_file_size
 
-    elif action == 'delete' and provider == 'osfstorage':
+    elif action == "delete" and provider == "osfstorage":
         current_usage = max(current_usage - target_file_size, 0)
 
-    elif action in 'move':
-        source_node = AbstractNode.load(payload['source']['nid'])  # Getting the 'from' node
+    elif action in "move":
+        source_node = AbstractNode.load(
+            payload["source"]["nid"]
+        )  # Getting the 'from' node
 
-        source_provider = payload['source']['provider']
+        source_provider = payload["source"]["provider"]
         if target_node == source_node and source_provider == provider:
             return  # Its not going anywhere.
-        if source_provider == 'osfstorage' and not source_node.is_quickfiles:
-            if source_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+        if source_provider == "osfstorage" and not source_node.is_quickfiles:
+            if (
+                source_node.storage_limit_status
+                is settings.StorageLimits.NOT_CALCULATED
+            ):
                 return update_storage_usage(source_node)
 
             source_node_usage = source_node.storage_usage
             source_node_usage = max(source_node_usage - target_file_size, 0)
 
-            key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
-            storage_usage_cache.set(key, source_node_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+            key = cache_settings.STORAGE_USAGE_KEY.format(
+                target_id=source_node._id
+            )
+            storage_usage_cache.set(
+                key, source_node_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT
+            )
 
         current_usage += target_file_size
 
-        if provider != 'osfstorage':
+        if provider != "osfstorage":
             return  # We don't want to update the destination node if the provider isn't osfstorage
     else:
         return
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_node._id)
-    storage_usage_cache.set(key, current_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+    storage_usage_cache.set(
+        key, current_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT
+    )

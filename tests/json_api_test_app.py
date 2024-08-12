@@ -5,19 +5,23 @@ from django.test.signals import template_rendered
 from django.core import signals
 from django.test.client import store_rendered_templates
 from functools import partial
+
 try:
     from django.db import close_old_connections
 except ImportError:
     from django.db import close_connection
+
     close_old_connections = None
 
 from webtest.utils import NoDefault
 from webtest_plus import TestApp
 
+
 class JSONAPIWrapper:
     """
     Creates wrapper with stated content_type.
     """
+
     def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
         """
         Helper method for generating wrapper method.
@@ -33,7 +37,7 @@ class JSONAPIWrapper:
         wrapper = self._gen_request(method, url, **kw)
 
         subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+        wrapper.__name__ = str("%(lmethod)s_json_api" % subst)
 
         return wrapper
 
@@ -48,14 +52,13 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(self.get_wsgi_handler(), *args, **kwargs)
         self.auth = None
-        self.auth_type = 'basic'
+        self.auth_type = "basic"
 
     def get_wsgi_handler(self):
         return StaticFilesHandler(WSGIHandler())
 
     # From django-webtest (MIT Licensed, see NOTICE for license details)
     def do_request(self, req, status, expect_errors):
-
         # Django closes the database connection after every request;
         # this breaks the use of transactions in your tests.
         if close_old_connections is not None:  # Django 1.6+
@@ -65,19 +68,19 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             signals.request_finished.disconnect(close_connection)
 
         try:
-            req.environ.setdefault('REMOTE_ADDR', '127.0.0.1')
+            req.environ.setdefault("REMOTE_ADDR", "127.0.0.1")
 
             # is this a workaround for
             # https://code.djangoproject.com/ticket/11111 ?
-            req.environ['REMOTE_ADDR'] = str(req.environ['REMOTE_ADDR'])
-            req.environ['PATH_INFO'] = str(req.environ['PATH_INFO'])
-            auth = req.environ.get('HTTP_AUTHORIZATION')
+            req.environ["REMOTE_ADDR"] = str(req.environ["REMOTE_ADDR"])
+            req.environ["PATH_INFO"] = str(req.environ["PATH_INFO"])
+            auth = req.environ.get("HTTP_AUTHORIZATION")
             if auth is None:
-                req.environ['HTTP_AUTHORIZATION'] = 'None'
+                req.environ["HTTP_AUTHORIZATION"] = "None"
             elif isinstance(auth, bytes):
-                req.environ['HTTP_AUTHORIZATION'] = auth.decode()
+                req.environ["HTTP_AUTHORIZATION"] = auth.decode()
             else:
-                req.environ['HTTP_AUTHORIZATION'] = str(auth)
+                req.environ["HTTP_AUTHORIZATION"] = str(auth)
 
             # Curry a data dictionary into an instance of the template renderer
             # callback function.
@@ -97,15 +100,15 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
 
             response.context = None
             response.template = None
-            response.templates = data.get('templates', None)
+            response.templates = data.get("templates", None)
 
-            if data.get('context'):
-                response.context = flattend('context')
+            if data.get("context"):
+                response.context = flattend("context")
 
-            if data.get('template'):
-                response.template = flattend('template')
-            elif data.get('templates'):
-                response.template = flattend('templates')
+            if data.get("template"):
+                response.template = flattend("template")
+            elif data.get("templates"):
+                response.template = flattend("templates")
 
             return response
         finally:
@@ -116,15 +119,17 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
                 signals.request_finished.connect(close_connection)
 
     def json_api_method(method):
-
         def wrapper(self, url, params=NoDefault, bulk=False, **kw):
-            content_type = 'application/vnd.api+json'
+            content_type = "application/vnd.api+json"
             if bulk:
-                content_type = 'application/vnd.api+json; ext=bulk'
-            return JSONAPIWrapper.make_wrapper(self, url, method, content_type, params, **kw)
+                content_type = "application/vnd.api+json; ext=bulk"
+            return JSONAPIWrapper.make_wrapper(
+                self, url, method, content_type, params, **kw
+            )
+
         return wrapper
 
-    post_json_api = json_api_method('POST')
-    put_json_api = json_api_method('PUT')
-    patch_json_api = json_api_method('PATCH')
-    delete_json_api = json_api_method('DELETE')
+    post_json_api = json_api_method("POST")
+    put_json_api = json_api_method("PUT")
+    patch_json_api = json_api_method("PATCH")
+    delete_json_api = json_api_method("DELETE")

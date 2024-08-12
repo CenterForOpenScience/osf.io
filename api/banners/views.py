@@ -19,12 +19,11 @@ from django.core.files.base import ContentFile
 
 
 class CurrentBanner(JSONAPIBaseView, generics.RetrieveAPIView):
-
     serializer_class = BannerSerializer
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
-    view_category = 'banners'
-    view_name = 'current'
+    view_category = "banners"
+    view_name = "current"
 
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -36,18 +35,24 @@ class CurrentBanner(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_object(self):
         try:
-            return get_object_or_error(ScheduledBanner, Q(start_date__lte=timezone.now(), end_date__gte=timezone.now()), self.request)
+            return get_object_or_error(
+                ScheduledBanner,
+                Q(
+                    start_date__lte=timezone.now(),
+                    end_date__gte=timezone.now(),
+                ),
+                self.request,
+            )
         except NotFound:
             return ScheduledBanner()
 
 
 class BannerMedia(JSONAPIBaseView):
-
     serializer_class = BannerSerializer
     # This view goes under the _/ namespace
     versioning_class = None
-    view_category = 'banners'
-    view_name = 'media'
+    view_category = "banners"
+    view_name = "media"
 
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -58,9 +63,11 @@ class BannerMedia(JSONAPIBaseView):
     required_write_scopes = [CoreScopes.NULL]
 
     def get_object(self):
-        return get_object_or_error(BannerImage, Q(filename=self.kwargs.get('filename')), self.request)
+        return get_object_or_error(
+            BannerImage, Q(filename=self.kwargs.get("filename")), self.request
+        )
 
     def get(self, request, *args, **kwargs):
         response = FileResponse(ContentFile(self.get_object().image))
-        response['Content-Type'] = 'image/svg+xml'
+        response["Content-Type"] = "image/svg+xml"
         return response

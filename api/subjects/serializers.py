@@ -39,80 +39,94 @@ class UpdateSubjectsMixin:
 
 
 class SubjectSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'text',
-        'parent',
-        'id',
-    ])
-    id = ser.CharField(source='_id', required=True)
+    filterable_fields = frozenset(
+        [
+            "text",
+            "parent",
+            "id",
+        ]
+    )
+    id = ser.CharField(source="_id", required=True)
     text = ser.CharField(max_length=200)
-    taxonomy_name = ser.CharField(source='provider.share_title', read_only=True)
+    taxonomy_name = ser.CharField(
+        source="provider.share_title", read_only=True
+    )
 
     parent = RelationshipField(
-        related_view='subjects:subject-detail',
-        related_view_kwargs={'subject_id': '<parent._id>'},
+        related_view="subjects:subject-detail",
+        related_view_kwargs={"subject_id": "<parent._id>"},
         always_embed=True,
     )
 
     children = RelationshipField(
-        related_view='subjects:subject-children',
-        related_view_kwargs={'subject_id': '<_id>'},
-        related_meta={'count': 'get_children_count'},
-
+        related_view="subjects:subject-children",
+        related_view_kwargs={"subject_id": "<_id>"},
+        related_meta={"count": "get_children_count"},
     )
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+        }
+    )
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_subject_url
 
     def get_children_count(self, obj):
-        return obj.children_count if hasattr(obj, 'children_count') else obj.child_count
+        return (
+            obj.children_count
+            if hasattr(obj, "children_count")
+            else obj.child_count
+        )
 
     class Meta:
-        type_ = 'subjects'
+        type_ = "subjects"
 
 
 class SubjectRelated(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='_id', required=False, allow_null=True)
+    id = ser.CharField(source="_id", required=False, allow_null=True)
+
     class Meta:
-        type_ = 'subjects'
+        type_ = "subjects"
 
 
 class SubjectsRelationshipSerializer(BaseAPISerializer, UpdateSubjectsMixin):
     data = ser.ListField(child=SubjectRelated())
-    links = LinksField({
-        'self': 'get_self_url',
-        'html': 'get_related_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_self_url",
+            "html": "get_related_url",
+        }
+    )
 
     def get_self_url(self, obj):
-        return obj['self'].subjects_relationship_url
+        return obj["self"].subjects_relationship_url
 
     def get_related_url(self, obj):
-        return obj['self'].subjects_url
+        return obj["self"].subjects_url
 
     class Meta:
-        type_ = 'subjects'
+        type_ = "subjects"
 
     def make_instance_obj(self, obj):
         return {
-            'data': obj.subjects.all(),
-            'self': obj,
+            "data": obj.subjects.all(),
+            "self": obj,
         }
 
     def format_subjects(self, subjects):
-        return [subj['_id'] for subj in subjects]
+        return [subj["_id"] for subj in subjects]
 
     def update_subjects_method(self, resource, subjects, auth):
         # Overrides UpdateSubjectsMixin
         return resource.set_subjects_from_relationships(subjects, auth)
 
     def update(self, instance, validated_data):
-        resource = instance['self']
-        user = self.context['request'].user
+        resource = instance["self"]
+        user = self.context["request"].user
         auth = Auth(user if not user.is_anonymous else None)
-        self.update_subjects(resource, self.format_subjects(validated_data['data']), auth)
+        self.update_subjects(
+            resource, self.format_subjects(validated_data["data"]), auth
+        )
         return self.make_instance_obj(resource)

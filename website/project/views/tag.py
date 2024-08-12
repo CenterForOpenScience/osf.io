@@ -8,7 +8,9 @@ from osf.models import AbstractNode
 from osf.utils.permissions import WRITE
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.project.decorators import (
-    must_be_valid_project, must_have_permission, must_not_be_registration
+    must_be_valid_project,
+    must_have_permission,
+    must_not_be_registration,
 )
 
 
@@ -16,16 +18,20 @@ from website.project.decorators import (
 # nodes serialized, before re-enabling.
 @collect_auth
 def project_tag(tag, auth, **kwargs):
-    nodes = AbstractNode.objects.filter(tags___id=tag).can_view(auth.user).values('title', 'url')
+    nodes = (
+        AbstractNode.objects.filter(tags___id=tag)
+        .can_view(auth.user)
+        .values("title", "url")
+    )
     return {
-        'nodes': [
+        "nodes": [
             {
-                'title': node['title'],
-                'url': node['url'],
+                "title": node["title"],
+                "url": node["url"],
             }
             for node in nodes
         ],
-        'tag': tag,
+        "tag": tag,
     }
 
 
@@ -33,15 +39,14 @@ def project_tag(tag, auth, **kwargs):
 @must_have_permission(WRITE)
 @must_not_be_registration
 def project_add_tag(auth, node, **kwargs):
-
     data = request.get_json()
-    tag = data['tag']
+    tag = data["tag"]
     if tag:
         try:
             node.add_tag(tag=tag, auth=auth)
-            return {'status': 'success'}, http_status.HTTP_201_CREATED
+            return {"status": "success"}, http_status.HTTP_201_CREATED
         except ValidationError:
-            return {'status': 'error'}, http_status.HTTP_400_BAD_REQUEST
+            return {"status": "error"}, http_status.HTTP_400_BAD_REQUEST
 
 
 @must_be_valid_project  # injects project
@@ -50,10 +55,10 @@ def project_add_tag(auth, node, **kwargs):
 def project_remove_tag(auth, node, **kwargs):
     data = request.get_json()
     try:
-        node.remove_tag(tag=data['tag'], auth=auth)
+        node.remove_tag(tag=data["tag"], auth=auth)
     except TagNotFoundError:
-        return {'status': 'failure'}, http_status.HTTP_409_CONFLICT
+        return {"status": "failure"}, http_status.HTTP_409_CONFLICT
     except (InvalidTagError, NodeStateError):
-        return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
+        return {"status": "failure"}, http_status.HTTP_400_BAD_REQUEST
     else:
-        return {'status': 'success'}, http_status.HTTP_200_OK
+        return {"status": "success"}, http_status.HTTP_200_OK

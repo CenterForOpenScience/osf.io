@@ -1,8 +1,11 @@
 from rest_framework import status as http_status
 
 from addons.base import exceptions as addon_errors
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings,
+    BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from framework.auth.decorators import Auth
@@ -13,19 +16,20 @@ from addons.dataverse.client import connect_from_settings_or_401
 from addons.dataverse.serializer import DataverseSerializer
 from addons.dataverse.utils import DataverseNodeLogger
 
+
 class DataverseFileNode(BaseFileNode):
-    _provider = 'dataverse'
+    _provider = "dataverse"
 
     @classmethod
     def get_or_create(cls, target, path, **query_params):
-        '''Override get_or_create for Dataverse.
+        """Override get_or_create for Dataverse.
 
         Dataverse is weird and reuses paths, so we need to extract a "version"
         query param to determine which file to get. We also don't want to "create"
         here, as that might lead to integrity errors.
-        '''
-        version = query_params.get('version', None)
-        if version not in {'latest', 'latest-published'}:
+        """
+        version = query_params.get("version", None)
+        if version not in {"latest", "latest-published"}:
             raise addon_errors.QueryError(
                 'Dataverse requires a "version" query paramater. '
                 'Acceptable options are "latest" or "latest-published"'
@@ -36,7 +40,7 @@ class DataverseFileNode(BaseFileNode):
             obj = cls.objects.get(
                 target_object_id=target.id,
                 target_content_type=content_type,
-                _path='/' + path.lstrip('/'),
+                _path="/" + path.lstrip("/"),
                 _history__0__extra__datasetVersion=version,
             )
         except cls.DoesNotExist:
@@ -52,12 +56,12 @@ class DataverseFolder(DataverseFileNode, Folder):
 
 
 class DataverseFile(DataverseFileNode, File):
-    version_identifier = 'version'
+    version_identifier = "version"
 
     @property
     def _hashes(self):
         try:
-            return self._history[-1]['extra']['hashes']
+            return self._history[-1]["extra"]["hashes"]
         except (IndexError, KeyError):
             return None
 
@@ -72,8 +76,9 @@ class DataverseFile(DataverseFileNode, File):
 
 class DataverseProvider:
     """An alternative to `ExternalProvider` not tied to OAuth"""
-    name = 'Dataverse'
-    short_name = 'dataverse'
+
+    name = "Dataverse"
+    short_name = "dataverse"
     serializer = DataverseSerializer
 
     def __init__(self, account=None):
@@ -82,9 +87,9 @@ class DataverseProvider:
         self.account = account
 
     def __repr__(self):
-        return '<{name}: {status}>'.format(
+        return "<{name}: {status}>".format(
             name=self.__class__.__name__,
-            status=self.account.provider_id if self.account else 'anonymous'
+            status=self.account.provider_id if self.account else "anonymous",
         )
 
 
@@ -102,7 +107,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     dataset_doi = models.TextField(blank=True, null=True)
     _dataset_id = models.TextField(blank=True, null=True)
     dataset = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
+    user_settings = models.ForeignKey(
+        UserSettings, null=True, blank=True, on_delete=models.CASCADE
+    )
 
     @property
     def folder_name(self):
@@ -110,7 +117,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def dataset_id(self):
-        if self._dataset_id is None and (self.dataverse_alias and self.dataset_doi):
+        if self._dataset_id is None and (
+            self.dataverse_alias and self.dataset_doi
+        ):
             connection = connect_from_settings_or_401(self)
             dataverse = connection.get_dataverse(self.dataverse_alias)
             dataset = dataverse.get_dataset_by_doi(self.dataset_doi)
@@ -136,10 +145,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         auth = None
         if self.user_settings:
             auth = Auth(self.user_settings.owner)
-        return DataverseNodeLogger(
-            node=self.owner,
-            auth=auth
-        )
+        return DataverseNodeLogger(node=self.owner, auth=auth)
 
     def set_folder(self, dataverse, dataset, auth=None):
         self.dataverse_alias = dataverse.alias
@@ -153,21 +159,28 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         if auth:
             self.owner.add_log(
-                action='dataverse_dataset_linked',
+                action="dataverse_dataset_linked",
                 params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                    'dataset': dataset.title,
+                    "project": self.owner.parent_id,
+                    "node": self.owner._id,
+                    "dataset": dataset.title,
                 },
                 auth=auth,
             )
 
-    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+    def _get_fileobj_child_metadata(
+        self, filenode, user, cookie=None, version=None
+    ):
         try:
-            return super()._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
+            return super()._get_fileobj_child_metadata(
+                filenode, user, cookie=cookie, version=version
+            )
         except HTTPError as e:
             # The Dataverse API returns a 404 if the dataset has no published files
-            if e.code == http_status.HTTP_404_NOT_FOUND and version == 'latest-published':
+            if (
+                e.code == http_status.HTTP_404_NOT_FOUND
+                and version == "latest-published"
+            ):
                 return []
             raise
 
@@ -188,43 +201,44 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if add_log and auth:
             node = self.owner
             self.owner.add_log(
-                action='dataverse_node_deauthorized',
+                action="dataverse_node_deauthorized",
                 params={
-                    'project': node.parent_id,
-                    'node': node._id,
+                    "project": node.parent_id,
+                    "node": node._id,
                 },
                 auth=auth,
             )
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
-            raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.oauth_secret}
+            raise exceptions.AddonError("Addon is not authorized")
+        return {"token": self.external_account.oauth_secret}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
-            raise exceptions.AddonError('Dataverse is not configured')
+            raise exceptions.AddonError("Dataverse is not configured")
         return {
-            'host': self.external_account.oauth_key,
-            'doi': self.dataset_doi,
-            'id': self.dataset_id,
-            'name': self.dataset,
+            "host": self.external_account.oauth_key,
+            "doi": self.dataset_doi,
+            "id": self.dataset_id,
+            "name": self.dataset,
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
+        url = self.owner.web_url_for(
+            "addon_view_or_download_file",
+            path=metadata["path"],
+            provider="dataverse",
+        )
         self.owner.add_log(
-            f'dataverse_{action}',
+            f"dataverse_{action}",
             auth=auth,
             params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'dataset': self.dataset,
-                'filename': metadata['materialized'].strip('/'),
-                'urls': {
-                    'view': url,
-                    'download': url + '?action=download'
-                },
+                "project": self.owner.parent_id,
+                "node": self.owner._id,
+                "dataset": self.dataset,
+                "filename": metadata["materialized"].strip("/"),
+                "urls": {"view": url, "download": url + "?action=download"},
             },
         )
 

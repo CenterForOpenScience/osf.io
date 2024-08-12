@@ -7,7 +7,7 @@ def copy_files(src, target_node, parent=None, name=None):
     :param Node target_node: The node to copy files to
     :param Folder parent: The parent of to attach the clone of src to, if applicable
     """
-    assert not parent or not parent.is_file, 'Parent must be a folder'
+    assert not parent or not parent.is_file, "Parent must be a folder"
     renaming = src.name != name
 
     cloned = src.clone()
@@ -18,9 +18,14 @@ def copy_files(src, target_node, parent=None, name=None):
 
     cloned.save()
     if src.is_file and src.versions.exists():
-        fileversions = src.versions.select_related('region').order_by('-created')
+        fileversions = src.versions.select_related("region").order_by(
+            "-created"
+        )
         most_recent_fileversion = fileversions.first()
-        if most_recent_fileversion.region and most_recent_fileversion.region != target_node.osfstorage_region:
+        if (
+            most_recent_fileversion.region
+            and most_recent_fileversion.region != target_node.osfstorage_region
+        ):
             # add all original version except the most recent
             attach_versions(cloned, fileversions[1:], src)
             # create a new most recent version and update the region before adding
@@ -46,6 +51,7 @@ def copy_files(src, target_node, parent=None, name=None):
             copy_files(child, target_node, parent=cloned)
 
     return cloned
+
 
 def attach_versions(file, versions_list, src=None):
     """

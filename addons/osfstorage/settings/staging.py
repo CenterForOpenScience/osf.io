@@ -1,1 +1,1 @@
-WATERBUTLER_RESOURCE = 'container'
+WATERBUTLER_RESOURCE = "container"

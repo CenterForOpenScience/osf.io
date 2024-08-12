@@ -1,22 +1,28 @@
 """Factory boy factories for the Google Drive addon."""
+
 import factory
 
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 
 from factory.django import DjangoModelFactory
-from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from osf_tests.factories import (
+    UserFactory,
+    ProjectFactory,
+    ExternalAccountFactory,
+)
 
 from addons.googledrive.models import NodeSettings
 from addons.googledrive.models import UserSettings
 
 
 class GoogleDriveAccountFactory(ExternalAccountFactory):
-    provider = 'googledrive'
-    provider_id = factory.Sequence(lambda n: f'id-{n}')
-    oauth_key = factory.Sequence(lambda n: f'key-{n}')
-    oauth_secret = factory.Sequence(lambda n: f'secret-{n}')
+    provider = "googledrive"
+    provider_id = factory.Sequence(lambda n: f"id-{n}")
+    oauth_key = factory.Sequence(lambda n: f"key-{n}")
+    oauth_secret = factory.Sequence(lambda n: f"secret-{n}")
     expires_at = timezone.now() + relativedelta(days=1)
+
 
 class GoogleDriveUserSettingsFactory(DjangoModelFactory):
     class Meta:
@@ -24,11 +30,12 @@ class GoogleDriveUserSettingsFactory(DjangoModelFactory):
 
     owner = factory.SubFactory(UserFactory)
 
+
 class GoogleDriveNodeSettingsFactory(DjangoModelFactory):
     class Meta:
         model = NodeSettings
 
     owner = factory.SubFactory(ProjectFactory)
     user_settings = factory.SubFactory(GoogleDriveUserSettingsFactory)
-    folder_id = '1234567890'
-    folder_path = 'Drive/Camera Uploads'
+    folder_id = "1234567890"
+    folder_path = "Drive/Camera Uploads"

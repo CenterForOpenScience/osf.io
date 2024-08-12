@@ -32,8 +32,13 @@ enabled = (not settings.DEV_MODE) and settings.SENTRY_DSN
 if enabled:
     init(
         dsn=settings.SENTRY_DSN,
-        integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+        integrations=[
+            CeleryIntegration(),
+            DjangoIntegration(),
+            FlaskIntegration(),
+        ],
     )
+
 
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
@@ -68,7 +73,7 @@ class DjangoGlobalMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         api_globals.request = None
         if api_settings.DEBUG and len(gc.get_referents(request)) > 2:
-            raise Exception('You wrote a memory leak. Stop it')
+            raise Exception("You wrote a memory leak. Stop it")
         return response
 
 
@@ -100,19 +105,25 @@ class ProfileMiddleware(MiddlewareMixin):
     """
 
     def process_request(self, request):
-        if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
+        if (
+            settings.DEBUG or request.user.is_superuser
+        ) and "prof" in request.GET:
             self.prof = cProfile.Profile()
 
     def process_view(self, request, callback, callback_args, callback_kwargs):
-        if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
+        if (
+            settings.DEBUG or request.user.is_superuser
+        ) and "prof" in request.GET:
             self.prof.enable()
 
     def process_response(self, request, response):
-        if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
+        if (
+            settings.DEBUG or request.user.is_superuser
+        ) and "prof" in request.GET:
             self.prof.disable()
 
             s = StringIO.StringIO()
-            ps = pstats.Stats(self.prof, stream=s).sort_stats('cumtime')
+            ps = pstats.Stats(self.prof, stream=s).sort_stats("cumtime")
             ps.print_stats()
             response.content = s.getvalue()
 

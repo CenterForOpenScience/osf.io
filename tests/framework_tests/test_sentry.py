@@ -23,50 +23,59 @@ def set_sentry(status):
             enabled, sentry.enabled = sentry.enabled, status
             func(*args, **kwargs)
             sentry.enabled = enabled
+
         return wrapped
+
     return wrapper
 
 
 with_sentry = set_sentry(True)
 without_sentry = set_sentry(False)
 
+
 @with_sentry
-@mock.patch('framework.sentry.isolation_scope')
-@mock.patch('framework.sentry.capture_exception')
+@mock.patch("framework.sentry.isolation_scope")
+@mock.patch("framework.sentry.capture_exception")
 def test_log_no_request_context(mock_capture, push_scope_mock):
     sentry.log_exception(sentinel.exception)
-    push_scope_mock.return_value.__enter__.return_value.set_extra.assert_called_once_with('session', {})
+    push_scope_mock.return_value.__enter__.return_value.set_extra.assert_called_once_with(
+        "session", {}
+    )
     mock_capture.assert_called_with(sentinel.exception)
 
 
 class TestSentry(OsfTestCase):
-
     @with_sentry
-    @mock.patch('framework.sentry.isolation_scope')
-    @mock.patch('framework.sentry.capture_exception')
+    @mock.patch("framework.sentry.isolation_scope")
+    @mock.patch("framework.sentry.capture_exception")
     def test_log_not_logged_in(self, mock_capture, push_scope_mock):
         sentry.log_exception(sentinel.exception)
-        push_scope_mock.return_value.__enter__.return_value.set_extra.assert_called_once_with('session', {})
+        push_scope_mock.return_value.__enter__.return_value.set_extra.assert_called_once_with(
+            "session", {}
+        )
         mock_capture.assert_called_with(sentinel.exception)
 
     @with_sentry
-    @mock.patch('framework.sentry.isolation_scope')
-    @mock.patch('framework.sentry.capture_exception')
+    @mock.patch("framework.sentry.isolation_scope")
+    @mock.patch("framework.sentry.capture_exception")
     def test_log_logged_in(self, mock_capture, push_scope_mock):
         user = UserFactory()
         s = SessionStore()
-        s['auth_user_id'] = user._id
+        s["auth_user_id"] = user._id
         s.create()
         g.current_session = s
         sentry.log_exception(sentinel.exception)
         push_scope_mock.return_value.__enter__.return_value.set_extra.assert_called_once_with(
-            'session', {'auth_user_id': user._id,}
+            "session",
+            {
+                "auth_user_id": user._id,
+            },
         )
         mock_capture.assert_called_once_with(sentinel.exception)
 
     @without_sentry
-    @mock.patch('framework.sentry.isolation_scope')
-    @mock.patch('framework.sentry.capture_exception')
+    @mock.patch("framework.sentry.isolation_scope")
+    @mock.patch("framework.sentry.capture_exception")
     def test_log_not_enabled(self, mock_capture, push_scope_mock):
         sentry.log_exception(sentinel.exception)
         push_scope_mock.assert_not_called()

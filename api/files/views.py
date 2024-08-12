@@ -16,11 +16,18 @@ from osf.models import (
 from api.base.exceptions import Gone
 from api.base.filters import ListFilterMixin
 from api.base.permissions import PermissionWithGetter
-from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle
+from api.base.throttling import (
+    CreateGuidThrottle,
+    NonCookieAuthThrottle,
+    UserRateThrottle,
+    BurstRateThrottle,
+)
 from api.base import utils
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
-from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
+from api.cedar_metadata_records.serializers import (
+    CedarMetadataRecordsListSerializer,
+)
 from api.cedar_metadata_records.utils import can_view_record
 from api.nodes.permissions import ContributorOrPublic
 from api.files import annotations
@@ -38,24 +45,35 @@ class FileMixin:
     """
 
     serializer_class = FileSerializer
-    file_lookup_url_kwarg = 'file_id'
+    file_lookup_url_kwarg = "file_id"
 
     def get_file(self, check_permissions=True):
         try:
-            obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg], self.request, display_name='file')
+            obj = utils.get_object_or_error(
+                BaseFileNode,
+                self.kwargs[self.file_lookup_url_kwarg],
+                self.request,
+                display_name="file",
+            )
         except NotFound:
-            obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg], self.request).referent
+            obj = utils.get_object_or_error(
+                Guid, self.kwargs[self.file_lookup_url_kwarg], self.request
+            ).referent
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
             if obj.is_deleted:
-                raise Gone(detail='The requested file is no longer available.')
+                raise Gone(detail="The requested file is no longer available.")
 
-        if getattr(obj.target, 'deleted', None):
-            raise Gone(detail='The requested file is no longer available')
+        if getattr(obj.target, "deleted", None):
+            raise Gone(detail="The requested file is no longer available")
 
-        if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
+        if getattr(obj.target, "is_quickfiles", False) and getattr(
+            obj.target, "creator"
+        ):
             if obj.target.creator.is_disabled:
-                raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
+                raise Gone(
+                    detail="This user has been deactivated and their quickfiles are no longer available."
+                )
 
         if check_permissions:
             # May raise a permission denied
@@ -64,23 +82,28 @@ class FileMixin:
 
 
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_detail).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_detail)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         IsPreprintFile,
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'target'),
+        PermissionWithGetter(ContributorOrPublic, "target"),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
-    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle)
-    view_category = 'files'
-    view_name = 'file-detail'
+    throttle_classes = (
+        CreateGuidThrottle,
+        NonCookieAuthThrottle,
+        UserRateThrottle,
+        BurstRateThrottle,
+    )
+    view_category = "files"
+    view_name = "file-detail"
 
     def get_serializer_class(self):
         return FileDetailSerializer
@@ -93,42 +116,48 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         user = utils.get_user_auth(self.request).user
         file = self.get_file()
 
-        if self.request.GET.get('create_guid', False):
+        if self.request.GET.get("create_guid", False):
             # allows quickfiles to be given guids when another user wants a permanent link to it
-            if (self.get_target().has_permission(user, ADMIN) and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
+            if (
+                self.get_target().has_permission(user, ADMIN)
+                and utils.has_admin_scope(self.request)
+            ) or getattr(file.target, "is_quickfiles", False):
                 file.get_guid(create=True)
 
         # We normally would pass this through `get_file` as an annotation, but the `select_for_update` feature prevents
         # grouping versions in an annotation
-        if file.kind == 'file':
+        if file.kind == "file":
             file.show_as_unviewed = annotations.check_show_as_unviewed(
-                user=self.request.user, osf_file=file,
+                user=self.request.user,
+                osf_file=file,
             )
-            if file.provider == 'osfstorage':
-                file.date_modified = file.versions.aggregate(Max('created'))['created__max']
+            if file.provider == "osfstorage":
+                file.date_modified = file.versions.aggregate(Max("created"))[
+                    "created__max"
+                ]
             else:
-                file.date_modified = file.history[-1]['modified']
+                file.date_modified = file.history[-1]["modified"]
 
         return file
 
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_versions).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_versions)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'target'),
+        PermissionWithGetter(ContributorOrPublic, "target"),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
-    view_category = 'files'
-    view_name = 'file-versions'
+    view_category = "files"
+    view_name = "file-versions"
 
-    ordering = ('-modified',)
+    ordering = ("-modified",)
 
     def get_queryset(self):
         self.file = self.get_file()
@@ -136,7 +165,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
 
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
-        context['file'] = self.file
+        context["file"] = self.file
         return context
 
 
@@ -145,9 +174,9 @@ def node_from_version(request, view, obj):
 
 
 class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_version_detail).
-    """
-    version_lookup_url_kwarg = 'version_id'
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_version_detail)."""
+
+    version_lookup_url_kwarg = "version_id"
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -158,39 +187,44 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
-    view_category = 'files'
-    view_name = 'version-detail'
+    view_category = "files"
+    view_name = "version-detail"
 
     # overrides RetrieveAPIView
     def get_object(self):
         self.file = self.get_file()
-        maybe_version = self.file.get_version(self.kwargs[self.version_lookup_url_kwarg])
+        maybe_version = self.file.get_version(
+            self.kwargs[self.version_lookup_url_kwarg]
+        )
 
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, self.file)
-        return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''), self.request)
+        return utils.get_object_or_error(
+            FileVersion, getattr(maybe_version, "_id", ""), self.request
+        )
 
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
-        context['file'] = self.file
+        context["file"] = self.file
         return context
 
 
-class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, FileMixin):
-
+class FileCedarMetadataRecordsList(
+    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, FileMixin
+):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'target'),
+        PermissionWithGetter(ContributorOrPublic, "target"),
     )
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = CedarMetadataRecordsListSerializer
 
-    view_category = 'files'
-    view_name = 'file-cedar-metadata-records-list'
+    view_category = "files"
+    view_name = "file-cedar-metadata-records-list"
 
     def get_default_queryset(self):
         guid = self.get_file().get_guid()
@@ -198,7 +232,11 @@ class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
             return CedarMetadataRecord.objects.none()
         file_records = CedarMetadataRecord.objects.filter(guid___id=guid._id)
         user_auth = utils.get_user_auth(self.request)
-        record_ids = [record.id for record in file_records if can_view_record(user_auth, record, guid_type=BaseFileNode)]
+        record_ids = [
+            record.id
+            for record in file_records
+            if can_view_record(user_auth, record, guid_type=BaseFileNode)
+        ]
         return CedarMetadataRecord.objects.filter(pk__in=record_ids)
 
     def get_queryset(self):

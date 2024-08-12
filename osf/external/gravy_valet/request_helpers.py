@@ -11,81 +11,93 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 # Use urljoin here to handle inconsistent use of trailing slash
-API_BASE = urljoin(settings.GRAVYVALET_URL, 'v1/')
+API_BASE = urljoin(settings.GRAVYVALET_URL, "v1/")
 
 # {{placeholder}} format allows f-string to return a formatable string
-ACCOUNT_ENDPOINT = f'{API_BASE}authorized-storage-accounts/{{pk}}'
-ADDON_ENDPOINT = f'{API_BASE}configured-storage-addons/{{pk}}'
-WB_CONFIG_ENDPOINT = f'{ADDON_ENDPOINT}/waterbutler-config'
+ACCOUNT_ENDPOINT = f"{API_BASE}authorized-storage-accounts/{{pk}}"
+ADDON_ENDPOINT = f"{API_BASE}configured-storage-addons/{{pk}}"
+WB_CONFIG_ENDPOINT = f"{ADDON_ENDPOINT}/waterbutler-config"
 
-USER_LIST_ENDPOINT = f'{API_BASE}user-references'
-USER_DETAIL_ENDPOINT = f'{API_BASE}user-references/{{pk}}'
+USER_LIST_ENDPOINT = f"{API_BASE}user-references"
+USER_DETAIL_ENDPOINT = f"{API_BASE}user-references/{{pk}}"
 
-RESOURCE_LIST_ENDPOINT = f'{API_BASE}resource-references'
-RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
+RESOURCE_LIST_ENDPOINT = f"{API_BASE}resource-references"
+RESOURCE_DETAIL_ENDPOINT = f"{API_BASE}resource-references/{{pk}}"
 
-ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
-ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
+ACCOUNT_EXTERNAL_SERVICE_PATH = "external_storage_service"
+ADDON_EXTERNAL_SERVICE_PATH = "base_account.external_storage_service"
 
 
 def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
-    '''Return a JSONAPIResultEntry representing a known AuthorizedStorageAccount.'''
+    """Return a JSONAPIResultEntry representing a known AuthorizedStorageAccount."""
     return get_gv_result(
         endpoint_url=ACCOUNT_ENDPOINT.format(pk=gv_account_pk),
         requesting_user=requesting_user,
-        params={'include': ACCOUNT_EXTERNAL_SERVICE_PATH},
+        params={"include": ACCOUNT_EXTERNAL_SERVICE_PATH},
     )
 
 
-def get_addon(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
-    '''Return a JSONAPIResultEntry representing a known ConfiguredStorageAddon.'''
+def get_addon(
+    gv_addon_pk, requested_resource, requesting_user
+):  # -> JSONAPIResultEntry
+    """Return a JSONAPIResultEntry representing a known ConfiguredStorageAddon."""
     return get_gv_result(
         endpoint_url=ADDON_ENDPOINT.format(pk=gv_addon_pk),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': ADDON_EXTERNAL_SERVICE_PATH},
+        params={"include": ADDON_EXTERNAL_SERVICE_PATH},
     )
 
 
-def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIResultEntry]
-    '''Returns an iterator of JSONAPIResultEntries representing all of the AuthorizedStorageAccounts for a user.'''
+def iterate_accounts_for_user(
+    requesting_user,
+):  # -> typing.Iterator[JSONAPIResultEntry]
+    """Returns an iterator of JSONAPIResultEntries representing all of the AuthorizedStorageAccounts for a user."""
     user_result = get_gv_result(
         endpoint_url=USER_LIST_ENDPOINT,
         requesting_user=requesting_user,
-        params={'filter[user_uri]': requesting_user.get_semantic_iri()},
+        params={"filter[user_uri]": requesting_user.get_semantic_iri()},
     )
     if not user_result:
         return None
     yield from iterate_gv_results(
-        endpoint_url=user_result.get_related_link('authorized_storage_accounts'),
+        endpoint_url=user_result.get_related_link(
+            "authorized_storage_accounts"
+        ),
         requesting_user=requesting_user,
-        params={'include': ACCOUNT_EXTERNAL_SERVICE_PATH},
+        params={"include": ACCOUNT_EXTERNAL_SERVICE_PATH},
     )
 
 
-def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typing.Iterator[JSONAPIResultEntry]
-    '''Returns an iterator of JSONAPIResultEntires representing all of the ConfiguredStorageAddons for a resource.'''
+def iterate_addons_for_resource(
+    requested_resource, requesting_user
+):  # -> typing.Iterator[JSONAPIResultEntry]
+    """Returns an iterator of JSONAPIResultEntires representing all of the ConfiguredStorageAddons for a resource."""
     resource_result = get_gv_result(
         endpoint_url=RESOURCE_LIST_ENDPOINT,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'filter[resource_uri]': requested_resource.get_semantic_iri()},
+        params={"filter[resource_uri]": requested_resource.get_semantic_iri()},
     )
     if not resource_result:
         return None
     yield from iterate_gv_results(
-        endpoint_url=resource_result.get_related_link('configured_storage_addons'),
+        endpoint_url=resource_result.get_related_link(
+            "configured_storage_addons"
+        ),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': ADDON_EXTERNAL_SERVICE_PATH}
+        params={"include": ADDON_EXTERNAL_SERVICE_PATH},
     )
 
 
-def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
+def get_waterbutler_config(
+    gv_addon_pk, requested_resource, requesting_user
+):  # -> JSONAPIResultEntry
     return get_gv_result(
         endpoint_url=WB_CONFIG_ENDPOINT.format(pk=gv_addon_pk),
         requesting_user=requesting_user,
-        requested_resource=requested_resource
+        requested_resource=requested_resource,
     )
 
 
@@ -93,10 +105,10 @@ def get_gv_result(
     endpoint_url: str,
     requesting_user,
     requested_resource=None,
-    request_method='GET',
+    request_method="GET",
     params: dict = None,
 ):  # -> JSONAPIResultEntry
-    '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
+    """Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry."""
     response_json = _make_gv_request(
         endpoint_url=endpoint_url,
         requesting_user=requesting_user,
@@ -105,12 +117,14 @@ def get_gv_result(
         params=params,
     ).json()
 
-    if not response_json['data']:
+    if not response_json["data"]:
         return None
-    data = response_json['data']
+    data = response_json["data"]
     if isinstance(data, list):
         data = data[0]  # Assume filtered list endpoint
-    included_entities_lookup = _format_included_entities(response_json.get('included', []))
+    included_entities_lookup = _format_included_entities(
+        response_json.get("included", [])
+    )
     return JSONAPIResultEntry(data, included_entities_lookup)
 
 
@@ -118,22 +132,24 @@ def iterate_gv_results(
     endpoint_url: str,
     requesting_user,
     requested_resource=None,
-    request_method='GET',
+    request_method="GET",
     params: dict = None,
 ):  # -> typing.Iterator[JSONAPIResultEntry]
-    '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
+    """Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires."""
     response_json = _make_gv_request(
         endpoint_url=endpoint_url,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         request_method=request_method,
-        params=params
+        params=params,
     ).json()
 
-    if not response_json['data']:
+    if not response_json["data"]:
         return  # empty iterator
-    included_entities_lookup = _format_included_entities(response_json.get('included', []))
-    for entry in response_json['data']:
+    included_entities_lookup = _format_included_entities(
+        response_json.get("included", [])
+    )
+    for entry in response_json["data"]:
         yield JSONAPIResultEntry(entry, included_entities_lookup)
 
 
@@ -141,18 +157,20 @@ def _make_gv_request(
     endpoint_url: str,
     requesting_user,
     requested_resource=None,
-    request_method='GET',
+    request_method="GET",
     params: dict = None,
 ):
-    '''Generates HMAC-Signed auth headers and makes a request to GravyValet, returning the result.'''
-    full_url = urlunparse(urlparse(endpoint_url)._replace(query=urlencode(params)))
+    """Generates HMAC-Signed auth headers and makes a request to GravyValet, returning the result."""
+    full_url = urlunparse(
+        urlparse(endpoint_url)._replace(query=urlencode(params))
+    )
     auth_headers = auth_helpers.make_gravy_valet_hmac_headers(
         request_url=full_url,
         request_method=request_method,
         additional_headers=auth_helpers.make_permissions_headers(
             requesting_user=requesting_user,
             requested_resource=requested_resource,
-        )
+        ),
     )
     response = requests.get(endpoint_url, headers=auth_headers, params=params)
     if not response.ok:
@@ -162,13 +180,13 @@ def _make_gv_request(
 
 
 def _format_included_entities(included_entities_json):
-    '''Processes all entries of a JSONAPI `include` element into JSONAPIResultEntries.
+    """Processes all entries of a JSONAPI `include` element into JSONAPIResultEntries.
 
     Returns a dictionary of JSONAPIResultEntires keyed by type and id for easy lookup
     and linking. Also links these entires in the case of nested Includes.
-    '''
+    """
     included_entities_by_type_and_id = {
-        (entity['type'], entity['id']): JSONAPIResultEntry(entity)
+        (entity["type"], entity["id"]): JSONAPIResultEntry(entity)
         for entity in included_entities_json
     }
     for entity in included_entities_by_type_and_id.values():
@@ -185,11 +203,15 @@ class JSONAPIResultEntry:
     # Included JSONAPIResultEntries, keyed by relationship name
     _includes: dict  # [str, JSONAPIResultEntry]
 
-    def __init__(self, result_entry: dict, included_entities_lookup: dict = None):
-        self.resource_type = result_entry['type']
-        self.resource_id = result_entry['id']
-        self._attributes = dict(result_entry['attributes'])
-        self._relationships = _extract_relationships(result_entry['relationships'])
+    def __init__(
+        self, result_entry: dict, included_entities_lookup: dict = None
+    ):
+        self.resource_type = result_entry["type"]
+        self.resource_id = result_entry["id"]
+        self._attributes = dict(result_entry["attributes"])
+        self._relationships = _extract_relationships(
+            result_entry["relationships"]
+        )
         self._includes = {}
         if included_entities_lookup:
             self.extract_included_relationships(included_entities_lookup)
@@ -206,10 +228,14 @@ class JSONAPIResultEntry:
     def get_included_member(self, relationship_name):
         return self._includes.get(relationship_name)
 
-    def get_included_attribute(self, include_path: typing.Iterator, attribute_name: str):
+    def get_included_attribute(
+        self, include_path: typing.Iterator, attribute_name: str
+    ):
         related_object = self
         for relationship_name in include_path:
-            related_object = related_object.get_included_member(relationship_name)
+            related_object = related_object.get_included_member(
+                relationship_name
+            )
         return related_object.get_attribute(attribute_name)
 
     def extract_included_relationships(self, included_entities_lookup):
@@ -217,10 +243,15 @@ class JSONAPIResultEntry:
             if relationship_entry.related_id is None:
                 continue
             included_entity = included_entities_lookup.get(
-                (relationship_entry.related_type, relationship_entry.related_id)
+                (
+                    relationship_entry.related_type,
+                    relationship_entry.related_id,
+                )
             )
             if included_entity:
-                self._includes[relationship_entry.relationship_name] = included_entity
+                self._includes[relationship_entry.relationship_name] = (
+                    included_entity
+                )
 
 
 @dataclasses.dataclass
@@ -232,18 +263,21 @@ class JSONAPIRelationship:
 
 
 def _extract_relationships(jsonapi_relationships_data):
-    '''Converts  the `relationship entrie from a JSONAPI into a dict of JSONAPIRelationships keyed by name.'''
+    """Converts  the `relationship entrie from a JSONAPI into a dict of JSONAPIRelationships keyed by name."""
     relationships_by_name = {}
-    for relationship_name, relationship_entry in jsonapi_relationships_data.items():
-        related_data = relationship_entry.get('data', {})
-        related_type = related_data.get('type')
-        related_id = related_data.get('id')
-        related_link = relationship_entry['links']['related']
+    for (
+        relationship_name,
+        relationship_entry,
+    ) in jsonapi_relationships_data.items():
+        related_data = relationship_entry.get("data", {})
+        related_type = related_data.get("type")
+        related_id = related_data.get("id")
+        related_link = relationship_entry["links"]["related"]
         relationships_by_name[relationship_name] = JSONAPIRelationship(
             relationship_name=relationship_name,
             related_link=related_link,
             related_type=related_type,
-            related_id=related_id
+            related_id=related_id,
         )
 
     return relationships_by_name

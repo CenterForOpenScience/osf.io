@@ -1,6 +1,6 @@
 DEFAULT_HOSTS = [
-    'dataverse.harvard.edu',            # Harvard PRODUCTION server
-    'dataverse.lib.virginia.edu'        # University of Virginia server
+    "dataverse.harvard.edu",  # Harvard PRODUCTION server
+    "dataverse.lib.virginia.edu",  # University of Virginia server
 ]
 
 REQUEST_TIMEOUT = 60

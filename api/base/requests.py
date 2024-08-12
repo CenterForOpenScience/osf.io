@@ -11,17 +11,26 @@ class EmbeddedRequest(Request):
     Enforces that the request method is 'GET' and user is the
     authorized user from the original request.
     """
+
     def __init__(
-        self, request, parsers=None, authenticators=None,
-        negotiator=None, parser_context=None, parents=None,
+        self,
+        request,
+        parsers=None,
+        authenticators=None,
+        negotiator=None,
+        parser_context=None,
+        parents=None,
     ):
         self.original_user = request.user
         self.parents = parents or {Node: {}, OSFUser: {}}
         self.version = request.version
 
         super().__init__(
-            request._request, parsers, authenticators,
-            negotiator, parser_context,
+            request._request,
+            parsers,
+            authenticators,
+            negotiator,
+            parser_context,
         )
 
     @property
@@ -29,7 +38,7 @@ class EmbeddedRequest(Request):
         """
         Overrides method to be 'GET'
         """
-        return 'GET'
+        return "GET"
 
     @property
     def user(self):

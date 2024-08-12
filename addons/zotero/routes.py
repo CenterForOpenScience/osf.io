@@ -3,72 +3,71 @@ from framework.routing import Rule, json_renderer
 from addons.zotero.views import zotero_views
 
 api_routes = {
-    'rules': [
+    "rules": [
         Rule(
             [
-                '/settings/zotero/accounts/',
+                "/settings/zotero/accounts/",
             ],
-            'get',
+            "get",
             zotero_views.account_list(),
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/zotero/settings/',
-                '/project/<pid>/node/<nid>/zotero/settings/',
+                "/project/<pid>/zotero/settings/",
+                "/project/<pid>/node/<nid>/zotero/settings/",
             ],
-            'get',
+            "get",
             zotero_views.get_config(),
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/zotero/settings/',
-                '/project/<pid>/node/<nid>/zotero/settings/',
+                "/project/<pid>/zotero/settings/",
+                "/project/<pid>/node/<nid>/zotero/settings/",
             ],
-            'put',
+            "put",
             zotero_views.set_config(),
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/zotero/user_auth/',
-                '/project/<pid>/node/<nid>/zotero/user_auth/',
+                "/project/<pid>/zotero/user_auth/",
+                "/project/<pid>/node/<nid>/zotero/user_auth/",
             ],
-            'put',
+            "put",
             zotero_views.import_auth(),
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/zotero/user_auth/',
-                '/project/<pid>/node/<nid>/zotero/user_auth/',
+                "/project/<pid>/zotero/user_auth/",
+                "/project/<pid>/node/<nid>/zotero/user_auth/",
             ],
-            'delete',
+            "delete",
             zotero_views.deauthorize_node(),
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/zotero/citations/',
-                '/project/<pid>/node/<nid>/zotero/citations/',
-                '/project/<pid>/zotero/citations/<list_id>/',
-                '/project/<pid>/node/<nid>/zotero/citations/<list_id>/',
+                "/project/<pid>/zotero/citations/",
+                "/project/<pid>/node/<nid>/zotero/citations/",
+                "/project/<pid>/zotero/citations/<list_id>/",
+                "/project/<pid>/node/<nid>/zotero/citations/<list_id>/",
             ],
-            'get',
+            "get",
             zotero_views.citation_list(),
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/zotero/groups/',
-                '/project/<pid>/node/<nid>/zotero/groups/',
+                "/project/<pid>/zotero/groups/",
+                "/project/<pid>/node/<nid>/zotero/groups/",
             ],
-            'get',
+            "get",
             zotero_views.library_list(),
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1',
-
+    "prefix": "/api/v1",
 }

@@ -1,11 +1,15 @@
 import pytest
 
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
-from api_tests.nodes.views.test_node_institutions_list import TestNodeInstitutionList
+from api_tests.nodes.views.test_node_institutions_list import (
+    TestNodeInstitutionList,
+)
+
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.fixture()
 def user_two():
@@ -14,7 +18,6 @@ def user_two():
 
 @pytest.mark.django_db
 class TestRegistrationInstitutionList(TestNodeInstitutionList):
-
     @pytest.fixture()
     def node_one(self, institution):
         # Fixture override for TestNodeInstitutionList

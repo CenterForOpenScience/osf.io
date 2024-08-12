@@ -6,14 +6,17 @@ from osf_tests.factories import SubjectFactory
 
 # Ported from tests/framework/test_mongo.py
 
+
 def test_string_required_passes_with_string():
-    assert validators.string_required('Hi!') is True
+    assert validators.string_required("Hi!") is True
+
 
 def test_string_required_fails_when_empty():
     with pytest.raises(ValidationValueError):
         validators.string_required(None)
     with pytest.raises(ValidationValueError):
-        validators.string_required('')
+        validators.string_required("")
+
 
 @pytest.mark.django_db
 def test_validate_expand_subject_hierarchy():
@@ -47,6 +50,6 @@ def test_validate_expand_subject_hierarchy():
     assert fruit in expanded
 
     # test invalid hierarchy
-    subject_list = [fruit._id, '12345_bad_id']
+    subject_list = [fruit._id, "12345_bad_id"]
     with pytest.raises(ValidationValueError):
         validators.expand_subject_hierarchy(subject_list)

@@ -7,7 +7,7 @@ from addons.bitbucket.api import BitbucketClient
 
 
 def get_path(kwargs, required=True):
-    path = kwargs.get('path')
+    path = kwargs.get("path")
     if path:
         return unquote_plus(path)
     elif required:
@@ -23,7 +23,9 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     :param Bitbucket connection: Bitbucket API object. If None, one will be created
         from the addon's user settings.
     """
-    connection = connection or BitbucketClient(access_token=addon.external_account.oauth_key)
+    connection = connection or BitbucketClient(
+        access_token=addon.external_account.oauth_key
+    )
 
     if sha and not branch:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -39,11 +41,12 @@ def get_refs(addon, branch=None, sha=None, connection=None):
 
     # identify commit sha for requested branch
     for each in branches:
-        if branch == each['name']:
-            sha = each['target']['hash']
+        if branch == each["name"]:
+            sha = each["target"]["hash"]
             break
 
-    return branch, sha, [
-        {'name': x['name'], 'sha': x['target']['hash']}
-        for x in branches
-    ]
+    return (
+        branch,
+        sha,
+        [{"name": x["name"], "sha": x["target"]["hash"]} for x in branches],
+    )

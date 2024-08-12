@@ -10,6 +10,7 @@
 import bcrypt
 from website import settings
 
+
 def generate_password_hash(password, rounds=None):
     """Generates a password hash using `bcrypt`. Specifying `log_rounds` sets
     the log_rounds parameter of `bcrypt.gensalt()` which determines the
@@ -22,12 +23,9 @@ def generate_password_hash(password, rounds=None):
         rounds = settings.BCRYPT_LOG_ROUNDS
 
     if not password:
-        raise ValueError('Password must be non-empty.')
+        raise ValueError("Password must be non-empty.")
 
-    pw_hash = bcrypt.hashpw(
-        password.encode(),
-        bcrypt.gensalt(rounds)
-    )
+    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds))
 
     return pw_hash
 
@@ -55,9 +53,5 @@ def check_password_hash(pw_hash, password):
     """
 
     return constant_time_compare(
-        bcrypt.hashpw(
-            password.encode(),
-            pw_hash.encode()
-        ),
-        pw_hash
+        bcrypt.hashpw(password.encode(), pw_hash.encode()), pw_hash
     )

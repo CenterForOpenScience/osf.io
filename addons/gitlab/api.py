@@ -10,13 +10,20 @@ from addons.gitlab.settings import DEFAULT_HOSTS
 
 
 class GitLabClient:
-
     def __init__(self, external_account=None, access_token=None, host=None):
-        self.access_token = getattr(external_account, 'oauth_key', None) or access_token
-        self.host = getattr(external_account, 'oauth_secret', None) or host or DEFAULT_HOSTS[0]
+        self.access_token = (
+            getattr(external_account, "oauth_key", None) or access_token
+        )
+        self.host = (
+            getattr(external_account, "oauth_secret", None)
+            or host
+            or DEFAULT_HOSTS[0]
+        )
 
         if self.access_token:
-            self.gitlab = gitlab.Gitlab(self.host, private_token=self.access_token)
+            self.gitlab = gitlab.Gitlab(
+                self.host, private_token=self.access_token
+            )
         else:
             self.gitlab = gitlab.Gitlab(self.host)
 
@@ -57,10 +64,13 @@ class GitLabClient:
         try:
             return self.gitlab.projects.list(membership=True, all=all)
         except gitlab.GitlabAuthenticationError:
-            raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-                'message_long': 'Your Gitlab token is deleted or invalid you may disconnect your Gitlab account and '
-                                'reconnect with a valid token <a href="/settings/addons/">here</a>.'
-            })
+            raise HTTPError(
+                http_status.HTTP_403_FORBIDDEN,
+                data={
+                    "message_long": "Your Gitlab token is deleted or invalid you may disconnect your Gitlab account and "
+                    'reconnect with a valid token <a href="/settings/addons/">here</a>.'
+                },
+            )
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
@@ -77,7 +87,7 @@ class GitLabClient:
 
         return self.gitlab.projects.get(repo_id).branches.list(all=True)
 
-    def starball(self, user, repo, repo_id, ref='master'):
+    def starball(self, user, repo, repo_id, ref="master"):
         """Get link for archive download.
 
         :param str user: GitLab user name
@@ -85,7 +95,7 @@ class GitLabClient:
         :param str ref: Git reference
         :returns: tuple: Tuple of headers and file location
         """
-        uri = f'projects/{repo_id}/repository/archive?sha={ref}'
+        uri = f"projects/{repo_id}/repository/archive?sha={ref}"
 
         request = self._get_api_request(uri)
 
@@ -126,24 +136,27 @@ class GitLabClient:
         return False
 
     def _get_api_request(self, uri):
-        headers = {'PRIVATE-TOKEN': f'{self.access_token}'}
+        headers = {"PRIVATE-TOKEN": f"{self.access_token}"}
 
-        return requests.get(f'https://{self.host}/api/v4/{uri}', verify=True, headers=headers)
+        return requests.get(
+            f"https://{self.host}/api/v4/{uri}", verify=True, headers=headers
+        )
 
     def revoke_token(self):
         return False
 
 
 def ref_to_params(branch=None, sha=None):
-
-    params = urlencode({
-        key: value
-        for key, value in {
-            'branch': branch,
-            'sha': sha,
-        }.items()
-        if value
-    })
+    params = urlencode(
+        {
+            key: value
+            for key, value in {
+                "branch": branch,
+                "sha": sha,
+            }.items()
+            if value
+        }
+    )
     if params:
-        return '?' + params
-    return ''
+        return "?" + params
+    return ""

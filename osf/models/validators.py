@@ -1,9 +1,18 @@
 import re
 import waffle
 
-from jsonschema import ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator, validate, validators
+from jsonschema import (
+    ValidationError as JsonSchemaValidationError,
+    SchemaError,
+    Draft7Validator,
+    validate,
+    validators,
+)
 from django.conf import settings
-from django.core.validators import URLValidator, validate_email as django_validate_email
+from django.core.validators import (
+    URLValidator,
+    validate_email as django_validate_email,
+)
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
 from rest_framework import exceptions
@@ -12,28 +21,37 @@ from website.notifications.constants import NOTIFICATION_TYPES
 
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
-from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
+from osf.exceptions import (
+    ValidationError,
+    ValidationValueError,
+    reraise_django_validation_errors,
+    BlockedEmailError,
+)
 
 from website.language import SWITCH_VALIDATOR_ERROR
 
 
 def validate_history_item(items):
     for value in items or []:
-        string_required(value.get('institution'))
-        startMonth = value.get('startMonth')
-        startYear = value.get('startYear')
-        endMonth = value.get('endMonth')
-        endYear = value.get('endYear')
+        string_required(value.get("institution"))
+        startMonth = value.get("startMonth")
+        startYear = value.get("startYear")
+        endMonth = value.get("endMonth")
+        endYear = value.get("endYear")
 
         validate_year(startYear)
         validate_year(endYear)
 
         if startYear and endYear:
             if endYear < startYear:
-                raise ValidationValueError('End date must be later than start date.')
+                raise ValidationValueError(
+                    "End date must be later than start date."
+                )
             elif endYear == startYear:
                 if endMonth and startMonth and endMonth < startMonth:
-                    raise ValidationValueError('End date must be later than start date.')
+                    raise ValidationValueError(
+                        "End date must be later than start date."
+                    )
 
 
 def validate_year(item):
@@ -41,15 +59,15 @@ def validate_year(item):
         try:
             int(item)
         except ValueError:
-            raise ValidationValueError('Please enter a valid year.')
+            raise ValidationValueError("Please enter a valid year.")
         else:
             if isinstance(item, str) and len(item) != 4:
-                raise ValidationValueError('Please enter a valid year.')
+                raise ValidationValueError("Please enter a valid year.")
 
 
 def string_required(value):
-    if value is None or value.strip() == '':
-        raise ValidationValueError('Value must not be empty.')
+    if value is None or value.strip() == "":
+        raise ValidationValueError("Value must not be empty.")
     return True
 
 
@@ -65,16 +83,16 @@ def validate_title(value, allow_blank=False):
 
     if not allow_blank:
         if value is None or not value.strip():
-            raise ValidationValueError('Title cannot be blank.')
+            raise ValidationValueError("Title cannot be blank.")
 
     value = strip_html(value)
 
     if not allow_blank:
         if value is None or not value.strip():
-            raise ValidationValueError('Invalid title.')
+            raise ValidationValueError("Invalid title.")
 
     if len(value) > 512:
-        raise ValidationValueError('Title cannot exceed 512 characters.')
+        raise ValidationValueError("Title cannot exceed 512 characters.")
 
     return True
 
@@ -88,22 +106,24 @@ def validate_profile_websites(profile_websites):
             validate_url(value)
         except DjangoValidationError:
             # Reraise with a better message
-            raise ValidationError('Invalid personal URL.')
+            raise ValidationError("Invalid personal URL.")
 
 
 def validate_social(value):
-    validate_profile_websites(value.get('profileWebsites'))
+    validate_profile_websites(value.get("profileWebsites"))
     from osf.models import OSFUser
+
     for soc_key in value.keys():
         if soc_key not in OSFUser.SOCIAL_FIELDS:
-            raise ValidationError(f'{soc_key} is not a valid key for social.')
+            raise ValidationError(f"{soc_key} is not a valid key for social.")
 
 
 def validate_email(value):
     from osf.models import NotableDomain
+
     with reraise_django_validation_errors():
         django_validate_email(value)
-    domain = value.split('@')[1].lower()
+    domain = value.split("@")[1].lower()
 
     is_email_domain_blocked = NotableDomain.objects.filter(
         domain=domain,
@@ -111,14 +131,15 @@ def validate_email(value):
     ).exists()
 
     if is_email_domain_blocked:
-        raise BlockedEmailError('Invalid Email')
+        raise BlockedEmailError("Invalid Email")
 
 
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject
+
     parent = Subject.objects.get(id=parent)
     if parent and len(parent.hierarchy) >= 3:
-        raise DjangoValidationError('Invalid hierarchy')
+        raise DjangoValidationError("Invalid hierarchy")
 
 
 def validate_subjects(subject_list):
@@ -128,9 +149,10 @@ def validate_subjects(subject_list):
     :return Subject queryset
     """
     from osf.models import Subject
+
     subjects = Subject.objects.filter(_id__in=subject_list)
     if subjects.count() != len(subject_list):
-        raise ValidationValueError('Subject not found.')
+        raise ValidationValueError("Subject not found.")
     return subjects
 
 
@@ -155,11 +177,14 @@ def expand_subject_hierarchy(subject_list):
 
 def validate_subject_hierarchy(subject_hierarchy):
     from osf.models import Subject
+
     validated_hierarchy, raw_hierarchy = [], set(subject_hierarchy)
     for subject_id in subject_hierarchy:
         subject = Subject.load(subject_id)
         if not subject:
-            raise ValidationValueError(f'Subject with id <{subject_id}> could not be found.')
+            raise ValidationValueError(
+                f"Subject with id <{subject_id}> could not be found."
+            )
 
         if subject.parent:
             continue
@@ -168,8 +193,13 @@ def validate_subject_hierarchy(subject_hierarchy):
         validated_hierarchy.append(subject._id)
 
         while raw_hierarchy:
-            if not set(subject.children.values_list('_id', flat=True)) & raw_hierarchy:
-                raise ValidationValueError(f'Invalid subject hierarchy: {subject_hierarchy}')
+            if (
+                not set(subject.children.values_list("_id", flat=True))
+                & raw_hierarchy
+            ):
+                raise ValidationValueError(
+                    f"Invalid subject hierarchy: {subject_hierarchy}"
+                )
             else:
                 for child in subject.children.filter(_id__in=raw_hierarchy):
                     subject = child
@@ -179,13 +209,19 @@ def validate_subject_hierarchy(subject_hierarchy):
         if set(validated_hierarchy) == set(subject_hierarchy):
             return
         else:
-            raise ValidationValueError(f'Invalid subject hierarchy: {subject_hierarchy}')
-    raise ValidationValueError(f'Unable to find root subject in {subject_hierarchy}')
+            raise ValidationValueError(
+                f"Invalid subject hierarchy: {subject_hierarchy}"
+            )
+    raise ValidationValueError(
+        f"Unable to find root subject in {subject_hierarchy}"
+    )
 
 
 @deconstructible
 class CommentMaxLength:
-    mention_re = re.compile(r'\[([@|\+].*?)\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/[a-z\d]{5}\/\)')
+    mention_re = re.compile(
+        r"\[([@|\+].*?)\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/[a-z\d]{5}\/\)"
+    )
     max_length = None
 
     def __init__(self, max_length=500):
@@ -199,23 +235,24 @@ class CommentMaxLength:
         reduced_comment = self.mention_re.sub(self.link_repl, value)
         if len(reduced_comment) > self.max_length + 2:
             raise ValidationValueError(
-                f'Ensure this field has no more than {self.max_length} characters.')
+                f"Ensure this field has no more than {self.max_length} characters."
+            )
 
         return True
 
 
-sanitize_pattern = re.compile(r'<\/?[^>]+>')
+sanitize_pattern = re.compile(r"<\/?[^>]+>")
 
 
 def validate_no_html(value):
-    if value != sanitize_pattern.sub('', value):
-        raise ValidationError('Unsanitary string')
+    if value != sanitize_pattern.sub("", value):
+        raise ValidationError("Unsanitary string")
     return True
 
 
 def validate_doi(value):
     # DOI must start with 10 and have a slash in it - avoided getting too complicated
-    if not re.match('10\\.\\S*\\/', value):
+    if not re.match("10\\.\\S*\\/", value):
         raise ValidationValueError(f'"{value}" is not a valid DOI')
     return True
 
@@ -225,7 +262,7 @@ def validate_location(value):
         return  # Allow for None locations but not broken dicts
     from addons.osfstorage import settings
 
-    for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
+    for key in ("service", settings.WATERBUTLER_RESOURCE, "object"):
         if key not in value:
             raise ValidationValueError(f'Location {value} missing key "{key}"')
     return True
@@ -233,41 +270,41 @@ def validate_location(value):
 
 class RegistrationResponsesValidator:
     NON_EMPTY_STRING = {
-        'type': 'string',
-        'minLength': 1,
+        "type": "string",
+        "minLength": 1,
     }
 
     FILE_REFERENCE = {
-        'type': 'object',
-        'additionalProperties': False,
-        'required': ['file_id', 'file_name', 'file_urls', 'file_hashes'],
-        'properties': {
-            'file_name': NON_EMPTY_STRING,
-            'file_id': NON_EMPTY_STRING,
-            'file_urls': {
-                'type': 'object',
-                'minProperties': 1,  # at least one identifying URL
-                'additionalProperties': False,
-                'required': ['html'],
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["file_id", "file_name", "file_urls", "file_hashes"],
+        "properties": {
+            "file_name": NON_EMPTY_STRING,
+            "file_id": NON_EMPTY_STRING,
+            "file_urls": {
+                "type": "object",
+                "minProperties": 1,  # at least one identifying URL
+                "additionalProperties": False,
+                "required": ["html"],
                 # html/view URL is required by archiver and for converting to legacy "nested" format
-                'properties': {
-                    'html': {
-                        'type': 'string',
-                        'regex': FILE_VIEW_URL_REGEX,
+                "properties": {
+                    "html": {
+                        "type": "string",
+                        "regex": FILE_VIEW_URL_REGEX,
                         # loosen this constraint to `format: iri` when we can drop the legacy format
                     },
-                    'download': {
-                        'type': 'string',
-                        'format': 'iri',
+                    "download": {
+                        "type": "string",
+                        "format": "iri",
                     },
                 },
             },
-            'file_hashes': {
-                'type': 'object',
-                'minProperties': 1,  # at least one hash
-                'additionalProperties': False,
-                'properties': {
-                    'sha256': NON_EMPTY_STRING,
+            "file_hashes": {
+                "type": "object",
+                "minProperties": 1,  # at least one hash
+                "additionalProperties": False,
+                "properties": {
+                    "sha256": NON_EMPTY_STRING,
                 },
             },
         },
@@ -290,22 +327,27 @@ class RegistrationResponsesValidator:
         :raises ValidationError (if invalid)
         """
         try:
-            validate(registration_responses, self.json_schema, cls=Draft7Validator)
+            validate(
+                registration_responses, self.json_schema, cls=Draft7Validator
+            )
         except JsonSchemaValidationError as e:
-            properties = self.json_schema.get('properties', {})
-            relative_path = getattr(e, 'relative_path', None)
-            question_id = relative_path[0] if relative_path else ''
+            properties = self.json_schema.get("properties", {})
+            relative_path = getattr(e, "relative_path", None)
+            question_id = relative_path[0] if relative_path else ""
             if properties.get(question_id, None):
-                question_title = properties.get(question_id).get('description') or question_id
-                if e.relative_schema_path[0] == 'required':
+                question_title = (
+                    properties.get(question_id).get("description")
+                    or question_id
+                )
+                if e.relative_schema_path[0] == "required":
                     raise ValidationError(
                         f"For your registration the '{question_title}' field is required"
                     )
-                elif 'enum' in properties.get(question_id):
+                elif "enum" in properties.get(question_id):
                     raise ValidationError(
-                        'For your registration, your response to the '
+                        "For your registration, your response to the "
                         f"'{question_title}' field is invalid, your response must be "
-                        'one of the provided options.'
+                        "one of the provided options."
                     )
                 else:
                     raise ValidationError(
@@ -317,27 +359,29 @@ class RegistrationResponsesValidator:
         return True
 
     def _build_json_schema(self):
-        """Builds jsonschema for validating flattened registration_responses field
-        """
+        """Builds jsonschema for validating flattened registration_responses field"""
         # schema blocks corresponding to registration_responses
         questions = [
-            block for block in self.schema_blocks
+            block
+            for block in self.schema_blocks
             if block.registration_response_key is not None
         ]
 
         properties = {
-            question.registration_response_key: self._build_question_schema(question)
+            question.registration_response_key: self._build_question_schema(
+                question
+            )
             for question in questions
         }
 
         json_schema = {
-            'type': 'object',
-            'additionalProperties': False,
-            'properties': properties
+            "type": "object",
+            "additionalProperties": False,
+            "properties": properties,
         }
 
         if self.required_fields:
-            json_schema['required'] = [
+            json_schema["required"] = [
                 question.registration_response_key
                 for question in questions
                 if question.required
@@ -356,14 +400,15 @@ class RegistrationResponsesValidator:
         options = [
             block.display_text
             for block in self.schema_blocks
-            if block.block_type == 'select-input-option' and block.schema_block_group_key == question.schema_block_group_key
+            if block.block_type == "select-input-option"
+            and block.schema_block_group_key == question.schema_block_group_key
         ]
 
         # required is True if we want to both enforce required_fields
         # and the question in particular is required.
         required = self.required_fields and question.required
-        if not required and '' not in options:
-            options.append('')
+        if not required and "" not in options:
+            options.append("")
 
         return options
 
@@ -376,50 +421,61 @@ class RegistrationResponsesValidator:
             (
                 block.display_text
                 for block in self.schema_blocks
-                if block.block_type == 'question-label' and block.schema_block_group_key == question.schema_block_group_key
+                if block.block_type == "question-label"
+                and block.schema_block_group_key
+                == question.schema_block_group_key
             ),
             question.registration_response_key,  # default
         )
 
-        if question.block_type == 'single-select-input':
+        if question.block_type == "single-select-input":
             return {
-                'type': 'string',
-                'enum': self._get_multiple_choice_options(question),
-                'description': question_text,
+                "type": "string",
+                "enum": self._get_multiple_choice_options(question),
+                "description": question_text,
             }
-        elif question.block_type == 'multi-select-input':
+        elif question.block_type == "multi-select-input":
             return {
-                'type': 'array',
-                'items': {
-                    'type': 'string',
-                    'enum': self._get_multiple_choice_options(question),
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "enum": self._get_multiple_choice_options(question),
                 },
-                'description': question_text,
+                "description": question_text,
             }
-        elif question.block_type == 'file-input':
+        elif question.block_type == "file-input":
             return {
-                'type': 'array',
-                'items': self.FILE_REFERENCE,
-                'description': question_text,
+                "type": "array",
+                "items": self.FILE_REFERENCE,
+                "description": question_text,
             }
-        elif question.block_type in ('short-text-input', 'long-text-input', 'contributors-input'):
+        elif question.block_type in (
+            "short-text-input",
+            "long-text-input",
+            "contributors-input",
+        ):
             if self.required_fields and question.required:
                 return {
-                    'type': 'string',
-                    'minLength': 1,
-                    'description': question_text,
+                    "type": "string",
+                    "minLength": 1,
+                    "description": question_text,
                 }
             else:
                 return {
-                    'type': 'string',
-                    'description': question_text,
+                    "type": "string",
+                    "description": question_text,
                 }
 
-        raise ValueError(f'Unexpected `block_type`: {question.block_type}')
+        raise ValueError(f"Unexpected `block_type`: {question.block_type}")
 
 
 class SwitchValidator:
-    def __init__(self, switch_name: str, message: str = SWITCH_VALIDATOR_ERROR, should_be: bool = True):
+    def __init__(
+        self,
+        switch_name: str,
+        message: str = SWITCH_VALIDATOR_ERROR,
+        should_be: bool = True,
+    ):
         """
         This throws a validation error if a switched off field is prematurely used. This the on/off state of the field
         is determined by the validators `should_be` value, if the switch's active value is `not` what it `should_be` a

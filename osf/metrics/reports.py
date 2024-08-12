@@ -9,8 +9,8 @@ from osf.metrics.utils import stable_key, YearMonth
 
 
 class ReportInvalid(Exception):
-    """Tried to save a report with invalid something-or-other
-    """
+    """Tried to save a report with invalid something-or-other"""
+
     pass
 
 
@@ -20,19 +20,24 @@ class DailyReport(metrics.Metric):
     There's something we'd like to know about every so often,
     so let's regularly run a report and stash the results here.
     """
-    DAILY_UNIQUE_FIELD = None  # set in subclasses that expect multiple reports per day
 
-    report_date = metrics.Date(format='strict_date', required=True)
+    DAILY_UNIQUE_FIELD = (
+        None  # set in subclasses that expect multiple reports per day
+    )
+
+    report_date = metrics.Date(format="strict_date", required=True)
 
     class Meta:
         abstract = True
-        dynamic = metrics.MetaField('strict')
+        dynamic = metrics.MetaField("strict")
         source = metrics.MetaField(enabled=True)
 
 
 class YearmonthField(metrics.Date):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, format='strict_year_month', required=True)
+        super().__init__(
+            *args, **kwargs, format="strict_year_month", required=True
+        )
 
     def deserialize(self, data):
         if isinstance(data, YearMonth):
@@ -42,7 +47,9 @@ class YearmonthField(metrics.Date):
         elif isinstance(data, (datetime.datetime, datetime.date)):
             return YearMonth.from_date(data)
         else:
-            raise ValueError('unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
+            raise ValueError(
+                'unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth'
+            )
 
     def serialize(self, data):
         if isinstance(data, str):
@@ -52,18 +59,19 @@ class YearmonthField(metrics.Date):
         elif isinstance(data, (datetime.datetime, datetime.date)):
             return str(YearMonth.from_date(data))
         else:
-            raise ValueError(f'unsure how to serialize "{data}" (of type {type(data)}) as YYYY-MM')
+            raise ValueError(
+                f'unsure how to serialize "{data}" (of type {type(data)}) as YYYY-MM'
+            )
 
 
 class MonthlyReport(metrics.Metric):
-    """MonthlyReport (abstract base for report-based metrics that run monthly)
-    """
+    """MonthlyReport (abstract base for report-based metrics that run monthly)"""
 
     report_yearmonth = YearmonthField()
 
     class Meta:
         abstract = True
-        dynamic = metrics.MetaField('strict')
+        dynamic = metrics.MetaField("strict")
         source = metrics.MetaField(enabled=True)
 
 
@@ -82,7 +90,9 @@ def set_report_id(sender, instance, **kwargs):
         else:
             duf_value = getattr(instance, duf_name)
             if not duf_value or not isinstance(duf_value, str):
-                raise ReportInvalid(f'{sender.__name__}.{duf_name} MUST have a non-empty string value (got {duf_value})')
+                raise ReportInvalid(
+                    f"{sender.__name__}.{duf_name} MUST have a non-empty string value (got {duf_value})"
+                )
             instance.meta.id = stable_key(instance.report_date, duf_value)
     elif issubclass(sender, MonthlyReport):
         instance.meta.id = stable_key(instance.report_yearmonth)
@@ -90,9 +100,11 @@ def set_report_id(sender, instance, **kwargs):
 
 #### BEGIN reusable inner objects #####
 
+
 class RunningTotal(InnerDoc):
     total = metrics.Integer()
     total_daily = metrics.Integer()
+
 
 class FileRunningTotals(InnerDoc):
     total = metrics.Integer()
@@ -101,6 +113,7 @@ class FileRunningTotals(InnerDoc):
     total_daily = metrics.Integer()
     public_daily = metrics.Integer()
     private_daily = metrics.Integer()
+
 
 class NodeRunningTotals(InnerDoc):
     total = metrics.Integer()
@@ -111,6 +124,7 @@ class NodeRunningTotals(InnerDoc):
     total_daily_excluding_spam = metrics.Integer()
     public_daily = metrics.Integer()
     private_daily = metrics.Integer()
+
 
 class RegistrationRunningTotals(InnerDoc):
     total = metrics.Integer()
@@ -123,6 +137,7 @@ class RegistrationRunningTotals(InnerDoc):
     embargoed_daily = metrics.Integer()
     embargoed_v2_daily = metrics.Integer()
     withdrawn_daily = metrics.Integer()
+
 
 ##### END reusable inner objects #####
 
@@ -157,7 +172,7 @@ class DownloadCountReport(DailyReport):
 
 
 class InstitutionSummaryReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'institution_id'
+    DAILY_UNIQUE_FIELD = "institution_id"
 
     institution_id = metrics.Keyword()
     institution_name = metrics.Keyword()
@@ -169,7 +184,7 @@ class InstitutionSummaryReport(DailyReport):
 
 
 class NewUserDomainReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'domain_name'
+    DAILY_UNIQUE_FIELD = "domain_name"
 
     domain_name = metrics.Keyword()
     new_user_count = metrics.Integer()
@@ -187,7 +202,7 @@ class OsfstorageFileCountReport(DailyReport):
 
 
 class PreprintSummaryReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'provider_key'
+    DAILY_UNIQUE_FIELD = "provider_key"
 
     provider_key = metrics.Keyword()
     preprint_count = metrics.Integer()

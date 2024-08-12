@@ -11,13 +11,12 @@ from osf import features
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         CHECKS = [
-            ['checkmigrations'],
+            ["checkmigrations"],
         ]
 
         if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-            CHECKS.append(['check_metrics'])
+            CHECKS.append(["check_metrics"])
         for check in CHECKS:
             call_command(*check)

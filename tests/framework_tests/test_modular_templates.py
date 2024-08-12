@@ -1,7 +1,8 @@
-'''Unit tests for the modular template system.
+"""Unit tests for the modular template system.
 
 These require a test db because they use Session objects.
-'''
+"""
+
 import json
 import unittest
 import os
@@ -12,7 +13,9 @@ import werkzeug.wrappers
 from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 from framework.routing import (
-    Renderer, JSONRenderer, render_mako_string,
+    Renderer,
+    JSONRenderer,
+    render_mako_string,
 )
 
 from tests.base import AppTestCase, OsfTestCase
@@ -21,7 +24,7 @@ from tests.base import AppTestCase, OsfTestCase
 from website.routes import OsfWebRenderer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES_PATH = os.path.join(HERE, 'templates')
+TEMPLATES_PATH = os.path.join(HERE, "templates")
 
 
 class RendererTestCase(AppTestCase):
@@ -30,9 +33,8 @@ class RendererTestCase(AppTestCase):
         self.r = Renderer()
 
     def test_redirect(self):
-        """When passed a Flask/Werkzeug Response object, it should be returned.
-        """
-        resp = flask.make_response('')
+        """When passed a Flask/Werkzeug Response object, it should be returned."""
+        resp = flask.make_response("")
 
         self.assertIsInstance(
             self.r(resp),
@@ -47,19 +49,17 @@ class RendererTestCase(AppTestCase):
     def test_tuple(self):
         """Subclasses of Renderer must implement ``.render()``."""
         with self.assertRaises(NotImplementedError):
-            self.r(('response text', ))
+            self.r(("response text",))
 
 
 class JSONRendererTestCase(RendererTestCase):
-
     def setUp(self):
         super().setUp()
         self.r = JSONRenderer()
 
     def test_redirect(self):
-        """When passed a Flask/Werkzeug Response object, it should be returned.
-        """
-        resp = flask.make_response('')
+        """When passed a Flask/Werkzeug Response object, it should be returned."""
+        resp = flask.make_response("")
 
         self.assertIsInstance(
             self.r(resp),
@@ -82,14 +82,17 @@ class JSONRendererTestCase(RendererTestCase):
         self.assertEqual(
             (
                 {
-                    'code': http_status.HTTP_404_NOT_FOUND,
-                    'referrer': None,
-                    'message_short': msg['message_short'],
-                    'message_long': msg['message_long'],
+                    "code": http_status.HTTP_404_NOT_FOUND,
+                    "referrer": None,
+                    "message_short": msg["message_short"],
+                    "message_long": msg["message_long"],
                 },
                 http_status.HTTP_404_NOT_FOUND,
             ),
-            (json.loads(resp[0]), http_status.HTTP_404_NOT_FOUND, ),
+            (
+                json.loads(resp[0]),
+                http_status.HTTP_404_NOT_FOUND,
+            ),
         )
 
     def test_tuple(self):
@@ -97,14 +100,12 @@ class JSONRendererTestCase(RendererTestCase):
 
 
 class WebRendererTestCase(OsfTestCase):
-
     def setUp(self):
         super().setUp()
 
         # Use OsfRenderer so that global vars are included
         self.r = OsfWebRenderer(
-            os.path.join(TEMPLATES_PATH, 'main.html'),
-            render_mako_string
+            os.path.join(TEMPLATES_PATH, "main.html"), render_mako_string
         )
 
     def test_redirect(self):
@@ -118,10 +119,11 @@ class WebRendererTestCase(OsfTestCase):
         self.app.application.preprocess_request()
 
         resp = self.r(
-            ({},  # data
-            302,  # status code
-            None,  # headers
-            'http://google.com/',  # redirect_uri
+            (
+                {},  # data
+                302,  # status code
+                None,  # headers
+                "http://google.com/",  # redirect_uri
             )
         )
 
@@ -130,7 +132,7 @@ class WebRendererTestCase(OsfTestCase):
             werkzeug.wrappers.Response,
         )
         self.assertEqual(302, resp.status_code)
-        self.assertEqual('http://google.com/', resp.location)
+        self.assertEqual("http://google.com/", resp.location)
 
     def test_input_dict(self):
         """When only a dict is passed it, a Flask-style tuple is returned, of
@@ -139,18 +141,13 @@ class WebRendererTestCase(OsfTestCase):
         """
         self.app.application.preprocess_request()
 
-        input_dict = {'foo': 'bar'}
+        input_dict = {"foo": "bar"}
 
         resp = self.r(input_dict)
 
-        self.assertIsInstance(
-            resp, werkzeug.wrappers.Response
-        )
+        self.assertIsInstance(resp, werkzeug.wrappers.Response)
 
-        self.assertIn(
-            'foo:bar',
-            resp.data.decode()
-        )
+        self.assertIn("foo:bar", resp.data.decode())
 
     def test_http_error_raised(self):
         """When an HTTPError is raised in the view function, it is passed as
@@ -168,7 +165,7 @@ class WebRendererTestCase(OsfTestCase):
         resp = self.r(err)
 
         self.assertIn(
-            err.to_data()['message_short'],
+            err.to_data()["message_short"],
             resp[0].decode(),
         )
         self.assertEqual(
@@ -193,23 +190,22 @@ class WebRendererTestCase(OsfTestCase):
         """
 
         resp = self.r(
-            HTTPError(http_status.HTTP_201_CREATED, redirect_url='http://google.com/')
+            HTTPError(
+                http_status.HTTP_201_CREATED, redirect_url="http://google.com/"
+            )
         )
 
-        self.assertIsInstance(
-            resp, werkzeug.wrappers.Response
-        )
+        self.assertIsInstance(resp, werkzeug.wrappers.Response)
 
         self.assertEqual(302, resp.status_code)
-        self.assertEqual('http://google.com/', resp.location)
+        self.assertEqual("http://google.com/", resp.location)
+
 
 class JSONRendererEncoderTestCase(unittest.TestCase):
-
     def test_encode_custom_class(self):
-
         class TestClass:
             def to_json(self):
-                return '<JSON representation>'
+                return "<JSON representation>"
 
         test_object = TestClass()
 
@@ -220,6 +216,5 @@ class JSONRendererEncoderTestCase(unittest.TestCase):
 
     def test_string(self):
         self.assertEqual(
-            '"my string"',
-            json.dumps('my string', cls=JSONRenderer.Encoder)
+            '"my string"', json.dumps("my string", cls=JSONRenderer.Encoder)
         )

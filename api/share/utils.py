@@ -2,6 +2,7 @@
 
 SHARE/Trove accepts metadata records as "indexcards" in turtle format: https://www.w3.org/TR/turtle/
 """
+
 from functools import partial
 import logging
 import random
@@ -25,11 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 def shtrove_ingest_url():
-    return f'{settings.SHARE_URL}api/v3/ingest'
+    return f"{settings.SHARE_URL}api/v3/ingest"
 
 
 def sharev2_push_url():
-    return f'{settings.SHARE_URL}api/v2/normalizeddata/'
+    return f"{settings.SHARE_URL}api/v2/normalizeddata/"
 
 
 def is_qa_resource(resource):
@@ -39,13 +40,18 @@ def is_qa_resource(resource):
     :param resource: should be Node/Registration/Preprint
     :return:
     """
-    tags = set(resource.tags.all().values_list('name', flat=True))
-    has_qa_tags = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(tags))
+    tags = set(resource.tags.all().values_list("name", flat=True))
+    has_qa_tags = bool(
+        set(settings.DO_NOT_INDEX_LIST["tags"]).intersection(tags)
+    )
 
     has_qa_title = False
-    _title = getattr(resource, 'title', None)
+    _title = getattr(resource, "title", None)
     if _title:
-        has_qa_title = any((_substring in _title) for _substring in settings.DO_NOT_INDEX_LIST['titles'])
+        has_qa_title = any(
+            (_substring in _title)
+            for _substring in settings.DO_NOT_INDEX_LIST["titles"]
+        )
 
     return has_qa_tags or has_qa_title
 
@@ -53,16 +59,18 @@ def is_qa_resource(resource):
 def update_share(resource):
     if not settings.SHARE_ENABLED:
         return
-    if not hasattr(resource, 'guids'):
-        logger.error(f'update_share called on non-guid resource: {resource}')
+    if not hasattr(resource, "guids"):
+        logger.error(f"update_share called on non-guid resource: {resource}")
         return
     _enqueue_update_share(resource)
 
 
 def _enqueue_update_share(osfresource):
-    _osfguid_value = osfresource.guids.values_list('_id', flat=True).first()
+    _osfguid_value = osfresource.guids.values_list("_id", flat=True).first()
     if not _osfguid_value:
-        logger.warning(f'update_share skipping resource that has no guids: {osfresource}')
+        logger.warning(
+            f"update_share skipping resource that has no guids: {osfresource}"
+        )
         return
     enqueue_task(task__update_share.s(_osfguid_value))
     if isinstance(osfresource, (osf_db.AbstractNode, osf_db.Preprint)):
@@ -87,7 +95,13 @@ def task__update_share(self, guid: str, is_backfill=False):
             try:
                 self.retry(
                     exc=e,
-                    countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
+                    countdown=(random.random() + 1)
+                    * min(
+                        60
+                        + settings.CELERY_RETRY_BACKOFF_BASE
+                        ** self.request.retries,
+                        60 * 10,
+                    ),
                 )
             except Retry as e:  # Retry is only raise after > 5 retries
                 log_exception(e)
@@ -101,19 +115,19 @@ def pls_send_trove_indexcard(osf_item, *, is_backfill=False):
     try:
         _iri = osf_item.get_semantic_iri()
     except (AttributeError, ValueError):
-        raise ValueError(f'could not get iri for {osf_item}')
-    _metadata_record = pls_gather_metadata_file(osf_item, 'turtle')
+        raise ValueError(f"could not get iri for {osf_item}")
+    _metadata_record = pls_gather_metadata_file(osf_item, "turtle")
     _queryparams = {
-        'focus_iri': _iri,
-        'record_identifier': _shtrove_record_identifier(osf_item),
+        "focus_iri": _iri,
+        "record_identifier": _shtrove_record_identifier(osf_item),
     }
     if is_backfill:
-        _queryparams['nonurgent'] = True
+        _queryparams["nonurgent"] = True
     return requests.post(
         shtrove_ingest_url(),
         params=_queryparams,
         headers={
-            'Content-Type': _metadata_record.mediatype,
+            "Content-Type": _metadata_record.mediatype,
             **_shtrove_auth_headers(osf_item),
         },
         data=ensure_bytes(_metadata_record.serialized_metadata),
@@ -124,15 +138,20 @@ def pls_delete_trove_indexcard(osf_item):
     return requests.delete(
         shtrove_ingest_url(),
         params={
-            'record_identifier': _shtrove_record_identifier(osf_item),
+            "record_identifier": _shtrove_record_identifier(osf_item),
         },
         headers=_shtrove_auth_headers(osf_item),
     )
 
 
 def _do_update_share(osfguid: str, *, is_backfill=False):
-    logger.debug('%s._do_update_share("%s", is_backfill=%s)', __name__, osfguid, is_backfill)
-    _guid_instance = apps.get_model('osf.Guid').load(osfguid)
+    logger.debug(
+        '%s._do_update_share("%s", is_backfill=%s)',
+        __name__,
+        osfguid,
+        is_backfill,
+    )
+    _guid_instance = apps.get_model("osf.Guid").load(osfguid)
     if _guid_instance is None:
         raise ValueError(f'unknown osfguid "{osfguid}"')
     _resource = _guid_instance.referent
@@ -145,41 +164,46 @@ def _do_update_share(osfguid: str, *, is_backfill=False):
 
 
 def _shtrove_record_identifier(osf_item):
-    return osf_item.guids.values_list('_id', flat=True).first()
+    return osf_item.guids.values_list("_id", flat=True).first()
 
 
 def _shtrove_auth_headers(osf_item):
     _nonfile_item = (
-        osf_item.target
-        if hasattr(osf_item, 'target')
-        else osf_item
+        osf_item.target if hasattr(osf_item, "target") else osf_item
     )
     _access_token = (
         _nonfile_item.provider.access_token
-        if getattr(_nonfile_item, 'provider', None) and _nonfile_item.provider.access_token
+        if getattr(_nonfile_item, "provider", None)
+        and _nonfile_item.provider.access_token
         else settings.SHARE_API_TOKEN
     )
-    return {'Authorization': f'Bearer {_access_token}'}
+    return {"Authorization": f"Bearer {_access_token}"}
 
 
 def _should_delete_indexcard(osf_item):
-    if getattr(osf_item, 'is_deleted', False) or getattr(osf_item, 'deleted', None):
+    if getattr(osf_item, "is_deleted", False) or getattr(
+        osf_item, "deleted", None
+    ):
         return True
     # if it quacks like BaseFileNode, look at .target instead
-    _containing_item = getattr(osf_item, 'target', None)
+    _containing_item = getattr(osf_item, "target", None)
     if _containing_item:
-        return not osf_item.should_update_search or _should_delete_indexcard(_containing_item)
+        return not osf_item.should_update_search or _should_delete_indexcard(
+            _containing_item
+        )
     return (
         not _is_item_public(osf_item)
-        or getattr(osf_item, 'is_spam', False)
+        or getattr(osf_item, "is_spam", False)
         or is_qa_resource(osf_item)
     )
 
 
 def _is_item_public(guid_referent) -> bool:
-    if hasattr(guid_referent, 'verified_publishable'):
-        return guid_referent.verified_publishable        # quacks like Preprint
-    return getattr(guid_referent, 'is_public', False)    # quacks like AbstractNode
+    if hasattr(guid_referent, "verified_publishable"):
+        return guid_referent.verified_publishable  # quacks like Preprint
+    return getattr(
+        guid_referent, "is_public", False
+    )  # quacks like AbstractNode
 
 
 ###
@@ -257,7 +281,10 @@ class GraphNode:
         :param all_graph_nodes: list of GraphNodes to include -- will also recursively
                                 look for and include GraphNodes contained in attrs
         """
-        to_visit = [central_graph_node, *all_graph_nodes]  # make a copy of the list
+        to_visit = [
+            central_graph_node,
+            *all_graph_nodes,
+        ]  # make a copy of the list
         visited = set()
         while to_visit:
             n = to_visit.pop(0)
@@ -266,16 +293,16 @@ class GraphNode:
                 to_visit.extend(n.get_related())
 
         return {
-            'central_node_id': central_graph_node.id,
-            '@graph': [node.serialize() for node in visited],
+            "central_node_id": central_graph_node.id,
+            "@graph": [node.serialize() for node in visited],
         }
 
     @property
     def ref(self):
-        return {'@id': self.id, '@type': self.type}
+        return {"@id": self.id, "@type": self.type}
 
     def __init__(self, type_, **attrs):
-        self.id = f'_:{uuid.uuid4()}'
+        self.id = f"_:{uuid.uuid4()}"
         self.type = type_.lower()
         self.attrs = attrs
 
@@ -291,7 +318,7 @@ class GraphNode:
         for key, value in self.attrs.items():
             if isinstance(value, GraphNode):
                 ser[key] = value.ref
-            elif isinstance(value, list) or value in (None, '', {}):
+            elif isinstance(value, list) or value in (None, "", {}):
                 continue
             else:
                 ser[key] = value
@@ -301,28 +328,47 @@ class GraphNode:
 
 def format_user(user):
     person = GraphNode(
-        'person', **{
-            'name': user.fullname,
-            'suffix': user.suffix,
-            'given_name': user.given_name,
-            'family_name': user.family_name,
-            'additional_name': user.middle_names,
+        "person",
+        **{
+            "name": user.fullname,
+            "suffix": user.suffix,
+            "given_name": user.given_name,
+            "family_name": user.family_name,
+            "additional_name": user.middle_names,
         },
     )
 
-    person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri=user.absolute_url)]
+    person.attrs["identifiers"] = [
+        GraphNode("agentidentifier", agent=person, uri=user.absolute_url)
+    ]
 
-    if user.external_identity.get('ORCID') and list(user.external_identity['ORCID'].values())[0] == 'VERIFIED':
-        person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=list(user.external_identity['ORCID'].keys())[0]))
+    if (
+        user.external_identity.get("ORCID")
+        and list(user.external_identity["ORCID"].values())[0] == "VERIFIED"
+    ):
+        person.attrs["identifiers"].append(
+            GraphNode(
+                "agentidentifier",
+                agent=person,
+                uri=list(user.external_identity["ORCID"].keys())[0],
+            )
+        )
 
-    person.attrs['related_agents'] = [GraphNode('isaffiliatedwith', subject=person, related=GraphNode('institution', name=institution.name)) for institution in user.get_affiliated_institutions()]
+    person.attrs["related_agents"] = [
+        GraphNode(
+            "isaffiliatedwith",
+            subject=person,
+            related=GraphNode("institution", name=institution.name),
+        )
+        for institution in user.get_affiliated_institutions()
+    ]
 
     return person
 
 
 def format_bibliographic_contributor(work_node, user, index):
     return GraphNode(
-        'creator',
+        "creator",
         agent=format_user(user),
         order_cited=index,
         creative_work=work_node,
@@ -338,19 +384,22 @@ def format_subject(subject, context=None):
     if subject.id in context:
         return context[subject.id]
     context[subject.id] = GraphNode(
-        'subject',
+        "subject",
         name=subject.text,
         uri=subject.absolute_api_v2_url,
     )
-    context[subject.id].attrs['parent'] = format_subject(subject.parent, context)
-    context[subject.id].attrs['central_synonym'] = format_subject(subject.bepress_subject, context)
+    context[subject.id].attrs["parent"] = format_subject(
+        subject.parent, context
+    )
+    context[subject.id].attrs["central_synonym"] = format_subject(
+        subject.bepress_subject, context
+    )
     return context[subject.id]
 
 
 def send_share_json(resource, data):
-    """POST metadata to SHARE, using the provider for the given resource.
-    """
-    if getattr(resource, 'provider') and resource.provider.access_token:
+    """POST metadata to SHARE, using the provider for the given resource."""
+    if getattr(resource, "provider") and resource.provider.access_token:
         access_token = resource.provider.access_token
     else:
         access_token = settings.SHARE_API_TOKEN
@@ -359,8 +408,8 @@ def send_share_json(resource, data):
         sharev2_push_url(),
         json=data,
         headers={
-            'Authorization': f'Bearer {access_token}',
-            'Content-Type': 'application/vnd.api+json',
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/vnd.api+json",
         },
     )
 
@@ -393,13 +442,13 @@ def serialize_share_data(resource, old_subjects=None):
         raise NotImplementedError()
 
     return {
-        'data': {
-            'type': 'NormalizedData',
-            'attributes': {
-                'tasks': [],
-                'raw': None,
-                'suid': resource._id,
-                'data': serializer(resource),
+        "data": {
+            "type": "NormalizedData",
+            "attributes": {
+                "tasks": [],
+                "raw": None,
+                "suid": resource._id,
+                "data": serializer(resource),
             },
         },
     }
@@ -409,102 +458,180 @@ def serialize_preprint(preprint, old_subjects=None):
     if old_subjects is None:
         old_subjects = []
     from osf.models import Subject
+
     old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
     preprint_graph = GraphNode(
-        preprint.provider.share_publish_type, **{
-            'title': preprint.title,
-            'description': preprint.description or '',
-            'is_deleted': (
-                (not preprint.verified_publishable and not preprint.is_retracted)
+        preprint.provider.share_publish_type,
+        **{
+            "title": preprint.title,
+            "description": preprint.description or "",
+            "is_deleted": (
+                (
+                    not preprint.verified_publishable
+                    and not preprint.is_retracted
+                )
                 or preprint.is_spam
                 or preprint.is_deleted
                 or is_qa_resource(preprint)
             ),
-            'date_updated': preprint.modified.isoformat(),
-            'date_published': preprint.date_published.isoformat() if preprint.date_published else None,
+            "date_updated": preprint.modified.isoformat(),
+            "date_published": preprint.date_published.isoformat()
+            if preprint.date_published
+            else None,
         },
     )
     to_visit = [
         preprint_graph,
-        GraphNode('workidentifier', creative_work=preprint_graph, uri=urljoin(settings.DOMAIN, preprint._id + '/')),
+        GraphNode(
+            "workidentifier",
+            creative_work=preprint_graph,
+            uri=urljoin(settings.DOMAIN, preprint._id + "/"),
+        ),
     ]
 
-    doi = preprint.get_identifier_value('doi')
+    doi = preprint.get_identifier_value("doi")
     if doi:
-        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=f'{settings.DOI_URL_PREFIX}{doi}'))
+        to_visit.append(
+            GraphNode(
+                "workidentifier",
+                creative_work=preprint_graph,
+                uri=f"{settings.DOI_URL_PREFIX}{doi}",
+            )
+        )
 
     if preprint.provider.domain_redirect_enabled:
-        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=preprint.absolute_url))
+        to_visit.append(
+            GraphNode(
+                "workidentifier",
+                creative_work=preprint_graph,
+                uri=preprint.absolute_url,
+            )
+        )
 
     if preprint.article_doi:
         # Article DOI refers to a clone of this preprint on another system and therefore does not qualify as an identifier for this preprint
-        related_work = GraphNode('creativework')
-        to_visit.append(GraphNode('workrelation', subject=preprint_graph, related=related_work))
-        to_visit.append(GraphNode('workidentifier', creative_work=related_work, uri=f'{settings.DOI_URL_PREFIX}{preprint.article_doi}'))
+        related_work = GraphNode("creativework")
+        to_visit.append(
+            GraphNode(
+                "workrelation", subject=preprint_graph, related=related_work
+            )
+        )
+        to_visit.append(
+            GraphNode(
+                "workidentifier",
+                creative_work=related_work,
+                uri=f"{settings.DOI_URL_PREFIX}{preprint.article_doi}",
+            )
+        )
 
-    preprint_graph.attrs['tags'] = [
-        GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
-        for tag in preprint.tags.values_list('name', flat=True) if tag
+    preprint_graph.attrs["tags"] = [
+        GraphNode(
+            "throughtags",
+            creative_work=preprint_graph,
+            tag=GraphNode("tag", name=tag),
+        )
+        for tag in preprint.tags.values_list("name", flat=True)
+        if tag
     ]
 
     current_subjects = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, is_deleted=False, subject=format_subject(s))
+        GraphNode(
+            "throughsubjects",
+            creative_work=preprint_graph,
+            is_deleted=False,
+            subject=format_subject(s),
+        )
         for s in preprint.subjects.all()
     ]
     deleted_subjects = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, is_deleted=True, subject=format_subject(s))
-        for s in old_subjects if not preprint.subjects.filter(id=s.id).exists()
+        GraphNode(
+            "throughsubjects",
+            creative_work=preprint_graph,
+            is_deleted=True,
+            subject=format_subject(s),
+        )
+        for s in old_subjects
+        if not preprint.subjects.filter(id=s.id).exists()
     ]
-    preprint_graph.attrs['subjects'] = current_subjects + deleted_subjects
+    preprint_graph.attrs["subjects"] = current_subjects + deleted_subjects
 
-    to_visit.extend(format_bibliographic_contributor(preprint_graph, user, i) for i, user in enumerate(preprint.visible_contributors))
+    to_visit.extend(
+        format_bibliographic_contributor(preprint_graph, user, i)
+        for i, user in enumerate(preprint.visible_contributors)
+    )
 
     return GraphNode.serialize_graph(preprint_graph, to_visit)
+
 
 def format_node_lineage(child_osf_node, child_graph_node):
     parent_osf_node = child_osf_node.parent_node
     if not parent_osf_node:
         return []
-    parent_graph_node = GraphNode('registration', title=parent_osf_node.title)
+    parent_graph_node = GraphNode("registration", title=parent_osf_node.title)
     return [
         parent_graph_node,
-        GraphNode('workidentifier', creative_work=parent_graph_node, uri=urljoin(settings.DOMAIN, parent_osf_node.url)),
-        GraphNode('ispartof', subject=child_graph_node, related=parent_graph_node),
+        GraphNode(
+            "workidentifier",
+            creative_work=parent_graph_node,
+            uri=urljoin(settings.DOMAIN, parent_osf_node.url),
+        ),
+        GraphNode(
+            "ispartof", subject=child_graph_node, related=parent_graph_node
+        ),
         *format_node_lineage(parent_osf_node, parent_graph_node),
     ]
+
 
 def serialize_registration(registration):
     return serialize_osf_node(
         registration,
         additional_attrs={
-            'date_published': registration.registered_date.isoformat() if registration.registered_date else None,
-            'registration_type': registration.registered_schema.first().name if registration.registered_schema.exists() else None,
-            'justification': registration.retraction.justification if registration.retraction else None,
-            'withdrawn': registration.is_retracted,
-            'extra': {'osf_related_resource_types': _get_osf_related_resource_types(registration)},
+            "date_published": registration.registered_date.isoformat()
+            if registration.registered_date
+            else None,
+            "registration_type": registration.registered_schema.first().name
+            if registration.registered_schema.exists()
+            else None,
+            "justification": registration.retraction.justification
+            if registration.retraction
+            else None,
+            "withdrawn": registration.is_retracted,
+            "extra": {
+                "osf_related_resource_types": _get_osf_related_resource_types(
+                    registration
+                )
+            },
         },
     )
+
 
 def _get_osf_related_resource_types(registration):
     from osf.models import OutcomeArtifact
     from osf.utils.outcomes import ArtifactTypes
-    artifacts = OutcomeArtifact.objects.for_registration(registration).filter(finalized=True, deleted__isnull=True)
+
+    artifacts = OutcomeArtifact.objects.for_registration(registration).filter(
+        finalized=True, deleted__isnull=True
+    )
     return {
-        artifact_type.name.lower(): artifacts.filter(artifact_type=artifact_type).exists()
+        artifact_type.name.lower(): artifacts.filter(
+            artifact_type=artifact_type
+        ).exists()
         for artifact_type in ArtifactTypes.public_types()
     }
+
 
 def serialize_osf_node(osf_node, additional_attrs=None):
     if osf_node.provider:
         share_publish_type = osf_node.provider.share_publish_type
     else:
-        share_publish_type = 'project'
+        share_publish_type = "project"
 
     graph_node = GraphNode(
-        share_publish_type, **{
-            'title': osf_node.title,
-            'description': osf_node.description or '',
-            'is_deleted': (
+        share_publish_type,
+        **{
+            "title": osf_node.title,
+            "description": osf_node.description or "",
+            "is_deleted": (
                 not osf_node.is_public
                 or osf_node.is_deleted
                 or osf_node.is_spam
@@ -516,25 +643,53 @@ def serialize_osf_node(osf_node, additional_attrs=None):
 
     to_visit = [
         graph_node,
-        GraphNode('workidentifier', creative_work=graph_node, uri=urljoin(settings.DOMAIN, osf_node.url)),
+        GraphNode(
+            "workidentifier",
+            creative_work=graph_node,
+            uri=urljoin(settings.DOMAIN, osf_node.url),
+        ),
     ]
 
-    doi = osf_node.get_identifier_value('doi')
+    doi = osf_node.get_identifier_value("doi")
     if doi:
-        to_visit.append(GraphNode('workidentifier', creative_work=graph_node, uri=f'{settings.DOI_URL_PREFIX}{doi}'))
+        to_visit.append(
+            GraphNode(
+                "workidentifier",
+                creative_work=graph_node,
+                uri=f"{settings.DOI_URL_PREFIX}{doi}",
+            )
+        )
 
-    graph_node.attrs['tags'] = [
-        GraphNode('throughtags', creative_work=graph_node, tag=GraphNode('tag', name=tag._id))
+    graph_node.attrs["tags"] = [
+        GraphNode(
+            "throughtags",
+            creative_work=graph_node,
+            tag=GraphNode("tag", name=tag._id),
+        )
         for tag in osf_node.tags.all()
     ]
 
-    graph_node.attrs['subjects'] = [
-        GraphNode('throughsubjects', creative_work=graph_node, subject=format_subject(s))
+    graph_node.attrs["subjects"] = [
+        GraphNode(
+            "throughsubjects",
+            creative_work=graph_node,
+            subject=format_subject(s),
+        )
         for s in osf_node.subjects.all()
     ]
 
-    to_visit.extend(format_bibliographic_contributor(graph_node, user, i) for i, user in enumerate(osf_node.visible_contributors))
-    to_visit.extend(GraphNode('AgentWorkRelation', creative_work=graph_node, agent=GraphNode('institution', name=institution.name)) for institution in osf_node.affiliated_institutions.all())
+    to_visit.extend(
+        format_bibliographic_contributor(graph_node, user, i)
+        for i, user in enumerate(osf_node.visible_contributors)
+    )
+    to_visit.extend(
+        GraphNode(
+            "AgentWorkRelation",
+            creative_work=graph_node,
+            agent=GraphNode("institution", name=institution.name),
+        )
+        for institution in osf_node.affiliated_institutions.all()
+    )
 
     to_visit.extend(format_node_lineage(osf_node, graph_node))
 
@@ -549,10 +704,10 @@ def async_update_resource_share(self, guid, old_subjects=None):
     :param guid:
     :return:
     """
-    AbstractNode = apps.get_model('osf.AbstractNode')
+    AbstractNode = apps.get_model("osf.AbstractNode")
     resource = AbstractNode.load(guid)
     if not resource:
-        Preprint = apps.get_model('osf.Preprint')
+        Preprint = apps.get_model("osf.Preprint")
         resource = Preprint.load(guid)
 
     data = serialize_share_data(resource, old_subjects)
@@ -566,7 +721,13 @@ def async_update_resource_share(self, guid, old_subjects=None):
             try:
                 self.retry(
                     exc=e,
-                    countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
+                    countdown=(random.random() + 1)
+                    * min(
+                        60
+                        + settings.CELERY_RETRY_BACKOFF_BASE
+                        ** self.request.retries,
+                        60 * 10,
+                    ),
                 )
             except Retry as e:  # Retry is only raise after > 5 retries
                 log_exception(e)

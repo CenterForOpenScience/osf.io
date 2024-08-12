@@ -7,9 +7,9 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import ADMIN
 
+
 @pytest.mark.django_db
 class TestUserCanReview:
-
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
@@ -22,15 +22,15 @@ class TestUserCanReview:
 
     @pytest.fixture()
     def provider(self):
-        return PreprintProviderFactory(name='Sockarxiv')
+        return PreprintProviderFactory(name="Sockarxiv")
 
     @pytest.fixture()
     def url(self):
-        return f'/{API_BASE}users/me/?fields[users]=can_view_reviews'
+        return f"/{API_BASE}users/me/?fields[users]=can_view_reviews"
 
     def test_can_review(self, app, url, user, moderator, provider):
         res = app.get(url, auth=moderator.auth)
-        assert res.json['data']['attributes']['can_view_reviews']
+        assert res.json["data"]["attributes"]["can_view_reviews"]
 
         res = app.get(url, auth=user.auth)
-        assert not res.json['data']['attributes']['can_view_reviews']
+        assert not res.json["data"]["attributes"]["can_view_reviews"]

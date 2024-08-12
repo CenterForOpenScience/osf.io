@@ -1,6 +1,7 @@
 import logging
 
 from website.app import setup_django
+
 setup_django()
 
 import argparse
@@ -15,8 +16,13 @@ from website.settings import GCS_CREDS, PURGE_DELTA
 
 logger = logging.getLogger(__name__)
 
+
 def purge_trash(n):
-    qs = TrashedFile.objects.filter(purged__isnull=True, deleted__lt=timezone.now()-PURGE_DELTA, provider='osfstorage')
+    qs = TrashedFile.objects.filter(
+        purged__isnull=True,
+        deleted__lt=timezone.now() - PURGE_DELTA,
+        provider="osfstorage",
+    )
     creds = Credentials.from_service_account_file(GCS_CREDS)
     client = Client(credentials=creds)
     total_bytes = 0
@@ -25,25 +31,27 @@ def purge_trash(n):
             total_bytes += tf._purge(client=client)
         except Exception as e:
             log_exception(e)
-            logger.error(f'Encountered Error handling {tf.id}')
+            logger.error(f"Encountered Error handling {tf.id}")
     return total_bytes
+
 
 def main():
     parser = argparse.ArgumentParser(
-        description=f'Purges TrashedFiles deleted more than {PURGE_DELTA} days ago.'
+        description=f"Purges TrashedFiles deleted more than {PURGE_DELTA} days ago."
     )
     parser.add_argument(
-        '-n',
-        '--num',
+        "-n",
+        "--num",
         type=int,
-        dest='num_records',
+        dest="num_records",
         default=50000,
-        help='Batch size',
+        help="Batch size",
     )
     pargs = parser.parse_args()
     total = purge_trash(pargs.num_records)
     readable_total = filesizeformat(total)
-    logger.info(f'Freed {readable_total}.')
+    logger.info(f"Freed {readable_total}.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

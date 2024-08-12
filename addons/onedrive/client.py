@@ -4,18 +4,18 @@ from website.util.client import BaseClient
 from addons.onedrive import settings
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 class OneDriveClient(BaseClient):
-
     def __init__(self, access_token=None):
         self.access_token = access_token
 
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'Authorization': f'Bearer {self.access_token}'}
+            return {"Authorization": f"Bearer {self.access_token}"}
         return {}
 
     def folders(self, drive_id=None, folder_id=None):
@@ -29,22 +29,28 @@ class OneDriveClient(BaseClient):
         """
 
         if drive_id is None:
-            raise Exception('drive_id is undefined, cannot proceed')
+            raise Exception("drive_id is undefined, cannot proceed")
 
-        folder_path_part = 'root' if folder_id is None else folder_id
-        list_folder_url = self._build_url(settings.MSGRAPH_API_URL, 'drives', drive_id,
-                                          'items', folder_path_part, 'children')
+        folder_path_part = "root" if folder_id is None else folder_id
+        list_folder_url = self._build_url(
+            settings.MSGRAPH_API_URL,
+            "drives",
+            drive_id,
+            "items",
+            folder_path_part,
+            "children",
+        )
         resp = self._make_request(
-            'GET',
+            "GET",
             list_folder_url,
             headers=self._default_headers,
-            params={'filter': 'folder ne null'},
-            expects=(200, ),
-            throws=HTTPError(401)
+            params={"filter": "folder ne null"},
+            expects=(200,),
+            throws=HTTPError(401),
         )
         folder_list = resp.json()
-        logger.debug(f'folder_list:({folder_list})')
-        return folder_list['value']
+        logger.debug(f"folder_list:({folder_list})")
+        return folder_list["value"]
 
     def user_info(self):
         """Given an access token, return information about the token's owner.
@@ -60,39 +66,43 @@ class OneDriveClient(BaseClient):
         """
 
         # get user properties from /me endpoint
-        me_url = self._build_url(settings.MSGRAPH_API_URL, 'me')
+        me_url = self._build_url(settings.MSGRAPH_API_URL, "me")
         me_resp = self._make_request(
-            'GET',
+            "GET",
             me_url,
             headers=self._default_headers,
-            expects=(200, ),
-            throws=HTTPError(401)
+            expects=(200,),
+            throws=HTTPError(401),
         )
         me_data = me_resp.json()
-        logger.debug(f'me_data:({me_data})')
+        logger.debug(f"me_data:({me_data})")
 
         retval = {
-            'id': me_data['id'],
-            'name': me_data['displayName'],
-            'link': '{}/users/{}'.format(settings.MSGRAPH_API_URL, me_data['id']),
-            'mail': me_data['userPrincipalName'],
+            "id": me_data["id"],
+            "name": me_data["displayName"],
+            "link": "{}/users/{}".format(
+                settings.MSGRAPH_API_URL, me_data["id"]
+            ),
+            "mail": me_data["userPrincipalName"],
         }
 
         # get drive properties from /users/$user_id/drive endpoint
-        drive_url = self._build_url(settings.MSGRAPH_API_URL, 'users', retval['id'], 'drive')
+        drive_url = self._build_url(
+            settings.MSGRAPH_API_URL, "users", retval["id"], "drive"
+        )
         drive_resp = self._make_request(
-            'GET',
+            "GET",
             drive_url,
             headers=self._default_headers,
-            expects=(200, ),
-            throws=HTTPError(401)
+            expects=(200,),
+            throws=HTTPError(401),
         )
         drive_data = drive_resp.json()
-        logger.debug(f'drive_data:({drive_data})')
-        retval['drive_id'] = drive_data['id']
+        logger.debug(f"drive_data:({drive_data})")
+        retval["drive_id"] = drive_data["id"]
 
-        if drive_data['driveType'] == 'personal':
-            retval['name'] = '{} - OneDrive Personal'.format(retval['mail'])
+        if drive_data["driveType"] == "personal":
+            retval["name"] = "{} - OneDrive Personal".format(retval["mail"])
         else:
             # get site properties from /sites endpoint
             # site_url = self._build_url(settings.MSGRAPH_API_URL, 'sites', 'root')
@@ -105,7 +115,9 @@ class OneDriveClient(BaseClient):
             # )
             # site_data = site_resp.json()
             # logger.debug('site_data:({})'.format(site_data))
-            retval['name'] = '{} - {}'.format(retval['mail'], 'OneDrive for School or Business')
+            retval["name"] = "{} - {}".format(
+                retval["mail"], "OneDrive for School or Business"
+            )
 
-        logger.debug(f'retval:({retval})')
+        logger.debug(f"retval:({retval})")
         return retval

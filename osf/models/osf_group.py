@@ -5,7 +5,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from guardian.shortcuts import assign_perm, remove_perm, get_perms, get_objects_for_group, get_group_perms
+from guardian.shortcuts import (
+    assign_perm,
+    remove_perm,
+    get_perms,
+    get_objects_for_group,
+    get_group_perms,
+)
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework.exceptions import PermissionsError
@@ -19,7 +25,15 @@ from .nodelog import NodeLog
 from .user import OSFUser
 from .osf_grouplog import OSFGroupLog
 from .validators import validate_email
-from osf.utils.permissions import ADMIN, READ_NODE, WRITE, MANAGER, MEMBER, MANAGE, reduce_permissions
+from osf.utils.permissions import (
+    ADMIN,
+    READ_NODE,
+    WRITE,
+    MANAGER,
+    MEMBER,
+    MANAGE,
+    reduce_permissions,
+)
 from osf.utils import sanitize
 from website.project import signals as project_signals
 from website.osf_groups import signals as group_signals
@@ -38,26 +52,29 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
     """
 
     name = models.TextField(blank=False)
-    creator = models.ForeignKey(OSFUser,
-                                db_index=True,
-                                related_name='osfgroups_created',
-                                on_delete=models.SET_NULL,
-                                null=True, blank=True)
+    creator = models.ForeignKey(
+        OSFUser,
+        db_index=True,
+        related_name="osfgroups_created",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     groups = {
-        'member': ('member_group',),
-        'manager': ('manage_group',),
+        "member": ("member_group",),
+        "manager": ("manage_group",),
     }
-    group_format = 'osfgroup_{self.id}_{group}'
+    group_format = "osfgroup_{self.id}_{group}"
 
     def __unicode__(self):
-        return f'OSFGroup_{self.id}_{self.name}'
+        return f"OSFGroup_{self.id}_{self.name}"
 
     class Meta:
         permissions = (
-            ('view_group', 'Can view group details'),
-            ('member_group', 'Has group membership'),
-            ('manage_group', 'Can manage group membership'),
+            ("view_group", "Can view group details"),
+            ("member_group", "Has group membership"),
+            ("manage_group", "Can manage group membership"),
         )
 
     @property
@@ -103,13 +120,13 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = f'/groups/{self._id}/'
+        path = f"/groups/{self._id}/"
         return api_v2_url(path)
 
     @property
     def url(self):
         # TODO - front end hasn't been set up
-        return f'/{self._primary_key}/'
+        return f"/{self._primary_key}/"
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -126,16 +143,22 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
 
     def _require_manager_permission(self, auth=None):
         if auth and not self.has_permission(auth.user, MANAGE):
-            raise PermissionsError('Must be a group manager to modify group membership.')
+            raise PermissionsError(
+                "Must be a group manager to modify group membership."
+            )
 
     def _disabled_user_check(self, user):
         if user.is_disabled:
-            raise ValueError('Deactivated users cannot be added to OSF Groups.')
+            raise ValueError(
+                "Deactivated users cannot be added to OSF Groups."
+            )
 
     def _enforce_one_manager(self, user):
         # Group must have at least one registered manager
-        if (len(self.managers) == 1 and self.managers[0] == user) or not self.managers.filter(is_registered=True).exclude(id=user.id):
-            raise ValueError('Group must have at least one manager.')
+        if (
+            len(self.managers) == 1 and self.managers[0] == user
+        ) or not self.managers.filter(is_registered=True).exclude(id=user.id):
+            raise ValueError("Group must have at least one manager.")
 
     def _get_node_group_perms(self, node, permission):
         """
@@ -146,11 +169,13 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         """
         permissions = node.groups.get(permission)
         if not permissions:
-            raise ValueError(f'{permission} is not a valid permission.')
+            raise ValueError(f"{permission} is not a valid permission.")
         return permissions
 
     def send_member_email(self, user, permission, auth=None):
-        group_signals.member_added.send(self, user=user, permission=permission, auth=auth)
+        group_signals.member_added.send(
+            self, user=user, permission=permission, auth=auth
+        )
 
     def make_member(self, user, auth=None):
         """Add member or downgrade manager to member
@@ -173,10 +198,11 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
             self.add_log(
                 OSFGroupLog.MEMBER_ADDED,
                 params={
-                    'group': self._id,
-                    'user': user._id,
+                    "group": self._id,
+                    "user": user._id,
                 },
-                auth=auth)
+                auth=auth,
+            )
         self.update_search()
 
         if adding_member:
@@ -198,10 +224,11 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
             self.add_log(
                 OSFGroupLog.MANAGER_ADDED,
                 params={
-                    'group': self._id,
-                    'user': user._id,
+                    "group": self._id,
+                    "user": user._id,
                 },
-                auth=auth)
+                auth=auth,
+            )
 
         else:
             self.add_role_updated_log(user, MANAGER, auth)
@@ -220,20 +247,22 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         :param auth: Auth object
         :param role: string, "member" or "manager", default is member
         """
-        OSFUser = apps.get_model('osf.OSFUser')
+        OSFUser = apps.get_model("osf.OSFUser")
 
         try:
             validate_email(email)
         except BlockedEmailError:
-            raise ValidationError('Email address domain is blocked.')
+            raise ValidationError("Email address domain is blocked.")
 
         user = get_user(email=email)
         if user:
             if user.is_registered or self.is_member(user):
-                raise ValueError('User already exists.')
+                raise ValueError("User already exists.")
         else:
             user = OSFUser.create_unregistered(fullname=fullname, email=email)
-        user.add_unclaimed_record(self, referrer=auth.user, given_name=fullname, email=email)
+        user.add_unclaimed_record(
+            self, referrer=auth.user, given_name=fullname, email=email
+        )
         user.save()
 
         if role == MANAGER:
@@ -287,10 +316,11 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         self.add_log(
             OSFGroupLog.MEMBER_REMOVED,
             params={
-                'group': self._id,
-                'user': user._id,
+                "group": self._id,
+                "user": user._id,
             },
-            auth=auth)
+            auth=auth,
+        )
 
         self.update_search()
 
@@ -314,11 +344,9 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
 
         self.add_log(
             OSFGroupLog.EDITED_NAME,
-            params={
-                'group': self._id,
-                'name_original': old_name
-            },
-            auth=auth)
+            params={"group": self._id, "name_original": old_name},
+            auth=auth,
+        )
         self.update_search()
         for node in self.nodes:
             node.update_search()
@@ -337,30 +365,35 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
             if current_perm == permission:
                 return False
             # If group already has perms to node, update permissions instead
-            return self.update_group_permissions_to_node(node, permission, auth)
+            return self.update_group_permissions_to_node(
+                node, permission, auth
+            )
 
         permissions = self._get_node_group_perms(node, permission)
         for perm in permissions:
             assign_perm(perm, self.member_group, node)
 
         params = {
-            'group': self._id,
-            'node': node._id,
-            'permission': permission
+            "group": self._id,
+            "node": node._id,
+            "permission": permission,
         }
 
-        self.add_log(
-            OSFGroupLog.NODE_CONNECTED,
-            params=params,
-            auth=auth)
+        self.add_log(OSFGroupLog.NODE_CONNECTED, params=params, auth=auth)
 
-        self.add_corresponding_node_log(node, NodeLog.GROUP_ADDED, params, auth)
+        self.add_corresponding_node_log(
+            node, NodeLog.GROUP_ADDED, params, auth
+        )
         node.update_search()
 
         for user in self.members:
-            group_signals.group_added_to_node.send(self, node=node, user=user, permission=permission, auth=auth)
+            group_signals.group_added_to_node.send(
+                self, node=node, user=user, permission=permission, auth=auth
+            )
 
-    def update_group_permissions_to_node(self, node, permission=WRITE, auth=None):
+    def update_group_permissions_to_node(
+        self, node, permission=WRITE, auth=None
+    ):
         """Updates the OSF Group permissions to the node.  Called from node model.
 
         :param obj Node
@@ -370,23 +403,23 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         if self.get_permission_to_node(node) == permission:
             return False
         permissions = self._get_node_group_perms(node, permission)
-        to_remove = set(get_perms(self.member_group, node)).difference(permissions)
+        to_remove = set(get_perms(self.member_group, node)).difference(
+            permissions
+        )
         for perm in to_remove:
             remove_perm(perm, self.member_group, node)
         for perm in permissions:
             assign_perm(perm, self.member_group, node)
         params = {
-            'group': self._id,
-            'node': node._id,
-            'permission': permission
+            "group": self._id,
+            "node": node._id,
+            "permission": permission,
         }
-        self.add_log(
-            OSFGroupLog.NODE_PERMS_UPDATED,
-            params=params,
-            auth=auth
-        )
+        self.add_log(OSFGroupLog.NODE_PERMS_UPDATED, params=params, auth=auth)
 
-        self.add_corresponding_node_log(node, NodeLog.GROUP_UPDATED, params, auth)
+        self.add_corresponding_node_log(
+            node, NodeLog.GROUP_UPDATED, params, auth
+        )
 
     def remove_group_from_node(self, node, auth):
         """Removes the OSFGroup from the node. Called from node model.
@@ -398,15 +431,14 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         for perm in node.groups[ADMIN]:
             remove_perm(perm, self.member_group, node)
         params = {
-            'group': self._id,
-            'node': node._id,
+            "group": self._id,
+            "node": node._id,
         }
-        self.add_log(
-            OSFGroupLog.NODE_DISCONNECTED,
-            params=params,
-            auth=auth)
+        self.add_log(OSFGroupLog.NODE_DISCONNECTED, params=params, auth=auth)
 
-        self.add_corresponding_node_log(node, NodeLog.GROUP_REMOVED, params, auth)
+        self.add_corresponding_node_log(
+            node, NodeLog.GROUP_REMOVED, params, auth
+        )
         node.update_search()
 
         for user in self.members:
@@ -433,7 +465,9 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
 
         # Using get_group_perms to get permissions that are inferred through
         # group membership - not inherited from superuser status
-        return '{}_{}'.format(permission, 'group') in get_group_perms(user, self)
+        return "{}_{}".format(permission, "group") in get_group_perms(
+            user, self
+        )
 
     def remove_group(self, auth=None):
         """Removes the OSFGroup and associated manager and member django groups
@@ -441,7 +475,7 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         """
         self._require_manager_permission(auth)
         group_id = self._id
-        members = list(self.members.values_list('id', flat=True))
+        members = list(self.members.values_list("id", flat=True))
         nodes = self.nodes
 
         self.member_group.delete()
@@ -453,10 +487,12 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
             for node in nodes:
                 node.disconnect_addons(user, auth)
                 params = {
-                    'group': group_id,
-                    'node': node._id,
+                    "group": group_id,
+                    "node": node._id,
                 }
-                self.add_corresponding_node_log(node, NodeLog.GROUP_REMOVED, params, auth)
+                self.add_corresponding_node_log(
+                    node, NodeLog.GROUP_REMOVED, params, auth
+                )
                 project_signals.contributor_removed.send(node, user=user)
                 node.update_search()
 
@@ -476,26 +512,22 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         self.add_log(
             OSFGroupLog.ROLE_UPDATED,
             params={
-                'group': self._id,
-                'new_role': role,
-                'user': user._id,
+                "group": self._id,
+                "new_role": role,
+                "user": user._id,
             },
-            auth=auth)
+            auth=auth,
+        )
 
     def add_corresponding_node_log(self, node, action, params, auth):
-        """ Used for logging OSFGroup-related action to nodes - for example,
+        """Used for logging OSFGroup-related action to nodes - for example,
         adding a group to a node.
 
         :param node: Node object
         :param action: string, Node log action
         :param params: dict, log params
         """
-        node.add_log(
-            action=action,
-            params=params,
-            auth=auth,
-            save=True
-        )
+        node.add_log(action=action, params=params, auth=auth, save=True)
 
     def add_log(self, action, params, auth, log_date=None, save=True):
         """Create OSFGroupLog
@@ -506,10 +538,7 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         if auth:
             user = auth.user
 
-        log = OSFGroupLog(
-            action=action, user=user,
-            params=params, group=self
-        )
+        log = OSFGroupLog(action=action, user=user, params=params, group=self)
 
         log.save()
 
@@ -520,7 +549,9 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
         from website import search
 
         try:
-            search.search.update_group(self, bulk=False, async_update=True, deleted_id=deleted_id)
+            search.search.update_group(
+                self, bulk=False, async_update=True, deleted_id=deleted_id
+            )
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
@@ -528,8 +559,14 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
     @classmethod
     def bulk_update_search(cls, groups, index=None):
         from website import search
+
         try:
-            serialize = functools.partial(search.search.update_group, index=index, bulk=True, async_update=False)
+            serialize = functools.partial(
+                search.search.update_group,
+                index=index,
+                bulk=True,
+                async_update=False,
+            )
             search.search.bulk_update_nodes(serialize, groups, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -541,7 +578,7 @@ def add_project_created_log(sender, instance, created, **kwargs):
     if created:
         log_action = OSFGroupLog.GROUP_CREATED
         log_params = {
-            'group': instance._id,
+            "group": instance._id,
         }
 
         instance.add_log(
@@ -558,6 +595,7 @@ class OSFGroupUserObjectPermission(UserObjectPermissionBase):
     Direct Foreign Key Table for guardian - User models - we typically add object
     perms directly to Django groups instead of users, so this will be used infrequently
     """
+
     content_object = models.ForeignKey(OSFGroup, on_delete=models.CASCADE)
 
 
@@ -569,4 +607,5 @@ class OSFGroupGroupObjectPermission(GroupObjectPermissionBase):
     (Every time an OSFGroup is created, a Django member group, and Django manager group are created.
     The member group is given member perms, manager group has manager perms.)
     """
+
     content_object = models.ForeignKey(OSFGroup, on_delete=models.CASCADE)

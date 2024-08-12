@@ -6,6 +6,7 @@ import logging
 
 
 import django
+
 django.setup()
 
 from django.core.management.base import BaseCommand
@@ -19,26 +20,34 @@ logger = logging.getLogger(__name__)
 
 OFFSET = 500000
 
-def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSET):
 
+def email_all_users(
+    email_template, dry_run=False, ids=None, run=0, offset=OFFSET
+):
     if ids:
         active_users = OSFUser.objects.filter(id__in=ids)
     else:
         lower_bound = run * offset
         upper_bound = (run + 1) * offset
-        base_query = OSFUser.objects.filter(date_confirmed__isnull=False, deleted=None).exclude(date_disabled__isnull=False).exclude(is_active=False)
-        active_users = base_query.filter(id__gt=lower_bound, id__lte=upper_bound).order_by('id')
+        base_query = (
+            OSFUser.objects.filter(date_confirmed__isnull=False, deleted=None)
+            .exclude(date_disabled__isnull=False)
+            .exclude(is_active=False)
+        )
+        active_users = base_query.filter(
+            id__gt=lower_bound, id__lte=upper_bound
+        ).order_by("id")
 
     if dry_run:
         active_users = active_users.exclude(is_superuser=False)
 
     total_active_users = active_users.count()
 
-    logger.info(f'About to send an email to {total_active_users} users.')
+    logger.info(f"About to send an email to {total_active_users} users.")
 
     template = getattr(mails, email_template, None)
     if not template:
-        raise RuntimeError('Invalid email template specified!')
+        raise RuntimeError("Invalid email template specified!")
 
     total_sent = 0
     for user in active_users.iterator():
@@ -49,65 +58,66 @@ def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSE
                 fullname=user.fullname,
             )
         except Exception as e:
-            logger.error(f'Exception encountered sending email to {user.id}')
+            logger.error(f"Exception encountered sending email to {user.id}")
             sentry.log_exception(e)
             continue
         else:
             total_sent += 1
 
-    logger.info(f'Emails sent to {total_sent}/{total_active_users} users')
+    logger.info(f"Emails sent to {total_sent}/{total_active_users} users")
 
 
 class Command(BaseCommand):
     """
     Add subscription to all active users for given notification type.
     """
+
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            '--dry',
-            action='store_true',
-            dest='dry_run',
-            help='Test - Only send to superusers'
+            "--dry",
+            action="store_true",
+            dest="dry_run",
+            help="Test - Only send to superusers",
         )
 
         parser.add_argument(
-            '--t',
+            "--t",
             type=str,
-            dest='template',
+            dest="template",
             required=True,
-            help='Specify which template to use'
+            help="Specify which template to use",
         )
 
         parser.add_argument(
-            '--r',
+            "--r",
             type=int,
-            dest='run',
+            dest="run",
             default=0,
-            help='Specify which run this is'
+            help="Specify which run this is",
         )
 
         parser.add_argument(
-            '--ids',
-            dest='ids',
-            nargs='+',
-            help='Specific IDs to email, otherwise will email all users'
+            "--ids",
+            dest="ids",
+            nargs="+",
+            help="Specific IDs to email, otherwise will email all users",
         )
 
         parser.add_argument(
-            '--o',
+            "--o",
             type=int,
-            dest='offset',
+            dest="offset",
             default=OFFSET,
-            help=f'How many users to email in this run, default is {OFFSET}'
+            help=f"How many users to email in this run, default is {OFFSET}",
         )
 
     def handle(self, *args, **options):
-        dry_run = options.get('dry_run', False)
-        template = options.get('template')
-        run = options.get('run')
-        ids = options.get('ids')
-        offset = options.get('offset', OFFSET)
+        dry_run = options.get("dry_run", False)
+        template = options.get("template")
+        run = options.get("run")
+        ids = options.get("ids")
+        offset = options.get("offset", OFFSET)
         email_all_users(template, dry_run, run=run, ids=ids, offset=offset)
         if dry_run:
-            raise RuntimeError('Dry run, only superusers emailed')
+            raise RuntimeError("Dry run, only superusers emailed")

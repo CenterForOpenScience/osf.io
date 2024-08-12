@@ -11,7 +11,10 @@ from api.base.parsers import (
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.nodes.permissions import ContributorOrPublic
-from api.draft_nodes.serializers import DraftNodeSerializer, DraftNodeStorageProviderSerializer
+from api.draft_nodes.serializers import (
+    DraftNodeSerializer,
+    DraftNodeStorageProviderSerializer,
+)
 from api.draft_registrations.serializers import DraftRegistrationSerializer
 from api.nodes.permissions import IsAdminContributor
 from api.nodes.views import (
@@ -29,14 +32,14 @@ class DraftNodeMixin:
     current URL. By default, fetches the current node based on the node_id kwarg.
     """
 
-    node_lookup_url_kwarg = 'node_id'
+    node_lookup_url_kwarg = "node_id"
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
             DraftNode,
-            Q(guids___id=self.kwargs['node_id']),
+            Q(guids___id=self.kwargs["node_id"]),
             request=self.request,
-            display_name='node',
+            display_name="node",
         )
 
         if check_object_permissions:
@@ -44,8 +47,9 @@ class DraftNodeMixin:
         return node
 
 
-class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin):
-
+class DraftNodeDetail(
+    JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin
+):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
@@ -53,8 +57,8 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
     )
 
     serializer_class = DraftNodeSerializer
-    view_category = 'draft_nodes'
-    view_name = 'draft-node-detail'
+    view_category = "draft_nodes"
+    view_name = "draft-node-detail"
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -64,21 +68,26 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
         return self.get_node()
 
 
-class DraftNodeDraftRegistrationsList(JSONAPIBaseView, generics.ListAPIView, DraftNodeMixin):
+class DraftNodeDraftRegistrationsList(
+    JSONAPIBaseView, generics.ListAPIView, DraftNodeMixin
+):
     permission_classes = (
         IsAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+    parser_classes = (
+        JSONAPIMultipleRelationshipsParser,
+        JSONAPIMultipleRelationshipsParserForRegularJSON,
+    )
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
     serializer_class = DraftRegistrationSerializer
-    view_category = 'draft_nodes'
-    view_name = 'draft-node-draft-registrations'
+    view_category = "draft_nodes"
+    view_name = "draft-node-draft-registrations"
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -93,35 +102,37 @@ class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft_nodes'
+    view_category = "draft_nodes"
     serializer_class = DraftNodeStorageProviderSerializer
 
 
-class DraftNodeStorageProviderDetail(DraftNodeMixin, NodeStorageProviderDetail):
+class DraftNodeStorageProviderDetail(
+    DraftNodeMixin, NodeStorageProviderDetail
+):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft_nodes'
+    view_category = "draft_nodes"
     serializer_class = DraftNodeStorageProviderSerializer
 
 
 class DraftNodeFilesList(DraftNodeMixin, NodeFilesList):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, "target"),
         base_permissions.TokenHasScope,
     )
-    view_category = 'draft_nodes'
+    view_category = "draft_nodes"
 
 
 class DraftNodeFileDetail(DraftNodeMixin, NodeFileDetail):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, "target"),
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft_nodes'
+    view_category = "draft_nodes"

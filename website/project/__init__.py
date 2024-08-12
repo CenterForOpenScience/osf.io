@@ -7,8 +7,11 @@ from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
 from osf.utils.sanitize import strip_html
 
+
 # TODO: This should be a class method of Node
-def new_node(category, title, user, description='', parent=None, campaign=None):
+def new_node(
+    category, title, user, description="", parent=None, campaign=None
+):
     """Create a new project or component.
 
     :param str category: Node category
@@ -21,7 +24,7 @@ def new_node(category, title, user, description='', parent=None, campaign=None):
     """
     # We use apps.get_model rather than import .model.Node
     # because we want the concrete Node class, not AbstractNode
-    Node = apps.get_model('osf.Node')
+    Node = apps.get_model("osf.Node")
     category = category
     title = strip_html(title.strip())
     if description:
@@ -32,13 +35,14 @@ def new_node(category, title, user, description='', parent=None, campaign=None):
         category=category,
         creator=user,
         description=description,
-        parent=parent
+        parent=parent,
     )
 
     node.save()
 
     if campaign:
         from framework.auth.campaigns import system_tag_for_campaign
+
         node.add_system_tag(system_tag_for_campaign(campaign))
 
     return node
@@ -51,20 +55,16 @@ def new_bookmark_collection(user):
     :return Node: Created node
 
     """
-    Collection = apps.get_model('osf.Collection')
+    Collection = apps.get_model("osf.Collection")
     existing_bookmark_collections = Collection.objects.filter(
-        is_bookmark_collection=True,
-        creator=user,
-        deleted__isnull=True
+        is_bookmark_collection=True, creator=user, deleted__isnull=True
     ).exists()
 
     if existing_bookmark_collections:
-        raise NodeStateError('Users may only have one bookmark collection')
+        raise NodeStateError("Users may only have one bookmark collection")
 
     collection = Collection(
-        title='Bookmarks',
-        creator=user,
-        is_bookmark_collection=True
+        title="Bookmarks", creator=user, is_bookmark_collection=True
     )
     collection.save()
     return collection
@@ -80,22 +80,19 @@ def new_private_link(name, user, nodes, anonymous):
     :return PrivateLink: Created private link
 
     """
-    PrivateLink = apps.get_model('osf.PrivateLink')
-    NodeLog = apps.get_model('osf.NodeLog')
+    PrivateLink = apps.get_model("osf.PrivateLink")
+    NodeLog = apps.get_model("osf.NodeLog")
 
-    key = str(uuid.uuid4()).replace('-', '')
+    key = str(uuid.uuid4()).replace("-", "")
     if name:
         name = strip_html(name)
         if name is None or not name.strip():
-            raise ValidationError('Invalid link name.')
+            raise ValidationError("Invalid link name.")
     else:
-        name = 'Shared project link'
+        name = "Shared project link"
 
     private_link = PrivateLink(
-        key=key,
-        name=name,
-        creator=user,
-        anonymous=anonymous
+        key=key, name=name, creator=user, anonymous=anonymous
     )
 
     private_link.save()
@@ -105,17 +102,13 @@ def new_private_link(name, user, nodes, anonymous):
     auth = Auth(user)
     for node in nodes:
         log_dict = {
-            'project': node.parent_id,
-            'node': node._id,
-            'user': user._id,
-            'anonymous_link': anonymous,
+            "project": node.parent_id,
+            "node": node._id,
+            "user": user._id,
+            "anonymous_link": anonymous,
         }
 
-        node.add_log(
-            NodeLog.VIEW_ONLY_LINK_ADDED,
-            log_dict,
-            auth=auth
-        )
+        node.add_log(NodeLog.VIEW_ONLY_LINK_ADDED, log_dict, auth=auth)
 
     private_link.save()
 

@@ -1,4 +1,5 @@
 """Serializer tests for the GitHub addon."""
+
 from unittest import mock
 import pytest
 
@@ -11,9 +12,9 @@ from addons.github.serializer import GitHubSerializer
 
 pytestmark = pytest.mark.django_db
 
-class TestGitHubSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 
-    addon_short_name = 'github'
+class TestGitHubSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
+    addon_short_name = "github"
 
     Serializer = GitHubSerializer
     ExternalAccountFactory = GitHubAccountFactory
@@ -26,11 +27,14 @@ class TestGitHubSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 
     def setUp(self):
         super().setUp()
-        self.mock_api_user = mock.patch('addons.github.api.GitHubClient.user')
+        self.mock_api_user = mock.patch("addons.github.api.GitHubClient.user")
         self.mock_api_user.return_value = mock.Mock()
         self.mock_api_user.start()
 
-        self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
+        self.mock_api_credentials_are_valid = mock.patch(
+            "addons.github.api.GitHubClient.check_authorization",
+            return_value=True,
+        )
         self.mock_api_credentials_are_valid.start()
 
     def tearDown(self):

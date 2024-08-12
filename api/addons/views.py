@@ -21,63 +21,77 @@ class AddonSettingsMixin:
     current URL. By default, fetches the settings based on the user or node available in self context.
     """
 
-    def get_addon_settings(self, provider=None, fail_if_absent=True, check_object_permissions=True):
+    def get_addon_settings(
+        self, provider=None, fail_if_absent=True, check_object_permissions=True
+    ):
         owner = None
-        provider = provider or self.kwargs['provider']
+        provider = provider or self.kwargs["provider"]
 
-        if hasattr(self, 'get_user'):
+        if hasattr(self, "get_user"):
             owner = self.get_user()
-            owner_type = 'user'
-        elif hasattr(self, 'get_node'):
+            owner_type = "user"
+        elif hasattr(self, "get_node"):
             owner = self.get_node()
-            owner_type = 'node'
+            owner_type = "node"
 
         try:
-            addon_module = apps.get_app_config(f'addons_{provider}')
+            addon_module = apps.get_app_config(f"addons_{provider}")
         except LookupError:
-            raise NotFound('Requested addon unrecognized')
+            raise NotFound("Requested addon unrecognized")
 
-        if not owner or provider not in ADDONS_OAUTH or owner_type not in addon_module.owners:
-            raise NotFound('Requested addon unavailable')
+        if (
+            not owner
+            or provider not in ADDONS_OAUTH
+            or owner_type not in addon_module.owners
+        ):
+            raise NotFound("Requested addon unavailable")
 
         addon_settings = owner.get_addon(provider)
         if not addon_settings and fail_if_absent:
-            raise NotFound('Requested addon not enabled')
+            raise NotFound("Requested addon not enabled")
 
         if not addon_settings or addon_settings.deleted:
             return None
 
         if addon_settings and check_object_permissions:
             authorizer = None
-            if owner_type == 'user':
+            if owner_type == "user":
                 authorizer = addon_settings.owner
-            elif getattr(addon_settings, 'user_settings', None):
+            elif getattr(addon_settings, "user_settings", None):
                 authorizer = addon_settings.user_settings.owner
             if authorizer and authorizer != self.request.user:
-                raise PermissionDenied('Must be addon authorizer to list folders')
+                raise PermissionDenied(
+                    "Must be addon authorizer to list folders"
+                )
 
         return addon_settings
 
+
 class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/addons_list).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/addons_list)."""
+
     permission_classes = (
         drf_permissions.AllowAny,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        TokenHasScope, )
+        TokenHasScope,
+    )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
 
     pagination_class = MaxSizePagination
     serializer_class = AddonSerializer
-    view_category = 'addons'
-    view_name = 'addon-list'
+    view_category = "addons"
+    view_name = "addon-list"
 
     ordering = ()
 
     def get_default_queryset(self):
-        return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.values() if 'accounts' in conf.configs]
+        return [
+            conf
+            for conf in osf_settings.ADDONS_AVAILABLE_DICT.values()
+            if "accounts" in conf.configs
+        ]
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -90,16 +104,34 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         if filters:
             for key, field_names in filters.items():
                 match = self.QUERY_PATTERN.match(key)
-                fields = match.groupdict()['fields']
-                statement = len(re.findall(self.FILTER_FIELDS, fields)) > 1  # This indicates an OR statement
+                fields = match.groupdict()["fields"]
+                statement = (
+                    len(re.findall(self.FILTER_FIELDS, fields)) > 1
+                )  # This indicates an OR statement
                 sub_query = set() if statement else set(default_queryset)
                 for field_name, data in field_names.items():
                     operations = data if isinstance(data, list) else [data]
                     for operation in operations:
                         if statement:
-                            sub_query = sub_query.union(set(self.get_filtered_queryset(field_name, operation, list(default_queryset))))
+                            sub_query = sub_query.union(
+                                set(
+                                    self.get_filtered_queryset(
+                                        field_name,
+                                        operation,
+                                        list(default_queryset),
+                                    )
+                                )
+                            )
                         else:
-                            sub_query = sub_query.intersection(set(self.get_filtered_queryset(field_name, operation, list(default_queryset))))
+                            sub_query = sub_query.intersection(
+                                set(
+                                    self.get_filtered_queryset(
+                                        field_name,
+                                        operation,
+                                        list(default_queryset),
+                                    )
+                                )
+                            )
 
                 queryset = sub_query.intersection(queryset)
         return list(queryset)

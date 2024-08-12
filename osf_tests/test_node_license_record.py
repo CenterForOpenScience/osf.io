@@ -2,6 +2,7 @@ import pytest
 
 from .factories import NodeLicenseRecordFactory
 
+
 @pytest.mark.django_db
 def test_factory():
     nlr = NodeLicenseRecordFactory()
@@ -11,9 +12,9 @@ def test_factory():
     assert nlr.year
     assert nlr.copyright_holders
 
+
 @pytest.mark.django_db
 class TestNodeLicenseRecord:
-
     def test_copy(self):
         nlr = NodeLicenseRecordFactory()
         copy = nlr.copy()

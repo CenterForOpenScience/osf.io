@@ -6,7 +6,12 @@ from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
 from osf.models import OSFUser
-from osf.models.queued_mail import NO_LOGIN_TYPE, NO_LOGIN, QueuedMail, queue_mail
+from osf.models.queued_mail import (
+    NO_LOGIN_TYPE,
+    NO_LOGIN,
+    QueuedMail,
+    queue_mail,
+)
 from website.app import init_app
 from website import settings
 
@@ -19,8 +24,8 @@ logging.basicConfig(level=logging.INFO)
 def main(dry_run=True):
     for user in find_inactive_users_with_no_inactivity_email_sent_or_queued():
         if dry_run:
-            logger.warning('Dry run mode')
-        logger.warning(f'Email of type no_login queued to {user.username}')
+            logger.warning("Dry run mode")
+        logger.warning(f"Email of type no_login queued to {user.username}")
         if not dry_run:
             with transaction.atomic():
                 queue_mail(
@@ -34,15 +39,24 @@ def main(dry_run=True):
 
 
 def find_inactive_users_with_no_inactivity_email_sent_or_queued():
-    users_sent_ids = QueuedMail.objects.filter(email_type=NO_LOGIN_TYPE).values_list('user__guids___id')
-    return (OSFUser.objects
-        .filter(
-            (Q(date_last_login__lt=timezone.now() - settings.NO_LOGIN_WAIT_TIME) & ~Q(tags__name='osf4m')) |
-            Q(date_last_login__lt=timezone.now() - settings.NO_LOGIN_OSF4M_WAIT_TIME, tags__name='osf4m'),
-            is_active=True)
-        .exclude(guids___id__in=users_sent_ids))
+    users_sent_ids = QueuedMail.objects.filter(
+        email_type=NO_LOGIN_TYPE
+    ).values_list("user__guids___id")
+    return OSFUser.objects.filter(
+        (
+            Q(date_last_login__lt=timezone.now() - settings.NO_LOGIN_WAIT_TIME)
+            & ~Q(tags__name="osf4m")
+        )
+        | Q(
+            date_last_login__lt=timezone.now()
+            - settings.NO_LOGIN_OSF4M_WAIT_TIME,
+            tags__name="osf4m",
+        ),
+        is_active=True,
+    ).exclude(guids___id__in=users_sent_ids)
 
-@celery_app.task(name='scripts.triggered_mails')
+
+@celery_app.task(name="scripts.triggered_mails")
 def run_main(dry_run=True):
     init_app(routes=False)
     if not dry_run:

@@ -22,36 +22,48 @@ def has_anonymous_link(node, auth):
 
 
 def get_valid_mentioned_users_guids(comment, contributors):
-    """ Get a list of valid users that are mentioned in the comment content.
+    """Get a list of valid users that are mentioned in the comment content.
 
     :param Node comment: Node that has content and ever_mentioned
     :param list contributors: List of contributors or group members on the node
     :return list new_mentions: List of valid contributors or group members mentioned in the comment content
     """
-    OSFUser = apps.get_model('osf', 'OSFUser')
+    OSFUser = apps.get_model("osf", "OSFUser")
 
-    mentions = set(re.findall(r'\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5,})\/\)', comment.content))
+    mentions = set(
+        re.findall(
+            r"\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5,})\/\)",
+            comment.content,
+        )
+    )
     if not mentions:
         return []
-    old_mentioned_guids = set(comment.ever_mentioned.values_list('guids___id', flat=True))
+    old_mentioned_guids = set(
+        comment.ever_mentioned.values_list("guids___id", flat=True)
+    )
     new_mentions = mentions.difference(old_mentioned_guids)
 
-    if OSFUser.objects.filter(is_registered=True, guids___id__in=new_mentions).count() != len(new_mentions):
-        raise ValidationError('User does not exist or is not active.')
-    elif contributors.filter(guids___id__in=new_mentions).count() != len(new_mentions):
-        raise ValidationError('Mentioned user is not a contributor or group member.')
+    if OSFUser.objects.filter(
+        is_registered=True, guids___id__in=new_mentions
+    ).count() != len(new_mentions):
+        raise ValidationError("User does not exist or is not active.")
+    elif contributors.filter(guids___id__in=new_mentions).count() != len(
+        new_mentions
+    ):
+        raise ValidationError(
+            "Mentioned user is not a contributor or group member."
+        )
 
     return list(new_mentions)
 
 
 def get_pointer_parent(pointer):
-    """Given a `Pointer` object, return its parent node.
-    """
+    """Given a `Pointer` object, return its parent node."""
     # The `parent_node` property of the `Pointer` schema refers to the parents
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
     # back-reference syntax to find the parents of the `Pointer`.
     parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent.'
+    assert len(parent_refs) == 1, "Pointer must have exactly one parent."
     return parent_refs[0]
 
 
@@ -60,15 +72,15 @@ def validate_title(value):
     above 512 characters.
     """
     if value is None or not value.strip():
-        raise ValidationError('Title cannot be blank.')
+        raise ValidationError("Title cannot be blank.")
 
     value = sanitize.strip_html(value)
 
     if value is None or not value.strip():
-        raise ValidationError('Invalid title.')
+        raise ValidationError("Invalid title.")
 
     if len(value) > 512:
-        raise ValidationError('Title cannot exceed 512 characters.')
+        raise ValidationError("Title cannot exceed 512 characters.")
 
     return True
 

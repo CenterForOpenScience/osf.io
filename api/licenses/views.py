@@ -12,8 +12,8 @@ from osf.models import NodeLicense
 
 
 class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/licenses_read).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/licenses_read)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -23,9 +23,9 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = LicenseSerializer
-    view_category = 'licenses'
-    view_name = 'license-detail'
-    lookup_url_kwarg = 'license_id'
+    view_category = "licenses"
+    view_name = "license-detail"
+    lookup_url_kwarg = "license_id"
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -33,15 +33,15 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             NodeLicense,
             self.kwargs[self.lookup_url_kwarg],
             self.request,
-            display_name='license',
+            display_name="license",
         )
         self.check_object_permissions(self.request, license)
         return license
 
 
 class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/license_list).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/license_list)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -49,13 +49,13 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     required_read_scopes = [CoreScopes.LICENSE_READ]
     required_write_scopes = [CoreScopes.NULL]
-    model_class = apps.get_model('osf.NodeLicense')
+    model_class = apps.get_model("osf.NodeLicense")
 
     serializer_class = LicenseSerializer
-    view_category = 'licenses'
-    view_name = 'license-list'
+    view_category = "licenses"
+    view_name = "license-list"
 
-    ordering = ('name',)  # default ordering
+    ordering = ("name",)  # default ordering
 
     def get_default_queryset(self):
         # excludes CCBYNCND and CCBYSA40

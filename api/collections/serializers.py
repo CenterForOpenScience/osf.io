@@ -4,13 +4,30 @@ from rest_framework import serializers as ser
 
 from osf.models import AbstractNode, Node, Collection, Guid, Registration
 from osf.exceptions import ValidationError, NodeStateError
-from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
-from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField, EnumField
-from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
+from api.base.serializers import (
+    LinksField,
+    RelationshipField,
+    LinkedNodesRelationshipSerializer,
+    LinkedRegistrationsRelationshipSerializer,
+    LinkedPreprintsRelationshipSerializer,
+)
+from api.base.serializers import (
+    JSONAPISerializer,
+    IDField,
+    TypeField,
+    VersionedDateTimeField,
+    EnumField,
+)
+from api.base.exceptions import (
+    InvalidModelValueError,
+    RelationshipPostMakesNoChanges,
+)
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
-from api.collections_providers.fields import CollectionProviderRelationshipField
+from api.collections_providers.fields import (
+    CollectionProviderRelationshipField,
+)
 from framework.exceptions import PermissionsError
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import CollectionSubmissionStates
@@ -25,19 +42,23 @@ class GuidRelationshipField(RelationshipField):
 
 
 class CollectionSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'title',
-        'date_created',
-        'date_modified',
-    ])
+    filterable_fields = frozenset(
+        [
+            "title",
+            "date_created",
+            "date_modified",
+        ]
+    )
 
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source="_id", read_only=True)
     type = TypeField()
 
     title = ser.CharField(required=True)
-    date_created = VersionedDateTimeField(source='created', read_only=True)
-    date_modified = VersionedDateTimeField(source='modified', read_only=True)
-    bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
+    date_created = VersionedDateTimeField(source="created", read_only=True)
+    date_modified = VersionedDateTimeField(source="modified", read_only=True)
+    bookmarks = ser.BooleanField(
+        read_only=False, default=False, source="is_bookmark_collection"
+    )
     is_promoted = ser.BooleanField(read_only=True, default=False)
     is_public = ser.BooleanField(read_only=False, default=False)
     status_choices = ser.ListField(
@@ -80,96 +101,116 @@ class CollectionSerializer(JSONAPISerializer):
     links = LinksField({})
 
     provider = CollectionProviderRelationshipField(
-        related_view='providers:collection-providers:collection-provider-detail',
-        related_view_kwargs={'provider_id': '<provider._id>'},
+        related_view="providers:collection-providers:collection-provider-detail",
+        related_view_kwargs={"provider_id": "<provider._id>"},
         read_only=True,
     )
 
     node_links = RelationshipField(
-        related_view='collections:node-pointers',
-        related_view_kwargs={'collection_id': '<_id>'},
-        related_meta={'count': 'get_node_links_count'},
+        related_view="collections:node-pointers",
+        related_view_kwargs={"collection_id": "<_id>"},
+        related_meta={"count": "get_node_links_count"},
     )
 
     # TODO: Add a self link to this when it's available
     linked_nodes = RelationshipField(
-        related_view='collections:linked-nodes',
-        related_view_kwargs={'collection_id': '<_id>'},
-        related_meta={'count': 'get_node_links_count'},
-        self_view='collections:collection-node-pointer-relationship',
-        self_view_kwargs={'collection_id': '<_id>'},
+        related_view="collections:linked-nodes",
+        related_view_kwargs={"collection_id": "<_id>"},
+        related_meta={"count": "get_node_links_count"},
+        self_view="collections:collection-node-pointer-relationship",
+        self_view_kwargs={"collection_id": "<_id>"},
     )
 
     linked_registrations = RelationshipField(
-        related_view='collections:linked-registrations',
-        related_view_kwargs={'collection_id': '<_id>'},
-        related_meta={'count': 'get_registration_links_count'},
-        self_view='collections:collection-registration-pointer-relationship',
-        self_view_kwargs={'collection_id': '<_id>'},
+        related_view="collections:linked-registrations",
+        related_view_kwargs={"collection_id": "<_id>"},
+        related_meta={"count": "get_registration_links_count"},
+        self_view="collections:collection-registration-pointer-relationship",
+        self_view_kwargs={"collection_id": "<_id>"},
     )
 
     linked_preprints = RelationshipField(
-        related_view='collections:linked-preprints',
-        related_view_kwargs={'collection_id': '<_id>'},
-        self_view='collections:collection-preprint-pointer-relationship',
-        self_view_kwargs={'collection_id': '<_id>'},
-        related_meta={'count': 'get_preprint_links_count'},
+        related_view="collections:linked-preprints",
+        related_view_kwargs={"collection_id": "<_id>"},
+        self_view="collections:collection-preprint-pointer-relationship",
+        self_view_kwargs={"collection_id": "<_id>"},
+        related_meta={"count": "get_preprint_links_count"},
     )
 
     collected_metadata = RelationshipField(
-        related_view='collections:collected-metadata-list',
-        related_view_kwargs={'collection_id': '<_id>'},
+        related_view="collections:collected-metadata-list",
+        related_view_kwargs={"collection_id": "<_id>"},
     )
 
     collection_submissions = RelationshipField(
-        related_view='collections:collection-submission-list',
-        related_view_kwargs={'collection_id': '<_id>'},
+        related_view="collections:collection-submission-list",
+        related_view_kwargs={"collection_id": "<_id>"},
     )
 
     class Meta:
-        type_ = 'collections'
+        type_ = "collections"
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'collections:collection-detail', kwargs={
-                'collection_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+            "collections:collection-detail",
+            kwargs={
+                "collection_id": obj._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
     def get_node_links_count(self, obj):
-        auth = get_user_auth(self.context['request'])
-        node_ids = obj.active_guids.all().values_list('_id', flat=True)
-        return Node.objects.filter(guids___id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+        auth = get_user_auth(self.context["request"])
+        node_ids = obj.active_guids.all().values_list("_id", flat=True)
+        return (
+            Node.objects.filter(guids___id__in=node_ids, is_deleted=False)
+            .can_view(user=auth.user, private_link=auth.private_link)
+            .count()
+        )
 
     def get_registration_links_count(self, obj):
-        auth = get_user_auth(self.context['request'])
-        registration_ids = obj.active_guids.all().values_list('_id', flat=True)
-        return Registration.objects.filter(guids___id__in=registration_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+        auth = get_user_auth(self.context["request"])
+        registration_ids = obj.active_guids.all().values_list("_id", flat=True)
+        return (
+            Registration.objects.filter(
+                guids___id__in=registration_ids, is_deleted=False
+            )
+            .can_view(user=auth.user, private_link=auth.private_link)
+            .count()
+        )
 
     def get_preprint_links_count(self, obj):
-        auth = get_user_auth(self.context['request'])
-        return self.context['view'].collection_preprints(obj, auth.user).count()
+        auth = get_user_auth(self.context["request"])
+        return (
+            self.context["view"].collection_preprints(obj, auth.user).count()
+        )
 
     def create(self, validated_data):
         node = Collection(**validated_data)
-        node.category = ''
+        node.category = ""
         try:
             node.save()
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
         except IntegrityError:
-            raise ser.ValidationError('Each user cannot have more than one Bookmark collection.')
+            raise ser.ValidationError(
+                "Each user cannot have more than one Bookmark collection."
+            )
         return node
 
     def update(self, collection, validated_data):
-        """Update instance with the validated data.
-        """
-        assert isinstance(collection, Collection), 'collection must be a Collection'
+        """Update instance with the validated data."""
+        assert isinstance(
+            collection, Collection
+        ), "collection must be a Collection"
         if validated_data:
             for key, value in validated_data.items():
-                if key == 'title' and collection.is_bookmark_collection:
-                    raise InvalidModelValueError('Bookmark collections cannot be renamed.')
+                if key == "title" and collection.is_bookmark_collection:
+                    raise InvalidModelValueError(
+                        "Bookmark collections cannot be renamed."
+                    )
                 setattr(collection, key, value)
         try:
             collection.save()
@@ -182,44 +223,50 @@ class CollectionDetailSerializer(CollectionSerializer):
     """
     Overrides CollectionSerializer to make id required.
     """
-    id = IDField(source='_id', required=True)
+
+    id = IDField(source="_id", required=True)
 
 
-class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
-
+class CollectionSubmissionSerializer(
+    TaxonomizableSerializerMixin, JSONAPISerializer
+):
     class Meta:
-        type_ = 'collection-submissions'
+        type_ = "collection-submissions"
 
-    filterable_fields = frozenset([
-        'id',
-        'title',
-        'collected_type',
-        'date_created',
-        'date_modified',
-        'reviews_state',
-        'subjects',
-        'status',
-    ])
-    id = IDField(source='guid._id', read_only=True)
-    reviews_state = EnumField(CollectionSubmissionStates, source='machine_state', required=False)
+    filterable_fields = frozenset(
+        [
+            "id",
+            "title",
+            "collected_type",
+            "date_created",
+            "date_modified",
+            "reviews_state",
+            "subjects",
+            "status",
+        ]
+    )
+    id = IDField(source="guid._id", read_only=True)
+    reviews_state = EnumField(
+        CollectionSubmissionStates, source="machine_state", required=False
+    )
     type = TypeField()
 
     creator = RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<creator._id>'},
+        related_view="users:user-detail",
+        related_view_kwargs={"user_id": "<creator._id>"},
     )
     collection = RelationshipField(
-        related_view='collections:collection-detail',
-        related_view_kwargs={'collection_id': '<collection._id>'},
+        related_view="collections:collection-detail",
+        related_view_kwargs={"collection_id": "<collection._id>"},
     )
     guid = RelationshipField(
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
+        related_view="guids:guid-detail",
+        related_view_kwargs={"guids": "<guid._id>"},
         always_embed=True,
     )
     collection_submission_actions = RelationshipField(
-        related_view='collection_submissions:collection-submission-action-list',
-        related_view_kwargs={'collection_submission_id': '<_id>'},
+        related_view="collection_submissions:collection-submission-action-list",
+        related_view_kwargs={"collection_submission_id": "<_id>"},
     )
 
     # Populated via annotations
@@ -230,17 +277,20 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collection-submissions-subjects-list'
+        return "collections:collection-submissions-subjects-list"
 
     @property
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collection-submission-subjects-relationship-list'
+        return "collections:collection-submission-subjects-relationship-list"
 
     @property
     def subjects_view_kwargs(self):
         # Overrides TaxonomizableSerializerMixin
-        return {'collection_id': '<collection._id>', 'collection_submission_id': '<guid._id>'}
+        return {
+            "collection_id": "<collection._id>",
+            "collection_submission_id": "<guid._id>",
+        }
 
     collected_type = ser.CharField(required=False)
     status = ser.CharField(required=False)
@@ -254,95 +304,105 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'collections:collected-metadata-detail',
+            "collections:collected-metadata-detail",
             kwargs={
-                'collection_id': obj.collection._id,
-                'collection_submission_id': obj.guid._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+                "collection_id": obj.collection._id,
+                "collection_submission_id": obj.guid._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
     def update(self, obj, validated_data):
-        if validated_data and 'subjects' in validated_data:
-            auth = get_user_auth(self.context['request'])
-            subjects = validated_data.pop('subjects', None)
+        if validated_data and "subjects" in validated_data:
+            auth = get_user_auth(self.context["request"])
+            subjects = validated_data.pop("subjects", None)
             self.update_subjects(obj, subjects, auth)
 
-        if 'status' in validated_data:
-            obj.status = validated_data.pop('status')
-        if 'collected_type' in validated_data:
-            obj.collected_type = validated_data.pop('collected_type')
-        if 'volume' in validated_data:
-            obj.volume = validated_data.pop('volume')
-        if 'issue' in validated_data:
-            obj.issue = validated_data.pop('issue')
-        if 'program_area' in validated_data:
-            obj.program_area = validated_data.pop('program_area')
-        if 'school_type' in validated_data:
-            obj.school_Type = validated_data.pop('school_type')
-        if 'study_design' in validated_data:
-            obj.study_design = validated_data.pop('study_design')
-        if 'data_type' in validated_data:
-            obj.data_type = validated_data.pop('data_type')
-        if 'disease' in validated_data:
-            obj.disease = validated_data.pop('disease')
+        if "status" in validated_data:
+            obj.status = validated_data.pop("status")
+        if "collected_type" in validated_data:
+            obj.collected_type = validated_data.pop("collected_type")
+        if "volume" in validated_data:
+            obj.volume = validated_data.pop("volume")
+        if "issue" in validated_data:
+            obj.issue = validated_data.pop("issue")
+        if "program_area" in validated_data:
+            obj.program_area = validated_data.pop("program_area")
+        if "school_type" in validated_data:
+            obj.school_Type = validated_data.pop("school_type")
+        if "study_design" in validated_data:
+            obj.study_design = validated_data.pop("study_design")
+        if "data_type" in validated_data:
+            obj.data_type = validated_data.pop("data_type")
+        if "disease" in validated_data:
+            obj.disease = validated_data.pop("disease")
 
         obj.save()
         return obj
 
 
-class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
-
+class LegacyCollectionSubmissionSerializer(
+    TaxonomizableSerializerMixin, JSONAPISerializer
+):
     class Meta:
-        type_ = 'collected-metadata'
+        type_ = "collected-metadata"
 
-    filterable_fields = frozenset([
-        'id',
-        'collected_type',
-        'date_created',
-        'date_modified',
-        'reviews_state',
-        'subjects',
-        'status',
-    ])
-    id = IDField(source='guid._id', read_only=True)
-    reviews_state = EnumField(CollectionSubmissionStates, source='machine_state', required=False)
+    filterable_fields = frozenset(
+        [
+            "id",
+            "collected_type",
+            "date_created",
+            "date_modified",
+            "reviews_state",
+            "subjects",
+            "status",
+        ]
+    )
+    id = IDField(source="guid._id", read_only=True)
+    reviews_state = EnumField(
+        CollectionSubmissionStates, source="machine_state", required=False
+    )
     type = TypeField()
 
     creator = RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<creator._id>'},
+        related_view="users:user-detail",
+        related_view_kwargs={"user_id": "<creator._id>"},
     )
     collection = RelationshipField(
-        related_view='collections:collection-detail',
-        related_view_kwargs={'collection_id': '<collection._id>'},
+        related_view="collections:collection-detail",
+        related_view_kwargs={"collection_id": "<collection._id>"},
     )
     guid = RelationshipField(
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
+        related_view="guids:guid-detail",
+        related_view_kwargs={"guids": "<guid._id>"},
         always_embed=True,
     )
     collection_submission_actions = RelationshipField(
-        related_view='collection_submissions:collection-submission-action-list',
-        related_view_kwargs={'collection_submission_id': '<_id>'},
+        related_view="collection_submissions:collection-submission-action-list",
+        related_view_kwargs={"collection_submission_id": "<_id>"},
     )
-    date_created = VersionedDateTimeField(source='created', read_only=True)
-    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+    date_created = VersionedDateTimeField(source="created", read_only=True)
+    date_modified = VersionedDateTimeField(source="modified", read_only=True)
 
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collection-submissions-subjects-list'
+        return "collections:collection-submissions-subjects-list"
 
     @property
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collection-submission-subjects-relationship-list'
+        return "collections:collection-submission-subjects-relationship-list"
 
     @property
     def subjects_view_kwargs(self):
         # Overrides TaxonomizableSerializerMixin
-        return {'collection_id': '<collection._id>', 'collection_submission_id': '<guid._id>'}
+        return {
+            "collection_id": "<collection._id>",
+            "collection_submission_id": "<guid._id>",
+        }
 
     collected_type = ser.CharField(required=False)
     status = ser.CharField(required=False)
@@ -356,38 +416,40 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'collections:collected-metadata-detail',
+            "collections:collected-metadata-detail",
             kwargs={
-                'collection_id': obj.collection._id,
-                'collection_submission_id': obj.guid._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+                "collection_id": obj.collection._id,
+                "collection_submission_id": obj.guid._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
     def update(self, obj, validated_data):
-        if validated_data and 'subjects' in validated_data:
-            auth = get_user_auth(self.context['request'])
-            subjects = validated_data.pop('subjects', None)
+        if validated_data and "subjects" in validated_data:
+            auth = get_user_auth(self.context["request"])
+            subjects = validated_data.pop("subjects", None)
             self.update_subjects(obj, subjects, auth)
 
-        if 'status' in validated_data:
-            obj.status = validated_data.pop('status')
-        if 'collected_type' in validated_data:
-            obj.collected_type = validated_data.pop('collected_type')
-        if 'volume' in validated_data:
-            obj.volume = validated_data.pop('volume')
-        if 'issue' in validated_data:
-            obj.issue = validated_data.pop('issue')
-        if 'program_area' in validated_data:
-            obj.program_area = validated_data.pop('program_area')
-        if 'school_type' in validated_data:
-            obj.school_Type = validated_data.pop('school_type')
-        if 'study_design' in validated_data:
-            obj.study_design = validated_data.pop('study_design')
-        if 'data_type' in validated_data:
-            obj.data_type = validated_data.pop('data_type')
-        if 'disease' in validated_data:
-            obj.disease = validated_data.pop('disease')
+        if "status" in validated_data:
+            obj.status = validated_data.pop("status")
+        if "collected_type" in validated_data:
+            obj.collected_type = validated_data.pop("collected_type")
+        if "volume" in validated_data:
+            obj.volume = validated_data.pop("volume")
+        if "issue" in validated_data:
+            obj.issue = validated_data.pop("issue")
+        if "program_area" in validated_data:
+            obj.program_area = validated_data.pop("program_area")
+        if "school_type" in validated_data:
+            obj.school_Type = validated_data.pop("school_type")
+        if "study_design" in validated_data:
+            obj.study_design = validated_data.pop("study_design")
+        if "data_type" in validated_data:
+            obj.data_type = validated_data.pop("data_type")
+        if "disease" in validated_data:
+            obj.disease = validated_data.pop("disease")
 
         obj.save()
         return obj
@@ -396,30 +458,40 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
 class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
+        related_view="guids:guid-detail",
+        related_view_kwargs={"guids": "<guid._id>"},
         always_embed=True,
         read_only=False,
         required=True,
     )
 
     def create(self, validated_data):
-        subjects = validated_data.pop('subjects', None)
-        collection = validated_data.pop('collection', None)
-        creator = validated_data.pop('creator', None)
-        guid = validated_data.pop('guid')
+        subjects = validated_data.pop("subjects", None)
+        collection = validated_data.pop("collection", None)
+        creator = validated_data.pop("creator", None)
+        guid = validated_data.pop("guid")
         if not collection:
             raise exceptions.ValidationError('"collection" must be specified.')
         if not creator:
             raise exceptions.ValidationError('"creator" must be specified.')
-        if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
-            raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        if not (
+            creator.has_perm("write_collection", collection)
+            or (
+                hasattr(guid.referent, "has_permission")
+                and guid.referent.has_permission(creator, WRITE)
+            )
+        ):
+            raise exceptions.PermissionDenied(
+                "Must have write permission on either collection or collected object to collect."
+            )
         try:
-            obj = collection.collect_object(guid.referent, creator, **validated_data)
+            obj = collection.collect_object(
+                guid.referent, creator, **validated_data
+            )
         except ValidationError as e:
             raise InvalidModelValueError(e.message)
         if subjects:
-            auth = get_user_auth(self.context['request'])
+            auth = get_user_auth(self.context["request"])
             try:
                 obj.set_subjects(subjects, auth)
             except PermissionsError as e:
@@ -429,33 +501,45 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
         return obj
 
 
-class LegacyCollectionSubmissionCreateSerializer(LegacyCollectionSubmissionSerializer):
+class LegacyCollectionSubmissionCreateSerializer(
+    LegacyCollectionSubmissionSerializer
+):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
+        related_view="guids:guid-detail",
+        related_view_kwargs={"guids": "<guid._id>"},
         always_embed=True,
         read_only=False,
         required=True,
     )
 
     def create(self, validated_data):
-        subjects = validated_data.pop('subjects', None)
-        collection = validated_data.pop('collection', None)
-        creator = validated_data.pop('creator', None)
-        guid = validated_data.pop('guid')
+        subjects = validated_data.pop("subjects", None)
+        collection = validated_data.pop("collection", None)
+        creator = validated_data.pop("creator", None)
+        guid = validated_data.pop("guid")
         if not collection:
             raise exceptions.ValidationError('"collection" must be specified.')
         if not creator:
             raise exceptions.ValidationError('"creator" must be specified.')
-        if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
-            raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        if not (
+            creator.has_perm("write_collection", collection)
+            or (
+                hasattr(guid.referent, "has_permission")
+                and guid.referent.has_permission(creator, WRITE)
+            )
+        ):
+            raise exceptions.PermissionDenied(
+                "Must have write permission on either collection or collected object to collect."
+            )
         try:
-            obj = collection.collect_object(guid.referent, creator, **validated_data)
+            obj = collection.collect_object(
+                guid.referent, creator, **validated_data
+            )
         except ValidationError as e:
             raise InvalidModelValueError(e.message)
         if subjects:
-            auth = get_user_auth(self.context['request'])
+            auth = get_user_auth(self.context["request"])
             try:
                 obj.set_subjects(subjects, auth)
             except PermissionsError as e:
@@ -467,41 +551,46 @@ class LegacyCollectionSubmissionCreateSerializer(LegacyCollectionSubmissionSeria
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):
     target_node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<guid.referent._id>'},
+        related_view="nodes:node-detail",
+        related_view_kwargs={"node_id": "<guid.referent._id>"},
         always_embed=True,
     )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'collections:node-pointer-detail',
+            "collections:node-pointer-detail",
             kwargs={
-                'collection_id': self.context['request'].parser_context['kwargs']['collection_id'],
-                'node_link_id': obj.guid._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+                "collection_id": self.context["request"].parser_context[
+                    "kwargs"
+                ]["collection_id"],
+                "node_link_id": obj.guid._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
     # Override NodeLinksSerializer
     def create(self, validated_data):
-        request = self.context['request']
+        request = self.context["request"]
         user = request.user
-        collection = self.context['view'].get_collection()
-        target_node_id = validated_data['_id']
+        collection = self.context["view"].get_collection()
+        target_node_id = validated_data["_id"]
         pointer_node = AbstractNode.load(target_node_id)
         if not pointer_node:
             raise InvalidModelValueError(
-                source={'pointer': '/data/relationships/node_links/data/id'},
-                detail=f'Target Node \'{target_node_id}\' not found.',
+                source={"pointer": "/data/relationships/node_links/data/id"},
+                detail=f"Target Node '{target_node_id}' not found.",
             )
         try:
             pointer = collection.collect_object(pointer_node, user)
         except ValidationError:
             raise InvalidModelValueError(
-                source={'pointer': '/data/relationships/node_links/data/id'},
-                detail=f'Target Node \'{target_node_id}\' already pointed to by \'{collection._id}\'.',
+                source={"pointer": "/data/relationships/node_links/data/id"},
+                detail=f"Target Node '{target_node_id}' already pointed to by '{collection._id}'.",
             )
         return pointer
+
 
 class CollectedAbstractNodeRelationshipSerializer:
     _abstract_node_subclass = None
@@ -509,21 +598,22 @@ class CollectedAbstractNodeRelationshipSerializer:
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object
         return {
-            'data':
-            list(
+            "data": list(
                 self._abstract_node_subclass.objects.filter(
                     guids__in=obj.active_guids,
                     is_deleted=False,
                 ),
             ),
-            'self': obj,
+            "self": obj,
         }
 
     def update(self, instance, validated_data):
-        collection = instance['self']
-        auth = get_user_auth(self.context['request'])
+        collection = instance["self"]
+        auth = get_user_auth(self.context["request"])
 
-        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+        add, remove = self.get_pointers_to_add_remove(
+            pointers=instance["data"], new_pointers=validated_data["data"]
+        )
 
         for pointer in remove:
             collection.remove_object(pointer, auth=auth)
@@ -533,11 +623,13 @@ class CollectedAbstractNodeRelationshipSerializer:
         return self.make_instance_obj(collection)
 
     def create(self, validated_data):
-        instance = self.context['view'].get_object()
-        auth = get_user_auth(self.context['request'])
-        collection = instance['self']
+        instance = self.context["view"].get_object()
+        auth = get_user_auth(self.context["request"])
+        collection = instance["self"]
 
-        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+        add, remove = self.get_pointers_to_add_remove(
+            pointers=instance["data"], new_pointers=validated_data["data"]
+        )
 
         if not len(add):
             raise RelationshipPostMakesNoChanges
@@ -547,24 +639,40 @@ class CollectedAbstractNodeRelationshipSerializer:
                 collection.collect_object(node, auth.user)
             except ValidationError as e:
                 raise InvalidModelValueError(
-                    source={'pointer': '/data/relationships/node_links/data/id'},
-                    detail=f'Target Node {node._id} generated error: {e.message}.',
+                    source={
+                        "pointer": "/data/relationships/node_links/data/id"
+                    },
+                    detail=f"Target Node {node._id} generated error: {e.message}.",
                 )
 
         return self.make_instance_obj(collection)
 
-class CollectedNodeRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedNodesRelationshipSerializer):
+
+class CollectedNodeRelationshipSerializer(
+    CollectedAbstractNodeRelationshipSerializer,
+    LinkedNodesRelationshipSerializer,
+):
     _abstract_node_subclass = Node
 
-class CollectedRegistrationsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedRegistrationsRelationshipSerializer):
+
+class CollectedRegistrationsRelationshipSerializer(
+    CollectedAbstractNodeRelationshipSerializer,
+    LinkedRegistrationsRelationshipSerializer,
+):
     _abstract_node_subclass = Registration
 
-class CollectedPreprintsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedPreprintsRelationshipSerializer):
 
+class CollectedPreprintsRelationshipSerializer(
+    CollectedAbstractNodeRelationshipSerializer,
+    LinkedPreprintsRelationshipSerializer,
+):
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object
         return {
-            'data':
-                list(self.context['view'].collection_preprints(obj, user=get_user_auth(self.context['request']).user)),
-            'self': obj,
+            "data": list(
+                self.context["view"].collection_preprints(
+                    obj, user=get_user_auth(self.context["request"]).user
+                )
+            ),
+            "self": obj,
         }

@@ -12,19 +12,19 @@ def stable_key(*key_parts):
     positional args: non-None, str-able things to hash
     """
     if not key_parts:
-        raise ValueError('stable_key requires args')
+        raise ValueError("stable_key requires args")
     if any((val is None) for val in key_parts):
-        raise ValueError('all key_parts must be non-None')
+        raise ValueError("all key_parts must be non-None")
 
-    plain_key = '|'.join(map(str, key_parts))
-    return sha256(bytes(plain_key, encoding='utf')).hexdigest()
+    plain_key = "|".join(map(str, key_parts))
+    return sha256(bytes(plain_key, encoding="utf")).hexdigest()
 
 
 class YearMonth(typing.NamedTuple):
     year: int
     month: int
 
-    YEARMONTH_RE = re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
+    YEARMONTH_RE = re.compile(r"(?P<year>\d{4})-(?P<month>\d{2})")
 
     @classmethod
     def from_date(cls, date):
@@ -36,14 +36,14 @@ class YearMonth(typing.NamedTuple):
         match = cls.YEARMONTH_RE.fullmatch(input_str)
         if match:
             return cls(
-                year=int(match.group('year')),
-                month=int(match.group('month')),
+                year=int(match.group("year")),
+                month=int(match.group("month")),
             )
         else:
             raise ValueError(f'expected YYYY-MM format, got "{input_str}"')
 
     def __str__(self):
-        return f'{self.year}-{self.month:0>2}'
+        return f"{self.year}-{self.month:0>2}"
 
     def target_month(self):
         return datetime.datetime(self.year, self.month, 1, tzinfo=pytz.utc)

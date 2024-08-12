@@ -8,6 +8,7 @@ from tests.json_api_test_app import JSONAPITestApp
 
 pytestmark = pytest.mark.django_db
 
+
 class TestForward(ForwardAddonTestCase, OsfTestCase):
     """
     Forward (the redirect url has two v2 routes, one is addon based `/v2/nodes/{}/addons/forward/` one is node settings
@@ -20,14 +21,14 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
         super().setUp()
         self.app.authenticate(*self.user.auth)
 
-    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
-    @mock.patch('osf.models.node.Node.do_check_spam')
+    @mock.patch.object(settings, "SPAM_SERVICES_ENABLED", True)
+    @mock.patch("osf.models.node.Node.do_check_spam")
     def test_change_url_check_spam(self, mock_check_spam):
         self.project.is_public = True
         self.project.save()
         self.django_app.put_json_api(
-            f'/v2/nodes/{self.project._id}/addons/forward/',
-            {'data': {'attributes': {'url': 'http://possiblyspam.com'}}},
+            f"/v2/nodes/{self.project._id}/addons/forward/",
+            {"data": {"attributes": {"url": "http://possiblyspam.com"}}},
             auth=self.user.auth,
         )
 
@@ -37,26 +38,26 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
 
         assert author == self.user.fullname
         assert author_email == self.user.username
-        assert content == 'http://possiblyspam.com'
+        assert content == "http://possiblyspam.com"
 
-    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
-    @mock.patch('osf.models.node.Node.do_check_spam')
+    @mock.patch.object(settings, "SPAM_SERVICES_ENABLED", True)
+    @mock.patch("osf.models.node.Node.do_check_spam")
     def test_change_url_check_spam_node_settings(self, mock_check_spam):
         self.project.is_public = True
         self.project.save()
 
         payload = {
-            'data': {
-                'type': 'node-settings',
-                'attributes': {
-                    'access_requests_enabled': False,
-                    'redirect_link_url': 'http://possiblyspam.com',
+            "data": {
+                "type": "node-settings",
+                "attributes": {
+                    "access_requests_enabled": False,
+                    "redirect_link_url": "http://possiblyspam.com",
                 },
             },
         }
 
         self.django_app.put_json_api(
-            f'/v2/nodes/{self.project._id}/settings/',
+            f"/v2/nodes/{self.project._id}/settings/",
             payload,
             auth=self.user.auth,
         )
@@ -67,15 +68,16 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
 
         assert author == self.user.fullname
         assert author_email == self.user.username
-        assert content == 'http://possiblyspam.com'
+        assert content == "http://possiblyspam.com"
 
     def test_invalid_url(self):
         res = self.django_app.put_json_api(
-            f'/v2/nodes/{self.project._id}/addons/forward/',
-            {'data': {'attributes': {'url': 'bad url'}}},
-            auth=self.user.auth, expect_errors=True,
+            f"/v2/nodes/{self.project._id}/addons/forward/",
+            {"data": {"attributes": {"url": "bad url"}}},
+            auth=self.user.auth,
+            expect_errors=True,
         )
         assert res.status_code == 400
-        error = res.json['errors'][0]
+        error = res.json["errors"][0]
 
-        assert error['detail'] == 'Enter a valid URL.'
+        assert error["detail"] == "Enter a valid URL."

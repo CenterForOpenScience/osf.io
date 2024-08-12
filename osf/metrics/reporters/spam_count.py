@@ -7,7 +7,6 @@ from osf.models.spam import SpamStatus
 
 
 class SpamCountReporter(MonthlyReporter):
-
     def report(self, report_yearmonth):
         target_month = report_yearmonth.target_month()
         next_month = report_yearmonth.next_month()
@@ -19,38 +18,38 @@ class SpamCountReporter(MonthlyReporter):
                 action=NodeLog.CONFIRM_SPAM,
                 created__gt=target_month,
                 created__lt=next_month,
-                node__type='osf.node',
+                node__type="osf.node",
             ).count(),
             node_confirmed_ham=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_HAM,
                 created__gt=target_month,
                 created__lt=next_month,
-                node__type='osf.node',
+                node__type="osf.node",
             ).count(),
             node_flagged=NodeLog.objects.filter(
                 action=NodeLog.FLAG_SPAM,
                 created__gt=target_month,
                 created__lt=next_month,
-                node__type='osf.node',
+                node__type="osf.node",
             ).count(),
             # Registration Log entries
             registration_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,
                 created__gt=target_month,
                 created__lt=next_month,
-                node__type='osf.registration',
+                node__type="osf.registration",
             ).count(),
             registration_confirmed_ham=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_HAM,
                 created__gt=target_month,
                 created__lt=next_month,
-                node__type='osf.registration',
+                node__type="osf.registration",
             ).count(),
             registration_flagged=NodeLog.objects.filter(
                 action=NodeLog.FLAG_SPAM,
                 created__gt=target_month,
                 created__lt=next_month,
-                node__type='osf.registration',
+                node__type="osf.registration",
             ).count(),
             # Preprint Log entries
             preprint_confirmed_spam=PreprintLog.objects.filter(
@@ -78,7 +77,7 @@ class SpamCountReporter(MonthlyReporter):
                 spam_status=SpamStatus.HAM,
                 created__gt=target_month,
                 created__lt=next_month,
-            ).count()
+            ).count(),
         )
 
         return [report]

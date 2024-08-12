@@ -14,14 +14,24 @@ from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.base.utils import get_user_auth
-from api.chronos.permissions import SubmissionOnPreprintPublishedOrAdmin, SubmissionAcceptedOrPublishedOrPreprintAdmin
-from api.chronos.serializers import ChronosJournalSerializer, ChronosSubmissionSerializer, ChronosSubmissionCreateSerializer, ChronosSubmissionDetailSerializer
+from api.chronos.permissions import (
+    SubmissionOnPreprintPublishedOrAdmin,
+    SubmissionAcceptedOrPublishedOrPreprintAdmin,
+)
+from api.chronos.serializers import (
+    ChronosJournalSerializer,
+    ChronosSubmissionSerializer,
+    ChronosSubmissionCreateSerializer,
+    ChronosSubmissionDetailSerializer,
+)
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ChronosJournal, ChronosSubmission, Preprint
 from osf.external.chronos.tasks import update_submissions_status_async
 
 
-class ChronosJournalList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class ChronosJournalList(
+    JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
+):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -34,8 +44,8 @@ class ChronosJournalList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin)
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
-    view_category = 'chronos'
-    view_name = 'chronos-journals'
+    view_category = "chronos"
+    view_name = "chronos-journals"
 
     def get_default_queryset(self):
         return ChronosJournal.objects.all()
@@ -56,17 +66,21 @@ class ChronosJournalDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
-    view_category = 'chronos'
-    view_name = 'chronos-journal-detail'
+    view_category = "chronos"
+    view_name = "chronos-journal-detail"
 
     def get_object(self):
         try:
-            return ChronosJournal.objects.get(journal_id=self.kwargs['journal_id'])
+            return ChronosJournal.objects.get(
+                journal_id=self.kwargs["journal_id"]
+            )
         except ChronosJournal.DoesNotExist:
             raise NotFound
 
 
-class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class ChronosSubmissionList(
+    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -76,30 +90,39 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     required_write_scopes = [CoreScopes.CHRONOS_SUBMISSION_WRITE]
 
     serializer_class = ChronosSubmissionSerializer
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+    parser_classes = (
+        JSONAPIMultipleRelationshipsParser,
+        JSONAPIMultipleRelationshipsParserForRegularJSON,
+    )
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
-    view_category = 'chronos'
-    view_name = 'chronos-submissions'
+    view_category = "chronos"
+    view_name = "chronos-submissions"
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return ChronosSubmissionCreateSerializer
         else:
             return ChronosSubmissionSerializer
 
     def get_default_queryset(self):
         user = get_user_auth(self.request).user
-        preprint_contributors = Preprint.load(self.kwargs['preprint_id'])._contributors
-        queryset = ChronosSubmission.objects.filter(preprint__guids___id=self.kwargs['preprint_id'])
+        preprint_contributors = Preprint.load(
+            self.kwargs["preprint_id"]
+        )._contributors
+        queryset = ChronosSubmission.objects.filter(
+            preprint__guids___id=self.kwargs["preprint_id"]
+        )
 
         # Get the list of stale submissions and queue a task to update them
         update_list_id = queryset.filter(
             modified__lt=chronos_submission_stale_time(),
-        ).values_list('id', flat=True)
+        ).values_list("id", flat=True)
         if len(update_list_id) > 0:
-            enqueue_task(update_submissions_status_async.s(list(update_list_id)))
+            enqueue_task(
+                update_submissions_status_async.s(list(update_list_id))
+            )
 
         # If the user is a contributor on this preprint, show all submissions
         # Otherwise, only show submissions in status 3 or 4 (accepted or published)
@@ -113,7 +136,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
     def perform_create(self, serializer):
         user = self.request.user
-        preprint = Preprint.load(self.kwargs['preprint_id'])
+        preprint = Preprint.load(self.kwargs["preprint_id"])
         if not preprint:
             raise NotFound
         self.check_object_permissions(self.request, preprint)
@@ -133,23 +156,27 @@ class ChronosSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
-    view_category = 'chronos'
-    view_name = 'chronos-submission-detail'
+    view_category = "chronos"
+    view_name = "chronos-submission-detail"
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+        if self.request.method == "PUT" or self.request.method == "PATCH":
             return ChronosSubmissionDetailSerializer
         else:
             return ChronosSubmissionSerializer
 
     def get_object(self):
         try:
-            submission = ChronosSubmission.objects.get(publication_id=self.kwargs['submission_id'])
+            submission = ChronosSubmission.objects.get(
+                publication_id=self.kwargs["submission_id"]
+            )
         except ChronosSubmission.DoesNotExist:
             raise NotFound
         else:
             if submission.modified < chronos_submission_stale_time():
-                enqueue_task(update_submissions_status_async.s([submission.id]))
+                enqueue_task(
+                    update_submissions_status_async.s([submission.id])
+                )
             self.check_object_permissions(self.request, submission)
             return submission
 

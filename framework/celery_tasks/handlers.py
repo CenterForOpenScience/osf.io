@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def queue():
-    if not hasattr(_local, 'queue'):
+    if not hasattr(_local, "queue"):
         _local.queue = []
     return _local.queue
 
@@ -42,7 +42,9 @@ def celery_teardown_request(error=None):
 
 
 def get_task_from_queue(name, predicate):
-    matches = [task for task in queue() if task.type.name == name and predicate(task)]
+    matches = [
+        task for task in queue() if task.type.name == name and predicate(task)
+    ]
     if len(matches) == 1:
         return matches[0]
     elif len(matches) > 1:
@@ -62,8 +64,7 @@ def _enqueue_task(signature):
     :param signature: Celery task signature
     """
     if (
-        not has_app_context() and
-        getattr(api_globals, 'request', None) is None
+        not has_app_context() and getattr(api_globals, "request", None) is None
     ):  # Not in a request context
         signature.apply()
     else:
@@ -77,15 +78,17 @@ def queued_task(task):
     tasks; should be used for all tasks fired within a request context that
     may write to the database to avoid race conditions.
     """
+
     @functools.wraps(task)
     def wrapped(*args, **kwargs):
         signature = task.si(*args, **kwargs)
         enqueue_task(signature)
+
     return wrapped
 
 
 handlers = {
-    'before_request': celery_before_request,
-    'after_request': celery_after_request,
-    'teardown_request': celery_teardown_request,
+    "before_request": celery_before_request,
+    "after_request": celery_after_request,
+    "teardown_request": celery_teardown_request,
 }

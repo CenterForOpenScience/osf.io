@@ -9,8 +9,8 @@ from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
-def gitlab_hgrid_data(node_settings, auth, **kwargs):
 
+def gitlab_hgrid_data(node_settings, auth, **kwargs):
     # Quit if no repo linked
     if not node_settings.complete:
         return
@@ -27,63 +27,79 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         try:
             repo = connection.repo(node_settings.repo_id)
         except NotFoundError:
-            logger.error('Could not access GitLab repo')
+            logger.error("Could not access GitLab repo")
             return None
 
     try:
-        branch, sha, branches = get_refs(node_settings, branch=kwargs.get('branch'), sha=kwargs.get('sha'), connection=connection)
+        branch, sha, branches = get_refs(
+            node_settings,
+            branch=kwargs.get("branch"),
+            sha=kwargs.get("sha"),
+            connection=connection,
+        )
     except (NotFoundError, GitLabError):
-        logger.error('GitLab repo not found')
+        logger.error("GitLab repo not found")
         return
 
     if branch is not None:
         ref = ref_to_params(branch, sha)
-        can_edit = check_permissions(node_settings, auth, connection, branch, sha, repo=repo)
+        can_edit = check_permissions(
+            node_settings, auth, connection, branch, sha, repo=repo
+        )
     else:
-        ref = ''
+        ref = ""
         can_edit = False
 
     permissions = {
-        'edit': can_edit,
-        'view': True,
-        'private': node_settings.is_private
+        "edit": can_edit,
+        "view": True,
+        "private": node_settings.is_private,
     }
     urls = {
-        'upload': node_settings.owner.api_url + 'gitlab/file/' + ref,
-        'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + ref,
-        'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/' + ref,
-        'zip': f'{node_settings.external_account.oauth_secret}/{repo.path_with_namespace}/repository/archive.zip?branch={ref}',
-        'repo': f'{node_settings.external_account.oauth_secret}/{repo.path_with_namespace}/tree/{ref}'
+        "upload": node_settings.owner.api_url + "gitlab/file/" + ref,
+        "fetch": node_settings.owner.api_url + "gitlab/hgrid/" + ref,
+        "branch": node_settings.owner.api_url + "gitlab/hgrid/root/" + ref,
+        "zip": f"{node_settings.external_account.oauth_secret}/{repo.path_with_namespace}/repository/archive.zip?branch={ref}",
+        "repo": f"{node_settings.external_account.oauth_secret}/{repo.path_with_namespace}/tree/{ref}",
     }
 
     branch_names = [each.name for each in branches]
     if not branch_names:
-        branch_names = [branch]  # if repo un-init-ed then still add default branch to list of branches
+        branch_names = [
+            branch
+        ]  # if repo un-init-ed then still add default branch to list of branches
 
-    return [rubeus.build_addon_root(
-        node_settings,
-        repo.path_with_namespace,
-        urls=urls,
-        permissions=permissions,
-        branches=branch_names,
-        private_key=kwargs.get('view_only', None),
-        default_branch=repo.default_branch,
-    )]
+    return [
+        rubeus.build_addon_root(
+            node_settings,
+            repo.path_with_namespace,
+            urls=urls,
+            permissions=permissions,
+            branches=branch_names,
+            private_key=kwargs.get("view_only", None),
+            default_branch=repo.default_branch,
+        )
+    ]
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_node_settings.mako')
-USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_user_settings.mako')
+NODE_SETTINGS_TEMPLATE = os.path.join(
+    HERE, "templates", "gitlab_node_settings.mako"
+)
+USER_SETTINGS_TEMPLATE = os.path.join(
+    HERE, "templates", "gitlab_user_settings.mako"
+)
+
 
 class GitLabAddonConfig(BaseAddonAppConfig):
-
     default = True
-    name = 'addons.gitlab'
-    label = 'addons_gitlab'
-    full_name = 'GitLab'
-    short_name = 'gitlab'
-    configs = ['accounts', 'node']
-    categories = ['storage']
-    owners = ['user', 'node']
+    name = "addons.gitlab"
+    label = "addons_gitlab"
+    full_name = "GitLab"
+    short_name = "gitlab"
+    configs = ["accounts", "node"]
+    categories = ["storage"]
+    owners = ["user", "node"]
     has_hgrid_files = True
     node_settings_template = NODE_SETTINGS_TEMPLATE
     user_settings_template = USER_SETTINGS_TEMPLATE
@@ -92,14 +108,14 @@ class GitLabAddonConfig(BaseAddonAppConfig):
     def get_hgrid_data(self):
         return gitlab_hgrid_data
 
-    FILE_ADDED = 'gitlab_file_added'
-    FILE_REMOVED = 'gitlab_file_removed'
-    FILE_UPDATED = 'gitlab_file_updated'
-    FOLDER_CREATED = 'gitlab_folder_created'
-    NODE_AUTHORIZED = 'gitlab_node_authorized'
-    NODE_DEAUTHORIZED = 'gitlab_node_deauthorized'
-    NODE_DEAUTHORIZED_NO_USER = 'gitlab_node_deauthorized_no_user'
-    REPO_LINKED = 'gitlab_repo_linked'
+    FILE_ADDED = "gitlab_file_added"
+    FILE_REMOVED = "gitlab_file_removed"
+    FILE_UPDATED = "gitlab_file_updated"
+    FOLDER_CREATED = "gitlab_folder_created"
+    NODE_AUTHORIZED = "gitlab_node_authorized"
+    NODE_DEAUTHORIZED = "gitlab_node_deauthorized"
+    NODE_DEAUTHORIZED_NO_USER = "gitlab_node_deauthorized_no_user"
+    REPO_LINKED = "gitlab_repo_linked"
 
     actions = (
         FILE_ADDED,
@@ -109,17 +125,19 @@ class GitLabAddonConfig(BaseAddonAppConfig):
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER,
-        REPO_LINKED)
+        REPO_LINKED,
+    )
 
     @property
     def routes(self):
         from . import routes
+
         return [routes.api_routes]
 
     @property
     def user_settings(self):
-        return self.get_model('UserSettings')
+        return self.get_model("UserSettings")
 
     @property
     def node_settings(self):
-        return self.get_model('NodeSettings')
+        return self.get_model("NodeSettings")

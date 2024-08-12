@@ -8,16 +8,18 @@ class TestGuidForm(AdminTestCase):
         super().setUp()
 
     def test_valid_data(self):
-        guid = '12345'
-        form = GuidForm({
-            'guid': guid,
-        })
+        guid = "12345"
+        form = GuidForm(
+            {
+                "guid": guid,
+            }
+        )
         assert form.is_valid()
-        assert form.cleaned_data.get('guid') == guid
+        assert form.cleaned_data.get("guid") == guid
 
     def test_blank_data(self):
         form = GuidForm({})
         assert not form.is_valid()
         assert form.errors == {
-            'guid': ['This field is required.'],
+            "guid": ["This field is required."],
         }

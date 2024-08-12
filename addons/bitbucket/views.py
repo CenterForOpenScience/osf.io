@@ -1,4 +1,5 @@
 """Views for the node settings page."""
+
 from rest_framework import status as http_status
 import logging
 
@@ -12,64 +13,62 @@ from addons.bitbucket.apps import bitbucket_hgrid_data
 from addons.bitbucket.serializer import BitbucketSerializer
 
 from website.project.decorators import (
-    must_have_addon, must_be_addon_authorizer,
-    must_have_permission, must_not_be_registration,
-    must_be_contributor_or_public
+    must_have_addon,
+    must_be_addon_authorizer,
+    must_have_permission,
+    must_not_be_registration,
+    must_be_contributor_or_public,
 )
 from osf.utils.permissions import WRITE
 
 logger = logging.getLogger(__name__)
 
 
-SHORT_NAME = 'bitbucket'
-FULL_NAME = 'Bitbucket'
+SHORT_NAME = "bitbucket"
+FULL_NAME = "Bitbucket"
 
 ############
 # Generics #
 ############
 
 bitbucket_account_list = generic_views.account_list(
-    SHORT_NAME,
-    BitbucketSerializer
+    SHORT_NAME, BitbucketSerializer
 )
 
 bitbucket_import_auth = generic_views.import_auth(
-    SHORT_NAME,
-    BitbucketSerializer
+    SHORT_NAME, BitbucketSerializer
 )
+
 
 def _get_folders(node_addon, folder_id):
     pass
 
+
 bitbucket_folder_list = generic_views.folder_list(
-    SHORT_NAME,
-    FULL_NAME,
-    _get_folders
+    SHORT_NAME, FULL_NAME, _get_folders
 )
 
 bitbucket_get_config = generic_views.get_config(
-    SHORT_NAME,
-    BitbucketSerializer
+    SHORT_NAME, BitbucketSerializer
 )
 
-bitbucket_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
-)
+bitbucket_deauthorize_node = generic_views.deauthorize_node(SHORT_NAME)
 
 
 #################
 # Special Cased #
 #################
 
+
 @must_not_be_registration
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(SHORT_NAME, "user")
+@must_have_addon(SHORT_NAME, "node")
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_permission(WRITE)
 def bitbucket_set_config(auth, **kwargs):
-    node_settings = kwargs.get('node_addon', None)
-    node = kwargs.get('node', None)
-    user_settings = kwargs.get('user_addon', None)
+    node_settings = kwargs.get("node_addon", None)
+    node = kwargs.get("node", None)
+    user_settings = kwargs.get("user_addon", None)
 
     try:
         if not node:
@@ -80,35 +79,34 @@ def bitbucket_set_config(auth, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Parse request
-    bitbucket_user_name = request.json.get('bitbucket_user', '')
-    bitbucket_repo_name = request.json.get('bitbucket_repo', '')
+    bitbucket_user_name = request.json.get("bitbucket_user", "")
+    bitbucket_repo_name = request.json.get("bitbucket_repo", "")
 
     if not bitbucket_user_name or not bitbucket_repo_name:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Verify that repo exists and that user can access
-    connection = BitbucketClient(access_token=node_settings.external_account.oauth_key)
+    connection = BitbucketClient(
+        access_token=node_settings.external_account.oauth_key
+    )
     repo = connection.repo(bitbucket_user_name, bitbucket_repo_name)
     if repo is None:
         if user_settings:
             message = (
-                'Cannot access repo. Either the repo does not exist '
-                'or your account does not have permission to view it.'
+                "Cannot access repo. Either the repo does not exist "
+                "or your account does not have permission to view it."
             )
         else:
-            message = (
-                'Cannot access repo.'
-            )
-        return {'message': message}, http_status.HTTP_400_BAD_REQUEST
+            message = "Cannot access repo."
+        return {"message": message}, http_status.HTTP_400_BAD_REQUEST
 
     changed = (
-        bitbucket_user_name != node_settings.user or
-        bitbucket_repo_name != node_settings.repo
+        bitbucket_user_name != node_settings.user
+        or bitbucket_repo_name != node_settings.repo
     )
 
     # Update hooks
     if changed:
-
         # # Delete existing hook, if any
         # node_settings.delete_hook()
 
@@ -118,14 +116,14 @@ def bitbucket_set_config(auth, **kwargs):
 
         # Log repo select
         node.add_log(
-            action='bitbucket_repo_linked',
+            action="bitbucket_repo_linked",
             params={
-                'project': node.parent_id,
-                'node': node._id,
-                'bitbucket': {
-                    'user': bitbucket_user_name,
-                    'repo': bitbucket_repo_name,
-                }
+                "project": node.parent_id,
+                "node": node._id,
+                "bitbucket": {
+                    "user": bitbucket_user_name,
+                    "repo": bitbucket_repo_name,
+                },
             },
             auth=auth,
         )
@@ -138,14 +136,16 @@ def bitbucket_set_config(auth, **kwargs):
 
     return {}
 
+
 @must_be_contributor_or_public
-@must_have_addon('bitbucket', 'node')
+@must_have_addon("bitbucket", "node")
 def bitbucket_download_starball(node_addon, **kwargs):
+    archive = kwargs.get("archive", "tar")
+    ref = request.args.get("sha", "master")
 
-    archive = kwargs.get('archive', 'tar')
-    ref = request.args.get('sha', 'master')
-
-    connection = BitbucketClient(access_token=node_addon.external_account.oauth_key)
+    connection = BitbucketClient(
+        access_token=node_addon.external_account.oauth_key
+    )
     headers, data = connection.starball(
         node_addon.user, node_addon.repo, archive, ref
     )
@@ -156,20 +156,22 @@ def bitbucket_download_starball(node_addon, **kwargs):
 
     return resp
 
+
 #########
 # HGrid #
 #########
 
+
 @must_be_contributor_or_public
-@must_have_addon('bitbucket', 'node')
+@must_have_addon("bitbucket", "node")
 def bitbucket_root_folder(*args, **kwargs):
     """View function returning the root container for a Bitbucket repo. In
     contrast to other add-ons, this is exposed via the API for Bitbucket to
     accommodate switching between branches and commits.
 
     """
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
+    node_settings = kwargs["node_addon"]
+    auth = kwargs["auth"]
     data = request.args.to_dict()
 
     return bitbucket_hgrid_data(node_settings, auth=auth, **data)

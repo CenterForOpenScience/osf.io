@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 MAXMONTH = 12
 
 
-@celery_app.task(name='management.commands.monthly_reporters_go')
+@celery_app.task(name="management.commands.monthly_reporters_go")
 def monthly_reporters_go(report_year=None, report_month=None):
     init_app()  # OSF-specific setup
 
@@ -44,17 +44,19 @@ def monthly_reporters_go(report_year=None, report_month=None):
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
-            'yearmonth',
+            "yearmonth",
             type=YearMonth.from_str,
-            default={'year': None, 'month': None},
-            help='year and month (YYYY-MM)',
+            default={"year": None, "month": None},
+            help="year and month (YYYY-MM)",
         )
 
     def handle(self, *args, **options):
         errors = monthly_reporters_go(
-            report_year=getattr(options.get('yearmonth'), 'year', None),
-            report_month=getattr(options.get('yearmonth'), 'month', None),
+            report_year=getattr(options.get("yearmonth"), "year", None),
+            report_month=getattr(options.get("yearmonth"), "month", None),
         )
         for error_key, error_val in errors.items():
-            self.stdout.write(self.style.ERROR(f'error running {error_key}: ') + error_val)
-        self.stdout.write(self.style.SUCCESS('done.'))
+            self.stdout.write(
+                self.style.ERROR(f"error running {error_key}: ") + error_val
+            )
+        self.stdout.write(self.style.SUCCESS("done."))

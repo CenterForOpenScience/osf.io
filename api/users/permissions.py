@@ -3,47 +3,56 @@ from rest_framework import permissions
 
 
 class ReadOnlyOrCurrentUser(permissions.BasePermission):
-    """ Check to see if the request is coming from the currently logged in user,
+    """Check to see if the request is coming from the currently logged in user,
     and allow non-safe actions if so.
     """
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, OSFUser), f'obj must be a User, got {obj}'
+        assert isinstance(obj, OSFUser), f"obj must be a User, got {obj}"
         request_user = request.user
         if request.method in permissions.SAFE_METHODS:
             return True
         else:
             return obj == request_user
 
+
 class CurrentUser(permissions.BasePermission):
-    """ Check to see if the request is coming from the currently logged user
-    """
+    """Check to see if the request is coming from the currently logged user"""
 
     def has_permission(self, request, view):
         requested_user = view.get_user()
-        assert isinstance(requested_user, OSFUser), f'obj must be a User, got {requested_user}'
+        assert isinstance(
+            requested_user, OSFUser
+        ), f"obj must be a User, got {requested_user}"
         return requested_user == request.user
 
+
 class ReadOnlyOrCurrentUserRelationship(permissions.BasePermission):
-    """ Check to see if the request is coming from the currently logged in user,
+    """Check to see if the request is coming from the currently logged in user,
     and allow non-safe actions if so.
     """
+
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
         request_user = request.user
         if request.method in permissions.SAFE_METHODS:
             return True
         else:
-            return obj['self']._id == request_user._id
+            return obj["self"]._id == request_user._id
+
 
 class ClaimUserPermission(permissions.BasePermission):
-    """ Allows anyone to attempt to claim an unregistered user.
+    """Allows anyone to attempt to claim an unregistered user.
     Allows no one to attempt to claim a registered user.
     """
+
     def has_permission(self, request, view):
         claimed_user = view.get_user(check_permissions=False)
-        assert isinstance(claimed_user, OSFUser), f'obj must be a User, got {claimed_user}'
+        assert isinstance(
+            claimed_user, OSFUser
+        ), f"obj must be a User, got {claimed_user}"
         return not claimed_user.is_registered
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, OSFUser), f'obj must be a User, got {obj}'
+        assert isinstance(obj, OSFUser), f"obj must be a User, got {obj}"
         return not obj.is_registered

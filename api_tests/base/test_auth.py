@@ -1,6 +1,7 @@
 """
 Tests related to authenticating API requests
 """
+
 import json
 from unittest import mock
 
@@ -22,7 +23,7 @@ from api.base.settings import API_BASE, CSRF_COOKIE_NAME
 class TestBasicAuthenticationValidation(ApiTestCase):
     """Test that APIv2 requests can validate and respond to Basic Authentication"""
 
-    TOTP_SECRET = 'b8f85986068f8079aa9d'
+    TOTP_SECRET = "b8f85986068f8079aa9d"
 
     def setUp(self):
         super().setUp()
@@ -32,66 +33,69 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         # Test projects for which a given user DOES and DOES NOT  have
         # appropriate permissions
         self.reachable_project = ProjectFactory(
-            title='Private Project User 1',
-            is_public=False,
-            creator=self.user1
+            title="Private Project User 1", is_public=False, creator=self.user1
         )
         self.unreachable_project = ProjectFactory(
-            title='Private Project User 2', is_public=False, creator=self.user2
+            title="Private Project User 2", is_public=False, creator=self.user2
         )
-        self.reachable_url = '/{}nodes/{}/'.format(
+        self.reachable_url = "/{}nodes/{}/".format(
             API_BASE, self.reachable_project._id
         )
         # User1 can't access this
-        self.unreachable_url = '/{}nodes/{}/'.format(
+        self.unreachable_url = "/{}nodes/{}/".format(
             API_BASE, self.unreachable_project._id
         )
 
     def test_missing_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=None, expect_errors=True)
         assert res.status_code == 401
-        assert res.json.get('errors')[0]['detail'] == 'Authentication credentials were not provided.'
+        assert (
+            res.json.get("errors")[0]["detail"]
+            == "Authentication credentials were not provided."
+        )
 
     def test_invalid_credential_fails(self):
         res = self.app.get(
             self.unreachable_url,
-            auth=(self.user1.username, 'invalid password'),
-            expect_errors=True
+            auth=(self.user1.username, "invalid password"),
+            expect_errors=True,
         )
         assert res.status_code == 401
-        assert res.json.get('errors')[0]['detail'] == 'Invalid username/password.'
+        assert (
+            res.json.get("errors")[0]["detail"] == "Invalid username/password."
+        )
 
     def test_valid_credential_authenticates_and_has_permissions(self):
         res = self.app.get(self.reachable_url, auth=self.user1.auth)
         assert res.status_code == 200, res.json
 
     def test_valid_credential_authenticates_but_user_lacks_object_permissions(
-            self):
+        self,
+    ):
         res = self.app.get(
-            self.unreachable_url,
-            auth=self.user1.auth,
-            expect_errors=True
+            self.unreachable_url, auth=self.user1.auth, expect_errors=True
         )
         assert res.status_code == 403, res.json
 
     def test_valid_credential_but_twofactor_required(self):
-        user1_addon = self.user1.get_or_add_addon('twofactor')
+        user1_addon = self.user1.get_or_add_addon("twofactor")
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET
         user1_addon.is_confirmed = True
         user1_addon.save()
 
         res = self.app.get(
-            self.reachable_url,
-            auth=self.user1.auth,
-            expect_errors=True
+            self.reachable_url, auth=self.user1.auth, expect_errors=True
         )
         assert res.status_code == 401
-        assert res.headers['X-OSF-OTP'] == 'required; app'
-        assert res.json.get('errors')[0]['detail'] == 'Must specify two-factor authentication OTP code.'
+        assert res.headers["X-OSF-OTP"] == "required; app"
+        assert (
+            res.json.get("errors")[0]["detail"]
+            == "Must specify two-factor authentication OTP code."
+        )
 
     def test_valid_credential_twofactor_invalid_otp(self):
-        user1_addon = self.user1.get_or_add_addon('twofactor')
+        user1_addon = self.user1.get_or_add_addon("twofactor")
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET
         user1_addon.is_confirmed = True
@@ -100,15 +104,18 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.reachable_url,
             auth=self.user1.auth,
-            headers={'X-OSF-OTP': 'invalid otp'},
-            expect_errors=True
+            headers={"X-OSF-OTP": "invalid otp"},
+            expect_errors=True,
         )
         assert res.status_code == 401
-        assert 'X-OSF-OTP' not in res.headers
-        assert res.json.get('errors')[0]['detail'] == 'Invalid two-factor authentication OTP code.'
+        assert "X-OSF-OTP" not in res.headers
+        assert (
+            res.json.get("errors")[0]["detail"]
+            == "Invalid two-factor authentication OTP code."
+        )
 
     def test_valid_credential_twofactor_valid_otp(self):
-        user1_addon = self.user1.get_or_add_addon('twofactor')
+        user1_addon = self.user1.get_or_add_addon("twofactor")
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET
         user1_addon.is_confirmed = True
@@ -117,7 +124,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(
             self.reachable_url,
             auth=self.user1.auth,
-            headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)}
+            headers={"X-OSF-OTP": _valid_code(self.TOTP_SECRET)},
         )
         assert res.status_code == 200
 
@@ -133,92 +140,99 @@ class TestOAuthValidation(ApiTestCase):
         # Test projects for which a given user DOES and DOES NOT  have
         # appropriate permissions
         self.reachable_project = ProjectFactory(
-            title='Private Project User 1',
-            is_public=False, creator=self.user1
+            title="Private Project User 1", is_public=False, creator=self.user1
         )
         self.unreachable_project = ProjectFactory(
-            title='Private Project User 2', is_public=False, creator=self.user2
+            title="Private Project User 2", is_public=False, creator=self.user2
         )
 
-        self.reachable_url = '/{}nodes/{}/'.format(
+        self.reachable_url = "/{}nodes/{}/".format(
             API_BASE, self.reachable_project._id
         )
         # User1 can't access this
-        self.unreachable_url = '/{}nodes/{}/'.format(
+        self.unreachable_url = "/{}nodes/{}/".format(
             API_BASE, self.unreachable_project._id
         )
 
     def test_missing_token_fails(self):
         res = self.app.get(
-            self.reachable_url,
-            auth=None, auth_type='jwt',
-            expect_errors=True
+            self.reachable_url, auth=None, auth_type="jwt", expect_errors=True
         )
         assert res.status_code == 401
-        assert res.json.get('errors')[0]['detail'] == 'Authentication credentials were not provided.'
+        assert (
+            res.json.get("errors")[0]["detail"]
+            == "Authentication credentials were not provided."
+        )
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_invalid_token_fails(self, mock_user_info):
         mock_user_info.return_value = cas.CasResponse(
-            authenticated=False, user=None,
-            attributes={'accessTokenScope': ['osf.full_read']}
+            authenticated=False,
+            user=None,
+            attributes={"accessTokenScope": ["osf.full_read"]},
         )
 
         res = self.app.get(
             self.reachable_url,
-            auth='invalid_token',
-            auth_type='jwt',
-            expect_errors=True
+            auth="invalid_token",
+            auth_type="jwt",
+            expect_errors=True,
         )
         assert res.status_code == 401, res.json
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_valid_token_returns_unknown_user_thus_fails(self, mock_user_info):
         mock_user_info.return_value = cas.CasResponse(
-            authenticated=True, user='fail',
-            attributes={'accessTokenScope': ['osf.full_read']}
+            authenticated=True,
+            user="fail",
+            attributes={"accessTokenScope": ["osf.full_read"]},
         )
 
         res = self.app.get(
             self.reachable_url,
-            auth='some_valid_token', auth_type='jwt',
-            expect_errors=True
+            auth="some_valid_token",
+            auth_type="jwt",
+            expect_errors=True,
         )
         assert res.status_code == 401, res.json
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_valid_token_authenticates_and_has_permissions(
-            self, mock_user_info):
+        self, mock_user_info
+    ):
         mock_user_info.return_value = cas.CasResponse(
-            authenticated=True, user=self.user1._id,
-            attributes={'accessTokenScope': ['osf.full_read']}
+            authenticated=True,
+            user=self.user1._id,
+            attributes={"accessTokenScope": ["osf.full_read"]},
         )
 
         res = self.app.get(
-            self.reachable_url,
-            auth='some_valid_token',
-            auth_type='jwt'
+            self.reachable_url, auth="some_valid_token", auth_type="jwt"
         )
         assert res.status_code == 200, res.json
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_valid_token_authenticates_but_user_lacks_object_permissions(
-            self, mock_user_info):
+        self, mock_user_info
+    ):
         mock_user_info.return_value = cas.CasResponse(
-            authenticated=True, user=self.user1._id, attributes={
-                'accessTokenScope': ['osf.full_read']})
+            authenticated=True,
+            user=self.user1._id,
+            attributes={"accessTokenScope": ["osf.full_read"]},
+        )
 
         res = self.app.get(
             self.unreachable_url,
-            auth='some_valid_token', auth_type='jwt',
-            expect_errors=True
+            auth="some_valid_token",
+            auth_type="jwt",
+            expect_errors=True,
         )
         assert res.status_code == 403, res.json
 
 
 class TestOAuthScopedAccess(ApiTestCase):
     """Verify that OAuth2 scopes restrict APIv2 access for a few sample views. These tests cover basic mechanics,
-        but are not intended to be an exhaustive list of how all views respond to all scopes."""
+    but are not intended to be an exhaustive list of how all views respond to all scopes."""
 
     def setUp(self):
         super().setUp()
@@ -229,218 +243,223 @@ class TestOAuthScopedAccess(ApiTestCase):
     def _scoped_response(self, scopes_list, user=None):
         user = user or self.user
         return cas.CasResponse(
-            authenticated=True, user=user._id,
-            attributes={'accessTokenScope': scopes_list}
+            authenticated=True,
+            user=user._id,
+            attributes={"accessTokenScope": scopes_list},
         )
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_user_read_scope_can_read_user_view(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.users.profile_read']
+            ["osf.users.profile_read"]
         )
-        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        url = api_v2_url("users/me/", base_route="/", base_prefix="v2/")
         res = self.app.get(
-            url,
-            auth='some_valid_token', auth_type='jwt',
-            expect_errors=True
+            url, auth="some_valid_token", auth_type="jwt", expect_errors=True
         )
         assert res.status_code == 200
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_user_read_scope_cant_write_user_view(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.users.profile_read']
+            ["osf.users.profile_read"]
         )
-        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        url = api_v2_url("users/me/", base_route="/", base_prefix="v2/")
         payload = {
-            'data': {
-                'type': 'users',
-                'id': self.user._id,
-                'attributes': {'suffix': 'VIII'}
+            "data": {
+                "type": "users",
+                "id": self.user._id,
+                "attributes": {"suffix": "VIII"},
             }
         }
 
         res = self.app.patch_json_api(
-            url, params=payload,
-            auth='some_valid_token',
-            auth_type='jwt',
-            expect_errors=True
+            url,
+            params=payload,
+            auth="some_valid_token",
+            auth_type="jwt",
+            expect_errors=True,
         )
         assert res.status_code == 403
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_user_write_scope_implies_read_permissions_for_user_view(
-            self, mock_user_info):
+        self, mock_user_info
+    ):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.users.profile_write']
+            ["osf.users.profile_write"]
         )
-        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        url = api_v2_url("users/me/", base_route="/", base_prefix="v2/")
         res = self.app.get(
-            url,
-            auth='some_valid_token', auth_type='jwt',
-            expect_errors=True
+            url, auth="some_valid_token", auth_type="jwt", expect_errors=True
         )
         assert res.status_code == 200
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_user_write_scope_can_write_user_view(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.users.profile_write']
+            ["osf.users.profile_write"]
         )
-        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        url = api_v2_url("users/me/", base_route="/", base_prefix="v2/")
 
         payload = {
-            'data': {
-                'type': 'users',
-                'id': self.user._id,
-                'attributes': {'suffix': 'VIII'}
+            "data": {
+                "type": "users",
+                "id": self.user._id,
+                "attributes": {"suffix": "VIII"},
             }
         }
 
         res = self.app.patch_json_api(
-            url, params=payload,
-            auth='some_valid_token', auth_type='jwt',
-            expect_errors=True
+            url,
+            params=payload,
+            auth="some_valid_token",
+            auth_type="jwt",
+            expect_errors=True,
         )
         assert res.status_code == 200
-        assert res.json['data']['attributes'] == payload['data']['attributes'] | res.json['data']['attributes']
+        assert (
+            res.json["data"]["attributes"]
+            == payload["data"]["attributes"] | res.json["data"]["attributes"]
+        )
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_node_write_scope_cant_read_user_view(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.nodes.full_write']
+            ["osf.nodes.full_write"]
         )
-        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        payload = {'suffix': 'VIII'}
+        url = api_v2_url("users/me/", base_route="/", base_prefix="v2/")
+        payload = {"suffix": "VIII"}
 
         res = self.app.get(
-            url, params=payload,
-            auth='some_valid_token', auth_type='jwt',
-            expect_errors=True
+            url,
+            params=payload,
+            auth="some_valid_token",
+            auth_type="jwt",
+            expect_errors=True,
         )
         assert res.status_code == 403
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_full_read_scope_can_read_guid_view_and_user_can_view_project(
-            self, mock_user_info):
+        self, mock_user_info
+    ):
         project = ProjectFactory(creator=self.user)
-        mock_user_info.return_value = self._scoped_response(['osf.full_read'])
+        mock_user_info.return_value = self._scoped_response(["osf.full_read"])
         url = api_v2_url(
-            f'guids/{project._id}/',
-            base_route='/', base_prefix='v2/'
+            f"guids/{project._id}/", base_route="/", base_prefix="v2/"
         )
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        redirect_url = '{}{}nodes/{}/'.format(
+        res = self.app.get(url, auth="some_valid_token", auth_type="jwt")
+        redirect_url = "{}{}nodes/{}/".format(
             API_DOMAIN, API_BASE, project._id
         )
         assert res.status_code == 302
         assert res.location == redirect_url
-        redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
-        assert redirect_res.json['data']['attributes']['title'] == project.title
+        redirect_res = res.follow(auth="some_valid_token", auth_type="jwt")
+        assert (
+            redirect_res.json["data"]["attributes"]["title"] == project.title
+        )
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_full_write_scope_can_read_guid_view_and_user_can_view_project(
-            self, mock_user_info):
+        self, mock_user_info
+    ):
         project = ProjectFactory(creator=self.user)
-        mock_user_info.return_value = self._scoped_response(['osf.full_write'])
+        mock_user_info.return_value = self._scoped_response(["osf.full_write"])
         url = api_v2_url(
-            f'guids/{project._id}/',
-            base_route='/', base_prefix='v2/'
+            f"guids/{project._id}/", base_route="/", base_prefix="v2/"
         )
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        redirect_url = '{}{}nodes/{}/'.format(
+        res = self.app.get(url, auth="some_valid_token", auth_type="jwt")
+        redirect_url = "{}{}nodes/{}/".format(
             API_DOMAIN, API_BASE, project._id
         )
         assert res.status_code == 302
         assert res.location == redirect_url
-        redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
-        assert redirect_res.json['data']['attributes']['title'] == project.title
+        redirect_res = res.follow(auth="some_valid_token", auth_type="jwt")
+        assert (
+            redirect_res.json["data"]["attributes"]["title"] == project.title
+        )
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_full_read_scope_can_read_guid_view_and_user_cannot_view_project(
-            self, mock_user_info):
+        self, mock_user_info
+    ):
         project = ProjectFactory()
-        mock_user_info.return_value = self._scoped_response(['osf.full_read'])
+        mock_user_info.return_value = self._scoped_response(["osf.full_read"])
         url = api_v2_url(
-            f'guids/{project._id}/',
-            base_route='/', base_prefix='v2/'
+            f"guids/{project._id}/", base_route="/", base_prefix="v2/"
         )
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        redirect_url = f'{API_DOMAIN}{API_BASE}nodes/{project._id}/'
+        res = self.app.get(url, auth="some_valid_token", auth_type="jwt")
+        redirect_url = f"{API_DOMAIN}{API_BASE}nodes/{project._id}/"
         assert res.status_code == 302
         assert res.location == redirect_url
         redirect_res = res.follow(
-            auth='some_valid_token',
-            auth_type='jwt',
-            expect_errors=True
+            auth="some_valid_token", auth_type="jwt", expect_errors=True
         )
         assert redirect_res.status_code == 403
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_full_write_scope_can_read_guid_view_and_user_cannot_view_project(
-            self, mock_user_info):
+        self, mock_user_info
+    ):
         project = ProjectFactory()
-        mock_user_info.return_value = self._scoped_response(['osf.full_write'])
+        mock_user_info.return_value = self._scoped_response(["osf.full_write"])
         url = api_v2_url(
-            f'guids/{project._id}/',
-            base_route='/', base_prefix='v2/'
+            f"guids/{project._id}/", base_route="/", base_prefix="v2/"
         )
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
-        redirect_url = f'{API_DOMAIN}{API_BASE}nodes/{project._id}/'
+        res = self.app.get(url, auth="some_valid_token", auth_type="jwt")
+        redirect_url = f"{API_DOMAIN}{API_BASE}nodes/{project._id}/"
         assert res.status_code == 302
         assert res.location == redirect_url
         redirect_res = res.follow(
-            auth='some_valid_token',
-            auth_type='jwt',
-            expect_errors=True)
+            auth="some_valid_token", auth_type="jwt", expect_errors=True
+        )
         assert redirect_res.status_code == 403
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_user_email_scope_can_read_email(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.users.profile_read', 'osf.users.email_read']
+            ["osf.users.profile_read", "osf.users.email_read"]
         )
-        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
+        url = api_v2_url("users/me/", base_route="/", base_prefix="v2/")
+        res = self.app.get(url, auth="some_valid_token", auth_type="jwt")
         assert res.status_code == 200
-        assert res.json['data']['attributes']['email'] == self.user.username
+        assert res.json["data"]["attributes"]["email"] == self.user.username
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_non_user_email_scope_cannot_read_email(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.users.profile_read']
+            ["osf.users.profile_read"]
         )
-        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
+        url = api_v2_url("users/me/", base_route="/", base_prefix="v2/")
+        res = self.app.get(url, auth="some_valid_token", auth_type="jwt")
         assert res.status_code == 200
-        assert 'email' not in res.json['data']['attributes']
+        assert "email" not in res.json["data"]["attributes"]
         assert self.user.username not in json.dumps(res.json)
 
-    @mock.patch('framework.auth.cas.CasClient.profile')
+    @mock.patch("framework.auth.cas.CasClient.profile")
     def test_user_email_scope_cannot_read_other_email(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(
-            ['osf.users.profile_read', 'osf.users.email_read']
+            ["osf.users.profile_read", "osf.users.email_read"]
         )
         url = api_v2_url(
-            f'users/{self.user2._id}/',
-            base_route='/', base_prefix='v2/'
+            f"users/{self.user2._id}/", base_route="/", base_prefix="v2/"
         )
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
+        res = self.app.get(url, auth="some_valid_token", auth_type="jwt")
         assert res.status_code == 200
-        assert 'email' not in res.json['data']['attributes']
+        assert "email" not in res.json["data"]["attributes"]
         assert self.user2.username not in json.dumps(res.json)
 
 
 @pytest.mark.django_db
 class TestCSRFValidation:
-
     @pytest.fixture
     def user(self):
         return UserFactory()
 
     @pytest.fixture
     def url(self):
-        return f'/{API_BASE}nodes/'
+        return f"/{API_BASE}nodes/"
 
     @pytest.fixture
     def csrf_token(self):
@@ -449,13 +468,13 @@ class TestCSRFValidation:
     @pytest.fixture
     def payload(self):
         return {
-            'data': {
-                'type': 'nodes',
-                'attributes': {
-                    'title': 'Test',
-                    'description': 'Test',
-                    'category': 'data'
-                }
+            "data": {
+                "type": "nodes",
+                "attributes": {
+                    "title": "Test",
+                    "description": "Test",
+                    "category": "data",
+                },
             }
         }
 
@@ -464,43 +483,35 @@ class TestCSRFValidation:
         session_cookie = user.get_or_create_cookie()
         app.set_cookie(COOKIE_NAME, session_cookie.decode())
 
-    def test_waffle_switch_inactive_does_not_enforce_csrf(self, app, url, payload):
-        with override_switch('enforce_csrf', active=False):
-            res = app.post_json_api(
-                url,
-                payload,
-                expect_errors=True
-            )
+    def test_waffle_switch_inactive_does_not_enforce_csrf(
+        self, app, url, payload
+    ):
+        with override_switch("enforce_csrf", active=False):
+            res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 201
 
     def test_post_no_csrf_cookie(self, app, url, payload):
-        with override_switch('enforce_csrf', active=True):
-            res = app.post_json_api(
-                url,
-                payload,
-                expect_errors=True
-            )
+        with override_switch("enforce_csrf", active=True):
+            res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 403
-        assert csrf.REASON_NO_CSRF_COOKIE in res.json['errors'][0]['detail']
+        assert csrf.REASON_NO_CSRF_COOKIE in res.json["errors"][0]["detail"]
 
     def test_post_without_csrf_in_headers(self, app, csrf_token, url, payload):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        with override_switch('enforce_csrf', active=True):
-            res = app.post_json_api(
-                url,
-                payload,
-                expect_errors=True
-            )
+        with override_switch("enforce_csrf", active=True):
+            res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 403
-        assert csrf.REASON_CSRF_TOKEN_MISSING in res.json['errors'][0]['detail']
+        assert (
+            csrf.REASON_CSRF_TOKEN_MISSING in res.json["errors"][0]["detail"]
+        )
 
     def test_send_csrf_cookie_and_headers(self, app, csrf_token, url, payload):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        with override_switch('enforce_csrf', active=True):
+        with override_switch("enforce_csrf", active=True):
             res = app.post_json_api(
                 url,
                 payload,
-                headers={'X-CSRFToken': csrf_token},
-                expect_errors=True
+                headers={"X-CSRFToken": csrf_token},
+                expect_errors=True,
             )
         assert res.status_code == 201

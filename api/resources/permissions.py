@@ -7,7 +7,7 @@ from osf.models import Registration
 
 
 class ResourcesPermission:
-    '''Base permissions class for acting on Resources.
+    """Base permissions class for acting on Resources.
 
     To GET an Resource (when the method is available), the user must have `can_view` access
     to the proxy_object designated by the view (i.e. the Primary Registration).
@@ -17,7 +17,8 @@ class ResourcesPermission:
 
     Note: SchemaResponses for deleted parent resources should appear to be deleted,
     while access should be denied to SchemaResponses on withdrawn parent resources.
-    '''
+    """
+
     acceptable_models = (Registration,)
     REQUIRED_PERMISSIONS = {}
 
@@ -30,7 +31,7 @@ class ResourcesPermission:
         if proxy_object.deleted:
             # Mimics get_object_or_error logic
             raise Gone
-        if getattr(proxy_object, 'is_retracted', False):
+        if getattr(proxy_object, "is_retracted", False):
             # Mimics behavior of ExcludeWithdrawals for Registration Resources
             return False
 
@@ -38,28 +39,37 @@ class ResourcesPermission:
         if request.method in permissions.SAFE_METHODS:
             return proxy_object.is_public or proxy_object.can_view(auth)
 
-        return proxy_object.has_permission(auth.user, self.REQUIRED_PERMISSIONS[request.method])
+        return proxy_object.has_permission(
+            auth.user, self.REQUIRED_PERMISSIONS[request.method]
+        )
 
 
 class ResourceListPermission(ResourcesPermission, permissions.BasePermission):
-    '''Permissions for the top-level ResourceList endpoint.
+    """Permissions for the top-level ResourceList endpoint.
 
     ResourceList only supports POST
-    '''
-    REQUIRED_PERMISSIONS = {'POST': 'write'}
+    """
+
+    REQUIRED_PERMISSIONS = {"POST": "write"}
 
 
-class ResourceDetailPermission(ResourcesPermission, permissions.BasePermission):
-    '''Permissions for the top-level ResourcesDetail endpoint.
+class ResourceDetailPermission(
+    ResourcesPermission, permissions.BasePermission
+):
+    """Permissions for the top-level ResourcesDetail endpoint.
 
     ResourcesDetail supports GET, PATCH, and DELETE methods.
-    '''
-    REQUIRED_PERMISSIONS = {'GET': None, 'PATCH': 'write', 'DELETE': 'write'}
+    """
+
+    REQUIRED_PERMISSIONS = {"GET": None, "PATCH": "write", "DELETE": "write"}
 
 
-class RegistrationResourceListPermission(ResourcesPermission, permissions.BasePermission):
-    '''Permissions for the Registration's ResourceList relationship endpoint.
+class RegistrationResourceListPermission(
+    ResourcesPermission, permissions.BasePermission
+):
+    """Permissions for the Registration's ResourceList relationship endpoint.
 
     RegistrationResourceList only supports GET
-    '''
-    REQUIRED_PERMISSIONS = {'GET': None}
+    """
+
+    REQUIRED_PERMISSIONS = {"GET": None}

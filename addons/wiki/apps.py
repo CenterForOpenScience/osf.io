@@ -2,39 +2,39 @@ from addons.base.apps import BaseAddonAppConfig
 
 
 class WikiAddonAppConfig(BaseAddonAppConfig):
-
     default = True
-    name = 'addons.wiki'
-    label = 'addons_wiki'
+    name = "addons.wiki"
+    label = "addons_wiki"
 
-    short_name = 'wiki'
-    full_name = 'Wiki'
+    short_name = "wiki"
+    full_name = "Wiki"
 
-    owners = ['node']
+    owners = ["node"]
 
-    added_default = ['node']
+    added_default = ["node"]
     added_mandatory = []
 
-    views = ['widget', 'page']
+    views = ["widget", "page"]
     configs = []
 
-    categories = ['documentation']
+    categories = ["documentation"]
 
     include_js = {
-        'widget': [],
-        'page': [],
+        "widget": [],
+        "page": [],
     }
 
     include_css = {
-        'widget': [],
-        'page': [],
+        "widget": [],
+        "page": [],
     }
 
     @property
     def routes(self):
         from addons.wiki import routes
+
         return [routes.page_routes, routes.api_routes]
 
     @property
     def node_settings(self):
-        return self.get_model('NodeSettings')
+        return self.get_model("NodeSettings")

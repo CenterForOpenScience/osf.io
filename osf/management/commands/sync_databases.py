@@ -12,15 +12,15 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from osf import features
 
-class Command(BaseCommand):
 
+class Command(BaseCommand):
     def handle(self, *args, **options):
         COMMANDS = [
             # Sync Postgres
-            ['migrate'],
+            ["migrate"],
         ]
         if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-            COMMANDS.append(['sync_metrics'])
+            COMMANDS.append(["sync_metrics"])
 
         for check in COMMANDS:
             call_command(*check)

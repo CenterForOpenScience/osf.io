@@ -13,11 +13,12 @@ from osf.utils.registrations import flatten_registration_metadata
 
 logger = logging.getLogger(__name__)
 
+
 # because Registrations and DraftRegistrations are different
 def get_nested_responses(registration_or_draft, schema_id):
     nested_responses = getattr(
         registration_or_draft,
-        'registration_metadata',
+        "registration_metadata",
         None,
     )
     if nested_responses is None:
@@ -25,14 +26,16 @@ def get_nested_responses(registration_or_draft, schema_id):
         nested_responses = registered_meta.get(schema_id, None)
     return nested_responses
 
+
 # because Registrations and DraftRegistrations are different
 def get_registration_schema(registration_or_draft):
-    schema = getattr(registration_or_draft, 'registration_schema', None)
+    schema = getattr(registration_or_draft, "registration_schema", None)
     if schema is None:
         schema = registration_or_draft.registered_schema.first()
     return schema
 
-def migrate_registrations(dry_run, rows='all', AbstractNodeModel=None):
+
+def migrate_registrations(dry_run, rows="all", AbstractNodeModel=None):
     """
     Loops through registrations whose registration_responses have not been migrated,
     and pulls this information from the "registered_meta" and flattens it, with
@@ -40,16 +43,21 @@ def migrate_registrations(dry_run, rows='all', AbstractNodeModel=None):
     nested user response in registered_meta
     """
     if AbstractNodeModel is None:
-        AbstractNodeModel = apps.get_model('osf', 'abstractnode')
+        AbstractNodeModel = apps.get_model("osf", "abstractnode")
 
     registrations = AbstractNodeModel.objects.filter(
-        type='osf.registration',
+        type="osf.registration",
     ).exclude(
         registration_responses_migrated=True,
     )
-    return migrate_responses(AbstractNodeModel, registrations, 'registrations', dry_run, rows)
+    return migrate_responses(
+        AbstractNodeModel, registrations, "registrations", dry_run, rows
+    )
 
-def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None):
+
+def migrate_draft_registrations(
+    dry_run, rows="all", DraftRegistrationModel=None
+):
     """
     Populates a subset of draft_registration.registration_responses, and corresponding
     draft_registration.registration_responses_migrated.
@@ -57,25 +65,33 @@ def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None
     :params rows
     """
     if DraftRegistrationModel is None:
-        DraftRegistrationModel = apps.get_model('osf', 'draftregistration')
+        DraftRegistrationModel = apps.get_model("osf", "draftregistration")
 
     draft_registrations = DraftRegistrationModel.objects.exclude(
         registration_responses_migrated=True
     )
-    return migrate_responses(DraftRegistrationModel, draft_registrations, 'draft registrations', dry_run, rows)
+    return migrate_responses(
+        DraftRegistrationModel,
+        draft_registrations,
+        "draft registrations",
+        dry_run,
+        rows,
+    )
 
 
-def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'):
+def migrate_responses(
+    model, resources, resource_name, dry_run=False, rows="all"
+):
     """
     DRY method to be used to migrate both DraftRegistration.registration_responses
     and Registration.registration_responses.
     """
     progress_bar = None
-    if rows == 'all':
-        logger.info(f'Migrating all {resource_name}.')
+    if rows == "all":
+        logger.info(f"Migrating all {resource_name}.")
     else:
         resources = resources[:rows]
-        logger.info(f'Migrating up to {rows} {resource_name}.')
+        logger.info(f"Migrating up to {rows} {resource_name}.")
         progress_bar = tqdm(total=rows)
 
     successes_to_save = []
@@ -92,7 +108,9 @@ def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'
         except SchemaBlockConversionError as e:
             resource.registration_responses_migrated = False
             errors_to_save.append(resource)
-            logger.error(f'Unexpected/invalid nested data in resource: {resource} with error {e}')
+            logger.error(
+                f"Unexpected/invalid nested data in resource: {resource} with error {e}"
+            )
         if progress_bar:
             progress_bar.update()
 
@@ -104,40 +122,58 @@ def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'
     total_count = success_count + error_count
 
     if total_count == 0:
-        logger.info(f'No {resource_name} left to migrate.')
+        logger.info(f"No {resource_name} left to migrate.")
         return total_count
 
-    logger.info(f'Successfully migrated {success_count} out of {total_count} {resource_name}.')
+    logger.info(
+        f"Successfully migrated {success_count} out of {total_count} {resource_name}."
+    )
     if error_count:
-        logger.warning(f'Encountered errors on {error_count} out of {total_count} {resource_name}.')
+        logger.warning(
+            f"Encountered errors on {error_count} out of {total_count} {resource_name}."
+        )
         if not success_count:
-            sentry.log_message(f'`migrate_registration_responses` has only errors left ({error_count} errors)')
+            sentry.log_message(
+                f"`migrate_registration_responses` has only errors left ({error_count} errors)"
+            )
 
     if dry_run:
-        logger.info('DRY RUN; discarding changes.')
+        logger.info("DRY RUN; discarding changes.")
     else:
-        logger.info('Saving changes...')
-        model.objects.bulk_update(successes_to_save, fields=['registration_responses', 'registration_responses_migrated'])
-        model.objects.bulk_update(errors_to_save, fields=['registration_responses_migrated'])
+        logger.info("Saving changes...")
+        model.objects.bulk_update(
+            successes_to_save,
+            fields=[
+                "registration_responses",
+                "registration_responses_migrated",
+            ],
+        )
+        model.objects.bulk_update(
+            errors_to_save, fields=["registration_responses_migrated"]
+        )
 
     return total_count
 
 
-@celery_app.task(name='management.commands.migrate_registration_responses')
+@celery_app.task(name="management.commands.migrate_registration_responses")
 def migrate_registration_responses(dry_run=False, rows=5000):
     script_start_time = datetime.datetime.now()
-    logger.info(f'Script started time: {script_start_time}')
+    logger.info(f"Script started time: {script_start_time}")
 
     draft_count = migrate_draft_registrations(dry_run, rows)
     registration_count = migrate_registrations(dry_run, rows)
 
     if draft_count == 0 and registration_count == 0:
-        logger.info('Migration complete! No more drafts or registrations need migrating.')
-        sentry.log_message('`migrate_registration_responses` command found nothing to migrate!')
+        logger.info(
+            "Migration complete! No more drafts or registrations need migrating."
+        )
+        sentry.log_message(
+            "`migrate_registration_responses` command found nothing to migrate!"
+        )
 
     script_finish_time = datetime.datetime.now()
-    logger.info(f'Script finished time: {script_finish_time}')
-    logger.info(f'Run time {script_finish_time - script_start_time}')
+    logger.info(f"Script finished time: {script_finish_time}")
+    logger.info(f"Run time {script_finish_time - script_start_time}")
 
 
 class Command(BaseCommand):
@@ -151,23 +187,23 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry_run',
+            "--dry_run",
             type=bool,
             default=False,
-            help='Run queries but do not write files',
+            help="Run queries but do not write files",
         )
         parser.add_argument(
-            '--rows',
+            "--rows",
             type=int,
             default=5000,
-            help='How many rows to process during this run',
+            help="How many rows to process during this run",
         )
 
     # Management command handler
     def handle(self, *args, **options):
-        dry_run = options['dry_run']
-        rows = options['rows']
+        dry_run = options["dry_run"]
+        rows = options["rows"]
         if dry_run:
-            logger.info('DRY RUN')
+            logger.info("DRY RUN")
 
         migrate_registration_responses(dry_run, rows)

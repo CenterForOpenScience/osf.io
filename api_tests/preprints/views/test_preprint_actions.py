@@ -7,24 +7,23 @@ from osf_tests.factories import (
 from osf.utils import permissions as osf_permissions
 
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
-from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
+from api_tests.reviews.mixins.comment_settings import (
+    ReviewActionCommentSettingsMixin,
+)
 
 
 class TestPreprintActionFilters(ReviewActionFilterMixin):
-
     @pytest.fixture()
     def preprint(self, all_actions):
         return all_actions[0].target
 
-    @pytest.fixture(params=[True, False], ids=['moderator', 'node_admin'])
+    @pytest.fixture(params=[True, False], ids=["moderator", "node_admin"])
     def user(self, request, preprint):
         user = AuthUserFactory()
         if request.param:
-            user.groups.add(preprint.provider.get_group('moderator'))
+            user.groups.add(preprint.provider.get_group("moderator"))
         else:
-            preprint.add_contributor(
-                user,
-                permissions=osf_permissions.ADMIN)
+            preprint.add_contributor(user, permissions=osf_permissions.ADMIN)
         return user
 
     @pytest.fixture()
@@ -33,7 +32,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
     def url(self, preprint):
-        return f'/{API_BASE}preprints/{preprint._id}/review_actions/'
+        return f"/{API_BASE}preprints/{preprint._id}/review_actions/"
 
     def test_unauthorized_user(self, app, url):
         res = app.get(url, expect_errors=True)
@@ -47,4 +46,4 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
 class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):
-        return f'/{API_BASE}preprints/{preprint._id}/review_actions/'
+        return f"/{API_BASE}preprints/{preprint._id}/review_actions/"

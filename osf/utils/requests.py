@@ -8,8 +8,11 @@ from api.base import settings
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
+
 class DummyRequest:
     pass
+
+
 dummy_request = DummyRequest()
 
 
@@ -32,7 +35,7 @@ def get_current_request():
     try:
         return request._get_current_object()
     except RuntimeError:  # Not in a flask request context
-        if getattr(api_globals, 'request', None) is not None:
+        if getattr(api_globals, "request", None) is not None:
             return api_globals.request
         else:  # Not in a Django request
             return dummy_request
@@ -50,31 +53,33 @@ def get_request_and_user_id():
     user_id = None
     if isinstance(req, FlaskRequest):
         user_session = get_session()
-        user_id = user_session.get('auth_user_id', None)
-    elif hasattr(req, 'user'):
+        user_id = user_session.get("auth_user_id", None)
+    elif hasattr(req, "user"):
         # admin module can return a user w/o an id
-        user_id = getattr(req.user, '_id', None)
+        user_id = getattr(req.user, "_id", None)
     return req, user_id
 
 
 def get_headers_from_request(req):
-    """ Get and normalize DRF and Flask request headers
-    """
-    headers = getattr(req, 'META', {})
+    """Get and normalize DRF and Flask request headers"""
+    headers = getattr(req, "META", {})
     if headers:
         headers = {
-            '-'.join([part.capitalize() for part in k.split('_')]).replace('Http-', ''): v
+            "-".join([part.capitalize() for part in k.split("_")]).replace(
+                "Http-", ""
+            ): v
             for k, v in headers.items()
         }
-        remote_addr = (headers.get('X-Forwarded-For') or headers.get('Remote-Addr'))
-        headers['Remote-Addr'] = remote_addr.split(',')[0].strip() if remote_addr else None
+        remote_addr = headers.get("X-Forwarded-For") or headers.get(
+            "Remote-Addr"
+        )
+        headers["Remote-Addr"] = (
+            remote_addr.split(",")[0].strip() if remote_addr else None
+        )
     else:
-        headers = getattr(req, 'headers', {})
-        headers = {
-            k: v
-            for k, v in headers.items()
-        }
-        headers['Remote-Addr'] = getattr(req, 'remote_addr', None)
+        headers = getattr(req, "headers", {})
+        headers = {k: v for k, v in headers.items()}
+        headers["Remote-Addr"] = getattr(req, "remote_addr", None)
     return headers
 
 
@@ -107,6 +112,6 @@ def requests_retry_session(
         status_forcelist=status_forcelist,
     )
     adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     return session

@@ -10,31 +10,30 @@ logging.basicConfig(level=logging.INFO)
 
 LOG_THRESHOLD = 11
 
+
 def get_elastic_query(date, provider):
     return {
-        'query': {
-            'bool': {
-                'must': [
+        "query": {
+            "bool": {
+                "must": [
+                    {"match": {"type": "preprint"}},
                     {
-                        'match': {
-                            'type': 'preprint'
+                        "match": {
+                            "sources": provider.share_source or provider.name,
                         }
                     },
-                    {
-                        'match': {
-                            'sources': provider.share_source or provider.name,
-                        }
-                    }
                 ],
-                'filter': [
+                "filter": [
                     {
-                        'range': {
-                            'date': {
-                                'lte': '{}||/d'.format(date.strftime('%Y-%m-%d'))
+                        "range": {
+                            "date": {
+                                "lte": "{}||/d".format(
+                                    date.strftime("%Y-%m-%d")
+                                )
                             }
                         }
                     }
-                ]
+                ],
             }
         }
     }
@@ -47,23 +46,30 @@ class PreprintCountReporter(DailyReporter):
         reports = []
         for preprint_provider in PreprintProvider.objects.all():
             elastic_query = get_elastic_query(date, preprint_provider)
-            resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
+            resp = requests.post(
+                f"{settings.SHARE_URL}api/v2/search/creativeworks/_search",
+                json=elastic_query,
+            ).json()
             reports.append(
                 PreprintSummaryReport(
                     report_date=date,
                     provider_key=preprint_provider._id,
-                    preprint_count=resp['hits']['total'],
+                    preprint_count=resp["hits"]["total"],
                 )
             )
-            logger.info('{} Preprints counted for the provider {}'.format(resp['hits']['total'], preprint_provider.name))
+            logger.info(
+                "{} Preprints counted for the provider {}".format(
+                    resp["hits"]["total"], preprint_provider.name
+                )
+            )
 
         return reports
 
     def keen_events_from_report(self, report):
         event = {
-            'provider': {
-                'name': report.provider_key,
-                'total': report.preprint_count,
+            "provider": {
+                "name": report.provider_key,
+                "total": report.preprint_count,
             },
         }
-        return {'preprint_summary': [event]}
+        return {"preprint_summary": [event]}

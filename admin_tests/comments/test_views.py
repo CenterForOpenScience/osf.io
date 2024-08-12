@@ -37,38 +37,41 @@ class TestSpamListView(AdminTestCase):
         self.comment_1.report_abuse(
             user=self.user_2,
             save=True,
-            category='spam',
-            date=date - timedelta(seconds=5)
+            category="spam",
+            date=date - timedelta(seconds=5),
         )
         self.comment_2.report_abuse(
             user=self.user_2,
             save=True,
-            category='spam',
-            date=date - timedelta(seconds=4)
+            category="spam",
+            date=date - timedelta(seconds=4),
         )
         self.comment_3.report_abuse(
             user=self.user_2,
             save=True,
-            category='spam',
-            date=date - timedelta(seconds=3)
+            category="spam",
+            date=date - timedelta(seconds=3),
         )
         self.comment_4.report_abuse(
             user=self.user_2,
             save=True,
-            category='spam',
-            date=date - timedelta(seconds=2)
+            category="spam",
+            date=date - timedelta(seconds=2),
         )
         self.comment_5.report_abuse(
             user=self.user_1,
             save=True,
-            category='spam',
-            date=date - timedelta(seconds=1)
+            category="spam",
+            date=date - timedelta(seconds=1),
         )
-        self.comment_6.report_abuse(user=self.user_1, save=True,
-                                    category='spam')
-        self.request = RequestFactory().get('/fake_path')
+        self.comment_6.report_abuse(
+            user=self.user_1, save=True, category="spam"
+        )
+        self.request = RequestFactory().get("/fake_path")
         self.view = CommentList()
-        self.view = setup_view(self.view, self.request, user_id=self.user_1._id)
+        self.view = setup_view(
+            self.view, self.request, user_id=self.user_1._id
+        )
 
     def test_get_spam(self):
         res = list(self.view.get_queryset())
@@ -80,7 +83,7 @@ class TestSpamListView(AdminTestCase):
             self.comment_4._id,
             self.comment_3._id,
             self.comment_2._id,
-            self.comment_1._id
+            self.comment_1._id,
         ]
         assert set(should_be) == set(response_list)
 
@@ -102,21 +105,29 @@ class TestUserCommentListView(AdminTestCase):
         self.comment_4 = CommentFactory(node=self.project, user=self.user_1)
         self.comment_5 = CommentFactory(node=self.project, user=self.user_2)
         self.comment_6 = CommentFactory(node=self.project, user=self.user_2)
-        self.comment_1.report_abuse(user=self.user_2, save=True,
-                                    category='spam')
-        self.comment_2.report_abuse(user=self.user_2, save=True,
-                                    category='spam')
-        self.comment_3.report_abuse(user=self.user_2, save=True,
-                                    category='spam')
-        self.comment_4.report_abuse(user=self.user_2, save=True,
-                                    category='spam')
-        self.comment_5.report_abuse(user=self.user_1, save=True,
-                                    category='spam')
-        self.comment_6.report_abuse(user=self.user_1, save=True,
-                                    category='spam')
-        self.request = RequestFactory().get('/fake_path')
+        self.comment_1.report_abuse(
+            user=self.user_2, save=True, category="spam"
+        )
+        self.comment_2.report_abuse(
+            user=self.user_2, save=True, category="spam"
+        )
+        self.comment_3.report_abuse(
+            user=self.user_2, save=True, category="spam"
+        )
+        self.comment_4.report_abuse(
+            user=self.user_2, save=True, category="spam"
+        )
+        self.comment_5.report_abuse(
+            user=self.user_1, save=True, category="spam"
+        )
+        self.comment_6.report_abuse(
+            user=self.user_1, save=True, category="spam"
+        )
+        self.request = RequestFactory().get("/fake_path")
         self.view = UserCommentList()
-        self.view = setup_view(self.view, self.request, user_guid=self.user_1._id)
+        self.view = setup_view(
+            self.view, self.request, user_guid=self.user_1._id
+        )
 
     def test_get_user_spam(self):
         res = list(self.view.get_queryset())

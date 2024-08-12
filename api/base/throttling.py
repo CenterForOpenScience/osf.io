@@ -1,5 +1,9 @@
 from rest_framework import permissions
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, SimpleRateThrottle
+from rest_framework.throttling import (
+    UserRateThrottle,
+    AnonRateThrottle,
+    SimpleRateThrottle,
+)
 import logging
 
 from api.base import settings
@@ -8,10 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseThrottle(SimpleRateThrottle):
-
     def get_ident(self, request):
-        if request.META.get('HTTP_X_THROTTLE_TOKEN'):
-            return request.META['HTTP_X_THROTTLE_TOKEN']
+        if request.META.get("HTTP_X_THROTTLE_TOKEN"):
+            return request.META["HTTP_X_THROTTLE_TOKEN"]
         return super().get_ident(request)
 
     def allow_request(self, request, view):
@@ -19,7 +22,7 @@ class BaseThrottle(SimpleRateThrottle):
         Implement the check to see if the request should be throttled.
         """
         if self.get_ident(request) == settings.BYPASS_THROTTLE_TOKEN:
-            logger.info('Bypass header (X-Throttle-Token) passed')
+            logger.info("Bypass header (X-Throttle-Token) passed")
             return True
 
         if self.rate is None:
@@ -42,8 +45,7 @@ class BaseThrottle(SimpleRateThrottle):
 
 
 class NonCookieAuthThrottle(BaseThrottle, AnonRateThrottle):
-
-    scope = 'non-cookie-auth'
+    scope = "non-cookie-auth"
 
     def allow_request(self, request, view):
         """
@@ -56,51 +58,48 @@ class NonCookieAuthThrottle(BaseThrottle, AnonRateThrottle):
 
 
 class AddContributorThrottle(BaseThrottle, UserRateThrottle):
-
-    scope = 'add-contributor'
+    scope = "add-contributor"
 
     def allow_request(self, request, view):
         """
         Allow all add contributor requests that do not send contributor emails.
         """
-        if request.method == 'POST' and request.query_params.get('send_email') == 'false':
+        if (
+            request.method == "POST"
+            and request.query_params.get("send_email") == "false"
+        ):
             return True
 
         return super().allow_request(request, view)
 
 
 class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
-
-    scope = 'create-guid'
+    scope = "create-guid"
 
     def allow_request(self, request, view):
         """
         Allow all create file requests that do not create new guids.
         """
-        if not request.query_params.get('create_guid'):
+        if not request.query_params.get("create_guid"):
             return True
 
         return super().allow_request(request, view)
 
 
 class RootAnonThrottle(AnonRateThrottle):
-
-    scope = 'root-anon-throttle'
+    scope = "root-anon-throttle"
 
 
 class TestUserRateThrottle(BaseThrottle, UserRateThrottle):
-
-    scope = 'test-user'
+    scope = "test-user"
 
 
 class TestAnonRateThrottle(BaseThrottle, AnonRateThrottle):
-
-    scope = 'test-anon'
+    scope = "test-anon"
 
 
 class SendEmailThrottle(BaseThrottle, UserRateThrottle):
-
-    scope = 'send-email'
+    scope = "send-email"
 
     def allow_request(self, request, view):
         if request.method in permissions.SAFE_METHODS:
@@ -110,24 +109,23 @@ class SendEmailThrottle(BaseThrottle, UserRateThrottle):
 
 
 class SendEmailDeactivationThrottle(SendEmailThrottle):
-
     def allow_request(self, request, view):
         """
         Throttle deactivation requests on the UserSettings endpoint
         """
-        if not request.data.get('deactivation_requested'):
+        if not request.data.get("deactivation_requested"):
             return True
 
         return super().allow_request(request, view)
 
 
 class BurstRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
-    scope = 'burst'
+    scope = "burst"
 
 
 class FilesRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
-    scope = 'files'
+    scope = "files"
 
 
 class FilesBurstRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
-    scope = 'files-burst'
+    scope = "files-burst"

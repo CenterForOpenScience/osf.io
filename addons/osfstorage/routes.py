@@ -4,128 +4,112 @@ from addons.osfstorage import views
 
 
 api_routes = {
-
-    'prefix': '/api/v1',
-
-    'rules': [
-
+    "prefix": "/api/v1",
+    "rules": [
         Rule(
             [
-                '/<guid>/osfstorage/',
-                '/<guid>/osfstorage/<fid>/',
+                "/<guid>/osfstorage/",
+                "/<guid>/osfstorage/<fid>/",
             ],
-            'get',
+            "get",
             views.osfstorage_get_metadata,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/quota_status/',
+                "/<guid>/osfstorage/quota_status/",
             ],
-            'get',
+            "get",
             views.osfstorage_get_storage_quota_status,
-            json_renderer
+            json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/',
+                "/<guid>/osfstorage/<fid>/",
             ],
-            'delete',
+            "delete",
             views.osfstorage_delete,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/download/',
+                "/<guid>/osfstorage/<fid>/download/",
             ],
-            'get',
+            "get",
             views.osfstorage_download,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/revisions/',
+                "/<guid>/osfstorage/<fid>/revisions/",
             ],
-            'get',
+            "get",
             views.osfstorage_get_revisions,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/lineage/',
+                "/<guid>/osfstorage/<fid>/lineage/",
             ],
-            'get',
+            "get",
             views.osfstorage_get_lineage,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/children/',
+                "/<guid>/osfstorage/<fid>/children/",
             ],
-            'post',
+            "post",
             views.osfstorage_create_child,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/children/',
+                "/<guid>/osfstorage/<fid>/children/",
             ],
-            'get',
+            "get",
             views.osfstorage_get_children,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/hooks/metadata/',
+                "/<guid>/osfstorage/hooks/metadata/",
             ],
-            'put',
+            "put",
             views.osfstorage_update_metadata,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/hooks/move/',
+                "/<guid>/osfstorage/hooks/move/",
             ],
-            'post',
+            "post",
             views.osfstorage_move_hook,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/hooks/copy/',
+                "/<guid>/osfstorage/hooks/copy/",
             ],
-            'post',
+            "post",
             views.osfstorage_copy_hook,
             json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/tags/',
+                "/<guid>/osfstorage/<fid>/tags/",
             ],
-            'post',
+            "post",
             views.osfstorage_add_tag,
-            json_renderer
+            json_renderer,
         ),
-
         Rule(
             [
-                '/<guid>/osfstorage/<fid>/tags/',
+                "/<guid>/osfstorage/<fid>/tags/",
             ],
-            'delete',
+            "delete",
             views.osfstorage_remove_tag,
-            json_renderer
+            json_renderer,
         ),
     ],
-
 }

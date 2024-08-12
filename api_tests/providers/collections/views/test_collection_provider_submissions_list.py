@@ -8,10 +8,11 @@ from osf_tests.factories import (
     CollectionProviderFactory,
 )
 
+
 class TestSubmissionList(ProviderSubmissionListViewTestBaseMixin):
     provider_class = CollectionProviderFactory
     submission_class = ProjectFactory
 
     @pytest.fixture()
     def url(self, submission_provider):
-        return f'/{API_BASE}providers/collections/{submission_provider._id}/submissions/'
+        return f"/{API_BASE}providers/collections/{submission_provider._id}/submissions/"

@@ -8,9 +8,15 @@ from waffle.models import Flag, Sample, Switch
 class BaseWaffleSerializer(JSONAPISerializer):
     id = ser.SerializerMethodField()
     type = TypeField()
-    name = ser.CharField(required=True, help_text='The name of the waffle object')
+    name = ser.CharField(
+        required=True, help_text="The name of the waffle object"
+    )
     active = ser.SerializerMethodField()
-    note = ser.CharField(required=False, allow_blank=True, help_text='Describe where the waffle object is used.')
+    note = ser.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Describe where the waffle object is used.",
+    )
 
     def get_type(self, obj):
         return type(obj).__name__.lower()
@@ -19,34 +25,34 @@ class BaseWaffleSerializer(JSONAPISerializer):
         """
         Use waffle_feature_is_active helper to determine if waffle flag, sample, or switch is active
         """
-        return waffle_feature_is_active(self.context.get('request'), self.get_type(obj), obj.name)
+        return waffle_feature_is_active(
+            self.context.get("request"), self.get_type(obj), obj.name
+        )
 
     def get_id(self, obj):
-        return f'{self.get_type(obj)}_{obj.id}'
+        return f"{self.get_type(obj)}_{obj.id}"
 
     class Meta:
-        type_ = 'waffle'
+        type_ = "waffle"
 
 
 class FlagSerializer(BaseWaffleSerializer):
     class Meta:
-        type_ = 'flag'
+        type_ = "flag"
 
 
 class SampleSerializer(BaseWaffleSerializer):
     class Meta:
-        type_ = 'sample'
+        type_ = "sample"
 
 
 class SwitchSerializer(BaseWaffleSerializer):
     class Meta:
-        type_ = 'switch'
+        type_ = "switch"
 
 
 class WaffleSerializer(JSONAPISerializer):
-
-    def to_representation(self, data, envelope='data'):
-
+    def to_representation(self, data, envelope="data"):
         if isinstance(data, Flag):
             serializer = FlagSerializer(data, context=self.context)
             return FlagSerializer.to_representation(serializer, data)
@@ -62,4 +68,4 @@ class WaffleSerializer(JSONAPISerializer):
         return None
 
     class Meta:
-        type_ = 'waffle'
+        type_ = "waffle"

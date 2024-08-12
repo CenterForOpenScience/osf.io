@@ -10,9 +10,11 @@ event_registry = {}
 
 def register(event_type):
     """Register classes into event_registry"""
+
     def decorator(cls):
         event_registry[event_type] = cls
         return cls
+
     return decorator
 
 
@@ -23,6 +25,7 @@ class Event:
     To use this interface you must use the class as a Super (inherited).
      - Implement property methods in subclasses
     """
+
     def __init__(self, user, node, action):
         self.user = user
         self.profile_image_url = user.profile_image_url()
@@ -39,7 +42,7 @@ class Event:
             timestamp=self.timestamp,
             message=self.html_message,
             profile_image_url=self.profile_image_url,
-            url=self.url
+            url=self.url,
         )
 
     @property

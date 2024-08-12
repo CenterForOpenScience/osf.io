@@ -3,60 +3,60 @@ from framework.routing import Rule, json_renderer
 from addons.figshare import views
 
 api_routes = {
-    'rules': [
+    "rules": [
         Rule(
             [
-                '/settings/figshare/accounts/',
+                "/settings/figshare/accounts/",
             ],
-            'get',
+            "get",
             views.figshare_account_list,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/figshare/settings/',
-                '/project/<pid>/node/<nid>/figshare/settings/'
+                "/project/<pid>/figshare/settings/",
+                "/project/<pid>/node/<nid>/figshare/settings/",
             ],
-            'get',
+            "get",
             views.figshare_get_config,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/figshare/settings/',
-                '/project/<pid>/node/<nid>/figshare/settings/'
+                "/project/<pid>/figshare/settings/",
+                "/project/<pid>/node/<nid>/figshare/settings/",
             ],
-            'put',
+            "put",
             views.figshare_set_config,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/figshare/user_auth/',
-                '/project/<pid>/node/<nid>/figshare/user_auth/'
+                "/project/<pid>/figshare/user_auth/",
+                "/project/<pid>/node/<nid>/figshare/user_auth/",
             ],
-            'put',
+            "put",
             views.figshare_import_auth,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/figshare/user_auth/',
-                '/project/<pid>/node/<nid>/figshare/user_auth/'
+                "/project/<pid>/figshare/user_auth/",
+                "/project/<pid>/node/<nid>/figshare/user_auth/",
             ],
-            'delete',
+            "delete",
             views.figshare_deauthorize_node,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/figshare/folders/',
-                '/project/<pid>/node/<nid>/figshare/folders/',
+                "/project/<pid>/figshare/folders/",
+                "/project/<pid>/node/<nid>/figshare/folders/",
             ],
-            'get',
+            "get",
             views.figshare_folder_list,
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
+    "prefix": "/api/v1",
 }

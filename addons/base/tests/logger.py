@@ -3,8 +3,8 @@ import abc
 from framework.auth import Auth
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 
-class AddonNodeLoggerTestSuiteMixinBase:
 
+class AddonNodeLoggerTestSuiteMixinBase:
     __metaclass__ = abc.ABCMeta
 
     @property
@@ -27,21 +27,24 @@ class AddonNodeLoggerTestSuiteMixinBase:
 
 
 class StorageAddonNodeLoggerTestSuiteMixin(AddonNodeLoggerTestSuiteMixinBase):
-
     def setUp(self):
         super().setUp()
 
     def test_log_file_added(self):
-        self.logger.log('file_added', save=True)
+        self.logger.log("file_added", save=True)
         last_log = self.node.logs.latest()
 
-        assert last_log.action == '{}_{}'.format(self.addon_short_name, 'file_added')
+        assert last_log.action == "{}_{}".format(
+            self.addon_short_name, "file_added"
+        )
 
     def test_log_file_removed(self):
-        self.logger.log('file_removed', save=True)
+        self.logger.log("file_removed", save=True)
         last_log = self.node.logs.latest()
 
-        assert last_log.action == '{}_{}'.format(self.addon_short_name, 'file_removed')
+        assert last_log.action == "{}_{}".format(
+            self.addon_short_name, "file_removed"
+        )
 
     def test_log_deauthorized_when_node_settings_are_deleted(self):
         node_settings = self.node.get_addon(self.addon_short_name)
@@ -49,7 +52,7 @@ class StorageAddonNodeLoggerTestSuiteMixin(AddonNodeLoggerTestSuiteMixinBase):
         # sanity check
         assert node_settings.deleted
 
-        self.logger.log(action='node_deauthorized', save=True)
+        self.logger.log(action="node_deauthorized", save=True)
 
         last_log = self.node.logs.latest()
-        assert last_log.action == f'{self.addon_short_name}_node_deauthorized'
+        assert last_log.action == f"{self.addon_short_name}_node_deauthorized"

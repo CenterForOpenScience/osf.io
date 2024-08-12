@@ -5,7 +5,6 @@ from api.base.utils import absolute_reverse
 
 
 class BrandSerializer(JSONAPISerializer):
-
     id = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
 
@@ -16,18 +15,20 @@ class BrandSerializer(JSONAPISerializer):
     primary_color = ser.CharField(read_only=True, max_length=7)
     secondary_color = ser.CharField(read_only=True, max_length=7)
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+        }
+    )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'brands:brand-detail',
+            "brands:brand-detail",
             kwargs={
-                'brand_id': obj.id,
-                'version': 'v2',
+                "brand_id": obj.id,
+                "version": "v2",
             },
         )
 
     class Meta:
-        type_ = 'brands'
+        type_ = "brands"

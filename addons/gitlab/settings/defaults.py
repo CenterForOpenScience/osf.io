@@ -1,9 +1,9 @@
-DEFAULT_HOSTS = ['https://gitlab.com']
+DEFAULT_HOSTS = ["https://gitlab.com"]
 
 # GitLab hook domain
 HOOK_DOMAIN = None
-HOOK_CONTENT_TYPE = 'json'
-HOOK_EVENTS = ['push']  # Only log commits
+HOOK_CONTENT_TYPE = "json"
+HOOK_EVENTS = ["push"]  # Only log commits
 
 # Max render size in bytes; no max if None
 MAX_RENDER_SIZE = None

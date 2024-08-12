@@ -21,11 +21,12 @@ from osf.utils import tokens
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SanctionTypes
 
-VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
+VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + "{node_id}/"
 
 
 class Sanction(ObjectIDMixin, BaseModel):
     """Sanction class is a generic way to track approval states"""
+
     # Neither approved not cancelled
     UNAPPROVED = ApprovalStates.UNAPPROVED.db_name
     # Has approval
@@ -40,18 +41,24 @@ class Sanction(ObjectIDMixin, BaseModel):
     MODERATOR_REJECTED = ApprovalStates.MODERATOR_REJECTED.db_name
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
-    DISPLAY_NAME = 'Sanction'
+    DISPLAY_NAME = "Sanction"
     # SHORT_NAME must correspond with the associated foreign field to query against,
     # e.g. Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
-    SHORT_NAME = 'sanction'
+    SHORT_NAME = "sanction"
 
-    ACTION_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to {ACTION} this {DISPLAY_NAME}'
-    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {DISPLAY_NAME}.'
-    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
+    ACTION_NOT_AUTHORIZED_MESSAGE = (
+        "This user is not authorized to {ACTION} this {DISPLAY_NAME}"
+    )
+    APPROVAL_INVALID_TOKEN_MESSAGE = (
+        "Invalid approval token provided for this {DISPLAY_NAME}."
+    )
+    REJECTION_INVALID_TOKEN_MESSAGE = (
+        "Invalid rejection token provided for this {DISPLAY_NAME}."
+    )
 
     # Controls whether or not the Sanction needs unanimous approval or just a single approval
-    ANY = 'any'
-    UNANIMOUS = 'unanimous'
+    ANY = "any"
+    UNANIMOUS = "unanimous"
     mode = UNANIMOUS
 
     # Sanction subclasses must have an initiated_by field
@@ -70,38 +77,43 @@ class Sanction(ObjectIDMixin, BaseModel):
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
     end_date = NonNaiveDateTimeField(null=True, blank=True, default=None)
-    initiation_date = NonNaiveDateTimeField(default=timezone.now, null=True, blank=True)
+    initiation_date = NonNaiveDateTimeField(
+        default=timezone.now, null=True, blank=True
+    )
 
-    state = models.CharField(choices=ApprovalStates.char_field_choices(),
-                             default=UNAPPROVED,
-                             max_length=255)
+    state = models.CharField(
+        choices=ApprovalStates.char_field_choices(),
+        default=UNAPPROVED,
+        max_length=255,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.approvals_machine = ApprovalsMachine(
             model=self,
-            state_property_name='approval_stage',
-            active_state=self.approval_stage
+            state_property_name="approval_stage",
+            active_state=self.approval_stage,
         )
 
     def __str__(self):
-        return f'<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'
+        return f"<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>"
 
     @property
     def is_pending_approval(self):
-        '''The sanction is awaiting admin approval.'''
+        """The sanction is awaiting admin approval."""
         return self.approval_stage is ApprovalStates.UNAPPROVED
 
     @property
     def is_approved(self):
-        '''The sanction has received all required admin and moderator approvals.'''
+        """The sanction has received all required admin and moderator approvals."""
         return self.approval_stage is ApprovalStates.APPROVED
 
     @property
     def is_rejected(self):
-        '''The sanction has been rejected by either an admin or a moderator.'''
+        """The sanction has been rejected by either an admin or a moderator."""
         rejected_states = [
-            ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED
+            ApprovalStates.REJECTED,
+            ApprovalStates.MODERATOR_REJECTED,
         ]
         return self.approval_stage in rejected_states
 
@@ -123,13 +135,13 @@ class Sanction(ObjectIDMixin, BaseModel):
 
     @property
     def revisable(self):
-        '''Controls state machine flow on a 'reject' trigger.
+        """Controls state machine flow on a 'reject' trigger.
 
         True -> IN_PROGRESS
         False -> [MODERATOR_]REJECTED
 
         Sanctions do not represent a revisable entity, so return False
-        '''
+        """
         return False
 
     # The Sanction object will also inherit the following functions from the SanctionStateMachine:
@@ -143,7 +155,9 @@ class Sanction(ObjectIDMixin, BaseModel):
 
     def _get_registration(self):
         """Get the Registration that is waiting on this sanction."""
-        raise NotImplementedError('Sanction subclasses must implement a #_get_registration method')
+        raise NotImplementedError(
+            "Sanction subclasses must implement a #_get_registration method"
+        )
 
     def _on_approve(self, event_data):
         """Callback for individual admin approval of a sanction.
@@ -154,7 +168,8 @@ class Sanction(ObjectIDMixin, BaseModel):
             contains information about the active state transition and arbitrary args and kwargs
         """
         raise NotImplementedError(
-            'Sanction subclasses must implement an #_on_approve method')
+            "Sanction subclasses must implement an #_on_approve method"
+        )
 
     def _on_reject(self, event_data):
         """Callback for rejection of a Sanction.
@@ -165,7 +180,8 @@ class Sanction(ObjectIDMixin, BaseModel):
             contains information about the active state transition and arbitrary args and kwargs
         """
         raise NotImplementedError(
-            'Sanction subclasses must implement an #_on_reject method')
+            "Sanction subclasses must implement an #_on_reject method"
+        )
 
     def _on_complete(self, user):
         """Callback for when a Sanction is fully approved.
@@ -176,7 +192,8 @@ class Sanction(ObjectIDMixin, BaseModel):
             contains information about the active state transition and arbitrary args and kwargs
         """
         raise NotImplementedError(
-            'Sanction subclasses must implement an #_on_complete method')
+            "Sanction subclasses must implement an #_on_complete method"
+        )
 
     def forcibly_reject(self):
         self.state = Sanction.REJECTED
@@ -189,11 +206,13 @@ class Sanction(ObjectIDMixin, BaseModel):
         if new_state is None:
             return
 
-        user = event_data.kwargs.get('user')
+        user = event_data.kwargs.get("user")
         if user is None and event_data.args:
             user = event_data.args[0]
-        comment = event_data.kwargs.get('comment', '')
-        self.target_registration.update_moderation_state(initiated_by=user, comment=comment)
+        comment = event_data.kwargs.get("comment", "")
+        self.target_registration.update_moderation_state(
+            initiated_by=user, comment=comment
+        )
 
     class Meta:
         abstract = True
@@ -207,7 +226,7 @@ class TokenApprovableSanction(Sanction):
         return True
 
     def _verify_user_role(self, user, action):
-        '''Confirm that user is allowed to act on the sanction in its current approval_stage.'''
+        """Confirm that user is allowed to act on the sanction in its current approval_stage."""
         if self.approval_stage is ApprovalStates.UNAPPROVED:
             # Allow user is None when UNAPPROVED to support timed
             # sanction expiration from within OSF via the 'accept' trigger
@@ -215,44 +234,64 @@ class TokenApprovableSanction(Sanction):
                 return True
             return False
 
-        required_permission = f'{action}_submissions'
+        required_permission = f"{action}_submissions"
         if self.approval_stage is ApprovalStates.PENDING_MODERATION:
-            return user.has_perm(required_permission, self.target_registration.provider)
+            return user.has_perm(
+                required_permission, self.target_registration.provider
+            )
 
         return False
 
     def _validate_trigger(self, event_data):
-        '''Verify that an approve/accept/reject call meets all preconditions.'''
+        """Verify that an approve/accept/reject call meets all preconditions."""
         action = event_data.event.name
-        user = event_data.kwargs.get('user')
+        user = event_data.kwargs.get("user")
         if user is None and event_data.args:
             user = event_data.args[0]
         # Allow certain 'accept' calls with no user for OSF admin use
-        if not user and action != 'accept':
-            raise ValueError('All state trigger functions must specify a user')
+        if not user and action != "accept":
+            raise ValueError("All state trigger functions must specify a user")
 
         if not self._verify_user_role(user, action):
-            raise PermissionsError(self.ACTION_NOT_AUTHORIZED_MESSAGE.format(
-                ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
+            raise PermissionsError(
+                self.ACTION_NOT_AUTHORIZED_MESSAGE.format(
+                    ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME
+                )
+            )
 
         # Moderator auth is validated by API, no token to check
         # user is None and no prior exception -> OSF-internal accept call
-        if self.approval_stage is ApprovalStates.PENDING_MODERATION or user is None:
+        if (
+            self.approval_stage is ApprovalStates.PENDING_MODERATION
+            or user is None
+        ):
             return True
 
-        token = event_data.kwargs.get('token')
+        token = event_data.kwargs.get("token")
         if token is None:
             try:
                 token = event_data.args[1]
             except IndexError:
-                raise ValueError('Admin actions require a token')
+                raise ValueError("Admin actions require a token")
 
-        if action == 'approve' and self.approval_state[user._id]['approval_token'] != token:
+        if (
+            action == "approve"
+            and self.approval_state[user._id]["approval_token"] != token
+        ):
             raise InvalidSanctionApprovalToken(
-                self.APPROVAL_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
-        elif action == 'reject' and self.approval_state[user._id]['rejection_token'] != token:
+                self.APPROVAL_INVALID_TOKEN_MESSAGE.format(
+                    DISPLAY_NAME=self.DISPLAY_NAME
+                )
+            )
+        elif (
+            action == "reject"
+            and self.approval_state[user._id]["rejection_token"] != token
+        ):
             raise InvalidSanctionRejectionToken(
-                self.REJECTION_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
+                self.REJECTION_INVALID_TOKEN_MESSAGE.format(
+                    DISPLAY_NAME=self.DISPLAY_NAME
+                )
+            )
 
         return True
 
@@ -270,18 +309,22 @@ class TokenApprovableSanction(Sanction):
             return False
 
         self.approval_state[user._id] = {
-            'has_approved': approved,
-            'node_id': node._id,
-            'approval_token': tokens.encode({
-                'user_id': user.id,
-                'sanction_id': self._id,
-                'action': f'approve_{self.SHORT_NAME}'
-            }),
-            'rejection_token': tokens.encode({
-                'user_id': user.id,
-                'sanction_id': self._id,
-                'action': f'reject_{self.SHORT_NAME}'
-            })
+            "has_approved": approved,
+            "node_id": node._id,
+            "approval_token": tokens.encode(
+                {
+                    "user_id": user.id,
+                    "sanction_id": self._id,
+                    "action": f"approve_{self.SHORT_NAME}",
+                }
+            ),
+            "rejection_token": tokens.encode(
+                {
+                    "user_id": user.id,
+                    "sanction_id": self._id,
+                    "action": f"reject_{self.SHORT_NAME}",
+                }
+            ),
         }
 
         if save:
@@ -310,15 +353,18 @@ class TokenApprovableSanction(Sanction):
         - mode is ANY and the Sanction has not already been cancelled
         - mode is UNANIMOUS and all users have given approval
         """
-        user = event_data.kwargs.get('user')
+        user = event_data.kwargs.get("user")
         if user is None and event_data.args:
             user = event_data.args[0]
-        self.approval_state[user._id]['has_approved'] = True
+        self.approval_state[user._id]["has_approved"] = True
 
         if self.mode == self.ANY or all(
-                authorizer['has_approved']
-                for authorizer in self.approval_state.values()):
-            self.accept(*event_data.args, **event_data.kwargs)  # state machine trigger
+            authorizer["has_approved"]
+            for authorizer in self.approval_state.values()
+        ):
+            self.accept(
+                *event_data.args, **event_data.kwargs
+            )  # state machine trigger
 
     def token_for_user(self, user, method):
         """
@@ -327,9 +373,12 @@ class TokenApprovableSanction(Sanction):
         try:
             user_state = self.approval_state[user._id]
         except KeyError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(
-                DISPLAY_NAME=self.DISPLAY_NAME))
-        return user_state[f'{method}_token']
+            raise PermissionsError(
+                self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(
+                    DISPLAY_NAME=self.DISPLAY_NAME
+                )
+            )
+        return user_state[f"{method}_token"]
 
     def _notify_authorizer(self, user, node):
         pass
@@ -348,9 +397,9 @@ class EmailApprovableSanction(TokenApprovableSanction):
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
 
-    VIEW_URL_TEMPLATE = ''
-    APPROVE_URL_TEMPLATE = ''
-    REJECT_URL_TEMPLATE = ''
+    VIEW_URL_TEMPLATE = ""
+    APPROVE_URL_TEMPLATE = ""
+    REJECT_URL_TEMPLATE = ""
 
     # A flag to conditionally run a callback on complete
     notify_initiator_on_complete = models.BooleanField(default=False)
@@ -373,42 +422,52 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def _format_or_empty(template, context):
         if context:
             return template.format(**context)
-        return ''
+        return ""
 
     def _view_url(self, user_id, node):
-        return self._format_or_empty(self.VIEW_URL_TEMPLATE,
-                                     self._view_url_context(user_id, node))
+        return self._format_or_empty(
+            self.VIEW_URL_TEMPLATE, self._view_url_context(user_id, node)
+        )
 
     def _view_url_context(self, user_id, node):
         return None
 
     def _approval_url(self, user_id):
-        return self._format_or_empty(self.APPROVE_URL_TEMPLATE,
-                                     self._approval_url_context(user_id))
+        return self._format_or_empty(
+            self.APPROVE_URL_TEMPLATE, self._approval_url_context(user_id)
+        )
 
     def _approval_url_context(self, user_id):
         return None
 
     def _rejection_url(self, user_id):
-        return self._format_or_empty(self.REJECT_URL_TEMPLATE,
-                                     self._rejection_url_context(user_id))
+        return self._format_or_empty(
+            self.REJECT_URL_TEMPLATE, self._rejection_url_context(user_id)
+        )
 
     def _rejection_url_context(self, user_id):
         return None
 
     def _send_approval_request_email(self, user, template, context):
-        mails.send_mail(user.username, template, user=user, can_change_preferences=False, **context)
+        mails.send_mail(
+            user.username,
+            template,
+            user=user,
+            can_change_preferences=False,
+            **context,
+        )
 
     def _email_template_context(self, user, node, is_authorizer=False):
         return {}
 
     def _notify_authorizer(self, authorizer, node):
-        context = self._email_template_context(authorizer,
-                                            node,
-                                            is_authorizer=True)
+        context = self._email_template_context(
+            authorizer, node, is_authorizer=True
+        )
         if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(
-                authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
+                authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context
+            )
         else:
             raise NotImplementedError()
 
@@ -416,7 +475,8 @@ class EmailApprovableSanction(TokenApprovableSanction):
         context = self._email_template_context(user, node)
         if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(
-                user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
+                user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context
+            )
         else:
             raise NotImplementedError
 
@@ -436,9 +496,9 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def add_authorizer(self, user, node, **kwargs):
         super().add_authorizer(user, node, **kwargs)
         self.stashed_urls[user._id] = {
-            'view': self._view_url(user._id, node),
-            'approve': self._approval_url(user._id),
-            'reject': self._rejection_url(user._id)
+            "view": self._view_url(user._id, node),
+            "approve": self._approval_url(user._id),
+            "reject": self._rejection_url(user._id),
         }
         self.save()
 
@@ -446,7 +506,10 @@ class EmailApprovableSanction(TokenApprovableSanction):
         raise NotImplementedError
 
     def _on_complete(self, event_data):
-        if self.notify_initiator_on_complete and not self.should_suppress_emails:
+        if (
+            self.notify_initiator_on_complete
+            and not self.should_suppress_emails
+        ):
             self._notify_initiator()
 
     class Meta:
@@ -457,24 +520,36 @@ class SanctionCallbackMixin:
     def _notify_initiator(self):
         raise NotImplementedError()
 
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+    def _email_template_context(
+        self, user, node, is_authorizer=False, urls=None
+    ):
         return {}
 
 
 class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
+
     SANCTION_TYPE = SanctionTypes.EMBARGO
-    DISPLAY_NAME = 'Embargo'
-    SHORT_NAME = 'embargo'
+    DISPLAY_NAME = "Embargo"
+    SHORT_NAME = "embargo"
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
+    REJECT_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
+    initiated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
     for_existing_registration = models.BooleanField(default=False)
 
     @property
@@ -507,85 +582,87 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def _view_url_context(self, user_id, node):
         registration = node or self._get_registration()
-        return {'node_id': registration._id}
+        return {"node_id": registration._id}
 
     def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        approval_token = user_approval_state.get('approval_token')
+        approval_token = user_approval_state.get("approval_token")
         if approval_token:
             registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', registration._id)
-            return {'node_id': node_id, 'token': approval_token}
+            node_id = user_approval_state.get("node_id", registration._id)
+            return {"node_id": node_id, "token": approval_token}
 
     def _rejection_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        rejection_token = user_approval_state.get('rejection_token')
+        rejection_token = user_approval_state.get("rejection_token")
         if rejection_token:
-            Registration = apps.get_model('osf.Registration')
+            Registration = apps.get_model("osf.Registration")
             root_registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', root_registration._id)
+            node_id = user_approval_state.get("node_id", root_registration._id)
             registration = Registration.load(node_id)
             return {
-                'node_id': registration.registered_from._id,
-                'token': rejection_token,
+                "node_id": registration.registered_from._id,
+                "token": rejection_token,
             }
 
-    def _email_template_context(self,
-                                user,
-                                node,
-                                is_authorizer=False,
-                                urls=None):
+    def _email_template_context(
+        self, user, node, is_authorizer=False, urls=None
+    ):
         context = super()._email_template_context(
-            user,
-            node,
-            is_authorizer=is_authorizer)
+            user, node, is_authorizer=is_authorizer
+        )
         urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id, node))
+        registration_link = urls.get("view", self._view_url(user._id, node))
         approval_time_span = osf_settings.EMBARGO_PENDING_TIME.days * 24
         if is_authorizer:
-            approval_link = urls.get('approve', '')
-            disapproval_link = urls.get('reject', '')
+            approval_link = urls.get("approve", "")
+            disapproval_link = urls.get("reject", "")
 
             registration = self._get_registration()
 
-            context.update({
-                'is_initiator': self.initiated_by == user,
-                'initiated_by': self.initiated_by.fullname,
-                'approval_link': approval_link,
-                'project_name': registration.title,
-                'disapproval_link': disapproval_link,
-                'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
-                'approval_time_span': approval_time_span,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-            })
+            context.update(
+                {
+                    "is_initiator": self.initiated_by == user,
+                    "initiated_by": self.initiated_by.fullname,
+                    "approval_link": approval_link,
+                    "project_name": registration.title,
+                    "disapproval_link": disapproval_link,
+                    "registration_link": registration_link,
+                    "embargo_end_date": self.end_date,
+                    "approval_time_span": approval_time_span,
+                    "is_moderated": self.is_moderated,
+                    "reviewable": self._get_registration(),
+                }
+            )
         else:
-            context.update({
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
-                'approval_time_span': approval_time_span,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-            })
+            context.update(
+                {
+                    "initiated_by": self.initiated_by.fullname,
+                    "registration_link": registration_link,
+                    "embargo_end_date": self.end_date,
+                    "approval_time_span": approval_time_span,
+                    "is_moderated": self.is_moderated,
+                    "reviewable": self._get_registration(),
+                }
+            )
         return context
 
     def _on_reject(self, event_data):
-        user = event_data.kwargs.get('user')
+        user = event_data.kwargs.get("user")
         if user is None and event_data.args:
             user = event_data.args[0]
-        NodeLog = apps.get_model('osf.NodeLog')
+        NodeLog = apps.get_model("osf.NodeLog")
 
         parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
-                'node': parent_registration.registered_from._id,
-                'registration': parent_registration._id,
-                'embargo_id': self._id,
+                "node": parent_registration.registered_from._id,
+                "registration": parent_registration._id,
+                "embargo_id": self._id,
             },
-            auth=Auth(user) if user else Auth(self.initiated_by))
+            auth=Auth(user) if user else Auth(self.initiated_by),
+        )
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
             parent_registration.delete_registration_tree(save=True)
@@ -601,26 +678,27 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         self.reject(user=user, token=token)
 
     def _on_complete(self, event_data):
-        NodeLog = apps.get_model('osf.NodeLog')
+        NodeLog = apps.get_model("osf.NodeLog")
 
         parent_registration = self.target_registration
         if parent_registration.is_spammy:
-            raise NodeStateError('Cannot complete a spammy registration.')
+            raise NodeStateError("Cannot complete a spammy registration.")
 
         super()._on_complete(event_data)
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
-                'node': parent_registration.registered_from._id,
-                'registration': parent_registration._id,
-                'embargo_id': self._id,
+                "node": parent_registration.registered_from._id,
+                "registration": parent_registration._id,
+                "embargo_id": self._id,
             },
-            auth=Auth(self.initiated_by), )
+            auth=Auth(self.initiated_by),
+        )
 
         # Make placeholder identifiers for all Registrations to allow resources to be added
         # This Identifier will be grabbed and populated when the Registration is made public
         for registration in parent_registration.node_and_primary_descendants():
-            registration.set_identifier_value(category='doi', value=None)
+            registration.set_identifier_value(category="doi", value=None)
         self.save()
 
     def approve_embargo(self, user, token):
@@ -632,108 +710,123 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         # self.state = Sanction.COMPLETED
         self.to_COMPLETED()
 
+
 class Retraction(EmailApprovableSanction):
     """
     Retraction object for public registrations.
     Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
     "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
     """
+
     SANCTION_TYPE = SanctionTypes.RETRACTION
-    DISPLAY_NAME = 'Retraction'
-    SHORT_NAME = 'retraction'
+    DISPLAY_NAME = "Retraction"
+    SHORT_NAME = "retraction"
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
+    REJECT_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
+    initiated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
     justification = models.CharField(max_length=2048, null=True, blank=True)
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _get_registration(self):
-        Registration = apps.get_model('osf.Registration')
+        Registration = apps.get_model("osf.Registration")
         parent_registration = Registration.objects.get(retraction=self)
 
         return parent_registration
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first() or node
-        return {
-            'node_id': registration._id
-        }
+        return {"node_id": registration._id}
 
     def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        approval_token = user_approval_state.get('approval_token')
+        approval_token = user_approval_state.get("approval_token")
         if approval_token:
             root_registration = self.registrations.first()
-            node_id = user_approval_state.get('node_id', root_registration._id)
+            node_id = user_approval_state.get("node_id", root_registration._id)
             return {
-                'node_id': node_id,
-                'token': approval_token,
+                "node_id": node_id,
+                "token": approval_token,
             }
 
     def _rejection_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        rejection_token = user_approval_state.get('rejection_token')
+        rejection_token = user_approval_state.get("rejection_token")
         if rejection_token:
-            Registration = apps.get_model('osf.Registration')
-            node_id = user_approval_state.get('node_id', None)
-            registration = Registration.objects.select_related(
-                'registered_from'
-            ).get(
-                guids___id=node_id, guids___id__isnull=False
-            ) if node_id else self.registrations.first()
+            Registration = apps.get_model("osf.Registration")
+            node_id = user_approval_state.get("node_id", None)
+            registration = (
+                Registration.objects.select_related("registered_from").get(
+                    guids___id=node_id, guids___id__isnull=False
+                )
+                if node_id
+                else self.registrations.first()
+            )
 
             return {
-                'node_id': registration.registered_from._id,
-                'token': rejection_token,
+                "node_id": registration.registered_from._id,
+                "token": rejection_token,
             }
 
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+    def _email_template_context(
+        self, user, node, is_authorizer=False, urls=None
+    ):
         urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id, node))
+        registration_link = urls.get("view", self._view_url(user._id, node))
         approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
         if is_authorizer:
-            approval_link = urls.get('approve', '')
-            disapproval_link = urls.get('reject', '')
+            approval_link = urls.get("approve", "")
+            disapproval_link = urls.get("reject", "")
 
             return {
-                'is_initiator': self.initiated_by == user,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-                'initiated_by': self.initiated_by.fullname,
-                'project_name': self.registrations.filter().values_list('title', flat=True).get(),
-                'registration_link': registration_link,
-                'approval_link': approval_link,
-                'disapproval_link': disapproval_link,
-                'approval_time_span': approval_time_span,
+                "is_initiator": self.initiated_by == user,
+                "is_moderated": self.is_moderated,
+                "reviewable": self._get_registration(),
+                "initiated_by": self.initiated_by.fullname,
+                "project_name": self.registrations.filter()
+                .values_list("title", flat=True)
+                .get(),
+                "registration_link": registration_link,
+                "approval_link": approval_link,
+                "disapproval_link": disapproval_link,
+                "approval_time_span": approval_time_span,
             }
         else:
             return {
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-                'approval_time_span': approval_time_span,
+                "initiated_by": self.initiated_by.fullname,
+                "registration_link": registration_link,
+                "is_moderated": self.is_moderated,
+                "reviewable": self._get_registration(),
+                "approval_time_span": approval_time_span,
             }
 
     def _on_reject(self, event_data):
-        user = event_data.kwargs.get('user')
+        user = event_data.kwargs.get("user")
         if user is None and event_data.args:
             user = event_data.args[0]
 
-        NodeLog = apps.get_model('osf.NodeLog')
+        NodeLog = apps.get_model("osf.NodeLog")
         parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
-                'node': parent_registration.registered_from._id,
-                'registration': parent_registration._id,
-                'retraction_id': self._id,
+                "node": parent_registration.registered_from._id,
+                "registration": parent_registration._id,
+                "retraction_id": self._id,
             },
             auth=Auth(user),
             save=True,
@@ -747,117 +840,136 @@ class Retraction(EmailApprovableSanction):
         self.save()
 
     def approve_retraction(self, user, token):
-        '''Test function'''
+        """Test function"""
         self.approve(user=user, token=token)
 
     def disapprove_retraction(self, user, token):
-        '''Test function'''
+        """Test function"""
         self.reject(user=user, token=token)
 
 
 class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     SANCTION_TYPE = SanctionTypes.REGISTRATION_APPROVAL
-    DISPLAY_NAME = 'Approval'
-    SHORT_NAME = 'registration_approval'
+    DISPLAY_NAME = "Approval"
+    SHORT_NAME = "registration_approval"
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
+    REJECT_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
+    initiated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
 
     def _get_registration(self):
         return self.registrations.first()
 
     def _view_url_context(self, user_id, node):
         user_approval_state = self.approval_state.get(user_id, {})
-        node_id = user_approval_state.get('node_id', node._id)
-        return {
-            'node_id': node_id
-        }
+        node_id = user_approval_state.get("node_id", node._id)
+        return {"node_id": node_id}
 
     def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        approval_token = user_approval_state.get('approval_token')
+        approval_token = user_approval_state.get("approval_token")
         if approval_token:
             registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', registration._id)
+            node_id = user_approval_state.get("node_id", registration._id)
             return {
-                'node_id': node_id,
-                'token': approval_token,
+                "node_id": node_id,
+                "token": approval_token,
             }
 
     def _rejection_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        rejection_token = self.approval_state.get(user_id, {}).get(
+            "rejection_token"
+        )
         if rejection_token:
-            Registration = apps.get_model('osf.Registration')
+            Registration = apps.get_model("osf.Registration")
             root_registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', root_registration._id)
+            node_id = user_approval_state.get("node_id", root_registration._id)
             registration = Registration.load(node_id)
             return {
-                'node_id': registration.registered_from._id,
-                'token': rejection_token,
+                "node_id": registration.registered_from._id,
+                "token": rejection_token,
             }
 
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
-        context = super()._email_template_context(user, node, is_authorizer, urls)
+    def _email_template_context(
+        self, user, node, is_authorizer=False, urls=None
+    ):
+        context = super()._email_template_context(
+            user, node, is_authorizer, urls
+        )
         urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id, node))
+        registration_link = urls.get("view", self._view_url(user._id, node))
         approval_time_span = osf_settings.REGISTRATION_APPROVAL_TIME.days * 24
         if is_authorizer:
-            approval_link = urls.get('approve', '')
-            disapproval_link = urls.get('reject', '')
+            approval_link = urls.get("approve", "")
+            disapproval_link = urls.get("reject", "")
             registration = self._get_registration()
-            context.update({
-                'is_initiator': self.initiated_by == user,
-                'initiated_by': self.initiated_by.fullname,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-                'registration_link': registration_link,
-                'approval_link': approval_link,
-                'disapproval_link': disapproval_link,
-                'approval_time_span': approval_time_span,
-                'project_name': registration.title,
-            })
+            context.update(
+                {
+                    "is_initiator": self.initiated_by == user,
+                    "initiated_by": self.initiated_by.fullname,
+                    "is_moderated": self.is_moderated,
+                    "reviewable": self._get_registration(),
+                    "registration_link": registration_link,
+                    "approval_link": approval_link,
+                    "disapproval_link": disapproval_link,
+                    "approval_time_span": approval_time_span,
+                    "project_name": registration.title,
+                }
+            )
         else:
-            context.update({
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-                'approval_time_span': approval_time_span,
-            })
+            context.update(
+                {
+                    "initiated_by": self.initiated_by.fullname,
+                    "registration_link": registration_link,
+                    "is_moderated": self.is_moderated,
+                    "reviewable": self._get_registration(),
+                    "approval_time_span": approval_time_span,
+                }
+            )
         return context
 
     def _add_success_logs(self, node, user):
-        NodeLog = apps.get_model('osf.NodeLog')
+        NodeLog = apps.get_model("osf.NodeLog")
 
         src = node.registered_from
         src.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'parent_node': src.parent_node._id if src.parent_node else None,
-                'node': src._primary_key,
-                'registration': node._primary_key,
+                "parent_node": src.parent_node._id
+                if src.parent_node
+                else None,
+                "node": src._primary_key,
+                "registration": node._primary_key,
             },
             auth=Auth(user),
-            save=False
+            save=False,
         )
         src.save()
 
     def _on_complete(self, event_data):
-        user = event_data.kwargs.get('user')
+        user = event_data.kwargs.get("user")
         if user is None and event_data.args:
             user = event_data.args[0]
-        NodeLog = apps.get_model('osf.NodeLog')
+        NodeLog = apps.get_model("osf.NodeLog")
 
         registration = self._get_registration()
         if registration.is_spammy:
-            raise NodeStateError('Cannot approve a spammy registration')
+            raise NodeStateError("Cannot approve a spammy registration")
 
         super()._on_complete(event_data)
         self.save()
@@ -865,17 +977,17 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity
         # to disapprove the registration by this point)
-        registration.set_privacy('public', auth=None, log=False)
+        registration.set_privacy("public", auth=None, log=False)
         for child in registration.get_descendants_recursive(primary_only=True):
-            child.set_privacy('public', auth=None, log=False)
+            child.set_privacy("public", auth=None, log=False)
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
             params={
-                'node': registered_from._id,
-                'registration': registration._id,
-                'registration_approval_id': self._id,
+                "node": registered_from._id,
+                "registration": registration._id,
+                "registration_approval_id": self._id,
             },
             auth=auth,
         )
@@ -886,19 +998,19 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, event_data):
-        user = event_data.kwargs.get('user')
+        user = event_data.kwargs.get("user")
         if user is None and event_data.args:
             user = event_data.args[0]
-        NodeLog = apps.get_model('osf.NodeLog')
+        NodeLog = apps.get_model("osf.NodeLog")
 
         registered_from = self.target_registration.registered_from
         self.target_registration.delete_registration_tree(save=True)
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                'node': registered_from._id,
-                'registration': self.target_registration._id,
-                'registration_approval_id': self._id,
+                "node": registered_from._id,
+                "registration": self.target_registration._id,
+                "registration_approval_id": self._id,
             },
             auth=Auth(user),
         )
@@ -906,18 +1018,31 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
 class EmbargoTerminationApproval(EmailApprovableSanction):
     SANCTION_TYPE = SanctionTypes.EMBARGO_TERMINATION_APPROVAL
-    DISPLAY_NAME = 'Embargo Termination Request'
-    SHORT_NAME = 'embargo_termination_approval'
+    DISPLAY_NAME = "Embargo Termination Request"
+    SHORT_NAME = "embargo_termination_approval"
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = (
+        mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
+    )
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
+    REJECT_URL_TEMPLATE = (
+        osf_settings.DOMAIN + "token_action/{node_id}/?token={token}"
+    )
 
-    embargoed_registration = models.ForeignKey('Registration', null=True, blank=True, on_delete=models.CASCADE)
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
+    embargoed_registration = models.ForeignKey(
+        "Registration", null=True, blank=True, on_delete=models.CASCADE
+    )
+    initiated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
 
     @property
     def is_moderated(self):
@@ -928,74 +1053,80 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
     def _view_url_context(self, user_id, node):
         registration = node or self._get_registration()
-        return {
-            'node_id': registration._id
-        }
+        return {"node_id": registration._id}
 
     def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        approval_token = user_approval_state.get('approval_token')
+        approval_token = user_approval_state.get("approval_token")
         if approval_token:
             registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', registration._id)
+            node_id = user_approval_state.get("node_id", registration._id)
             return {
-                'node_id': node_id,
-                'token': approval_token,
+                "node_id": node_id,
+                "token": approval_token,
             }
 
     def _rejection_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
-        rejection_token = user_approval_state.get('rejection_token')
+        rejection_token = user_approval_state.get("rejection_token")
         if rejection_token:
             root_registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', root_registration._id)
+            node_id = user_approval_state.get("node_id", root_registration._id)
             return {
-                'node_id': node_id,
-                'token': rejection_token,
+                "node_id": node_id,
+                "token": rejection_token,
             }
 
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+    def _email_template_context(
+        self, user, node, is_authorizer=False, urls=None
+    ):
         context = super()._email_template_context(
-            user,
-            node,
-            is_authorizer=is_authorizer
+            user, node, is_authorizer=is_authorizer
         )
         urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id, node))
-        approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
+        registration_link = urls.get("view", self._view_url(user._id, node))
+        approval_time_span = (
+            osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
+        )
         if is_authorizer:
-            approval_link = urls.get('approve', '')
-            disapproval_link = urls.get('reject', '')
+            approval_link = urls.get("approve", "")
+            disapproval_link = urls.get("reject", "")
 
             registration = self._get_registration()
 
-            context.update({
-                'is_initiator': self.initiated_by == user,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-                'initiated_by': self.initiated_by.fullname,
-                'approval_link': approval_link,
-                'project_name': registration.title,
-                'disapproval_link': disapproval_link,
-                'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
-                'approval_time_span': approval_time_span,
-            })
+            context.update(
+                {
+                    "is_initiator": self.initiated_by == user,
+                    "is_moderated": self.is_moderated,
+                    "reviewable": self._get_registration(),
+                    "initiated_by": self.initiated_by.fullname,
+                    "approval_link": approval_link,
+                    "project_name": registration.title,
+                    "disapproval_link": disapproval_link,
+                    "registration_link": registration_link,
+                    "embargo_end_date": self.end_date,
+                    "approval_time_span": approval_time_span,
+                }
+            )
         else:
-            context.update({
-                'initiated_by': self.initiated_by.fullname,
-                'project_name': self.target_registration.title,
-                'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
-                'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
-                'approval_time_span': approval_time_span,
-            })
+            context.update(
+                {
+                    "initiated_by": self.initiated_by.fullname,
+                    "project_name": self.target_registration.title,
+                    "registration_link": registration_link,
+                    "embargo_end_date": self.end_date,
+                    "is_moderated": self.is_moderated,
+                    "reviewable": self._get_registration(),
+                    "approval_time_span": approval_time_span,
+                }
+            )
         return context
 
     def _on_complete(self, event_data):
         super()._on_complete(event_data)
-        if self.target_registration.is_embargoed:  # if the embargo expires normally, this is noop.
+        if (
+            self.target_registration.is_embargoed
+        ):  # if the embargo expires normally, this is noop.
             self.target_registration.terminate_embargo(forced=True)
 
     def _on_reject(self, event_data):

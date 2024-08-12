@@ -1,1 +1,1 @@
-from .mails import *   # noqa
+from .mails import *  # noqa

@@ -14,11 +14,10 @@ class NewUserDomainReporter(DailyReporter):
         new_user_emails = OSFUser.objects.filter(
             date_confirmed__date=date,
             username__isnull=False,
-        ).values_list('username', flat=True)
+        ).values_list("username", flat=True)
 
         domain_names = Counter(
-            email.split('@')[-1]
-            for email in new_user_emails
+            email.split("@")[-1] for email in new_user_emails
         )
         return [
             NewUserDomainReport(
@@ -31,9 +30,9 @@ class NewUserDomainReporter(DailyReporter):
 
     def keen_events_from_report(self, report):
         events = [
-            {'domain': report.domain_name, 'date': str(report.report_date)}
+            {"domain": report.domain_name, "date": str(report.report_date)}
             for _ in range(report.new_user_count)
         ]
         return {
-            'user_domain_events': events,
+            "user_domain_events": events,
         }

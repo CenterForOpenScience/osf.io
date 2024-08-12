@@ -7,10 +7,15 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import WRITE, READ
 
+
 class TestRegistrationSubjectsList(SubjectsListMixin):
     @pytest.fixture()
-    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
-        registration = RegistrationFactory(is_public=False, creator=user_admin_contrib)
+    def resource(
+        self, user_admin_contrib, user_write_contrib, user_read_contrib
+    ):
+        registration = RegistrationFactory(
+            is_public=False, creator=user_admin_contrib
+        )
         registration.add_contributor(user_write_contrib, permissions=WRITE)
         registration.add_contributor(user_read_contrib, permissions=READ)
         registration.save()
@@ -18,4 +23,4 @@ class TestRegistrationSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def url(self, resource):
-        return f'/{API_BASE}registrations/{resource._id}/subjects/'
+        return f"/{API_BASE}registrations/{resource._id}/subjects/"

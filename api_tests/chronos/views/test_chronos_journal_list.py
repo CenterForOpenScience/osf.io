@@ -5,10 +5,13 @@ from osf_tests.factories import ChronosJournalFactory
 
 @pytest.mark.django_db
 class TestChronosJournalList:
-
     @pytest.fixture()
     def journals(self):
-        return [ChronosJournalFactory(), ChronosJournalFactory(), ChronosJournalFactory()]
+        return [
+            ChronosJournalFactory(),
+            ChronosJournalFactory(),
+            ChronosJournalFactory(),
+        ]
 
     @pytest.fixture()
     def journal_ids(self, journals):
@@ -16,7 +19,7 @@ class TestChronosJournalList:
 
     @pytest.fixture()
     def url(self):
-        return '/_/chronos/journals/'
+        return "/_/chronos/journals/"
 
     @pytest.fixture()
     def res(self, app, journals, url):
@@ -24,16 +27,15 @@ class TestChronosJournalList:
 
     @pytest.fixture()
     def data(self, res):
-        return res.json['data']
+        return res.json["data"]
 
     def test_journal_list(self, res, data, journal_ids):
         assert res.status_code == 200
-        assert set(journal_ids) == {datum['id'] for datum in data}
+        assert set(journal_ids) == {datum["id"] for datum in data}
 
 
 @pytest.mark.django_db
 class TestChronosJournalListFilter:
-
     @pytest.fixture()
     def journal_one(self):
         return ChronosJournalFactory()
@@ -44,17 +46,24 @@ class TestChronosJournalListFilter:
 
     @pytest.fixture()
     def journal_one_filter_name_url(self, journal_one):
-        return f'/_/chronos/journals/?filter[name]={journal_one.name}'
+        return f"/_/chronos/journals/?filter[name]={journal_one.name}"
 
     @pytest.fixture()
     def journal_one_filter_title_url(self, journal_one):
-        return f'/_/chronos/journals/?filter[title]={journal_one.title}'
+        return f"/_/chronos/journals/?filter[title]={journal_one.title}"
 
-    def test_journal_list_filter(self, app, journal_one, journal_two, journal_one_filter_name_url, journal_one_filter_title_url):
+    def test_journal_list_filter(
+        self,
+        app,
+        journal_one,
+        journal_two,
+        journal_one_filter_name_url,
+        journal_one_filter_title_url,
+    ):
         res = app.get(journal_one_filter_name_url)
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['name'] == journal_one.name
+        assert len(res.json["data"]) == 1
+        assert res.json["data"][0]["attributes"]["name"] == journal_one.name
 
         res = app.get(journal_one_filter_title_url)
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['title'] == journal_one.title
+        assert len(res.json["data"]) == 1
+        assert res.json["data"][0]["attributes"]["title"] == journal_one.title

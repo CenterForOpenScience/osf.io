@@ -8,7 +8,6 @@ from scripts import populate_new_and_noteworthy_projects as script
 
 
 class TestPopulateNewAndNoteworthy(OsfTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -22,14 +21,22 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.nn4 = ProjectFactory(is_public=True)
         self.nn5 = ProjectFactory(is_public=True)
 
-        self.all_ids = {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id}
+        self.all_ids = {
+            self.nn1._id,
+            self.nn2._id,
+            self.nn3._id,
+            self.nn4._id,
+            self.nn5._id,
+        }
 
     def tearDown(self):
         super().tearDown()
         Node.objects.all().delete()
 
     def test_get_new_and_noteworthy_nodes(self):
-        new_noteworthy = script.get_new_and_noteworthy_nodes(self.new_and_noteworthy_links_node)
+        new_noteworthy = script.get_new_and_noteworthy_nodes(
+            self.new_and_noteworthy_links_node
+        )
         assert set(new_noteworthy) == self.all_ids
 
     def test_populate_new_and_noteworthy(self):
@@ -45,6 +52,10 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.new_and_noteworthy_links_node.reload()
 
         # new_and_noteworthy_node_links = {pointer.node._id for pointer in self.new_and_noteworthy_links_node.nodes}
-        new_and_noteworthy_node_links = self.new_and_noteworthy_links_node._nodes.all().values_list('guids___id', flat=True)
+        new_and_noteworthy_node_links = (
+            self.new_and_noteworthy_links_node._nodes.all().values_list(
+                "guids___id", flat=True
+            )
+        )
 
         assert set(new_and_noteworthy_node_links) == self.all_ids

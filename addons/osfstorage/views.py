@@ -17,7 +17,8 @@ from osf.models import FileVersion, Node, OSFUser
 from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
-    must_not_be_registration, must_have_permission
+    must_not_be_registration,
+    must_have_permission,
 )
 from website.project.model import has_anonymous_link
 
@@ -35,9 +36,9 @@ logger = logging.getLogger(__name__)
 def make_error(code, message_short=None, message_long=None):
     data = {}
     if message_short:
-        data['message_short'] = message_short
+        data["message_short"] = message_short
     if message_long:
-        data['message_long'] = message_long
+        data["message_long"] = message_long
     return HTTPError(code, data=data)
 
 
@@ -77,13 +78,17 @@ def osfstorage_update_metadata(payload, **kwargs):
         }
     """
     try:
-        version_id = payload['version']
-        metadata = payload['metadata']
+        version_id = payload["version"]
+        metadata = payload["metadata"]
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if check_select_for_update():
-        version = FileVersion.objects.filter(_id=version_id).select_for_update().first()
+        version = (
+            FileVersion.objects.filter(_id=version_id)
+            .select_for_update()
+            .first()
+        )
     else:
         version = FileVersion.objects.filter(_id=version_id).first()
 
@@ -92,16 +97,15 @@ def osfstorage_update_metadata(payload, **kwargs):
 
     version.update_metadata(metadata)
 
-    return {'status': 'success'}
+    return {"status": "success"}
+
 
 @must_be_signed
 @decorators.load_guid_as_target
 def osfstorage_get_storage_quota_status(target, **kwargs):
     # Storage caps only restrict Nodes
     if not isinstance(target, Node):
-        return {
-            'over_quota': False
-        }
+        return {"over_quota": False}
     # Storage calculation for the target has been accepted and will run asynchronously
     if target.storage_limit_status is StorageLimits.NOT_CALCULATED:
         raise HTTPError(http_status.HTTP_202_ACCEPTED)
@@ -111,29 +115,52 @@ def osfstorage_get_storage_quota_status(target, **kwargs):
         over_quota = target.storage_limit_status >= StorageLimits.OVER_PUBLIC
     else:
         over_quota = target.storage_limit_status >= StorageLimits.OVER_PRIVATE
-    return {
-        'over_quota': over_quota
-    }
+    return {"over_quota": over_quota}
+
 
 @must_be_signed
-@decorators.autoload_filenode(must_be='file')
+@decorators.autoload_filenode(must_be="file")
 def osfstorage_get_revisions(file_node, payload, target, **kwargs):
-    from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
-    is_anon = has_anonymous_link(target, Auth(private_key=request.args.get('view_only')))
+    from osf.models import (
+        PageCounter,
+        FileVersion,
+    )  # TODO Fix me onces django works
 
-    counter_prefix = f'download:{file_node.target._id}:{file_node._id}:'
+    is_anon = has_anonymous_link(
+        target, Auth(private_key=request.args.get("view_only"))
+    )
+
+    counter_prefix = f"download:{file_node.target._id}:{file_node._id}:"
 
     version_count = file_node.versions.count()
-    counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
-    qs = FileVersion.objects.filter(basefilenode__id=file_node.id).prefetch_related('creator__guids').order_by('-created')
+    counts = dict(
+        PageCounter.objects.filter(
+            resource=file_node.target.guids.first().id,
+            file=file_node,
+            action="download",
+        ).values_list("_id", "total")
+    )
+    qs = (
+        FileVersion.objects.filter(basefilenode__id=file_node.id)
+        .prefetch_related("creator__guids")
+        .order_by("-created")
+    )
 
     for i, version in enumerate(qs):
-        version._download_count = counts.get(f'{counter_prefix}{version_count - i - 1}', 0)
+        version._download_count = counts.get(
+            f"{counter_prefix}{version_count - i - 1}", 0
+        )
 
     # Return revisions in descending order
     return {
-        'revisions': [
-            utils.serialize_revision(target, file_node, version, index=version_count - idx - 1, anon=is_anon)
+        "revisions": [
+            utils.serialize_revision(
+                target,
+                file_node,
+                version,
+                index=version_count - idx - 1,
+                anon=is_anon,
+            )
             for idx, version in enumerate(qs)
         ]
     }
@@ -141,24 +168,35 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    ret = source.copy_under(destination, name=name).serialize(), http_status.HTTP_201_CREATED
+    ret = (
+        source.copy_under(destination, name=name).serialize(),
+        http_status.HTTP_201_CREATED,
+    )
     return ret
+
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-
     try:
-        ret = source.move_under(destination, name=name).serialize(), http_status.HTTP_200_OK
+        ret = (
+            source.move_under(destination, name=name).serialize(),
+            http_status.HTTP_200_OK,
+        )
     except exceptions.FileNodeCheckedOutError:
-        raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
-            'message_long': 'Cannot move file as it is checked out.'
-        })
+        raise HTTPError(
+            http_status.HTTP_405_METHOD_NOT_ALLOWED,
+            data={"message_long": "Cannot move file as it is checked out."},
+        )
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_long': 'Cannot move file as it is the primary file of preprint.'
-        })
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data={
+                "message_long": "Cannot move file as it is the primary file of preprint."
+            },
+        )
 
     return ret
+
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
@@ -169,7 +207,7 @@ def osfstorage_get_lineage(file_node, **kwargs):
         lineage.append(file_node.serialize())
         file_node = file_node.parent
 
-    return {'data': lineage}
+    return {"data": lineage}
 
 
 @must_be_signed
@@ -177,22 +215,28 @@ def osfstorage_get_lineage(file_node, **kwargs):
 def osfstorage_get_metadata(file_node, **kwargs):
     try:
         # TODO This should change to version as its internal it can be changed anytime
-        version = int(request.args.get('revision'))
+        version = int(request.args.get("revision"))
     except (ValueError, TypeError):  # If its not a number
         version = None
     return file_node.serialize(version=version, include_full=True)
 
 
 @must_be_signed
-@decorators.autoload_filenode(must_be='folder')
+@decorators.autoload_filenode(must_be="folder")
 def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
-    user_id = request.args.get('user_id')
+
+    user_id = request.args.get("user_id")
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
-    user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
+    user_pk = (
+        OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False)
+        .values_list("pk", flat=True)
+        .first()
+    )
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT json_agg(CASE
                 WHEN F.type = 'osf.osfstoragefile' THEN
                     json_build_object(
@@ -279,40 +323,49 @@ def osfstorage_get_children(file_node, **kwargs):
             ) SEEN_LATEST_VERSION ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        """, [
-            user_content_type_id,
-            file_node.target.guids.first().id,
-            user_pk,
-            user_pk,
-            user_id,
-            user_id,
-            file_node.id
-        ])
+        """,
+            [
+                user_content_type_id,
+                file_node.target.guids.first().id,
+                user_pk,
+                user_pk,
+                user_id,
+                user_id,
+                file_node.id,
+            ],
+        )
         return cursor.fetchone()[0] or []
 
 
 @must_be_signed
-@decorators.autoload_filenode(must_be='folder')
+@decorators.autoload_filenode(must_be="folder")
 def osfstorage_create_child(file_node, payload, **kwargs):
     parent = file_node  # Just for clarity
-    name = payload.get('name')
-    user = OSFUser.load(payload.get('user'))
-    is_folder = payload.get('kind') == 'folder'
+    name = payload.get("name")
+    user = OSFUser.load(payload.get("user"))
+    is_folder = payload.get("kind") == "folder"
 
-    if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
+    if getattr(file_node.target, "is_registration", False) and not getattr(
+        file_node.target, "archiving", False
+    ):
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
             data={
-                'message_short': 'Registered Nodes are immutable',
-                'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
-            }
+                "message_short": "Registered Nodes are immutable",
+                "message_long": "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+            },
         )
 
-    if not (name or user) or '/' in name:
+    if not (name or user) or "/" in name:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    if getattr(file_node.target, 'is_quickfiles', False) and is_folder:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
+    if getattr(file_node.target, "is_quickfiles", False) and is_folder:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={
+                "message_long": "You may not create a folder for QuickFiles"
+            },
+        )
 
     try:
         # Create a save point so that we can rollback and unlock
@@ -323,30 +376,43 @@ def osfstorage_create_child(file_node, payload, **kwargs):
             else:
                 created, file_node = True, parent.append_file(name)
     except (ValidationError, IntegrityError):
-        created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
+        created, file_node = (
+            False,
+            parent.find_child_by_name(name, kind=int(not is_folder)),
+        )
 
     if not created and is_folder:
-        raise HTTPError(http_status.HTTP_409_CONFLICT, data={
-            'message_long': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
-                name=file_node.name,
-                path=file_node.materialized_path,
-            )
-        })
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data={
+                "message_long": 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+                    name=file_node.name,
+                    path=file_node.materialized_path,
+                )
+            },
+        )
 
     if file_node.checkout and file_node.checkout._id != user._id:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_long': 'File cannot be updated due to checkout status.'
-        })
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data={
+                "message_long": "File cannot be updated due to checkout status."
+            },
+        )
 
     if not is_folder:
         try:
-            metadata = dict(payload['metadata'], **payload['hashes'])
-            location = dict(payload['settings'], **dict(
-                payload['worker'], **{
-                    'object': payload['metadata']['name'],
-                    'service': payload['metadata']['provider'],
-                }
-            ))
+            metadata = dict(payload["metadata"], **payload["hashes"])
+            location = dict(
+                payload["settings"],
+                **dict(
+                    payload["worker"],
+                    **{
+                        "object": payload["metadata"]["name"],
+                        "service": payload["metadata"]["provider"],
+                    },
+                ),
+            )
         except KeyError:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -358,22 +424,25 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         version_id = None
         archive_exists = False
 
-    return {
-        'status': 'success',
-        'archive': not archive_exists,  # Should waterbutler also archive this file
-        'data': file_node.serialize(),
-        'version': version_id,
-    }, http_status.HTTP_201_CREATED if created else http_status.HTTP_200_OK
+    return (
+        {
+            "status": "success",
+            "archive": not archive_exists,  # Should waterbutler also archive this file
+            "data": file_node.serialize(),
+            "version": version_id,
+        },
+        http_status.HTTP_201_CREATED if created else http_status.HTTP_200_OK,
+    )
 
 
 @must_be_signed
 @must_not_be_registration
 @decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, target, **kwargs):
-    user = OSFUser.load(payload['user'])
+    user = OSFUser.load(payload["user"])
     auth = Auth(user)
 
-    #TODO Auth check?
+    # TODO Auth check?
     if not auth:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     if file_node == OsfStorageFolder.objects.get_root(target=target):
@@ -385,75 +454,91 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_long': 'Cannot delete file as it is the primary file of preprint.'
-        })
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data={
+                "message_long": "Cannot delete file as it is the primary file of preprint."
+            },
+        )
 
-    return {'status': 'success'}
+    return {"status": "success"}
 
 
 @must_be_signed
-@decorators.autoload_filenode(must_be='file')
+@decorators.autoload_filenode(must_be="file")
 def osfstorage_download(file_node, payload, **kwargs):
-    if not request.args.get('version'):
+    if not request.args.get("version"):
         version_id = None
     else:
         try:
-            version_id = int(request.args['version'])
+            version_id = int(request.args["version"])
         except ValueError:
-            raise make_error(http_status.HTTP_400_BAD_REQUEST, message_short='Version must be an integer if not specified')
+            raise make_error(
+                http_status.HTTP_400_BAD_REQUEST,
+                message_short="Version must be an integer if not specified",
+            )
 
     version = file_node.get_version(version_id, required=True)
     file_version_thru = version.get_basefilenode_version(file_node)
-    name = file_version_thru.version_name if file_version_thru else file_node.name
+    name = (
+        file_version_thru.version_name if file_version_thru else file_node.name
+    )
 
     return {
-        'data': {
-            'name': name,
-            'path': version.location_hash,
+        "data": {
+            "name": name,
+            "path": version.location_hash,
         },
-        'settings': {
-            osf_storage_settings.WATERBUTLER_RESOURCE: version.location[osf_storage_settings.WATERBUTLER_RESOURCE],
+        "settings": {
+            osf_storage_settings.WATERBUTLER_RESOURCE: version.location[
+                osf_storage_settings.WATERBUTLER_RESOURCE
+            ],
         },
     }
 
 
 @must_have_permission(WRITE)
-@decorators.autoload_filenode(must_be='file')
+@decorators.autoload_filenode(must_be="file")
 def osfstorage_add_tag(file_node, **kwargs):
     data = request.get_json()
-    if file_node.add_tag(data['tag'], kwargs['auth']):
-        return {'status': 'success'}, http_status.HTTP_200_OK
-    return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
+    if file_node.add_tag(data["tag"], kwargs["auth"]):
+        return {"status": "success"}, http_status.HTTP_200_OK
+    return {"status": "failure"}, http_status.HTTP_400_BAD_REQUEST
+
 
 @must_have_permission(WRITE)
-@decorators.autoload_filenode(must_be='file')
+@decorators.autoload_filenode(must_be="file")
 def osfstorage_remove_tag(file_node, **kwargs):
     data = request.get_json()
     try:
-        file_node.remove_tag(data['tag'], kwargs['auth'])
+        file_node.remove_tag(data["tag"], kwargs["auth"])
     except TagNotFoundError:
-        return {'status': 'failure'}, http_status.HTTP_409_CONFLICT
+        return {"status": "failure"}, http_status.HTTP_409_CONFLICT
     except InvalidTagError:
-        return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
+        return {"status": "failure"}, http_status.HTTP_400_BAD_REQUEST
     else:
-        return {'status': 'success'}, http_status.HTTP_200_OK
+        return {"status": "success"}, http_status.HTTP_200_OK
 
 
 @must_be_logged_in
 def update_region(auth, **kwargs):
     user = auth.user
-    user_settings = user.get_addon('osfstorage')
+    user_settings = user.get_addon("osfstorage")
 
     data = request.get_json()
     try:
-        region_id = data['region_id']
+        region_id = data["region_id"]
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         user_settings.set_region(region_id)
     except ValueError:
-        raise HTTPError(404, data=dict(message_short='Region not found',
-                                    message_long='A storage region with this id does not exist'))
-    return {'message': 'User region updated.'}
+        raise HTTPError(
+            404,
+            data=dict(
+                message_short="Region not found",
+                message_long="A storage region with this id does not exist",
+            ),
+        )
+    return {"message": "User region updated."}

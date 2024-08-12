@@ -4,10 +4,12 @@ from osf.metadata.serializers import _base
 from .datacite_tree_walker import DataciteTreeWalker
 
 
-def _visit_tree_branch_json(parent, child_name: str, *, is_list=False, text=None, attrib=None):
-    assert isinstance(parent, (dict, list)), (
-        f'expected parent to be list or dict, got type {type(parent)} (parent={parent})'
-    )
+def _visit_tree_branch_json(
+    parent, child_name: str, *, is_list=False, text=None, attrib=None
+):
+    assert isinstance(
+        parent, (dict, list)
+    ), f"expected parent to be list or dict, got type {type(parent)} (parent={parent})"
     parent_is_list = isinstance(parent, list)
     if is_list:
         assert not parent_is_list
@@ -34,12 +36,14 @@ def _child_json_object(child_name, text, attrib) -> dict:
     json_obj = {}
     if text is not None:
         try:
-            json_obj[child_name] = text.toPython()  # quacks like rdflib.Literal
+            json_obj[child_name] = (
+                text.toPython()
+            )  # quacks like rdflib.Literal
         except AttributeError:
             json_obj[child_name] = str(text)
-        language = getattr(text, 'language', None)
+        language = getattr(text, "language", None)
         if language:
-            json_obj['lang'] = language
+            json_obj["lang"] = language
     if attrib is not None:
         assert child_name not in attrib
         json_obj.update(attrib)
@@ -47,10 +51,10 @@ def _child_json_object(child_name, text, attrib) -> dict:
 
 
 class DataciteJsonMetadataSerializer(_base.MetadataSerializer):
-    mediatype = 'application/json'
+    mediatype = "application/json"
 
     def filename_for_itemid(self, itemid: str):
-        return f'{itemid}-datacite.json'
+        return f"{itemid}-datacite.json"
 
     def serialize(self) -> str:
         return json.dumps(
@@ -61,6 +65,8 @@ class DataciteJsonMetadataSerializer(_base.MetadataSerializer):
 
     def metadata_as_dict(self) -> dict:
         root_dict = {}
-        walker = DataciteTreeWalker(self.basket, root_dict, _visit_tree_branch_json)
-        walker.walk(doi_override=self.serializer_config.get('doi_value'))
+        walker = DataciteTreeWalker(
+            self.basket, root_dict, _visit_tree_branch_json
+        )
+        walker.walk(doi_override=self.serializer_config.get("doi_value"))
         return root_dict

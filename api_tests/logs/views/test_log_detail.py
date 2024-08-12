@@ -13,7 +13,6 @@ from osf.utils import permissions as osf_permissions
 
 @pytest.mark.django_db
 class LogsTestCase:
-
     @pytest.fixture()
     def user_one(self):
         return AuthUserFactory()
@@ -29,7 +28,8 @@ class LogsTestCase:
             user_one,
             permissions=osf_permissions.READ,
             auth=Auth(node_private.creator),
-            log=True, save=True
+            log=True,
+            save=True,
         )
         return node_private
 
@@ -40,13 +40,14 @@ class LogsTestCase:
             user_one,
             permissions=osf_permissions.READ,
             auth=Auth(node_public.creator),
-            log=True, save=True
+            log=True,
+            save=True,
         )
         return node_public
 
     @pytest.fixture()
     def logs_public(self, node_public):
-        return list(node_public.logs.order_by('date'))
+        return list(node_public.logs.order_by("date"))
 
     @pytest.fixture()
     def log_public(self, logs_public):
@@ -58,7 +59,7 @@ class LogsTestCase:
 
     @pytest.fixture()
     def logs_private(self, node_private):
-        return list(node_private.logs.order_by('date'))
+        return list(node_private.logs.order_by("date"))
 
     @pytest.fixture()
     def log_private(self, logs_private):
@@ -70,40 +71,39 @@ class LogsTestCase:
 
     @pytest.fixture()
     def url_node_private_log(self, node_private):
-        return f'/{API_BASE}nodes/{node_private._id}/logs/'
+        return f"/{API_BASE}nodes/{node_private._id}/logs/"
 
     @pytest.fixture()
     def url_logs(self):
-        return f'/{API_BASE}logs/'
+        return f"/{API_BASE}logs/"
 
     @pytest.fixture()
     def url_log_private_nodes(self, log_private, url_logs):
-        return f'{url_logs}{log_private._id}/nodes/'
+        return f"{url_logs}{log_private._id}/nodes/"
 
     @pytest.fixture()
     def url_log_public_nodes(self, log_public, url_logs):
-        return f'{url_logs}{log_public._id}/nodes/'
+        return f"{url_logs}{log_public._id}/nodes/"
 
     @pytest.fixture()
     def url_log_detail_private(self, log_private, url_logs):
-        return f'{url_logs}{log_private._id}/'
+        return f"{url_logs}{log_private._id}/"
 
     @pytest.fixture()
     def url_log_detail_public(self, log_public, url_logs):
-        return f'{url_logs}{log_public._id}/'
+        return f"{url_logs}{log_public._id}/"
 
 
 @pytest.mark.django_db
 class TestLogDetail(LogsTestCase):
-
     def test_log_detail_private(
-            self, app, url_log_detail_private,
-            user_one, user_two, log_private):
+        self, app, url_log_detail_private, user_one, user_two, log_private
+    ):
         # test_log_detail_returns_data
         res = app.get(url_log_detail_private, auth=user_one.auth)
         assert res.status_code == 200
-        json_data = res.json['data']
-        assert json_data['id'] == log_private._id
+        json_data = res.json["data"]
+        assert json_data["id"] == log_private._id
 
         # test_log_detail_private_not_logged_in_cannot_access_logs
         res = app.get(url_log_detail_private, expect_errors=True)
@@ -111,39 +111,37 @@ class TestLogDetail(LogsTestCase):
 
         # test_log_detail_private_non_contributor_cannot_access_logs
         res = app.get(
-            url_log_detail_private,
-            auth=user_two.auth, expect_errors=True
+            url_log_detail_private, auth=user_two.auth, expect_errors=True
         )
         assert res.status_code == 403
 
     def test_log_detail_public(
-            self, app, url_log_detail_public,
-            log_public, user_two, user_one):
+        self, app, url_log_detail_public, log_public, user_two, user_one
+    ):
         # test_log_detail_public_not_logged_in_can_access_logs
         res = app.get(url_log_detail_public, expect_errors=True)
         assert res.status_code == 200
-        data = res.json['data']
-        assert data['id'] == log_public._id
+        data = res.json["data"]
+        assert data["id"] == log_public._id
 
         # test_log_detail_public_non_contributor_can_access_logs
         res = app.get(
-            url_log_detail_public,
-            auth=user_two.auth, expect_errors=True)
+            url_log_detail_public, auth=user_two.auth, expect_errors=True
+        )
         assert res.status_code == 200
-        data = res.json['data']
-        assert data['id'] == log_public._id
+        data = res.json["data"]
+        assert data["id"] == log_public._id
 
         # test_log_detail_data_format_api
         res = app.get(
-            f'{url_log_detail_public}?format=api',
-            auth=user_one.auth)
+            f"{url_log_detail_public}?format=api", auth=user_one.auth
+        )
         assert res.status_code == 200
         assert log_public._id in res.body.decode()
 
 
 @pytest.mark.django_db
 class TestNodeFileLogDetail:
-
     @pytest.fixture()
     def user_one(self):
         return AuthUserFactory()
@@ -168,40 +166,40 @@ class TestNodeFileLogDetail:
 
     @pytest.fixture()
     def url_node_logs(self, node):
-        return f'/{API_BASE}nodes/{node._id}/logs/'
+        return f"/{API_BASE}nodes/{node._id}/logs/"
 
     @pytest.fixture()
     def url_component_logs(self, component):
-        return f'/{API_BASE}nodes/{component._id}/logs/'
+        return f"/{API_BASE}nodes/{component._id}/logs/"
 
     @pytest.fixture()
     def node_with_log(self, node, user_one, file_component, component):
         node.add_log(
-            'osf_storage_file_moved',
+            "osf_storage_file_moved",
             auth=Auth(user_one),
             params={
-                'node': node._id,
-                'project': node.parent_id,
-                'path': file_component.materialized_path,
-                'urls': {'url1': 'www.fake.org', 'url2': 'www.fake.com'},
-                'source': {
-                    'materialized': file_component.materialized_path,
-                    'addon': 'osfstorage',
-                    'node': {
-                        '_id': component._id,
-                        'url': component.url,
-                        'title': component.title,
-                    }
+                "node": node._id,
+                "project": node.parent_id,
+                "path": file_component.materialized_path,
+                "urls": {"url1": "www.fake.org", "url2": "www.fake.com"},
+                "source": {
+                    "materialized": file_component.materialized_path,
+                    "addon": "osfstorage",
+                    "node": {
+                        "_id": component._id,
+                        "url": component.url,
+                        "title": component.title,
+                    },
                 },
-                'destination': {
-                    'materialized': file_component.materialized_path,
-                    'addon': 'osfstorage',
-                    'node': {
-                        '_id': node._id,
-                        'url': node.url,
-                        'title': node.title,
-                    }
-                }
+                "destination": {
+                    "materialized": file_component.materialized_path,
+                    "addon": "osfstorage",
+                    "node": {
+                        "_id": node._id,
+                        "url": node.url,
+                        "title": node.title,
+                    },
+                },
             },
         )
         node.save()
@@ -212,51 +210,57 @@ class TestNodeFileLogDetail:
         # Node log is added directly to prove that URLs are removed in
         # serialization
         node.add_log(
-            'osf_storage_folder_created',
+            "osf_storage_folder_created",
             auth=Auth(user_one),
             params={
-                'node': node._id,
-                'project': node.parent_id,
-                'path': file_component.materialized_path,
-                'urls': {'url1': 'www.fake.org', 'url2': 'www.fake.com'},
-                'source': {
-                    'materialized': file_component.materialized_path,
-                    'addon': 'osfstorage',
-                    'node': {
-                        '_id': component._id,
-                        'url': component.url,
-                        'title': component.title,
-                    }
-                }
+                "node": node._id,
+                "project": node.parent_id,
+                "path": file_component.materialized_path,
+                "urls": {"url1": "www.fake.org", "url2": "www.fake.com"},
+                "source": {
+                    "materialized": file_component.materialized_path,
+                    "addon": "osfstorage",
+                    "node": {
+                        "_id": component._id,
+                        "url": component.url,
+                        "title": component.title,
+                    },
+                },
             },
         )
         node.save()
         return node
 
     def test_title_visibility_in_file_move(
-            self, app, url_node_logs,
-            user_two, component, node_with_log):
+        self, app, url_node_logs, user_two, component, node_with_log
+    ):
         # test_title_not_hidden_from_contributor_in_file_move
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
-        assert res.json['data'][0]['attributes']['params']['destination']['node_title'] == node_with_log.title
+        assert (
+            res.json["data"][0]["attributes"]["params"]["destination"][
+                "node_title"
+            ]
+            == node_with_log.title
+        )
 
         # test_title_hidden_from_non_contributor_in_file_move
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
-        assert component.title not in res.json['data']
-        assert res.json['data'][0]['attributes']['params']['source']['node_title'] == 'Private Component'
+        assert component.title not in res.json["data"]
+        assert (
+            res.json["data"][0]["attributes"]["params"]["source"]["node_title"]
+            == "Private Component"
+        )
 
     def test_file_log_keeps_url(
-            self, app, url_node_logs, user_two, node_with_log
+        self, app, url_node_logs, user_two, node_with_log
     ):
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
-        assert res.json['data'][0]['attributes']['params'].get('urls')
+        assert res.json["data"][0]["attributes"]["params"].get("urls")
 
-    def test_folder_log_url_removal(
-            self, app, url_node_logs, user_two
-    ):
+    def test_folder_log_url_removal(self, app, url_node_logs, user_two):
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
-        assert not res.json['data'][0]['attributes']['params'].get('urls')
+        assert not res.json["data"][0]["attributes"]["params"].get("urls")

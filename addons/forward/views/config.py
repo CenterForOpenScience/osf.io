@@ -1,4 +1,5 @@
 """Views for the node settings page."""
+
 from rest_framework import status as http_status
 
 from flask import request
@@ -10,22 +11,23 @@ from website.project.decorators import (
     must_have_addon,
     must_have_permission,
     must_not_be_registration,
-    must_be_valid_project)
+    must_be_valid_project,
+)
 
 from addons.forward.utils import serialize_settings
 
 
 @must_be_valid_project
-@must_have_addon('forward', 'node')
+@must_have_addon("forward", "node")
 def forward_config_get(node, node_addon, **kwargs):
     res = serialize_settings(node_addon)
-    res.update({'is_registration': node.is_registration})
+    res.update({"is_registration": node.is_registration})
     return res
 
 
 @must_have_permission(WRITE)
 @must_not_be_registration
-@must_have_addon('forward', 'node')
+@must_have_addon("forward", "node")
 def forward_config_put(auth, node_addon, **kwargs):
     """Set configuration for forward node settings, adding a log if URL has
     changed.
@@ -35,8 +37,8 @@ def forward_config_put(auth, node_addon, **kwargs):
 
     """
     try:
-        node_addon.url = request.json['url']
-        node_addon.label = request.json.get('label')
+        node_addon.url = request.json["url"]
+        node_addon.label = request.json.get("label")
     except (KeyError, TypeError, ValueError):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -48,9 +50,9 @@ def forward_config_put(auth, node_addon, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Log change if URL updated
-    if 'url' in dirty_fields:
+    if "url" in dirty_fields:
         node_addon.owner.add_log(
-            action='forward_url_changed',
+            action="forward_url_changed",
             params=dict(
                 node=node_addon.owner._id,
                 project=node_addon.owner.parent_id,

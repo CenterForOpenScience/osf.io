@@ -21,7 +21,7 @@ def admin():
 
 @pytest.fixture()
 def base_url():
-    return f'/{API_BASE}registrations/'
+    return f"/{API_BASE}registrations/"
 
 
 @pytest.fixture()
@@ -46,15 +46,14 @@ def valid_contributors(admin, read_contrib, write_contrib):
 @pytest.fixture()
 def private_node_one(admin, read_contrib, write_contrib):
     private_node_one = RegistrationFactory(
-        is_public=False,
-        creator=admin,
-        title='Private One')
+        is_public=False, creator=admin, title="Private One"
+    )
     private_node_one.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True
+    )
     private_node_one.add_contributor(
-        write_contrib,
-        permissions=permissions.WRITE,
-        save=True)
+        write_contrib, permissions=permissions.WRITE, save=True
+    )
     return private_node_one
 
 
@@ -76,39 +75,39 @@ def private_node_one_private_link(private_node_one):
 
 @pytest.fixture()
 def private_node_one_url(private_node_one):
-    return f'/{API_BASE}registrations/{private_node_one._id}/'
+    return f"/{API_BASE}registrations/{private_node_one._id}/"
 
 
 @pytest.fixture()
 def private_node_two(admin, read_contrib, write_contrib):
     private_node_two = RegistrationFactory(
-        is_public=False,
-        creator=admin,
-        title='Private Two')
+        is_public=False, creator=admin, title="Private Two"
+    )
     private_node_two.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True
+    )
     private_node_two.add_contributor(
-        write_contrib,
-        permissions=permissions.WRITE,
-        save=True)
+        write_contrib, permissions=permissions.WRITE, save=True
+    )
     return private_node_two
 
 
 @pytest.fixture()
 def private_node_two_url(private_node_two):
-    return f'/{API_BASE}registrations/{private_node_two._id}/'
+    return f"/{API_BASE}registrations/{private_node_two._id}/"
 
 
 @pytest.fixture()
 def public_node_one(admin, read_contrib, write_contrib):
     public_node_one = RegistrationFactory(
-        is_public=True, creator=admin, title='Public One')
+        is_public=True, creator=admin, title="Public One"
+    )
     public_node_one.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True
+    )
     public_node_one.add_contributor(
-        write_contrib,
-        permissions=permissions.WRITE,
-        save=True)
+        write_contrib, permissions=permissions.WRITE, save=True
+    )
     return public_node_one
 
 
@@ -130,50 +129,50 @@ def public_node_one_private_link(public_node_one):
 
 @pytest.fixture()
 def public_node_one_url(public_node_one):
-    return f'/{API_BASE}registrations/{public_node_one._id}/'
+    return f"/{API_BASE}registrations/{public_node_one._id}/"
 
 
 @pytest.fixture()
 def public_node_two(admin, read_contrib, write_contrib):
     public_node_two = RegistrationFactory(
-        is_public=True, creator=admin, title='Public Two')
+        is_public=True, creator=admin, title="Public Two"
+    )
     public_node_two.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True
+    )
     public_node_two.add_contributor(
-        write_contrib,
-        permissions=permissions.WRITE,
-        save=True)
+        write_contrib, permissions=permissions.WRITE, save=True
+    )
     return public_node_two
 
 
 @pytest.fixture()
 def public_node_two_url(public_node_two):
-    return f'/{API_BASE}registrations/{public_node_two._id}/'
+    return f"/{API_BASE}registrations/{public_node_two._id}/"
 
 
 class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
     @pytest.fixture()
     def registration_schema(self):
-        name = 'Registered Report Protocol Preregistration'
+        name = "Registered Report Protocol Preregistration"
         return RegistrationSchema.objects.get(name=name, schema_version=2)
 
     @pytest.fixture()
     def reg_report(self, registration_schema, admin):
-        registration = RegistrationFactory(schema=registration_schema, creator=admin, is_public=False)
+        registration = RegistrationFactory(
+            schema=registration_schema, creator=admin, is_public=False
+        )
         registration.registered_meta[registration_schema._id] = {
-            'q1': {
-                'comments': [],
-                'extra': [],
-                'value': 'This is the answer to a question'
+            "q1": {
+                "comments": [],
+                "extra": [],
+                "value": "This is the answer to a question",
             },
-            'q2': {
-                'comments': [],
-                'extra': [],
-                'value': 'Grapes McGee'
-            }
-
+            "q2": {"comments": [], "extra": [], "value": "Grapes McGee"},
         }
-        registration.registration_responses = registration.flatten_registration_metadata()
+        registration.registration_responses = (
+            registration.flatten_registration_metadata()
+        )
         registration.save()
         return registration
 
@@ -184,31 +183,35 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
         anon_link.save()
         return anon_link
 
-    def test_author_questions_are_anonymous(self, app, base_url, reg_report, admin, reg_report_anonymous_link):
+    def test_author_questions_are_anonymous(
+        self, app, base_url, reg_report, admin, reg_report_anonymous_link
+    ):
         # Admin contributor sees q2 (author question)
-        url = f'/{API_BASE}registrations/{reg_report._id}/'
+        url = f"/{API_BASE}registrations/{reg_report._id}/"
         res = app.get(url, auth=admin.auth)
         assert res.status_code == 200
-        meta = res.json['data']['attributes']['registered_meta']
-        assert 'q1' in meta
-        assert 'q2' in meta
+        meta = res.json["data"]["attributes"]["registered_meta"]
+        assert "q1" in meta
+        assert "q2" in meta
 
-        reg_responses = res.json['data']['attributes']['registration_responses']
-        assert 'q1' in reg_responses
-        assert 'q2' in reg_responses
+        reg_responses = res.json["data"]["attributes"][
+            "registration_responses"
+        ]
+        assert "q1" in reg_responses
+        assert "q2" in reg_responses
 
         # Anonymous view only link has q2 (author response) removed
-        res = app.get(url, {
-            'view_only': reg_report_anonymous_link.key
-        })
+        res = app.get(url, {"view_only": reg_report_anonymous_link.key})
         assert res.status_code == 200
-        meta = res.json['data']['attributes']['registered_meta']
-        assert 'q1' in meta
-        assert 'q2' not in meta
+        meta = res.json["data"]["attributes"]["registered_meta"]
+        assert "q1" in meta
+        assert "q2" not in meta
 
-        reg_responses = res.json['data']['attributes']['registration_responses']
-        assert 'q1' in reg_responses
-        assert 'q2' not in reg_responses
+        reg_responses = res.json["data"]["attributes"][
+            "registration_responses"
+        ]
+        assert "q1" in reg_responses
+        assert "q2" not in reg_responses
 
 
 class TestRegistrationListViewOnlyLinks(TestNodeListViewOnlyLinks):

@@ -8,8 +8,8 @@ from website import mails
 
 from osf.management.commands.email_all_users import email_all_users
 
-class TestEmailAllUsers:
 
+class TestEmailAllUsers:
     @pytest.fixture()
     def user(self):
         return UserFactory(id=1)
@@ -42,32 +42,37 @@ class TestEmailAllUsers:
         return UserFactory(is_registered=False)
 
     @pytest.mark.django_db
-    @mock.patch('website.mails.send_mail')
+    @mock.patch("website.mails.send_mail")
     def test_email_all_users_dry(self, mock_email, superuser):
-        email_all_users('TOU_NOTIF', dry_run=True)
+        email_all_users("TOU_NOTIF", dry_run=True)
 
         mock_email.assert_called_with(
             to_addr=superuser.email,
             mail=mails.TOU_NOTIF,
-            fullname=superuser.fullname
+            fullname=superuser.fullname,
         )
 
     @pytest.mark.django_db
-    @mock.patch('website.mails.send_mail')
+    @mock.patch("website.mails.send_mail")
     def test_dont_email_inactive_users(
-            self, mock_email, deleted_user, inactive_user, unconfirmed_user, unregistered_user):
-
-        email_all_users('TOU_NOTIF')
+        self,
+        mock_email,
+        deleted_user,
+        inactive_user,
+        unconfirmed_user,
+        unregistered_user,
+    ):
+        email_all_users("TOU_NOTIF")
 
         mock_email.assert_not_called()
 
     @pytest.mark.django_db
-    @mock.patch('website.mails.send_mail')
+    @mock.patch("website.mails.send_mail")
     def test_email_all_users_offset(self, mock_email, user, user2):
-        email_all_users('TOU_NOTIF', offset=1, run=0)
+        email_all_users("TOU_NOTIF", offset=1, run=0)
 
-        email_all_users('TOU_NOTIF', offset=1, run=1)
+        email_all_users("TOU_NOTIF", offset=1, run=1)
 
-        email_all_users('TOU_NOTIF', offset=1, run=2)
+        email_all_users("TOU_NOTIF", offset=1, run=2)
 
         assert mock_email.call_count == 2

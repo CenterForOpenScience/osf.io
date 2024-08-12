@@ -7,12 +7,15 @@ from django.test import RequestFactory
 from osf_tests.factories import (
     AuthUserFactory,
     RegistrationProviderFactory,
-    ProviderAssetFileFactory
+    ProviderAssetFileFactory,
 )
 from osf.models import RegistrationProvider, RegistrationSchema
 from admin_tests.utilities import setup_view, setup_form_view
 from admin.registration_providers import views
-from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
+from admin.providers.views import (
+    AddAdminOrModerator,
+    RemoveAdminsAndModerators,
+)
 from admin.registration_providers.forms import RegistrationProviderForm
 from admin_tests.mixins.providers import (
     ProcessCustomTaxonomyMixinBase,
@@ -29,18 +32,20 @@ from osf.migrations import update_provider_auth_groups
 
 pytestmark = pytest.mark.django_db
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def req(user):
-    req = RequestFactory().get('/fake_path')
+    req = RequestFactory().get("/fake_path")
     req.user = user
     return req
 
-class TestRegistrationProviderList(ProviderListMixinBase):
 
+class TestRegistrationProviderList(ProviderListMixinBase):
     @pytest.fixture()
     def provider_factory(self):
         return RegistrationProviderFactory
@@ -56,7 +61,6 @@ class TestRegistrationProviderList(ProviderListMixinBase):
 
 
 class TestProcessCustomTaxonomy(ProcessCustomTaxonomyMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return RegistrationProviderFactory
@@ -68,7 +72,6 @@ class TestProcessCustomTaxonomy(ProcessCustomTaxonomyMixinBase):
 
 
 class TestRegistrationProviderDisplay(ProviderDisplayMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return RegistrationProviderFactory
@@ -85,12 +88,11 @@ class TestRegistrationProviderDisplay(ProviderDisplayMixinBase):
     def view(self, req, provider):
         plain_view = views.RegistrationProviderDisplay()
         view = setup_view(plain_view, req)
-        view.kwargs = {'registration_provider_id': provider.id}
+        view.kwargs = {"registration_provider_id": provider.id}
         return view
 
 
 class TestCreateRegistrationProvider(CreateProviderMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return RegistrationProviderFactory
@@ -98,13 +100,14 @@ class TestCreateRegistrationProvider(CreateProviderMixinBase):
     @pytest.fixture()
     def view(self, req, provider):
         plain_view = views.CreateRegistrationProvider()
-        view = setup_form_view(plain_view, req, form=RegistrationProviderForm())
-        view.kwargs = {'registration_provider_id': provider.id}
+        view = setup_form_view(
+            plain_view, req, form=RegistrationProviderForm()
+        )
+        view.kwargs = {"registration_provider_id": provider.id}
         return view
 
 
 class TestDeleteRegistrationProvider(DeleteProviderMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return RegistrationProviderFactory
@@ -113,27 +116,28 @@ class TestDeleteRegistrationProvider(DeleteProviderMixinBase):
     def view(self, req, provider):
         view = views.DeleteRegistrationProvider()
         view = setup_view(view, req)
-        view.kwargs = {'registration_provider_id': provider.id}
+        view.kwargs = {"registration_provider_id": provider.id}
         return view
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 class TestShareSourceRegistrationProvider:
-
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
 
     @pytest.fixture()
     def req(self, user):
-        req = RequestFactory().get('/fake_path')
+        req = RequestFactory().get("/fake_path")
         req.user = user
         return req
 
     @pytest.fixture()
     def provider(self):
         provider = RegistrationProviderFactory()
-        asset_file = ProviderAssetFileFactory(name='square_color_no_transparent')
+        asset_file = ProviderAssetFileFactory(
+            name="square_color_no_transparent"
+        )
         provider.asset_files.add(asset_file)
         provider.access_token = None
         provider.save()
@@ -148,64 +152,63 @@ class TestShareSourceRegistrationProvider:
         mock_share_responses.reset()
         mock_share_responses.add(
             responses.POST,
-            f'{settings.SHARE_URL}api/v2/sources/',
+            f"{settings.SHARE_URL}api/v2/sources/",
             json.dumps(
                 {
-                    'data': {
-                        'attributes': {
-                            'longTitle': 'test source'
+                    "data": {"attributes": {"longTitle": "test source"}},
+                    "included": [
+                        {
+                            "attributes": {
+                                "token": "test access token",
+                            },
+                            "type": "ShareUser",
                         }
-                    },
-                    'included': [{
-                        'attributes': {
-                            'token': 'test access token',
-                        },
-                        'type': 'ShareUser',
-                    }]
+                    ],
                 }
-            )
+            ),
         )
         res = view.get(req)
         assert res.status_code == 302
         provider.refresh_from_db()
-        assert provider.share_source == 'test source'
-        assert provider.access_token == 'test access token'
+        assert provider.share_source == "test source"
+        assert provider.access_token == "test access token"
 
-    @mock.patch.object(settings, 'SHARE_PROVIDER_PREPEND', 'testenv')
-    def test_share_source_prefix(self, mock_share_responses, view, provider, req):
+    @mock.patch.object(settings, "SHARE_PROVIDER_PREPEND", "testenv")
+    def test_share_source_prefix(
+        self, mock_share_responses, view, provider, req
+    ):
         mock_share_responses.reset()
         mock_share_responses.add(
             responses.POST,
-            f'{settings.SHARE_URL}api/v2/sources/',
+            f"{settings.SHARE_URL}api/v2/sources/",
             json.dumps(
                 {
-                    'data': {
-                        'attributes': {
-                            'longTitle': 'testenv-test source'
-                        }
+                    "data": {
+                        "attributes": {"longTitle": "testenv-test source"}
                     },
-                    'included': [{
-                        'attributes': {
-                            'token': 'test access token',
-                        },
-                        'type': 'ShareUser',
-                    }]
+                    "included": [
+                        {
+                            "attributes": {
+                                "token": "test access token",
+                            },
+                            "type": "ShareUser",
+                        }
+                    ],
                 }
-            )
+            ),
         )
         res = view.get(req)
         assert res.status_code == 302
         provider.refresh_from_db()
-        assert provider.share_source == 'testenv-test source'
-        assert provider.access_token == 'test access token'
+        assert provider.share_source == "testenv-test source"
+        assert provider.access_token == "test access token"
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 class TestChangeSchemas:
-
     @pytest.fixture()
     def req(self, user):
-        req = RequestFactory().get('/fake_path')
+        req = RequestFactory().get("/fake_path")
         req.user = user
         return req
 
@@ -215,7 +218,9 @@ class TestChangeSchemas:
 
     @pytest.fixture()
     def schema(self):
-        schema = RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=1)
+        schema = RegistrationSchema(
+            name="foo", schema={"foo": 42}, schema_version=1
+        )
         schema.save()
         return schema
 
@@ -223,7 +228,7 @@ class TestChangeSchemas:
     def view(self, req, provider):
         view = views.ChangeSchema()
         view = setup_view(view, req)
-        view.kwargs = {'registration_provider_id': provider.id}
+        view.kwargs = {"registration_provider_id": provider.id}
         return view
 
     def test_get(self, view, req):
@@ -232,22 +237,18 @@ class TestChangeSchemas:
 
     def test_post(self, view, req, schema, provider):
         schema_id = schema.id
-        req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
-            str(schema_id): ['on']
-        }
+        req.POST = {"csrfmiddlewaretoken": "fake csfr", str(schema_id): ["on"]}
 
         res = view.post(req)
         assert res.status_code == 302
         assert provider.schemas.get(id=schema_id)
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 class TestEditModerators:
-
     @pytest.fixture()
     def req(self, user):
-        req = RequestFactory().get('/fake_path')
+        req = RequestFactory().get("/fake_path")
         req.user = user
         return req
 
@@ -260,7 +261,7 @@ class TestEditModerators:
     @pytest.fixture()
     def moderator(self, provider):
         user = AuthUserFactory()
-        provider.add_to_group(user, 'moderator')
+        provider.add_to_group(user, "moderator")
         return user
 
     @pytest.fixture()
@@ -271,14 +272,14 @@ class TestEditModerators:
     def remove_moderator_view(self, req, provider):
         view = RemoveAdminsAndModerators()
         view = setup_view(view, req)
-        view.kwargs = {'provider_id': provider.id}
+        view.kwargs = {"provider_id": provider.id}
         return view
 
     @pytest.fixture()
     def add_moderator_view(self, req, provider):
         view = AddAdminOrModerator()
         view = setup_view(view, req)
-        view.kwargs = {'provider_id': provider.id}
+        view.kwargs = {"provider_id": provider.id}
         return view
 
     def test_get(self, add_moderator_view, remove_moderator_view, req):
@@ -288,36 +289,35 @@ class TestEditModerators:
         res = remove_moderator_view.get(req)
         assert res.status_code == 200
 
-    def test_post_remove(self, remove_moderator_view, req, moderator, provider):
-        moderator_id = f'Moderator-{moderator.id}'
-        req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
-            moderator_id: ['on']
-        }
+    def test_post_remove(
+        self, remove_moderator_view, req, moderator, provider
+    ):
+        moderator_id = f"Moderator-{moderator.id}"
+        req.POST = {"csrfmiddlewaretoken": "fake csfr", moderator_id: ["on"]}
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
-        setattr(req, 'session', 'session')
+        setattr(req, "session", "session")
         messages = FallbackStorage(req)
-        setattr(req, '_messages', messages)
+        setattr(req, "_messages", messages)
 
         res = remove_moderator_view.post(req)
         assert res.status_code == 302
-        assert not provider.get_group('moderator').user_set.all()
+        assert not provider.get_group("moderator").user_set.all()
 
     def test_post_add(self, add_moderator_view, req, user, provider):
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
-            'add-moderators-form': [user._id],
-            'moderator': ['Add Moderator']
+            "csrfmiddlewaretoken": "fake csfr",
+            "add-moderators-form": [user._id],
+            "moderator": ["Add Moderator"],
         }
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
-        setattr(req, 'session', 'session')
+        setattr(req, "session", "session")
         messages = FallbackStorage(req)
-        setattr(req, '_messages', messages)
+        setattr(req, "_messages", messages)
 
         res = add_moderator_view.post(req)
         assert res.status_code == 302
-        assert user in provider.get_group('moderator').user_set.all()
+        assert user in provider.get_group("moderator").user_set.all()

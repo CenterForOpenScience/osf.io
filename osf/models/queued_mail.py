@@ -14,7 +14,9 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
 class QueuedMail(ObjectIDMixin, BaseModel):
-    user = models.ForeignKey('OSFUser', db_index=True, null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        "OSFUser", db_index=True, null=True, on_delete=models.CASCADE
+    )
     to_addr = models.CharField(max_length=255)
     send_at = NonNaiveDateTimeField(db_index=True, null=False)
 
@@ -26,16 +28,16 @@ class QueuedMail(ObjectIDMixin, BaseModel):
     # self.data = {
     #    'nid' : 'ShIpTo',
     #    'fullname': 'Florence Welch',
-    #}
+    # }
     data = DateTimeAwareJSONField(default=dict, blank=True)
     sent_at = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     def __repr__(self):
         if self.sent_at is not None:
-            return '<QueuedMail {} of type {} sent to {} at {}>'.format(
+            return "<QueuedMail {} of type {} sent to {} at {}>".format(
                 self._id, self.email_type, self.to_addr, self.sent_at
             )
-        return '<QueuedMail {} of type {} to be sent to {} on {}>'.format(
+        return "<QueuedMail {} of type {} to be sent to {} on {}>".format(
             self._id, self.email_type, self.to_addr, self.send_at
         )
 
@@ -48,15 +50,21 @@ class QueuedMail(ObjectIDMixin, BaseModel):
         :return: boolean based on whether email was sent.
         """
         mail_struct = queue_mail_types[self.email_type]
-        presend = mail_struct['presend'](self)
+        presend = mail_struct["presend"](self)
         mail = Mail(
-            mail_struct['template'],
-            subject=mail_struct['subject'],
-            categories=mail_struct.get('categories', None)
+            mail_struct["template"],
+            subject=mail_struct["subject"],
+            categories=mail_struct.get("categories", None),
         )
-        self.data['osf_url'] = osf_settings.DOMAIN
-        if presend and self.user.is_active and self.user.osf_mailing_lists.get(osf_settings.OSF_HELP_LIST):
-            send_mail(self.to_addr or self.user.username, mail, **(self.data or {}))
+        self.data["osf_url"] = osf_settings.DOMAIN
+        if (
+            presend
+            and self.user.is_active
+            and self.user.osf_mailing_lists.get(osf_settings.OSF_HELP_LIST)
+        ):
+            send_mail(
+                self.to_addr or self.user.username, mail, **(self.data or {})
+            )
             self.sent_at = timezone.now()
             self.save()
             return True
@@ -70,7 +78,9 @@ class QueuedMail(ObjectIDMixin, BaseModel):
         Does not look for queue-up emails.
         :return: a list of those emails
         """
-        return self.__class__.objects.filter(email_type=self.email_type, user=self.user).exclude(sent_at=None)
+        return self.__class__.objects.filter(
+            email_type=self.email_type, user=self.user
+        ).exclude(sent_at=None)
 
 
 def queue_mail(to_addr, mail, send_at, user, **context):
@@ -91,66 +101,68 @@ def queue_mail(to_addr, mail, send_at, user, **context):
                     not parameters.
     :return: the QueuedMail object created
     """
-    if waffle.switch_is_active(features.DISABLE_ENGAGEMENT_EMAILS) and mail.get('engagement', False):
+    if waffle.switch_is_active(
+        features.DISABLE_ENGAGEMENT_EMAILS
+    ) and mail.get("engagement", False):
         return False
     new_mail = QueuedMail(
         user=user,
         to_addr=to_addr,
         send_at=send_at,
-        email_type=mail['template'],
-        data=context
+        email_type=mail["template"],
+        data=context,
     )
     new_mail.save()
     return new_mail
 
 
 # Predefined email templates. Structure:
-#EMAIL_TYPE = {
+# EMAIL_TYPE = {
 #    'template': the mako template used for email_type,
 #    'subject': subject used for the actual email,
 #    'categories': categories to attach to the email using Sendgrid's SMTPAPI.
 #    'engagement': Whether this is an engagement email that can be disabled with the disable_engagement_emails waffle flag
 #    'presend': predicate function that determines whether an email should be sent. May also
 #               modify mail.data.
-#}
+# }
 
 NO_ADDON = {
-    'template': 'no_addon',
-    'subject': 'Link an add-on to your OSF project',
-    'presend': presends.no_addon,
-    'categories': ['engagement', 'engagement-no-addon'],
-    'engagement': True
+    "template": "no_addon",
+    "subject": "Link an add-on to your OSF project",
+    "presend": presends.no_addon,
+    "categories": ["engagement", "engagement-no-addon"],
+    "engagement": True,
 }
 
 NO_LOGIN = {
-    'template': 'no_login',
-    'subject': 'What you\'re missing on the OSF',
-    'presend': presends.no_login,
-    'categories': ['engagement', 'engagement-no-login'],
-    'engagement': True
+    "template": "no_login",
+    "subject": "What you're missing on the OSF",
+    "presend": presends.no_login,
+    "categories": ["engagement", "engagement-no-login"],
+    "engagement": True,
 }
 
 NEW_PUBLIC_PROJECT = {
-    'template': 'new_public_project',
-    'subject': 'Now, public. Next, impact.',
-    'presend': presends.new_public_project,
-    'categories': ['engagement', 'engagement-new-public-project'],
-    'engagement': True
+    "template": "new_public_project",
+    "subject": "Now, public. Next, impact.",
+    "presend": presends.new_public_project,
+    "categories": ["engagement", "engagement-new-public-project"],
+    "engagement": True,
 }
 
 
 WELCOME_OSF4M = {
-    'template': 'welcome_osf4m',
-    'subject': 'The benefits of sharing your presentation',
-    'presend': presends.welcome_osf4m,
-    'categories': ['engagement', 'engagement-welcome-osf4m'],
-    'engagement': True
+    "template": "welcome_osf4m",
+    "subject": "The benefits of sharing your presentation",
+    "presend": presends.welcome_osf4m,
+    "categories": ["engagement", "engagement-welcome-osf4m"],
+    "engagement": True,
 }
 
-NO_ADDON_TYPE = 'no_addon'
-NO_LOGIN_TYPE = 'no_login'
-NEW_PUBLIC_PROJECT_TYPE = 'new_public_project'
-WELCOME_OSF4M_TYPE = 'welcome_osf4m'
+NO_ADDON_TYPE = "no_addon"
+NO_LOGIN_TYPE = "no_login"
+NEW_PUBLIC_PROJECT_TYPE = "new_public_project"
+WELCOME_OSF4M_TYPE = "welcome_osf4m"
 
 
 # Used to keep relationship from stored string 'email_type' to the predefined queued_email objects.
@@ -158,5 +170,5 @@ queue_mail_types = {
     NO_ADDON_TYPE: NO_ADDON,
     NO_LOGIN_TYPE: NO_LOGIN,
     NEW_PUBLIC_PROJECT_TYPE: NEW_PUBLIC_PROJECT,
-    WELCOME_OSF4M_TYPE: WELCOME_OSF4M
+    WELCOME_OSF4M_TYPE: WELCOME_OSF4M,
 }

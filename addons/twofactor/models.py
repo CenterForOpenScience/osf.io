@@ -23,16 +23,18 @@ class UserSettings(BaseUserSettings):
 
     @property
     def otpauth_url(self) -> str:
-        return f'otpauth://totp/OSF:{self.owner.username}?secret={self.totp_secret_b32}'
+        return f"otpauth://totp/OSF:{self.owner.username}?secret={self.totp_secret_b32}"
 
     def to_json(self, user):
         rv = super().to_json(user)
-        rv.update({
-            'is_enabled': True,
-            'is_confirmed': self.is_confirmed,
-            'secret': self.totp_secret_b32,
-            'drift': self.totp_drift,
-        })
+        rv.update(
+            {
+                "is_enabled": True,
+                "is_confirmed": self.is_confirmed,
+                "secret": self.totp_secret_b32,
+                "drift": self.totp_drift,
+            }
+        )
         return rv
 
     ###################
@@ -43,8 +45,9 @@ class UserSettings(BaseUserSettings):
         client = TOTP(self.totp_secret_b32)
         accepted = client.verify(
             otp=str(code),
-            for_time=datetime.now() + timedelta(seconds=self.totp_drift * DRIFT_PERIOD),
-            valid_window=1
+            for_time=datetime.now()
+            + timedelta(seconds=self.totp_drift * DRIFT_PERIOD),
+            valid_window=1,
         )
         if accepted:
             self.totp_drift += 1

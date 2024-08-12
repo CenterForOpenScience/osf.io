@@ -15,18 +15,12 @@ def order_recursive(data):
     if isinstance(data, dict):
         return collections.OrderedDict(
             sorted(
-                (
-                    (key, order_recursive(value))
-                    for key, value in data.items()
-                ),
-                key=lambda item: item[0]
+                ((key, order_recursive(value)) for key, value in data.items()),
+                key=lambda item: item[0],
             )
         )
     if isinstance(data, list):
-        return [
-            order_recursive(value)
-            for value in data
-        ]
+        return [order_recursive(value) for value in data]
     return data
 
 
@@ -41,7 +35,6 @@ def unserialize_payload(message):
 
 
 class Signer:
-
     def __init__(self, secret, digest):
         assert callable(digest)
         self.secret = secret
@@ -69,14 +62,16 @@ class Signer:
 
 
 def sign_data(signer, data, ttl=100):
-    target = {'time': int(time.time() + ttl)}
+    target = {"time": int(time.time() + ttl)}
     target.update(data)
     payload, signature = signer.sign_payload(target)
     payload = payload.decode() if isinstance(payload, bytes) else payload
     return {
-        'payload': payload,
-        'signature': signature,
+        "payload": payload,
+        "signature": signature,
     }
 
 
-default_signer = Signer(settings.DEFAULT_HMAC_SECRET, settings.DEFAULT_HMAC_ALGORITHM)
+default_signer = Signer(
+    settings.DEFAULT_HMAC_SECRET, settings.DEFAULT_HMAC_ALGORITHM
+)

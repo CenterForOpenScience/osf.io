@@ -9,7 +9,6 @@ from scripts.retract_registrations import main
 
 
 class TestRetractRegistrations(OsfTestCase):
-
     def setUp(self):
         super().setUp()
         self.user = UserFactory()
@@ -24,9 +23,13 @@ class TestRetractRegistrations(OsfTestCase):
         main(dry_run=False)
         assert not self.registration.is_retracted
 
-    def test_should_not_retract_pending_retraction_less_than_48_hours_old(self):
+    def test_should_not_retract_pending_retraction_less_than_48_hours_old(
+        self,
+    ):
         # Retraction#iniation_date is read only
-        self.registration.retraction.initiation_date = (timezone.now() - timedelta(hours=47))
+        self.registration.retraction.initiation_date = (
+            timezone.now() - timedelta(hours=47)
+        )
         self.registration.retraction.save()
         assert not self.registration.is_retracted
 
@@ -35,7 +38,9 @@ class TestRetractRegistrations(OsfTestCase):
 
     def test_should_retract_pending_retraction_that_is_48_hours_old(self):
         # Retraction#iniation_date is read only
-        self.registration.retraction.initiation_date = (timezone.now() - timedelta(hours=48))
+        self.registration.retraction.initiation_date = (
+            timezone.now() - timedelta(hours=48)
+        )
         self.registration.retraction.save()
         assert not self.registration.is_retracted
 
@@ -45,7 +50,9 @@ class TestRetractRegistrations(OsfTestCase):
 
     def test_should_retract_pending_retraction_more_than_48_hours_old(self):
         # Retraction#iniation_date is read only
-        self.registration.retraction.initiation_date = (timezone.now() - timedelta(days=365))
+        self.registration.retraction.initiation_date = (
+            timezone.now() - timedelta(days=365)
+        )
         self.registration.retraction.save()
         assert not self.registration.is_retracted
 
@@ -54,9 +61,13 @@ class TestRetractRegistrations(OsfTestCase):
         assert self.registration.is_retracted
 
     def test_retraction_adds_to_parent_projects_log(self):
-        initial_project_logs = len(self.registration.registered_from.logs.all())
+        initial_project_logs = len(
+            self.registration.registered_from.logs.all()
+        )
         # Retraction#iniation_date is read only
-        self.registration.retraction.initiation_date =(timezone.now() - timedelta(days=365))
+        self.registration.retraction.initiation_date = (
+            timezone.now() - timedelta(days=365)
+        )
         self.registration.retraction.save()
         assert not self.registration.is_retracted
 
@@ -64,4 +75,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.retraction.refresh_from_db()
         assert self.registration.is_retracted
         # Logs: Created, made public, retraction initiated, retracted approved
-        assert len(self.registration.registered_from.logs.all()) == initial_project_logs + 1
+        assert (
+            len(self.registration.registered_from.logs.all())
+            == initial_project_logs + 1
+        )

@@ -20,24 +20,27 @@ pytestmark = pytest.mark.django_db
 def date():
     return timezone.now()
 
+
 @pytest.fixture()
 def maintenance_alert():
-    maintenance.set_maintenance('')
+    maintenance.set_maintenance("")
     return maintenance.get_maintenance()
+
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def req(user):
-    req = RequestFactory().get('/fake_path')
+    req = RequestFactory().get("/fake_path")
     req.user = user
     return req
 
-@pytest.mark.urls('admin.base.urls')
-class TestMaintenanceDisplay:
 
+@pytest.mark.urls("admin.base.urls")
+class TestMaintenanceDisplay:
     @pytest.fixture()
     def plain_view(self):
         return views.MaintenanceDisplay
@@ -50,18 +53,20 @@ class TestMaintenanceDisplay:
 
     def test_has_alert(self, view, maintenance_alert):
         data = view.get_context_data()
-        assert data['current_alert']
+        assert data["current_alert"]
 
     def test_has_no_alert(self, view):
         data = view.get_context_data()
-        assert not data.get('current_alert')
+        assert not data.get("current_alert")
 
     def test_no_user_permissions_raises_error(self, req, plain_view):
         with pytest.raises(PermissionDenied):
             plain_view.as_view()(req)
 
     def test_correct_view_permissions(self, req, user, plain_view):
-        view_permission = Permission.objects.get(codename='change_maintenancestate')
+        view_permission = Permission.objects.get(
+            codename="change_maintenancestate"
+        )
         user.user_permissions.add(view_permission)
         user.save()
 
@@ -69,15 +74,18 @@ class TestMaintenanceDisplay:
         assert res.status_code == 200
 
     def test_create_maintenance(self, view, req):
-        message = 'Whooo. Its Custom!'
-        req.POST = {'start': '2018/01/27 10:24', 'level': 1, 'message': message}
+        message = "Whooo. Its Custom!"
+        req.POST = {
+            "start": "2018/01/27 10:24",
+            "level": 1,
+            "message": message,
+        }
         view.post(req)
         assert MaintenanceState.objects.first().message == message
 
 
-@pytest.mark.urls('admin.base.urls')
+@pytest.mark.urls("admin.base.urls")
 class TestDeleteMaintenance:
-
     @pytest.fixture()
     def plain_view(self):
         return views.DeleteMaintenance
@@ -90,7 +98,7 @@ class TestDeleteMaintenance:
 
     def test_delete(self, view, req):
         res = view.delete(req)
-        assert res.url == '/maintenance/'
+        assert res.url == "/maintenance/"
         assert res.status_code == 302
         assert MaintenanceState.objects.all().count() == 0
 
@@ -99,7 +107,9 @@ class TestDeleteMaintenance:
             plain_view.as_view()(req)
 
     def test_correct_view_permissions(self, req, user, plain_view):
-        view_permission = Permission.objects.get(codename='delete_maintenancestate')
+        view_permission = Permission.objects.get(
+            codename="delete_maintenancestate"
+        )
         user.user_permissions.add(view_permission)
         user.save()
 

@@ -8,18 +8,15 @@ from website.archiver import signals
 
 
 def fail_archive_on_error(func):
-
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except HTTPError as e:
             _inject_nodes(kwargs)
-            registration = kwargs['node']
+            registration = kwargs["node"]
             registration.archive_status = ARCHIVER_NETWORK_ERROR
             registration.save()
-            signals.archive_fail.send(
-                registration,
-                errors=[str(e)]
-            )
+            signals.archive_fail.send(registration, errors=[str(e)])
+
     return wrapped

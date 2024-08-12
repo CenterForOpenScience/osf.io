@@ -6,32 +6,32 @@ from osf.models.licenses import NodeLicense
 
 @pytest.mark.django_db
 class TestLicenseList:
-
     def test_license_list(self, app):
         licenses = NodeLicense.objects.project_licenses()
         license_node = licenses[0]
-        url_licenses = f'/{API_BASE}licenses/'
+        url_licenses = f"/{API_BASE}licenses/"
         res_licenses = app.get(url_licenses)
 
         # test_license_list_success
         assert res_licenses.status_code == 200
-        assert res_licenses.content_type == 'application/vnd.api+json'
+        assert res_licenses.content_type == "application/vnd.api+json"
 
         # test_license_list_count_correct
-        total = res_licenses.json['links']['meta']['total']
+        total = res_licenses.json["links"]["meta"]["total"]
         assert total == licenses.count()
 
         # test_license_list_name_filter
-        url = '/{}licenses/?filter[name]={}'.format(
-            API_BASE, license_node.name)
+        url = "/{}licenses/?filter[name]={}".format(
+            API_BASE, license_node.name
+        )
         res = app.get(url)
-        data = res.json['data'][0]
-        assert data['attributes']['name'] == license_node.name
-        assert data['id'] == license_node._id
+        data = res.json["data"][0]
+        assert data["attributes"]["name"] == license_node.name
+        assert data["id"] == license_node._id
 
         # test_license_list_id_filter(self, licenses):
-        url = f'/{API_BASE}licenses/?filter[id]={license_node._id}'
+        url = f"/{API_BASE}licenses/?filter[id]={license_node._id}"
         res = app.get(url)
-        data = res.json['data'][0]
-        assert data['attributes']['name'] == license_node.name
-        assert data['id'] == license_node._id
+        data = res.json["data"][0]
+        assert data["attributes"]["name"] == license_node.name
+        assert data["id"] == license_node._id

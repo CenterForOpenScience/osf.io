@@ -1,8 +1,10 @@
-""" Script for removing nodes with 'qatest' tags from elastic search index """
+"""Script for removing nodes with 'qatest' tags from elastic search index"""
+
 import logging
 import sys
 
 import django
+
 django.setup()
 
 from website.app import init_app
@@ -20,24 +22,32 @@ logger = logging.getLogger(__name__)
 def remove_search_index(dry_run=True):
     tag_query = Q()
     title_query = Q()
-    for tag in DO_NOT_INDEX_LIST['tags']:
-        tag_query |= Q(tags__name = tag)
+    for tag in DO_NOT_INDEX_LIST["tags"]:
+        tag_query |= Q(tags__name=tag)
 
-    for title in DO_NOT_INDEX_LIST['titles']:
-        title_query |= Q(title__contains = title)
+    for title in DO_NOT_INDEX_LIST["titles"]:
+        title_query |= Q(title__contains=title)
 
     increment = 20
-    nodes = paginated(AbstractNode, query=Q(is_public=True) & (tag_query | title_query), increment=increment, each=True)
+    nodes = paginated(
+        AbstractNode,
+        query=Q(is_public=True) & (tag_query | title_query),
+        increment=increment,
+        each=True,
+    )
     if dry_run:
-        logger.warning('Dry run mode.')
+        logger.warning("Dry run mode.")
         for node in nodes:
-            logger.info(f"Removing {node._id} with title '{node.title}' from search index and SHARE.")
+            logger.info(
+                f"Removing {node._id} with title '{node.title}' from search index and SHARE."
+            )
     else:
         for node in nodes:
             update_node(node, bulk=False)
             update_share(node)
 
-if __name__ == '__main__':
-    dry_run = '--dry' in sys.argv
+
+if __name__ == "__main__":
+    dry_run = "--dry" in sys.argv
     init_app(routes=False)
     remove_search_index(dry_run=dry_run)

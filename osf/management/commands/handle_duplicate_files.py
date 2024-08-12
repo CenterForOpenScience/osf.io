@@ -10,7 +10,7 @@ from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
-FOLDER = 'osf.osfstoragefolder'
+FOLDER = "osf.osfstoragefolder"
 
 
 # For a specific file type, returns items that have duplicate
@@ -36,18 +36,19 @@ FETCH_DUPLICATES_BY_FILETYPE = """
 
 # googledrive and trashedfile/folder/folders excluded.
 valid_file_types = [
-    'osf.onedrivefile',
-    'osf.gitlabfile',
-    'osf.dropboxfile',
-    'osf.githubfile',
-    'osf.s3file',
-    'osf.boxfile',
-    'osf.figsharefile',
-    'osf.osfstoragefile',
-    'osf.bitbucketfile',
-    'osf.owncloudfile',
-    FOLDER
+    "osf.onedrivefile",
+    "osf.gitlabfile",
+    "osf.dropboxfile",
+    "osf.githubfile",
+    "osf.s3file",
+    "osf.boxfile",
+    "osf.figsharefile",
+    "osf.osfstoragefile",
+    "osf.bitbucketfile",
+    "osf.owncloudfile",
+    FOLDER,
 ]
+
 
 def compare_location_and_region(first_file, second_file):
     """
@@ -55,20 +56,25 @@ def compare_location_and_region(first_file, second_file):
     Compares location['bucket'] and location['object'].
     Also compares version region_ids.
     """
-    first_loc = first_file['versions__location']
-    second_loc = second_file['versions__location']
+    first_loc = first_file["versions__location"]
+    second_loc = second_file["versions__location"]
 
     if first_loc and second_loc:
-        return first_loc['bucket'] == second_loc['bucket'] and \
-            first_loc['object'] == second_loc['object'] and \
-            first_file['versions__region_id'] == first_file['versions__region_id']
+        return (
+            first_loc["bucket"] == second_loc["bucket"]
+            and first_loc["object"] == second_loc["object"]
+            and first_file["versions__region_id"]
+            == first_file["versions__region_id"]
+        )
     return False
+
 
 def build_filename_set(files):
     """
     Convenience method for building a set of filenames
     """
-    return set(files.values_list('name', flat=True).order_by('name'))
+    return set(files.values_list("name", flat=True).order_by("name"))
+
 
 def recursively_compare_folders(resource_one, resource_two):
     """
@@ -77,42 +83,52 @@ def recursively_compare_folders(resource_one, resource_two):
     """
     match = True
     item_count = 0
-    files_list_one = BaseFileNode.objects.filter(parent_id=resource_one['id'])
-    files_list_two = BaseFileNode.objects.filter(parent_id=resource_two['id'])
-    if len(files_list_one) != len(files_list_two) or \
-            build_filename_set(files_list_one) != build_filename_set(files_list_two):
+    files_list_one = BaseFileNode.objects.filter(parent_id=resource_one["id"])
+    files_list_two = BaseFileNode.objects.filter(parent_id=resource_two["id"])
+    if len(files_list_one) != len(files_list_two) or build_filename_set(
+        files_list_one
+    ) != build_filename_set(files_list_two):
         match = False
 
     files_list_one = return_basefilenode_values(files_list_one)
     while match and (item_count < len(files_list_one)):
         resource_one = files_list_one[item_count]
-        resource_two = return_basefilenode_values(files_list_two.filter(name=resource_one['name'])).first()
-        match = resources_match(resource_one, resource_two) if resource_two else False
+        resource_two = return_basefilenode_values(
+            files_list_two.filter(name=resource_one["name"])
+        ).first()
+        match = (
+            resources_match(resource_one, resource_two)
+            if resource_two
+            else False
+        )
         item_count += 1
     return match
+
 
 def resources_match(resource_one, resource_two):
     """
     Checks if resource_one and resource_two match.  If two folders, recursively compares contents.
     If two files, compares versions.
     """
-    if resource_one['type'] == FOLDER:
+    if resource_one["type"] == FOLDER:
         match = recursively_compare_folders(resource_one, resource_two)
     else:
         match = compare_versions(resource_one, resource_two)
     return match
+
 
 def compare_history(first_file, second_file):
     """
     Compares _history field on files.  Addons in these scenarios
     are very unlikely to have versions, so we must compare their _history.
     """
-    first_hist = first_file['_history']
-    second_hist = second_file['_history']
+    first_hist = first_file["_history"]
+    second_hist = second_file["_history"]
 
     if first_hist and second_hist:
         return first_hist == second_hist
     return False
+
 
 def stage_removal(preserved_file, next_file):
     """
@@ -121,11 +137,12 @@ def stage_removal(preserved_file, next_file):
     The next_file will be deleted.
     """
     info = {
-        'guid_to_repoint': next_file['guids___id'],
-        'to_remove': next_file['_id'],
-        'preserving': preserved_file['_id']
+        "guid_to_repoint": next_file["guids___id"],
+        "to_remove": next_file["_id"],
+        "preserving": preserved_file["_id"],
     }
     return info
+
 
 def return_basefilenode_values(file_queryset):
     """
@@ -133,15 +150,16 @@ def return_basefilenode_values(file_queryset):
     a file comparison
     """
     return file_queryset.values(
-        '_id',
-        'id',
-        'type',
-        'versions__location',
-        'versions__region_id',
-        'guids___id',
-        '_history',
-        'name',
+        "_id",
+        "id",
+        "type",
+        "versions__location",
+        "versions__region_id",
+        "guids___id",
+        "_history",
+        "name",
     )
+
 
 def compare_versions(first_file, second_file):
     """
@@ -151,6 +169,7 @@ def compare_versions(first_file, second_file):
     history_equal = compare_history(first_file, second_file)
 
     return versions_equal or history_equal
+
 
 def inspect_duplicates(file_summary):
     """
@@ -171,26 +190,31 @@ def inspect_duplicates(file_summary):
                 type=file_type,
                 target_object_id=target_id,
                 parent_id=parent_id,
-                _path=path
-            ).order_by('created')
+                _path=path,
+            ).order_by("created")
         )
 
         preserved_file = files.first()
 
-        for next_file in files.exclude(_id=preserved_file['_id']):
+        for next_file in files.exclude(_id=preserved_file["_id"]):
             safe_to_remove = resources_match(preserved_file, next_file)
             if safe_to_remove:
                 to_remove.append(stage_removal(preserved_file, next_file))
 
         if not safe_to_remove:
             error_counter += 1
-            logger.info(f'Contact admins to resolve: target: {target._id}, name: {name}')
+            logger.info(
+                f"Contact admins to resolve: target: {target._id}, name: {name}"
+            )
 
-    logger.info(f'{error_counter}/{len(file_summary)} errors to manually resolve.')
-    logger.info('Files that can be deleted without issue:')
+    logger.info(
+        f"{error_counter}/{len(file_summary)} errors to manually resolve."
+    )
+    logger.info("Files that can be deleted without issue:")
     for entry in to_remove:
-        logger.info(f'{entry}')
+        logger.info(f"{entry}")
     return to_remove
+
 
 def remove_duplicates(duplicate_array, file_type):
     """
@@ -198,16 +222,16 @@ def remove_duplicates(duplicate_array, file_type):
         [{'guid_to_repoint': guid, 'to_remove': file__id, 'preserving': file__id}]
     """
     for duplicate in duplicate_array:
-        guid = Guid.load(duplicate['guid_to_repoint'])
-        preserving = BaseFileNode.objects.get(_id=duplicate['preserving'])
-        to_remove = BaseFileNode.objects.get(_id=duplicate['to_remove'])
+        guid = Guid.load(duplicate["guid_to_repoint"])
+        preserving = BaseFileNode.objects.get(_id=duplicate["preserving"])
+        to_remove = BaseFileNode.objects.get(_id=duplicate["to_remove"])
 
         if guid:
             guid.referent = preserving
             guid.save()
 
         to_remove.delete()
-    logger.info(f'Duplicates removed of type {file_type}')
+    logger.info(f"Duplicates removed of type {file_type}")
 
 
 class Command(BaseCommand):
@@ -224,13 +248,13 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry_run',
+            "--dry_run",
             type=bool,
             default=False,
-            help='Run queries but do not repoint guids or delete dupes',
+            help="Run queries but do not repoint guids or delete dupes",
         )
         parser.add_argument(
-            '--file_type',
+            "--file_type",
             type=str,
             required=True,
             help='File type - must be in valid_file_types or "all-files" or "all"',
@@ -239,27 +263,30 @@ class Command(BaseCommand):
     # Management command handler
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info(f'Script started time: {script_start_time}')
-        dry_run = options['dry_run']
-        file_type = options['file_type']
+        logger.info(f"Script started time: {script_start_time}")
+        dry_run = options["dry_run"]
+        file_type = options["file_type"]
 
-        if file_type not in valid_file_types and file_type not in ['all', 'all-files']:
-            raise Exception('This is not a valid filetype.')
+        if file_type not in valid_file_types and file_type not in [
+            "all",
+            "all-files",
+        ]:
+            raise Exception("This is not a valid filetype.")
 
-        if file_type == 'all':
+        if file_type == "all":
             file_types = valid_file_types
-        elif file_type == 'all-files':
+        elif file_type == "all-files":
             file_types = [t for t in valid_file_types if t != FOLDER]
         else:
             file_types = [file_type]
 
         if dry_run:
-            logger.info('Dry Run. Data will not be modified.')
+            logger.info("Dry Run. Data will not be modified.")
 
         for file_type in file_types:
             type_start_time = datetime.datetime.now()
             with connection.cursor() as cursor:
-                logger.info(f'Examining duplicates for {file_type}')
+                logger.info(f"Examining duplicates for {file_type}")
                 cursor.execute(FETCH_DUPLICATES_BY_FILETYPE, [file_type])
                 duplicate_files = cursor.fetchall()
 
@@ -268,8 +295,10 @@ class Command(BaseCommand):
                 with transaction.atomic():
                     remove_duplicates(to_remove, file_type)
             type_finish_time = datetime.datetime.now()
-            logger.info(f'{file_type} run time {type_finish_time - type_start_time}')
+            logger.info(
+                f"{file_type} run time {type_finish_time - type_start_time}"
+            )
 
         script_finish_time = datetime.datetime.now()
-        logger.info(f'Script finished time: {script_finish_time}')
-        logger.info(f'Run time {script_finish_time - script_start_time}')
+        logger.info(f"Script finished time: {script_finish_time}")
+        logger.info(f"Run time {script_finish_time - script_start_time}")

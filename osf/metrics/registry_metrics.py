@@ -1,11 +1,16 @@
 from elasticsearch_metrics import metrics
 
-from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
+from osf.utils.workflows import (
+    RegistrationModerationTriggers,
+    RegistrationModerationStates,
+)
 from .metric_mixin import MetricMixin
 
 
 class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
-    registration_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    registration_id = metrics.Keyword(
+        index=True, doc_values=True, required=True
+    )
     provider_id = metrics.Keyword(index=True, doc_values=True, required=True)
     trigger = metrics.Keyword(index=True, doc_values=True, required=True)
     from_state = metrics.Keyword(index=True, doc_values=True, required=True)
@@ -15,9 +20,9 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
 
     class Index:
         settings = {
-            'number_of_shards': 1,
-            'number_of_replicas': 1,
-            'refresh_interval': '1s',
+            "number_of_shards": 1,
+            "number_of_replicas": 1,
+            "refresh_interval": "1s",
         }
 
     class Meta:
@@ -70,107 +75,106 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
         """
         search = cls.search()
 
-        return search.update_from_dict({
-            'aggs': {
-                'providers': {
-                    'terms': {
-                        'field': 'provider_id'
-                    },
-                    'aggs': {
-                        'transitions_without_comments': {
-                            'missing': {
-                                'field': 'comment'
-                            }
-                        },
-                        'transitions_with_comments': {
-                            'filter': {
-                                'exists': {
-                                    'field': 'comment'
-                                }
-                            }
-                        },
-                        'submissions': {
-                            'filter': {
-                                'match': {
-                                    'trigger': {
-                                        'query': RegistrationModerationTriggers.SUBMIT.db_name
+        return (
+            search.update_from_dict(
+                {
+                    "aggs": {
+                        "providers": {
+                            "terms": {"field": "provider_id"},
+                            "aggs": {
+                                "transitions_without_comments": {
+                                    "missing": {"field": "comment"}
+                                },
+                                "transitions_with_comments": {
+                                    "filter": {"exists": {"field": "comment"}}
+                                },
+                                "submissions": {
+                                    "filter": {
+                                        "match": {
+                                            "trigger": {
+                                                "query": RegistrationModerationTriggers.SUBMIT.db_name
+                                            }
+                                        }
                                     }
-                                }
-                            }
-                        },
-                        'accepted_with_embargo': {
-                            'filter': {
-                                'bool': {
-                                    'must': [
-                                        {
-                                            'match': {
-                                                'to_state': RegistrationModerationStates.EMBARGO.db_name
-                                            }
-                                        },
-                                        {
-                                            'match': {
-                                                'trigger': RegistrationModerationTriggers.SUBMIT.db_name
-                                            }
+                                },
+                                "accepted_with_embargo": {
+                                    "filter": {
+                                        "bool": {
+                                            "must": [
+                                                {
+                                                    "match": {
+                                                        "to_state": RegistrationModerationStates.EMBARGO.db_name
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "trigger": RegistrationModerationTriggers.SUBMIT.db_name
+                                                    }
+                                                },
+                                            ]
                                         }
-                                    ]
-                                }
-                            }
-                        },
-                        'accepted_without_embargo': {
-                            'filter': {
-                                'bool': {
-                                    'must': [
-                                        {
-                                            'match': {
-                                                'to_state': RegistrationModerationStates.ACCEPTED.db_name
-                                            }
-                                        },
-                                        {
-                                            'match': {
-                                                'trigger': RegistrationModerationTriggers.SUBMIT.db_name
-                                            }
+                                    }
+                                },
+                                "accepted_without_embargo": {
+                                    "filter": {
+                                        "bool": {
+                                            "must": [
+                                                {
+                                                    "match": {
+                                                        "to_state": RegistrationModerationStates.ACCEPTED.db_name
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "trigger": RegistrationModerationTriggers.SUBMIT.db_name
+                                                    }
+                                                },
+                                            ]
                                         }
-                                    ]
-                                }
-                            }
-                        },
-                        'rejected': {
-                            'filter': {
-                                'bool': {
-                                    'must': [
-                                        {
-                                            'match': {
-                                                'to_state': RegistrationModerationStates.REJECTED.db_name
-                                            }
-                                        },
-                                        {
-                                            'match': {
-                                                'trigger': RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
-                                            }
+                                    }
+                                },
+                                "rejected": {
+                                    "filter": {
+                                        "bool": {
+                                            "must": [
+                                                {
+                                                    "match": {
+                                                        "to_state": RegistrationModerationStates.REJECTED.db_name
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "trigger": RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+                                                    }
+                                                },
+                                            ]
                                         }
-                                    ]
-                                }
-                            }
-                        },
-                        'withdrawn': {
-                            'filter': {
-                                'bool': {
-                                    'must': [
-                                        {
-                                            'match': {
-                                                'to_state': RegistrationModerationStates.WITHDRAWN.db_name
-                                            }
-                                        },
-                                        {
-                                            'match': {
-                                                'trigger': RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
-                                            }
+                                    }
+                                },
+                                "withdrawn": {
+                                    "filter": {
+                                        "bool": {
+                                            "must": [
+                                                {
+                                                    "match": {
+                                                        "to_state": RegistrationModerationStates.WITHDRAWN.db_name
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "trigger": RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
+                                                    }
+                                                },
+                                            ]
                                         }
-                                    ]
-                                }
-                            }
-                        },
+                                    }
+                                },
+                            },
+                        }
                     }
                 }
-            }
-        }).execute().aggregations['providers'].to_dict()
+            )
+            .execute()
+            .aggregations["providers"]
+            .to_dict()
+        )

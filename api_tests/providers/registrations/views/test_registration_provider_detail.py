@@ -13,25 +13,27 @@ class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
 
     @pytest.fixture()
     def fake_url(self):
-        return f'/{API_BASE}providers/registrations/fake/'
+        return f"/{API_BASE}providers/registrations/fake/"
 
     @pytest.fixture()
     def provider_url(self, provider):
-        return '/{}providers/registrations/{}/'.format(
-            API_BASE, provider._id)
+        return "/{}providers/registrations/{}/".format(API_BASE, provider._id)
 
     @pytest.fixture()
     def provider_url_two(self, provider_two):
-        return '/{}providers/registrations/{}/'.format(
-            API_BASE, provider_two._id)
+        return "/{}providers/registrations/{}/".format(
+            API_BASE, provider_two._id
+        )
 
     @pytest.fixture()
     def provider_list_url(self, provider):
-        return f'/{API_BASE}providers/registrations/{provider._id}/submissions/'
+        return (
+            f"/{API_BASE}providers/registrations/{provider._id}/submissions/"
+        )
 
     @pytest.fixture()
     def provider_list_url_fake(self, fake_url):
-        return f'{fake_url}submissions/'
+        return f"{fake_url}submissions/"
 
     @pytest.fixture()
     def brand(self):
@@ -46,15 +48,21 @@ class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
 
     @pytest.fixture()
     def provider_url_w_brand(self, provider_with_brand):
-        return '/{}providers/registrations/{}/'.format(
-            API_BASE, provider_with_brand._id)
+        return "/{}providers/registrations/{}/".format(
+            API_BASE, provider_with_brand._id
+        )
 
-    def test_registration_provider_with_special_fields(self, app, provider_with_brand, brand, provider_url_w_brand):
+    def test_registration_provider_with_special_fields(
+        self, app, provider_with_brand, brand, provider_url_w_brand
+    ):
         # Ensures brand data is included for registration providers
         res = app.get(provider_url_w_brand)
 
         assert res.status_code == 200
-        data = res.json['data']
+        data = res.json["data"]
 
-        assert data['relationships']['brand']['data']['id'] == str(brand.id)
-        assert data['attributes']['branded_discovery_page'] == provider_with_brand.branded_discovery_page
+        assert data["relationships"]["brand"]["data"]["id"] == str(brand.id)
+        assert (
+            data["attributes"]["branded_discovery_page"]
+            == provider_with_brand.branded_discovery_page
+        )

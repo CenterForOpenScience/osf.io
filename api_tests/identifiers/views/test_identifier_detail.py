@@ -8,7 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     IdentifierFactory,
     NodeFactory,
-    PreprintFactory
+    PreprintFactory,
 )
 from osf.utils.permissions import READ
 from osf.utils.workflows import DefaultStates
@@ -16,7 +16,6 @@ from osf.utils.workflows import DefaultStates
 
 @pytest.mark.django_db
 class TestIdentifierDetail:
-
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
@@ -31,13 +30,14 @@ class TestIdentifierDetail:
 
     @pytest.fixture()
     def res_registration(self, app, identifier_registration):
-        registration_url = '/{}identifiers/{}/'.format(
-            API_BASE, identifier_registration._id)
+        registration_url = "/{}identifiers/{}/".format(
+            API_BASE, identifier_registration._id
+        )
         return app.get(registration_url)
 
     @pytest.fixture()
     def data_registration(self, res_registration):
-        return res_registration.json['data']
+        return res_registration.json["data"]
 
     @pytest.fixture()
     def node(self, user):
@@ -53,12 +53,12 @@ class TestIdentifierDetail:
 
     @pytest.fixture()
     def res_node(self, app, identifier_node):
-        url_node = f'/{API_BASE}identifiers/{identifier_node._id}/'
+        url_node = f"/{API_BASE}identifiers/{identifier_node._id}/"
         return app.get(url_node)
 
     @pytest.fixture()
     def data_node(self, res_node):
-        return res_node.json['data']
+        return res_node.json["data"]
 
     @pytest.fixture()
     def preprint(self, user):
@@ -70,77 +70,85 @@ class TestIdentifierDetail:
         return IdentifierFactory(referent=preprint)
 
     def test_identifier_registration_detail(
-            self, registration, identifier_registration,
-            res_registration, data_registration
+        self,
+        registration,
+        identifier_registration,
+        res_registration,
+        data_registration,
     ):
-
         # test_identifier_detail_success_registration
         assert res_registration.status_code == 200
-        assert res_registration.content_type == 'application/vnd.api+json'
+        assert res_registration.content_type == "application/vnd.api+json"
 
         # test_identifier_detail_returns_correct_referent_registration
         path = urlparse(
-            data_registration['relationships']['referent']['links']['related']['href']
+            data_registration["relationships"]["referent"]["links"]["related"][
+                "href"
+            ]
         ).path
-        assert '/{}registrations/{}/'.format(
-            API_BASE, registration._id) == path
+        assert (
+            "/{}registrations/{}/".format(API_BASE, registration._id) == path
+        )
 
         # test_identifier_detail_returns_correct_category_registration
-        assert data_registration['attributes']['category'] == identifier_registration.category
+        assert (
+            data_registration["attributes"]["category"]
+            == identifier_registration.category
+        )
 
         # test_identifier_detail_returns_correct_value_registration
-        assert data_registration['attributes']['value'] == identifier_registration.value
+        assert (
+            data_registration["attributes"]["value"]
+            == identifier_registration.value
+        )
 
     def test_identifier_node_detail(
-            self, node, identifier_node,
-            res_node, data_node
+        self, node, identifier_node, res_node, data_node
     ):
-
         # test_identifier_detail_success_node
         assert res_node.status_code == 200
-        assert res_node.content_type == 'application/vnd.api+json'
+        assert res_node.content_type == "application/vnd.api+json"
 
         # test_identifier_detail_returns_correct_referent_node
         path = urlparse(
-            data_node['relationships']['referent']['links']['related']['href']
+            data_node["relationships"]["referent"]["links"]["related"]["href"]
         ).path
-        assert f'/{API_BASE}nodes/{node._id}/' == path
+        assert f"/{API_BASE}nodes/{node._id}/" == path
 
         # test_identifier_detail_returns_correct_category_node
-        assert data_node['attributes']['category'] == identifier_node.category
+        assert data_node["attributes"]["category"] == identifier_node.category
 
         # test_identifier_detail_returns_correct_value_node
-        assert data_node['attributes']['value'] == identifier_node.value
+        assert data_node["attributes"]["value"] == identifier_node.value
 
     def test_identifier_preprint_detail(
-            self, app, preprint, identifier_preprint,
-            user
+        self, app, preprint, identifier_preprint, user
     ):
-        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
+        url = f"/{API_BASE}identifiers/{identifier_preprint._id}/"
 
         res = app.get(url, expect_errors=True)
 
         # test_identifier_detail_success_preprint
         assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        data = res.json['data']
+        assert res.content_type == "application/vnd.api+json"
+        data = res.json["data"]
 
         # test_identifier_detail_returns_correct_referent_preprint
         path = urlparse(
-            data['relationships']['referent']['links']['related']['href']
+            data["relationships"]["referent"]["links"]["related"]["href"]
         ).path
-        assert f'/{API_BASE}preprints/{preprint._id}/' == path
+        assert f"/{API_BASE}preprints/{preprint._id}/" == path
 
         # test_identifier_detail_returns_correct_category_preprint
-        assert data['attributes']['category'] == identifier_preprint.category
+        assert data["attributes"]["category"] == identifier_preprint.category
 
         # test_identifier_detail_returns_correct_value_preprint
-        assert data['attributes']['value'] == identifier_preprint.value
+        assert data["attributes"]["value"] == identifier_preprint.value
 
     def test_identifier_preprint_detail_unpublished(
-            self, app, preprint, user, identifier_preprint, noncontrib
+        self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
+        url = f"/{API_BASE}identifiers/{identifier_preprint._id}/"
         preprint.is_published = False
         preprint.save()
 
@@ -164,9 +172,9 @@ class TestIdentifierDetail:
         assert res.status_code == 200
 
     def test_identifier_preprint_detail_deleted(
-            self, app, preprint, user, identifier_preprint, noncontrib
+        self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
+        url = f"/{API_BASE}identifiers/{identifier_preprint._id}/"
         preprint.deleted = timezone.now()
         preprint.save()
 
@@ -190,9 +198,9 @@ class TestIdentifierDetail:
         assert res.status_code == 404
 
     def test_identifier_preprint_detail_private(
-            self, app, preprint, user, identifier_preprint, noncontrib
+        self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
+        url = f"/{API_BASE}identifiers/{identifier_preprint._id}/"
         preprint.is_public = False
         preprint.save()
 
@@ -216,9 +224,9 @@ class TestIdentifierDetail:
         assert res.status_code == 200
 
     def test_identifier_preprint_detail_abandoned(
-            self, app, preprint, user, identifier_preprint, noncontrib
+        self, app, preprint, user, identifier_preprint, noncontrib
     ):
-        url = f'/{API_BASE}identifiers/{identifier_preprint._id}/'
+        url = f"/{API_BASE}identifiers/{identifier_preprint._id}/"
         preprint.machine_state = DefaultStates.INITIAL.value
         preprint.save()
 
@@ -241,27 +249,25 @@ class TestIdentifierDetail:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
-    def test_invalid_identifier(
-            self, app, user
-    ):
-        url = '/{}identifiers/{}/'.format(API_BASE, 'invalid_id')
+    def test_invalid_identifier(self, app, user):
+        url = "/{}identifiers/{}/".format(API_BASE, "invalid_id")
 
         # test_unpublished_preprint_identifier_unauthenticated
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
     def test_identifier_preprint_detail_datacite_doi(self, app, user):
-        """ Make sure dois with the temporary category legacy_doi show up
+        """Make sure dois with the temporary category legacy_doi show up
         with the category doi for now, until the proper migration happens
         """
         preprint = PreprintFactory(set_doi=False)
-        doi_value = '10.123/datacitedoi/woo'
-        preprint.set_identifier_value(category='legacy_doi', value=doi_value)
-        identifier = preprint.identifiers.filter(category='legacy_doi').first()
-        url = f'/{API_BASE}identifiers/{identifier._id}/'
+        doi_value = "10.123/datacitedoi/woo"
+        preprint.set_identifier_value(category="legacy_doi", value=doi_value)
+        identifier = preprint.identifiers.filter(category="legacy_doi").first()
+        url = f"/{API_BASE}identifiers/{identifier._id}/"
 
         res = app.get(url, auth=user.auth)
-        attributes = res.json['data']['attributes']
+        attributes = res.json["data"]["attributes"]
 
-        assert attributes['category'] == 'doi'
-        assert attributes['value'] == doi_value
+        assert attributes["category"] == "doi"
+        assert attributes["value"] == doi_value

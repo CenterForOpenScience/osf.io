@@ -12,22 +12,22 @@ class TestCollectionProviderExists(ProviderExistsMixin):
 
     @pytest.fixture()
     def fake_url(self):
-        return f'/{API_BASE}providers/collections/fake/'
+        return f"/{API_BASE}providers/collections/fake/"
 
     @pytest.fixture()
     def provider_url(self, provider):
-        return '/{}providers/collections/{}/'.format(
-            API_BASE, provider._id)
+        return "/{}providers/collections/{}/".format(API_BASE, provider._id)
 
     @pytest.fixture()
     def provider_url_two(self, provider_two):
-        return '/{}providers/collections/{}/'.format(
-            API_BASE, provider_two._id)
+        return "/{}providers/collections/{}/".format(
+            API_BASE, provider_two._id
+        )
 
     @pytest.fixture()
     def provider_list_url(self, provider):
-        return f'/{API_BASE}providers/collections/{provider._id}/submissions/'
+        return f"/{API_BASE}providers/collections/{provider._id}/submissions/"
 
     @pytest.fixture()
     def provider_list_url_fake(self, fake_url):
-        return f'{fake_url}submissions/'
+        return f"{fake_url}submissions/"

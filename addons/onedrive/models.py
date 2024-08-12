@@ -5,8 +5,11 @@ import logging
 from django.db import models
 
 from addons.base import exceptions
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings,
+    BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from addons.onedrive import settings
 from addons.onedrive.client import OneDriveClient
 from addons.onedrive.settings import DEFAULT_ROOT_ID
@@ -21,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class OneDriveFileNode(BaseFileNode):
-    _provider = 'onedrive'
+    _provider = "onedrive"
 
 
 class OneDriveFolder(OneDriveFileNode, Folder):
@@ -32,14 +35,14 @@ class OneDriveFile(OneDriveFileNode, File):
     @property
     def _hashes(self):
         try:
-            return {'md5': self._history[-1]['extra']['hashes']['md5']}
+            return {"md5": self._history[-1]["extra"]["hashes"]["md5"]}
         except (IndexError, KeyError):
             return None
 
 
 class OneDriveProvider(ExternalProvider):
-    name = 'Microsoft OneDrive'
-    short_name = 'onedrive'
+    name = "Microsoft OneDrive"
+    short_name = "onedrive"
 
     client_id = settings.ONEDRIVE_KEY
     client_secret = settings.ONEDRIVE_SECRET
@@ -55,12 +58,12 @@ class OneDriveProvider(ExternalProvider):
         """View called when the Oauth flow is completed. Adds a new OneDriveUserSettings
         record to the user and saves the user's access token and account info.
         """
-        client = OneDriveClient(response['access_token'])
+        client = OneDriveClient(response["access_token"])
         user_info = client.user_info()
         return {
-            'provider_id': user_info['id'],
-            'display_name': user_info['name'],
-            'profile_url': user_info['link'],
+            "provider_id": user_info["id"],
+            "display_name": user_info["name"],
+            "profile_url": user_info["link"],
         }
 
     def fetch_access_token(self, force_refresh=False):
@@ -69,8 +72,8 @@ class OneDriveProvider(ExternalProvider):
 
 
 class UserSettings(BaseOAuthUserSettings):
-    """Stores user-specific onedrive information
-    """
+    """Stores user-specific onedrive information"""
+
     oauth_provider = OneDriveProvider
     serializer = OneDriveSerializer
 
@@ -90,12 +93,15 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
       is defined in the settings.
 
     """
+
     oauth_provider = OneDriveProvider
     serializer = OneDriveSerializer
 
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
+    user_settings = models.ForeignKey(
+        UserSettings, null=True, blank=True, on_delete=models.CASCADE
+    )
     drive_id = models.TextField(null=True, blank=True)
 
     _api = None
@@ -109,10 +115,13 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def complete(self):
-        return bool(self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-        ))
+        return bool(
+            self.has_auth
+            and self.user_settings.verify_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+            )
+        )
 
     @property
     def folder_name(self):
@@ -122,7 +131,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if self.folder_id != DEFAULT_ROOT_ID:
             return unquote(os.path.split(self.folder_path)[1])
         else:
-            return '/ (Full OneDrive)'
+            return "/ (Full OneDrive)"
 
     def fetch_folder_name(self):
         """Required.  Called by base views"""
@@ -167,17 +176,21 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         """
 
         if folder_id is None:
-            return [{
-                'id': DEFAULT_ROOT_ID,
-                'path': '/',
-                'addon': 'onedrive',
-                'kind': 'folder',
-                'name': '/ (Full OneDrive)',
-                'urls': {
-                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/onedrive/folders/',
-                                          params={'id': DEFAULT_ROOT_ID}),
+            return [
+                {
+                    "id": DEFAULT_ROOT_ID,
+                    "path": "/",
+                    "addon": "onedrive",
+                    "kind": "folder",
+                    "name": "/ (Full OneDrive)",
+                    "urls": {
+                        "folders": api_v2_url(
+                            f"nodes/{self.owner._id}/addons/onedrive/folders/",
+                            params={"id": DEFAULT_ROOT_ID},
+                        ),
+                    },
                 }
-            }]
+            ]
 
         try:
             access_token = self.fetch_access_token()
@@ -188,40 +201,42 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         items = client.folders(self.drive_id, folder_id)
         return [
             {
-                'addon': 'onedrive',
-                'kind': 'folder',
-                'id': item['id'],
-                'name': item['name'],
-                'path': item['name'],
-                'urls': {
-                    'folders': api_v2_url(f'nodes/{self.owner._id}/addons/onedrive/folders/',
-                                          params={'id': item['id']}),
-                }
+                "addon": "onedrive",
+                "kind": "folder",
+                "id": item["id"],
+                "name": item["name"],
+                "path": item["name"],
+                "urls": {
+                    "folders": api_v2_url(
+                        f"nodes/{self.owner._id}/addons/onedrive/folders/",
+                        params={"id": item["id"]},
+                    ),
+                },
             }
             for item in items
         ]
 
     def set_folder(self, folder, auth):
-        self.folder_id = folder['id']
-        self.folder_path = folder['path']
+        self.folder_id = folder["id"]
+        self.folder_path = folder["path"]
         self.save()
 
         if not self.complete:
             self.user_settings.grant_oauth_access(
                 node=self.owner,
                 external_account=self.external_account,
-                metadata={'folder': self.folder_id}
+                metadata={"folder": self.folder_id},
             )
             self.user_settings.save()
 
-        self.nodelogger.log(action='folder_selected', save=True)
+        self.nodelogger.log(action="folder_selected", save=True)
 
     @property
     def selected_folder_name(self):
         if self.folder_id is None:
-            return ''
+            return ""
         elif self.folder_id == DEFAULT_ROOT_ID:
-            return '/ (Full OneDrive)'
+            return "/ (Full OneDrive)"
         else:
             return self.folder_name
 
@@ -229,8 +244,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         """Remove user authorization from this node and log the event."""
 
         if add_log:
-            extra = {'folder_id': self.folder_id}
-            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
+            extra = {"folder_id": self.folder_id}
+            self.nodelogger.log(
+                action="node_deauthorized", extra=extra, save=True
+            )
 
         self.clear_settings()
         self.clear_auth()
@@ -240,35 +257,35 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
-            raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.fetch_access_token()}
+            raise exceptions.AddonError("Addon is not authorized")
+        return {"token": self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if self.drive_id is None or self.folder_id is None:
-            raise exceptions.AddonError('Folder is not configured')
-        return {'drive_id': self.drive_id, 'folder': self.folder_id}
+            raise exceptions.AddonError("Folder is not configured")
+        return {"drive_id": self.drive_id, "folder": self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
-            f'onedrive_{action}',
+            f"onedrive_{action}",
             auth=auth,
             params={
-                'path': metadata['materialized'],
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'folder': self.folder_id,
-                'urls': {
-                    'view': self.owner.web_url_for(
-                        'addon_view_or_download_file',
-                        provider='onedrive',
-                        action='view',
-                        path=metadata['path']
+                "path": metadata["materialized"],
+                "project": self.owner.parent_id,
+                "node": self.owner._id,
+                "folder": self.folder_id,
+                "urls": {
+                    "view": self.owner.web_url_for(
+                        "addon_view_or_download_file",
+                        provider="onedrive",
+                        action="view",
+                        path=metadata["path"],
                     ),
-                    'download': self.owner.web_url_for(
-                        'addon_view_or_download_file',
-                        provider='onedrive',
-                        action='download',
-                        path=metadata['path']
+                    "download": self.owner.web_url_for(
+                        "addon_view_or_download_file",
+                        provider="onedrive",
+                        action="download",
+                        path=metadata["path"],
                     ),
                 },
             },
@@ -289,5 +306,5 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         client = OneDriveClient(self.fetch_access_token())
         user_info = client.user_info()
-        self.drive_id = user_info['drive_id']
+        self.drive_id = user_info["drive_id"]
         self.save()

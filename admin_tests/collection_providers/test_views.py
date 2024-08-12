@@ -2,10 +2,7 @@ import pytest
 
 from django.test import RequestFactory
 
-from osf_tests.factories import (
-    AuthUserFactory,
-    CollectionProviderFactory
-)
+from osf_tests.factories import AuthUserFactory, CollectionProviderFactory
 from osf.models import CollectionProvider
 from admin_tests.utilities import setup_view, setup_form_view
 from admin.collection_providers import views
@@ -19,18 +16,20 @@ from admin_tests.mixins.providers import (
 
 pytestmark = pytest.mark.django_db
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def req(user):
-    req = RequestFactory().get('/fake_path')
+    req = RequestFactory().get("/fake_path")
     req.user = user
     return req
 
-class TestCollectionProviderList(ProviderListMixinBase):
 
+class TestCollectionProviderList(ProviderListMixinBase):
     @pytest.fixture()
     def provider_factory(self):
         return CollectionProviderFactory
@@ -46,7 +45,6 @@ class TestCollectionProviderList(ProviderListMixinBase):
 
 
 class TestCollectionProviderDisplay(ProviderDisplayMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return CollectionProviderFactory
@@ -63,12 +61,11 @@ class TestCollectionProviderDisplay(ProviderDisplayMixinBase):
     def view(self, req, provider):
         plain_view = views.CollectionProviderDisplay()
         view = setup_view(plain_view, req)
-        view.kwargs = {'collection_provider_id': provider.id}
+        view.kwargs = {"collection_provider_id": provider.id}
         return view
 
 
 class TestCreateCollectionProvider(CreateProviderMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return CollectionProviderFactory
@@ -77,12 +74,11 @@ class TestCreateCollectionProvider(CreateProviderMixinBase):
     def view(self, req, provider):
         plain_view = views.CreateCollectionProvider()
         view = setup_form_view(plain_view, req, form=CollectionProviderForm())
-        view.kwargs = {'collection_provider_id': provider.id}
+        view.kwargs = {"collection_provider_id": provider.id}
         return view
 
 
 class TestDeleteCollectionProvider(DeleteProviderMixinBase):
-
     @pytest.fixture()
     def provider_factory(self):
         return CollectionProviderFactory
@@ -91,5 +87,5 @@ class TestDeleteCollectionProvider(DeleteProviderMixinBase):
     def view(self, req, provider):
         view = views.DeleteCollectionProvider()
         view = setup_view(view, req)
-        view.kwargs = {'collection_provider_id': provider.id}
+        view.kwargs = {"collection_provider_id": provider.id}
         return view

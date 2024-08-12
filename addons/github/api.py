@@ -16,15 +16,15 @@ default_adapter = HTTPAdapter()
 
 
 class GitHubClient:
-
     def __init__(self, external_account=None, access_token=None):
-
-        self.access_token = getattr(external_account, 'oauth_key', None) or access_token
+        self.access_token = (
+            getattr(external_account, "oauth_key", None) or access_token
+        )
         session = GitHubSession()
         # Caching libary
         if github_settings.CACHE:
-            session.mount('https://api.github.com/user', default_adapter)
-            session.mount('https://', https_cache)
+            session.mount("https://api.github.com/user", default_adapter)
+            session.mount("https://", https_cache)
 
         if self.access_token:
             self.gh3 = GitHub(session=session, token=self.access_token)
@@ -63,8 +63,8 @@ class GitHubClient:
         raise NotFoundError
 
     def repos(self):
-        repos = self.gh3.repositories(type='all', sort='pushed')
-        return [repo for repo in repos if repo.permissions['push']]
+        repos = self.gh3.repositories(type="all", sort="pushed")
+        return [repo for repo in repos if repo.permissions["push"]]
 
     def create_repo(self, repo, **kwargs):
         return self.gh3.create_repository(repo, **kwargs)
@@ -83,7 +83,7 @@ class GitHubClient:
         return self.repo(user, repo).branches() or []
 
     # TODO: Test
-    def starball(self, user, repo, archive='tar', ref='master'):
+    def starball(self, user, repo, archive="tar", ref="master"):
         """Get link for archive download.
 
         :param str user: GitHub user name
@@ -95,7 +95,9 @@ class GitHubClient:
 
         # github3 archive method writes file to disk
         repository = self.repo(user, repo)
-        url = repository._build_url(archive + 'ball', ref, base_url=repository._api)
+        url = repository._build_url(
+            archive + "ball", ref, base_url=repository._api
+        )
         resp = repository._get(url, allow_redirects=True, stream=True)
 
         return resp.headers, resp.content
@@ -123,7 +125,9 @@ class GitHubClient:
             http://developer.github.com/v3/repos/hooks/#json-http
         """
         try:
-            hook = self.repo(user, repo).create_hook(name, config, events, active)
+            hook = self.repo(user, repo).create_hook(
+                name, config, events, active
+            )
         except GitHubError:
             # TODO Handle this case - if '20 hooks' in e.errors[0].get('message'):
             return None
@@ -166,12 +170,12 @@ class GitHubClient:
             bool
         """
         if self.access_token:
-            url = self.gh3._build_url('user')
+            url = self.gh3._build_url("user")
             resp = self.gh3._get(
                 url,
                 headers={
-                    'Authorization': f'token {self.access_token}',
-                    'Accept': 'application/vnd.github.v3+json'
+                    "Authorization": f"token {self.access_token}",
+                    "Accept": "application/vnd.github.v3+json",
                 },
             )
 
@@ -181,15 +185,16 @@ class GitHubClient:
 
 
 def ref_to_params(branch=None, sha=None):
-
-    params = urlencode({
-        key: value
-        for key, value in {
-            'branch': branch,
-            'sha': sha,
-        }.items()
-        if value
-    })
+    params = urlencode(
+        {
+            key: value
+            for key, value in {
+                "branch": branch,
+                "sha": sha,
+            }.items()
+            if value
+        }
+    )
     if params:
-        return '?' + params
-    return ''
+        return "?" + params
+    return ""

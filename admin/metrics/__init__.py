@@ -1,1 +1,1 @@
-default_app_config = 'admin.metrics.apps.MetricsAdminAppConfig'
+default_app_config = "admin.metrics.apps.MetricsAdminAppConfig"

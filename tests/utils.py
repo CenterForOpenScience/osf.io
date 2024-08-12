@@ -14,6 +14,7 @@ from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
+
 def requires_module(module):
     def decorator(fn):
         @functools.wraps(fn)
@@ -23,7 +24,9 @@ def requires_module(module):
             except ImportError:
                 raise SkipTest()
             return fn(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -40,6 +43,7 @@ def assert_logs(log_action, node_key, index=-1):
 
     TODO: extend this decorator to check log param correctness?
     """
+
     def outer_wrapper(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -47,12 +51,15 @@ def assert_logs(log_action, node_key, index=-1):
             last_log = node.logs.latest()
             func(self, *args, **kwargs)
             node.reload()
-            new_log = node.logs.order_by('-date')[-index - 1]
+            new_log = node.logs.order_by("-date")[-index - 1]
             assert last_log._id != new_log._id
             assert new_log.action == log_action
             node.save()
+
         return wrapper
+
     return outer_wrapper
+
 
 def assert_preprint_logs(log_action, preprint_key, index=-1):
     """A decorator to ensure a log is added during a unit test.
@@ -67,6 +74,7 @@ def assert_preprint_logs(log_action, preprint_key, index=-1):
 
     TODO: extend this decorator to check log param correctness?
     """
+
     def outer_wrapper(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -74,12 +82,15 @@ def assert_preprint_logs(log_action, preprint_key, index=-1):
             last_log = preprint.logs.latest()
             func(self, *args, **kwargs)
             preprint.reload()
-            new_log = preprint.logs.order_by('-created')[-index - 1]
+            new_log = preprint.logs.order_by("-created")[-index - 1]
             assert last_log._id != new_log._id
             assert new_log.action == log_action
             preprint.save()
+
         return wrapper
+
     return outer_wrapper
+
 
 def assert_not_logs(log_action, node_key, index=-1):
     def outer_wrapper(func):
@@ -89,17 +100,21 @@ def assert_not_logs(log_action, node_key, index=-1):
             last_log = node.logs.latest()
             func(self, *args, **kwargs)
             node.reload()
-            new_log = node.logs.order_by('-date')[-index - 1]
+            new_log = node.logs.order_by("-date")[-index - 1]
             assert new_log.action != log_action
             assert last_log._id == new_log._id
             node.save()
+
         return wrapper
+
     return outer_wrapper
+
 
 def assert_equals(item_one, item_two):
     item_one.sort()
     item_two.sort()
     assert item_one == item_two
+
 
 @contextlib.contextmanager
 def assert_latest_log(log_action, node_key, index=0):
@@ -107,9 +122,14 @@ def assert_latest_log(log_action, node_key, index=0):
     last_log = node.logs.latest()
     node.reload()
     yield
-    new_log = node.logs.order_by('-date')[index] if hasattr(last_log, 'date') else node.logs.order_by('-created')[index]
+    new_log = (
+        node.logs.order_by("-date")[index]
+        if hasattr(last_log, "date")
+        else node.logs.order_by("-created")[index]
+    )
     assert last_log._id != new_log._id
     assert new_log.action == log_action
+
 
 @contextlib.contextmanager
 def assert_latest_log_not(log_action, node_key, index=0):
@@ -117,16 +137,31 @@ def assert_latest_log_not(log_action, node_key, index=0):
     last_log = node.logs.latest()
     node.reload()
     yield
-    new_log = node.logs.order_by('-date')[index] if hasattr(last_log, 'date') else node.logs.order_by('-created')[index]
+    new_log = (
+        node.logs.order_by("-date")[index]
+        if hasattr(last_log, "date")
+        else node.logs.order_by("-created")[index]
+    )
     assert new_log.action != log_action
     assert last_log._id == new_log._id
 
+
 @contextlib.contextmanager
-def mock_archive(project, schema=None, auth=None, draft_registration=None, parent=None,
-                 embargo=False, embargo_end_date=None,
-                 retraction=False, justification=None, autoapprove_retraction=False,
-                 autocomplete=True, autoapprove=False):
-    """ A context manager for registrations. When you want to call Node#register_node in
+def mock_archive(
+    project,
+    schema=None,
+    auth=None,
+    draft_registration=None,
+    parent=None,
+    embargo=False,
+    embargo_end_date=None,
+    retraction=False,
+    justification=None,
+    autoapprove_retraction=False,
+    autocomplete=True,
+    autoapprove=False,
+):
+    """A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
     helper allows for creating a registration in a safe fashion.
 
@@ -157,9 +192,11 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
     """
     schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
-    draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, registration_schema=schema)
+    draft_registration = draft_registration or DraftRegistrationFactory(
+        branched_from=project, registration_schema=schema
+    )
 
-    with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
+    with mock.patch("framework.celery_tasks.handlers.enqueue_task"):
         registration = draft_registration.register(auth=auth, save=True)
 
     if embargo:
@@ -167,8 +204,7 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
             timezone.now() + datetime.timedelta(days=20)
         )
         registration.root.embargo_registration(
-            project.creator,
-            embargo_end_date
+            project.creator, embargo_end_date
         )
     else:
         registration.root.require_approval(project.creator)
@@ -179,8 +215,10 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
         root_job.done = True
         root_job.save()
         sanction = registration.root.sanction
-        mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True))
-        mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
+        mock.patch.object(
+            root_job, "archive_tree_finished", mock.Mock(return_value=True)
+        )
+        mock.patch("website.archiver.tasks.archive_success.delay", mock.Mock())
         archiver_listeners.archive_callback(registration)
 
     if autoapprove:
@@ -188,8 +226,10 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
         sanction.accept()
 
     if retraction:
-        justification = justification or 'Because reasons'
-        retraction = registration.retract_registration(project.creator, justification=justification)
+        justification = justification or "Because reasons"
+        retraction = registration.retract_registration(
+            project.creator, justification=justification
+        )
         if autoapprove_retraction:
             retraction.state = Sanction.APPROVED
             retraction._on_complete(project.creator)
@@ -197,31 +237,38 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
         registration.save()
     yield registration
 
+
 def make_drf_request(*args, **kwargs):
     from rest_framework.request import Request
+
     http_request = HttpRequest()
     # The values here don't matter; they just need
     # to be present
-    http_request.META['SERVER_NAME'] = 'localhost'
-    http_request.META['SERVER_PORT'] = 8000
+    http_request.META["SERVER_NAME"] = "localhost"
+    http_request.META["SERVER_PORT"] = 8000
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
 
-def make_drf_request_with_version(version='2.0', *args, **kwargs):
+
+def make_drf_request_with_version(version="2.0", *args, **kwargs):
     req = make_drf_request(*args, **kwargs)
-    req.parser_context['kwargs'] = {'version': 'v2'}
+    req.parser_context["kwargs"] = {"version": "v2"}
     req.version = version
     return req
 
-class MockAuth:
 
+class MockAuth:
     def __init__(self, user):
         self.user = user
         self.logged_in = True
         self.private_key = None
         self.private_link = None
 
-mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
+
+mock_auth = lambda user: mock.patch(
+    "framework.auth.Auth.from_kwargs", mock.Mock(return_value=MockAuth(user))
+)
+
 
 def unique(factory):
     """
@@ -234,18 +281,23 @@ def unique(factory):
     unique_name = unique_name_factory()
     """
     used = []
+
     @functools.wraps(factory)
     def wrapper():
         item = factory()
         over = 0
         while item in used:
             if over > 100:
-                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
+                raise RuntimeError(
+                    "Tried 100 times to generate a unqiue value, stopping."
+                )
             item = factory()
             over += 1
         used.append(item)
         return item
+
     return wrapper
+
 
 @contextlib.contextmanager
 def run_celery_tasks():

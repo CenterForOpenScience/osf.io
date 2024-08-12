@@ -16,9 +16,9 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
 
     class Index:
         settings = {
-            'number_of_shards': 1,
-            'number_of_replicas': 1,
-            'refresh_interval': '1s',
+            "number_of_shards": 1,
+            "number_of_replicas": 1,
+            "refresh_interval": "1s",
         }
 
     class Meta:
@@ -27,26 +27,30 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
 
     @classmethod
     def record_for_preprint(cls, preprint, user=None, **kwargs):
-        count = kwargs.pop('count', 1)
+        count = kwargs.pop("count", 1)
         return cls.record(
             count=count,
             preprint_id=preprint._id,
-            user_id=getattr(user, '_id', None),
+            user_id=getattr(user, "_id", None),
             provider_id=preprint.provider._id,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
-    def get_count_for_preprint(cls, preprint, after=None, before=None, index=None):
-        search = cls.search(after=after, before=before, index=index).filter('match', preprint_id=preprint._id)
+    def get_count_for_preprint(
+        cls, preprint, after=None, before=None, index=None
+    ):
+        search = cls.search(after=after, before=before, index=index).filter(
+            "match", preprint_id=preprint._id
+        )
         timestamp = {}
         if after:
-            timestamp['gte'] = after
+            timestamp["gte"] = after
         if before:
-            timestamp['lt'] = before
+            timestamp["lt"] = before
         if timestamp:
-            search = search.filter('range', timestamp=timestamp)
-        search.aggs.metric('sum_count', 'sum', field='count')
+            search = search.filter("range", timestamp=timestamp)
+        search.aggs.metric("sum_count", "sum", field="count")
         # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
         search = search.extra(size=0)
         try:
@@ -57,7 +61,7 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
             search = search.index().index(cls._default_index())
             response = search.execute()
         # No indexed data
-        if not hasattr(response.aggregations, 'sum_count'):
+        if not hasattr(response.aggregations, "sum_count"):
             return 0
         return int(response.aggregations.sum_count.value)
 

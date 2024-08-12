@@ -15,13 +15,13 @@ from framework.sessions.utils import remove_session
 
 
 __all__ = [
-    'Auth',
-    'get_user',
-    'check_password',
-    'authenticate',
-    'external_first_login_authenticate',
-    'logout',
-    'register_unconfirmed',
+    "Auth",
+    "get_user",
+    "check_password",
+    "authenticate",
+    "external_first_login_authenticate",
+    "logout",
+    "register_unconfirmed",
 ]
 
 
@@ -31,19 +31,38 @@ check_password = bcrypt.check_password_hash
 
 def authenticate(user, response, user_updates=None):
     data = {
-        'auth_user_username': user.username,
-        'auth_user_id': user._primary_key,
-        'auth_user_fullname': user.fullname,
+        "auth_user_username": user.username,
+        "auth_user_id": user._primary_key,
+        "auth_user_fullname": user.fullname,
     }
-    print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
-    enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))
-    print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
+    print_cas_log(
+        f"Finalizing authentication - data updated: user=[{user._id}]",
+        LogLevel.INFO,
+    )
+    enqueue_task(
+        update_user_from_activity.s(
+            user._id,
+            timezone.now().timestamp(),
+            cas_login=True,
+            updates=user_updates,
+        )
+    )
+    print_cas_log(
+        f"Finalizing authentication - user update queued: user=[{user._id}]",
+        LogLevel.INFO,
+    )
     user_session, response = create_session(response, data=data)
     if not user_session:
         return response
     from osf.models import UserSessionMap
-    UserSessionMap.objects.get_or_create(user=user, session_key=user_session.session_key)
-    print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
+
+    UserSessionMap.objects.get_or_create(
+        user=user, session_key=user_session.session_key
+    )
+    print_cas_log(
+        f"Finalizing authentication - session created: user=[{user._id}]",
+        LogLevel.INFO,
+    )
     return response
 
 
@@ -56,22 +75,24 @@ def external_first_login_authenticate(user_dict, response):
     :return: the response
     """
     data = {
-        'auth_user_external_id_provider': user_dict['external_id_provider'],
-        'auth_user_external_id': user_dict['external_id'],
-        'auth_user_fullname': user_dict['fullname'],
-        'auth_user_external_first_login': True,
-        'service_url': user_dict['service_url'],
+        "auth_user_external_id_provider": user_dict["external_id_provider"],
+        "auth_user_external_id": user_dict["external_id"],
+        "auth_user_fullname": user_dict["fullname"],
+        "auth_user_external_first_login": True,
+        "service_url": user_dict["service_url"],
     }
-    user_identity = '{}#{}'.format(user_dict['external_id_provider'], user_dict['external_id'])
+    user_identity = "{}#{}".format(
+        user_dict["external_id_provider"], user_dict["external_id"]
+    )
     print_cas_log(
-        f'Finalizing first-time login from external IdP - data updated: user=[{user_identity}]',
+        f"Finalizing first-time login from external IdP - data updated: user=[{user_identity}]",
         LogLevel.INFO,
     )
     # Note: we don't need to keep track of this anonymous session, and thus no entry is created in `UserSessionMap`
     user_session, response = create_session(response, data=data)
     if user_session:
         print_cas_log(
-            f'Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]',
+            f"Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]",
             LogLevel.INFO,
         )
     return response
@@ -82,8 +103,11 @@ def logout():
     remove_session(get_session())
 
 
-def register_unconfirmed(username, password, fullname, campaign=None, accepted_terms_of_service=None):
+def register_unconfirmed(
+    username, password, fullname, campaign=None, accepted_terms_of_service=None
+):
     from osf.models import OSFUser
+
     user = get_user(email=username)
     if not user:
         user = OSFUser.create_unconfirmed(
@@ -91,7 +115,7 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
             password=password,
             fullname=fullname,
             campaign=campaign,
-            accepted_terms_of_service=accepted_terms_of_service
+            accepted_terms_of_service=accepted_terms_of_service,
         )
         user.save()
         signals.unconfirmed_user_created.send(user)
@@ -103,11 +127,13 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
         user.update_guessed_names()
         user.save()
     else:
-        raise DuplicateEmailError(f'OSFUser {username!r} already exists')
+        raise DuplicateEmailError(f"OSFUser {username!r} already exists")
     return user
 
 
-def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_institution):
+def get_or_create_institutional_user(
+    fullname, sso_email, sso_identity, primary_institution
+):
     """
     Get or create an institutional user by fullname, email address and sso identity and institution.
     Returns a tuple of five objects ``(user, is_created, duplicate_user, email_to_add, identity_to_add)``:
@@ -125,12 +151,16 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     """
 
     from osf.models import OSFUser
-    from osf.models.institution_affiliation import get_user_by_institution_identity
+    from osf.models.institution_affiliation import (
+        get_user_by_institution_identity,
+    )
 
     user_by_email = get_user(email=sso_email)
     # ``InstitutionAffiliationStateError`` can be raised by ``get_user_by_institution_identity()``, the caller of
     # ``get_or_create_institutional_user()`` must handle it properly
-    user_by_identity, is_identity_eligible = get_user_by_institution_identity(primary_institution, sso_identity)
+    user_by_identity, is_identity_eligible = get_user_by_institution_identity(
+        primary_institution, sso_identity
+    )
     # Avoid adding an sso identity that is not eligible
     if not is_identity_eligible:
         sso_identity = None
@@ -167,6 +197,7 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
     :return: tuple of (user, created)
     """
     from osf.models import OSFUser
+
     user = get_user(email=address)
     if user:
         return user, False
@@ -174,8 +205,10 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
         password = str(uuid.uuid4())
         user = OSFUser.create_confirmed(address, password, fullname)
         if reset_password:
-            user.verification_key_v2 = generate_verification_key(verification_type='password')
+            user.verification_key_v2 = generate_verification_key(
+                verification_type="password"
+            )
         if is_spam:
             user.save()  # need to save in order to add a tag
-            user.add_system_tag('is_spam')
+            user.add_system_tag("is_spam")
         return user, True

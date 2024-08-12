@@ -3,7 +3,13 @@ from rest_framework import exceptions
 
 from framework.exceptions import PermissionsError
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import ValuesListField, RelationshipField, LinksField, HideIfDraftRegistration, IDField
+from api.base.serializers import (
+    ValuesListField,
+    RelationshipField,
+    LinksField,
+    HideIfDraftRegistration,
+    IDField,
+)
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
     DraftRegistrationLegacySerializer,
@@ -25,75 +31,94 @@ from website import settings
 
 
 class NodeRelationshipField(RelationshipField):
-
     def to_internal_value(self, node_id):
-        context_view = self.context['view']
-        if hasattr(context_view, 'get_node'):
-            node = self.context['view'].get_node(node_id=node_id) if node_id else None
+        context_view = self.context["view"]
+        if hasattr(context_view, "get_node"):
+            node = (
+                self.context["view"].get_node(node_id=node_id)
+                if node_id
+                else None
+            )
         else:
             node = Node.load(node_id)
         return node
 
 
-class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, TaxonomizableSerializerMixin):
+class DraftRegistrationSerializer(
+    DraftRegistrationLegacySerializer, TaxonomizableSerializerMixin
+):
     """
     New DraftRegistrationSerializer - instead of the node_id being provided in the URL, an optional
     node is passed in under `branched_from`.
 
     DraftRegistrations have several fields that can be edited that are persisted to the final registration.
     """
+
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
-    category_choices_string = ', '.join([f"'{choice[0]}'" for choice in category_choices])
+    category_choices_string = ", ".join(
+        [f"'{choice[0]}'" for choice in category_choices]
+    )
 
     title = ser.CharField(required=False, allow_blank=True)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    description = ser.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
 
-    category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
-    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
-    node_license = NodeLicenseSerializer(required=False, source='license')
+    category = ser.ChoiceField(
+        required=False,
+        choices=category_choices,
+        help_text="Choices: " + category_choices_string,
+    )
+    tags = ValuesListField(
+        attr_name="name", child=ser.CharField(), required=False
+    )
+    node_license = NodeLicenseSerializer(required=False, source="license")
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+        }
+    )
 
     affiliated_institutions = RelationshipField(
-        related_view='draft_registrations:draft-registration-institutions',
-        related_view_kwargs={'draft_id': '<_id>'},
-        self_view='draft_registrations:draft-registration-relationships-institutions',
-        self_view_kwargs={'draft_id': '<_id>'},
+        related_view="draft_registrations:draft-registration-institutions",
+        related_view_kwargs={"draft_id": "<_id>"},
+        self_view="draft_registrations:draft-registration-relationships-institutions",
+        self_view_kwargs={"draft_id": "<_id>"},
         read_only=False,
         required=False,
     )
 
     branched_from = NodeRelationshipField(
         related_view=lambda draft_reg: (
-            'draft_nodes:draft-node-detail'
-            if getattr(draft_reg.branched_from, 'type', False) == 'osf.draftnode'
-            else 'nodes:node-detail'
+            "draft_nodes:draft-node-detail"
+            if getattr(draft_reg.branched_from, "type", False)
+            == "osf.draftnode"
+            else "nodes:node-detail"
         ),
-        related_view_kwargs={'node_id': '<branched_from._id>'},
+        related_view_kwargs={"node_id": "<branched_from._id>"},
         read_only=False,
         required=False,
     )
 
     contributors = RelationshipField(
-        related_view='draft_registrations:draft-registration-contributors',
-        related_view_kwargs={'draft_id': '<_id>'},
+        related_view="draft_registrations:draft-registration-contributors",
+        related_view_kwargs={"draft_id": "<_id>"},
     )
 
     bibliographic_contributors = RelationshipField(
-        related_view='draft_registrations:draft-registration-bibliographic-contributor-detail',
-        related_view_kwargs={'draft_id': '<_id>'},
+        related_view="draft_registrations:draft-registration-bibliographic-contributor-detail",
+        related_view_kwargs={"draft_id": "<_id>"},
     )
 
     current_user_permissions = ser.SerializerMethodField(
-        help_text='List of strings representing the permissions '
-        'for the current user on this draft registratione.',
+        help_text="List of strings representing the permissions "
+        "for the current user on this draft registratione.",
     )
 
     license = NodeLicenseRelationshipField(
-        related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<license.node_license._id>'},
+        related_view="licenses:license-detail",
+        related_view_kwargs={"license_id": "<license.node_license._id>"},
         read_only=False,
     )
 
@@ -105,32 +130,35 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'draft_registrations:draft-registration-subjects'
+        return "draft_registrations:draft-registration-subjects"
 
     @property
     def subjects_view_kwargs(self):
         # Overrides TaxonomizableSerializerMixin
-        return {'draft_id': '<_id>'}
+        return {"draft_id": "<_id>"}
 
     @property
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'draft_registrations:draft-registration-relationships-subjects'
+        return "draft_registrations:draft-registration-relationships-subjects"
 
     def get_self_url(self, obj):
         return absolute_reverse(
-            'draft_registrations:draft-registration-list',
+            "draft_registrations:draft-registration-list",
             kwargs={
-                'version': self.context['request'].parser_context['kwargs']['version'],
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
+
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()
 
     # Overrides DraftRegistrationLegacySerializer
     def get_node(self, validated_data):
         # Node comes from branched_from relationship rather than from URL
-        return validated_data.pop('branched_from', None)
+        return validated_data.pop("branched_from", None)
 
     def get_current_user_permissions(self, obj):
         return NodeSerializer.get_current_user_permissions(self, obj)
@@ -146,50 +174,61 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         return True
 
 
-class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegistrationDetailLegacySerializer):
+class DraftRegistrationDetailSerializer(
+    DraftRegistrationSerializer, DraftRegistrationDetailLegacySerializer
+):
     """
     Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement, node, cannot be changed after draft has been created.
     """
-    id = IDField(source='_id', required=True)
+
+    id = IDField(source="_id", required=True)
 
     registration_schema = RegistrationSchemaRelationshipField(
-        related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        related_view="schemas:registration-schema-detail",
+        related_view_kwargs={"schema_id": "<registration_schema._id>"},
         required=False,
         read_only=False,
     )
 
-    links = LinksField({
-        'self': 'get_self_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_self_url",
+        }
+    )
 
     def get_self_url(self, obj):
         return absolute_reverse(
-            'draft_registrations:draft-registration-detail',
+            "draft_registrations:draft-registration-detail",
             kwargs={
-                'version': self.context['request'].parser_context['kwargs']['version'],
-                'draft_id': self.context['request'].parser_context['kwargs']['draft_id'],
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
+                "draft_id": self.context["request"].parser_context["kwargs"][
+                    "draft_id"
+                ],
             },
         )
 
     def update(self, draft, validated_data):
         draft = super().update(draft, validated_data)
-        user = self.context['request'].user
-        auth = get_user_auth(self.context['request'])
+        user = self.context["request"].user
+        auth = get_user_auth(self.context["request"])
 
-        if 'tags' in validated_data:
-            new_tags = set(validated_data.pop('tags', []))
+        if "tags" in validated_data:
+            new_tags = set(validated_data.pop("tags", []))
             draft.update_tags(new_tags, auth=auth)
-        if 'license_type' in validated_data or 'license' in validated_data:
+        if "license_type" in validated_data or "license" in validated_data:
             license_details = get_license_details(draft, validated_data)
-            validated_data['node_license'] = license_details
-        if 'affiliated_institutions' in validated_data:
-            institutions_list = validated_data.pop('affiliated_institutions')
-            new_institutions = [{'_id': institution} for institution in institutions_list]
+            validated_data["node_license"] = license_details
+        if "affiliated_institutions" in validated_data:
+            institutions_list = validated_data.pop("affiliated_institutions")
+            new_institutions = [
+                {"_id": institution} for institution in institutions_list
+            ]
             update_institutions(draft, new_institutions, user)
-        if 'subjects' in validated_data:
-            subjects = validated_data.pop('subjects', None)
+        if "subjects" in validated_data:
+            subjects = validated_data.pop("subjects", None)
             self.update_subjects(draft, subjects, auth)
         try:
             draft.update(validated_data, auth=auth)
@@ -202,54 +241,65 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
 
 
 class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):
-
     draft_registration = RelationshipField(
-        related_view='draft_registrations:draft-registration-detail',
-        related_view_kwargs={'draft_id': '<draft_registration._id>'},
+        related_view="draft_registrations:draft-registration-detail",
+        related_view_kwargs={"draft_id": "<draft_registration._id>"},
     )
 
     node = HideIfDraftRegistration(
         RelationshipField(
-            related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<node._id>'},
+            related_view="nodes:node-detail",
+            related_view_kwargs={"node_id": "<node._id>"},
         ),
     )
 
     class Meta:
-        type_ = 'contributors'
+        type_ = "contributors"
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+        }
+    )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'draft_registrations:draft-registration-contributor-detail',
+            "draft_registrations:draft-registration-contributor-detail",
             kwargs={
-                'user_id': obj.user._id,
-                'draft_id': self.context['request'].parser_context['kwargs']['draft_id'],
-                'version': self.context['request'].parser_context['kwargs']['version'],
+                "user_id": obj.user._id,
+                "draft_id": self.context["request"].parser_context["kwargs"][
+                    "draft_id"
+                ],
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
 
-class DraftRegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer, DraftRegistrationContributorsSerializer):
+class DraftRegistrationContributorsCreateSerializer(
+    NodeContributorsCreateSerializer, DraftRegistrationContributorsSerializer
+):
     """
     Overrides DraftRegistrationContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
 
     id and index redefined because of the two serializers we've inherited
     """
-    id = IDField(source='_id', required=False, allow_null=True)
-    index = ser.IntegerField(required=False, source='_order')
 
-    email_preferences = ['draft_registration', 'false']
+    id = IDField(source="_id", required=False, allow_null=True)
+    index = ser.IntegerField(required=False, source="_order")
+
+    email_preferences = ["draft_registration", "false"]
 
 
-class DraftRegistrationContributorDetailSerializer(NodeContributorDetailSerializer, DraftRegistrationContributorsSerializer):
+class DraftRegistrationContributorDetailSerializer(
+    NodeContributorDetailSerializer, DraftRegistrationContributorsSerializer
+):
     """
     Overrides NodeContributorDetailSerializer to set the draft registration instead of the node
 
     id and index redefined because of the two serializers we've inherited
     """
-    id = IDField(required=True, source='_id')
-    index = ser.IntegerField(required=False, read_only=False, source='_order')
+
+    id = IDField(required=True, source="_id")
+    index = ser.IntegerField(required=False, read_only=False, source="_order")

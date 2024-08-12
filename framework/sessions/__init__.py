@@ -24,19 +24,19 @@ def add_key_to_url(url, scheme, key):
     """Redirects the user to the requests URL with the given key appended to the query parameters."""
 
     query = request.args.to_dict()
-    query['view_only'] = key
-    replacements = {'query': urlencode(query)}
+    query["view_only"] = key
+    replacements = {"query": urlencode(query)}
 
     if scheme:
-        replacements['scheme'] = scheme
+        replacements["scheme"] = scheme
 
     parsed_url = urlparse(url)
 
     if parsed_url.fragment:
         # Fragments should exists server side so this mean some one set up a # in the url
         # WSGI sucks and auto unescapes it so we just shove it back into the path with the escaped hash
-        replacements['path'] = f'{parsed_url.path}%23{parsed_url.fragment}'
-        replacements['fragment'] = ''
+        replacements["path"] = f"{parsed_url.path}%23{parsed_url.fragment}"
+        replacements["fragment"] = ""
 
     parsed_redirect_url = parsed_url._replace(**replacements)
     return urlunparse(parsed_redirect_url)
@@ -60,18 +60,18 @@ def prepare_private_key():
     this is attached in website.app.init_app rather than using @app.before_request.
     """
     # Done if not GET request
-    if request.method != 'GET':
+    if request.method != "GET":
         return
 
     # Done if private_key in args
-    if request.args.get('view_only', ''):
+    if request.args.get("view_only", ""):
         return
 
     # Grab query key from previous request for not logged-in users
     if request.referrer:
         referrer_parsed = urlparse(request.referrer)
         scheme = referrer_parsed.scheme
-        key = parse_qs(urlparse(request.referrer).query).get('view_only')
+        key = parse_qs(urlparse(request.referrer).query).get("view_only")
         if key:
             key = key[0]
     else:
@@ -94,10 +94,17 @@ def flask_get_session_from_cookie(cookie):
     anonymous session for ORCiD SSO must have key 'auth_user_external_first_login'.
     """
     try:
-        session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
+        session_key = ensure_str(
+            itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+        )
         session = SessionStore(session_key=session_key)
-        is_valid_session = session.get('auth_user_id', None) or session.get('auth_user_external_first_login', None)
-        if not SessionStore().exists(session_key=session_key) or not is_valid_session:
+        is_valid_session = session.get("auth_user_id", None) or session.get(
+            "auth_user_external_first_login", None
+        )
+        if (
+            not SessionStore().exists(session_key=session_key)
+            or not is_valid_session
+        ):
             raise InvalidCookieOrSessionError
         return session
     except (itsdangerous.BadSignature, TypeError):
@@ -119,8 +126,12 @@ def get_session(ignore_cookie=False):
     """
     cookie = request.cookies.get(settings.COOKIE_NAME)
     try:
-        if not g.get('current_session', None):
-            g.current_session = flask_get_session_from_cookie(cookie) if (not ignore_cookie and cookie) else SessionStore()
+        if not g.get("current_session", None):
+            g.current_session = (
+                flask_get_session_from_cookie(cookie)
+                if (not ignore_cookie and cookie)
+                else SessionStore()
+            )
         return g.current_session
     except InvalidCookieOrSessionError:
         return None
@@ -135,11 +146,14 @@ def create_session(response, data=None):
     user_session = get_session()
     if not user_session:
         if response is not None:
-            response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+            response.delete_cookie(
+                settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN
+            )
         return None, response
     if user_session.session_key:
         from framework import sentry
-        sentry.log_message('create_session() encounters an existing session')
+
+        sentry.log_message("create_session() encounters an existing session")
     else:
         user_session.create()
     # TODO: check if session data changed and decide whether to save the session object
@@ -147,14 +161,18 @@ def create_session(response, data=None):
         user_session[key] = value
     user_session.save()
     if response is not None:
-        cookie_value = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key))
+        cookie_value = ensure_str(
+            itsdangerous.Signer(settings.SECRET_KEY).sign(
+                user_session.session_key
+            )
+        )
         response.set_cookie(
             settings.COOKIE_NAME,
             value=cookie_value,
             domain=settings.OSF_COOKIE_DOMAIN,
             secure=settings.SESSION_COOKIE_SECURE,
             httponly=settings.SESSION_COOKIE_HTTPONLY,
-            samesite=settings.SESSION_COOKIE_SAMESITE
+            samesite=settings.SESSION_COOKIE_SAMESITE,
         )
         return user_session, response
     return user_session, None
@@ -166,22 +184,25 @@ def before_request():
     # TODO: Fix circular import
     from framework.auth.core import get_user
     from framework.auth import cas
-    UserSessionMap = apps.get_model('osf.UserSessionMap')
+
+    UserSessionMap = apps.get_model("osf.UserSessionMap")
 
     # Request Type 1: Service ticket validation during CAS login.
-    ticket = request.args.get('ticket')
+    ticket = request.args.get("ticket")
     if ticket:
-        service_url = furl(request.url).remove(args=['ticket'])
+        service_url = furl(request.url).remove(args=["ticket"])
         # Attempt to authenticate wih CAS, and return a proper redirect response
-        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
+        return cas.make_response_from_ticket(
+            ticket=ticket, service_url=service_url.url
+        )
 
     # Request Type 2: Basic Auth with username and password in Authorization headers
     # Note: As for flask/V1 request, many views rely on an ``auth`` object that comes from the ``session``
     #       to identify the user. Thus, we still need to keep the session creation and usage here.
-    if request.authorization and request.authorization.type == 'basic':
+    if request.authorization and request.authorization.type == "basic":
         user = get_user(
             email=request.authorization.username,
-            password=request.authorization.password
+            password=request.authorization.password,
         )
         # Create an empty session
         user_session = get_session(ignore_cookie=True)
@@ -192,22 +213,26 @@ def before_request():
             return
 
         if not user:
-            user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
+            user_session["auth_error_code"] = http_status.HTTP_401_UNAUTHORIZED
             user_session.save()
             return
 
-        user_addon = user.get_addon('twofactor')
+        user_addon = user.get_addon("twofactor")
         if user_addon and user_addon.is_confirmed:
-            otp = request.headers.get('X-OSF-OTP')
+            otp = request.headers.get("X-OSF-OTP")
             if otp is None or not user_addon.verify_code(otp):
-                user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
+                user_session["auth_error_code"] = (
+                    http_status.HTTP_401_UNAUTHORIZED
+                )
                 return
-        user_session['auth_user_username'] = user.username
-        user_session['auth_user_fullname'] = user.fullname
-        if user_session.get('auth_user_id', None) != user._primary_key:
-            user_session['auth_user_id'] = user._primary_key
+        user_session["auth_user_username"] = user.username
+        user_session["auth_user_fullname"] = user.fullname
+        if user_session.get("auth_user_id", None) != user._primary_key:
+            user_session["auth_user_id"] = user._primary_key
         user_session.save()
-        UserSessionMap.objects.create(user=user, session_key=user_session.session_key)
+        UserSessionMap.objects.create(
+            user=user, session_key=user_session.session_key
+        )
         return
 
     # Request Type 3: Cookie Auth
@@ -216,31 +241,41 @@ def before_request():
         try:
             user_session = flask_get_session_from_cookie(cookie)
         except InvalidCookieOrSessionError:
-            response = redirect(web_url_for('index'))
-            response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+            response = redirect(web_url_for("index"))
+            response.delete_cookie(
+                settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN
+            )
             return response
         # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only
-        if user_session.get('auth_user_external_first_login', False) is True:
+        if user_session.get("auth_user_external_first_login", False) is True:
             return
         # Case 2: session without authenticated user
-        user_id = user_session.get('auth_user_id', None)
+        user_id = user_session.get("auth_user_id", None)
         if not user_id:
             return
         # Case 3: authenticated session with user
         # Update date last login when making non-api requests
         from framework.auth.tasks import update_user_from_activity
-        enqueue_task(update_user_from_activity.s(user_id, timezone.now().timestamp(), cas_login=False))
+
+        enqueue_task(
+            update_user_from_activity.s(
+                user_id, timezone.now().timestamp(), cas_login=False
+            )
+        )
 
 
 def after_request(response):
     # Disallow embedding in frames
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
     session = get_session()
     # Remove to-be-orphan session (and its cookie) if such session exists
-    if session and session.get('post_request_removal', False) is True:
+    if session and session.get("post_request_removal", False) is True:
         from framework.sessions.utils import remove_session
+
         remove_session(session)
-        response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+        response.delete_cookie(
+            settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN
+        )
     # Usually, the flask app context "g" has the same lifetime of a request
     # However this is not the case for unit tests
     # Therefore, we need to clear g.current_session manually here for tests to run

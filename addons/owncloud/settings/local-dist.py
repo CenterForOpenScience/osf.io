@@ -1,2 +1,2 @@
-DEFAULT_HOSTS = ['https://localhost/owncloud']
+DEFAULT_HOSTS = ["https://localhost/owncloud"]
 USE_SSL = True

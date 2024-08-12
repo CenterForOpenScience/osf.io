@@ -2,7 +2,11 @@ from django.apps import apps
 
 from babel import dates, core, Locale
 
-from osf.models import AbstractNode, NotificationDigest, NotificationSubscription
+from osf.models import (
+    AbstractNode,
+    NotificationDigest,
+    NotificationSubscription,
+)
 from osf.utils.permissions import ADMIN, READ
 from website import mails
 from website.notifications import constants
@@ -23,8 +27,8 @@ def notify(event, user, node, timestamp, **context):
     """
     sent_users = []
     # The user who the current comment is a reply to
-    target_user = context.get('target_user', None)
-    exclude = context.get('exclude', [])
+    target_user = context.get("target_user", None)
+    exclude = context.get("exclude", [])
     # do not notify user who initiated the emails
     exclude.append(user._id)
 
@@ -37,30 +41,62 @@ def notify(event, user, node, timestamp, **context):
         subscriptions = compile_subscriptions(node, event_type, event)
 
     for notification_type in subscriptions:
-        if notification_type == 'none' or not subscriptions[notification_type]:
+        if notification_type == "none" or not subscriptions[notification_type]:
             continue
         # Remove excluded ids from each notification type
-        subscriptions[notification_type] = [guid for guid in subscriptions[notification_type] if guid not in exclude]
+        subscriptions[notification_type] = [
+            guid
+            for guid in subscriptions[notification_type]
+            if guid not in exclude
+        ]
 
         # If target, they get a reply email and are removed from the general email
         if target_user and target_user._id in subscriptions[notification_type]:
             subscriptions[notification_type].remove(target_user._id)
-            store_emails([target_user._id], notification_type, 'comment_replies', user, node, timestamp, **context)
+            store_emails(
+                [target_user._id],
+                notification_type,
+                "comment_replies",
+                user,
+                node,
+                timestamp,
+                **context,
+            )
             sent_users.append(target_user._id)
 
         if subscriptions[notification_type]:
-            store_emails(subscriptions[notification_type], notification_type, event_type, user, node, timestamp, **context)
+            store_emails(
+                subscriptions[notification_type],
+                notification_type,
+                event_type,
+                user,
+                node,
+                timestamp,
+                **context,
+            )
             sent_users.extend(subscriptions[notification_type])
     return sent_users
 
+
 def notify_mentions(event, user, node, timestamp, **context):
-    OSFUser = apps.get_model('osf', 'OSFUser')
-    recipient_ids = context.get('new_mentions', [])
+    OSFUser = apps.get_model("osf", "OSFUser")
+    recipient_ids = context.get("new_mentions", [])
     recipients = OSFUser.objects.filter(guids___id__in=recipient_ids)
-    sent_users = notify_global_event(event, user, node, timestamp, recipients, context=context)
+    sent_users = notify_global_event(
+        event, user, node, timestamp, recipients, context=context
+    )
     return sent_users
 
-def notify_global_event(event, sender_user, node, timestamp, recipients, template=None, context=None):
+
+def notify_global_event(
+    event,
+    sender_user,
+    node,
+    timestamp,
+    recipients,
+    template=None,
+    context=None,
+):
     event_type = utils.find_subscription_type(event)
     sent_users = []
     if not context:
@@ -68,18 +104,44 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
 
     for recipient in recipients:
         subscriptions = get_user_subscriptions(recipient, event_type)
-        context['is_creator'] = recipient == node.creator
+        context["is_creator"] = recipient == node.creator
         if node.provider:
-            context['has_psyarxiv_chronos_text'] = node.has_permission(recipient, ADMIN) and 'psyarxiv' in node.provider.name.lower()
+            context["has_psyarxiv_chronos_text"] = (
+                node.has_permission(recipient, ADMIN)
+                and "psyarxiv" in node.provider.name.lower()
+            )
         for notification_type in subscriptions:
-            if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
-                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template=template, **context)
+            if (
+                notification_type != "none"
+                and subscriptions[notification_type]
+                and recipient._id in subscriptions[notification_type]
+            ):
+                store_emails(
+                    [recipient._id],
+                    notification_type,
+                    event,
+                    sender_user,
+                    node,
+                    timestamp,
+                    template=template,
+                    **context,
+                )
                 sent_users.append(recipient._id)
 
     return sent_users
 
 
-def store_emails(recipient_ids, notification_type, event, user, node, timestamp, abstract_provider=None, template=None, **context):
+def store_emails(
+    recipient_ids,
+    notification_type,
+    event,
+    user,
+    node,
+    timestamp,
+    abstract_provider=None,
+    template=None,
+    **context,
+):
     """Store notification emails
 
     Emails are sent via celery beat as digests
@@ -92,16 +154,16 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
-    OSFUser = apps.get_model('osf', 'OSFUser')
+    OSFUser = apps.get_model("osf", "OSFUser")
 
-    if notification_type == 'none':
+    if notification_type == "none":
         return
 
     # If `template` is not specified, default to using a template with name `event`
-    template = f'{template or event}.html.mako'
+    template = f"{template or event}.html.mako"
 
     # user whose action triggered email sending
-    context['user'] = user
+    context["user"] = user
     node_lineage_ids = get_node_lineage(node) if node else []
 
     for recipient_id in recipient_ids:
@@ -110,8 +172,10 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         recipient = OSFUser.load(recipient_id)
         if recipient.is_disabled:
             continue
-        context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
-        context['recipient'] = recipient
+        context["localized_timestamp"] = localize_timestamp(
+            timestamp, recipient
+        )
+        context["recipient"] = recipient
         message = mails.render_message(template, **context)
         digest = NotificationDigest(
             timestamp=timestamp,
@@ -120,7 +184,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             user=recipient,
             message=message,
             node_lineage=node_lineage_ids,
-            provider=abstract_provider
+            provider=abstract_provider,
         )
         digest.save()
 
@@ -136,11 +200,16 @@ def compile_subscriptions(node, event_type, event=None, level=0):
     """
     subscriptions = check_node(node, event_type)
     if event:
-        subscriptions = check_node(node, event)  # Gets particular event subscriptions
-        parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
-    elif getattr(node, 'parent_id', False):
-        parent_subscriptions = \
-            compile_subscriptions(AbstractNode.load(node.parent_id), event_type, level=level + 1)
+        subscriptions = check_node(
+            node, event
+        )  # Gets particular event subscriptions
+        parent_subscriptions = compile_subscriptions(
+            node, event_type, level=level + 1
+        )  # get node and parent subs
+    elif getattr(node, "parent_id", False):
+        parent_subscriptions = compile_subscriptions(
+            AbstractNode.load(node.parent_id), event_type, level=level + 1
+        )
     else:
         parent_subscriptions = check_node(None, event_type)
     for notification_type in parent_subscriptions:
@@ -159,7 +228,9 @@ def check_node(node, event):
     """Return subscription for a particular node and event."""
     node_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
     if node:
-        subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
+        subscription = NotificationSubscription.load(
+            utils.to_subscription_key(node._id, event)
+        )
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
             if users:
@@ -172,18 +243,28 @@ def check_node(node, event):
 def get_user_subscriptions(user, event):
     if user.is_disabled:
         return {}
-    user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
+    user_subscription = NotificationSubscription.load(
+        utils.to_subscription_key(user._id, event)
+    )
     if user_subscription:
-        return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
+        return {
+            key: list(
+                getattr(user_subscription, key)
+                .all()
+                .values_list("guids___id", flat=True)
+            )
+            for key in constants.NOTIFICATION_TYPES
+        }
     else:
         return {key: [] for key in constants.NOTIFICATION_TYPES}
 
 
 def get_node_lineage(node):
-    """ Get a list of node ids in order from the node to top most project
-        e.g. [parent._id, node._id]
+    """Get a list of node ids in order from the node to top most project
+    e.g. [parent._id, node._id]
     """
     from osf.models import Preprint
+
     lineage = [node._id]
     if isinstance(node, Preprint):
         return lineage
@@ -197,11 +278,12 @@ def get_node_lineage(node):
 
 def get_settings_url(uid, user):
     if uid == user._id:
-        return web_url_for('user_notifications', _absolute=True)
+        return web_url_for("user_notifications", _absolute=True)
 
     node = AbstractNode.load(uid)
-    assert node, 'get_settings_url recieved an invalid Node id'
-    return node.web_url_for('node_setting', _guid=True, _absolute=True)
+    assert node, "get_settings_url recieved an invalid Node id"
+    return node.web_url_for("node_setting", _guid=True, _absolute=True)
+
 
 def fix_locale(locale):
     """Atempt to fix a locale to have the correct casing, e.g. de_de -> de_DE
@@ -209,22 +291,23 @@ def fix_locale(locale):
     This is NOT guaranteed to return a valid locale identifier.
     """
     try:
-        language, territory = locale.split('_', 1)
+        language, territory = locale.split("_", 1)
     except ValueError:
         return locale
     else:
-        return '_'.join([language, territory.upper()])
+        return "_".join([language, territory.upper()])
+
 
 def localize_timestamp(timestamp, user):
     try:
         user_timezone = dates.get_timezone(user.timezone)
     except LookupError:
-        user_timezone = dates.get_timezone('Etc/UTC')
+        user_timezone = dates.get_timezone("Etc/UTC")
 
     try:
         user_locale = Locale(user.locale)
     except core.UnknownLocaleError:
-        user_locale = Locale('en')
+        user_locale = Locale("en")
 
     # Do our best to find a valid locale
     try:
@@ -235,9 +318,13 @@ def localize_timestamp(timestamp, user):
             user_locale = Locale(fix_locale(user.locale))
             user_locale.date_formats
         except (core.UnknownLocaleError, OSError):
-            user_locale = Locale('en')
+            user_locale = Locale("en")
 
-    formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
-    formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
+    formatted_date = dates.format_date(
+        timestamp, format="full", locale=user_locale
+    )
+    formatted_time = dates.format_time(
+        timestamp, format="short", tzinfo=user_timezone, locale=user_locale
+    )
 
-    return f'{formatted_time} on {formatted_date}'
+    return f"{formatted_time} on {formatted_date}"

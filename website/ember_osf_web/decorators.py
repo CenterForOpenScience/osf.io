@@ -11,6 +11,7 @@ def ember_flag_is_active(flag_name):
     Decorator for checking whether ember flag is active.  If so, proxy to ember
     app, otherwise, load old view.
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
@@ -18,5 +19,7 @@ def ember_flag_is_active(flag_name):
                 return use_ember_app()
             else:
                 return func(*args, **kwargs)
+
         return wrapped
+
     return decorator

@@ -1,6 +1,7 @@
 """
 Tasks for making even transactional emails consolidated.
 """
+
 import itertools
 
 from django.db import connection
@@ -21,7 +22,9 @@ from website import mails, settings
 from website.notifications.utils import NotificationsDict
 
 
-@celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
+@celery_app.task(
+    name="website.notifications.tasks.send_users_email", max_retries=0
+)
 def send_users_email(send_type):
     """Send pending emails.
 
@@ -38,19 +41,22 @@ def _send_global_and_node_emails(send_type):
     """
     grouped_emails = get_users_emails(send_type)
     for group in grouped_emails:
-        user = OSFUser.load(group['user_id'])
+        user = OSFUser.load(group["user_id"])
         if not user:
             log_message(f"User with id={group['user_id']} not found")
             continue
-        info = group['info']
-        notification_ids = [message['_id'] for message in info]
+        info = group["info"]
+        notification_ids = [message["_id"] for message in info]
         sorted_messages = group_by_node(info)
         if sorted_messages:
             if not user.is_disabled:
                 # If there's only one node in digest we can show it's preferences link in the template.
-                notification_nodes = list(sorted_messages['children'].keys())
-                node = AbstractNode.load(notification_nodes[0]) if len(
-                    notification_nodes) == 1 else None
+                notification_nodes = list(sorted_messages["children"].keys())
+                node = (
+                    AbstractNode.load(notification_nodes[0])
+                    if len(notification_nodes) == 1
+                    else None
+                )
                 mails.send_mail(
                     to_addr=user.username,
                     can_change_node_preferences=bool(node),
@@ -68,36 +74,42 @@ def _send_reviews_moderator_emails(send_type):
     """
     grouped_emails = get_moderators_emails(send_type)
     for group in grouped_emails:
-        user = OSFUser.load(group['user_id'])
-        info = group['info']
-        notification_ids = [message['_id'] for message in info]
-        provider = AbstractProvider.objects.get(id=group['provider_id'])
+        user = OSFUser.load(group["user_id"])
+        info = group["info"]
+        notification_ids = [message["_id"] for message in info]
+        provider = AbstractProvider.objects.get(id=group["provider_id"])
         additional_context = dict()
         if isinstance(provider, RegistrationProvider):
-            provider_type = 'registration'
-            submissions_url = get_registration_provider_submissions_url(provider)
-            withdrawals_url = f'{submissions_url}?state=pending_withdraw'
-            notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
+            provider_type = "registration"
+            submissions_url = get_registration_provider_submissions_url(
+                provider
+            )
+            withdrawals_url = f"{submissions_url}?state=pending_withdraw"
+            notification_settings_url = f"{settings.DOMAIN}registries/{provider._id}/moderation/notifications"
             if provider.brand:
                 additional_context = {
-                    'logo_url': provider.brand.hero_logo_image,
-                    'top_bar_color': provider.brand.primary_color
+                    "logo_url": provider.brand.hero_logo_image,
+                    "top_bar_color": provider.brand.primary_color,
                 }
         elif isinstance(provider, CollectionProvider):
-            provider_type = 'collection'
-            submissions_url = f'{settings.DOMAIN}collections/{provider._id}/moderation/'
-            notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
+            provider_type = "collection"
+            submissions_url = (
+                f"{settings.DOMAIN}collections/{provider._id}/moderation/"
+            )
+            notification_settings_url = f"{settings.DOMAIN}registries/{provider._id}/moderation/notifications"
             if provider.brand:
                 additional_context = {
-                    'logo_url': provider.brand.hero_logo_image,
-                    'top_bar_color': provider.brand.primary_color
+                    "logo_url": provider.brand.hero_logo_image,
+                    "top_bar_color": provider.brand.primary_color,
                 }
-            withdrawals_url = ''
+            withdrawals_url = ""
         else:
-            provider_type = 'preprint'
-            submissions_url = f'{settings.DOMAIN}reviews/preprints/{provider._id}',
-            withdrawals_url = ''
-            notification_settings_url = f'{settings.DOMAIN}reviews/{provider_type}s/{provider._id}/notifications'
+            provider_type = "preprint"
+            submissions_url = (
+                f"{settings.DOMAIN}reviews/preprints/{provider._id}",
+            )
+            withdrawals_url = ""
+            notification_settings_url = f"{settings.DOMAIN}reviews/{provider_type}s/{provider._id}/notifications"
 
         if not user.is_disabled:
             mails.send_mail(
@@ -110,9 +122,11 @@ def _send_reviews_moderator_emails(send_type):
                 notification_settings_url=notification_settings_url,
                 reviews_withdrawal_url=withdrawals_url,
                 is_reviews_moderator_notification=True,
-                is_admin=provider.get_group(ADMIN).user_set.filter(id=user.id).exists(),
+                is_admin=provider.get_group(ADMIN)
+                .user_set.filter(id=user.id)
+                .exists(),
                 provider_type=provider_type,
-                **additional_context
+                **additional_context,
             )
         remove_notifications(email_notification_ids=notification_ids)
 
@@ -152,7 +166,12 @@ def get_moderators_emails(send_type):
         """
 
     with connection.cursor() as cursor:
-        cursor.execute(sql, [send_type, ])
+        cursor.execute(
+            sql,
+            [
+                send_type,
+            ],
+        )
         return itertools.chain.from_iterable(cursor.fetchall())
 
 
@@ -201,7 +220,12 @@ def get_users_emails(send_type):
     """
 
     with connection.cursor() as cursor:
-        cursor.execute(sql, [send_type, ])
+        cursor.execute(
+            sql,
+            [
+                send_type,
+            ],
+        )
         return itertools.chain.from_iterable(cursor.fetchall())
 
 
@@ -213,7 +237,9 @@ def group_by_node(notifications, limit=15):
     """
     emails = NotificationsDict()
     for notification in notifications[:15]:
-        emails.add_message(notification['node_lineage'], notification['message'])
+        emails.add_message(
+            notification["node_lineage"], notification["message"]
+        )
     return emails
 
 
@@ -224,4 +250,6 @@ def remove_notifications(email_notification_ids=None):
     :return:
     """
     if email_notification_ids:
-        NotificationDigest.objects.filter(_id__in=email_notification_ids).delete()
+        NotificationDigest.objects.filter(
+            _id__in=email_notification_ids
+        ).delete()

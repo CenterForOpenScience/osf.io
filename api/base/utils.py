@@ -24,9 +24,9 @@ from website import util as website_util  # noqa
 TRUTHY = fields.BooleanField.TRUE_VALUES
 FALSY = fields.BooleanField.FALSE_VALUES
 
-UPDATE_METHODS = ['PUT', 'PATCH']
+UPDATE_METHODS = ["PUT", "PATCH"]
 
-hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz', salt=HASHIDS_SALT)
+hashids = Hashids(alphabet="abcdefghijklmnopqrstuvwxyz", salt=HASHIDS_SALT)
 
 
 def decompose_field(field):
@@ -37,9 +37,9 @@ def decompose_field(field):
     Assumes nested structures like the following:
     - field, field.field, field.child_relation, field.field.child_relation, etc.
     """
-    while hasattr(field, 'field'):
+    while hasattr(field, "field"):
         field = field.field
-    return getattr(field, 'child_relation', field)
+    return getattr(field, "child_relation", field)
 
 
 def is_bulk_request(request):
@@ -47,7 +47,7 @@ def is_bulk_request(request):
     Returns True if bulk request.  Can be called as early as the parser.
     """
     content_type = request.content_type
-    return 'ext=bulk' in content_type
+    return "ext=bulk" in content_type
 
 
 def is_truthy(value):
@@ -67,7 +67,7 @@ def get_user_auth(request):
     authenticated user attached to it.
     """
     user = request.user
-    private_key = request.query_params.get('view_only', None)
+    private_key = request.query_params.get("view_only", None)
     if user.is_anonymous:
         auth = Auth(None, private_key=private_key)
     else:
@@ -79,15 +79,23 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
     relative_url = reverse(view_name, kwargs=kwargs)
 
-    url = website_util.api_v2_url(relative_url, params=query_kwargs, base_prefix='')
+    url = website_util.api_v2_url(
+        relative_url, params=query_kwargs, base_prefix=""
+    )
     return url
 
 
-def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None, check_deleted=True):
-    OSFUser = apps.get_model('osf', 'OSFUser')
+def get_object_or_error(
+    model_or_qs,
+    query_or_pk=None,
+    request=None,
+    display_name=None,
+    check_deleted=True,
+):
+    OSFUser = apps.get_model("osf", "OSFUser")
     if not request:
         # for backwards compat with existing get_object_or_error usages
-        raise TypeError('request is a required argument')
+        raise TypeError("request is a required argument")
 
     obj = query = None
     model_cls = model_or_qs
@@ -97,7 +105,11 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         # they passed a queryset
         model_cls = model_or_qs.model
         try:
-            obj = model_or_qs.select_for_update().get() if select_for_update else model_or_qs.get()
+            obj = (
+                model_or_qs.select_for_update().get()
+                if select_for_update
+                else model_or_qs.get()
+            )
         except model_cls.DoesNotExist:
             raise NotFound
 
@@ -105,18 +117,24 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name
-            query = {'guids___id': query_or_pk}
+            query = {"guids___id": query_or_pk}
         else:
-            if hasattr(model_cls, 'primary_identifier_name'):
+            if hasattr(model_cls, "primary_identifier_name"):
                 # primary_identifier_name gives us the natural key for the model
                 query = {model_cls.primary_identifier_name: query_or_pk}
             else:
                 # fall back to modmcompatiblity's load method since we don't know their PIN
-                obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
+                obj = model_cls.load(
+                    query_or_pk, select_for_update=select_for_update
+                )
     else:
         # they passed a query
         try:
-            obj = model_cls.objects.filter(query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
+            obj = (
+                model_cls.objects.filter(query_or_pk).select_for_update().get()
+                if select_for_update
+                else model_cls.objects.get(query_or_pk)
+            )
         except model_cls.DoesNotExist:
             raise NotFound
 
@@ -127,9 +145,21 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         try:
             # TODO This could be added onto with eager on the queryset and the embedded fields of the api
             if isinstance(query, dict):
-                obj = model_cls.objects.get(**query) if not select_for_update else model_cls.objects.filter(**query).select_for_update().get()
+                obj = (
+                    model_cls.objects.get(**query)
+                    if not select_for_update
+                    else model_cls.objects.filter(**query)
+                    .select_for_update()
+                    .get()
+                )
             else:
-                obj = model_cls.objects.get(query) if not select_for_update else model_cls.objects.filter(query).select_for_update().get()
+                obj = (
+                    model_cls.objects.get(query)
+                    if not select_for_update
+                    else model_cls.objects.filter(query)
+                    .select_for_update()
+                    .get()
+                )
         except ObjectDoesNotExist:
             raise NotFound
 
@@ -139,17 +169,24 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     # disabled.
     if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    if check_deleted and (model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False)):
+    if check_deleted and (
+        model_cls is not OSFUser
+        and not getattr(obj, "is_active", True)
+        or getattr(obj, "is_deleted", False)
+        or getattr(obj, "deleted", False)
+    ):
         if display_name is None:
             raise Gone
         else:
-            raise Gone(detail=f'The requested {display_name} is no longer available.')
+            raise Gone(
+                detail=f"The requested {display_name} is no longer available."
+            )
     return obj
 
 
 def default_node_list_queryset(model_cls):
-    Node = apps.get_model('osf', 'Node')
-    Registration = apps.get_model('osf', 'Registration')
+    Node = apps.get_model("osf", "Node")
+    Registration = apps.get_model("osf", "Registration")
     assert model_cls in {Node, Registration}
     return model_cls.objects.filter(is_deleted=False)
 
@@ -159,8 +196,8 @@ def default_node_permission_queryset(user, model_cls):
     Return nodes that are either public or you have perms because you're a contributor.
     Implicit admin permissions not included here (NodeList, UserNodes, for example, don't factor this in.)
     """
-    Node = apps.get_model('osf', 'Node')
-    Registration = apps.get_model('osf', 'Registration')
+    Node = apps.get_model("osf", "Node")
+    Registration = apps.get_model("osf", "Registration")
     assert model_cls in {Node, Registration}
     return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
@@ -169,7 +206,9 @@ def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
     # Django's alaising will break and the resulting QS will be empty and you will be sad.
-    qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
+    qs = default_node_permission_queryset(
+        user, model_cls
+    ) & default_node_list_queryset(model_cls)
     if annotations:
         qs = qs.annotate(**annotations)
     return qs
@@ -180,40 +219,48 @@ def extend_querystring_params(url, params):
     orig_params = parse_qs(query)
     orig_params.update(params)
     query = urlencode(orig_params, True)
-    return urlunsplit([scheme, netloc, path, query, ''])
+    return urlunsplit([scheme, netloc, path, query, ""])
 
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():
-        return extend_querystring_params(url, {key: request.query_params.get(key)})
+        return extend_querystring_params(
+            url, {key: request.query_params.get(key)}
+        )
     return url
 
 
 def has_admin_scope(request):
-    """ Helper function to determine if a request should be treated
-        as though it has the `osf.admin` scope. This includes both
-        tokened requests that do, and requests that are made via the
-        OSF (i.e. have an osf cookie)
+    """Helper function to determine if a request should be treated
+    as though it has the `osf.admin` scope. This includes both
+    tokened requests that do, and requests that are made via the
+    OSF (i.e. have an osf cookie)
     """
     cookie = request.COOKIES.get(website_settings.COOKIE_NAME)
     if cookie:
-        return bool(request.session and request.session.get('auth_user_id', None))
+        return bool(
+            request.session and request.session.get("auth_user_id", None)
+        )
 
     token = request.auth
     if token is None or not isinstance(token, CasResponse):
         return False
 
-    return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
+    return set(ComposedScopes.ADMIN_LEVEL).issubset(
+        normalize_scopes(token.attributes["accessTokenScope"])
+    )
 
 
 def has_pigeon_scope(request):
-    """ Helper function to determine if a request token has OSF pigeon scope
-    """
+    """Helper function to determine if a request token has OSF pigeon scope"""
     token = request.auth
     if token is None or not isinstance(token, CasResponse):
         return False
 
-    if token.attributes['accessToken'] == website_settings.PIGEON_CALLBACK_BEARER_TOKEN:
+    if (
+        token.attributes["accessToken"]
+        == website_settings.PIGEON_CALLBACK_BEARER_TOKEN
+    ):
         return True
     else:
         return False
@@ -221,39 +268,62 @@ def has_pigeon_scope(request):
 
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
-        raise NotImplementedError('Must specify min or max version.')
-    min_version_deprecated = min_version and Version(request_version) < Version(str(min_version))
-    max_version_deprecated = max_version and Version(request_version) > Version(str(max_version))
+        raise NotImplementedError("Must specify min or max version.")
+    min_version_deprecated = min_version and Version(
+        request_version
+    ) < Version(str(min_version))
+    max_version_deprecated = max_version and Version(
+        request_version
+    ) > Version(str(max_version))
     if min_version_deprecated or max_version_deprecated:
         return True
     return False
 
 
-def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_url=None, **kwargs):
-    assert path.startswith('/'), 'Path must always start with /'
-    if provider != 'osfstorage':
+def waterbutler_api_url_for(
+    node_id, provider, path="/", _internal=False, base_url=None, **kwargs
+):
+    assert path.startswith("/"), "Path must always start with /"
+    if provider != "osfstorage":
         base_url = None
     # NOTE: furl encoding to be verified later
-    url = furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL))
-    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
+    url = furl(
+        website_settings.WATERBUTLER_INTERNAL_URL
+        if _internal
+        else (base_url or website_settings.WATERBUTLER_URL)
+    )
+    segments = [
+        "v1",
+        "resources",
+        node_id,
+        "providers",
+        provider,
+    ] + path.split("/")[1:]
     url.add(path=[quote(x) for x in segments])
     url.args.update(kwargs)
     return url.url
 
+
 def assert_resource_type(obj, resource_tuple):
-    assert type(resource_tuple) is tuple, 'resources must be passed in as a tuple.'
+    assert (
+        type(resource_tuple) is tuple
+    ), "resources must be passed in as a tuple."
     if len(resource_tuple) == 1:
         error_message = resource_tuple[0].__name__
     elif len(resource_tuple) == 2:
-        error_message = resource_tuple[0].__name__ + ' or ' + resource_tuple[1].__name__
+        error_message = (
+            resource_tuple[0].__name__ + " or " + resource_tuple[1].__name__
+        )
     else:
-        error_message = ''
+        error_message = ""
         for resource in resource_tuple[:-1]:
-            error_message += resource.__name__ + ', '
-        error_message += 'or ' + resource_tuple[-1].__name__
+            error_message += resource.__name__ + ", "
+        error_message += "or " + resource_tuple[-1].__name__
 
-    a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
-    assert isinstance(obj, resource_tuple), f'obj must be {a_or_an} {error_message}; got {obj}'
+    a_or_an = "an" if error_message[0].lower() in "aeiou" else "a"
+    assert isinstance(
+        obj, resource_tuple
+    ), f"obj must be {a_or_an} {error_message}; got {obj}"
 
 
 class MockQueryset(list):
@@ -273,5 +343,5 @@ class MockQueryset(list):
         return self.search.count()
 
     def add_dict_as_item(self, dict):
-        item = type('item', (object,), dict)
+        item = type("item", (object,), dict)
         self.append(item)

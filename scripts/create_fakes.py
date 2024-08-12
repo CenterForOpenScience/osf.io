@@ -42,10 +42,19 @@ import django
 import pytz
 from faker import Factory
 from faker.providers import BaseProvider
+
 django.setup()
 
 from framework.auth import Auth
-from osf_tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory, fake_email
+from osf_tests.factories import (
+    UserFactory,
+    ProjectFactory,
+    NodeFactory,
+    RegistrationFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    fake_email,
+)
 from osf import models
 from website.app import init_app
 
@@ -53,88 +62,551 @@ from website.app import init_app
 class Sciencer(BaseProvider):
     # Science term Faker Provider created by @csheldonhess
     # https://github.com/csheldonhess/FakeConsumer/blob/master/faker/providers/science.py
-    word_list = ('abiosis', 'abrade', 'absorption', 'acceleration', 'accumulation',
-                 'acid', 'acidic', 'activist', 'adaptation', 'agonistic', 'agrarian', 'airborne',
-                 'alchemist', 'alignment', 'allele', 'alluvial', 'alveoli', 'ambiparous',
-                 'amphibian', 'amplitude', 'analysis', 'ancestor', 'anodize', 'anomaly',
-                 'anther', 'antigen', 'apiary', 'apparatus', 'application', 'approximation',
-                 'aquatic', 'aquifer', 'arboreal', 'archaeology', 'artery', 'assessment',
-                 'asteroid', 'atmosphere', 'atomic', 'atrophy', 'attenuate', 'aven', 'aviary',
-                 'axis', 'bacteria', 'balance', 'bases', 'biome', 'biosphere', 'black hole',
-                 'blight', 'buoyancy', 'calcium', 'canopy', 'capacity', 'capillary', 'carapace',
-                 'carcinogen', 'catalyst', 'cauldron', 'celestial', 'cells', 'centigrade',
-                 'centimeter', 'centrifugal', 'chemical reaction', 'chemicals', 'chemistry',
-                 'chlorophyll', 'choked', 'chromosome', 'chronic', 'churn', 'classification',
-                 'climate', 'cloud', 'comet', 'composition', 'compound', 'compression',
-                 'condensation', 'conditions', 'conduction', 'conductivity', 'conservation',
-                 'constant', 'constellation', 'continental', 'convection', 'convention', 'cool',
-                 'core', 'cosmic', 'crater', 'creature', 'crepuscular', 'crystals', 'cycle', 'cytoplasm',
-                 'dampness', 'data', 'decay', 'decibel', 'deciduous', 'defoliate', 'density',
-                 'denude', 'dependency', 'deposits', 'depth', 'desiccant', 'detritus',
-                 'development', 'digestible', 'diluted', 'direction', 'disappearance', 'discovery',
-                 'dislodge', 'displace', 'dissection', 'dissolution', 'dissolve', 'distance',
-                 'diurnal', 'diverse', 'doldrums', 'dynamics', 'earthquake', 'eclipse', 'ecology',
-                 'ecosystem', 'electricity', 'elements', 'elevation', 'embryo', 'endangered',
-                 'endocrine', 'energy', 'entropy', 'environment', 'enzyme', 'epidermis', 'epoch',
-                 'equilibrium', 'equine', 'erosion', 'essential', 'estuary', 'ethical', 'evaporation',
-                 'event', 'evidence', 'evolution', 'examination', 'existence', 'expansion',
-                 'experiment', 'exploration ', 'extinction', 'extreme', 'facet', 'fault', 'fauna',
-                 'feldspar', 'fermenting', 'fission', 'fissure', 'flora', 'flourish', 'flowstone',
-                 'foliage', 'food chain', 'forage', 'force', 'forecast', 'forensics', 'formations',
-                 'fossil fuel', 'frequency', 'friction', 'fungi', 'fusion', 'galaxy', 'gastric',
-                 'geo-science', 'geothermal', 'germination', 'gestation', 'global', 'gravitation',
-                 'green', 'greenhouse effect', 'grotto', 'groundwater', 'habitat', 'heat', 'heavens',
-                 'hemisphere', 'hemoglobin', 'herpetologist', 'hormones', 'host', 'humidity', 'hyaline',
-                 'hydrogen', 'hydrology', 'hypothesis', 'ichthyology', 'illumination', 'imagination',
-                 'impact of', 'impulse', 'incandescent', 'indigenous', 'inertia', 'inevitable', 'inherit',
-                 'inquiry', 'insoluble', 'instinct', 'instruments', 'integrity', 'intelligence',
-                 'interacts with', 'interdependence', 'interplanetary', 'invertebrate', 'investigation',
-                 'invisible', 'ions', 'irradiate', 'isobar', 'isotope', 'joule', 'jungle', 'jurassic',
-                 'jutting', 'kilometer', 'kinetics', 'kingdom', 'knot', 'laser', 'latitude', 'lava',
-                 'lethal', 'life', 'lift', 'light', 'limestone', 'lipid', 'lithosphere', 'load',
-                 'lodestone', 'luminous', 'luster', 'magma', 'magnet', 'magnetism', 'mangrove', 'mantle',
-                 'marine', 'marsh', 'mass', 'matter', 'measurements', 'mechanical', 'meiosis', 'meridian',
-                 'metamorphosis', 'meteor', 'microbes', 'microcosm', 'migration', 'millennia', 'minerals',
-                 'modulate', 'moisture', 'molecule', 'molten', 'monograph', 'monolith', 'motion',
-                 'movement', 'mutant', 'mutation', 'mysterious', 'natural', 'navigable', 'navigation',
-                 'negligence', 'nervous system', 'nesting', 'neutrons', 'niche', 'nocturnal',
-                 'nuclear energy', 'numerous', 'nurture', 'obsidian', 'ocean', 'oceanography', 'omnivorous',
-                 'oolites (cave pearls)', 'opaque', 'orbit', 'organ', 'organism', 'ornithology',
-                 'osmosis', 'oxygen', 'paleontology', 'parallax', 'particle', 'penumbra',
-                 'percolate', 'permafrost', 'permutation', 'petrify', 'petrograph', 'phenomena',
-                 'physical property', 'planetary', 'plasma', 'polar', 'pole', 'pollination',
-                 'polymer', 'population', 'precipitation', 'predator', 'prehensile', 'preservation',
-                 'preserve', 'pressure', 'primate', 'pristine', 'probe', 'process', 'propagation',
-                 'properties', 'protected', 'proton', 'pulley', 'qualitative data', 'quantum', 'quark',
-                 'quarry', 'radiation', 'radioactivity', 'rain forest', 'ratio', 'reaction', 'reagent',
-                 'realm', 'redwoods', 'reeds', 'reflection', 'refraction', 'relationships between', 'reptile',
-                 'research', 'resistance', 'resonate', 'rookery', 'rubble', 'runoff', 'salinity', 'sandbar',
-                 'satellite', 'saturation', 'scientific investigation', 'scientist\'s', 'sea floor', 'season',
-                 'sedentary', 'sediment', 'sedimentary', 'seepage', 'seismic', 'sensors', 'shard',
-                 'similarity', 'solar', 'soluble', 'solvent', 'sonic', 'sound', 'source', 'species',
-                 'spectacular', 'spectrum', 'speed', 'sphere', 'spring', 'stage', 'stalactite',
-                 'stalagmites', 'stimulus', 'substance', 'subterranean', 'sulfuric acid', 'surface',
-                 'survival', 'swamp', 'sylvan', 'symbiosis', 'symbol', 'synergy', 'synthesis', 'taiga',
-                 'taxidermy', 'technology', 'tectonics', 'temperate', 'temperature', 'terrestrial',
-                 'thermals', 'thermometer', 'thrust', 'torque', 'toxin', 'trade winds', 'pterodactyl',
-                 'transformation tremors', 'tropical', 'umbra', 'unbelievable', 'underwater', 'unearth',
-                 'unique', 'unite', 'unity', 'universal', 'unpredictable', 'unusual', 'ursine', 'vacuole',
-                 'valuable', 'vapor', 'variable', 'variety', 'vast', 'velocity', 'ventifact', 'verdant',
-                 'vespiary', 'viable', 'vibration', 'virus', 'viscosity', 'visible', 'vista', 'vital',
-                 'vitreous', 'volt', 'volume', 'vulpine', 'wave', 'wax', 'weather', 'westerlies', 'wetlands',
-                 'whitewater', 'xeriscape', 'xylem', 'yield', 'zero-impact', 'zone', 'zygote', 'achieving',
-                 'acquisition of', 'an alternative', 'analysis of', 'approach toward', 'area', 'aspects of',
-                 'assessment of', 'assuming', 'authority', 'available', 'benefit of', 'circumstantial',
-                 'commentary', 'components', 'concept of', 'consistent', 'corresponding', 'criteria',
-                 'data', 'deduction', 'demonstrating', 'derived', 'distribution', 'dominant', 'elements',
-                 'equation', 'estimate', 'evaluation', 'factors', 'features', 'final', 'function',
-                 'initial', 'instance ', 'interpretation of', 'maintaining ', 'method', 'perceived',
-                 'percent', 'period', 'positive', 'potential', 'previous', 'primary', 'principle',
-                 'procedure', 'process', 'range', 'region', 'relevant', 'required', 'research',
-                 'resources', 'response', 'role', 'section', 'select', 'significant ', 'similar',
-                 'source', 'specific', 'strategies', 'structure', 'theory', 'transfer', 'variables',
-                 'corvidae', 'passerine', 'Pica pica', 'Chinchilla lanigera', 'Nymphicus hollandicus',
-                 'Melopsittacus undulatus', )
+    word_list = (
+        "abiosis",
+        "abrade",
+        "absorption",
+        "acceleration",
+        "accumulation",
+        "acid",
+        "acidic",
+        "activist",
+        "adaptation",
+        "agonistic",
+        "agrarian",
+        "airborne",
+        "alchemist",
+        "alignment",
+        "allele",
+        "alluvial",
+        "alveoli",
+        "ambiparous",
+        "amphibian",
+        "amplitude",
+        "analysis",
+        "ancestor",
+        "anodize",
+        "anomaly",
+        "anther",
+        "antigen",
+        "apiary",
+        "apparatus",
+        "application",
+        "approximation",
+        "aquatic",
+        "aquifer",
+        "arboreal",
+        "archaeology",
+        "artery",
+        "assessment",
+        "asteroid",
+        "atmosphere",
+        "atomic",
+        "atrophy",
+        "attenuate",
+        "aven",
+        "aviary",
+        "axis",
+        "bacteria",
+        "balance",
+        "bases",
+        "biome",
+        "biosphere",
+        "black hole",
+        "blight",
+        "buoyancy",
+        "calcium",
+        "canopy",
+        "capacity",
+        "capillary",
+        "carapace",
+        "carcinogen",
+        "catalyst",
+        "cauldron",
+        "celestial",
+        "cells",
+        "centigrade",
+        "centimeter",
+        "centrifugal",
+        "chemical reaction",
+        "chemicals",
+        "chemistry",
+        "chlorophyll",
+        "choked",
+        "chromosome",
+        "chronic",
+        "churn",
+        "classification",
+        "climate",
+        "cloud",
+        "comet",
+        "composition",
+        "compound",
+        "compression",
+        "condensation",
+        "conditions",
+        "conduction",
+        "conductivity",
+        "conservation",
+        "constant",
+        "constellation",
+        "continental",
+        "convection",
+        "convention",
+        "cool",
+        "core",
+        "cosmic",
+        "crater",
+        "creature",
+        "crepuscular",
+        "crystals",
+        "cycle",
+        "cytoplasm",
+        "dampness",
+        "data",
+        "decay",
+        "decibel",
+        "deciduous",
+        "defoliate",
+        "density",
+        "denude",
+        "dependency",
+        "deposits",
+        "depth",
+        "desiccant",
+        "detritus",
+        "development",
+        "digestible",
+        "diluted",
+        "direction",
+        "disappearance",
+        "discovery",
+        "dislodge",
+        "displace",
+        "dissection",
+        "dissolution",
+        "dissolve",
+        "distance",
+        "diurnal",
+        "diverse",
+        "doldrums",
+        "dynamics",
+        "earthquake",
+        "eclipse",
+        "ecology",
+        "ecosystem",
+        "electricity",
+        "elements",
+        "elevation",
+        "embryo",
+        "endangered",
+        "endocrine",
+        "energy",
+        "entropy",
+        "environment",
+        "enzyme",
+        "epidermis",
+        "epoch",
+        "equilibrium",
+        "equine",
+        "erosion",
+        "essential",
+        "estuary",
+        "ethical",
+        "evaporation",
+        "event",
+        "evidence",
+        "evolution",
+        "examination",
+        "existence",
+        "expansion",
+        "experiment",
+        "exploration ",
+        "extinction",
+        "extreme",
+        "facet",
+        "fault",
+        "fauna",
+        "feldspar",
+        "fermenting",
+        "fission",
+        "fissure",
+        "flora",
+        "flourish",
+        "flowstone",
+        "foliage",
+        "food chain",
+        "forage",
+        "force",
+        "forecast",
+        "forensics",
+        "formations",
+        "fossil fuel",
+        "frequency",
+        "friction",
+        "fungi",
+        "fusion",
+        "galaxy",
+        "gastric",
+        "geo-science",
+        "geothermal",
+        "germination",
+        "gestation",
+        "global",
+        "gravitation",
+        "green",
+        "greenhouse effect",
+        "grotto",
+        "groundwater",
+        "habitat",
+        "heat",
+        "heavens",
+        "hemisphere",
+        "hemoglobin",
+        "herpetologist",
+        "hormones",
+        "host",
+        "humidity",
+        "hyaline",
+        "hydrogen",
+        "hydrology",
+        "hypothesis",
+        "ichthyology",
+        "illumination",
+        "imagination",
+        "impact of",
+        "impulse",
+        "incandescent",
+        "indigenous",
+        "inertia",
+        "inevitable",
+        "inherit",
+        "inquiry",
+        "insoluble",
+        "instinct",
+        "instruments",
+        "integrity",
+        "intelligence",
+        "interacts with",
+        "interdependence",
+        "interplanetary",
+        "invertebrate",
+        "investigation",
+        "invisible",
+        "ions",
+        "irradiate",
+        "isobar",
+        "isotope",
+        "joule",
+        "jungle",
+        "jurassic",
+        "jutting",
+        "kilometer",
+        "kinetics",
+        "kingdom",
+        "knot",
+        "laser",
+        "latitude",
+        "lava",
+        "lethal",
+        "life",
+        "lift",
+        "light",
+        "limestone",
+        "lipid",
+        "lithosphere",
+        "load",
+        "lodestone",
+        "luminous",
+        "luster",
+        "magma",
+        "magnet",
+        "magnetism",
+        "mangrove",
+        "mantle",
+        "marine",
+        "marsh",
+        "mass",
+        "matter",
+        "measurements",
+        "mechanical",
+        "meiosis",
+        "meridian",
+        "metamorphosis",
+        "meteor",
+        "microbes",
+        "microcosm",
+        "migration",
+        "millennia",
+        "minerals",
+        "modulate",
+        "moisture",
+        "molecule",
+        "molten",
+        "monograph",
+        "monolith",
+        "motion",
+        "movement",
+        "mutant",
+        "mutation",
+        "mysterious",
+        "natural",
+        "navigable",
+        "navigation",
+        "negligence",
+        "nervous system",
+        "nesting",
+        "neutrons",
+        "niche",
+        "nocturnal",
+        "nuclear energy",
+        "numerous",
+        "nurture",
+        "obsidian",
+        "ocean",
+        "oceanography",
+        "omnivorous",
+        "oolites (cave pearls)",
+        "opaque",
+        "orbit",
+        "organ",
+        "organism",
+        "ornithology",
+        "osmosis",
+        "oxygen",
+        "paleontology",
+        "parallax",
+        "particle",
+        "penumbra",
+        "percolate",
+        "permafrost",
+        "permutation",
+        "petrify",
+        "petrograph",
+        "phenomena",
+        "physical property",
+        "planetary",
+        "plasma",
+        "polar",
+        "pole",
+        "pollination",
+        "polymer",
+        "population",
+        "precipitation",
+        "predator",
+        "prehensile",
+        "preservation",
+        "preserve",
+        "pressure",
+        "primate",
+        "pristine",
+        "probe",
+        "process",
+        "propagation",
+        "properties",
+        "protected",
+        "proton",
+        "pulley",
+        "qualitative data",
+        "quantum",
+        "quark",
+        "quarry",
+        "radiation",
+        "radioactivity",
+        "rain forest",
+        "ratio",
+        "reaction",
+        "reagent",
+        "realm",
+        "redwoods",
+        "reeds",
+        "reflection",
+        "refraction",
+        "relationships between",
+        "reptile",
+        "research",
+        "resistance",
+        "resonate",
+        "rookery",
+        "rubble",
+        "runoff",
+        "salinity",
+        "sandbar",
+        "satellite",
+        "saturation",
+        "scientific investigation",
+        "scientist's",
+        "sea floor",
+        "season",
+        "sedentary",
+        "sediment",
+        "sedimentary",
+        "seepage",
+        "seismic",
+        "sensors",
+        "shard",
+        "similarity",
+        "solar",
+        "soluble",
+        "solvent",
+        "sonic",
+        "sound",
+        "source",
+        "species",
+        "spectacular",
+        "spectrum",
+        "speed",
+        "sphere",
+        "spring",
+        "stage",
+        "stalactite",
+        "stalagmites",
+        "stimulus",
+        "substance",
+        "subterranean",
+        "sulfuric acid",
+        "surface",
+        "survival",
+        "swamp",
+        "sylvan",
+        "symbiosis",
+        "symbol",
+        "synergy",
+        "synthesis",
+        "taiga",
+        "taxidermy",
+        "technology",
+        "tectonics",
+        "temperate",
+        "temperature",
+        "terrestrial",
+        "thermals",
+        "thermometer",
+        "thrust",
+        "torque",
+        "toxin",
+        "trade winds",
+        "pterodactyl",
+        "transformation tremors",
+        "tropical",
+        "umbra",
+        "unbelievable",
+        "underwater",
+        "unearth",
+        "unique",
+        "unite",
+        "unity",
+        "universal",
+        "unpredictable",
+        "unusual",
+        "ursine",
+        "vacuole",
+        "valuable",
+        "vapor",
+        "variable",
+        "variety",
+        "vast",
+        "velocity",
+        "ventifact",
+        "verdant",
+        "vespiary",
+        "viable",
+        "vibration",
+        "virus",
+        "viscosity",
+        "visible",
+        "vista",
+        "vital",
+        "vitreous",
+        "volt",
+        "volume",
+        "vulpine",
+        "wave",
+        "wax",
+        "weather",
+        "westerlies",
+        "wetlands",
+        "whitewater",
+        "xeriscape",
+        "xylem",
+        "yield",
+        "zero-impact",
+        "zone",
+        "zygote",
+        "achieving",
+        "acquisition of",
+        "an alternative",
+        "analysis of",
+        "approach toward",
+        "area",
+        "aspects of",
+        "assessment of",
+        "assuming",
+        "authority",
+        "available",
+        "benefit of",
+        "circumstantial",
+        "commentary",
+        "components",
+        "concept of",
+        "consistent",
+        "corresponding",
+        "criteria",
+        "data",
+        "deduction",
+        "demonstrating",
+        "derived",
+        "distribution",
+        "dominant",
+        "elements",
+        "equation",
+        "estimate",
+        "evaluation",
+        "factors",
+        "features",
+        "final",
+        "function",
+        "initial",
+        "instance ",
+        "interpretation of",
+        "maintaining ",
+        "method",
+        "perceived",
+        "percent",
+        "period",
+        "positive",
+        "potential",
+        "previous",
+        "primary",
+        "principle",
+        "procedure",
+        "process",
+        "range",
+        "region",
+        "relevant",
+        "required",
+        "research",
+        "resources",
+        "response",
+        "role",
+        "section",
+        "select",
+        "significant ",
+        "similar",
+        "source",
+        "specific",
+        "strategies",
+        "structure",
+        "theory",
+        "transfer",
+        "variables",
+        "corvidae",
+        "passerine",
+        "Pica pica",
+        "Chinchilla lanigera",
+        "Nymphicus hollandicus",
+        "Melopsittacus undulatus",
+    )
 
     def science_word(cls):
         """
@@ -159,7 +631,7 @@ class Sciencer(BaseProvider):
             otherwise $nbWords may vary by +/-40% with a minimum of 1
         """
         if nb_words <= 0:
-            return ''
+            return ""
 
         if variable_nb_words:
             nb_words = cls.randomize_nb_elements(nb_words)
@@ -167,7 +639,7 @@ class Sciencer(BaseProvider):
         words = cls.science_words(nb_words)
         words[0] = words[0].title()
 
-        return ' '.join(words) + '.'
+        return " ".join(words) + "."
 
     def science_sentences(cls, nb=3):
         """
@@ -188,12 +660,12 @@ class Sciencer(BaseProvider):
         :return string
         """
         if nb_sentences <= 0:
-            return ''
+            return ""
 
         if variable_nb_sentences:
             nb_sentences = cls.randomize_nb_elements(nb_sentences)
 
-        return ' '.join(cls.science_sentences(nb_sentences))
+        return " ".join(cls.science_sentences(nb_sentences))
 
     def science_paragraphs(cls, nb=3):
         """
@@ -214,7 +686,9 @@ class Sciencer(BaseProvider):
         """
         text = []
         if max_nb_chars < 5:
-            raise ValueError('text() can only generate text of at least 5 characters')
+            raise ValueError(
+                "text() can only generate text of at least 5 characters"
+            )
 
         if max_nb_chars < 25:
             # join words
@@ -222,20 +696,20 @@ class Sciencer(BaseProvider):
                 size = 0
                 # determine how many words are needed to reach the $max_nb_chars once;
                 while size < max_nb_chars:
-                    word = (' ' if size else '') + cls.science_word()
+                    word = (" " if size else "") + cls.science_word()
                     text.append(word)
                     size += len(word)
                 text.pop()
             text[0] = text[0][0].upper() + text[0][1:]
             last_index = len(text) - 1
-            text[last_index] += '.'
+            text[last_index] += "."
         elif max_nb_chars < 100:
             # join sentences
             while not text:
                 size = 0
                 # determine how many sentences are needed to reach the $max_nb_chars once
                 while size < max_nb_chars:
-                    sentence = (' ' if size else '') + cls.science_sentence()
+                    sentence = (" " if size else "") + cls.science_sentence()
                     text.append(sentence)
                     size += len(sentence)
                 text.pop()
@@ -245,18 +719,20 @@ class Sciencer(BaseProvider):
                 size = 0
                 # determine how many paragraphs are needed to reach the $max_nb_chars once
                 while size < max_nb_chars:
-                    paragraph = ('\n' if size else '') + cls.science_paragraph()
+                    paragraph = (
+                        "\n" if size else ""
+                    ) + cls.science_paragraph()
                     text.append(paragraph)
                     size += len(paragraph)
                 text.pop()
 
-        return ''.join(text)
+        return "".join(text)
 
 
-logger = logging.getLogger('create_fakes')
+logger = logging.getLogger("create_fakes")
 SILENT_LOGGERS = [
-    'factory',
-    'website.mails',
+    "factory",
+    "website.mails",
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -267,36 +743,80 @@ fake.add_provider(Sciencer)
 def create_fake_user():
     email = fake_email()
     name = fake.name()
-    user = UserFactory(username=email, fullname=name,
-                       is_registered=True, emails=[email],
-                       date_registered=fake.date_time(tzinfo=pytz.UTC),
-                   )
-    user.set_password('faker123')
+    user = UserFactory(
+        username=email,
+        fullname=name,
+        is_registered=True,
+        emails=[email],
+        date_registered=fake.date_time(tzinfo=pytz.UTC),
+    )
+    user.set_password("faker123")
     user.save()
-    logger.info(f'Created user: {user.fullname} <{user.username}>')
+    logger.info(f"Created user: {user.fullname} <{user.username}>")
     return user
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Create fake data.')
-    parser.add_argument('-u', '--user', dest='user', required=True)
-    parser.add_argument('--nusers', dest='n_users', type=int, default=3)
-    parser.add_argument('--nprojects', dest='n_projects', type=int, default=3)
-    parser.add_argument('-c', '--components', dest='n_components', type=evaluate_argument, default='0')
-    parser.add_argument('-p', '--privacy', dest='privacy', type=str, default='private', choices=['public', 'private'])
-    parser.add_argument('-n', '--name', dest='name', type=str, default=None)
-    parser.add_argument('-t', '--tags', dest='n_tags', type=int, default=5)
-    parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
-    parser.add_argument('-r', '--registration', dest='is_registration', type=bool, default=False)
-    parser.add_argument('-pre', '--preprint', dest='is_preprint', type=bool, default=False)
-    parser.add_argument('-preprovider', '--preprintprovider', dest='preprint_provider', type=str, default=None)
+    parser = argparse.ArgumentParser(description="Create fake data.")
+    parser.add_argument("-u", "--user", dest="user", required=True)
+    parser.add_argument("--nusers", dest="n_users", type=int, default=3)
+    parser.add_argument("--nprojects", dest="n_projects", type=int, default=3)
+    parser.add_argument(
+        "-c",
+        "--components",
+        dest="n_components",
+        type=evaluate_argument,
+        default="0",
+    )
+    parser.add_argument(
+        "-p",
+        "--privacy",
+        dest="privacy",
+        type=str,
+        default="private",
+        choices=["public", "private"],
+    )
+    parser.add_argument("-n", "--name", dest="name", type=str, default=None)
+    parser.add_argument("-t", "--tags", dest="n_tags", type=int, default=5)
+    parser.add_argument(
+        "--presentation", dest="presentation_name", type=str, default=None
+    )
+    parser.add_argument(
+        "-r",
+        "--registration",
+        dest="is_registration",
+        type=bool,
+        default=False,
+    )
+    parser.add_argument(
+        "-pre", "--preprint", dest="is_preprint", type=bool, default=False
+    )
+    parser.add_argument(
+        "-preprovider",
+        "--preprintprovider",
+        dest="preprint_provider",
+        type=str,
+        default=None,
+    )
     return parser.parse_args()
+
 
 def evaluate_argument(string):
     return ast.literal_eval(string)
 
 
-def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration, is_preprint, preprint_provider):
+def create_fake_project(
+    creator,
+    n_users,
+    privacy,
+    n_components,
+    name,
+    n_tags,
+    presentation_name,
+    is_registration,
+    is_preprint,
+    preprint_provider,
+):
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
     if is_preprint:
@@ -308,16 +828,31 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
                 pass
         if not provider:
             provider = PreprintProviderFactory(name=fake.science_word())
-        privacy = 'public'
-        mock_change_identifier_preprints = mock.patch('website.identifiers.client.CrossRefClient.update_identifier')
+        privacy = "public"
+        mock_change_identifier_preprints = mock.patch(
+            "website.identifiers.client.CrossRefClient.update_identifier"
+        )
         mock_change_identifier_preprints.start()
-        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
+        project = PreprintFactory(
+            title=project_title,
+            description=fake.science_paragraph(),
+            creator=creator,
+            provider=provider,
+        )
         node = project.node
     elif is_registration:
-        project = RegistrationFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
+        project = RegistrationFactory(
+            title=project_title,
+            description=fake.science_paragraph(),
+            creator=creator,
+        )
         node = project
     else:
-        project = ProjectFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
+        project = ProjectFactory(
+            title=project_title,
+            description=fake.science_paragraph(),
+            creator=creator,
+        )
         node = project
 
     node.set_privacy(privacy)
@@ -326,19 +861,25 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         node.add_contributor(contrib, auth=auth)
     if isinstance(n_components, int):
         for _ in range(n_components):
-            NodeFactory(parent=node, title=fake.science_sentence(), description=fake.science_paragraph(),
-                        creator=creator)
+            NodeFactory(
+                parent=node,
+                title=fake.science_sentence(),
+                description=fake.science_paragraph(),
+                creator=creator,
+            )
     elif isinstance(n_components, list):
-        render_generations_from_node_structure_list(node, creator, n_components)
+        render_generations_from_node_structure_list(
+            node, creator, n_components
+        )
     for _ in range(n_tags):
         node.add_tag(fake.science_word(), auth=auth)
     if presentation_name is not None:
         node.add_tag(presentation_name, auth=auth)
-        node.add_tag('poster', auth=auth)
+        node.add_tag("poster", auth=auth)
 
     node.save()
     project.save()
-    logger.info(f'Created project: {node.title}')
+    logger.info(f"Created project: {node.title}")
     return project
 
 
@@ -349,19 +890,25 @@ def render_generations_from_parent(parent, creator, num_generations):
             parent=current_gen,
             creator=creator,
             title=fake.science_sentence(),
-            description=fake.science_paragraph()
+            description=fake.science_paragraph(),
         )
         current_gen = next_gen
     return current_gen
 
 
-def render_generations_from_node_structure_list(parent, creator, node_structure_list):
+def render_generations_from_node_structure_list(
+    parent, creator, node_structure_list
+):
     new_parent = None
     for node_number in node_structure_list:
         if isinstance(node_number, list):
-            render_generations_from_node_structure_list(new_parent or parent, creator, node_number)
+            render_generations_from_node_structure_list(
+                new_parent or parent, creator, node_number
+            )
         else:
-            new_parent = render_generations_from_parent(parent, creator, node_number)
+            new_parent = render_generations_from_parent(
+                parent, creator, node_number
+            )
     return new_parent
 
 
@@ -369,13 +916,23 @@ def main():
     args = parse_args()
     creator = models.OSFUser.objects.get(username=args.user)
     for i in range(args.n_projects):
-        name = args.name + str(i) if args.name else ''
-        create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags,
-                            args.presentation_name, args.is_registration, args.is_preprint, args.preprint_provider)
-    print(f'Created {args.n_projects} fake projects.')
+        name = args.name + str(i) if args.name else ""
+        create_fake_project(
+            creator,
+            args.n_users,
+            args.privacy,
+            args.n_components,
+            name,
+            args.n_tags,
+            args.presentation_name,
+            args.is_registration,
+            args.is_preprint,
+            args.preprint_provider,
+        )
+    print(f"Created {args.n_projects} fake projects.")
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     init_app(set_backends=True, routes=False)
     main()

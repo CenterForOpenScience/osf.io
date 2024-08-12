@@ -1,6 +1,10 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
+from rest_framework.exceptions import (
+    NotFound,
+    ValidationError,
+    PermissionDenied,
+)
 
 from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
@@ -30,11 +34,16 @@ class CommentMixin:
     """
 
     serializer_class = CommentSerializer
-    comment_lookup_url_kwarg = 'comment_id'
+    comment_lookup_url_kwarg = "comment_id"
 
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
-        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False, guids___id__isnull=False)
+        comment = get_object_or_404(
+            Comment,
+            guids___id=pk,
+            root_target__isnull=False,
+            guids___id__isnull=False,
+        )
 
         if comment.root_target is None:
             raise NotFound
@@ -45,9 +54,11 @@ class CommentMixin:
         return comment
 
 
-class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/comments_read).
-    """
+class CommentDetail(
+    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin
+):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/comments_read)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CommentDetailPermissions,
@@ -58,8 +69,8 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = NodeCommentDetailSerializer
-    view_category = 'comments'
-    view_name = 'comment-detail'
+    view_category = "comments"
+    view_name = "comment-detail"
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -80,15 +91,19 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     def perform_destroy(self, instance):
         auth = Auth(self.request.user)
         if instance.is_deleted:
-            raise ValidationError('Comment already deleted.')
+            raise ValidationError("Comment already deleted.")
         else:
             try:
                 instance.delete(auth, save=True)
             except PermissionsError:
-                raise PermissionDenied('Not authorized to delete this comment.')
+                raise PermissionDenied(
+                    "Not authorized to delete this comment."
+                )
 
 
-class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):
+class CommentReportsList(
+    JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin
+):
     """List of reports made for a comment. *Writeable*.
 
     Paginated list of reports for a comment. Each resource contains the full representation of the
@@ -141,6 +156,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
 
     #This Request/Response
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticated,
         CommentReportsPermissions,
@@ -152,10 +168,10 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
 
     serializer_class = CommentReportSerializer
 
-    view_category = 'comments'
-    view_name = 'comment-reports'
+    view_category = "comments"
+    view_name = "comment-reports"
 
-    ordering = ('-modified',)
+    ordering = ("-modified",)
 
     def get_queryset(self):
         user_id = self.request.user._id
@@ -163,12 +179,16 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
         reports = comment.reports
         serialized_reports = []
         if user_id in reports:
-            report = CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
+            report = CommentReport(
+                user_id, reports[user_id]["category"], reports[user_id]["text"]
+            )
             serialized_reports.append(report)
         return serialized_reports
 
 
-class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
+class CommentReportDetail(
+    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin
+):
     """Details about a specific comment report. *Writeable*.
 
     ###Permissions
@@ -227,6 +247,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
     #This Request/Response
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticated,
         CommentReportsPermissions,
@@ -237,23 +258,29 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportDetailSerializer
-    view_category = 'comments'
-    view_name = 'report-detail'
+    view_category = "comments"
+    view_name = "report-detail"
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         comment = self.get_comment()
         reports = comment.reports
         user_id = self.request.user._id
-        reporter_id = self.kwargs['user_id']
+        reporter_id = self.kwargs["user_id"]
 
         if reporter_id != user_id:
-            raise PermissionDenied('Not authorized to comment on this project.')
+            raise PermissionDenied(
+                "Not authorized to comment on this project."
+            )
 
         if reporter_id in reports:
-            return CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
+            return CommentReport(
+                user_id, reports[user_id]["category"], reports[user_id]["text"]
+            )
         else:
-            raise Gone(detail='The requested comment report is no longer available.')
+            raise Gone(
+                detail="The requested comment report is no longer available."
+            )
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):

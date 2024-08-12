@@ -1,64 +1,65 @@
 """Box addon routes."""
+
 from framework.routing import Rule, json_renderer
 
 from . import views
 
 
 api_routes = {
-    'rules': [
+    "rules": [
         Rule(
             [
-                '/settings/box/accounts/',
+                "/settings/box/accounts/",
             ],
-            'get',
+            "get",
             views.box_account_list,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/box/settings/',
-                '/project/<pid>/node/<nid>/box/settings/'
+                "/project/<pid>/box/settings/",
+                "/project/<pid>/node/<nid>/box/settings/",
             ],
-            'get',
+            "get",
             views.box_get_config,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/box/settings/',
-                '/project/<pid>/node/<nid>/box/settings/'
+                "/project/<pid>/box/settings/",
+                "/project/<pid>/node/<nid>/box/settings/",
             ],
-            'put',
+            "put",
             views.box_set_config,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/box/user_auth/',
-                '/project/<pid>/node/<nid>/box/user_auth/'
+                "/project/<pid>/box/user_auth/",
+                "/project/<pid>/node/<nid>/box/user_auth/",
             ],
-            'put',
+            "put",
             views.box_import_auth,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/box/user_auth/',
-                '/project/<pid>/node/<nid>/box/user_auth/'
+                "/project/<pid>/box/user_auth/",
+                "/project/<pid>/node/<nid>/box/user_auth/",
             ],
-            'delete',
+            "delete",
             views.box_deauthorize_node,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/box/folders/',
-                '/project/<pid>/node/<nid>/box/folders/',
+                "/project/<pid>/box/folders/",
+                "/project/<pid>/node/<nid>/box/folders/",
             ],
-            'get',
+            "get",
             views.box_folder_list,
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
+    "prefix": "/api/v1",
 }

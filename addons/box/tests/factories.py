@@ -1,20 +1,25 @@
 """Factory boy factories for the Box addon."""
+
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from factory import SubFactory, Sequence
 from factory.django import DjangoModelFactory
 
-from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from osf_tests.factories import (
+    UserFactory,
+    ProjectFactory,
+    ExternalAccountFactory,
+)
 
 from addons.box.models import NodeSettings
 from addons.box.models import UserSettings
 
 
 class BoxAccountFactory(ExternalAccountFactory):
-    provider = 'box'
-    provider_id = Sequence(lambda n: f'id-{n}')
-    oauth_key = Sequence(lambda n: f'key-{n}')
+    provider = "box"
+    provider_id = Sequence(lambda n: f"id-{n}")
+    oauth_key = Sequence(lambda n: f"key-{n}")
     expires_at = timezone.now() + relativedelta(seconds=3600)
 
 

@@ -8,10 +8,12 @@ import logging
 import django
 from django.utils import timezone
 from django.db import transaction
+
 django.setup()
 
 # init_app must be called before sentry is imported
 from website.app import init_app
+
 init_app(routes=False)
 
 from framework import sentry
@@ -32,17 +34,18 @@ def main(dry_run=True):
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
-                logger.warning('Dry run mode')
+                logger.warning("Dry run mode")
             try:
                 parent_registration = Registration.objects.get(embargo=embargo)
             except Registration.DoesNotExist:
                 logger.error(
-                    f'Embargo {embargo._id} is not attached to a registration'
+                    f"Embargo {embargo._id} is not attached to a registration"
                 )
                 continue
             logger.warning(
-                'Embargo {} approved. Activating embargo for registration {}'
-                .format(embargo._id, parent_registration._id)
+                "Embargo {} approved. Activating embargo for registration {}".format(
+                    embargo._id, parent_registration._id
+                )
             )
             if not dry_run:
                 if parent_registration.is_deleted:
@@ -60,8 +63,8 @@ def main(dry_run=True):
                     transaction.savepoint_commit(sid)
                 except Exception as err:
                     logger.error(
-                        f'Unexpected error raised when activating embargo for '
-                        f'registration {parent_registration._id}. Continuing...'
+                        f"Unexpected error raised when activating embargo for "
+                        f"registration {parent_registration._id}. Continuing..."
                     )
                     logger.exception(err)
                     sentry.log_message(str(err))
@@ -71,11 +74,12 @@ def main(dry_run=True):
     for embargo in active_embargoes:
         if embargo.end_date < timezone.now() and not embargo.is_deleted:
             if dry_run:
-                logger.warning('Dry run mode')
+                logger.warning("Dry run mode")
             parent_registration = Registration.objects.get(embargo=embargo)
             logger.warning(
-                'Embargo {} complete. Making registration {} public'
-                .format(embargo._id, parent_registration._id)
+                "Embargo {} complete. Making registration {} public".format(
+                    embargo._id, parent_registration._id
+                )
             )
             if not dry_run:
                 if parent_registration.is_deleted:
@@ -90,8 +94,8 @@ def main(dry_run=True):
                     transaction.savepoint_commit(sid)
                 except Exception as err:
                     logger.error(
-                        f'Unexpected error raised when completing embargo for '
-                        f'registration {parent_registration._id}. Continuing...'
+                        f"Unexpected error raised when completing embargo for "
+                        f"registration {parent_registration._id}. Continuing..."
                     )
                     logger.exception(err)
                     sentry.log_message(str(err))
@@ -100,14 +104,17 @@ def main(dry_run=True):
 
 def should_be_embargoed(embargo):
     """Returns true if embargo was initiated more than 48 hours prior."""
-    return (timezone.now() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME and not embargo.is_deleted
+    return (
+        timezone.now() - embargo.initiation_date
+    ) >= settings.EMBARGO_PENDING_TIME and not embargo.is_deleted
 
 
-@celery_app.task(name='scripts.embargo_registrations')
+@celery_app.task(name="scripts.embargo_registrations")
 def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main(False)

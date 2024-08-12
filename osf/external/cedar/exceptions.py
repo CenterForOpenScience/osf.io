@@ -1,6 +1,5 @@
 class CedarClientError(Exception):
-
-    def __init__(self, reason='Cedar API Error'):
+    def __init__(self, reason="Cedar API Error"):
         super().__init__(reason)
         self.reason = reason
 

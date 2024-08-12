@@ -4,15 +4,19 @@ from api.base.serializers import JSONAPISerializer, VersionedDateTimeField
 
 
 class CitationSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'title',
-        'short_title',
-        'summary',
-        'id',
-    ])
-    id = ser.CharField(source='_id', required=True)
+    filterable_fields = frozenset(
+        [
+            "title",
+            "short_title",
+            "summary",
+            "id",
+        ]
+    )
+    id = ser.CharField(source="_id", required=True)
     title = ser.CharField(max_length=200)
-    date_parsed = VersionedDateTimeField(read_only=True, help_text='Datetime the csl file was last parsed')
+    date_parsed = VersionedDateTimeField(
+        read_only=True, help_text="Datetime the csl file was last parsed"
+    )
 
     short_title = ser.CharField(max_length=500)
     summary = ser.CharField(max_length=200)
@@ -21,4 +25,4 @@ class CitationSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     class Meta:
-        type_ = 'citation-styles'
+        type_ = "citation-styles"

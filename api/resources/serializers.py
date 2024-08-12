@@ -22,40 +22,48 @@ from osf.utils.outcomes import ArtifactTypes
 
 
 MODEL_TO_SERIALIZER_FIELD_MAPPINGS = {
-    'artifact_type': 'resource_type',
-    'identifier__value': 'pid',
+    "artifact_type": "resource_type",
+    "identifier__value": "pid",
 }
 
 
 class ResourceSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'date_created',
-        'date_modified',
-        'resource_type',
-    ])
+    filterable_fields = frozenset(
+        [
+            "date_created",
+            "date_modified",
+            "resource_type",
+        ]
+    )
 
-    non_anonymized_fields = frozenset([
-        'id',
-        'type',
-        'date_created',
-        'date_modified',
-        'description',
-        'links',
-        'registration',
-        'resource_type',
-    ])
+    non_anonymized_fields = frozenset(
+        [
+            "id",
+            "type",
+            "date_created",
+            "date_modified",
+            "description",
+            "links",
+            "registration",
+            "resource_type",
+        ]
+    )
 
     class Meta:
-        type_ = 'resources'
+        type_ = "resources"
 
-    id = ser.CharField(source='_id', read_only=True, required=False)
+    id = ser.CharField(source="_id", read_only=True, required=False)
     type = TypeField()
 
-    date_created = VersionedDateTimeField(source='created', required=False)
-    date_modified = VersionedDateTimeField(source='modified', required=False)
+    date_created = VersionedDateTimeField(source="created", required=False)
+    date_modified = VersionedDateTimeField(source="modified", required=False)
 
-    description = ser.CharField(allow_null=False, allow_blank=True, required=False)
-    resource_type = EnumField(ArtifactTypes, source='artifact_type', allow_null=False, required=False)
+    description = ser.CharField(
+        allow_null=False, allow_blank=True, required=False
+    )
+    resource_type = EnumField(
+        ArtifactTypes, source="artifact_type", allow_null=False, required=False
+    )
     finalized = ser.BooleanField(required=False)
 
     # Reference to obj.identifier.value, populated via annotation on default manager
@@ -63,46 +71,52 @@ class ResourceSerializer(JSONAPISerializer):
 
     # primary_resource_guid is populated via annotation on the default manager
     registration = RelationshipField(
-        related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': '<primary_resource_guid>'},
+        related_view="registrations:registration-detail",
+        related_view_kwargs={"node_id": "<primary_resource_guid>"},
         read_only=True,
         required=False,
         allow_null=True,
     )
 
-    links = LinksField({'self': 'get_absolute_url'})
+    links = LinksField({"self": "get_absolute_url"})
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'resources:resource-detail',
+            "resources:resource-detail",
             kwargs={
-                'version': self.context['request'].parser_context['kwargs']['version'],
-                'resource_id': obj._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
+                "resource_id": obj._id,
             },
         )
 
     def create(self, validated_data):
         # Already loaded by view, so no need to error check
-        guid = self.context['request'].data['registration']
+        guid = self.context["request"].data["registration"]
         primary_registration = Registration.load(guid)
 
         try:
-            root_outcome = Outcome.objects.for_registration(primary_registration, create=True)
+            root_outcome = Outcome.objects.for_registration(
+                primary_registration, create=True
+            )
         except NoPIDError:
-            raise Conflict('Cannot add Resources to a Registration that does not have a DOI')
+            raise Conflict(
+                "Cannot add Resources to a Registration that does not have a DOI"
+            )
 
         return OutcomeArtifact.objects.create(outcome=root_outcome)
 
     def update(self, instance, validated_data):
-        updated_description = validated_data.get('description')
+        updated_description = validated_data.get("description")
         if updated_description == instance.description:
             updated_description = None
 
-        updated_artifact_type = validated_data.get('artifact_type')
+        updated_artifact_type = validated_data.get("artifact_type")
         if updated_artifact_type == instance.artifact_type:
             updated_artifact_type = None
 
-        updated_pid_value = validated_data.get('pid')
+        updated_pid_value = validated_data.get("pid")
         if updated_pid_value == instance.pid:
             updated_pid_value = None
 
@@ -111,30 +125,30 @@ class ResourceSerializer(JSONAPISerializer):
                 new_description=updated_description,
                 new_artifact_type=updated_artifact_type,
                 new_pid_value=updated_pid_value,
-                api_request=self.context['request'],
+                api_request=self.context["request"],
             )
         except UnsupportedArtifactTypeError:
             current_type = ArtifactTypes(instance.artifact_type).name.lower()
             raise JSONAPIException(
                 detail=(
-                    f'Error updating resource_type for Resource with id [{instance._id}]: '
+                    f"Error updating resource_type for Resource with id [{instance._id}]: "
                     f'currently has a resource_type of "{current_type}", cannot return '
                     'resource_type to "undefined".'
                 ),
-                source={'pointer': '/data/attributes/resource_type'},
+                source={"pointer": "/data/attributes/resource_type"},
             )
         except InvalidPIDError as e:
             raise JSONAPIException(
-                detail=f'Error updating PID for Resource with id [{instance._id}]: {e.message}',
-                source={'pointer': '/data/attributes/pid'},
+                detail=f"Error updating PID for Resource with id [{instance._id}]: {e.message}",
+                source={"pointer": "/data/attributes/pid"},
             )
         except IntegrityError:
             raise JSONAPIException(
-                detail='A Resource with the provided PID and Resource Type already exists.',
-                source={'pointer': '/data/attributes'},
+                detail="A Resource with the provided PID and Resource Type already exists.",
+                source={"pointer": "/data/attributes"},
             )
 
-        finalized = validated_data.get('finalized')
+        finalized = validated_data.get("finalized")
         if finalized is not None:
             self._update_finalized(instance, finalized)
 
@@ -151,36 +165,37 @@ class ResourceSerializer(JSONAPISerializer):
         if instance.finalized:
             raise Conflict(
                 detail=(
-                    'Resource with id [{instance._id}] has state `finalized: true`, '
-                    'cannot PATCH `finalized: false'
+                    "Resource with id [{instance._id}] has state `finalized: true`, "
+                    "cannot PATCH `finalized: false"
                 ),
-                source={'pointer': '/data/attributes/finalized'},
+                source={"pointer": "/data/attributes/finalized"},
             )
 
         try:
-            instance.finalize(api_request=self.context['request'])
+            instance.finalize(api_request=self.context["request"])
         except CannotFinalizeArtifactError as e:
             error_sources = [
-                MODEL_TO_SERIALIZER_FIELD_MAPPINGS[field] for field in e.incomplete_fields
+                MODEL_TO_SERIALIZER_FIELD_MAPPINGS[field]
+                for field in e.incomplete_fields
             ]
         except IntegrityError:
             raise JSONAPIException(
-                detail='A Resource with the provided PID and Resource Type already exists.',
-                source={'pointer': '/data/attributes'},
+                detail="A Resource with the provided PID and Resource Type already exists.",
+                source={"pointer": "/data/attributes"},
             )
         else:
             return
 
-        source = '/data/attributes/'
+        source = "/data/attributes/"
         if len(error_sources) == 1:  # Be more specific if possible
             source += error_sources[0]
 
         raise Conflict(
             detail=(
-                f'Cannot PATCH `finalized: true` for Resource with id [{instance._id}] '
-                f'until the following required fields are populated {error_sources}.'
+                f"Cannot PATCH `finalized: true` for Resource with id [{instance._id}] "
+                f"until the following required fields are populated {error_sources}."
             ),
-            source={'pointer': source},
+            source={"pointer": source},
         )
 
         return True

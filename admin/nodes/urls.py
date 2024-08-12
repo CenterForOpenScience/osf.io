@@ -1,40 +1,125 @@
 from django.urls import re_path
 from admin.nodes import views
 
-app_name = 'admin'
+app_name = "admin"
 
 urlpatterns = [
-    re_path(r'^$', views.NodeSearchView.as_view(), name='search'),
-    re_path(r'^flagged_spam$', views.NodeFlaggedSpamList.as_view(), name='flagged-spam'),
-    re_path(r'^known_spam$', views.NodeKnownSpamList.as_view(), name='known-spam'),
-    re_path(r'^known_ham$', views.NodeKnownHamList.as_view(), name='known-ham'),
-    re_path(r'^doi_backlog_list/$', views.DoiBacklogListView.as_view(), name='doi-backlog-list'),
-    re_path(r'^registration_list/$', views.RegistrationListView.as_view(), name='registrations'),
-    re_path(r'^stuck_registration_list/$', views.StuckRegistrationListView.as_view(), name='stuck-registrations'),
-    re_path(r'^ia_backlog_list/$', views.RegistrationBacklogListView.as_view(), name='ia-backlog-list'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/$', views.NodeView.as_view(), name='node'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/logs/$', views.AdminNodeLogView.as_view(), name='node-logs'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/schema_responses/$', views.AdminNodeSchemaResponseView.as_view(),
-        name='schema-responses'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/update_embargo/$', views.RegistrationUpdateEmbargoView.as_view(), name='update-embargo'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/remove/$', views.NodeDeleteView.as_view(), name='remove'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/restore/$', views.NodeDeleteView.as_view(), name='restore'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/confirm_spam/$', views.NodeConfirmSpamView.as_view(), name='confirm-spam'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/confirm_ham/$', views.NodeConfirmHamView.as_view(), name='confirm-ham'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/confirm_unflag/$', views.NodeConfirmUnflagView.as_view(), name='confirm-unflag'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/reindex_share_node/$', views.NodeReindexShare.as_view(), name='reindex-share-node'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_node/$', views.NodeReindexElastic.as_view(),
-        name='reindex-elastic-node'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/restart_stuck_registrations/$', views.RestartStuckRegistrationsView.as_view(),
-        name='restart-stuck-registrations'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/remove_stuck_registrations/$', views.RemoveStuckRegistrationsView.as_view(),
-        name='remove-stuck-registrations'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$', views.NodeRemoveContributorView.as_view(),
-        name='remove-user'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/modify_storage_usage/$', views.NodeModifyStorageUsage.as_view(),
-        name='adjust-storage-usage'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/recalculate_node_storage/$', views.NodeRecalculateStorage.as_view(),
-        name='recalculate-node-storage'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/make_private/$', views.NodeMakePrivate.as_view(), name='make-private'),
-    re_path(r'^(?P<guid>[a-z0-9]+)/make_public/$', views.NodeMakePublic.as_view(), name='make-public'),
+    re_path(r"^$", views.NodeSearchView.as_view(), name="search"),
+    re_path(
+        r"^flagged_spam$",
+        views.NodeFlaggedSpamList.as_view(),
+        name="flagged-spam",
+    ),
+    re_path(
+        r"^known_spam$", views.NodeKnownSpamList.as_view(), name="known-spam"
+    ),
+    re_path(
+        r"^known_ham$", views.NodeKnownHamList.as_view(), name="known-ham"
+    ),
+    re_path(
+        r"^doi_backlog_list/$",
+        views.DoiBacklogListView.as_view(),
+        name="doi-backlog-list",
+    ),
+    re_path(
+        r"^registration_list/$",
+        views.RegistrationListView.as_view(),
+        name="registrations",
+    ),
+    re_path(
+        r"^stuck_registration_list/$",
+        views.StuckRegistrationListView.as_view(),
+        name="stuck-registrations",
+    ),
+    re_path(
+        r"^ia_backlog_list/$",
+        views.RegistrationBacklogListView.as_view(),
+        name="ia-backlog-list",
+    ),
+    re_path(r"^(?P<guid>[a-z0-9]+)/$", views.NodeView.as_view(), name="node"),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/logs/$",
+        views.AdminNodeLogView.as_view(),
+        name="node-logs",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/schema_responses/$",
+        views.AdminNodeSchemaResponseView.as_view(),
+        name="schema-responses",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/update_embargo/$",
+        views.RegistrationUpdateEmbargoView.as_view(),
+        name="update-embargo",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/remove/$",
+        views.NodeDeleteView.as_view(),
+        name="remove",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/restore/$",
+        views.NodeDeleteView.as_view(),
+        name="restore",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/confirm_spam/$",
+        views.NodeConfirmSpamView.as_view(),
+        name="confirm-spam",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/confirm_ham/$",
+        views.NodeConfirmHamView.as_view(),
+        name="confirm-ham",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/confirm_unflag/$",
+        views.NodeConfirmUnflagView.as_view(),
+        name="confirm-unflag",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/reindex_share_node/$",
+        views.NodeReindexShare.as_view(),
+        name="reindex-share-node",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/reindex_elastic_node/$",
+        views.NodeReindexElastic.as_view(),
+        name="reindex-elastic-node",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/restart_stuck_registrations/$",
+        views.RestartStuckRegistrationsView.as_view(),
+        name="restart-stuck-registrations",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/remove_stuck_registrations/$",
+        views.RemoveStuckRegistrationsView.as_view(),
+        name="remove-stuck-registrations",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$",
+        views.NodeRemoveContributorView.as_view(),
+        name="remove-user",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/modify_storage_usage/$",
+        views.NodeModifyStorageUsage.as_view(),
+        name="adjust-storage-usage",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/recalculate_node_storage/$",
+        views.NodeRecalculateStorage.as_view(),
+        name="recalculate-node-storage",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/make_private/$",
+        views.NodeMakePrivate.as_view(),
+        name="make-private",
+    ),
+    re_path(
+        r"^(?P<guid>[a-z0-9]+)/make_public/$",
+        views.NodeMakePublic.as_view(),
+        name="make-public",
+    ),
 ]

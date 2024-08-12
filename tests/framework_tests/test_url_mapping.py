@@ -6,7 +6,6 @@ from framework.routing import Rule, json_renderer, process_rules
 
 
 class RuleTestCase(unittest.TestCase):
-
     def setUp(self):
         # create a new app for every test
         self.app = Flask(__name__)
@@ -16,50 +15,83 @@ class RuleTestCase(unittest.TestCase):
             return {}
 
         return Rule(
-            kwargs.get('routes', ['/', ]),
-            kwargs.get('methods', ['GET', ]),
-            kwargs.get('view_func_or_data', vf),
-            kwargs.get('renderer', json_renderer),
-            kwargs.get('view_kwargs'),
+            kwargs.get(
+                "routes",
+                [
+                    "/",
+                ],
+            ),
+            kwargs.get(
+                "methods",
+                [
+                    "GET",
+                ],
+            ),
+            kwargs.get("view_func_or_data", vf),
+            kwargs.get("renderer", json_renderer),
+            kwargs.get("view_kwargs"),
         )
 
     def test_rule_single_route(self):
-        r = self._make_rule(routes='/')
-        assert r.routes == ['/', ]
+        r = self._make_rule(routes="/")
+        assert r.routes == [
+            "/",
+        ]
 
     def test_rule_single_method(self):
-        r = self._make_rule(methods='GET')
-        assert r.methods == ['GET', ]
+        r = self._make_rule(methods="GET")
+        assert r.methods == [
+            "GET",
+        ]
 
     def test_rule_lambda_view(self):
-        r = self._make_rule(view_func_or_data=lambda: '')
+        r = self._make_rule(view_func_or_data=lambda: "")
         assert callable(r.view_func_or_data)
 
     def test_url_for_simple(self):
-        r = Rule(['/project/'], 'get', view_func_or_data=dummy_view, renderer=json_renderer)
+        r = Rule(
+            ["/project/"],
+            "get",
+            view_func_or_data=dummy_view,
+            renderer=json_renderer,
+        )
         process_rules(self.app, [r])
         with self.app.test_request_context():
-            assert url_for('JSONRenderer__dummy_view') == '/project/'
+            assert url_for("JSONRenderer__dummy_view") == "/project/"
 
     def test_url_for_with_argument(self):
-        r = Rule(['/project/<pid>/'], 'get', view_func_or_data=dummy_view2, renderer=json_renderer)
+        r = Rule(
+            ["/project/<pid>/"],
+            "get",
+            view_func_or_data=dummy_view2,
+            renderer=json_renderer,
+        )
         process_rules(self.app, [r])
         with self.app.test_request_context():
-            assert url_for('JSONRenderer__dummy_view2', pid=123) == '/project/123/'
+            assert (
+                url_for("JSONRenderer__dummy_view2", pid=123)
+                == "/project/123/"
+            )
 
     def test_url_for_with_prefix(self):
-        api_rule = Rule(['/project/'], 'get', view_func_or_data=dummy_view3,
-                renderer=json_renderer)
-        process_rules(self.app, [api_rule], prefix='/api/v1')
+        api_rule = Rule(
+            ["/project/"],
+            "get",
+            view_func_or_data=dummy_view3,
+            renderer=json_renderer,
+        )
+        process_rules(self.app, [api_rule], prefix="/api/v1")
         with self.app.test_request_context():
-            assert url_for('JSONRenderer__dummy_view3') == '/api/v1/project/'
+            assert url_for("JSONRenderer__dummy_view3") == "/api/v1/project/"
 
 
 def dummy_view():
-    return {'status': 'success'}
+    return {"status": "success"}
+
 
 def dummy_view2(pid):
-    return {'id': pid}
+    return {"id": pid}
+
 
 def dummy_view3():
-    return {'status': 'success'}
+    return {"status": "success"}

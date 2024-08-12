@@ -4,7 +4,11 @@ from rest_framework import permissions
 from rest_framework.exceptions import NotFound, PermissionDenied
 
 from api.actions.permissions import ReviewActionPermission
-from api.actions.serializers import NodeRequestActionSerializer, ReviewActionSerializer, PreprintRequestActionSerializer
+from api.actions.serializers import (
+    NodeRequestActionSerializer,
+    ReviewActionSerializer,
+    PreprintRequestActionSerializer,
+)
 from api.base.exceptions import Conflict
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
@@ -15,7 +19,10 @@ from api.base.parsers import (
 from api.base import permissions as base_permissions
 from api.base.utils import absolute_reverse
 from api.requests.views import NodeRequestMixin, PreprintRequestMixin
-from api.requests.permissions import NodeRequestPermission, PreprintRequestPermission
+from api.requests.permissions import (
+    NodeRequestPermission,
+    PreprintRequestPermission,
+)
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import (
     PreprintProvider,
@@ -29,9 +36,9 @@ from osf.models import (
 
 def get_review_actions_queryset():
     return ReviewAction.objects.prefetch_related(
-        'creator__guids',
-        'target__guids',
-        'target__provider',
+        "creator__guids",
+        "target__guids",
+        "target__provider",
     ).filter(is_deleted=False)
 
 
@@ -65,6 +72,7 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     ##Links
     - `self` -- Detail page for the current action
     """
+
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -76,8 +84,8 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
     serializer_class = ReviewActionSerializer
-    view_category = 'actions'
-    view_name = 'action-detail'
+    view_category = "actions"
+    view_name = "action-detail"
 
     def get_serializer_class(self):
         # Not allowed to view NodeRequestActions yet, making extra logic unnecessary
@@ -85,32 +93,47 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_object(self):
         action = None
-        action_id = self.kwargs['action_id']
+        action_id = self.kwargs["action_id"]
 
-        if NodeRequestAction.objects.filter(_id=action_id).exists() or PreprintRequestAction.objects.filter(_id=action_id).exists():
+        if (
+            NodeRequestAction.objects.filter(_id=action_id).exists()
+            or PreprintRequestAction.objects.filter(_id=action_id).exists()
+        ):
             # No permissions allow for viewing RequestActions yet
-            raise PermissionDenied('You do not have permission to view this Action')
+            raise PermissionDenied(
+                "You do not have permission to view this Action"
+            )
 
         # Query all Action classes that aren't deleted
         action_querysets = [
             action_subclass.objects.filter(_id=action_id, is_deleted=False)
             for action_subclass in BaseAction.__subclasses__()
-        ] + [CollectionSubmissionAction.objects.filter(_id=action_id, deleted__isnull=True)]
+        ] + [
+            CollectionSubmissionAction.objects.filter(
+                _id=action_id, deleted__isnull=True
+            )
+        ]
         if action_querysets:
-            action = [action_queryset for action_queryset in action_querysets if action_queryset][0]  # clear empty querysets
+            action = [
+                action_queryset
+                for action_queryset in action_querysets
+                if action_queryset
+            ][0]  # clear empty querysets
             action.prefetch_related(
-                'creator__guids',
-                'target__guids',
-                'target__provider',
+                "creator__guids",
+                "target__guids",
+                "target__provider",
             )
             action = action.get()
         else:
-            raise NotFound('Unable to find specified Action')
+            raise NotFound("Unable to find specified Action")
         self.check_object_permissions(self.request, action)
         return action
 
 
-class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class ReviewActionListCreate(
+    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+):
     """List of review actions viewable by this user
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -148,6 +171,7 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
 
     Actions may be filtered by their `id`, `from_state`, `to_state`, `date_created`, `date_modified`, `creator`, `provider`, `target`
     """
+
     # Permissions handled in get_default_django_query
     permission_classes = (
         permissions.IsAuthenticated,
@@ -158,27 +182,33 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+    parser_classes = (
+        JSONAPIMultipleRelationshipsParser,
+        JSONAPIMultipleRelationshipsParserForRegularJSON,
+    )
     serializer_class = ReviewActionSerializer
     model_class = ReviewAction
 
-    ordering = ('-created',)
-    view_category = 'actions'
-    view_name = 'review-action-list'
+    ordering = ("-created",)
+    view_category = "actions"
+    view_name = "review-action-list"
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        target = serializer.validated_data['target']
+        target = serializer.validated_data["target"]
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
             raise Conflict(
-                '{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
+                "{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}".format(
                     target.provider.name,
                     absolute_reverse(
-                        'providers:preprint-providers:preprint-provider-detail', kwargs={
-                            'provider_id': target.provider._id,
-                            'version': self.request.parser_context['kwargs']['version'],
+                        "providers:preprint-providers:preprint-provider-detail",
+                        kwargs={
+                            "provider_id": target.provider._id,
+                            "version": self.request.parser_context["kwargs"][
+                                "version"
+                            ],
                         },
                     ),
                 ),
@@ -188,14 +218,22 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        provider_queryset = get_objects_for_user(self.request.user, 'view_actions', PreprintProvider)
-        return get_review_actions_queryset().filter(target__node__is_public=True, target__provider__in=provider_queryset)
+        provider_queryset = get_objects_for_user(
+            self.request.user, "view_actions", PreprintProvider
+        )
+        return get_review_actions_queryset().filter(
+            target__node__is_public=True,
+            target__provider__in=provider_queryset,
+        )
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-class NodeRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, NodeRequestMixin):
+
+class NodeRequestActionCreate(
+    JSONAPIBaseView, generics.CreateAPIView, NodeRequestMixin
+):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -205,20 +243,26 @@ class NodeRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, NodeReque
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+    parser_classes = (
+        JSONAPIMultipleRelationshipsParser,
+        JSONAPIMultipleRelationshipsParserForRegularJSON,
+    )
     serializer_class = NodeRequestActionSerializer
 
-    view_category = 'request-actions'
-    view_name = 'create-node-request-action'
+    view_category = "request-actions"
+    view_name = "create-node-request-action"
 
     # overrides CreateAPIView
     def perform_create(self, serializer):
-        target = serializer.validated_data['target']
+        target = serializer.validated_data["target"]
         self.check_object_permissions(self.request, target)
 
         serializer.save(user=self.request.user)
 
-class PreprintRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, PreprintRequestMixin):
+
+class PreprintRequestActionCreate(
+    JSONAPIBaseView, generics.CreateAPIView, PreprintRequestMixin
+):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -228,15 +272,18 @@ class PreprintRequestActionCreate(JSONAPIBaseView, generics.CreateAPIView, Prepr
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+    parser_classes = (
+        JSONAPIMultipleRelationshipsParser,
+        JSONAPIMultipleRelationshipsParserForRegularJSON,
+    )
     serializer_class = PreprintRequestActionSerializer
 
-    view_category = 'request-actions'
-    view_name = 'create-preprint-request-action'
+    view_category = "request-actions"
+    view_name = "create-preprint-request-action"
 
     # overrides CreateAPIView
     def perform_create(self, serializer):
-        target = serializer.validated_data['target']
+        target = serializer.validated_data["target"]
         self.check_object_permissions(self.request, target)
 
         serializer.save(user=self.request.user)

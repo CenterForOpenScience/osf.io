@@ -9,7 +9,11 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from api.base.serializers import JSONAPISerializer
 
-from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationIdentifierSerializer, PreprintIdentifierSerializer
+from api.identifiers.serializers import (
+    NodeIdentifierSerializer,
+    RegistrationIdentifierSerializer,
+    PreprintIdentifierSerializer,
+)
 
 from api.nodes.permissions import (
     IsPublic,
@@ -21,7 +25,9 @@ from api.nodes.permissions import (
 from osf.models import Node, Registration, Preprint, Identifier
 
 
-class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class IdentifierList(
+    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+):
     permission_classes = (
         IsPublic,
         EditIfPublic,
@@ -34,10 +40,10 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
     required_write_scopes = [CoreScopes.IDENTIFIERS_WRITE]
 
-    view_category = 'identifiers'
-    view_name = 'identifier-list'
+    view_category = "identifiers"
+    view_name = "identifier-list"
 
-    ordering = ('-id',)
+    ordering = ("-id",)
 
     def get_object(self, *args, **kwargs):
         raise NotImplementedError
@@ -49,6 +55,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
     # overrides ListCreateAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
 
 class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """List of identifiers for a specified node. *Read-only*.
@@ -77,6 +84,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     #This Request/Response
 
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -87,11 +95,11 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = RegistrationIdentifierSerializer
-    view_category = 'identifiers'
-    view_name = 'identifier-detail'
+    view_category = "identifiers"
+    view_name = "identifier-detail"
 
     def get_serializer_class(self):
-        if 'identifier_id' in self.kwargs:
+        if "identifier_id" in self.kwargs:
             referent = self.get_object().referent
             if isinstance(referent, Node):
                 return NodeIdentifierSerializer
@@ -102,8 +110,12 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return JSONAPISerializer
 
     def get_object(self):
-        identifier = Identifier.load(self.kwargs['identifier_id'])
-        if not identifier or getattr(identifier.referent, 'deleted', False) or getattr(identifier.referent, 'is_deleted', False):
+        identifier = Identifier.load(self.kwargs["identifier_id"])
+        if (
+            not identifier
+            or getattr(identifier.referent, "deleted", False)
+            or getattr(identifier.referent, "is_deleted", False)
+        ):
             raise NotFound
         self.check_object_permissions(self.request, identifier)
         return identifier

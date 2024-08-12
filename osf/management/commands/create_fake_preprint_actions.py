@@ -18,23 +18,23 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            'user',
+            "user",
             type=str,
-            nargs='?',
+            nargs="?",
             default=None,
-            help='Guid for user to list as creator for all fake actions (default to arbitrary user)'
+            help="Guid for user to list as creator for all fake actions (default to arbitrary user)",
         )
         parser.add_argument(
-            '--num-actions',
-            action='store',
+            "--num-actions",
+            action="store",
             type=int,
             default=10,
-            help='Number of actions to create for each preprint which does not have one'
+            help="Number of actions to create for each preprint which does not have one",
         )
 
     def handle(self, *args, **options):
-        user_guid = options.get('user')
-        num_actions = options.get('--num-actions')
+        user_guid = options.get("user")
+        num_actions = options.get("--num-actions")
 
         if user_guid is None:
             user = OSFUser.objects.first()

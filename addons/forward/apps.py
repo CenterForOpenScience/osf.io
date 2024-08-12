@@ -5,33 +5,34 @@ from addons.base.apps import BaseAddonAppConfig
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(
     HERE,
-    'templates',
-    'forward_node_settings.mako',
+    "templates",
+    "forward_node_settings.mako",
 )
 
-class ForwardAddonAppConfig(BaseAddonAppConfig):
 
+class ForwardAddonAppConfig(BaseAddonAppConfig):
     default = True
-    name = 'addons.forward'
-    label = 'addons_forward'
-    full_name = 'Redirect Link'
-    short_name = 'forward'
+    name = "addons.forward"
+    label = "addons_forward"
+    full_name = "Redirect Link"
+    short_name = "forward"
     configs = []
-    owners = ['node']
-    views = ['widget']
-    categories = ['other']
+    owners = ["node"]
+    views = ["widget"]
+    categories = ["other"]
     node_settings_template = NODE_SETTINGS_TEMPLATE
     user_settings_template = None
 
-    URL_CHANGED = 'forward_url_changed'
+    URL_CHANGED = "forward_url_changed"
 
-    actions = (URL_CHANGED, )
+    actions = (URL_CHANGED,)
 
     @property
     def routes(self):
         from . import routes
+
         return [routes.api_routes]
 
     @property
     def node_settings(self):
-        return self.get_model('NodeSettings')
+        return self.get_model("NodeSettings")

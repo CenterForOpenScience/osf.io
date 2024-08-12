@@ -10,10 +10,10 @@ from osf.utils import permissions as osf_permissions
 # Required permission to perform each action. `None` means no permissions required.
 TRIGGER_PERMISSIONS = {
     ReviewTriggers.SUBMIT.value: None,
-    ReviewTriggers.ACCEPT.value: 'accept_submissions',
-    ReviewTriggers.REJECT.value: 'reject_submissions',
-    ReviewTriggers.WITHDRAW.value: 'withdraw_submissions',
-    ReviewTriggers.EDIT_COMMENT.value: 'edit_review_comments',
+    ReviewTriggers.ACCEPT.value: "accept_submissions",
+    ReviewTriggers.REJECT.value: "reject_submissions",
+    ReviewTriggers.WITHDRAW.value: "withdraw_submissions",
+    ReviewTriggers.EDIT_COMMENT.value: "edit_review_comments",
 }
 
 
@@ -35,23 +35,34 @@ class ReviewActionPermission(drf_permissions.BasePermission):
         elif isinstance(obj, CollectionSubmissionAction):
             provider = obj
         else:
-            raise ValueError(f'Not a reviews-related model: {obj}')
+            raise ValueError(f"Not a reviews-related model: {obj}")
 
         serializer = view.get_serializer()
 
         if request.method in drf_permissions.SAFE_METHODS:
             # Moderators and node contributors can view actions
-            is_node_contributor = target is not None and target.has_permission(auth.user, osf_permissions.READ)
-            return is_node_contributor or auth.user.has_perm('view_actions', provider)
+            is_node_contributor = target is not None and target.has_permission(
+                auth.user, osf_permissions.READ
+            )
+            return is_node_contributor or auth.user.has_perm(
+                "view_actions", provider
+            )
         else:
             # Moderators and node admins can trigger state changes.
-            is_node_admin = target is not None and target.has_permission(auth.user, osf_permissions.ADMIN)
-            if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
+            is_node_admin = target is not None and target.has_permission(
+                auth.user, osf_permissions.ADMIN
+            )
+            if not (
+                is_node_admin
+                or auth.user.has_perm("view_submissions", provider)
+            ):
                 return False
 
             # User can trigger state changes on this reviewable, but can they use this trigger in particular?
             serializer = view.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            trigger = serializer.validated_data.get('trigger')
+            trigger = serializer.validated_data.get("trigger")
             permission = TRIGGER_PERMISSIONS[trigger]
-            return permission is None or request.user.has_perm(permission, target.provider)
+            return permission is None or request.user.has_perm(
+                permission, target.provider
+            )

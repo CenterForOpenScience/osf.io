@@ -23,21 +23,25 @@ class DismissedAlertDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     model_class = DismissedAlert
 
     serializer_class = AlertSerializer
-    view_category = 'alerts'
-    view_name = 'alerts-detail'
+    view_category = "alerts"
+    view_name = "alerts-detail"
 
-    ordering = ('-created',)
+    ordering = ("-created",)
 
     # overrides RetrieveAPIView
     def get_object(self):
         try:
-            obj = get_object_or_error(DismissedAlert, Q(_id=self.kwargs['_id']), self.request)
+            obj = get_object_or_error(
+                DismissedAlert, Q(_id=self.kwargs["_id"]), self.request
+            )
         except DismissedAlert.DoesNotExist:
             raise NotFound
         return obj
 
 
-class DismissedAlertList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class DismissedAlertList(
+    JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
+):
     """List of Dismissed Alerts.
     ###Creating New Dismissed Alert
 
@@ -55,6 +59,7 @@ class DismissedAlertList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
                        }
         Success:       201 CREATED + alert representation
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -65,8 +70,8 @@ class DismissedAlertList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     model_class = DismissedAlert
 
     serializer_class = AlertSerializer
-    view_category = 'alerts'
-    view_name = 'alerts-list'
+    view_category = "alerts"
+    view_name = "alerts-list"
 
     def get_default_queryset(self):
         return DismissedAlert.objects.filter(user=self.request.user)
@@ -77,5 +82,5 @@ class DismissedAlertList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     def perform_create(self, serializer):
         """Add user to the created alert"""
         user = get_user_auth(self.request).user
-        serializer.validated_data['user'] = user
+        serializer.validated_data["user"] = user
         serializer.save()

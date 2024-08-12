@@ -18,7 +18,9 @@ class Identifier(ObjectIDMixin, BaseModel):
 
     # object to which the identifier points
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(
+        ContentType, null=True, blank=True, on_delete=models.CASCADE
+    )
     referent = GenericForeignKey()
     # category: e.g. 'ark', 'doi'
     category = models.CharField(max_length=20)  # longest was 3, 8/19/2016
@@ -27,7 +29,7 @@ class Identifier(ObjectIDMixin, BaseModel):
     deleted = NonNaiveDateTimeField(blank=True, null=True)
 
     class Meta:
-        unique_together = ('object_id', 'content_type', 'category')
+        unique_together = ("object_id", "content_type", "category")
 
     def remove(self, save=True):
         """Mark an identifier as deleted, which excludes it from being returned in get_identifier"""
@@ -36,8 +38,11 @@ class Identifier(ObjectIDMixin, BaseModel):
             self.save()
 
     def delete(self):
-        '''Used to delete an orphaned Identifier (distinct from setting `deleted`)'''
-        if self.object_id or self.artifact_metadata.filter(deleted__isnull=True).exists():
+        """Used to delete an orphaned Identifier (distinct from setting `deleted`)"""
+        if (
+            self.object_id
+            or self.artifact_metadata.filter(deleted__isnull=True).exists()
+        ):
             raise IdentifierHasReferencesError
         super().delete()
 
@@ -48,7 +53,9 @@ class Identifier(ObjectIDMixin, BaseModel):
 
         # If we don't know how to validate a PID, assume it's fine
         try:
-            validator = identifier_utils.PIDValidator.for_identifier_category(self.category)
+            validator = identifier_utils.PIDValidator.for_identifier_category(
+                self.category
+            )
         except NoSuchPIDValidatorError:
             return True
 
@@ -56,7 +63,7 @@ class Identifier(ObjectIDMixin, BaseModel):
         return validator.validate(self.value)
 
     def as_semantic_iri(self) -> str:
-        if self.category == 'doi':
+        if self.category == "doi":
             return DOI[self.value]
         raise ValueError(f'unsure how to iri with category "{self.category}"')
 
@@ -68,8 +75,7 @@ class IdentifierMixin(models.Model):
 
     @property
     def should_request_identifiers(self):
-        """Determines if a identifier should be requested, Bool.
-        """
+        """Determines if a identifier should be requested, Bool."""
         raise NotImplementedError()
 
     def get_doi_client(self):
@@ -84,7 +90,7 @@ class IdentifierMixin(models.Model):
             return client.create_identifier(self, category)
 
     def request_identifier_update(self, category, create=False):
-        '''Noop if no existing identifier value for the category.'''
+        """Noop if no existing identifier value for the category."""
 
         if not self.get_identifier_value(category) and not create:
             return
@@ -102,9 +108,13 @@ class IdentifierMixin(models.Model):
 
     def get_identifier(self, category):
         """Returns None of no identifier matches"""
-        found_identifier = self.all_identifiers().filter(category=category).first()
-        if category == 'doi' and not found_identifier:
-            found_identifier = self.all_identifiers().filter(category='legacy_doi').first()
+        found_identifier = (
+            self.all_identifiers().filter(category=category).first()
+        )
+        if category == "doi" and not found_identifier:
+            found_identifier = (
+                self.all_identifiers().filter(category="legacy_doi").first()
+            )
         return found_identifier
 
     def get_identifier_value(self, category):
@@ -112,11 +122,13 @@ class IdentifierMixin(models.Model):
         return identifier.value if identifier else None
 
     def set_identifier_value(self, category, value=None):
-        defaults = {'value': value} if value is not None else {}
-        identifier, created = Identifier.objects.get_or_create(object_id=self.pk,
-                                                               content_type=ContentType.objects.get_for_model(self),
-                                                               category=category,
-                                                               defaults=defaults)
+        defaults = {"value": value} if value is not None else {}
+        identifier, created = Identifier.objects.get_or_create(
+            object_id=self.pk,
+            content_type=ContentType.objects.get_for_model(self),
+            category=category,
+            defaults=defaults,
+        )
         if value and not created:
             identifier.value = value
             identifier.save()

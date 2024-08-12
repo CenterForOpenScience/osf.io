@@ -2,105 +2,129 @@ from urllib.parse import urljoin
 
 from django.urls import resolve, reverse
 
-from api.base.serializers import JSONAPISerializer, IDField, TypeField, RelatedLambdaRelationshipField, RelationshipField, LinksField
+from api.base.serializers import (
+    JSONAPISerializer,
+    IDField,
+    TypeField,
+    RelatedLambdaRelationshipField,
+    RelationshipField,
+    LinksField,
+)
 from api.base.utils import absolute_reverse
-from osf.models import OSFUser, AbstractNode, Registration, Guid, BaseFileNode, Collection, Node, Preprint
+from osf.models import (
+    OSFUser,
+    AbstractNode,
+    Registration,
+    Guid,
+    BaseFileNode,
+    Collection,
+    Node,
+    Preprint,
+)
 from website import settings as website_settings
 
 
 def get_type(record):
     if isinstance(record, Registration):
-        return 'registrations'
+        return "registrations"
     elif isinstance(record, AbstractNode):
-        return 'nodes'
+        return "nodes"
     elif isinstance(record, Preprint):
-        return 'preprints'
+        return "preprints"
     elif isinstance(record, OSFUser):
-        return 'users'
+        return "users"
     elif isinstance(record, BaseFileNode):
-        return 'files'
+        return "files"
     elif isinstance(record, Guid):
         return get_type(record.referent)
     elif isinstance(record, Collection):
-        return 'collections'
-    raise NotImplementedError(f'unrecognized guid referent: {record}')
+        return "collections"
+    raise NotImplementedError(f"unrecognized guid referent: {record}")
+
 
 def get_referent_view(record):
     kind = get_type(record)
     # slight hack, works for existing types
-    singular = kind.rstrip('s')
-    return f'{kind}:{singular}-detail'
+    singular = kind.rstrip("s")
+    return f"{kind}:{singular}-detail"
+
 
 def get_referent_view_kwargs(record):
     kind = get_type(record)
     # slight hack, works for existing types
-    singular = kind.rstrip('s')
+    singular = kind.rstrip("s")
     # The registration view_kwarg is node_id
-    if singular == 'registration':
-        singular = 'node'
+    if singular == "registration":
+        singular = "node"
     return {
-        f'{singular}_id': '<_id>',
+        f"{singular}_id": "<_id>",
     }
+
 
 def get_custom_metadata_view(referent):
     if isinstance(referent, BaseFileNode):
         # files have a special custom metadata view (for now...)
-        return 'custom-file-metadata:custom-file-metadata-detail'
-    return 'custom-item-metadata:custom-item-metadata-detail'
+        return "custom-file-metadata:custom-file-metadata-detail"
+    return "custom-item-metadata:custom-item-metadata-detail"
+
 
 class GuidSerializer(JSONAPISerializer):
-
     class Meta:
-        type_ = 'guids'
+        type_ = "guids"
 
     filterable_fields = tuple()
 
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source="_id", read_only=True)
     type = TypeField()
 
     referent = RelationshipField(
         related_view=get_referent_view,
         related_view_kwargs=get_referent_view_kwargs,
         related_meta={
-            'type': 'get_type',
+            "type": "get_type",
         },
     )
     custom_metadata = RelatedLambdaRelationshipField(
-        view_lambda_argument='referent',
+        view_lambda_argument="referent",
         related_view=get_custom_metadata_view,
-        related_view_kwargs={'guid_id': '<_id>'},
+        related_view_kwargs={"guid_id": "<_id>"},
     )
-    links = LinksField({
-        'self': 'get_absolute_url',
-        'html': 'get_absolute_html_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+            "html": "get_absolute_html_url",
+        }
+    )
 
     def get_type(self, guid):
         return get_type(guid.referent)
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'guids:guid-detail', kwargs={
-                'guids': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+            "guids:guid-detail",
+            kwargs={
+                "guids": obj._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
     def get_absolute_html_url(self, obj):
         if not isinstance(obj.referent, BaseFileNode):
             return obj.referent.absolute_url
-        return urljoin(website_settings.DOMAIN, f'/{obj._id}/')
+        return urljoin(website_settings.DOMAIN, f"/{obj._id}/")
 
     def to_representation(self, obj):
-        if self.context['view'].kwargs.get('is_embedded'):
+        if self.context["view"].kwargs.get("is_embedded"):
             # Force the referent to serialize instead.
             obj = obj.referent
             if isinstance(obj, Collection):
-                view_kwargs = {'collection_id': obj._id}
+                view_kwargs = {"collection_id": obj._id}
             elif isinstance(obj, Preprint):
-                view_kwargs = {'preprint_id': obj._id}
+                view_kwargs = {"preprint_id": obj._id}
             elif isinstance(obj, (Node, Registration)):
-                view_kwargs = {'node_id': obj._id}
+                view_kwargs = {"node_id": obj._id}
             else:
                 raise NotImplementedError()
 
@@ -108,7 +132,9 @@ class GuidSerializer(JSONAPISerializer):
                 reverse(
                     get_referent_view(obj),
                     kwargs={
-                        'version': self.context['view'].kwargs.get('version', '2'),
+                        "version": self.context["view"].kwargs.get(
+                            "version", "2"
+                        ),
                         **view_kwargs,
                     },
                 ),

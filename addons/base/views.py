@@ -28,7 +28,11 @@ from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
 from framework.auth import oauth_scopes
-from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
+from framework.auth.decorators import (
+    collect_auth,
+    must_be_logged_in,
+    must_be_signed,
+)
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
@@ -53,21 +57,26 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion
+    FileVersion,
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from osf.utils.requests import requests_retry_session
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
-from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
+from website.project.decorators import (
+    must_be_contributor_or_public,
+    must_be_valid_project,
+    check_contributor_auth,
+)
 from website.project.utils import serialize_node
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-ERROR_MESSAGES = {'FILE_GONE': """
+ERROR_MESSAGES = {
+    "FILE_GONE": """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -78,7 +87,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
 </p>""",
-                  'FILE_GONE_ACTOR_UNKNOWN': """
+    "FILE_GONE_ACTOR_UNKNOWN": """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -89,7 +98,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 <p>
 It was deleted on {deleted_on}.
 </p>""",
-                  'DONT_KNOW': """
+    "DONT_KNOW": """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -97,7 +106,7 @@ It was deleted on {deleted_on}.
 <p>
 File not found at {provider}.
 </p>""",
-                  'BLAME_PROVIDER': """
+    "BLAME_PROVIDER": """
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -109,36 +118,39 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 <p>
 You may wish to verify this through {provider}'s website.
 </p>""",
-                  'FILE_SUSPENDED': """
+    "FILE_SUSPENDED": """
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed."""}
+This content has been removed.""",
+}
 
-WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+WATERBUTLER_JWE_KEY = jwe.kdf(
+    settings.WATERBUTLER_JWE_SECRET.encode("utf-8"),
+    settings.WATERBUTLER_JWE_SALT.encode("utf-8"),
+)
 
 
 @decorators.must_have_permission(permissions.WRITE)
 @decorators.must_not_be_registration
 def disable_addon(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+    node = kwargs["node"] or kwargs["project"]
 
-    addon_name = kwargs.get('addon')
+    addon_name = kwargs.get("addon")
     if addon_name is None:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     deleted = node.delete_addon(addon_name, auth)
 
-    return {'deleted': deleted}
+    return {"deleted": deleted}
 
 
 @must_be_logged_in
 def get_addon_user_config(**kwargs):
+    user = kwargs["auth"].user
 
-    user = kwargs['auth'].user
-
-    addon_name = kwargs.get('addon')
+    addon_name = kwargs.get("addon")
     if addon_name is None:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -150,20 +162,20 @@ def get_addon_user_config(**kwargs):
 
 
 permission_map = {
-    'create_folder': permissions.WRITE,
-    'revisions': permissions.READ,
-    'metadata': permissions.READ,
-    'download': permissions.READ,
-    'render': permissions.READ,
-    'export': permissions.READ,
-    'upload': permissions.WRITE,
-    'delete': permissions.WRITE,
-    'copy': permissions.WRITE,
-    'move': permissions.WRITE,
-    'copyto': permissions.WRITE,
-    'moveto': permissions.WRITE,
-    'copyfrom': permissions.READ,
-    'movefrom': permissions.WRITE,
+    "create_folder": permissions.WRITE,
+    "revisions": permissions.READ,
+    "metadata": permissions.READ,
+    "download": permissions.READ,
+    "render": permissions.READ,
+    "export": permissions.READ,
+    "upload": permissions.WRITE,
+    "delete": permissions.WRITE,
+    "copy": permissions.WRITE,
+    "move": permissions.WRITE,
+    "copyto": permissions.WRITE,
+    "moveto": permissions.WRITE,
+    "copyfrom": permissions.READ,
+    "movefrom": permissions.WRITE,
 }
 
 
@@ -171,7 +183,10 @@ def get_permission_for_action(action):
     """Retrieve the permission level required for a given action."""
     permission = permission_map.get(action)
     if not permission:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message='Invalid action specified.')
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            message="Invalid action specified.",
+        )
     return permission
 
 
@@ -192,23 +207,33 @@ def check_resource_permissions(resource, auth, action):
 
     required_permission = get_permission_for_action(action)
     if isinstance(resource, Registration):
-        return _check_registration_permissions(resource, auth, required_permission, action)
+        return _check_registration_permissions(
+            resource, auth, required_permission, action
+        )
     elif isinstance(resource, Node):
-        return _check_node_permissions(resource, auth, required_permission, action)
+        return _check_node_permissions(
+            resource, auth, required_permission, action
+        )
     elif isinstance(resource, Preprint):
         return _check_preprint_permissions(resource, auth, required_permission)
     elif isinstance(resource, DraftNode):
         draft_registration = resource.registered_draft.first()
-        return _check_draft_registration_permissions(draft_registration, auth, required_permission)
+        return _check_draft_registration_permissions(
+            draft_registration, auth, required_permission
+        )
     else:
         raise NotImplementedError()
 
 
 def _check_registration_permissions(registration, auth, permission, action):
     if permission == permissions.READ:
-        return registration.can_view(auth) or registration.registered_from.can_view(auth)
-    if action in ('copyfrom', 'upload'):
-        return _check_hierarchical_write_permissions(resource=registration, auth=auth)
+        return registration.can_view(
+            auth
+        ) or registration.registered_from.can_view(auth)
+    if action in ("copyfrom", "upload"):
+        return _check_hierarchical_write_permissions(
+            resource=registration, auth=auth
+        )
     return registration.can_edit(auth)
 
 
@@ -217,7 +242,7 @@ def _check_node_permissions(node, auth, permission, action):
         return node.can_view(auth)
     if node.can_edit(auth):
         return True
-    if action == 'copyfrom':
+    if action == "copyfrom":
         return _check_hierarchical_write_permissions(resource=node, auth=auth)
 
 
@@ -227,7 +252,9 @@ def _check_preprint_permissions(preprint, auth, permission):
     return preprint.can_edit(auth)
 
 
-def _check_draft_registration_permissions(draft_registration, auth, permission):
+def _check_draft_registration_permissions(
+    draft_registration, auth, permission
+):
     if permission == permissions.READ:
         return draft_registration.can_view(auth)
     return draft_registration.can_edit(auth)
@@ -241,31 +268,35 @@ def _check_hierarchical_write_permissions(resource, auth):
         permissions_resource = permissions_resource.parent_node
     return False
 
+
 def _download_is_from_mfr(waterbutler_data):
-    metrics_data = waterbutler_data['metrics']
-    uri = metrics_data['uri']
-    is_render_uri = furl(uri or '').query.params.get('mode') == 'render'
+    metrics_data = waterbutler_data["metrics"]
+    uri = metrics_data["uri"]
+    is_render_uri = furl(uri or "").query.params.get("mode") == "render"
     return (
         # This header is sent for download requests that
         # originate from MFR, e.g. for the code pygments renderer
-        request.headers.get('X-Cos-Mfr-Render-Request', None) or
+        request.headers.get("X-Cos-Mfr-Render-Request", None)
+        or
         # Need to check the URI in order to account
         # for renderers that send XHRs from the
         # rendered content, e.g. PDFs
         is_render_uri
     )
 
+
 def make_auth(user):
     if user is not None:
         return {
-            'id': user._id,
-            'email': f'{user._id}@osf.io',
-            'name': user.fullname,
+            "id": user._id,
+            "email": f"{user._id}@osf.io",
+            "name": user.fullname,
         }
     return {}
 
+
 def authenticate_via_oauth_bearer_token(resource, action):
-    authorization = request.headers.get('Authorization')
+    authorization = request.headers.get("Authorization")
     client = cas.get_client()
 
     try:
@@ -273,7 +304,9 @@ def authenticate_via_oauth_bearer_token(resource, action):
         cas_resp = client.profile(access_token)
     except cas.CasError as err:
         sentry.log_exception(err)
-        return json_renderer(err)  # Assuming json_renderer wraps the error in a Response
+        return json_renderer(
+            err
+        )  # Assuming json_renderer wraps the error in a Response
 
     permission = get_permission_for_action(action)
     if permission == permissions.READ:
@@ -283,11 +316,13 @@ def authenticate_via_oauth_bearer_token(resource, action):
     else:
         required_scope = resource.file_write_scope
 
-    token = cas_resp.attributes.get('accessTokenScope')
+    token = cas_resp.attributes.get("accessTokenScope")
     if not token or not cas_resp.authenticated:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
-    normalize_scopes = oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope'])
+    normalize_scopes = oauth_scopes.normalize_scopes(
+        cas_resp.attributes["accessTokenScope"]
+    )
     if required_scope not in normalize_scopes:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
@@ -296,14 +331,14 @@ def authenticate_via_oauth_bearer_token(resource, action):
 
 def decrypt_and_decode_jwt_payload():
     try:
-        payload_encrypted = request.args.get('payload', '').encode('utf-8')
+        payload_encrypted = request.args.get("payload", "").encode("utf-8")
         payload_decrypted = jwe.decrypt(payload_encrypted, WATERBUTLER_JWE_KEY)
         return jwt.decode(
             payload_decrypted,
             settings.WATERBUTLER_JWT_SECRET,
-            options={'require': ['exp']},
+            options={"require": ["exp"]},
             algorithms=[settings.WATERBUTLER_JWT_ALGORITHM],
-        )['data']
+        )["data"]
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
@@ -312,32 +347,41 @@ def decrypt_and_decode_jwt_payload():
 def get_authenticated_resource(resource_id):
     resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
     if not resource:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND, message="Resource not found."
+        )
 
     if resource.deleted:
-        raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been deleted.')
+        raise HTTPError(
+            http_status.HTTP_410_GONE, message="Resource has been deleted."
+        )
 
     return resource
 
 
-def _get_osfstorage_file_version(file_node: OsfStorageFileNode, version_string: str = None) -> FileVersion:
+def _get_osfstorage_file_version(
+    file_node: OsfStorageFileNode, version_string: str = None
+) -> FileVersion:
     if not (file_node and file_node.is_file):
         return None
 
     try:
-        return FileVersion.objects.select_related('region').get(
+        return FileVersion.objects.select_related("region").get(
             basefilenode=file_node,
-            identifier=version_string or str(file_node.versions.count())
+            identifier=version_string or str(file_node.versions.count()),
         )
     except FileVersion.DoesNotExist:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File Version unavailable')
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            "Requested File Version unavailable",
+        )
 
 
 def _get_osfstorage_file_node(file_path: str) -> OsfStorageFileNode:
     if not file_path:
         return None
 
-    file_id = file_path.strip('/')
+    file_id = file_path.strip("/")
     return OsfStorageFileNode.load(file_id)
 
 
@@ -345,14 +389,18 @@ def authenticate_user_if_needed(auth, waterbutler_data, resource):
     if auth.user:
         return  # User is already authenticated
 
-    if 'cookie' in waterbutler_data:
-        auth.user = OSFUser.from_cookie(waterbutler_data.get('cookie'))
+    if "cookie" in waterbutler_data:
+        auth.user = OSFUser.from_cookie(waterbutler_data.get("cookie"))
         if not auth.user:
-            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'Invalid user cookie.')
+            raise HTTPError(
+                http_status.HTTP_401_UNAUTHORIZED, "Invalid user cookie."
+            )
 
-    authorization = request.headers.get('Authorization')
-    if authorization and authorization.startswith('Bearer '):
-        auth.user = authenticate_via_oauth_bearer_token(resource, waterbutler_data['action'])
+    authorization = request.headers.get("Authorization")
+    if authorization and authorization.startswith("Bearer "):
+        auth.user = authenticate_via_oauth_bearer_token(
+            resource, waterbutler_data["action"]
+        )
 
 
 @collect_auth
@@ -387,19 +435,19 @@ def get_auth(auth, **kwargs):
     waterbutler_data = decrypt_and_decode_jwt_payload()
 
     # Authenticate the resource based on the node_id and handle potential draft nodes
-    resource = get_authenticated_resource(waterbutler_data['nid'])
+    resource = get_authenticated_resource(waterbutler_data["nid"])
 
     # Authenticate the user using cookie or Oauth if possible
     authenticate_user_if_needed(auth, waterbutler_data, resource)
 
     # Verify the user has permission to perform the requested action on the node
-    action = waterbutler_data['action']
+    action = waterbutler_data["action"]
     if not check_resource_permissions(resource, auth, action):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # Validate provider, exclude Preprints that don't have `get_addon`.
     if not isinstance(resource, Preprint):
-        provider = resource.get_addon(waterbutler_data['provider'])
+        provider = resource.get_addon(waterbutler_data["provider"])
         if not provider:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     else:
@@ -409,36 +457,36 @@ def get_auth(auth, **kwargs):
     file_node = None
     fileversion = None
 
-    if waterbutler_data['provider'] == 'osfstorage':
-        file_node = _get_osfstorage_file_node(waterbutler_data.get('path'))
-        fileversion = _get_osfstorage_file_version(file_node, waterbutler_data.get('version'))
+    if waterbutler_data["provider"] == "osfstorage":
+        file_node = _get_osfstorage_file_node(waterbutler_data.get("path"))
+        fileversion = _get_osfstorage_file_version(
+            file_node, waterbutler_data.get("version")
+        )
 
     # Fetch Waterbutler credentials and settings for the resource
     credentials, waterbutler_settings = get_waterbutler_data(
-        resource,
-        waterbutler_data,
-        fileversion,
-        provider
+        resource, waterbutler_data, fileversion, provider
     )
 
     if fileversion:
         # Trigger any file-specific signals based on the action taken (e.g., file viewed, downloaded)
-        if action == 'render':
-            file_signals.file_viewed.send(auth=auth, fileversion=fileversion, file_node=file_node)
-        elif action == 'download' and not _download_is_from_mfr(waterbutler_data):
-            file_signals.file_downloaded.send(auth=auth, fileversion=fileversion, file_node=file_node)
+        if action == "render":
+            file_signals.file_viewed.send(
+                auth=auth, fileversion=fileversion, file_node=file_node
+            )
+        elif action == "download" and not _download_is_from_mfr(
+            waterbutler_data
+        ):
+            file_signals.file_downloaded.send(
+                auth=auth, fileversion=fileversion, file_node=file_node
+            )
 
     # Construct the response payload including the JWT
-    return construct_payload(
-        auth,
-        resource,
-        credentials,
-        waterbutler_settings
-    )
+    return construct_payload(auth, resource, credentials, waterbutler_settings)
 
 
 def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
-    provider_name = waterbutler_data.get('provider')
+    provider_name = waterbutler_data.get("provider")
     if isinstance(resource, Preprint):
         credentials = resource.serialize_waterbutler_credentials()
         waterbutler_settings = resource.serialize_waterbutler_settings()
@@ -450,72 +498,72 @@ def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
         )
     elif waffle.flag_is_active(request, features.ENABLE_GV):
         data = requests_retry_session(
-            f'{settings.DOMAIN}/v1/configured_storage_addon/{provider_name}/waterbutler-config'
+            f"{settings.DOMAIN}/v1/configured_storage_addon/{provider_name}/waterbutler-config"
         )
-        credentials, waterbutler_settings = data['data']
+        credentials, waterbutler_settings = data["data"]
     else:
-        credentials = resource.serialize_waterbutler_credentials(provider.short_name)
-        waterbutler_settings = resource.serialize_waterbutler_settings(provider.short_name)
+        credentials = resource.serialize_waterbutler_credentials(
+            provider.short_name
+        )
+        waterbutler_settings = resource.serialize_waterbutler_settings(
+            provider.short_name
+        )
 
     return credentials, waterbutler_settings
 
 
 def construct_payload(auth, resource, credentials, waterbutler_settings):
-
     if isinstance(resource, Registration):
         callback_url = resource.api_url_for(
-            'registration_callbacks',
-            _absolute=True,
-            _internal=True
+            "registration_callbacks", _absolute=True, _internal=True
         )
     else:
         callback_url = resource.api_url_for(
-            'create_waterbutler_log',
-            _absolute=True,
-            _internal=True
+            "create_waterbutler_log", _absolute=True, _internal=True
         )
 
     # Construct the data dictionary for JWT encoding
     jwt_data = {
-        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        'data': {
-            'auth': make_auth(auth.user),
-            'credentials': credentials,
-            'settings': waterbutler_settings,
-            'callback_url': callback_url
-        }
+        "exp": timezone.now()
+        + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        "data": {
+            "auth": make_auth(auth.user),
+            "credentials": credentials,
+            "settings": waterbutler_settings,
+            "callback_url": callback_url,
+        },
     }
 
     # JWT encode the data
     encoded_jwt = jwt.encode(
         jwt_data,
         settings.WATERBUTLER_JWT_SECRET,
-        algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+        algorithm=settings.WATERBUTLER_JWT_ALGORITHM,
     )
 
     # Encrypt the encoded JWT with JWE
     decoded_encrypted_jwt = jwe.encrypt(
-        encoded_jwt.encode(),
-        WATERBUTLER_JWE_KEY
+        encoded_jwt.encode(), WATERBUTLER_JWE_KEY
     ).decode()
 
-    return {'payload': decoded_encrypted_jwt}
+    return {"payload": decoded_encrypted_jwt}
 
 
 LOG_ACTION_MAP = {
-    'move': NodeLog.FILE_MOVED,
-    'copy': NodeLog.FILE_COPIED,
-    'rename': NodeLog.FILE_RENAMED,
-    'create': NodeLog.FILE_ADDED,
-    'update': NodeLog.FILE_UPDATED,
-    'delete': NodeLog.FILE_REMOVED,
-    'create_folder': NodeLog.FOLDER_CREATED,
+    "move": NodeLog.FILE_MOVED,
+    "copy": NodeLog.FILE_COPIED,
+    "rename": NodeLog.FILE_RENAMED,
+    "create": NodeLog.FILE_ADDED,
+    "update": NodeLog.FILE_UPDATED,
+    "delete": NodeLog.FILE_REMOVED,
+    "create_folder": NodeLog.FOLDER_CREATED,
 }
 
 DOWNLOAD_ACTIONS = {
-    'download_file',
-    'download_zip',
+    "download_file",
+    "download_zip",
 }
+
 
 @must_be_signed
 @no_auto_transaction
@@ -523,161 +571,193 @@ DOWNLOAD_ACTIONS = {
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
-            auth = payload['auth']
+            auth = payload["auth"]
             # Don't log download actions
-            if payload['action'] in DOWNLOAD_ACTIONS:
-                guid = Guid.load(payload['metadata'].get('nid'))
+            if payload["action"] in DOWNLOAD_ACTIONS:
+                guid = Guid.load(payload["metadata"].get("nid"))
                 if guid:
                     node = guid.referent
-                return {'status': 'success'}
+                return {"status": "success"}
 
-            user = OSFUser.load(auth['id'])
+            user = OSFUser.load(auth["id"])
             if user is None:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-            action = LOG_ACTION_MAP[payload['action']]
+            action = LOG_ACTION_MAP[payload["action"]]
         except KeyError:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         auth = Auth(user=user)
-        node = kwargs.get('node') or kwargs.get('project') or Preprint.load(kwargs.get('nid')) or Preprint.load(kwargs.get('pid'))
+        node = (
+            kwargs.get("node")
+            or kwargs.get("project")
+            or Preprint.load(kwargs.get("nid"))
+            or Preprint.load(kwargs.get("pid"))
+        )
 
         if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
-
-            for bundle in ('source', 'destination'):
-                for key in ('provider', 'materialized', 'name', 'nid'):
+            for bundle in ("source", "destination"):
+                for key in ("provider", "materialized", "name", "nid"):
                     if key not in payload[bundle]:
                         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-            dest = payload['destination']
-            src = payload['source']
+            dest = payload["destination"]
+            src = payload["source"]
 
             if src is not None and dest is not None:
-                dest_path = dest['materialized']
-                src_path = src['materialized']
-                if dest_path.endswith('/') and src_path.endswith('/'):
+                dest_path = dest["materialized"]
+                src_path = src["materialized"]
+                if dest_path.endswith("/") and src_path.endswith("/"):
                     dest_path = os.path.dirname(dest_path)
                     src_path = os.path.dirname(src_path)
                 if (
-                    os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
-                    dest['provider'] == src['provider'] and
-                    dest['nid'] == src['nid'] and
-                    dest['name'] != src['name']
+                    os.path.split(dest_path)[0] == os.path.split(src_path)[0]
+                    and dest["provider"] == src["provider"]
+                    and dest["nid"] == src["nid"]
+                    and dest["name"] != src["name"]
                 ):
-                    action = LOG_ACTION_MAP['rename']
+                    action = LOG_ACTION_MAP["rename"]
 
             destination_node = node  # For clarity
-            source_node = AbstractNode.load(src['nid']) or Preprint.load(src['nid'])
+            source_node = AbstractNode.load(src["nid"]) or Preprint.load(
+                src["nid"]
+            )
 
             # We return provider fullname so we need to load node settings, if applicable
             source = None
-            if hasattr(source_node, 'get_addon'):
-                source = source_node.get_addon(payload['source']['provider'])
+            if hasattr(source_node, "get_addon"):
+                source = source_node.get_addon(payload["source"]["provider"])
             destination = None
-            if hasattr(node, 'get_addon'):
-                destination = node.get_addon(payload['destination']['provider'])
-
-            payload['source'].update({
-                'materialized': payload['source']['materialized'].lstrip('/'),
-                'addon': source.config.full_name if source else 'osfstorage',
-                'url': source_node.web_url_for(
-                    'addon_view_or_download_file',
-                    path=payload['source']['path'].lstrip('/'),
-                    provider=payload['source']['provider']
-                ),
-                'node': {
-                    '_id': source_node._id,
-                    'url': source_node.url,
-                    'title': source_node.title,
-                }
-            })
-
-            payload['destination'].update({
-                'materialized': payload['destination']['materialized'].lstrip('/'),
-                'addon': destination.config.full_name if destination else 'osfstorage',
-                'url': destination_node.web_url_for(
-                    'addon_view_or_download_file',
-                    path=payload['destination']['path'].lstrip('/'),
-                    provider=payload['destination']['provider']
-                ),
-                'node': {
-                    '_id': destination_node._id,
-                    'url': destination_node.url,
-                    'title': destination_node.title,
-                }
-            })
-
-            if not payload.get('errors'):
-                destination_node.add_log(
-                    action=action,
-                    auth=auth,
-                    params=payload
+            if hasattr(node, "get_addon"):
+                destination = node.get_addon(
+                    payload["destination"]["provider"]
                 )
 
-            if payload.get('email') is True or payload.get('errors'):
+            payload["source"].update(
+                {
+                    "materialized": payload["source"]["materialized"].lstrip(
+                        "/"
+                    ),
+                    "addon": source.config.full_name
+                    if source
+                    else "osfstorage",
+                    "url": source_node.web_url_for(
+                        "addon_view_or_download_file",
+                        path=payload["source"]["path"].lstrip("/"),
+                        provider=payload["source"]["provider"],
+                    ),
+                    "node": {
+                        "_id": source_node._id,
+                        "url": source_node.url,
+                        "title": source_node.title,
+                    },
+                }
+            )
+
+            payload["destination"].update(
+                {
+                    "materialized": payload["destination"][
+                        "materialized"
+                    ].lstrip("/"),
+                    "addon": destination.config.full_name
+                    if destination
+                    else "osfstorage",
+                    "url": destination_node.web_url_for(
+                        "addon_view_or_download_file",
+                        path=payload["destination"]["path"].lstrip("/"),
+                        provider=payload["destination"]["provider"],
+                    ),
+                    "node": {
+                        "_id": destination_node._id,
+                        "url": destination_node.url,
+                        "title": destination_node.title,
+                    },
+                }
+            )
+
+            if not payload.get("errors"):
+                destination_node.add_log(
+                    action=action, auth=auth, params=payload
+                )
+
+            if payload.get("email") is True or payload.get("errors"):
                 mails.send_mail(
                     user.username,
-                    mails.FILE_OPERATION_FAILED if payload.get('errors')
+                    mails.FILE_OPERATION_FAILED
+                    if payload.get("errors")
                     else mails.FILE_OPERATION_SUCCESS,
-                    action=payload['action'],
+                    action=payload["action"],
                     source_node=source_node,
                     destination_node=destination_node,
-                    source_path=payload['source']['materialized'],
-                    source_addon=payload['source']['addon'],
-                    destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                    source_path=payload["source"]["materialized"],
+                    source_addon=payload["source"]["addon"],
+                    destination_addon=payload["destination"]["addon"],
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
                 )
 
-            if payload.get('errors'):
+            if payload.get("errors"):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
-                return {'status': 'success'}
+                return {"status": "success"}
 
         else:
             node.create_waterbutler_log(auth, action, payload)
 
-    metadata = payload.get('metadata') or payload.get('destination')
+    metadata = payload.get("metadata") or payload.get("destination")
 
-    target_node = AbstractNode.load(metadata.get('nid'))
-    if target_node and not target_node.is_quickfiles and payload['action'] != 'download_file':
+    target_node = AbstractNode.load(metadata.get("nid"))
+    if (
+        target_node
+        and not target_node.is_quickfiles
+        and payload["action"] != "download_file"
+    ):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+        file_signals.file_updated.send(
+            target=node, user=user, event_type=action, payload=payload
+        )
 
-    return {'status': 'success'}
+    return {"status": "success"}
 
 
 @file_signals.file_updated.connect
 def addon_delete_file_node(self, target, user, event_type, payload):
-    """ Get addon BaseFileNode(s), move it into the TrashedFileNode collection
+    """Get addon BaseFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
     Required so that the guids of deleted addon files are not re-pointed when an
     addon file or folder is moved or renamed.
     """
-    if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
-        provider = payload['provider']
-        path = payload['metadata']['path']
-        materialized_path = payload['metadata']['materialized']
+    if (
+        event_type == "file_removed"
+        and payload.get("provider", None) != "osfstorage"
+    ):
+        provider = payload["provider"]
+        path = payload["metadata"]["path"]
+        materialized_path = payload["metadata"]["materialized"]
         content_type = ContentType.objects.get_for_model(target)
-        if path.endswith('/'):
-            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
+        if path.endswith("/"):
+            folder_children = BaseFileNode.resolve_class(
+                provider, BaseFileNode.ANY
+            ).objects.filter(
                 provider=provider,
                 target_object_id=target.id,
                 target_content_type=content_type,
-                _materialized_path__startswith=materialized_path
+                _materialized_path__startswith=materialized_path,
             )
             for item in folder_children:
-                if item.kind == 'file' and not TrashedFileNode.load(item._id):
+                if item.kind == "file" and not TrashedFileNode.load(item._id):
                     item.delete(user=user)
-                elif item.kind == 'folder':
+                elif item.kind == "folder":
                     BaseFileNode.delete(item)
         else:
             try:
-                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
+                file_node = BaseFileNode.resolve_class(
+                    provider, BaseFileNode.FILE
+                ).objects.get(
                     target_object_id=target.id,
                     target_content_type=content_type,
-                    _materialized_path=materialized_path
+                    _materialized_path=materialized_path,
                 )
             except BaseFileNode.DoesNotExist:
                 file_node = None
@@ -690,24 +770,25 @@ def addon_delete_file_node(self, target, user, event_type, payload):
 def osfstoragefile_mark_viewed(self, auth, fileversion, file_node):
     if auth.user:
         # mark fileversion as seen
-        FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
+        FileVersionUserMetadata.objects.get_or_create(
+            user=auth.user, file_version=fileversion
+        )
 
 
 @file_signals.file_viewed.connect
 def osfstoragefile_update_view_analytics(self, auth, fileversion, file_node):
     resource = file_node.target
     enqueue_update_analytics(
-        resource,
-        file_node,
-        fileversion.identifier,
-        'view'
+        resource, file_node, fileversion.identifier, "view"
     )
 
 
 @file_signals.file_viewed.connect
 def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
     resource = file_node.target
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
+    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(
+        resource, Preprint
+    ):
         try:
             PreprintView.record_for_preprint(
                 preprint=resource,
@@ -720,17 +801,25 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
 
 
 @file_signals.file_downloaded.connect
-def osfstoragefile_downloaded_update_analytics(self, auth, fileversion, file_node):
+def osfstoragefile_downloaded_update_analytics(
+    self, auth, fileversion, file_node
+):
     resource = file_node.target
     if not resource.is_contributor_or_group_member(auth.user):
         version_index = int(fileversion.identifier) - 1
-        enqueue_update_analytics(resource, file_node, version_index, 'download')
+        enqueue_update_analytics(
+            resource, file_node, version_index, "download"
+        )
 
 
 @file_signals.file_downloaded.connect
-def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node):
+def osfstoragefile_downloaded_update_metrics(
+    self, auth, fileversion, file_node
+):
     resource = file_node.target
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
+    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(
+        resource, Preprint
+    ):
         try:
             PreprintDownload.record_for_preprint(
                 preprint=resource,
@@ -745,77 +834,84 @@ def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node)
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
-    node = kwargs.get('node') or kwargs['project']
+    node = kwargs.get("node") or kwargs["project"]
 
-    action = query_params.pop('action', 'view')
-    provider = kwargs.get('provider', 'osfstorage')
+    action = query_params.pop("action", "view")
+    provider = kwargs.get("provider", "osfstorage")
 
-    if kwargs.get('path'):
-        path = kwargs['path']
-    elif kwargs.get('fid'):
-        path = kwargs['fid']
+    if kwargs.get("path"):
+        path = kwargs["path"]
+    elif kwargs.get("fid"):
+        path = kwargs["fid"]
 
-    if 'download' in request.path or request.path.startswith('/api/v1/'):
-        action = 'download'
+    if "download" in request.path or request.path.startswith("/api/v1/"):
+        action = "download"
 
-    if kwargs.get('vid'):
-        query_params['version'] = kwargs['vid']
+    if kwargs.get("vid"):
+        query_params["version"] = kwargs["vid"]
 
     # If provider is OSFstorage, check existence of requested file in the filetree
     # This prevents invalid GUIDs from being created
-    if provider == 'osfstorage':
-        node_settings = node.get_addon('osfstorage')
+    if provider == "osfstorage":
+        node_settings = node.get_addon("osfstorage")
 
         try:
             path = node_settings.get_root().find_child_by_name(path)._id
         except OsfStorageFileNode.DoesNotExist:
             raise HTTPError(
-                404, data=dict(
-                    message_short='File not found',
-                    message_long='You requested a file that does not exist.'
-                )
+                404,
+                data=dict(
+                    message_short="File not found",
+                    message_long="You requested a file that does not exist.",
+                ),
             )
 
     return redirect(
         node.web_url_for(
-            'addon_view_or_download_file',
+            "addon_view_or_download_file",
             path=path,
             provider=provider,
             action=action,
-            **query_params
+            **query_params,
         ),
-        code=http_status.HTTP_301_MOVED_PERMANENTLY
+        code=http_status.HTTP_301_MOVED_PERMANENTLY,
     )
 
+
 @must_be_contributor_or_public
-def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
-    """Shows a nice error message to users when they try to view a deleted file
-    """
+def addon_deleted_file(auth, target, error_type="BLAME_PROVIDER", **kwargs):
+    """Shows a nice error message to users when they try to view a deleted file"""
     # Allow file_node to be passed in so other views can delegate to this one
-    file_node = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
+    file_node = kwargs.get("file_node") or TrashedFileNode.load(
+        kwargs.get("trashed_id")
+    )
 
     deleted_by, deleted_on, deleted = None, None, None
     if isinstance(file_node, TrashedFileNode):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
-        deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
+        deleted_on = file_node.deleted_on.strftime("%c") + " UTC"
         deleted = deleted_on
-        if getattr(file_node, 'suspended', False):
-            error_type = 'FILE_SUSPENDED'
-        elif file_node.deleted_by is None or (auth.private_key and auth.private_link.anonymous):
-            if file_node.provider == 'osfstorage':
-                error_type = 'FILE_GONE_ACTOR_UNKNOWN'
+        if getattr(file_node, "suspended", False):
+            error_type = "FILE_SUSPENDED"
+        elif file_node.deleted_by is None or (
+            auth.private_key and auth.private_link.anonymous
+        ):
+            if file_node.provider == "osfstorage":
+                error_type = "FILE_GONE_ACTOR_UNKNOWN"
             else:
-                error_type = 'BLAME_PROVIDER'
+                error_type = "BLAME_PROVIDER"
         else:
-            error_type = 'FILE_GONE'
+            error_type = "FILE_GONE"
     else:
-        error_type = 'DONT_KNOW'
+        error_type = "DONT_KNOW"
 
-    file_path = kwargs.get('path', file_node.path)
+    file_path = kwargs.get("path", file_node.path)
     file_name = file_node.name or os.path.basename(file_path)
     file_name_title, file_name_ext = os.path.splitext(file_name)
-    provider_full = settings.ADDONS_AVAILABLE_DICT[file_node.provider].full_name
+    provider_full = settings.ADDONS_AVAILABLE_DICT[
+        file_node.provider
+    ].full_name
     try:
         file_guid = file_node.get_guid()._id
     except AttributeError:
@@ -823,48 +919,61 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
 
     format_params = dict(
         file_name=markupsafe.escape(file_name),
-        deleted_by=markupsafe.escape(getattr(deleted_by, 'fullname', None)),
+        deleted_by=markupsafe.escape(getattr(deleted_by, "fullname", None)),
         deleted_on=markupsafe.escape(deleted_on),
         provider=markupsafe.escape(provider_full),
-        deleted=markupsafe.escape(deleted)
+        deleted=markupsafe.escape(deleted),
     )
     if deleted_by:
-        format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
+        format_params["deleted_by_guid"] = markupsafe.escape(deleted_by_guid)
 
     error_msg = ERROR_MESSAGES[error_type].format(**format_params)
     if isinstance(target, AbstractNode):
-        error_msg += format_last_known_metadata(auth, target, file_node, error_type)
+        error_msg += format_last_known_metadata(
+            auth, target, file_node, error_type
+        )
         ret = serialize_node(target, auth, primary=True)
         ret.update(rubeus.collect_addon_assets(target))
-        ret.update({
-            'error': error_msg,
-            'urls': {
-                'render': None,
-                'sharejs': None,
-                'mfr': get_mfr_url(target, file_node.provider),
-                'profile_image': get_profile_image_url(auth.user, 25),
-                'files': target.web_url_for('collect_file_trees'),
-            },
-            'extra': {},
-            'size': 9966699,  # Prevent file from being edited, just in case
-            'sharejs_uuid': None,
-            'file_name': file_name,
-            'file_path': file_path,
-            'file_name_title': file_name_title,
-            'file_name_ext': file_name_ext,
-            'target_deleted': getattr(target, 'is_deleted', False),
-            'version_id': None,
-            'file_guid': file_guid,
-            'file_id': file_node._id,
-            'provider': file_node.provider,
-            'materialized_path': file_node.materialized_path or file_path,
-            'private': getattr(target.get_addon(file_node.provider), 'is_private', False),
-            'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
-            'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
-        })
+        ret.update(
+            {
+                "error": error_msg,
+                "urls": {
+                    "render": None,
+                    "sharejs": None,
+                    "mfr": get_mfr_url(target, file_node.provider),
+                    "profile_image": get_profile_image_url(auth.user, 25),
+                    "files": target.web_url_for("collect_file_trees"),
+                },
+                "extra": {},
+                "size": 9966699,  # Prevent file from being edited, just in case
+                "sharejs_uuid": None,
+                "file_name": file_name,
+                "file_path": file_path,
+                "file_name_title": file_name_title,
+                "file_name_ext": file_name_ext,
+                "target_deleted": getattr(target, "is_deleted", False),
+                "version_id": None,
+                "file_guid": file_guid,
+                "file_id": file_node._id,
+                "provider": file_node.provider,
+                "materialized_path": file_node.materialized_path or file_path,
+                "private": getattr(
+                    target.get_addon(file_node.provider), "is_private", False
+                ),
+                "file_tags": list(
+                    file_node.tags.filter(system=False).values_list(
+                        "name", flat=True
+                    )
+                )
+                if not file_node._state.adding
+                else [],  # Only access ManyRelatedManager if saved
+                "allow_comments": file_node.provider
+                in settings.ADDONS_COMMENTABLE,
+            }
+        )
     else:
         # TODO - serialize deleted metadata for future types of deleted file targets
-        ret = {'error': error_msg}
+        ret = {"error": error_msg}
 
     return ret, http_status.HTTP_410_GONE
 
@@ -872,11 +981,11 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
-    extras.pop('_', None)  # Clean up our url params a bit
-    action = extras.get('action', 'view')
-    guid = kwargs.get('guid')
-    guid_target = getattr(Guid.load(guid), 'referent', None)
-    target = guid_target or kwargs.get('node') or kwargs['project']
+    extras.pop("_", None)  # Clean up our url params a bit
+    action = extras.get("action", "view")
+    guid = kwargs.get("guid")
+    guid_target = getattr(Guid.load(guid), "referent", None)
+    target = guid_target or kwargs.get("node") or kwargs["project"]
 
     provider_safe = markupsafe.escape(provider)
     path_safe = markupsafe.escape(path)
@@ -884,73 +993,76 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    if hasattr(target, 'get_addon'):
-
+    if hasattr(target, "get_addon"):
         node_addon = target.get_addon(provider)
 
         if not isinstance(node_addon, BaseStorageAddon):
-            object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-                'message_short': 'Bad Request',
-                'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer connected to {object_text}.'
-            })
+            object_text = markupsafe.escape(
+                getattr(target, "project_or_component", "this object")
+            )
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    "message_short": "Bad Request",
+                    "message_long": f"The {provider_safe} add-on containing {path_safe} is no longer connected to {object_text}.",
+                },
+            )
 
         if not node_addon.has_auth:
-            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, data={
-                'message_short': 'Unauthorized',
-                'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer authorized.'
-            })
+            raise HTTPError(
+                http_status.HTTP_401_UNAUTHORIZED,
+                data={
+                    "message_short": "Unauthorized",
+                    "message_long": f"The {provider_safe} add-on containing {path_safe} is no longer authorized.",
+                },
+            )
 
         if not node_addon.complete:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-                'message_short': 'Bad Request',
-                'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer configured.'
-            })
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    "message_short": "Bad Request",
+                    "message_long": f"The {provider_safe} add-on containing {path_safe} is no longer configured.",
+                },
+            )
 
     savepoint_id = transaction.savepoint()
 
     try:
         file_node = BaseFileNode.resolve_class(
             provider, BaseFileNode.FILE
-        ).get_or_create(
-            target, path, **extras
-        )
+        ).get_or_create(target, path, **extras)
     except addon_errors.QueryError as e:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data={
-                'message_short': 'Bad Request',
-                'message_long': str(e)
-            }
+            data={"message_short": "Bad Request", "message_long": str(e)},
         )
     except addon_errors.DoesNotExist as e:
         raise HTTPError(
             http_status.HTTP_404_NOT_FOUND,
-            data={
-                'message_short': 'Not Found',
-                'message_long': str(e)
-            }
+            data={"message_short": "Not Found", "message_long": str(e)},
         )
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overridden to force authentication as the current user
     # the auth header is also pass to support basic auth
     version = file_node.touch(
-        request.headers.get('Authorization'),
-        **dict(
-            extras,
-            cookie=request.cookies.get(settings.COOKIE_NAME)
-        )
+        request.headers.get("Authorization"),
+        **dict(extras, cookie=request.cookies.get(settings.COOKIE_NAME)),
     )
 
     # There's no download action redirect to the Ember front-end file view and create guid.
-    if action != 'download':
-        if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+    if action != "download":
+        if isinstance(target, Node) and waffle.flag_is_active(
+            request, features.EMBER_FILE_PROJECT_DETAIL
+        ):
             guid = file_node.get_guid(create=True)
-            return redirect(f'{settings.DOMAIN}{guid._id}/')
-        if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+            return redirect(f"{settings.DOMAIN}{guid._id}/")
+        if isinstance(target, Registration) and waffle.flag_is_active(
+            request, features.EMBER_FILE_REGISTRATION_DETAIL
+        ):
             guid = file_node.get_guid(create=True)
-            return redirect(f'{settings.DOMAIN}{guid._id}/')
+            return redirect(f"{settings.DOMAIN}{guid._id}/")
 
     if version is None:
         # File is either deleted or unable to be found in the provider location
@@ -960,86 +1072,140 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             file_node = BaseFileNode.load(path)
 
             if not file_node:
-                raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
-                    'message_short': 'File Not Found',
-                    'message_long': 'The requested file could not be found.'
-                })
+                raise HTTPError(
+                    http_status.HTTP_404_NOT_FOUND,
+                    data={
+                        "message_short": "File Not Found",
+                        "message_long": "The requested file could not be found.",
+                    },
+                )
 
-            if file_node.kind == 'folder':
-                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-                    'message_short': 'Bad Request',
-                    'message_long': 'You cannot request a folder from this endpoint.'
-                })
+            if file_node.kind == "folder":
+                raise HTTPError(
+                    http_status.HTTP_400_BAD_REQUEST,
+                    data={
+                        "message_short": "Bad Request",
+                        "message_long": "You cannot request a folder from this endpoint.",
+                    },
+                )
 
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if file_node.provider == 'osfstorage' and not file_node.is_deleted:
+            if file_node.provider == "osfstorage" and not file_node.is_deleted:
                 return redirect(
-                    file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
+                    file_node.target.web_url_for(
+                        "addon_view_or_download_file",
+                        path=file_node._id,
+                        provider=file_node.provider,
+                    )
                 )
-        return addon_deleted_file(target=target, file_node=file_node, path=path, **kwargs)
+        return addon_deleted_file(
+            target=target, file_node=file_node, path=path, **kwargs
+        )
     else:
         transaction.savepoint_commit(savepoint_id)
 
     # TODO clean up these urls and unify what is used as a version identifier
-    if request.method == 'HEAD':
-        return make_response(('', http_status.HTTP_302_FOUND, {
-            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render'))
-        }))
+    if request.method == "HEAD":
+        return make_response(
+            (
+                "",
+                http_status.HTTP_302_FOUND,
+                {
+                    "Location": file_node.generate_waterbutler_url(
+                        **dict(
+                            extras,
+                            direct=None,
+                            version=version.identifier,
+                            _internal=extras.get("mode") == "render",
+                        )
+                    )
+                },
+            )
+        )
 
-    if action == 'download':
-        format = extras.get('format')
+    if action == "download":
+        format = extras.get("format")
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
-        if format and f'.{format.lower()}' != extension.lower():
-            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, quote(file_node.generate_waterbutler_url(
-                **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
-            ))))
-        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
+        if format and f".{format.lower()}" != extension.lower():
+            return redirect(
+                "{}/export?format={}&url={}".format(
+                    get_mfr_url(target, provider),
+                    format,
+                    quote(
+                        file_node.generate_waterbutler_url(
+                            **dict(
+                                extras,
+                                direct=None,
+                                version=version.identifier,
+                                _internal=extras.get("mode") == "render",
+                            )
+                        )
+                    ),
+                )
+            )
+        return redirect(
+            file_node.generate_waterbutler_url(
+                **dict(
+                    extras,
+                    direct=None,
+                    version=version.identifier,
+                    _internal=extras.get("mode") == "render",
+                )
+            )
+        )
 
-    if action == 'get_guid':
-        draft_id = extras.get('draft')
+    if action == "get_guid":
+        draft_id = extras.get("draft")
         draft = DraftRegistration.load(draft_id)
         if draft is None:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-                'message_short': 'Bad Request',
-                'message_long': 'File not associated with required object.'
-            })
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    "message_short": "Bad Request",
+                    "message_long": "File not associated with required object.",
+                },
+            )
         guid = file_node.get_guid(create=True)
         guid.referent.save()
         return dict(guid=guid._id)
 
-    if len(request.path.strip('/').split('/')) > 1:
+    if len(request.path.strip("/").split("/")) > 1:
         guid = file_node.get_guid(create=True)
         # NOTE: furl encoding to be verified later
-        return redirect(furl(f'/{guid._id}/', args=extras).url)
+        return redirect(furl(f"/{guid._id}/", args=extras).url)
     if isinstance(target, Preprint):
         # Redirecting preprint file guids to the preprint detail page
-        return redirect(f'/{target._id}/')
+        return redirect(f"/{target._id}/")
 
     return addon_view_file(auth, target, file_node, version)
 
 
 @collect_auth
 def persistent_file_download(auth, **kwargs):
-    id_or_guid = kwargs.get('fid_or_guid')
+    id_or_guid = kwargs.get("fid_or_guid")
     file = BaseFileNode.active.filter(_id=id_or_guid).first()
     if not file:
         guid = Guid.load(id_or_guid)
         if guid:
             file = guid.referent
         else:
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
-                'message_short': 'File Not Found',
-                'message_long': 'The requested file could not be found.'
-            })
+            raise HTTPError(
+                http_status.HTTP_404_NOT_FOUND,
+                data={
+                    "message_short": "File Not Found",
+                    "message_long": "The requested file could not be found.",
+                },
+            )
     if not file.is_file:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-            'message_long': 'Downloading folders is not permitted.'
-        })
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={"message_long": "Downloading folders is not permitted."},
+        )
 
-    auth_redirect = check_contributor_auth(file.target, auth,
-                                           include_public=True,
-                                           include_view_only_anon=True)
+    auth_redirect = check_contributor_auth(
+        file.target, auth, include_public=True, include_view_only_anon=True
+    )
     if auth_redirect:
         return auth_redirect
 
@@ -1047,19 +1213,23 @@ def persistent_file_download(auth, **kwargs):
 
     return redirect(
         file.generate_waterbutler_url(**query_params),
-        code=http_status.HTTP_302_FOUND
+        code=http_status.HTTP_302_FOUND,
     )
 
 
 def addon_view_or_download_quickfile(**kwargs):
-    fid = kwargs.get('fid', 'NOT_AN_FID')
+    fid = kwargs.get("fid", "NOT_AN_FID")
     file_ = OsfStorageFile.load(fid)
     if not file_:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
-            'message_short': 'File Not Found',
-            'message_long': 'The requested file could not be found.'
-        })
-    return proxy_url(f'/project/{file_.target._id}/files/osfstorage/{fid}/')
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={
+                "message_short": "File Not Found",
+                "message_long": "The requested file could not be found.",
+            },
+        )
+    return proxy_url(f"/project/{file_.target._id}/files/osfstorage/{fid}/")
+
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
@@ -1067,18 +1237,22 @@ def addon_view_file(auth, node, file_node, version):
 
     if isinstance(version, tuple):
         version, error = version
-        error = error.replace('\n', '').strip()
+        error = error.replace("\n", "").strip()
     else:
         error = None
 
     ret = serialize_node(node, auth, primary=True)
 
-    if file_node._id + '-' + version._id not in node.file_guid_to_share_uuids:
-        node.file_guid_to_share_uuids[file_node._id + '-' + version._id] = uuid.uuid4()
+    if file_node._id + "-" + version._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[file_node._id + "-" + version._id] = (
+            uuid.uuid4()
+        )
         node.save()
 
-    if ret['user']['can_edit']:
-        sharejs_uuid = str(node.file_guid_to_share_uuids[file_node._id + '-' + version._id])
+    if ret["user"]["can_edit"]:
+        sharejs_uuid = str(
+            node.file_guid_to_share_uuids[file_node._id + "-" + version._id]
+        )
     else:
         sharejs_uuid = None
 
@@ -1086,54 +1260,70 @@ def addon_view_file(auth, node, file_node, version):
     download_url = furl(
         request.url,
         netloc=internal_furl.netloc,
-        args=dict(request.args, **{
-            'direct': None,
-            'mode': 'render',
-            'action': 'download',
-            'public_file': node.is_public,
-        })
+        args=dict(
+            request.args,
+            **{
+                "direct": None,
+                "mode": "render",
+                "action": "download",
+                "public_file": node.is_public,
+            },
+        ),
     )
 
     mfr_url = get_mfr_url(node, file_node.provider)
     # NOTE: furl encoding to be verified later
-    render_url = furl(
-        mfr_url,
-        path=['render'],
-        args={'url': download_url.url}
+    render_url = furl(mfr_url, path=["render"], args={"url": download_url.url})
+
+    version_names = (
+        BaseFileVersionsThrough.objects.filter(basefilenode_id=file_node.id)
+        .order_by("-fileversion_id")
+        .values_list("version_name", flat=True)
     )
 
-    version_names = BaseFileVersionsThrough.objects.filter(
-        basefilenode_id=file_node.id
-    ).order_by('-fileversion_id').values_list('version_name', flat=True)
-
-    ret.update({
-        'urls': {
-            'render': render_url.url,
-            'mfr': mfr_url,
-            'sharejs': wiki_settings.SHAREJS_URL,
-            'profile_image': get_profile_image_url(auth.user, 25),
-            'files': node.web_url_for('collect_file_trees'),
-            'archived_from': get_archived_from_url(node, file_node) if node.is_registration else None,
-        },
-        'error': error,
-        'file_name': file_node.name,
-        'file_name_title': os.path.splitext(file_node.name)[0],
-        'file_name_ext': os.path.splitext(file_node.name)[1],
-        'version_id': version.identifier,
-        'file_path': file_node.path,
-        'sharejs_uuid': sharejs_uuid,
-        'provider': file_node.provider,
-        'materialized_path': file_node.materialized_path,
-        'extra': version.metadata.get('extra', {}),
-        'size': version.size if version.size is not None else 9966699,
-        'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
-        'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
-        'file_guid': file_node.get_guid()._id,
-        'file_id': file_node._id,
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
-        'checkout_user': file_node.checkout._id if file_node.checkout else None,
-        'version_names': list(version_names)
-    })
+    ret.update(
+        {
+            "urls": {
+                "render": render_url.url,
+                "mfr": mfr_url,
+                "sharejs": wiki_settings.SHAREJS_URL,
+                "profile_image": get_profile_image_url(auth.user, 25),
+                "files": node.web_url_for("collect_file_trees"),
+                "archived_from": get_archived_from_url(node, file_node)
+                if node.is_registration
+                else None,
+            },
+            "error": error,
+            "file_name": file_node.name,
+            "file_name_title": os.path.splitext(file_node.name)[0],
+            "file_name_ext": os.path.splitext(file_node.name)[1],
+            "version_id": version.identifier,
+            "file_path": file_node.path,
+            "sharejs_uuid": sharejs_uuid,
+            "provider": file_node.provider,
+            "materialized_path": file_node.materialized_path,
+            "extra": version.metadata.get("extra", {}),
+            "size": version.size if version.size is not None else 9966699,
+            "private": getattr(
+                node.get_addon(file_node.provider), "is_private", False
+            ),
+            "file_tags": list(
+                file_node.tags.filter(system=False).values_list(
+                    "name", flat=True
+                )
+            )
+            if not file_node._state.adding
+            else [],  # Only access ManyRelatedManager if saved
+            "file_guid": file_node.get_guid()._id,
+            "file_id": file_node._id,
+            "allow_comments": file_node.provider
+            in settings.ADDONS_COMMENTABLE,
+            "checkout_user": file_node.checkout._id
+            if file_node.checkout
+            else None,
+            "version_names": list(version_names),
+        }
+    )
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
@@ -1143,5 +1333,9 @@ def get_archived_from_url(node, file_node):
     if file_node.copied_from:
         trashed = TrashedFileNode.load(file_node.copied_from._id)
         if not trashed:
-            return node.registered_from.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from._id)
+            return node.registered_from.web_url_for(
+                "addon_view_or_download_file",
+                provider=file_node.provider,
+                path=file_node.copied_from._id,
+            )
     return None

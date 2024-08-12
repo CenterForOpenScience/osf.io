@@ -21,26 +21,26 @@ from framework import sentry
 from framework.celery_tasks import app as celery_app
 from website.settings import DS_METRICS_BASE_FOLDER, DS_METRICS_OSF_TOKEN
 
-DEFAULT_API_VERSION = '2.14'
-TEMP_FOLDER = tempfile.mkdtemp(suffix='/')
+DEFAULT_API_VERSION = "2.14"
+TEMP_FOLDER = tempfile.mkdtemp(suffix="/")
 VALUES = [
-    'file_version_id',
-    'file_id',
-    'version_id',
-    'target_object',
-    'target_content_type_id',
-    'deleted_on',
-    'size',
-    'region',
-    'target_guid',
-    'target_title',
-    'target_type',
-    'target_is_public',
-    'target_is_fork',
-    'target_root',
-    'target_is_deleted',
-    'target_spam_status',
-    'target_is_supplementary_node'
+    "file_version_id",
+    "file_id",
+    "version_id",
+    "target_object",
+    "target_content_type_id",
+    "deleted_on",
+    "size",
+    "region",
+    "target_guid",
+    "target_title",
+    "target_type",
+    "target_is_public",
+    "target_is_fork",
+    "target_root",
+    "target_is_deleted",
+    "target_spam_status",
+    "target_is_supplementary_node",
 ]
 
 # Grab the id of end of the basefilenode_version table for query limiting
@@ -246,7 +246,7 @@ def get_content_types(cursor):
 
 
 def convert_value(value):
-    if value == 'None' or value is None:
+    if value == "None" or value is None:
         return 0
     if isinstance(value, Decimal):
         return int(value)
@@ -259,12 +259,14 @@ def combine_summary_data(*args):
         logger.debug(summary_data_item)
         if isinstance(summary_data_item, dict):
             for key in summary_data_item.keys():
-                combined_summary_data[key] = combined_summary_data.get(key, 0) + convert_value(
-                    summary_data_item.get(key, 0)
-                )
+                combined_summary_data[key] = combined_summary_data.get(
+                    key, 0
+                ) + convert_value(summary_data_item.get(key, 0))
         elif isinstance(summary_data_item, list):
             for key, value in summary_data_item:
-                combined_summary_data[key] = combined_summary_data.get(key, 0) + convert_value(value)
+                combined_summary_data[key] = combined_summary_data.get(
+                    key, 0
+                ) + convert_value(value)
     return combined_summary_data
 
 
@@ -275,20 +277,20 @@ def summarize(sql, content_type, start, end, cursor):
             content_type,
             start,
             end,
-        ]
+        ],
     )
     return cursor.fetchall()
 
 
 def gather_usage_data(start, end, dry_run, zip_file):
-    logger.info(f'Start: {start}, end: {end}, dry run: {dry_run}')
+    logger.info(f"Start: {start}, end: {end}, dry run: {dry_run}")
     with connection.cursor() as cursor:
         content_types = get_content_types(cursor)
-        abstractnode_content_type = content_types['osf.abstractnode']
-        preprint_content_type = content_types['osf.preprint']
+        abstractnode_content_type = content_types["osf.abstractnode"]
+        preprint_content_type = content_types["osf.preprint"]
 
-        logger.debug(f'Gathering node usage at {datetime.datetime.now()}')
-        filename = f'./data-usage-raw-nodes-{start}-{end}.csv'
+        logger.debug(f"Gathering node usage at {datetime.datetime.now()}")
+        filename = f"./data-usage-raw-nodes-{start}-{end}.csv"
         cursor.execute(
             NODE_LIST_SQL,
             [
@@ -297,68 +299,91 @@ def gather_usage_data(start, end, dry_run, zip_file):
                 abstractnode_content_type,
                 start,
                 end,
-            ]
+            ],
         )
         if not dry_run:
-            logger.debug(f'Writing {filename} to zip')
+            logger.debug(f"Writing {filename} to zip")
             write_raw_data(cursor=cursor, zip_file=zip_file, filename=filename)
 
-        logger.debug(f'Gathering abstractnode summary at {datetime.datetime.now()}')
-        summary_data = combine_summary_data(summarize(
-            sql=ABSTRACT_NODE_SIZE_SUM_SQL,
-            content_type=abstractnode_content_type,
-            start=start,
-            end=end,
-            cursor=cursor,
-        ))
-        logger.debug(f'Gathering regional node summary at {datetime.datetime.now()}')
-        summary_data = combine_summary_data(summary_data, summarize(
-            sql=REGIONAL_NODE_SIZE_SUM_SQL,
-            content_type=abstractnode_content_type,
-            start=start,
-            end=end,
-            cursor=cursor,
-        ))
+        logger.debug(
+            f"Gathering abstractnode summary at {datetime.datetime.now()}"
+        )
+        summary_data = combine_summary_data(
+            summarize(
+                sql=ABSTRACT_NODE_SIZE_SUM_SQL,
+                content_type=abstractnode_content_type,
+                start=start,
+                end=end,
+                cursor=cursor,
+            )
+        )
+        logger.debug(
+            f"Gathering regional node summary at {datetime.datetime.now()}"
+        )
+        summary_data = combine_summary_data(
+            summary_data,
+            summarize(
+                sql=REGIONAL_NODE_SIZE_SUM_SQL,
+                content_type=abstractnode_content_type,
+                start=start,
+                end=end,
+                cursor=cursor,
+            ),
+        )
 
         # TODO: Move the next when Quick Folders is done
-        logger.debug(f'Gathering quickfile summary at {datetime.datetime.now()}')
-        summary_data = combine_summary_data(summary_data, summarize(
-            sql=ND_QUICK_FILE_SIZE_SUM_SQL,
-            content_type=abstractnode_content_type,
-            start=start,
-            end=end,
-            cursor=cursor,
-        ))
+        logger.debug(
+            f"Gathering quickfile summary at {datetime.datetime.now()}"
+        )
+        summary_data = combine_summary_data(
+            summary_data,
+            summarize(
+                sql=ND_QUICK_FILE_SIZE_SUM_SQL,
+                content_type=abstractnode_content_type,
+                start=start,
+                end=end,
+                cursor=cursor,
+            ),
+        )
 
-        logger.debug(f'Gathering supplement summary at {datetime.datetime.now()}')
-        summary_data = combine_summary_data(summary_data, summarize(
-            sql=ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL,
-            content_type=abstractnode_content_type,
-            start=start,
-            end=end,
-            cursor=cursor,
-        ))
-        logger.debug(f'Gathering deleted file summary at {datetime.datetime.now()}')
+        logger.debug(
+            f"Gathering supplement summary at {datetime.datetime.now()}"
+        )
+        summary_data = combine_summary_data(
+            summary_data,
+            summarize(
+                sql=ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL,
+                content_type=abstractnode_content_type,
+                start=start,
+                end=end,
+                cursor=cursor,
+            ),
+        )
+        logger.debug(
+            f"Gathering deleted file summary at {datetime.datetime.now()}"
+        )
         cursor.execute(
             DELETED_FILE_SIZE_SUM_SQL,
             [
                 start,
                 end,
-            ]
+            ],
         )
         summary_data = combine_summary_data(summary_data, cursor.fetchall())
-        logger.debug(f'Gathering total file summary at {datetime.datetime.now()}')
+        logger.debug(
+            f"Gathering total file summary at {datetime.datetime.now()}"
+        )
         cursor.execute(
             TOTAL_FILE_SIZE_SUM_SQL,
             [
                 start,
                 end,
-            ]
+            ],
         )
         summary_data = combine_summary_data(summary_data, cursor.fetchall())
 
-        logger.debug(f'Gathering preprint usage at {datetime.datetime.now()}')
-        filename = f'./data-usage-raw-preprints-{start}-{end}.csv'
+        logger.debug(f"Gathering preprint usage at {datetime.datetime.now()}")
+        filename = f"./data-usage-raw-preprints-{start}-{end}.csv"
 
         cursor.execute(
             PREPRINT_LIST_SQL,
@@ -367,28 +392,38 @@ def gather_usage_data(start, end, dry_run, zip_file):
                 preprint_content_type,
                 start,
                 end,
-            ]
+            ],
         )
         if not dry_run:
-            logger.debug(f'Writing {filename} to zip.')
+            logger.debug(f"Writing {filename} to zip.")
             write_raw_data(cursor=cursor, zip_file=zip_file, filename=filename)
 
-        logger.debug(f'Gathering preprint summary at {datetime.datetime.now()}')
-        summary_data = combine_summary_data(summary_data, summarize(
-            sql=ND_PREPRINT_SIZE_SUM_SQL,
-            content_type=preprint_content_type,
-            start=start,
-            end=end,
-            cursor=cursor,
-        ))
-        logger.debug(f'Gathering regional preprint summary at {datetime.datetime.now()}')
-        summary_data = combine_summary_data(summary_data, summarize(
-            sql=REGIONAL_PREPRINT_SIZE_SUM_SQL,
-            content_type=preprint_content_type,
-            start=start,
-            end=end,
-            cursor=cursor,
-        ))
+        logger.debug(
+            f"Gathering preprint summary at {datetime.datetime.now()}"
+        )
+        summary_data = combine_summary_data(
+            summary_data,
+            summarize(
+                sql=ND_PREPRINT_SIZE_SUM_SQL,
+                content_type=preprint_content_type,
+                start=start,
+                end=end,
+                cursor=cursor,
+            ),
+        )
+        logger.debug(
+            f"Gathering regional preprint summary at {datetime.datetime.now()}"
+        )
+        summary_data = combine_summary_data(
+            summary_data,
+            summarize(
+                sql=REGIONAL_PREPRINT_SIZE_SUM_SQL,
+                content_type=preprint_content_type,
+                start=start,
+                end=end,
+                cursor=cursor,
+            ),
+        )
 
     return summary_data
 
@@ -396,34 +431,43 @@ def gather_usage_data(start, end, dry_run, zip_file):
 def write_summary_data(filename, summary_data, remote_base_folder):
     header_row = summary_data.keys()
     summary_row = summary_data.values()
-    file_path = f'{TEMP_FOLDER}{filename}'
+    file_path = f"{TEMP_FOLDER}{filename}"
     old_remote = requests.get(
-        url=remote_base_folder['files'],
-        headers={'Accept': f'application/vnd.api+json;version={DEFAULT_API_VERSION}'},
+        url=remote_base_folder["files"],
+        headers={
+            "Accept": f"application/vnd.api+json;version={DEFAULT_API_VERSION}"
+        },
         auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
-        params={'filter[name]': filename},
+        params={"filter[name]": filename},
     ).json()
     try:
-        logger.debug(f'json: {old_remote}')
-        if old_remote['meta']['total'] > 1:
+        logger.debug(f"json: {old_remote}")
+        if old_remote["meta"]["total"] > 1:
             sentry.log_message(
-                'Too many files that look like {} - this may cause problems for data storage usage summaries'.format(
-                    remote_base_folder['files']
+                "Too many files that look like {} - this may cause problems for data storage usage summaries".format(
+                    remote_base_folder["files"]
                 )
             )
-        old_remote_data = old_remote['data'][0]
-        upload = old_remote_data['links']['upload']
-        params = {'kind': 'file'}
+        old_remote_data = old_remote["data"][0]
+        upload = old_remote_data["links"]["upload"]
+        params = {"kind": "file"}
 
         header_skipped = False
-        with open(file_path, 'w') as new_file:
-            writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
+        with open(file_path, "w") as new_file:
+            writer = csv.writer(
+                new_file,
+                delimiter=",",
+                lineterminator="\n",
+                quoting=csv.QUOTE_ALL,
+            )
             writer.writerow(header_row)
             with requests.get(
-                    url=upload,  # Yes, upload is correct here.
-                    headers={'Accept': f'application/vnd.api+json;version={DEFAULT_API_VERSION}'},
-                    auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
-                    stream=True,
+                url=upload,  # Yes, upload is correct here.
+                headers={
+                    "Accept": f"application/vnd.api+json;version={DEFAULT_API_VERSION}"
+                },
+                auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
+                stream=True,
             ) as old_file:
                 lines = []
                 for line in old_file.iter_lines():
@@ -431,7 +475,7 @@ def write_summary_data(filename, summary_data, remote_base_folder):
                         line = line.decode()
                     lines.append(line)
 
-                reader = csv.reader(lines, delimiter=',', lineterminator='\n')
+                reader = csv.reader(lines, delimiter=",", lineterminator="\n")
                 for row in reader:
                     if header_skipped:
                         writer.writerow(row)
@@ -439,13 +483,18 @@ def write_summary_data(filename, summary_data, remote_base_folder):
             writer.writerow(summary_row)
 
     except IndexError:
-        upload = remote_base_folder['upload']
+        upload = remote_base_folder["upload"]
         params = {
-            'kind': 'file',
-            'name': filename,
+            "kind": "file",
+            "name": filename,
         }
-        with open(file_path, 'w') as new_file:
-            writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
+        with open(file_path, "w") as new_file:
+            writer = csv.writer(
+                new_file,
+                delimiter=",",
+                lineterminator="\n",
+                quoting=csv.QUOTE_ALL,
+            )
             writer.writerow(header_row)
             writer.writerow(summary_row)
 
@@ -454,81 +503,91 @@ def write_summary_data(filename, summary_data, remote_base_folder):
 
 def write_raw_data(cursor, zip_file, filename):
     data_buffer = StringIO()
-    writer = csv.writer(data_buffer, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(
+        data_buffer, delimiter=",", lineterminator="\n", quoting=csv.QUOTE_ALL
+    )
     writer.writerow(VALUES)
     for row in cursor.fetchall():
         row_to_write = []
         for s in row:
-            item = s.encode('utf-8') if isinstance(s, str) else s
+            item = s.encode("utf-8") if isinstance(s, str) else s
             row_to_write.append(item)
         writer.writerow(row_to_write)
     zip_file.writestr(filename, data_buffer.getvalue())
 
 
 def upload_to_storage(file_path, upload_url, params):
-    logger.debug(f'Uploading {file_path} to {upload_url}')
-    with open(file_path, 'rb') as summary_file:
+    logger.debug(f"Uploading {file_path} to {upload_url}")
+    with open(file_path, "rb") as summary_file:
         requests.put(
             url=upload_url,
-            headers={'Accept': f'application/vnd.api+json;version={DEFAULT_API_VERSION}'},
+            headers={
+                "Accept": f"application/vnd.api+json;version={DEFAULT_API_VERSION}"
+            },
             params=params,
             data=summary_file,
             auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
         )
 
 
-@celery_app.task(name='management.commands.data_storage_usage')
+@celery_app.task(name="management.commands.data_storage_usage")
 def process_usages(
-        dry_run=False,
-        page_size=10000,
-        sample_only=False,
+    dry_run=False,
+    page_size=10000,
+    sample_only=False,
 ):
     if not dry_run:
         json = requests.get(
             url=DS_METRICS_BASE_FOLDER,
-            headers={'Accept': f'application/vnd.api+json;version={DEFAULT_API_VERSION}'},
-            auth=bearer_token_auth(DS_METRICS_OSF_TOKEN)
-        ).json()['data']
+            headers={
+                "Accept": f"application/vnd.api+json;version={DEFAULT_API_VERSION}"
+            },
+            auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
+        ).json()["data"]
 
         remote_base_folder = {
-            'files': json['relationships']['files']['links']['related']['href'],
-            'new_folder': json['links']['new_folder'],
-            'upload': json['links']['upload'],
+            "files": json["relationships"]["files"]["links"]["related"][
+                "href"
+            ],
+            "new_folder": json["links"]["new_folder"],
+            "upload": json["links"]["upload"],
         }
-        logger.debug(f'Remote base folder: {remote_base_folder}')
+        logger.debug(f"Remote base folder: {remote_base_folder}")
     # We can't re-order these columns after they are released, only add columns to the end
     # This is why we can't just append whatever storage regions we add to the system automatically,
     # because then they'd likely be out of order when they were added.
 
-    logger.debug(f'Getting last item - {datetime.datetime.now()}')
+    logger.debug(f"Getting last item - {datetime.datetime.now()}")
     with connection.cursor() as cursor:
         cursor.execute(LAST_ROW_SQL)
         last_item = cursor.fetchone()[0]
-    logger.debug(f'Last item: {last_item}')
-    summary_data = OrderedDict([
-        ('date', date.today().isoformat()),
-        ('total', 0),
-        ('deleted', 0),
-        ('registrations', 0),
-        ('nd_public_nodes', 0),
-        ('nd_private_nodes', 0),
-        ('nd_preprints', 0),
-        ('nd_supp_nodes', 0),
-        ('canada_montreal', 0),
-        ('australia_sydney', 0),
-        ('germany_frankfurt', 0),
-        ('united_states', 0),
-    ])
-    logger.debug(f'Collecting usage details - {datetime.datetime.now()}')
+    logger.debug(f"Last item: {last_item}")
+    summary_data = OrderedDict(
+        [
+            ("date", date.today().isoformat()),
+            ("total", 0),
+            ("deleted", 0),
+            ("registrations", 0),
+            ("nd_public_nodes", 0),
+            ("nd_private_nodes", 0),
+            ("nd_preprints", 0),
+            ("nd_supp_nodes", 0),
+            ("canada_montreal", 0),
+            ("australia_sydney", 0),
+            ("germany_frankfurt", 0),
+            ("united_states", 0),
+        ]
+    )
+    logger.debug(f"Collecting usage details - {datetime.datetime.now()}")
     summary_totals = {}
     start = 0
     end = min(page_size, last_item)
     keep_going = True
     now = datetime.datetime.now()
-    zip_file_name = f'data_storage_raw_{now}.zip'
-    zip_file_path = f'{TEMP_FOLDER}{zip_file_name}'
+    zip_file_name = f"data_storage_raw_{now}.zip"
+    zip_file_path = f"{TEMP_FOLDER}{zip_file_name}"
     with zipfile.ZipFile(
-            zip_file_path, mode='w', compression=zipfile.ZIP_DEFLATED
+        zip_file_path, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
         while keep_going:
             summary_totals = combine_summary_data(
@@ -538,7 +597,7 @@ def process_usages(
                     end=end,
                     dry_run=dry_run,
                     zip_file=zip_file,
-                )
+                ),
             )
             start = end + 1
             end = min(end + page_size, last_item)
@@ -548,98 +607,102 @@ def process_usages(
     if not dry_run:
         upload_to_storage(
             file_path=zip_file_path,
-            upload_url=remote_base_folder['upload'],
+            upload_url=remote_base_folder["upload"],
             params={
-                'kind': 'file',
-                'name': zip_file_name,
-            }
+                "kind": "file",
+                "name": zip_file_name,
+            },
         )
 
-    summary_data['total'] = summary_totals.get('total', 0)
-    summary_data['deleted'] = summary_totals.get('deleted', 0)
-    summary_data['registrations'] = summary_totals.get('osf.registration', 0)
-    summary_data['nd_public_nodes'] = summary_totals.get('osf.node', 0)
-    summary_data['nd_private_nodes'] = summary_totals.get('osf.private-node', 0)
-    summary_data['nd_preprints'] = summary_totals.get('nd_preprints', 0)
-    summary_data['nd_supp_nodes'] = summary_totals.get('nd_supplement', 0)
-    summary_data['canada_montreal'] = summary_totals.get('Canada - Montréal', 0)
-    summary_data['australia_sydney'] = summary_totals.get('Australia - Sydney', 0)
-    summary_data['germany_frankfurt'] = summary_totals.get('Germany - Frankfurt', 0)
-    summary_data['united_states'] = summary_totals.get('United States', 0)
+    summary_data["total"] = summary_totals.get("total", 0)
+    summary_data["deleted"] = summary_totals.get("deleted", 0)
+    summary_data["registrations"] = summary_totals.get("osf.registration", 0)
+    summary_data["nd_public_nodes"] = summary_totals.get("osf.node", 0)
+    summary_data["nd_private_nodes"] = summary_totals.get(
+        "osf.private-node", 0
+    )
+    summary_data["nd_preprints"] = summary_totals.get("nd_preprints", 0)
+    summary_data["nd_supp_nodes"] = summary_totals.get("nd_supplement", 0)
+    summary_data["canada_montreal"] = summary_totals.get(
+        "Canada - Montréal", 0
+    )
+    summary_data["australia_sydney"] = summary_totals.get(
+        "Australia - Sydney", 0
+    )
+    summary_data["germany_frankfurt"] = summary_totals.get(
+        "Germany - Frankfurt", 0
+    )
+    summary_data["united_states"] = summary_totals.get("United States", 0)
     if not dry_run:
         write_summary_data(
-            filename='osf_storage_metrics.csv',
+            filename="osf_storage_metrics.csv",
             summary_data=summary_data,
-            remote_base_folder=remote_base_folder
+            remote_base_folder=remote_base_folder,
         )
 
     return summary_data
 
 
 def bearer_token_auth(token):
-    token_dict = {
-        'token_type': 'Bearer',
-        'access_token': token
-    }
+    token_dict = {"token_type": "Bearer", "access_token": token}
     return OAuth2(token=token_dict)
 
 
 class Command(BaseCommand):
-    help = '''Get raw and summary data of storage usage for Product and Metascience.
+    help = """Get raw and summary data of storage usage for Product and Metascience.
     For remote upload, add a setting for DS_METRICS_API_TOKEN that has write access to a waterbutler info URL
     for a folder on an OSF project stored in the DS_METRICS_BASE_FOLDER setting. WARNING: If you are making
     changes to this and are using Production data, do not put the data that this script outputs anywhere that
-    you wouldn't put production data.'''
+    you wouldn't put production data."""
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry_run',
+            "--dry_run",
             type=bool,
             default=False,
-            help='Run queries but do not write files',
+            help="Run queries but do not write files",
         )
         parser.add_argument(
-            '--page_size',
+            "--page_size",
             type=int,
             default=10000,
-            help='How many items at a time to include for each query',
+            help="How many items at a time to include for each query",
         )
         parser.add_argument(
-            '--sample_only',
+            "--sample_only",
             type=bool,
             default=False,
-            help='Only do one example of each type of detail gatherer',
+            help="Only do one example of each type of detail gatherer",
         )
 
     # Management command handler
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info(f'Script started time: {script_start_time}')
+        logger.info(f"Script started time: {script_start_time}")
         logger.debug(options)
 
-        dry_run = options['dry_run']
-        page_size = options['page_size']
-        sample_only = options['sample_only']
+        dry_run = options["dry_run"]
+        page_size = options["page_size"]
+        sample_only = options["sample_only"]
 
         if dry_run:
-            logger.info('DRY RUN')
+            logger.info("DRY RUN")
         else:
             if DS_METRICS_BASE_FOLDER is None or DS_METRICS_OSF_TOKEN is None:
                 raise RuntimeError(
-                    'DS_METRICS_BASE_FOLDER and DS_METRICS_OSF_TOKEN settings are required if dry_run==False.'
+                    "DS_METRICS_BASE_FOLDER and DS_METRICS_OSF_TOKEN settings are required if dry_run==False."
                 )
 
-        logger.debug('Dry run: {}, page size: {}, sample only: {}, temp folder: {}'.format(
-            dry_run,
-            page_size,
-            sample_only,
-            TEMP_FOLDER
-        ))
+        logger.debug(
+            "Dry run: {}, page size: {}, sample only: {}, temp folder: {}".format(
+                dry_run, page_size, sample_only, TEMP_FOLDER
+            )
+        )
         process_usages(
             dry_run=dry_run,
             page_size=page_size,
             sample_only=sample_only,
         )
         script_finish_time = datetime.datetime.now()
-        logger.info(f'Script finished time: {script_finish_time}')
-        logger.info(f'Run time {script_finish_time - script_start_time}')
+        logger.info(f"Script finished time: {script_finish_time}")
+        logger.info(f"Run time {script_finish_time - script_start_time}")

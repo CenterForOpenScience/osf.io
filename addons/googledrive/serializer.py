@@ -2,9 +2,9 @@ from oauthlib.oauth2 import InvalidGrantError
 from addons.base.serializer import StorageAddonSerializer
 from website.util import api_url_for
 
-class GoogleDriveSerializer(StorageAddonSerializer):
 
-    addon_short_name = 'googledrive'
+class GoogleDriveSerializer(StorageAddonSerializer):
+    addon_short_name = "googledrive"
 
     def credentials_are_valid(self, user_settings, client):
         try:
@@ -15,22 +15,21 @@ class GoogleDriveSerializer(StorageAddonSerializer):
 
     def serialized_folder(self, node_settings):
         return {
-            'name': node_settings.folder_name,
-            'path': node_settings.folder_path
+            "name": node_settings.folder_name,
+            "path": node_settings.folder_path,
         }
 
     @property
     def addon_serialized_urls(self):
         node = self.node_settings.owner
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='googledrive'),
-            'files': node.web_url_for('collect_file_trees'),
-            'config': node.api_url_for('googledrive_set_config'),
-            'deauthorize': node.api_url_for('googledrive_deauthorize_node'),
-            'importAuth': node.api_url_for('googledrive_import_auth'),
-            'folders': node.api_url_for('googledrive_folder_list'),
-            'accounts': node.api_url_for('googledrive_account_list')
+            "auth": api_url_for("oauth_connect", service_name="googledrive"),
+            "files": node.web_url_for("collect_file_trees"),
+            "config": node.api_url_for("googledrive_set_config"),
+            "deauthorize": node.api_url_for("googledrive_deauthorize_node"),
+            "importAuth": node.api_url_for("googledrive_import_auth"),
+            "folders": node.api_url_for("googledrive_folder_list"),
+            "accounts": node.api_url_for("googledrive_account_list"),
         }
 
     @property
@@ -42,5 +41,5 @@ class GoogleDriveSerializer(StorageAddonSerializer):
                 self.node_settings.fetch_access_token()
             except InvalidGrantError:
                 valid_credentials = False
-        result['validCredentials'] = valid_credentials
-        return {'result': result}
+        result["validCredentials"] = valid_credentials
+        return {"result": result}

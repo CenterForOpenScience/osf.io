@@ -8,7 +8,7 @@ class RegistrationSchemaCreateForm(forms.Form):
     schema = forms.FileField(widget=forms.ClearableFileInput(), required=False)
 
     class Meta:
-        fields = ('name', 'schema')
+        fields = ("name", "schema")
 
 
 class RegistrationSchemaEditForm(forms.ModelForm):
@@ -17,4 +17,4 @@ class RegistrationSchemaEditForm(forms.ModelForm):
 
     class Meta:
         model = RegistrationSchema
-        fields = ('active', 'visible')
+        fields = ("active", "visible")

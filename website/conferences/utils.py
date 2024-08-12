@@ -30,23 +30,31 @@ def provision_node(conference, message, node, user):
     """
     auth = Auth(user=user)
     try:
-        wiki = WikiPage.objects.create_for_node(node, 'home', message.text, auth)
+        wiki = WikiPage.objects.create_for_node(
+            node, "home", message.text, auth
+        )
     except NodeStateError:
-        wiki = WikiPage.objects.get_for_node(node, 'home')
+        wiki = WikiPage.objects.get_for_node(node, "home")
         wiki.update(user, message.text)
 
     if conference.admins.exists():
-        node.add_contributors(prepare_contributors(conference.admins.all()), log=False)
+        node.add_contributors(
+            prepare_contributors(conference.admins.all()), log=False
+        )
 
     if not message.is_spam and conference.public_projects:
-        node.set_privacy('public', meeting_creation=True, auth=auth)
+        node.set_privacy("public", meeting_creation=True, auth=auth)
 
     conference.submissions.add(node)
     node.add_tag(message.conference_category, auth=auth)
-    for systag in ['emailed', message.conference_name, message.conference_category]:
+    for systag in [
+        "emailed",
+        message.conference_name,
+        message.conference_category,
+    ]:
         node.add_system_tag(systag, save=False)
     if message.is_spam:
-        node.add_system_tag('spam', save=False)
+        node.add_system_tag("spam", save=False)
 
     node.save()
 
@@ -54,9 +62,9 @@ def provision_node(conference, message, node, user):
 def prepare_contributors(admins):
     return [
         {
-            'user': admin,
-            'permissions': ADMIN,
-            'visible': False,
+            "user": admin,
+            "permissions": ADMIN,
+            "visible": False,
         }
         for admin in admins
     ]
@@ -64,9 +72,16 @@ def prepare_contributors(admins):
 
 def upload_attachment(user, node, attachment):
     attachment.seek(0)
-    name = (attachment.filename or settings.MISSING_FILE_NAME)
+    name = attachment.filename or settings.MISSING_FILE_NAME
     content = attachment.read()
-    upload_url = waterbutler_api_url_for(node._id, 'osfstorage', name=name, base_url=node.osfstorage_region.waterbutler_url, cookie=user.get_or_create_cookie().decode(), _internal=True)
+    upload_url = waterbutler_api_url_for(
+        node._id,
+        "osfstorage",
+        name=name,
+        base_url=node.osfstorage_region.waterbutler_url,
+        cookie=user.get_or_create_cookie().decode(),
+        _internal=True,
+    )
 
     resp = requests.put(
         upload_url,

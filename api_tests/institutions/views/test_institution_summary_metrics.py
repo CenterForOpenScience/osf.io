@@ -2,17 +2,13 @@ import pytest
 import datetime
 
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import (
-    AuthUserFactory,
-    InstitutionFactory
-)
+from osf_tests.factories import AuthUserFactory, InstitutionFactory
 from osf.metrics import InstitutionProjectCounts
 
 
 @pytest.mark.es
 @pytest.mark.django_db
 class TestInstitutionSummaryMetrics:
-
     @pytest.fixture()
     def institution(self):
         return InstitutionFactory()
@@ -24,14 +20,14 @@ class TestInstitutionSummaryMetrics:
     @pytest.fixture()
     def admin(self, institution):
         user = AuthUserFactory()
-        group = institution.get_group('institutional_admins')
+        group = institution.get_group("institutional_admins")
         group.user_set.add(user)
         group.save()
         return user
 
     @pytest.fixture()
     def url(self, institution):
-        return f'/{API_BASE}institutions/{institution._id}/metrics/summary/'
+        return f"/{API_BASE}institutions/{institution._id}/metrics/summary/"
 
     def test_get(self, app, url, institution, user, admin):
         # Tests unauthenticated user
@@ -54,7 +50,7 @@ class TestInstitutionSummaryMetrics:
             user_count=institution_user_count_latest,
             public_project_count=public_project_count_latest,
             private_project_count=private_project_count_latest,
-            timestamp=timestamp_latest
+            timestamp=timestamp_latest,
         ).save()
 
         # Record earlier institutional metrics to ES
@@ -69,10 +65,11 @@ class TestInstitutionSummaryMetrics:
             user_count=institution_user_count_early,
             public_project_count=public_project_count_early,
             private_project_count=private_project_count_early,
-            timestamp=timestamp_early
+            timestamp=timestamp_early,
         ).save()
 
         import time
+
         time.sleep(5)
 
         # Tests authorized user with institution with metrics
@@ -80,15 +77,15 @@ class TestInstitutionSummaryMetrics:
         assert resp.status_code == 200
 
         # Validates the summary metrics returned by the API
-        assert resp.json['data'] == {
-            'id': institution._id,
-            'type': 'institution-summary-metrics',
-            'attributes': {
-                'public_project_count': public_project_count_latest,
-                'private_project_count': private_project_count_latest,
-                'user_count': institution_user_count_latest
+        assert resp.json["data"] == {
+            "id": institution._id,
+            "type": "institution-summary-metrics",
+            "attributes": {
+                "public_project_count": public_project_count_latest,
+                "private_project_count": private_project_count_latest,
+                "user_count": institution_user_count_latest,
             },
-            'links': {
-                'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/summary/'
-            }
+            "links": {
+                "self": f"http://localhost:8000/v2/institutions/{institution._id}/metrics/summary/"
+            },
         }

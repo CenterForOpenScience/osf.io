@@ -16,18 +16,22 @@ from osf.models import (
     Sanction,
     RegistrationProvider,
     RegistrationSchema,
-    NotificationSubscription
+    NotificationSubscription,
 )
 
 from osf.utils.migrations import create_schema_blocks_for_atomic_schema
 
-from osf_tests.default_test_schema import DEFAULT_TEST_SCHEMA_NAME, DEFAULT_TEST_SCHEMA
+from osf_tests.default_test_schema import (
+    DEFAULT_TEST_SCHEMA_NAME,
+    DEFAULT_TEST_SCHEMA,
+)
 
 from .factories import (
     get_default_metaschema,
     RegistrationProviderFactory,
     DraftRegistrationFactory,
 )
+
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals:
@@ -38,6 +42,7 @@ class CaptureSignals:
     blinker `NamedSignals` to patch. Each signal has its `send` mocked out.
 
     """
+
     def __init__(self, signals):
         """Patch all given signals and make them available as attributes.
 
@@ -51,8 +56,7 @@ class CaptureSignals:
             self._receivers[signal] = functools.partial(self._record, signal)
 
     def __getitem__(self, signal):
-        """All captured signals are available via `ctxt[signal]`.
-        """
+        """All captured signals are available via `ctxt[signal]`."""
         if isinstance(signal, blinker.base.NamedSignal):
             return self._records[signal]
         else:
@@ -75,24 +79,41 @@ class CaptureSignals:
         :rtype: list of blinker `NamedSignals`.
 
         """
-        return {signal for signal, _ in self._records.items() if self._records[signal]}
+        return {
+            signal
+            for signal, _ in self._records.items()
+            if self._records[signal]
+        }
 
 
 def capture_signals():
     """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
     return CaptureSignals(ALL_SIGNALS)
 
+
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""
 
     assert abs(dt1 - dt2) < dt.timedelta(milliseconds=allowance)
 
+
 @contextlib.contextmanager
-def mock_archive(project, schema=None, auth=None, data=None, parent=None,
-                 embargo=False, embargo_end_date=None,
-                 retraction=False, justification=None, autoapprove_retraction=False,
-                 autocomplete=True, autoapprove=False, provider=None):
-    """ A context manager for registrations. When you want to call Node#register_node in
+def mock_archive(
+    project,
+    schema=None,
+    auth=None,
+    data=None,
+    parent=None,
+    embargo=False,
+    embargo_end_date=None,
+    retraction=False,
+    justification=None,
+    autoapprove_retraction=False,
+    autocomplete=True,
+    autoapprove=False,
+    provider=None,
+):
+    """A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
     helper allows for creating a registration in a safe fashion.
 
@@ -124,11 +145,17 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     """
     schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
-    data = data or ''
-    provider = provider or RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
+    data = data or ""
+    provider = (
+        provider
+        or RegistrationProvider.objects.first()
+        or RegistrationProviderFactory(_id="osf")
+    )
 
-    with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
-        draft_reg = DraftRegistrationFactory(branched_from=project, registration_schema=schema)
+    with mock.patch("framework.celery_tasks.handlers.enqueue_task"):
+        draft_reg = DraftRegistrationFactory(
+            branched_from=project, registration_schema=schema
+        )
         registration = project.register_node(
             schema=schema,
             auth=auth,
@@ -140,10 +167,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         embargo_end_date = embargo_end_date or (
             timezone.now() + dt.timedelta(days=20)
         )
-        registration.embargo_registration(
-            project.creator,
-            embargo_end_date
-        )
+        registration.embargo_registration(project.creator, embargo_end_date)
     else:
         registration.require_approval(project.creator)
     if autocomplete:
@@ -153,8 +177,12 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         root_job.done = True
         root_job.save()
         sanction = registration.sanction
-        mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-        mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
+        (
+            mock.patch.object(
+                root_job, "archive_tree_finished", mock.Mock(return_value=True)
+            ),
+        )
+        mock.patch("website.archiver.tasks.archive_success.delay", mock.Mock())
         archiver_listeners.archive_callback(registration)
 
     if autoapprove:
@@ -162,42 +190,48 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction.mode = Sanction.ANY
         sanction.approve(
             user=project.creator,
-            token=sanction.token_for_user(project.creator, 'approval')
+            token=sanction.token_for_user(project.creator, "approval"),
         )
 
     if retraction:
-        justification = justification or 'Because reasons'
+        justification = justification or "Because reasons"
         registration.refresh_from_db()
-        retraction = registration.retract_registration(project.creator, justification=justification)
+        retraction = registration.retract_registration(
+            project.creator, justification=justification
+        )
         if autoapprove_retraction:
             retraction.mode = Sanction.ANY
             retraction.approve(
                 user=project.creator,
-                token=retraction.token_for_user(project.creator, 'approval')
+                token=retraction.token_for_user(project.creator, "approval"),
             )
         registration.save()
     yield registration
 
+
 class MockShareResponse:
     def __init__(self, status_code):
         self.status_code = status_code
-        self.content = 'data'
-        self.text = 'text'
+        self.content = "data"
+        self.text = "text"
         self.json = {}
 
     def raise_for_status(self):
         if self.status_code >= 400:
             raise Exception
 
+
 def create_mock_blob():
     mock_blob = mock.create_autospec(Blob)
     mock_blob.delete.return_value = None
     return mock_blob
 
+
 def create_mock_bucket():
     mock_bucket = mock.create_autospec(Bucket)
     mock_bucket.get_blob.return_value = create_mock_blob()
     return mock_bucket
+
 
 def create_mock_gcs_client():
     """
@@ -207,14 +241,17 @@ def create_mock_gcs_client():
     mock_client.get_bucket.return_value = create_mock_bucket()
     return mock_client
 
+
 def get_default_test_schema():
     try:
-        test_schema = RegistrationSchema.objects.get(name=DEFAULT_TEST_SCHEMA_NAME)
+        test_schema = RegistrationSchema.objects.get(
+            name=DEFAULT_TEST_SCHEMA_NAME
+        )
     except RegistrationSchema.DoesNotExist:
         test_schema = RegistrationSchema.objects.create(
             name=DEFAULT_TEST_SCHEMA_NAME,
             schema_version=1,
-            schema=DEFAULT_TEST_SCHEMA
+            schema=DEFAULT_TEST_SCHEMA,
         )
         create_schema_blocks_for_atomic_schema(test_schema)
 
@@ -222,33 +259,42 @@ def get_default_test_schema():
 
 
 def _ensure_subscriptions(provider):
-    '''Make sure a provider's subscriptions exist.
+    """Make sure a provider's subscriptions exist.
 
     Provider subscriptions are populated by an on_save signal when the provider is created.
     This has led to observed race conditions and probabalistic test failures.
     Avoid that.
-    '''
+    """
     for subscription in provider.DEFAULT_SUBSCRIPTIONS:
         NotificationSubscription.objects.get_or_create(
-            _id=f'{provider._id}_{subscription}',
+            _id=f"{provider._id}_{subscription}",
             event_name=subscription,
-            provider=provider
+            provider=provider,
         )
 
-def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
-    '''Confirms that a mocked send_mail function contains the appropriate calls.'''
+
+def assert_notification_correctness(
+    send_mail_mock, expected_template, expected_recipients
+):
+    """Confirms that a mocked send_mail function contains the appropriate calls."""
     assert send_mail_mock.call_count == len(expected_recipients)
 
     recipients = set()
     templates = set()
     for _, call_kwargs in send_mail_mock.call_args_list:
-        recipients.add(call_kwargs['to_addr'])
-        templates.add(call_kwargs['mail'])
+        recipients.add(call_kwargs["to_addr"])
+        templates.add(call_kwargs["mail"])
 
     assert recipients == expected_recipients
 
     try:
         assert templates == {expected_template}
-    except AssertionError:  # the non-static subject attributes mean we need a different comparison
-        assert {template.tpl_prefix for template in list(templates)} == {expected_template.tpl_prefix}
-        assert {template._subject for template in list(templates)} == {expected_template._subject}
+    except (
+        AssertionError
+    ):  # the non-static subject attributes mean we need a different comparison
+        assert {template.tpl_prefix for template in list(templates)} == {
+            expected_template.tpl_prefix
+        }
+        assert {template._subject for template in list(templates)} == {
+            expected_template._subject
+        }

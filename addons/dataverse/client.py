@@ -1,12 +1,17 @@
 from rest_framework import status as http_status
 
 from dataverse import Connection
-from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
+from dataverse.exceptions import (
+    ConnectionError,
+    UnauthorizedError,
+    OperationFailedError,
+)
 
 from framework.exceptions import HTTPError
 
 from addons.dataverse import settings
 from osf.utils.sanitize import strip_html
+
 
 def _connect(host, token):
     try:
@@ -49,7 +54,7 @@ def connect_from_settings_or_401(node_settings):
 
 
 def get_files(dataset, published=False):
-    version = 'latest-published' if published else 'latest'
+    version = "latest-published" if published else "latest"
     return dataset.get_files(version)
 
 
@@ -61,16 +66,22 @@ def publish_dataverse(dataverse):
 
 
 def publish_dataset(dataset):
-    if dataset.get_state() == 'RELEASED':
-        raise HTTPError(http_status.HTTP_409_CONFLICT, data=dict(
-            message_short='Dataset conflict',
-            message_long='This version of the dataset has already been published.'
-        ))
+    if dataset.get_state() == "RELEASED":
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data=dict(
+                message_short="Dataset conflict",
+                message_long="This version of the dataset has already been published.",
+            ),
+        )
     if not dataset.dataverse.is_published:
-        raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data=dict(
-            message_short='Method not allowed',
-            message_long='A dataset cannot be published until its parent Dataverse is published.'
-        ))
+        raise HTTPError(
+            http_status.HTTP_405_METHOD_NOT_ALLOWED,
+            data=dict(
+                message_short="Method not allowed",
+                message_long="A dataset cannot be published until its parent Dataverse is published.",
+            ),
+        )
 
     try:
         dataset.publish()
@@ -87,20 +98,28 @@ def get_datasets(dataverse):
 def get_dataset(dataverse, doi):
     if dataverse is None:
         return
-    dataset = dataverse.get_dataset_by_doi(doi, timeout=settings.REQUEST_TIMEOUT)
+    dataset = dataverse.get_dataset_by_doi(
+        doi, timeout=settings.REQUEST_TIMEOUT
+    )
     try:
-        if dataset and dataset.get_state() == 'DEACCESSIONED':
-            raise HTTPError(http_status.HTTP_410_GONE, data=dict(
-                message_short='Dataset deaccessioned',
-                message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
-            ))
+        if dataset and dataset.get_state() == "DEACCESSIONED":
+            raise HTTPError(
+                http_status.HTTP_410_GONE,
+                data=dict(
+                    message_short="Dataset deaccessioned",
+                    message_long="This dataset has been deaccessioned and can no longer be linked to the OSF.",
+                ),
+            )
         return dataset
     except UnicodeDecodeError:
-        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE, data=dict(
-            message_short='Not acceptable',
-            message_long='This dataset cannot be connected due to forbidden '
-                         'characters in one or more of the file names.'
-        ))
+        raise HTTPError(
+            http_status.HTTP_406_NOT_ACCEPTABLE,
+            data=dict(
+                message_short="Not acceptable",
+                message_long="This dataset cannot be connected due to forbidden "
+                "characters in one or more of the file names.",
+            ),
+        )
 
 
 def get_dataverses(connection):
@@ -117,5 +136,7 @@ def get_dataverse(connection, alias):
 
 def get_custom_publish_text(connection):
     if connection is None:
-        return ''
-    return strip_html(connection.get_custom_publish_text(), tags=['strong', 'li', 'ul'])
+        return ""
+    return strip_html(
+        connection.get_custom_publish_text(), tags=["strong", "li", "ul"]
+    )

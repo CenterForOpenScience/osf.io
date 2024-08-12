@@ -5,13 +5,12 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
-    ProjectFactory
+    ProjectFactory,
 )
 
 
 @pytest.mark.django_db
 class TestDraftNodeDetail:
-
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
@@ -28,7 +27,7 @@ class TestDraftNodeDetail:
         draft_node = draft_reg.branched_from
 
         # Unauthenticated
-        url = f'/{API_BASE}draft_nodes/{draft_node._id}/'
+        url = f"/{API_BASE}draft_nodes/{draft_node._id}/"
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
@@ -39,24 +38,27 @@ class TestDraftNodeDetail:
         # Draft Registration contributor only
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
-        data = res.json['data']
+        data = res.json["data"]
 
-        assert data['attributes'] == {}
-        assert data['type'] == 'draft-nodes'
-        assert data['id'] == draft_node._id
+        assert data["attributes"] == {}
+        assert data["type"] == "draft-nodes"
+        assert data["id"] == draft_node._id
 
-        assert url + 'files/' in data['relationships']['files']['links']['related']['href']
-        assert url in data['links']['self']
+        assert (
+            url + "files/"
+            in data["relationships"]["files"]["links"]["related"]["href"]
+        )
+        assert url in data["links"]["self"]
 
         # assert cannot access node through this endpoint
         project = ProjectFactory(creator=user)
-        url = f'/{API_BASE}draft_nodes/{project._id}/'
+        url = f"/{API_BASE}draft_nodes/{project._id}/"
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
         # cannot access draft node after it's been registered (it's now a node!)
-        draft_reg.title = 'test user generated title.'
+        draft_reg.title = "test user generated title."
         draft_reg.register(Auth(user))
-        url = f'/{API_BASE}draft_nodes/{draft_node._id}/'
+        url = f"/{API_BASE}draft_nodes/{draft_node._id}/"
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 404

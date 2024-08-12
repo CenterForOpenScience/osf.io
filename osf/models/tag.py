@@ -4,11 +4,11 @@ from .base import BaseModel
 
 
 class TagManager(models.Manager):
-    """Manager that filters out system tags by default.
-    """
+    """Manager that filters out system tags by default."""
 
     def get_queryset(self):
         return super().get_queryset().filter(system=False)
+
 
 class Tag(BaseModel):
     name = models.CharField(db_index=True, max_length=1024)
@@ -19,8 +19,8 @@ class Tag(BaseModel):
 
     def __unicode__(self):
         if self.system:
-            return f'System Tag: {self.name}'
-        return f'{self.name}'
+            return f"System Tag: {self.name}"
+        return f"{self.name}"
 
     def _natural_key(self):
         return hash(self.name + str(self.system))
@@ -40,5 +40,5 @@ class Tag(BaseModel):
             return None
 
     class Meta:
-        unique_together = ('name', 'system')
-        ordering = ('name', )
+        unique_together = ("name", "system")
+        ordering = ("name",)

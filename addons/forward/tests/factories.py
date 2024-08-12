@@ -12,4 +12,4 @@ class ForwardSettingsFactory(DjangoModelFactory):
         model = NodeSettings
 
     owner = SubFactory(ProjectFactory)
-    url = 'http://frozen.pizza.reviews/'
+    url = "http://frozen.pizza.reviews/"

@@ -14,9 +14,7 @@ from website import settings
 
 def get_mailchimp_api():
     if not settings.MAILCHIMP_API_KEY:
-        raise OSFError(
-            'An API key is required to connect to Mailchimp.'
-        )
+        raise OSFError("An API key is required to connect to Mailchimp.")
     return mailchimp3.MailChimp(settings.MAILCHIMP_API_KEY)
 
 
@@ -25,15 +23,13 @@ def get_list_id_from_name(list_name):
     try:
         return settings.MAILCHIMP_LIST_MAP[list_name]
     except KeyError:
-        raise OSFError(
-            'List not found.'
-        )
+        raise OSFError("List not found.")
 
 
 def get_list_name_from_id(list_id):
     m = get_mailchimp_api()
     mailing_list = m.lists.get(list_id=list_id)
-    return mailing_list['name']
+    return mailing_list["name"]
 
 
 @queued_task
@@ -53,14 +49,14 @@ def subscribe_mailchimp(list_name, user_id):
             list_id=list_id,
             subscriber_hash=user_hash,
             data={
-                'status': 'subscribed',
-                'status_if_new': 'subscribed',
-                'email_address': user.username,
-                'merge_fields': {
-                    'FNAME': user.given_name,
-                    'LNAME': user.family_name
-                }
-            }
+                "status": "subscribed",
+                "status_if_new": "subscribed",
+                "email_address": user.username,
+                "merge_fields": {
+                    "FNAME": user.given_name,
+                    "LNAME": user.family_name,
+                },
+            },
         )
     except MailChimpError as error:
         sentry.log_exception(error)
@@ -91,10 +87,7 @@ def unsubscribe_mailchimp(list_name, user_id, username=None):
     # pass the error for unsubscribing a user from the mailchimp who has already been unsubscribed
     # and allow update mailing_list user field
     try:
-        m.lists.members.delete(
-            list_id=list_id,
-            subscriber_hash=user_hash
-        )
+        m.lists.members.delete(list_id=list_id, subscriber_hash=user_hash)
     except MailChimpError as error:
         sentry.log_exception(error)
         sentry.log_message(error)
@@ -108,13 +101,16 @@ def unsubscribe_mailchimp(list_name, user_id, username=None):
     user.mailchimp_mailing_lists[list_name] = False
     user.save()
 
+
 @queued_task
 @app.task
 @transaction.atomic
 def unsubscribe_mailchimp_async(list_name, user_id, username=None):
-    """ Same args as unsubscribe_mailchimp, used to have the task be run asynchronously
-    """
-    unsubscribe_mailchimp(list_name=list_name, user_id=user_id, username=username)
+    """Same args as unsubscribe_mailchimp, used to have the task be run asynchronously"""
+    unsubscribe_mailchimp(
+        list_name=list_name, user_id=user_id, username=username
+    )
+
 
 @user_confirmed.connect
 def subscribe_on_confirm(user):

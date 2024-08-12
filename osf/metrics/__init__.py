@@ -36,11 +36,11 @@ DAILY_REPORTS = (
 
 
 __all__ = (
-    'CountedAuthUsage',
-    'DAILY_REPORTS',
-    'InstitutionProjectCounts',
-    'PreprintView',
-    'PreprintDownload',
-    'RegistriesModerationMetrics',
-    'UserInstitutionProjectCounts',
+    "CountedAuthUsage",
+    "DAILY_REPORTS",
+    "InstitutionProjectCounts",
+    "PreprintView",
+    "PreprintDownload",
+    "RegistriesModerationMetrics",
+    "UserInstitutionProjectCounts",
 )

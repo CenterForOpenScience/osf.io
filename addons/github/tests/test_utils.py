@@ -12,21 +12,24 @@ from addons.base.exceptions import HookError
 
 pytestmark = pytest.mark.django_db
 
+
 def make_signature(secret, data):
     return hmac.new(secret.encode(), data, hashlib.sha1).hexdigest()
 
-HOOK_PAYLOAD = json.dumps({
-    'files': [],
-    'message': 'fake commit',
-}).encode()
+
+HOOK_PAYLOAD = json.dumps(
+    {
+        "files": [],
+        "message": "fake commit",
+    }
+).encode()
 
 
 class TestHookVerify(OsfTestCase):
-
     def setUp(self):
         super().setUp()
         self.node_settings = NodeSettings(
-            hook_secret='speakfriend',
+            hook_secret="speakfriend",
         )
 
     def test_verify_no_secret(self):
@@ -40,11 +43,11 @@ class TestHookVerify(OsfTestCase):
                 self.node_settings,
                 HOOK_PAYLOAD,
                 {
-                    'X-Hub-Signature': make_signature(
+                    "X-Hub-Signature": make_signature(
                         self.node_settings.hook_secret,
                         HOOK_PAYLOAD,
                     )
-                }
+                },
             )
         except HookError:
             assert 0
@@ -54,6 +57,5 @@ class TestHookVerify(OsfTestCase):
             utils.verify_hook_signature(
                 self.node_settings,
                 HOOK_PAYLOAD,
-                {'X-Hub-Signature': 'invalid'}
+                {"X-Hub-Signature": "invalid"},
             )
-

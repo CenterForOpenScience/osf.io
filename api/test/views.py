@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from api.base.throttling import TestUserRateThrottle, TestAnonRateThrottle
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 @throttle_classes([TestUserRateThrottle, TestAnonRateThrottle])
 def test_throttling(request, **kwargs):
-    return Response('Throttle test.')
+    return Response("Throttle test.")

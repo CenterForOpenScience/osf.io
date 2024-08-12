@@ -1,6 +1,11 @@
 import pytest
 
-from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory, OSFGroupFactory
+from osf_tests.factories import (
+    InstitutionFactory,
+    NodeFactory,
+    AuthUserFactory,
+    OSFGroupFactory,
+)
 from osf.utils.permissions import READ
 from api.base.settings.defaults import API_BASE
 
@@ -9,13 +14,14 @@ from api.base.settings.defaults import API_BASE
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def user_two():
     return AuthUserFactory()
 
+
 @pytest.mark.django_db
 class TestNodeInstitutionList:
-
     @pytest.fixture()
     def institution(self):
         return InstitutionFactory()
@@ -40,37 +46,43 @@ class TestNodeInstitutionList:
         return self.build_resource_institution_url(node_two)
 
     def build_resource_institution_url(self, resource):
-        return f'/{API_BASE}{resource.__class__.__name__.lower()}s/{resource._id}/institutions/'
+        return f"/{API_BASE}{resource.__class__.__name__.lower()}s/{resource._id}/institutions/"
 
     def test_node_institution_detail(
-        self, app, user, user_two, institution, node_one, node_two, node_one_url, node_two_url,
+        self,
+        app,
+        user,
+        user_two,
+        institution,
+        node_one,
+        node_two,
+        node_one_url,
+        node_two_url,
     ):
         #   test_return_institution
         res = app.get(node_one_url)
 
         assert res.status_code == 200
-        assert res.json['data'][0]['attributes']['name'] == institution.name
-        assert res.json['data'][0]['id'] == institution._id
+        assert res.json["data"][0]["attributes"]["name"] == institution.name
+        assert res.json["data"][0]["id"] == institution._id
 
-    #   test_return_no_institution
+        #   test_return_no_institution
         res = app.get(
-            node_two_url, auth=user.auth,
+            node_two_url,
+            auth=user.auth,
         )
         assert res.status_code == 200
-        assert len(res.json['data']) == 0
+        assert len(res.json["data"]) == 0
 
-    #   test_osf_group_member_can_view_node_institutions
+        #   test_osf_group_member_can_view_node_institutions
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         node_one.add_osf_group(group, READ)
         res = app.get(node_one_url)
         assert res.status_code == 200
 
-    #   test_non_contrib
+        #   test_non_contrib
         node_one.is_public = False
         node_one.save()
-        res = app.get(
-            node_one_url, auth=user_two.auth,
-            expect_errors=True
-        )
+        res = app.get(node_one_url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403

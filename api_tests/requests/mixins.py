@@ -11,9 +11,9 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions
 
+
 @pytest.mark.django_db
 class NodeRequestTestMixin:
-
     @pytest.fixture()
     def admin(self):
         return AuthUserFactory()
@@ -37,8 +37,8 @@ class NodeRequestTestMixin:
         proj.add_contributor(
             contributor=write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            send_email='access_request',
-            save=True
+            send_email="access_request",
+            save=True,
         )
         return proj
 
@@ -48,7 +48,7 @@ class NodeRequestTestMixin:
             creator=requester,
             target=project,
             request_type=RequestTypes.ACCESS.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         node_request.run_submit(requester)
         return node_request
@@ -59,13 +59,13 @@ class NodeRequestTestMixin:
         project.add_contributor(
             contributor=second_admin,
             permissions=permissions.CREATOR_PERMISSIONS,
-            save=True
+            save=True,
         )
         return second_admin
 
+
 @pytest.mark.django_db
 class PreprintRequestTestMixin:
-
     @pytest.fixture()
     def admin(self):
         return AuthUserFactory()
@@ -88,14 +88,14 @@ class PreprintRequestTestMixin:
 
     @pytest.fixture()
     def pre_mod_provider(self, moderator):
-        ppp = PreprintProviderFactory(reviews_workflow='pre-moderation')
-        ppp.get_group('moderator').user_set.add(moderator)
+        ppp = PreprintProviderFactory(reviews_workflow="pre-moderation")
+        ppp.get_group("moderator").user_set.add(moderator)
         return ppp
 
     @pytest.fixture()
     def post_mod_provider(self, moderator):
-        ppp = PreprintProviderFactory(reviews_workflow='post-moderation')
-        ppp.get_group('moderator').user_set.add(moderator)
+        ppp = PreprintProviderFactory(reviews_workflow="post-moderation")
+        ppp.get_group("moderator").user_set.add(moderator)
         return ppp
 
     @pytest.fixture()
@@ -108,32 +108,30 @@ class PreprintRequestTestMixin:
             creator=admin,
             provider=pre_mod_provider,
             is_published=False,
-            machine_state='pending'
+            machine_state="pending",
         )
         pre.ever_public = True
         pre.save()
         pre.add_contributor(
-            contributor=write_contrib,
-            permissions=permissions.WRITE,
-            save=True
+            contributor=write_contrib, permissions=permissions.WRITE, save=True
         )
         pre.is_public = True
         pre.save()
         return pre
 
     @pytest.fixture()
-    def auto_withdrawable_pre_mod_preprint(self, admin, write_contrib, pre_mod_provider):
+    def auto_withdrawable_pre_mod_preprint(
+        self, admin, write_contrib, pre_mod_provider
+    ):
         pre = PreprintFactory(
             creator=admin,
             provider=pre_mod_provider,
             is_published=False,
-            machine_state='pending'
+            machine_state="pending",
         )
         pre.save()
         pre.add_contributor(
-            contributor=write_contrib,
-            permissions=permissions.WRITE,
-            save=True
+            contributor=write_contrib, permissions=permissions.WRITE, save=True
         )
         return pre
 
@@ -145,9 +143,7 @@ class PreprintRequestTestMixin:
         )
         post.save()
         post.add_contributor(
-            contributor=write_contrib,
-            permissions=permissions.WRITE,
-            save=True
+            contributor=write_contrib, permissions=permissions.WRITE, save=True
         )
         return post
 
@@ -159,9 +155,7 @@ class PreprintRequestTestMixin:
         )
         preprint.save()
         preprint.add_contributor(
-            contributor=write_contrib,
-            permissions=permissions.WRITE,
-            save=True
+            contributor=write_contrib, permissions=permissions.WRITE, save=True
         )
         return preprint
 
@@ -171,7 +165,7 @@ class PreprintRequestTestMixin:
             creator=admin,
             target=pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
@@ -182,7 +176,7 @@ class PreprintRequestTestMixin:
             creator=admin,
             target=post_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
@@ -193,18 +187,20 @@ class PreprintRequestTestMixin:
             creator=admin,
             target=none_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
 
     @pytest.fixture()
-    def auto_approved_pre_request(self, auto_withdrawable_pre_mod_preprint, admin):
+    def auto_approved_pre_request(
+        self, auto_withdrawable_pre_mod_preprint, admin
+    ):
         request = PreprintRequestFactory(
             creator=admin,
             target=auto_withdrawable_pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
@@ -215,7 +211,7 @@ class PreprintRequestTestMixin:
             creator=requester,
             target=pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request
@@ -226,7 +222,7 @@ class PreprintRequestTestMixin:
             creator=requester,
             target=post_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request
@@ -237,18 +233,20 @@ class PreprintRequestTestMixin:
             creator=requester,
             target=none_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request
 
     @pytest.fixture()
-    def nonadmin_auto_approved_pre_request(self, auto_withdrawable_pre_mod_preprint, requester):
+    def nonadmin_auto_approved_pre_request(
+        self, auto_withdrawable_pre_mod_preprint, requester
+    ):
         request = PreprintRequestFactory(
             creator=requester,
             target=auto_withdrawable_pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request

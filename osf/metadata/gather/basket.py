@@ -1,6 +1,5 @@
-'''a gather.Basket holds gathered metadata and coordinates gatherer actions.
+"""a gather.Basket holds gathered metadata and coordinates gatherer actions."""
 
-'''
 import typing
 
 import rdflib
@@ -11,9 +10,9 @@ from .gatherer import get_gatherers, Gatherer
 
 
 class Basket:
-    focus: Focus                     # the thing to gather metadata from.
+    focus: Focus  # the thing to gather metadata from.
     gathered_metadata: rdflib.Graph  # heap of metadata already gathered.
-    _gathertasks_done: set           # memory of gatherings already done.
+    _gathertasks_done: set  # memory of gatherings already done.
     _known_focus_dict: dict
 
     def __init__(self, focus: Focus):
@@ -28,7 +27,7 @@ class Basket:
         self._add_focus_reference(self.focus)
 
     def pls_gather(self, predicate_map):  # TODO: async
-        '''go gatherers, go!
+        """go gatherers, go!
 
         @predicate_map: dict with rdflib.URIRef keys
 
@@ -47,17 +46,17 @@ class Basket:
                 },
             },
         })
-        '''
+        """
         self._do_gather(self.focus, predicate_map)
 
     def __getitem__(self, slice_or_arg) -> typing.Iterable[rdflib.term.Node]:
-        '''convenience for getting values from the basket
+        """convenience for getting values from the basket
 
         basket[subject:path] -> generator of objects that complete the rdf triple
         basket[path] -> same, with this basket's focus as the implicit subject
 
         if this isn't enough, access basket.gathered_metadata directly (or improve this!)
-        '''
+        """
         if isinstance(slice_or_arg, slice):
             focus_iri = slice_or_arg.start
             path = slice_or_arg.stop
@@ -70,7 +69,7 @@ class Basket:
 
     def __contains__(self, item):
         # implemented to prevent `x in basket` calling __getitem__ with every integer
-        return (item in self.gathered_metadata)
+        return item in self.gathered_metadata
 
     ##### END public api #####
 
@@ -85,7 +84,9 @@ class Basket:
                 current_map[subpath] = current_map = {}
             self._maybe_gather_for_predicate_map(focus, predicate_map)
         else:
-            raise ValueError(f'unsupported path type {type(path)} (path={path})')
+            raise ValueError(
+                f"unsupported path type {type(path)} (path={path})"
+            )
 
     def _maybe_gather_for_predicate_map(self, iri_or_focus, predicate_map):
         if isinstance(iri_or_focus, Focus):
@@ -96,17 +97,18 @@ class Basket:
         elif isinstance(iri_or_focus, rdflib.BNode):
             pass  # silently ignore
         else:
-            raise ValueError(f'expected `iri_or_focus` to be Focus or URIRef (got {iri_or_focus})')
+            raise ValueError(
+                f"expected `iri_or_focus` to be Focus or URIRef (got {iri_or_focus})"
+            )
 
     def _do_gather(self, focus, predicate_map):
         if not isinstance(predicate_map, dict):
             # allow iterable of predicates with no deeper paths
             predicate_map = {
-                predicate_iri: None
-                for predicate_iri in predicate_map
+                predicate_iri: None for predicate_iri in predicate_map
             }
         for gatherer in get_gatherers(focus.rdftype, predicate_map.keys()):
-            for (subj, pred, obj) in self._do_a_gathertask(gatherer, focus):
+            for subj, pred, obj in self._do_a_gathertask(gatherer, focus):
                 if isinstance(obj, Focus):
                     self._add_focus_reference(obj)
                     self.gathered_metadata.add((subj, pred, obj.iri))
@@ -121,17 +123,12 @@ class Basket:
                     self.gathered_metadata.add((subj, pred, obj))
 
     def _do_a_gathertask(self, gatherer: Gatherer, focus: Focus):
-        '''invoke gatherer with the given focus, but only if it hasn't already been done
-        '''
+        """invoke gatherer with the given focus, but only if it hasn't already been done"""
         if (gatherer, focus) not in self._gathertasks_done:
             self._gathertasks_done.add((gatherer, focus))  # eager
             yield from gatherer(focus)
 
     def _add_focus_reference(self, focus: Focus):
-        (
-            self._known_focus_dict
-            .setdefault(focus.iri, set())
-            .add(focus)
-        )
+        (self._known_focus_dict.setdefault(focus.iri, set()).add(focus))
         for triple in focus.reference_triples():
             self.gathered_metadata.add(triple)

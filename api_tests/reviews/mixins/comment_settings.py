@@ -11,7 +11,6 @@ from osf.utils import permissions
 
 @pytest.mark.django_db
 class ReviewActionCommentSettingsMixin:
-
     @pytest.fixture()
     def url(self):
         raise NotImplementedError
@@ -37,21 +36,25 @@ class ReviewActionCommentSettingsMixin:
     @pytest.fixture()
     def provider_moderator(self, provider):
         user = AuthUserFactory()
-        user.groups.add(provider.get_group('moderator'))
+        user.groups.add(provider.get_group("moderator"))
         return user
 
     @pytest.fixture()
     def preprint_admin(self, preprint):
         user = AuthUserFactory()
-        preprint.add_contributor(
-            user,
-            permissions.ADMIN
-        )
+        preprint.add_contributor(user, permissions.ADMIN)
         return user
 
     def test_comment_settings(
-            self, app, url, provider, actions, provider_admin,
-            provider_moderator, preprint_admin):
+        self,
+        app,
+        url,
+        provider,
+        actions,
+        provider_admin,
+        provider_moderator,
+        preprint_admin,
+    ):
         expected_ids = {item._id for item in actions}
         for anonymous in [True, False]:
             for private in [True, False]:
@@ -72,19 +75,20 @@ class ReviewActionCommentSettingsMixin:
                 self.__assert_fields(res, expected_ids, anonymous, private)
 
     def __assert_fields(
-            self, res, expected_ids, hidden_creator, hidden_comment):
-        data = res.json['data']
-        actual_ids = {item['id'] for item in data}
+        self, res, expected_ids, hidden_creator, hidden_comment
+    ):
+        data = res.json["data"]
+        actual_ids = {item["id"] for item in data}
         if expected_ids != actual_ids:
             raise Exception((expected_ids, actual_ids))
         assert expected_ids == actual_ids
 
         for action in data:
             if hidden_creator:
-                assert 'creator' not in action['relationships']
+                assert "creator" not in action["relationships"]
             else:
-                assert 'creator' in action['relationships']
+                assert "creator" in action["relationships"]
             if hidden_comment:
-                assert 'comment' not in action['attributes']
+                assert "comment" not in action["attributes"]
             else:
-                assert 'comment' in action['attributes']
+                assert "comment" in action["attributes"]

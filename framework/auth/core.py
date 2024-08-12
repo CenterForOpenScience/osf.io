@@ -14,9 +14,11 @@ from osf.utils.requests import check_select_for_update
 from website import security, settings
 
 name_formatters = {
-    'long': lambda user: user.fullname,
-    'surname': lambda user: user.family_name if user.family_name else user.fullname,
-    'initials': lambda user: f'{user.family_name}, {user.given_name_initial}.',
+    "long": lambda user: user.fullname,
+    "surname": lambda user: user.family_name
+    if user.family_name
+    else user.fullname,
+    "initials": lambda user: f"{user.family_name}, {user.given_name_initial}.",
 }
 
 logger = logging.getLogger(__name__)
@@ -35,10 +37,12 @@ def generate_verification_key(verification_type=None):
     if not verification_type:
         return token
     # v2 with a token and the expiration time
-    expires = timezone.now() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
+    expires = timezone.now() + dt.timedelta(
+        minutes=settings.EXPIRATION_TIME_DICT[verification_type]
+    )
     return {
-        'token': token,
-        'expires': expires,
+        "token": token,
+        "expires": expires,
     }
 
 
@@ -47,10 +51,10 @@ def validate_year(item):
         try:
             int(item)
         except ValueError:
-            raise ValidationValueError('Please enter a valid year.')
+            raise ValidationValueError("Please enter a valid year.")
         else:
             if len(item) != 4:
-                raise ValidationValueError('Please enter a valid year.')
+                raise ValidationValueError("Please enter a valid year.")
 
 
 validate_url = URLValidator()
@@ -62,27 +66,32 @@ def validate_profile_websites(profile_websites):
             validate_url(value)
         except ValidationError:
             # Reraise with a better message
-            raise ValidationError('Invalid personal URL.')
+            raise ValidationError("Invalid personal URL.")
 
 
 def validate_social(value):
-    validate_profile_websites(value.get('profileWebsites'))
+    validate_profile_websites(value.get("profileWebsites"))
 
 
 def get_current_user_id():
     current_session = get_session()
-    return current_session.get('auth_user_id', None) if current_session else None
+    return (
+        current_session.get("auth_user_id", None) if current_session else None
+    )
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     from osf.models import OSFUser
     from framework.auth import cas
+
     current_user_id = get_current_user_id()
-    header_token = request.headers.get('Authorization', None)
+    header_token = request.headers.get("Authorization", None)
     if current_user_id:
-        return OSFUser.load(current_user_id, select_for_update=check_select_for_update(request))
-    elif header_token and 'bearer' in header_token.lower():
+        return OSFUser.load(
+            current_user_id, select_for_update=check_select_for_update(request)
+        )
+    elif header_token and "bearer" in header_token.lower():
         # instead of querying directly here, let CAS deal with the authentication
         client = cas.get_client()
         auth_token = cas.parse_auth_header(header_token)
@@ -92,17 +101,27 @@ def _get_current_user():
         except cas.CasHTTPError:
             return None
 
-        return OSFUser.load(
-            cas_auth_response.user,
-            select_for_update=check_select_for_update(request)
-        ) if cas_auth_response.authenticated else None
+        return (
+            OSFUser.load(
+                cas_auth_response.user,
+                select_for_update=check_select_for_update(request),
+            )
+            if cas_auth_response.authenticated
+            else None
+        )
 
     else:
         return None
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None):
+def get_user(
+    email=None,
+    password=None,
+    token=None,
+    external_id_provider=None,
+    external_id=None,
+):
     """
     Get an instance of `User` matching the provided params.
 
@@ -120,17 +139,30 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     """
     from osf.models import OSFUser, Email
 
-    if not any([email, password, token, external_id_provider, external_id_provider]):
+    if not any(
+        [email, password, token, external_id_provider, external_id_provider]
+    ):
         return None
 
     if password and not email:
-        raise AssertionError('If a password is provided, an email must also be provided.')
+        raise AssertionError(
+            "If a password is provided, an email must also be provided."
+        )
 
     qs = OSFUser.objects.filter()
 
     if email:
         email = email.strip().lower()
-        qs = qs.filter(Q(Q(username=email) | Q(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
+        qs = qs.filter(
+            Q(
+                Q(username=email)
+                | Q(
+                    id=Subquery(
+                        Email.objects.filter(address=email).values("user_id")
+                    )
+                )
+            )
+        )
 
     if password:
         password = password.strip()
@@ -147,7 +179,11 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         qs = qs.filter(verification_key=token)
 
     if external_id_provider and external_id:
-        qs = qs.filter(**{f'external_identity__{external_id_provider}__{external_id}': 'VERIFIED'})
+        qs = qs.filter(
+            **{
+                f"external_identity__{external_id_provider}__{external_id}": "VERIFIED"
+            }
+        )
 
     try:
         user = qs.get()
@@ -158,19 +194,18 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 
 
 class Auth:
-
-    def __init__(self, user=None, api_node=None,
-                 private_key=None):
+    def __init__(self, user=None, api_node=None, private_key=None):
         self.user = user
         self.api_node = api_node
         self.private_key = private_key
 
     def __repr__(self):
-        return ('<Auth(user="{self.user}", '
-                'private_key={self.private_key})>').format(self=self)
+        return (
+            '<Auth(user="{self.user}", ' "private_key={self.private_key})>"
+        ).format(self=self)
 
     def to_header(self):
-        return f'Basic {self.user.username}'
+        return f"Basic {self.user.username}"
 
     @property
     def logged_in(self):
@@ -182,6 +217,7 @@ class Auth:
             return None
         # Avoid circular import
         from osf.models import PrivateLink
+
         try:
             private_link = PrivateLink.objects.get(key=self.private_key)
 
@@ -195,8 +231,12 @@ class Auth:
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
-        private_key = request_args.get('view_only')
+        user = (
+            request_args.get("user")
+            or kwargs.get("user")
+            or _get_current_user()
+        )
+        private_key = request_args.get("view_only")
         return cls(
             user=user,
             private_key=private_key,

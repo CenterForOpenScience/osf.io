@@ -22,6 +22,4 @@ DAILY_REPORTERS = (
     UserCountReporter,
 )
 
-MONTHLY_REPORTERS = (
-    SpamCountReporter,
-)
+MONTHLY_REPORTERS = (SpamCountReporter,)

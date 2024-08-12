@@ -7,13 +7,12 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     RegistrationProviderFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
 )
 
 
 @pytest.mark.django_db
 class TestReindexProvider:
-
     @pytest.fixture()
     def preprint_provider(self):
         return PreprintProviderFactory()
@@ -34,12 +33,20 @@ class TestReindexProvider:
     def user(self):
         return AuthUserFactory()
 
-    def test_reindex_provider_preprint(self, mock_update_share, preprint_provider, preprint):
+    def test_reindex_provider_preprint(
+        self, mock_update_share, preprint_provider, preprint
+    ):
         mock_update_share.reset_mock()
-        call_command('reindex_provider', f'--providers={preprint_provider._id}')
+        call_command(
+            "reindex_provider", f"--providers={preprint_provider._id}"
+        )
         mock_update_share.assert_called_once_with(preprint)
 
-    def test_reindex_provider_registration(self, mock_update_share, registration_provider, registration):
+    def test_reindex_provider_registration(
+        self, mock_update_share, registration_provider, registration
+    ):
         mock_update_share.reset_mock()
-        call_command('reindex_provider', f'--providers={registration_provider._id}')
+        call_command(
+            "reindex_provider", f"--providers={registration_provider._id}"
+        )
         mock_update_share.assert_called_once_with(registration)

@@ -1,10 +1,6 @@
 import logging
 
-from .node import (
-    AbstractNode,
-    AbstractNodeManager,
-    Node
-)
+from .node import AbstractNode, AbstractNodeManager, Node
 from .nodelog import NodeLog
 
 from osf.exceptions import NodeStateError
@@ -14,19 +10,17 @@ logger = logging.getLogger(__name__)
 
 
 class QuickFilesNodeManager(AbstractNodeManager):
-
     def create_for_user(self, user):
         possessive_title = get_quickfiles_project_title(user)
 
         quickfiles, created = QuickFilesNode.objects.get_or_create(
-            title=possessive_title,
-            creator=user
+            title=possessive_title, creator=user
         )
 
         if not created:
-            raise NodeStateError('Users may only have one quickfiles project')
+            raise NodeStateError("Users may only have one quickfiles project")
 
-        quickfiles.add_addon('osfstorage', auth=None, log=False)
+        quickfiles.add_addon("osfstorage", auth=None, log=False)
 
         return quickfiles
 
@@ -34,10 +28,13 @@ class QuickFilesNodeManager(AbstractNodeManager):
         try:
             return QuickFilesNode.objects.get(creator=user)
         except AbstractNode.DoesNotExist:
-            return Node.objects.filter(
-                logs__action=NodeLog.MIGRATED_QUICK_FILES,
-                creator=user
-            ).order_by('created').first()  # Returns None if there are none
+            return (
+                Node.objects.filter(
+                    logs__action=NodeLog.MIGRATED_QUICK_FILES, creator=user
+                )
+                .order_by("created")
+                .first()
+            )  # Returns None if there are none
 
 
 class QuickFilesNode(AbstractNode):
@@ -46,7 +43,7 @@ class QuickFilesNode(AbstractNode):
     objects = QuickFilesNodeManager()
 
     def __init__(self, *args, **kwargs):
-        kwargs['is_public'] = True
+        kwargs["is_public"] = True
         super().__init__(*args, **kwargs)
 
     def remove_node(self, auth, date=None):
@@ -55,22 +52,28 @@ class QuickFilesNode(AbstractNode):
         if auth.user.is_disabled:
             super().remove_node(auth=auth, date=date)
         else:
-            raise NodeStateError('A QuickFilesNode may not be deleted.')
+            raise NodeStateError("A QuickFilesNode may not be deleted.")
 
     def set_privacy(self, permissions, *args, **kwargs):
-        raise NodeStateError('You may not set privacy for a QuickFilesNode.')
+        raise NodeStateError("You may not set privacy for a QuickFilesNode.")
 
     def add_contributor(self, contributor, *args, **kwargs):
         if contributor == self.creator:
             return super().add_contributor(contributor, *args, **kwargs)
-        raise NodeStateError('A QuickFilesNode may not have additional contributors.')
+        raise NodeStateError(
+            "A QuickFilesNode may not have additional contributors."
+        )
 
     def clone(self):
-        raise NodeStateError('A QuickFilesNode may not be forked, used as a template, or registered.')
+        raise NodeStateError(
+            "A QuickFilesNode may not be forked, used as a template, or registered."
+        )
 
     def add_addon(self, name, auth, log=True):
-        if name != 'osfstorage':
-            raise NodeStateError('A QuickFilesNode can only have the osfstorage addon.')
+        if name != "osfstorage":
+            raise NodeStateError(
+                "A QuickFilesNode can only have the osfstorage addon."
+            )
         return super().add_addon(name, auth, log)
 
     @property
@@ -89,5 +92,9 @@ class QuickFilesNode(AbstractNode):
 
 
 def get_quickfiles_project_title(user):
-    possessive_title_name = user.fullname + "'s" if user.fullname[-1] != 's' else user.fullname + "'"
-    return f'{possessive_title_name} Quick Files'
+    possessive_title_name = (
+        user.fullname + "'s"
+        if user.fullname[-1] != "s"
+        else user.fullname + "'"
+    )
+    return f"{possessive_title_name} Quick Files"

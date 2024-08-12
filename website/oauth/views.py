@@ -17,6 +17,7 @@ from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 from website.settings import GRAVYVALET_URL
 
+
 @must_be_logged_in
 def oauth_disconnect(external_account_id, auth):
     account = ExternalAccount.load(external_account_id)
@@ -39,6 +40,7 @@ def oauth_disconnect(external_account_id, auth):
     user.external_accounts.remove(account)
     user.save()
 
+
 @must_be_logged_in
 def oauth_connect(service_name, auth):
     service = get_service(service_name)
@@ -59,7 +61,10 @@ def oauth_callback(service_name, auth):
     if not provider.auth_callback(user=user):
         return {}
 
-    if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
+    if (
+        provider.account
+        and not user.external_accounts.filter(id=provider.account.id).exists()
+    ):
         user.external_accounts.add(provider.account)
         user.save()
 
@@ -67,12 +72,17 @@ def oauth_callback(service_name, auth):
 
     return {}
 
+
 def _forward_to_addon_service():
-    code = request.args.get('code')
-    state = request.args.get('state')
+    code = request.args.get("code")
+    state = request.args.get("state")
     query_params = {
-        'code': code,
-        'state': state,
+        "code": code,
+        "state": state,
     }
-    gv_url = urlunparse(urlparse(GRAVYVALET_URL)._replace(path='/v1/oauth/callback', query=urlencode(query_params)))
+    gv_url = urlunparse(
+        urlparse(GRAVYVALET_URL)._replace(
+            path="/v1/oauth/callback", query=urlencode(query_params)
+        )
+    )
     requests.get(gv_url)

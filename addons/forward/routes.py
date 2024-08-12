@@ -1,33 +1,28 @@
 """Forward addon routes."""
+
 from framework.routing import Rule, json_renderer
 from addons.forward import views
 
 api_routes = {
-
-    'rules': [
-
+    "rules": [
         Rule(
             [
-                '/project/<pid>/forward/config/',
-                '/project/<pid>/node/<nid>/forward/config/'
+                "/project/<pid>/forward/config/",
+                "/project/<pid>/node/<nid>/forward/config/",
             ],
-            'get',
+            "get",
             views.config.forward_config_get,
             json_renderer,
         ),
-
         Rule(
             [
-                '/project/<pid>/forward/config/',
-                '/project/<pid>/node/<nid>/forward/config/'
+                "/project/<pid>/forward/config/",
+                "/project/<pid>/node/<nid>/forward/config/",
             ],
-            'put',
+            "put",
             views.config.forward_config_put,
             json_renderer,
         ),
-
     ],
-
-    'prefix': '/api/v1',
-
+    "prefix": "/api/v1",
 }

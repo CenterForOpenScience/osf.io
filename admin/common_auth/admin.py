@@ -9,13 +9,16 @@ from osf.models import AdminProfile
 
 
 class PermissionAdmin(admin.ModelAdmin):
-    search_fields = ['name', 'codename']
+    search_fields = ["name", "codename"]
+
 
 class AdminAdmin(admin.ModelAdmin):
-
     def permission_groups(self):
-        perm_groups = ', '.join(
-            [perm.name for perm in self.user.groups.all()]) if self.user.groups.all() else 'No permission groups'
+        perm_groups = (
+            ", ".join([perm.name for perm in self.user.groups.all()])
+            if self.user.groups.all()
+            else "No permission groups"
+        )
         return f'<a href="/account/register/?id={self.user._id}">{perm_groups}</a>'
 
     def user_name(self):
@@ -25,7 +28,7 @@ class AdminAdmin(admin.ModelAdmin):
         return self.user._id
 
     permission_groups.allow_tags = True
-    permission_groups.short_description = 'Permission Groups'
+    permission_groups.short_description = "Permission Groups"
 
     list_display = [user_name, _id, permission_groups]
 
@@ -35,34 +38,27 @@ admin.site.register(AdminProfile, AdminAdmin)
 
 
 class LogEntryAdmin(admin.ModelAdmin):
-
-    date_hierarchy = 'action_time'
+    date_hierarchy = "action_time"
 
     readonly_fields = [f.name for f in AdminLogEntry._meta.get_fields()]
 
-    list_filter = [
-        'user',
-        'action_flag'
-    ]
+    list_filter = ["user", "action_flag"]
 
-    search_fields = [
-        'object_repr',
-        'change_message'
-    ]
+    search_fields = ["object_repr", "change_message"]
 
     list_display = [
-        'action_time',
-        'user',
-        'object_link',
-        'object_id',
-        'message',
+        "action_time",
+        "user",
+        "object_link",
+        "object_id",
+        "message",
     ]
 
     def has_add_permission(self, request):
         return False
 
     def has_change_permission(self, request, obj=None):
-        return request.user.is_superuser and request.method != 'POST'
+        return request.user.is_superuser and request.method != "POST"
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -75,17 +71,20 @@ class LogEntryAdmin(admin.ModelAdmin):
         else:
             ct = obj.content_type
             link = '<a href="{}">{}</a>'.format(
-                reverse(f'admin:{ct.app_label}_{ct.model}_change', args=[obj.object_id]),
+                reverse(
+                    f"admin:{ct.app_label}_{ct.model}_change",
+                    args=[obj.object_id],
+                ),
                 escape(obj.object_repr),
             )
         return link
+
     object_link.allow_tags = True
-    object_link.admin_order_field = 'object_repr'
-    object_link.short_description = 'object'
+    object_link.admin_order_field = "object_repr"
+    object_link.short_description = "object"
 
     def queryset(self, request):
-        return super().queryset(request) \
-            .prefetch_related('content_type')
+        return super().queryset(request).prefetch_related("content_type")
 
 
 # admin.site.register(AdminLogEntry, LogEntryAdmin)

@@ -24,4 +24,5 @@ class DoesNotExist(AddonError):
 
 class NotApplicableError(AddonError):
     """This exception is used by non-storage and/or non-oauth add-ons when they don't need or have certain features."""
+
     pass

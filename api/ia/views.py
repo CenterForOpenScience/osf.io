@@ -11,12 +11,11 @@ class IACallbackView(APIView):
     """
     This is the callback Pigeon makes that signals IA has finished an archive job.
     """
-    view_category = 'ia'
-    view_name = 'ia_callback'
-    target_lookup_url_kwarg = 'target_id'
-    permission_classes = (
-        base_permissions.RequestHasPigeonToken,
-    )
+
+    view_category = "ia"
+    view_name = "ia_callback"
+    target_lookup_url_kwarg = "target_id"
+    permission_classes = (base_permissions.RequestHasPigeonToken,)
 
     def get_object(self):
         return self.get_target(self.kwargs[self.target_lookup_url_kwarg])
@@ -30,7 +29,7 @@ class IACallbackView(APIView):
 
     def post(self, request, *args, **kwargs):
         registration = self.get_object()
-        ia_url = json.loads(request.body)['ia_url']
+        ia_url = json.loads(request.body)["ia_url"]
         registration.ia_url = ia_url
         registration.save()
-        return JsonResponse({'status': 'complete'})
+        return JsonResponse({"status": "complete"})

@@ -34,14 +34,17 @@ REJECT_WITHDRAWAL = 61
 PREPRINT_REMOVED = 70
 PREPRINT_RESTORED = 71
 
-def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
+
+def update_admin_log(
+    user_id, object_id, object_repr, message, action_flag=UNKNOWN
+):
     AdminLogEntry.objects.log_action(
         user_id=user_id,
         content_type_id=None,
         object_id=object_id,
         object_repr=object_repr,
         change_message=message,
-        action_flag=action_flag
+        action_flag=action_flag,
     )
 
 
@@ -50,9 +53,11 @@ class AdminLogEntryManager(LogEntryManager):
 
 
 class AdminLogEntry(LogEntry):
-    primary_identifier_name = 'id'
+    primary_identifier_name = "id"
+
     def message(self):
         return self.change_message
+
     message.allow_tags = True
 
     objects = AdminLogEntryManager()

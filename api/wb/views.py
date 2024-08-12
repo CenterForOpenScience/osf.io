@@ -15,10 +15,11 @@ class FileMetadataView(APIView):
     """
     Mixin with common code for WB move/copy hooks
     """
+
     parser_classes = (HMACSignedParser,)
     serializer_class = WaterbutlerMetadataSerializer
-    view_category = 'wb'
-    target_lookup_url_kwarg = 'target_id'
+    view_category = "wb"
+    target_lookup_url_kwarg = "target_id"
 
     def get_object(self):
         return self.get_target(self.kwargs[self.target_lookup_url_kwarg])
@@ -28,8 +29,10 @@ class FileMetadataView(APIView):
         if not guid:
             raise NotFound
         target = guid.referent
-        if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
-            raise ValidationError('Registrations cannot be changed.')
+        if getattr(target, "is_registration", False) and not getattr(
+            target, "archiving", False
+        ):
+            raise ValidationError("Registrations cannot be changed.")
         return target
 
     def get_serializer_context(self):
@@ -37,23 +40,27 @@ class FileMetadataView(APIView):
         Extra context provided to the serializer class.
         """
         return {
-            'view': self,
+            "view": self,
         }
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context=self.get_serializer_context())
+        serializer = self.serializer_class(
+            data=request.data, context=self.get_serializer_context()
+        )
         if serializer.is_valid():
-            source = serializer.validated_data.pop('source')
-            destination = serializer.validated_data.pop('destination')
-            name = destination.get('name')
-            dest_target = self.get_target(target_id=destination.get('target'))
+            source = serializer.validated_data.pop("source")
+            destination = serializer.validated_data.pop("destination")
+            name = destination.get("name")
+            dest_target = self.get_target(target_id=destination.get("target"))
             try:
                 source = OsfStorageFileNode.get(source, self.get_object())
             except OsfStorageFileNode.DoesNotExist:
                 raise NotFound
 
             try:
-                dest_parent = OsfStorageFolder.get(destination.get('parent'), dest_target)
+                dest_parent = OsfStorageFolder.get(
+                    destination.get("parent"), dest_target
+                )
             except OsfStorageFolder.DoesNotExist:
                 raise NotFound
             serializer.save(source=source, destination=dest_parent, name=name)
@@ -67,7 +74,7 @@ class MoveFileMetadataView(FileMetadataView):
     Only WaterButler should talk to this endpoint by sending a signed request.
     """
 
-    view_name = 'metadata-move'
+    view_name = "metadata-move"
 
     # overrides FileMetadataView
     def post(self, request, *args, **kwargs):
@@ -89,7 +96,7 @@ class CopyFileMetadataView(FileMetadataView):
     Only WaterButler should talk to this endpoint by sending a signed request.
     """
 
-    view_name = 'metadata-copy'
+    view_name = "metadata-copy"
 
     def perform_file_action(self, source, destination, name):
         ret = source.copy_under(destination, name)

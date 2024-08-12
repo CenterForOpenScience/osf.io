@@ -9,14 +9,15 @@ from api_tests.nodes.views.test_node_view_only_links_list import (
 from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
 )
 
 
 @pytest.fixture()
 def base_url(public_project):
-    return '/{}registrations/{}/view_only_links/'.format(
-        API_BASE, public_project._id)
+    return "/{}registrations/{}/view_only_links/".format(
+        API_BASE, public_project._id
+    )
 
 
 @pytest.fixture()
@@ -42,17 +43,17 @@ def non_contrib():
 @pytest.fixture()
 def public_project(user, read_contrib, write_contrib):
     public_project = RegistrationFactory(is_public=True, creator=user)
+    public_project.add_contributor(read_contrib, permissions=permissions.READ)
     public_project.add_contributor(
-        read_contrib, permissions=permissions.READ)
-    public_project.add_contributor(
-        write_contrib, permissions=permissions.WRITE)
+        write_contrib, permissions=permissions.WRITE
+    )
     public_project.save()
     return public_project
 
 
 @pytest.fixture()
 def view_only_link(public_project):
-    view_only_link = PrivateLinkFactory(name='testlink')
+    view_only_link = PrivateLinkFactory(name="testlink")
     view_only_link.nodes.add(public_project)
     view_only_link.save()
     return view_only_link

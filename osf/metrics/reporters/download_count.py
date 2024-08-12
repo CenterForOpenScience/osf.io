@@ -15,8 +15,8 @@ class DownloadCountReporter(DailyReporter):
 
     def keen_events_from_report(self, report):
         event = {
-            'files': {
-                'total': report.daily_file_downloads,
+            "files": {
+                "total": report.daily_file_downloads,
             },
         }
-        return {'download_count_summary': [event]}
+        return {"download_count_summary": [event]}

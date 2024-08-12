@@ -9,7 +9,13 @@ from osf.utils import permissions
 from osf.models import RegistrationSchema
 
 from tests.base import OsfTestCase
-from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory, OSFGroupFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    ProjectFactory,
+    DraftRegistrationFactory,
+    OSFGroupFactory,
+)
+
 
 class RegistrationsTestBase(OsfTestCase):
     def setUp(self):
@@ -23,54 +29,61 @@ class RegistrationsTestBase(OsfTestCase):
             self.non_admin,
             permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
             auth=self.auth,
-            save=True
+            save=True,
         )
         self.non_contrib = AuthUserFactory()
         self.group_mem = AuthUserFactory()
         self.group = OSFGroupFactory(creator=self.group_mem)
         self.node.add_osf_group(self.group, permissions.ADMIN)
 
-        self.meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+        self.meta_schema = RegistrationSchema.objects.get(
+            name="Open-Ended Registration", schema_version=2
+        )
 
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
             branched_from=self.node,
             registration_schema=self.meta_schema,
-            registration_metadata={
-                'summary': {'value': 'Some airy'}
-            }
+            registration_metadata={"summary": {"value": "Some airy"}},
         )
 
-        current_month = timezone.now().strftime('%B')
-        current_year = timezone.now().strftime('%Y')
+        current_month = timezone.now().strftime("%B")
+        current_year = timezone.now().strftime("%Y")
 
         valid_date = timezone.now() + dt.timedelta(days=180)
         self.embargo_payload = {
-            'data': {
-                'attributes': {
-                    'children': [self.node._id],
-                    'draft_registration': self.draft._id,
-                    'lift_embargo': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + ' GMT',
-                    'registration_choice': 'embargo',
+            "data": {
+                "attributes": {
+                    "children": [self.node._id],
+                    "draft_registration": self.draft._id,
+                    "lift_embargo": str(
+                        valid_date.strftime("%a, %d, %B %Y %H:%M:%S")
+                    )
+                    + " GMT",
+                    "registration_choice": "embargo",
                 },
-                'type': 'registrations',
+                "type": "registrations",
             },
         }
         self.invalid_embargo_date_payload = copy.deepcopy(self.embargo_payload)
-        self.invalid_embargo_date_payload['data']['attributes']['lift_embargo'] = f'Thu, 01 {current_month} {str(int(current_year) - 1)} 05:00:00 GMT'
+        self.invalid_embargo_date_payload["data"]["attributes"][
+            "lift_embargo"
+        ] = f"Thu, 01 {current_month} {str(int(current_year) - 1)} 05:00:00 GMT"
 
         self.immediate_payload = {
-            'data': {
-                'attributes': {
-                    'children': [self.node._id],
-                    'draft_registration': self.draft._id,
-                    'registration_choice': 'immediate',
+            "data": {
+                "attributes": {
+                    "children": [self.node._id],
+                    "draft_registration": self.draft._id,
+                    "registration_choice": "immediate",
                 },
-                'type': 'registrations',
+                "type": "registrations",
             },
         }
         self.invalid_payload = copy.deepcopy(self.immediate_payload)
-        self.invalid_payload['data']['attributes']['registration_choice'] = 'foobar'
+        self.invalid_payload["data"]["attributes"]["registration_choice"] = (
+            "foobar"
+        )
 
     def draft_url(self, view_name):
         return self.node.web_url_for(view_name, draft_id=self.draft._id)

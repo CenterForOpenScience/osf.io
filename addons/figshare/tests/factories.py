@@ -3,14 +3,19 @@ from django.utils import timezone
 import factory
 from factory.django import DjangoModelFactory
 
-from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from osf_tests.factories import (
+    UserFactory,
+    ProjectFactory,
+    ExternalAccountFactory,
+)
 
 from addons.figshare.models import UserSettings, NodeSettings
 
+
 class FigshareAccountFactory(ExternalAccountFactory):
-    provider = 'figshare'
-    provider_id = factory.Sequence(lambda n: f'id-{n}')
-    oauth_key = factory.Sequence(lambda n: f'key-{n}')
+    provider = "figshare"
+    provider_id = factory.Sequence(lambda n: f"id-{n}")
+    oauth_key = factory.Sequence(lambda n: f"key-{n}")
     expires_at = timezone.now() + relativedelta(seconds=3600)
 
 

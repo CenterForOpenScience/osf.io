@@ -10,8 +10,8 @@ class UserFactory(factory.Factory):
 
     user = OSFUserFactory
 
-    desk_token = 'el-p'
-    test_token_secret = 'mike'
+    desk_token = "el-p"
+    test_token_secret = "mike"
 
     @classmethod
     def is_in_group(cls, value):

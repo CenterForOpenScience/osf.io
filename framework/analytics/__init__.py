@@ -10,15 +10,19 @@ logger = logging.getLogger(__name__)
 @app.task(max_retries=5, default_retry_delay=60)
 def increment_user_activity_counters(user_id, action, date_string):
     from osf.models import UserActivityCounter
+
     return UserActivityCounter.increment(user_id, action, date_string)
 
 
 def get_total_activity_count(user_id):
     from osf.models import UserActivityCounter
+
     return UserActivityCounter.get_total_activity_count(user_id)
 
 
-def update_counter(resource, file, version, action, node_info=None, session_key=None):
+def update_counter(
+    resource, file, version, action, node_info=None, session_key=None
+):
     """Update counters for resource.
 
     :param obj resource
@@ -27,9 +31,20 @@ def update_counter(resource, file, version, action, node_info=None, session_key=
     :param str action, ex. 'download'
     """
     from osf.models import PageCounter
-    return PageCounter.update_counter(resource, file, version=version, action=action, node_info=node_info, session_key=session_key)
+
+    return PageCounter.update_counter(
+        resource,
+        file,
+        version=version,
+        action=action,
+        node_info=node_info,
+        session_key=session_key,
+    )
 
 
 def get_basic_counters(resource, file, version, action):
     from osf.models import PageCounter
-    return PageCounter.get_basic_counters(resource, file, version=version, action=action)
+
+    return PageCounter.get_basic_counters(
+        resource, file, version=version, action=action
+    )

@@ -24,6 +24,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     #This Request/Response
 
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -32,28 +33,30 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_read_scopes = [CoreScopes.GUIDS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'guids'
-    view_name = 'guid-detail'
+    view_category = "guids"
+    view_name = "guid-detail"
 
     serializer_class = GuidSerializer
 
     @staticmethod
     def should_resolve(request):
-        query_params = getattr(request, 'query_params', request.GET)
-        resolve = query_params.get('resolve')
+        query_params = getattr(request, "query_params", request.GET)
+        resolve = query_params.get("resolve")
         return resolve is None or is_truthy(resolve)
 
     def get_serializer_class(self):
-        if not self.should_resolve(self.request) or self.kwargs.get('is_embedded', False):
+        if not self.should_resolve(self.request) or self.kwargs.get(
+            "is_embedded", False
+        ):
             return self.serializer_class
         return None
 
     def get_object(self):
         return get_object_or_error(
             Guid,
-            self.kwargs['guids'],
+            self.kwargs["guids"],
             self.request,
-            display_name='guid',
+            display_name="guid",
         )
 
     def get(self, request, **kwargs):
@@ -62,17 +65,17 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
         url = self.get_redirect_url(**kwargs)
         if url:
-            query_params = getattr(request, 'query_params', request.GET)
+            query_params = getattr(request, "query_params", request.GET)
             if query_params:
                 url = furl(url).add(query_params=self.request.query_params).url
             return http.HttpResponseRedirect(url)
         raise NotFound
 
     def get_redirect_url(self, **kwargs):
-        guid = Guid.load(kwargs['guids'])
+        guid = Guid.load(kwargs["guids"])
         if guid:
             referent = guid.referent
-            if getattr(referent, 'absolute_api_v2_url', None):
+            if getattr(referent, "absolute_api_v2_url", None):
                 return referent.absolute_api_v2_url
             else:
                 raise EndpointNotImplementedError()

@@ -12,8 +12,12 @@ from rest_framework import exceptions
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base import settings as api_settings
 from api.base.exceptions import (
-    UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
-    MergedAccountError, InvalidAccountError, TwoFactorRequiredError,
+    UnconfirmedAccountError,
+    UnclaimedAccountError,
+    DeactivatedAccountError,
+    MergedAccountError,
+    InvalidAccountError,
+    TwoFactorRequiredError,
 )
 from framework.auth import cas
 from framework.auth.core import get_user
@@ -37,7 +41,9 @@ def drf_get_session_from_cookie(cookie_val):
     :return: the Django native `Session` object or None
     """
     try:
-        session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val))
+        session_key = ensure_str(
+            itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
+        )
     except itsdangerous.BadSignature:
         return None
     return SessionStore(session_key=session_key)
@@ -85,7 +91,10 @@ def check_user(user):
 
     # The user has not been confirmed or claimed
     if not user.is_confirmed and not user.is_registered:
-        if user.has_usable_password() or created_by_external_idp_and_unconfirmed(user):
+        if (
+            user.has_usable_password()
+            or created_by_external_idp_and_unconfirmed(user)
+        ):
             raise UnconfirmedAccountError
         raise UnclaimedAccountError
 
@@ -103,7 +112,15 @@ def created_by_external_idp_and_unconfirmed(user):
     external IdP and is unconfirmed.
     """
 
-    return 'CREATE' in set(sum([list(each.values()) for each in list(user.external_identity.values())], []))
+    return "CREATE" in set(
+        sum(
+            [
+                list(each.values())
+                for each in list(user.external_identity.values())
+            ],
+            [],
+        )
+    )
 
 
 # Three customized DRF authentication classes: basic, session/cookie and access token.
@@ -125,7 +142,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         session = request.session
         if not session:
             return None
-        user_id = session.get('auth_user_id', None)
+        user_id = session.get("auth_user_id", None)
         user = OSFUser.load(user_id)
         if not user:
             return None
@@ -144,7 +161,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         reason = CSRFCheck(lambda _: _).process_view(request, None, (), {})
         if reason:
             # CSRF failed, bail with explicit error message
-            raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)
+            raise exceptions.PermissionDenied("CSRF Failed: %s" % reason)
 
         if not request.COOKIES.get(api_settings.CSRF_COOKIE_NAME):
             # Make sure the CSRF cookie is set for next time
@@ -168,7 +185,9 @@ class OSFBasicAuthentication(BasicAuthentication):
 
         user_auth_tuple = super().authenticate(request)
         if user_auth_tuple is not None:
-            self.authenticate_twofactor_credentials(user_auth_tuple[0], request)
+            self.authenticate_twofactor_credentials(
+                user_auth_tuple[0], request
+            )
         return user_auth_tuple
 
     def authenticate_credentials(self, userid, password, request=None):
@@ -185,7 +204,9 @@ class OSFBasicAuthentication(BasicAuthentication):
         user = get_user(email=userid, password=password)
 
         if userid and not user:
-            raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
+            raise exceptions.AuthenticationFailed(
+                _("Invalid username/password.")
+            )
         elif userid is None or not password:
             raise exceptions.NotAuthenticated()
 
@@ -208,11 +229,13 @@ class OSFBasicAuthentication(BasicAuthentication):
         except TwoFactorUserSettings.DoesNotExist:
             two_factor = None
         if two_factor and two_factor.is_confirmed:
-            otp = request.META.get('HTTP_X_OSF_OTP')
+            otp = request.META.get("HTTP_X_OSF_OTP")
             if otp is None:
                 raise TwoFactorRequiredError()
             if not two_factor.verify_code(otp):
-                raise exceptions.AuthenticationFailed(_('Invalid two-factor authentication OTP code.'))
+                raise exceptions.AuthenticationFailed(
+                    _("Invalid two-factor authentication OTP code.")
+                )
 
     def authenticate_header(self, request):
         """
@@ -222,7 +245,6 @@ class OSFBasicAuthentication(BasicAuthentication):
 
 
 class OSFCASAuthentication(authentication.BaseAuthentication):
-
     def authenticate(self, request):
         """
         Check whether the request provides a valid OAuth2 bearer token.
@@ -235,7 +257,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
 
         client = cas.get_client()
         try:
-            auth_header_field = request.META['HTTP_AUTHORIZATION']
+            auth_header_field = request.META["HTTP_AUTHORIZATION"]
             auth_token = cas.parse_auth_header(auth_header_field)
         except (cas.CasTokenError, KeyError):
             return None
@@ -243,14 +265,20 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         try:
             cas_auth_response = client.profile(auth_token)
         except cas.CasHTTPError:
-            raise exceptions.NotAuthenticated(_('User provided an invalid OAuth2 access token'))
+            raise exceptions.NotAuthenticated(
+                _("User provided an invalid OAuth2 access token")
+            )
 
         if cas_auth_response.authenticated is False:
-            raise exceptions.NotAuthenticated(_('CAS server failed to authenticate this token'))
+            raise exceptions.NotAuthenticated(
+                _("CAS server failed to authenticate this token")
+            )
 
         user = OSFUser.load(cas_auth_response.user)
         if not user:
-            raise exceptions.AuthenticationFailed(_('Could not find the user associated with this token'))
+            raise exceptions.AuthenticationFailed(
+                _("Could not find the user associated with this token")
+            )
 
         check_user(user)
         return user, cas_auth_response
@@ -259,4 +287,4 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         """
         Return an empty string.
         """
-        return ''
+        return ""

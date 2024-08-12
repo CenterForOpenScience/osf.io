@@ -21,14 +21,20 @@ except Exception:
 
 
 class TestEmail(unittest.TestCase):
-
-    @unittest.skipIf(not SERVER_RUNNING,
-                     "Mailserver isn't running. Run \"invoke mailserver\".")
-    @unittest.skipIf(not settings.USE_EMAIL,
-                     'settings.USE_EMAIL is False')
+    @unittest.skipIf(
+        not SERVER_RUNNING,
+        'Mailserver isn\'t running. Run "invoke mailserver".',
+    )
+    @unittest.skipIf(not settings.USE_EMAIL, "settings.USE_EMAIL is False")
     def test_sending_email(self):
-        assert send_email('foo@bar.com', 'baz@quux.com', subject='no subject',
-                          message='<h1>Greetings!</h1>', ttls=False, login=False)
+        assert send_email(
+            "foo@bar.com",
+            "baz@quux.com",
+            subject="no subject",
+            message="<h1>Greetings!</h1>",
+            ttls=False,
+            login=False,
+        )
 
     def setUp(self):
         settings.SENDGRID_WHITELIST_MODE = False
@@ -36,10 +42,12 @@ class TestEmail(unittest.TestCase):
     def tearDown(self):
         settings.SENDGRID_WHITELIST_MODE = True
 
-    @mock.patch(f'{_send_with_sendgrid.__module__}.Mail', autospec=True)
+    @mock.patch(f"{_send_with_sendgrid.__module__}.Mail", autospec=True)
     def test_send_with_sendgrid_success(self, mock_mail: MagicMock):
         mock_client = mock.MagicMock(autospec=SendGridAPIClient)
-        mock_client.send.return_value = mock.Mock(status_code=200, body='success')
+        mock_client.send.return_value = mock.Mock(
+            status_code=200, body="success"
+        )
         from_addr, to_addr = fake_email(), fake_email()
         category1, category2 = fake.word(), fake.word()
         subject = fake.bs()
@@ -50,7 +58,7 @@ class TestEmail(unittest.TestCase):
             subject=subject,
             message=message,
             client=mock_client,
-            categories=(category1, category2)
+            categories=(category1, category2),
         )
         assert ret
         mock_mail.assert_called_once_with(
@@ -64,12 +72,17 @@ class TestEmail(unittest.TestCase):
         assert mock_mail.return_value.category[1].get() == category2
         mock_client.send.assert_called_once_with(mock_mail.return_value)
 
-
-    @mock.patch(f'{_send_with_sendgrid.__module__}.sentry.log_message', autospec=True)
-    @mock.patch(f'{_send_with_sendgrid.__module__}.Mail', autospec=True)
-    def test_send_with_sendgrid_failure_returns_false(self, mock_mail, sentry_mock):
+    @mock.patch(
+        f"{_send_with_sendgrid.__module__}.sentry.log_message", autospec=True
+    )
+    @mock.patch(f"{_send_with_sendgrid.__module__}.Mail", autospec=True)
+    def test_send_with_sendgrid_failure_returns_false(
+        self, mock_mail, sentry_mock
+    ):
         mock_client = mock.MagicMock()
-        mock_client.send.return_value = mock.Mock(status_code=400, body='failed')
+        mock_client.send.return_value = mock.Mock(
+            status_code=400, body="failed"
+        )
         from_addr, to_addr = fake_email(), fake_email()
         subject = fake.bs()
         message = fake.text()
@@ -78,7 +91,7 @@ class TestEmail(unittest.TestCase):
             to_addr=to_addr,
             subject=subject,
             message=message,
-            client=mock_client
+            client=mock_client,
         )
         assert not ret
         sentry_mock.assert_called_once()
@@ -91,5 +104,5 @@ class TestEmail(unittest.TestCase):
         mock_client.send.assert_called_once_with(mock_mail.return_value)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

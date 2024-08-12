@@ -19,10 +19,10 @@ class LogMixin:
     """
 
     def get_log(self):
-        log = NodeLog.load(self.kwargs.get('log_id'))
+        log = NodeLog.load(self.kwargs.get("log_id"))
         if not log:
             raise NotFound(
-                detail='No log matching that log_id could be found.',
+                detail="No log matching that log_id could be found.",
             )
 
         self.check_object_permissions(self.request, log)
@@ -30,8 +30,8 @@ class LogMixin:
 
 
 class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/logs_read).
-    """
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/logs_read)."""
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -42,8 +42,8 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeLogSerializer
-    view_category = 'logs'
-    view_name = 'log-detail'
+    view_category = "logs"
+    view_name = "log-detail"
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

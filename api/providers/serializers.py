@@ -4,9 +4,19 @@ from rest_framework.exceptions import ValidationError
 
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField, TypedRelationshipField
+from api.base.serializers import (
+    JSONAPISerializer,
+    IDField,
+    LinksField,
+    RelationshipField,
+    ShowIfVersion,
+    TypeField,
+    TypedRelationshipField,
+)
 from api.nodes.serializers import RegistrationProviderRelationshipField
-from api.collections_providers.fields import CollectionProviderRelationshipField
+from api.collections_providers.fields import (
+    CollectionProviderRelationshipField,
+)
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
@@ -19,13 +29,12 @@ from website.settings import DOMAIN
 
 
 class ProviderSerializer(JSONAPISerializer):
-
     class Meta:
-        type_ = 'providers'
+        type_ = "providers"
 
     name = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
-    id = ser.CharField(read_only=True, max_length=200, source='_id')
+    id = ser.CharField(read_only=True, max_length=200, source="_id")
     advisory_board = ser.CharField(read_only=True)
     example = ser.CharField(read_only=True, allow_null=True)
     domain = ser.CharField(read_only=True, allow_null=False)
@@ -41,46 +50,60 @@ class ProviderSerializer(JSONAPISerializer):
     share_publish_type = ser.CharField(read_only=True)
     permissions = ser.SerializerMethodField()
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-        'external_url': 'get_external_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+            "external_url": "get_external_url",
+        }
+    )
 
     subjects = TypedRelationshipField(
-        related_view='providers:subject-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:subject-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     highlighted_subjects = TypedRelationshipField(
-        related_view='providers:highlighted-subject-list',
-        related_view_kwargs={'provider_id': '<_id>'},
-        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'},
+        related_view="providers:highlighted-subject-list",
+        related_view_kwargs={"provider_id": "<_id>"},
+        related_meta={
+            "has_highlighted_subjects": "get_has_highlighted_subjects"
+        },
     )
-    access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
+    access_requests_enabled = ShowIfVersion(
+        ser.BooleanField(read_only=False, required=False),
+        min_version="2.0",
+        max_version="2.8",
+    )
 
     taxonomies = ShowIfVersion(
         TypedRelationshipField(
-            related_view='providers:taxonomy-list',
-            related_view_kwargs={'provider_id': '<_id>'},
-        ), min_version='2.0', max_version='2.14',
+            related_view="providers:taxonomy-list",
+            related_view_kwargs={"provider_id": "<_id>"},
+        ),
+        min_version="2.0",
+        max_version="2.14",
     )
 
     highlighted_taxonomies = ShowIfVersion(
         TypedRelationshipField(
-            related_view='providers:highlighted-taxonomy-list',
-            related_view_kwargs={'provider_id': '<_id>'},
-            related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'},
-        ), min_version='2.0', max_version='2.14',
+            related_view="providers:highlighted-taxonomy-list",
+            related_view_kwargs={"provider_id": "<_id>"},
+            related_meta={
+                "has_highlighted_subjects": "get_has_highlighted_subjects"
+            },
+        ),
+        min_version="2.0",
+        max_version="2.14",
     )
 
     licenses_acceptable = TypedRelationshipField(
-        related_view='providers:license-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:license-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     schemas = TypedRelationshipField(
-        related_view='providers:registration-providers:registration-schema-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:registration-providers:registration-schema-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     def get_has_highlighted_subjects(self, obj):
@@ -93,10 +116,12 @@ class ProviderSerializer(JSONAPISerializer):
         return obj.external_url
 
     def get_assets(self, obj):
-        return {asset.name: asset.file.url for asset in obj.asset_files.all()} or None
+        return {
+            asset.name: asset.file.url for asset in obj.asset_files.all()
+        } or None
 
     def get_permissions(self, obj):
-        auth = get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context["request"])
         if not auth.user:
             return []
         return get_perms(auth.user, obj)
@@ -104,111 +129,125 @@ class ProviderSerializer(JSONAPISerializer):
 
 class CollectionProviderSerializer(ProviderSerializer):
     class Meta:
-        type_ = 'collection-providers'
+        type_ = "collection-providers"
 
     primary_collection = RelationshipField(
-        related_view='collections:collection-detail',
-        related_view_kwargs={'collection_id': '<primary_collection._id>'},
+        related_view="collections:collection-detail",
+        related_view_kwargs={"collection_id": "<primary_collection._id>"},
     )
 
     moderators = RelationshipField(
-        related_view='providers:collection-providers:provider-moderator-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:collection-providers:provider-moderator-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
-    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
+    reviews_workflow = ser.ChoiceField(
+        choices=Workflows.choices(), read_only=True
+    )
 
     subscriptions = RelationshipField(
-        related_view='providers:collection-providers:notification-subscription-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:collection-providers:notification-subscription-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
-    filterable_fields = frozenset([
-        'allow_submissions',
-        'allow_commenting',
-        'description',
-        'domain',
-        'reviews_workflow',
-        'domain_redirect_enabled',
-        'id',
-        'name',
-    ])
+    filterable_fields = frozenset(
+        [
+            "allow_submissions",
+            "allow_commenting",
+            "description",
+            "domain",
+            "reviews_workflow",
+            "domain_redirect_enabled",
+            "id",
+            "name",
+        ]
+    )
+
 
 class RegistrationProviderSerializer(ProviderSerializer):
     class Meta:
-        type_ = 'registration-providers'
+        type_ = "registration-providers"
 
     branded_discovery_page = ser.BooleanField(read_only=True)
 
     brand = RelationshipField(
-        related_view='brands:brand-detail',
-        related_view_kwargs={'brand_id': '<brand.id>'},
+        related_view="brands:brand-detail",
+        related_view_kwargs={"brand_id": "<brand.id>"},
     )
 
     moderators = RelationshipField(
-        related_view='providers:registration-providers:provider-moderator-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:registration-providers:provider-moderator-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     primary_collection = RelationshipField(
-        related_view='collections:collection-detail',
-        related_view_kwargs={'collection_id': '<primary_collection._id>'},
+        related_view="collections:collection-detail",
+        related_view_kwargs={"collection_id": "<primary_collection._id>"},
     )
 
-    filterable_fields = frozenset([
-        'allow_submissions',
-        'allow_commenting',
-        'brand',
-        'description',
-        'domain',
-        'domain_redirect_enabled',
-        'id',
-        'name',
-        'reviews_workflow',
-        'permissions',
-    ])
+    filterable_fields = frozenset(
+        [
+            "allow_submissions",
+            "allow_commenting",
+            "brand",
+            "description",
+            "domain",
+            "domain_redirect_enabled",
+            "id",
+            "name",
+            "reviews_workflow",
+            "permissions",
+        ]
+    )
 
-    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
+    reviews_workflow = ser.ChoiceField(
+        choices=Workflows.choices(), read_only=True
+    )
     reviews_comments_anonymous = ser.BooleanField(read_only=True)
     allow_updates = ser.BooleanField(read_only=True)
     allow_bulk_uploads = ser.BooleanField(read_only=True)
 
     registrations = ReviewableCountsRelationshipField(
-        related_view='providers:registration-providers:registrations-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:registration-providers:registrations-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     subscriptions = RelationshipField(
-        related_view='providers:registration-providers:notification-subscription-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:registration-providers:notification-subscription-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-        'external_url': 'get_external_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+            "external_url": "get_external_url",
+        }
+    )
 
 
 class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
-
     class Meta:
-        type_ = 'preprint-providers'
+        type_ = "preprint-providers"
 
-    filterable_fields = frozenset([
-        'allow_submissions',
-        'allow_commenting',
-        'description',
-        'domain',
-        'domain_redirect_enabled',
-        'id',
-        'name',
-        'share_publish_type',
-        'reviews_workflow',
-        'permissions',
-        'advertise_on_discover_page',
-    ])
-    available_metrics = frozenset([
-        'downloads',
-        'views',
-    ])
+    filterable_fields = frozenset(
+        [
+            "allow_submissions",
+            "allow_commenting",
+            "description",
+            "domain",
+            "domain_redirect_enabled",
+            "id",
+            "name",
+            "share_publish_type",
+            "reviews_workflow",
+            "permissions",
+            "advertise_on_discover_page",
+        ]
+    )
+    available_metrics = frozenset(
+        [
+            "downloads",
+            "views",
+        ]
+    )
 
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
@@ -220,100 +259,129 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
     reviews_comments_private = ser.BooleanField()
     reviews_comments_anonymous = ser.BooleanField()
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-        'preprints': 'get_preprints_url',
-        'external_url': 'get_external_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+            "preprints": "get_preprints_url",
+            "external_url": "get_external_url",
+        }
+    )
 
     preprints = ReviewableCountsRelationshipField(
-        related_view='providers:preprint-providers:preprints-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:preprint-providers:preprints-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     citation_styles = RelationshipField(
-        related_view='providers:preprint-providers:preprint-provider-citation-styles',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:preprint-providers:preprint-provider-citation-styles",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     moderators = RelationshipField(
-        related_view='providers:preprint-providers:provider-moderator-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:preprint-providers:provider-moderator-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     subscriptions = RelationshipField(
-        related_view='providers:preprint-providers:notification-subscription-list',
-        related_view_kwargs={'provider_id': '<_id>'},
+        related_view="providers:preprint-providers:notification-subscription-list",
+        related_view_kwargs={"provider_id": "<_id>"},
     )
 
     brand = RelationshipField(
-        related_view='brands:brand-detail',
-        related_view_kwargs={'brand_id': '<brand.id>'},
+        related_view="brands:brand-detail",
+        related_view_kwargs={"brand_id": "<brand.id>"},
     )
 
     def get_preprints_url(self, obj):
         return absolute_reverse(
-            'providers:preprint-providers:preprints-list', kwargs={
-                'provider_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+            "providers:preprint-providers:preprints-list",
+            kwargs={
+                "provider_id": obj._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
     def validate(self, data):
-        required_fields = ('reviews_workflow', 'reviews_comments_private', 'reviews_comments_anonymous')
+        required_fields = (
+            "reviews_workflow",
+            "reviews_comments_private",
+            "reviews_comments_anonymous",
+        )
         for field in required_fields:
             if data.get(field) is None:
-                raise ValidationError('All reviews fields must be set at once: `{}`'.format('`, `'.join(required_fields)))
+                raise ValidationError(
+                    "All reviews fields must be set at once: `{}`".format(
+                        "`, `".join(required_fields)
+                    )
+                )
         return data
 
     def update(self, instance, validated_data):
-        instance.reviews_workflow = validated_data['reviews_workflow']
-        instance.reviews_comments_private = validated_data['reviews_comments_private']
-        instance.reviews_comments_anonymous = validated_data['reviews_comments_anonymous']
+        instance.reviews_workflow = validated_data["reviews_workflow"]
+        instance.reviews_comments_private = validated_data[
+            "reviews_comments_private"
+        ]
+        instance.reviews_comments_anonymous = validated_data[
+            "reviews_comments_anonymous"
+        ]
         instance.save()
         return instance
 
 
 class ModeratorSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'full_name',
-        'id',
-        'permission_group',
-    ])
+    filterable_fields = frozenset(
+        [
+            "full_name",
+            "id",
+            "permission_group",
+        ]
+    )
 
-    id = IDField(source='_id', required=False, allow_null=True)
+    id = IDField(source="_id", required=False, allow_null=True)
     type = TypeField()
-    full_name = ser.CharField(source='fullname', required=False, label='Full name', help_text='Display name used in the general user interface', max_length=186)
+    full_name = ser.CharField(
+        source="fullname",
+        required=False,
+        label="Full name",
+        help_text="Display name used in the general user interface",
+        max_length=186,
+    )
     permission_group = ser.CharField(required=True)
-    email = ser.EmailField(required=False, write_only=True, validators=[validate_email])
+    email = ser.EmailField(
+        required=False, write_only=True, validators=[validate_email]
+    )
 
     user = RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<_id>'},
+        related_view="users:user-detail",
+        related_view_kwargs={"user_id": "<_id>"},
         always_embed=True,
         required=False,
     )
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
+    links = LinksField(
+        {
+            "self": "get_absolute_url",
+        }
+    )
 
     def get_provider(self, obj):
-        return self.context['provider']._id
+        return self.context["provider"]._id
 
     def get_absolute_url(self, obj):
         raise NotImplementedError()
 
     class Meta:
-        type_ = 'moderators'
+        type_ = "moderators"
 
     def create(self, validated_data):
-        auth = get_user_auth(self.context['request'])
-        user_id = validated_data.pop('_id', '')
-        address = validated_data.pop('email', '')
-        provider = self.context['provider']
+        auth = get_user_auth(self.context["request"])
+        user_id = validated_data.pop("_id", "")
+        address = validated_data.pop("email", "")
+        provider = self.context["provider"]
         context = {
-            'referrer': auth.user,
+            "referrer": auth.user,
         }
         if user_id and address:
             raise ValidationError('Cannot specify both "id" and "email".')
@@ -325,44 +393,50 @@ class ModeratorSerializer(JSONAPISerializer):
             try:
                 email = Email.objects.get(address=address.lower())
             except Email.DoesNotExist:
-                full_name = validated_data.pop('fullname', '')
+                full_name = validated_data.pop("fullname", "")
                 if not full_name:
-                    raise ValidationError('"full_name" is required when adding a moderator via email.')
+                    raise ValidationError(
+                        '"full_name" is required when adding a moderator via email.'
+                    )
                 user = OSFUser.create_unregistered(full_name, email=address)
                 user.add_unclaimed_record(
-                    provider, referrer=auth.user,
-                    given_name=full_name, email=address,
+                    provider,
+                    referrer=auth.user,
+                    given_name=full_name,
+                    email=address,
                 )
                 user.save()
                 claim_url = user.get_claim_url(provider._id, external=True)
-                context['claim_url'] = claim_url
+                context["claim_url"] = claim_url
             else:
                 user = email.user
         else:
             raise ValidationError('Must specify either "id" or "email".')
 
         if not user:
-            raise ValidationError('Unable to find specified user.')
-        context['user'] = user
-        context['provider'] = provider
+            raise ValidationError("Unable to find specified user.")
+        context["user"] = user
+        context["provider"] = provider
 
         if bool(get_perms(user, provider)):
-            raise ValidationError('Specified user is already a moderator.')
-        if 'claim_url' in context:
+            raise ValidationError("Specified user is already a moderator.")
+        if "claim_url" in context:
             template = mails.CONFIRM_EMAIL_MODERATION(provider)
         else:
             template = mails.MODERATOR_ADDED(provider)
 
-        perm_group = validated_data.pop('permission_group', '')
+        perm_group = validated_data.pop("permission_group", "")
         if perm_group not in REVIEW_GROUPS:
-            raise ValidationError('Unrecognized permission_group')
-        context['notification_settings_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/notifications'
-        context['provider_name'] = provider.name
-        context['is_reviews_moderator_notification'] = True
-        context['is_admin'] = perm_group == ADMIN
+            raise ValidationError("Unrecognized permission_group")
+        context["notification_settings_url"] = (
+            f"{DOMAIN}reviews/preprints/{provider._id}/notifications"
+        )
+        context["provider_name"] = provider.name
+        context["is_reviews_moderator_notification"] = True
+        context["is_admin"] = perm_group == ADMIN
 
         provider.add_to_group(user, perm_group)
-        setattr(user, 'permission_group', perm_group)  # Allows reserialization
+        setattr(user, "permission_group", perm_group)  # Allows reserialization
         mails.send_mail(
             user.username,
             template,
@@ -371,69 +445,78 @@ class ModeratorSerializer(JSONAPISerializer):
         return user
 
     def update(self, instance, validated_data):
-        provider = self.context['provider']
-        perm_group = validated_data.get('permission_group')
+        provider = self.context["provider"]
+        perm_group = validated_data.get("permission_group")
         if perm_group == instance.permission_group:
             return instance
 
         try:
-            provider.remove_from_group(instance, instance.permission_group, unsubscribe=False)
+            provider.remove_from_group(
+                instance, instance.permission_group, unsubscribe=False
+            )
         except ValueError as e:
             raise ValidationError(str(e))
         provider.add_to_group(instance, perm_group)
-        setattr(instance, 'permission_group', perm_group)
+        setattr(instance, "permission_group", perm_group)
         return instance
 
 
 class PreprintModeratorSerializer(ModeratorSerializer):
-
     provider = PreprintProviderRelationshipField(
-        related_view='providers:preprint-providers:preprint-provider-detail',
-        related_view_kwargs={'provider_id': 'get_provider'},
+        related_view="providers:preprint-providers:preprint-provider-detail",
+        related_view_kwargs={"provider_id": "get_provider"},
         read_only=False,
     )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'providers:preprint-providers:provider-moderator-detail', kwargs={
-                'provider_id': self.get_provider(obj),
-                'moderator_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+            "providers:preprint-providers:provider-moderator-detail",
+            kwargs={
+                "provider_id": self.get_provider(obj),
+                "moderator_id": obj._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
-class RegistrationModeratorSerializer(ModeratorSerializer):
 
+class RegistrationModeratorSerializer(ModeratorSerializer):
     provider = RegistrationProviderRelationshipField(
-        related_view='providers:registration-providers:registration-provider-detail',
-        related_view_kwargs={'provider_id': 'get_provider'},
+        related_view="providers:registration-providers:registration-provider-detail",
+        related_view_kwargs={"provider_id": "get_provider"},
         read_only=True,
     )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'providers:registration-providers:provider-moderator-detail', kwargs={
-                'provider_id': self.get_provider(obj),
-                'moderator_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+            "providers:registration-providers:provider-moderator-detail",
+            kwargs={
+                "provider_id": self.get_provider(obj),
+                "moderator_id": obj._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
 
 class CollectionsModeratorSerializer(ModeratorSerializer):
-
     provider = CollectionProviderRelationshipField(
-        related_view='providers:collection-providers:collection-provider-detail',
-        related_view_kwargs={'provider_id': 'get_provider'},
+        related_view="providers:collection-providers:collection-provider-detail",
+        related_view_kwargs={"provider_id": "get_provider"},
         read_only=True,
     )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'providers:collection-providers:provider-moderator-detail', kwargs={
-                'provider_id': self.get_provider(obj),
-                'moderator_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
+            "providers:collection-providers:provider-moderator-detail",
+            kwargs={
+                "provider_id": self.get_provider(obj),
+                "moderator_id": obj._id,
+                "version": self.context["request"].parser_context["kwargs"][
+                    "version"
+                ],
             },
         )
 
@@ -445,4 +528,4 @@ class CitationStyleSerializer(ser.ModelSerializer):
 
     class Meta:
         model = CitationStyle
-        fields = '__all__'  # Or specify the fields you want to serialize
+        fields = "__all__"  # Or specify the fields you want to serialize

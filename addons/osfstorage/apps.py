@@ -6,6 +6,7 @@ from addons.osfstorage import settings as addon_settings
 # Ensure blinker signal listeners are connected
 import addons.osfstorage.listeners  # noqa
 
+
 # This is defined here to avoid `AppRegistryNotReady: Apps aren't loaded yet` errors
 def osf_storage_root(addon_config, node_settings, auth, **kwargs):
     """Build HGrid JSON for root node. Note: include node URLs for client-side
@@ -14,7 +15,7 @@ def osf_storage_root(addon_config, node_settings, auth, **kwargs):
     node = node_settings.owner
     root = rubeus.build_addon_root(
         node_settings=node_settings,
-        name='',
+        name="",
         permissions=auth,
         user=auth.user,
         nodeUrl=node.url,
@@ -24,16 +25,15 @@ def osf_storage_root(addon_config, node_settings, auth, **kwargs):
 
 
 class OSFStorageAddonAppConfig(BaseAddonAppConfig):
-
     default = True
-    name = 'addons.osfstorage'
-    label = 'addons_osfstorage'
-    full_name = 'OSF Storage'
-    short_name = 'osfstorage'
-    added_default = ['node', 'user']
-    added_mandatory = ['node']
+    name = "addons.osfstorage"
+    label = "addons_osfstorage"
+    full_name = "OSF Storage"
+    short_name = "osfstorage"
+    added_default = ["node", "user"]
+    added_mandatory = ["node"]
 
-    categories = ['storage']
+    categories = ["storage"]
 
     has_hgrid_files = True
 
@@ -42,7 +42,7 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     max_file_size = addon_settings.MAX_UPLOAD_SIZE
     high_max_file_size = addon_settings.HIGH_MAX_UPLOAD_SIZE
 
-    owners = ['node']
+    owners = ["node"]
 
     WATERBUTLER_CREDENTIALS = addon_settings.WATERBUTLER_CREDENTIALS
 
@@ -52,21 +52,26 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
 
     DISK_SAVING_MODE = settings.DISK_SAVING_MODE
 
-    FOLDER_SELECTED = 'osfstorage_folder_selected'
-    NODE_AUTHORIZED = 'osfstorage_node_authorized'
-    NODE_DEAUTHORIZED = 'osfstorage_node_deauthorized'
+    FOLDER_SELECTED = "osfstorage_folder_selected"
+    NODE_AUTHORIZED = "osfstorage_node_authorized"
+    NODE_DEAUTHORIZED = "osfstorage_node_deauthorized"
 
-    actions = (FOLDER_SELECTED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, )
+    actions = (
+        FOLDER_SELECTED,
+        NODE_AUTHORIZED,
+        NODE_DEAUTHORIZED,
+    )
 
     @property
     def routes(self):
         from addons.osfstorage import routes
+
         return [routes.api_routes]
 
     @property
     def node_settings(self):
-        return self.get_model('NodeSettings')
+        return self.get_model("NodeSettings")
 
     @property
     def user_settings(self):
-        return self.get_model('UserSettings')
+        return self.get_model("UserSettings")

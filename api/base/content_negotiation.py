@@ -2,7 +2,6 @@ from rest_framework.negotiation import DefaultContentNegotiation
 
 
 class JSONAPIContentNegotiation(DefaultContentNegotiation):
-
     def select_renderer(self, request, renderers, format_suffix=None):
         """
         Returns appropriate tuple (renderer, media type).
@@ -13,7 +12,7 @@ class JSONAPIContentNegotiation(DefaultContentNegotiation):
         """
         accepts = self.get_accept_list(request)
 
-        if 'application/json' in accepts:
+        if "application/json" in accepts:
             return (renderers[0], renderers[0].media_type)
 
         return super().select_renderer(request, renderers)

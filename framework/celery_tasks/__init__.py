@@ -1,4 +1,5 @@
 """Asynchronous task queue module."""
+
 from celery import Celery
 from celery.utils.log import get_task_logger
 
@@ -15,11 +16,15 @@ app.config_from_object(CeleryConfig)
 if SENTRY_DSN:
     init(
         dsn=SENTRY_DSN,
-        integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+        integrations=[
+            CeleryIntegration(),
+            DjangoIntegration(),
+            FlaskIntegration(),
+        ],
         release=VERSION,
     )
     with configure_scope() as scope:
-        scope.set_tag('App', 'celery')
+        scope.set_tag("App", "celery")
 
 
 @app.task
@@ -36,7 +41,7 @@ def error_handler(task_id, task_name):
     excep = result.get(propagate=False)
     # log detailed error mesage in error log
     logger.error(
-        '#####FAILURE LOG BEGIN#####\n'
-        f'Task {task_name} raised exception: {excep}\n{result.traceback}\n'
-        '#####FAILURE LOG STOP#####'
+        "#####FAILURE LOG BEGIN#####\n"
+        f"Task {task_name} raised exception: {excep}\n{result.traceback}\n"
+        "#####FAILURE LOG STOP#####"
     )

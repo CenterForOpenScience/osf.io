@@ -25,8 +25,8 @@ from osf.models import (
 
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    view_name = 'notification-subscription-list'
-    view_category = 'notification-subscriptions'
+    view_name = "notification-subscription-list"
+    view_category = "notification-subscriptions"
     serializer_class = SubscriptionSerializer
     model_class = NotificationSubscription
     permission_classes = (
@@ -40,9 +40,9 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     def get_default_queryset(self):
         user = self.request.user
         return NotificationSubscription.objects.filter(
-            Q(none=user) |
-            Q(email_digest=user) |
-            Q(
+            Q(none=user)
+            | Q(email_digest=user)
+            | Q(
                 email_transactional=user,
             ),
         ).distinct()
@@ -54,19 +54,23 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 class AbstractProviderSubscriptionList(SubscriptionList):
     def get_default_queryset(self):
         user = self.request.user
-        return NotificationSubscription.objects.filter(
-            provider___id=self.kwargs['provider_id'],
-            provider__type=self.provider_class._typedmodels_type,
-        ).filter(
-            Q(none=user) |
-            Q(email_digest=user) |
-            Q(email_transactional=user),
-        ).distinct()
+        return (
+            NotificationSubscription.objects.filter(
+                provider___id=self.kwargs["provider_id"],
+                provider__type=self.provider_class._typedmodels_type,
+            )
+            .filter(
+                Q(none=user)
+                | Q(email_digest=user)
+                | Q(email_transactional=user),
+            )
+            .distinct()
+        )
 
 
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
-    view_name = 'notification-subscription-detail'
-    view_category = 'notification-subscriptions'
+    view_name = "notification-subscription-detail"
+    view_category = "notification-subscriptions"
     serializer_class = SubscriptionSerializer
     permission_classes = (
         drf_permissions.IsAuthenticated,
@@ -78,7 +82,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     required_write_scopes = [CoreScopes.SUBSCRIPTIONS_WRITE]
 
     def get_object(self):
-        subscription_id = self.kwargs['subscription_id']
+        subscription_id = self.kwargs["subscription_id"]
         try:
             obj = NotificationSubscription.objects.get(_id=subscription_id)
         except ObjectDoesNotExist:
@@ -88,8 +92,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
 
 class AbstractProviderSubscriptionDetail(SubscriptionDetail):
-    view_name = 'provider-notification-subscription-detail'
-    view_category = 'notification-subscriptions'
+    view_name = "provider-notification-subscription-detail"
+    view_category = "notification-subscriptions"
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -101,13 +105,17 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
     provider_class = None
 
     def __init__(self, *args, **kwargs):
-        assert issubclass(self.provider_class, AbstractProvider), 'Class must be subclass of AbstractProvider'
+        assert issubclass(
+            self.provider_class, AbstractProvider
+        ), "Class must be subclass of AbstractProvider"
         super().__init__(*args, **kwargs)
 
     def get_object(self):
-        subscription_id = self.kwargs['subscription_id']
-        if self.kwargs.get('provider_id'):
-            provider = self.provider_class.objects.get(_id=self.kwargs.get('provider_id'))
+        subscription_id = self.kwargs["subscription_id"]
+        if self.kwargs.get("provider_id"):
+            provider = self.provider_class.objects.get(
+                _id=self.kwargs.get("provider_id")
+            )
             try:
                 obj = NotificationSubscription.objects.get(
                     _id=subscription_id,
@@ -137,7 +145,9 @@ class PreprintProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
     serializer_class = PreprintSubscriptionSerializer
 
 
-class RegistrationProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
+class RegistrationProviderSubscriptionDetail(
+    AbstractProviderSubscriptionDetail
+):
     provider_class = RegistrationProvider
     serializer_class = RegistrationSubscriptionSerializer
 

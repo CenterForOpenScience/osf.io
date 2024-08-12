@@ -10,17 +10,18 @@ from website import settings
 
 # leaving this at module scope for any existing imports.
 DEFAULT_FIELD_NAMES = {
-    'submission1': 'poster',
-    'submission2': 'talk',
-    'submission1_plural': 'posters',
-    'submission2_plural': 'talks',
-    'meeting_title_type': 'Posters & Talks',
-    'add_submission': 'poster or talk',
-    'mail_subject': 'Presentation title',
-    'mail_message_body': 'Presentation abstract (if any)',
-    'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)',
-    'homepage_link_text': 'Conference homepage',
+    "submission1": "poster",
+    "submission2": "talk",
+    "submission1_plural": "posters",
+    "submission2_plural": "talks",
+    "meeting_title_type": "Posters & Talks",
+    "add_submission": "poster or talk",
+    "mail_subject": "Presentation title",
+    "mail_message_body": "Presentation abstract (if any)",
+    "mail_attachment": "Your presentation file (e.g., PowerPoint, PDF, etc.)",
+    "homepage_link_text": "Conference homepage",
 }
+
 
 def get_default_field_names():
     return DEFAULT_FIELD_NAMES
@@ -30,11 +31,13 @@ class ConferenceManager(models.Manager):
     def get_by_endpoint(self, endpoint, active=True):
         try:
             if active:
-                return self.get_queryset().get(endpoint__iexact=endpoint, active=True)
+                return self.get_queryset().get(
+                    endpoint__iexact=endpoint, active=True
+                )
             else:
                 return self.get_queryset().get(endpoint__iexact=endpoint)
         except Conference.DoesNotExist:
-            raise ConferenceError(f'Endpoint {endpoint} not found')
+            raise ConferenceError(f"Endpoint {endpoint} not found")
 
 
 class Conference(ObjectIDMixin, BaseModel):
@@ -52,9 +55,11 @@ class Conference(ObjectIDMixin, BaseModel):
     end_date = NonNaiveDateTimeField(blank=True, null=True)
     is_meeting = models.BooleanField(default=True)
     active = models.BooleanField()
-    admins = models.ManyToManyField('OSFUser')
+    admins = models.ManyToManyField("OSFUser")
     # Temporary field on conference model to link Conferences and AbstractNodes
-    submissions = models.ManyToManyField('AbstractNode', related_name='conferences')
+    submissions = models.ManyToManyField(
+        "AbstractNode", related_name="conferences"
+    )
     # Whether to make submitted projects public
     public_projects = models.BooleanField(default=True)
     poster = models.BooleanField(default=True)
@@ -68,8 +73,8 @@ class Conference(ObjectIDMixin, BaseModel):
     objects = ConferenceManager()
 
     def __repr__(self):
-        return (
-            '<Conference(endpoint={self.endpoint!r}, active={self.active})>'.format(self=self)
+        return "<Conference(endpoint={self.endpoint!r}, active={self.active})>".format(
+            self=self
         )
 
     @classmethod
@@ -78,7 +83,7 @@ class Conference(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        return urljoin(settings.DOMAIN, f'/view/{self.endpoint}')
+        return urljoin(settings.DOMAIN, f"/view/{self.endpoint}")
 
     @property
     def valid_submissions(self):
@@ -97,5 +102,5 @@ class Conference(ObjectIDMixin, BaseModel):
 
 class MailRecord(ObjectIDMixin, BaseModel):
     data = DateTimeAwareJSONField()
-    nodes_created = models.ManyToManyField('Node')
-    users_created = models.ManyToManyField('OSFUser')
+    nodes_created = models.ManyToManyField("Node")
+    users_created = models.ManyToManyField("OSFUser")

@@ -7,15 +7,14 @@ import pytz
 
 
 class MetricMixin:
-
     @classmethod
     def _get_all_indices(cls):
         all_aliases = cls._index.get_alias()
         indices = set()
         for index, aliases in all_aliases.items():
             indices.add(index)
-            if aliases['aliases']:
-                for alias in aliases['aliases'].keys():
+            if aliases["aliases"]:
+                for alias in aliases["aliases"].keys():
                     indices.add(alias)
         return indices
 
@@ -39,21 +38,27 @@ class MetricMixin:
         return [index for index in relevant_indices if index in all_indices]
 
     @classmethod
-    def _get_id_to_count(cls, size, metric_field, count_field, after=None, before=None):
+    def _get_id_to_count(
+        cls, size, metric_field, count_field, after=None, before=None
+    ):
         """Performs the elasticsearch aggregation for get_top_by_count. Return a
         dict mapping ids to summed counts. If there's no data in the ES index, return None.
         """
         search = cls.search(after=after, before=before)
         timestamp = {}
         if after:
-            timestamp['gte'] = after
+            timestamp["gte"] = after
         if before:
-            timestamp['lt'] = before
+            timestamp["lt"] = before
         if timestamp:
-            search = search.filter('range', timestamp=timestamp)
-        search.aggs.\
-            bucket('by_id', 'terms', field=metric_field, size=size, order={'sum_count': 'desc'}).\
-            metric('sum_count', 'sum', field=count_field)
+            search = search.filter("range", timestamp=timestamp)
+        search.aggs.bucket(
+            "by_id",
+            "terms",
+            field=metric_field,
+            size=size,
+            order={"sum_count": "desc"},
+        ).metric("sum_count", "sum", field=count_field)
         # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
         search = search.extra(size=0)
         try:
@@ -64,30 +69,36 @@ class MetricMixin:
             search = search.index().index(cls._default_index())
             response = search.execute()
         # No indexed data
-        if not hasattr(response.aggregations, 'by_id'):
+        if not hasattr(response.aggregations, "by_id"):
             return None
         buckets = response.aggregations.by_id.buckets
         # Map _id => count
-        return {
-            bucket.key: int(bucket.sum_count.value)
-            for bucket in buckets
-        }
+        return {bucket.key: int(bucket.sum_count.value) for bucket in buckets}
 
     # Overrides Document.search to only search relevant
     # indices, determined from `after`
     @classmethod
-    def search(cls, using=None, index=None, after=None, before=None, *args, **kwargs):
+    def search(
+        cls, using=None, index=None, after=None, before=None, *args, **kwargs
+    ):
         if not index and (before or after):
             indices = cls._get_relevant_indices(after, before)
-            index = ','.join(indices)
+            index = ",".join(indices)
         return super().search(using=using, index=index, *args, **kwargs)
 
     @classmethod
-    def get_top_by_count(cls, qs, model_field, metric_field,
-                         size, order_by=None,
-                         count_field='count',
-                         annotation='metric_count',
-                         after=None, before=None):
+    def get_top_by_count(
+        cls,
+        qs,
+        model_field,
+        metric_field,
+        size,
+        order_by=None,
+        count_field="count",
+        annotation="metric_count",
+        after=None,
+        before=None,
+    ):
         """Return a queryset annotated with the metric counts for each item.
 
         Example: ::
@@ -125,20 +136,29 @@ class MetricMixin:
             metric_field=metric_field,
             count_field=count_field,
             after=after,
-            before=before
+            before=before,
         )
         if id_to_count is None:
-            return qs.annotate(**{annotation: models.Value(0, models.IntegerField())})
+            return qs.annotate(
+                **{annotation: models.Value(0, models.IntegerField())}
+            )
         # Annotate the queryset with the counts for each id
         # https://stackoverflow.com/a/48187723/1157536
         whens = [
-            models.When(**{
-                model_field: k,
-                'then': v,
-            }) for k, v in id_to_count.items()
+            models.When(
+                **{
+                    model_field: k,
+                    "then": v,
+                }
+            )
+            for k, v in id_to_count.items()
         ]
         # By default order by annotation, desc
-        order_by = order_by or f'-{annotation}'
-        return qs.annotate(**{
-            annotation: models.Case(*whens, default=0, output_field=models.IntegerField())
-        }).order_by(order_by)
+        order_by = order_by or f"-{annotation}"
+        return qs.annotate(
+            **{
+                annotation: models.Case(
+                    *whens, default=0, output_field=models.IntegerField()
+                )
+            }
+        ).order_by(order_by)

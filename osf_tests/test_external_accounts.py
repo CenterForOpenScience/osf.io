@@ -7,17 +7,26 @@ from django.db import connection
 from psycopg2._psycopg import AsIs
 
 from osf.models import ExternalAccount
-from osf.utils.fields import EncryptedTextField, SENSITIVE_DATA_KEY, ensure_bytes
+from osf.utils.fields import (
+    EncryptedTextField,
+    SENSITIVE_DATA_KEY,
+    ensure_bytes,
+)
 from .factories import ExternalAccountFactory
+
 
 @pytest.mark.django_db
 class TestEncryptedExternalAccountFields:
     def setup_class(self):
-        self.magic_string = ''.join(random.choice(string.hexdigits) for _ in range(25))
+        self.magic_string = "".join(
+            random.choice(string.hexdigits) for _ in range(25)
+        )
 
-        self.encrypted_field_dict = {f.name: self.magic_string for f in
-                                ExternalAccountFactory._meta.model._meta.get_fields() if
-                                isinstance(f, EncryptedTextField)}
+        self.encrypted_field_dict = {
+            f.name: self.magic_string
+            for f in ExternalAccountFactory._meta.model._meta.get_fields()
+            if isinstance(f, EncryptedTextField)
+        }
 
     def test_values_match(self):
         eaf = ExternalAccountFactory(**self.encrypted_field_dict)
@@ -25,7 +34,9 @@ class TestEncryptedExternalAccountFields:
         ea.reload()
 
         for field_name, value in self.encrypted_field_dict.items():
-            assert self.encrypted_field_dict[field_name] == getattr(ea, field_name)
+            assert self.encrypted_field_dict[field_name] == getattr(
+                ea, field_name
+            )
 
     def test_database_is_encrypted(self):
         eaf = ExternalAccountFactory(**self.encrypted_field_dict)
@@ -35,10 +46,18 @@ class TestEncryptedExternalAccountFields:
             SELECT %s FROM osf_externalaccount WHERE id = %s;
         """
         with connection.cursor() as cursor:
-            cursor.execute(sql, [AsIs(', '.join(self.encrypted_field_dict.keys())), ea.id])
+            cursor.execute(
+                sql, [AsIs(", ".join(self.encrypted_field_dict.keys())), ea.id]
+            )
             row = cursor.fetchone()
             for blicky in row:
-                assert jwe.decrypt(blicky[len(EncryptedTextField.prefix):].encode(), SENSITIVE_DATA_KEY).decode() == self.magic_string
+                assert (
+                    jwe.decrypt(
+                        blicky[len(EncryptedTextField.prefix) :].encode(),
+                        SENSITIVE_DATA_KEY,
+                    ).decode()
+                    == self.magic_string
+                )
 
 
 class TestEncryptedTextField:
@@ -47,77 +66,91 @@ class TestEncryptedTextField:
         return EncryptedTextField(null=True, blank=True)
 
     def test_ensure_bytes_encodes_no_unicode_in_string_type_str(self):
-        my_value = 'hello'
+        my_value = "hello"
         assert isinstance(my_value, str)
         my_str = ensure_bytes(my_value)
         assert isinstance(my_str, bytes)
 
     def test_ensure_bytes_encodes_unicode_in_string_type_str(self):
-        my_value = 'hellü'
+        my_value = "hellü"
         assert isinstance(my_value, str)
         my_str = ensure_bytes(my_value)
         assert isinstance(my_str, bytes)
 
     def test_ensure_bytes_encodes_no_unicode_in_string_type_unicode(self):
-        my_value = 'hello'
+        my_value = "hello"
         assert isinstance(my_value, str)
         my_str = ensure_bytes(my_value)
         assert isinstance(my_str, bytes)
 
     def test_ensure_bytes_encodes_unicode_in_string_type_unicode(self):
-        my_value = 'hellü'
+        my_value = "hellü"
         assert isinstance(my_value, str)
         my_str = ensure_bytes(my_value)
         assert isinstance(my_str, bytes)
 
     def test_encrypt_and_decrypt_no_unicode_in_string_type_str(self, field):
-        my_value = 'hello'
+        my_value = "hello"
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         assert isinstance(my_value_encrypted, str)
 
-        my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)
+        my_value_decrypted = field.from_db_value(
+            my_value_encrypted, None, None
+        )
         assert isinstance(my_value_decrypted, str)
         assert my_value_decrypted == ensure_bytes(my_value).decode()
 
     def test_encrypt_and_decrypt_unicode_in_string_type_str(self, field):
-        my_value = 'hellü'
+        my_value = "hellü"
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         assert isinstance(my_value_encrypted, str)
 
-        my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)
+        my_value_decrypted = field.from_db_value(
+            my_value_encrypted, None, None
+        )
         assert my_value_decrypted == ensure_bytes(my_value).decode()
 
-        my_value = '찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol'
+        my_value = "찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol"
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
-        my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)
+        my_value_decrypted = field.from_db_value(
+            my_value_encrypted, None, None
+        )
         assert isinstance(my_value_decrypted, str)
         assert my_value_decrypted == ensure_bytes(my_value).decode()
 
-    def test_encrypt_and_decrypt_no_unicode_in_string_type_unicode(self, field):
-        my_value = 'hello'
+    def test_encrypt_and_decrypt_no_unicode_in_string_type_unicode(
+        self, field
+    ):
+        my_value = "hello"
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         assert isinstance(my_value_encrypted, str)
 
-        my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)
+        my_value_decrypted = field.from_db_value(
+            my_value_encrypted, None, None
+        )
         assert isinstance(my_value_decrypted, str)
         assert my_value_decrypted == str(my_value)
 
     def test_encrypt_and_decrypt_unicode_in_string_type_unicode(self, field):
-        my_value = 'hellü'
+        my_value = "hellü"
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         assert isinstance(my_value_encrypted, str)
 
-        my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)
+        my_value_decrypted = field.from_db_value(
+            my_value_encrypted, None, None
+        )
         assert my_value_decrypted == ensure_bytes(my_value).decode()
 
-        my_value = '찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol'
+        my_value = "찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol"
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
-        my_value_decrypted = field.from_db_value(my_value_encrypted, None, None)
+        my_value_decrypted = field.from_db_value(
+            my_value_encrypted, None, None
+        )
         assert isinstance(my_value_decrypted, str)
         assert my_value_decrypted == ensure_bytes(my_value).decode()

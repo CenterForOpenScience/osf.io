@@ -29,7 +29,9 @@ class BaseXmlschemaDefinition(BaseMetadataDefinition):
     def raise_objections(self, metadata_record):
         xml_doc = (
             metadata_record
-            if isinstance(metadata_record, (etree._Element, etree._ElementTree))
+            if isinstance(
+                metadata_record, (etree._Element, etree._ElementTree)
+            )
             else etree.parse(metadata_record)
         )
         self.xmlschema().assertValid(xml_doc)
@@ -38,8 +40,6 @@ class BaseXmlschemaDefinition(BaseMetadataDefinition):
 class DataciteXmlschemaDefinition(BaseXmlschemaDefinition):
     @classmethod
     def xmlschema_file_path(self):
-        return (
-            pathlib.Path(__file__)
-            .parent
-            .joinpath('datacite', 'datacite-v4.xsd')
+        return pathlib.Path(__file__).parent.joinpath(
+            "datacite", "datacite-v4.xsd"
         )

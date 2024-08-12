@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # SQL with comments provided by Courtney Soderberg
 
-REGISTRATION_METRICS_SQL = '''
+REGISTRATION_METRICS_SQL = """
 /*  calculate the number of registrations made and the number of retractions made of each type for each date that were
     made on the site during the last month, not including registrations that were canceled */
 
@@ -73,26 +73,24 @@ coalesce(reg_events, 0) - coalesce(retract_events,0) AS net_events
     ON setup.event_date = reg_by_date.event_date AND setup.name = reg_by_date.name
     LEFT JOIN retracts_by_date
     ON setup.event_date = retracts_by_date.event_date AND setup.name = retracts_by_date.name;
-'''
-TEMP_FOLDER = tempfile.mkdtemp(suffix='/')
+"""
+TEMP_FOLDER = tempfile.mkdtemp(suffix="/")
 VALUES = (
-    'event_date',
-    'name',
-    'reg_events',
-    'retract_events',
-    'net_events',
+    "event_date",
+    "name",
+    "reg_events",
+    "retract_events",
+    "net_events",
 )
 
+
 def bearer_token_auth(token):
-    token_dict = {
-        'token_type': 'Bearer',
-        'access_token': token
-    }
+    token_dict = {"token_type": "Bearer", "access_token": token}
     return OAuth2(token=token_dict)
 
 
 def upload_to_storage(file_path, upload_url, params):
-    logger.debug(f'Uploading {file_path} to {upload_url}')
+    logger.debug(f"Uploading {file_path} to {upload_url}")
     with open(file_path) as summary_file:
         requests.put(
             url=upload_url,
@@ -105,32 +103,36 @@ def upload_to_storage(file_path, upload_url, params):
 def encode_row(row):
     row_to_write = []
     for s in row:
-        item = s.encode('utf-8') if isinstance(s, str) else s
+        item = s.encode("utf-8") if isinstance(s, str) else s
         row_to_write.append(item)
     return row_to_write
 
 
 def write_raw_data(cursor, filename):
-    file_path = f'{TEMP_FOLDER}{filename}'
+    file_path = f"{TEMP_FOLDER}{filename}"
     params = {
-        'kind': 'file',
-        'name': filename,
+        "kind": "file",
+        "name": filename,
     }
-    logger.debug(f'Writing to {file_path}')
-    with open(file_path, 'w') as new_file:
-        writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
+    logger.debug(f"Writing to {file_path}")
+    with open(file_path, "w") as new_file:
+        writer = csv.writer(
+            new_file, delimiter=",", lineterminator="\n", quoting=csv.QUOTE_ALL
+        )
         writer.writerow(list(VALUES))
         for row in cursor.fetchall():
             writer.writerow(row)
-    upload_to_storage(file_path=file_path, upload_url=REG_METRICS_BASE_FOLDER, params=params)
+    upload_to_storage(
+        file_path=file_path, upload_url=REG_METRICS_BASE_FOLDER, params=params
+    )
 
 
-@celery_app.task(name='management.commands.registration_schema_metrics')
+@celery_app.task(name="management.commands.registration_schema_metrics")
 def gather_metrics(dry_run=False):
     today = datetime.date.today()
     first = today.replace(day=1)
     last_month = first - datetime.timedelta(days=1)
-    filename = 'form_types_{}.csv'.format(last_month.strftime('%Y-%m'))
+    filename = "form_types_{}.csv".format(last_month.strftime("%Y-%m"))
 
     with connection.cursor() as cursor:
         cursor.execute(REGISTRATION_METRICS_SQL)
@@ -142,29 +144,29 @@ def gather_metrics(dry_run=False):
 
 
 class Command(BaseCommand):
-    help = '''Counts the number of registrations made and retracted in the past month, grouped by provider'''
+    help = """Counts the number of registrations made and retracted in the past month, grouped by provider"""
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry_run',
+            "--dry_run",
             type=bool,
             default=False,
-            help='Run queries but do not write files',
+            help="Run queries but do not write files",
         )
 
     # Management command handler
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info(f'Script started time: {script_start_time}')
+        logger.info(f"Script started time: {script_start_time}")
         logger.debug(options)
 
-        dry_run = options['dry_run']
+        dry_run = options["dry_run"]
 
         if dry_run:
-            logger.info('DRY RUN')
+            logger.info("DRY RUN")
 
         gather_metrics(dry_run=dry_run)
 
         script_finish_time = datetime.datetime.now()
-        logger.info(f'Script finished time: {script_finish_time}')
-        logger.info(f'Run time {script_finish_time - script_start_time}')
+        logger.info(f"Script finished time: {script_finish_time}")
+        logger.info(f"Run time {script_finish_time - script_start_time}")

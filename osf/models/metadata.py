@@ -27,13 +27,13 @@ class GuidMetadataRecordManager(models.Manager):
         guid = coerce_guid(maybe_guid, create_if_needed=True)
         if allowed_referent_models is not None:
             allowed_content_types = set(
-                ContentType.objects
-                .get_for_models(*allowed_referent_models)
-                .values()
+                ContentType.objects.get_for_models(
+                    *allowed_referent_models
+                ).values()
             )
             if guid.content_type not in allowed_content_types:
                 raise InvalidGuid(
-                    f'guid exists ({guid}) but is a disallowed type (allowed: {allowed_content_types})',
+                    f"guid exists ({guid}) but is a disallowed type (allowed: {allowed_content_types})",
                 )
         try:
             return GuidMetadataRecord.objects.get(guid=guid)
@@ -54,7 +54,9 @@ class GuidMetadataRecordManager(models.Manager):
 
         to_guid = coerce_guid(to_, create_if_needed=True)
         if GuidMetadataRecord.objects.filter(guid=to_guid).exists():
-            raise MetadataRecordCopyConflict(f'cannot copy GuidMetadataRecord to {to_guid}; it already has one!')
+            raise MetadataRecordCopyConflict(
+                f"cannot copy GuidMetadataRecord to {to_guid}; it already has one!"
+            )
         to_record = GuidMetadataRecord.objects.for_guid(to_guid)
         to_record.title = from_record.title
         to_record.description = from_record.description
@@ -65,7 +67,9 @@ class GuidMetadataRecordManager(models.Manager):
 
 
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):
-    guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
+    guid = models.OneToOneField(
+        "Guid", related_name="metadata_record", on_delete=models.CASCADE
+    )
 
     # TODO: consider consolidating title/description/etc. metadata fields from many
     #       models (perhaps replace EditableFieldsMixin with a model like this)
@@ -75,21 +79,27 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     resource_type_general = models.TextField(blank=True)  # TODO: choices?
 
     FUNDER_INFO_JSONSCHEMA = {
-        'type': 'array',
-        'items': {
-            'type': 'object',
-            'required': ['funder_name'],
-            'additionalProperties': False,
-            'properties': {
-                'funder_name': {'type': 'string'},
-                'funder_identifier': {'type': 'string'},
-                'funder_identifier_type': {
-                    'type': 'string',
-                    'enum': ['ISNI', 'GRID', 'Crossref Funder ID', 'ROR', 'Other'],
+        "type": "array",
+        "items": {
+            "type": "object",
+            "required": ["funder_name"],
+            "additionalProperties": False,
+            "properties": {
+                "funder_name": {"type": "string"},
+                "funder_identifier": {"type": "string"},
+                "funder_identifier_type": {
+                    "type": "string",
+                    "enum": [
+                        "ISNI",
+                        "GRID",
+                        "Crossref Funder ID",
+                        "ROR",
+                        "Other",
+                    ],
                 },
-                'award_number': {'type': 'string'},
-                'award_uri': {'type': 'string', 'format': 'uri'},
-                'award_title': {'type': 'string'},
+                "award_number": {"type": "string"},
+                "award_uri": {"type": "string", "format": "uri"},
+                "award_title": {"type": "string"},
             },
         },
     }
@@ -102,17 +112,18 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     objects = GuidMetadataRecordManager()
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(guid={self.guid._id})'
+        return f"{self.__class__.__name__}(guid={self.guid._id})"
 
     def get_editable_fields(self):
         from .files import BaseFileNode
+
         editable_fields = {
-            'language',
-            'resource_type_general',
-            'funding_info',
+            "language",
+            "resource_type_general",
+            "funding_info",
         }
         if isinstance(self.guid.referent, BaseFileNode):
-            editable_fields.update(('title', 'description'))
+            editable_fields.update(("title", "description"))
         return editable_fields
 
     def update(self, new_values, auth):
@@ -120,42 +131,43 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
         editable_fields = self.get_editable_fields()
         for field_name, new_value in new_values.items():
             if field_name not in editable_fields:
-                raise ValueError(f'cannot update `{field_name}` on {self}')
+                raise ValueError(f"cannot update `{field_name}` on {self}")
             updated_fields[field_name] = {
-                'old': getattr(self, field_name),
-                'new': new_value,
+                "old": getattr(self, field_name),
+                "new": new_value,
             }
             setattr(self, field_name, new_value)
         self.save()
         self._log_update(auth, updated_fields)
-        if hasattr(self.guid.referent, 'update_search'):
+        if hasattr(self.guid.referent, "update_search"):
             self.guid.referent.update_search()
-        if hasattr(self.guid.referent, 'request_identifier_update'):
-            self.guid.referent.request_identifier_update('doi')
+        if hasattr(self.guid.referent, "request_identifier_update"):
+            self.guid.referent.request_identifier_update("doi")
 
     def _log_update(self, auth, updated_fields):
         from .files import BaseFileNode
         from .preprint import Preprint
+
         loggable_referent = self.guid.referent
         log_params = {
-            'updated_fields': updated_fields,
-            'guid': self.guid._id,
-            'urls': {
-                'view': f'/{self.guid._id}',
+            "updated_fields": updated_fields,
+            "guid": self.guid._id,
+            "urls": {
+                "view": f"/{self.guid._id}",
             },
         }
         if isinstance(loggable_referent, BaseFileNode):
-            log_params['path'] = loggable_referent.materialized_path
+            log_params["path"] = loggable_referent.materialized_path
             loggable_referent = loggable_referent.target
             log_action = loggable_referent.log_class.FILE_METADATA_UPDATED
         else:
-            log_params['title'] = loggable_referent.title
+            log_params["title"] = loggable_referent.title
             log_action = loggable_referent.log_class.GUID_METADATA_UPDATED
 
         if isinstance(loggable_referent, Preprint):
-            log_params['preprint'] = loggable_referent._id
+            log_params["preprint"] = loggable_referent._id
         else:
-            log_params['node'] = loggable_referent._id
+            log_params["node"] = loggable_referent._id
 
         loggable_referent.add_log(
             action=log_action,

@@ -18,14 +18,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            '--reverse',
-            action='store_true',
-            dest='reverse',
-            help='Unsets date_retraction'
+            "--reverse",
+            action="store_true",
+            dest="reverse",
+            help="Unsets date_retraction",
         )
 
     def handle(self, *args, **options):
-        reverse = options.get('reverse', False)
+        reverse = options.get("reverse", False)
         if reverse:
             reverse_update_folder_names()
         else:
@@ -33,44 +33,36 @@ class Command(BaseCommand):
 
 
 def update_folder_names():
-    NodeSettings = apps.get_model('addons_s3', 'NodeSettings')
+    NodeSettings = apps.get_model("addons_s3", "NodeSettings")
 
     # Update folder_id for all records
-    NodeSettings.objects.exclude(
-        folder_name__contains=':/'
-    ).update(
-        folder_id=Concat(F('folder_id'), Value(':/'))
+    NodeSettings.objects.exclude(folder_name__contains=":/").update(
+        folder_id=Concat(F("folder_id"), Value(":/"))
     )
 
     # Update folder_name for records containing '('
-    NodeSettings.objects.filter(
-        folder_name__contains=' ('
-    ).exclude(
-        folder_name__contains=':/'
-    ).update(
-        folder_name=Replace(F('folder_name'), Value(' ('), Value(':/ ('))
-    )
-    NodeSettings.objects.exclude(
-        folder_name__contains=':/'
-    ).exclude(
-        folder_name__contains=' ('
-    ).update(
-        folder_name=Concat(F('folder_name'), Value(':/'))
-    )
-    logger.info('Update Folder Names/IDs complete')
+    NodeSettings.objects.filter(folder_name__contains=" (").exclude(
+        folder_name__contains=":/"
+    ).update(folder_name=Replace(F("folder_name"), Value(" ("), Value(":/ (")))
+    NodeSettings.objects.exclude(folder_name__contains=":/").exclude(
+        folder_name__contains=" ("
+    ).update(folder_name=Concat(F("folder_name"), Value(":/")))
+    logger.info("Update Folder Names/IDs complete")
 
 
 def reverse_update_folder_names():
-    NodeSettings = apps.get_model('addons_s3', 'NodeSettings')
+    NodeSettings = apps.get_model("addons_s3", "NodeSettings")
 
     # Reverse update folder_id for all records
-    NodeSettings.objects.update(folder_id=Replace(F('folder_id'), Value(':/'), Value('')))
+    NodeSettings.objects.update(
+        folder_id=Replace(F("folder_id"), Value(":/"), Value(""))
+    )
 
     # Reverse update folder_name for records containing ':/ ('
-    NodeSettings.objects.filter(folder_name__contains=':/ (').update(
-        folder_name=Replace(F('folder_name'), Value(':/ ('), Value(' ('))
+    NodeSettings.objects.filter(folder_name__contains=":/ (").update(
+        folder_name=Replace(F("folder_name"), Value(":/ ("), Value(" ("))
     )
-    NodeSettings.objects.filter(folder_name__contains=':/').update(
-        folder_name=Replace(F('folder_name'), Value(':/'), Value(''))
+    NodeSettings.objects.filter(folder_name__contains=":/").update(
+        folder_name=Replace(F("folder_name"), Value(":/"), Value(""))
     )
-    logger.info('Reverse Update Folder Names/IDs complete')
+    logger.info("Reverse Update Folder Names/IDs complete")

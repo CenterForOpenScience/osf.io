@@ -24,5 +24,5 @@ ALL_SIGNALS = [  # TODO: Fix
     auth.unconfirmed_user_created,
     event.file_updated,
     conference.osf4m_user_created,
-    reviews.reviews_email
+    reviews.reviews_email,
 ]

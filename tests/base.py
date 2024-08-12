@@ -1,4 +1,5 @@
-'''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+"""Base TestCase class for OSF unittests. Uses a temporary MongoDB database."""
+
 import abc
 import datetime as dt
 import functools
@@ -21,8 +22,10 @@ from framework.flask import rm_handlers
 from osf.models import RegistrationSchema
 from website import settings
 from website.app import init_app
-from website.notifications.listeners import (subscribe_contributor,
-                                             subscribe_creator)
+from website.notifications.listeners import (
+    subscribe_contributor,
+    subscribe_creator,
+)
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
@@ -37,6 +40,7 @@ def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
     return RegistrationSchema.objects.first()
 
+
 try:
     test_app = init_app(routes=True, set_backends=False)
 except AssertionError:  # Routes have already been set up
@@ -45,26 +49,26 @@ except AssertionError:  # Routes have already been set up
 rm_handlers(test_app, django_handlers)
 rm_handlers(test_app, celery_handlers)
 
-test_app.config['TESTING'] = True
+test_app.config["TESTING"] = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
-    'api.caching.tasks',
-    'factory.generate',
-    'factory.containers',
-    'framework.analytics',
-    'framework.auth.core',
-    'website.app',
-    'website.archiver.tasks',
-    'website.mails',
-    'website.notifications.listeners',
-    'website.search.elastic_search',
-    'website.search_migration.migrate',
-    'website.util.paths',
-    'requests_oauthlib.oauth2_session',
-    'transitions.core',
-    'MARKDOWN',
+    "api.caching.tasks",
+    "factory.generate",
+    "factory.containers",
+    "framework.analytics",
+    "framework.auth.core",
+    "website.app",
+    "website.archiver.tasks",
+    "website.mails",
+    "website.notifications.listeners",
+    "website.search.elastic_search",
+    "website.search_migration.migrate",
+    "website.util.paths",
+    "requests_oauthlib.oauth2_session",
+    "transitions.core",
+    "MARKDOWN",
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -75,13 +79,15 @@ fake = Factory.create()
 
 @pytest.mark.django_db
 class DbTestCase(unittest.TestCase):
-    """Base `TestCase` for tests that require a scratch database.
-    """
+    """Base `TestCase` for tests that require a scratch database."""
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
 
-        cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        cls._original_enable_email_subscriptions = (
+            settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        )
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
@@ -90,13 +96,14 @@ class DbTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = (
+            cls._original_enable_email_subscriptions
+        )
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
 class AppTestCase(unittest.TestCase):
-    """Base `TestCase` for OSF tests that require the WSGI app (but no database).
-    """
+    """Base `TestCase` for OSF tests that require the WSGI app (but no database)."""
 
     PUSH_CONTEXT = True
     DISCONNECTED_SIGNALS = {
@@ -108,17 +115,23 @@ class AppTestCase(unittest.TestCase):
         super().setUp()
         self.app = test_app.test_client()
         self.app.response_wrapper = FormsTestResponse
-        self.app.application.config.update({'TESTING': True, })
+        self.app.application.config.update(
+            {
+                "TESTING": True,
+            }
+        )
 
         # logger.error('self.app has been changed from a webtest_plus.TestApp to a flask.Flask.test_client.')
 
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return
-        self.context = test_app.test_request_context(headers={
-            'Remote-Addr': '146.9.219.56',
-            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
-        })
+        self.context = test_app.test_request_context(
+            headers={
+                "Remote-Addr": "146.9.219.56",
+                "User-Agent": "Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3",
+            }
+        )
         self.context.push()
         with self.context:
             celery_before_request()
@@ -130,7 +143,7 @@ class AppTestCase(unittest.TestCase):
         super().tearDown()
         if not self.PUSH_CONTEXT:
             return
-        with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
+        with mock.patch("website.mailchimp_utils.get_mailchimp_api"):
             self.context.pop()
         for signal in self.DISCONNECTED_SIGNALS:
             for receiver in self.DISCONNECTED_SIGNALS[signal]:
@@ -138,8 +151,8 @@ class AppTestCase(unittest.TestCase):
 
 
 class ApiAppTestCase(unittest.TestCase):
-    """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
-    """
+    """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database)."""
+
     allow_database_queries = True
 
     def setUp(self):
@@ -148,12 +161,12 @@ class ApiAppTestCase(unittest.TestCase):
 
 
 class SearchTestCase(unittest.TestCase):
-
     def setUp(self):
         settings.ELASTIC_INDEX = uuid.uuid1().hex
         settings.ELASTIC_TIMEOUT = 60
 
         from website.search import elastic_search
+
         elastic_search.INDEX = settings.ELASTIC_INDEX
         elastic_search.create_index(settings.ELASTIC_INDEX)
 
@@ -165,6 +178,7 @@ class SearchTestCase(unittest.TestCase):
         super().tearDown()
 
         from website.search import elastic_search
+
         elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
@@ -173,6 +187,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
+
     pass
 
 
@@ -181,14 +196,15 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
+
     def setUp(self):
         super().setUp()
         settings.USE_EMAIL = False
 
-class ApiAddonTestCase(ApiTestCase):
-    """Base `TestCase` for tests that require interaction with addons.
 
-    """
+class ApiAddonTestCase(ApiTestCase):
+    """Base `TestCase` for tests that require interaction with addons."""
+
     DISABLE_OUTGOING_CONNECTIONS = True
 
     @property
@@ -211,9 +227,9 @@ class ApiAddonTestCase(ApiTestCase):
 
     def _settings_kwargs(self, node, user_settings):
         return {
-            'user_settings': self.user_settings,
-            'folder_id': '1234567890',
-            'owner': self.node
+            "user_settings": self.user_settings,
+            "folder_id": "1234567890",
+            "owner": self.node,
         }
 
     def setUp(self):
@@ -224,9 +240,15 @@ class ApiAddonTestCase(ApiTestCase):
         )
         from addons.base.models import (
             BaseOAuthNodeSettings,
-            BaseOAuthUserSettings
+            BaseOAuthUserSettings,
         )
-        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')
+
+        assert self.addon_type in (
+            "CONFIGURABLE",
+            "OAUTH",
+            "UNMANAGEABLE",
+            "INVALID",
+        )
         self.account = None
         self.node_settings = None
         self.user_settings = None
@@ -234,20 +256,22 @@ class ApiAddonTestCase(ApiTestCase):
         self.auth = Auth(self.user)
         self.node = ProjectFactory(creator=self.user)
 
-        if self.addon_type not in ('UNMANAGEABLE', 'INVALID'):
-            if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
+        if self.addon_type not in ("UNMANAGEABLE", "INVALID"):
+            if self.addon_type in ("OAUTH", "CONFIGURABLE"):
                 self.account = self.AccountFactory()
                 self.user.external_accounts.add(self.account)
                 self.user.save()
 
             self.user_settings = self.user.get_or_add_addon(self.short_name)
-            self.node_settings = self.node.get_or_add_addon(self.short_name, auth=self.auth)
+            self.node_settings = self.node.get_or_add_addon(
+                self.short_name, auth=self.auth
+            )
 
-            if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
+            if self.addon_type in ("OAUTH", "CONFIGURABLE"):
                 self.node_settings.set_auth(self.account, self.user)
                 self._apply_auth_configuration()
 
-        if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
+        if self.addon_type in ("OAUTH", "CONFIGURABLE"):
             assert isinstance(self.node_settings, BaseOAuthNodeSettings)
             assert isinstance(self.user_settings, BaseOAuthUserSettings)
             self.node_settings.reload()
@@ -264,7 +288,7 @@ class ApiAddonTestCase(ApiTestCase):
             self.account.delete()
 
 
-@override_settings(ROOT_URLCONF='admin.base.urls')
+@override_settings(ROOT_URLCONF="admin.base.urls")
 class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
 
@@ -274,10 +298,11 @@ class NotificationTestCase(OsfTestCase):
     Use when you'd like to manually create all Node subscriptions and subscriptions
     for added contributors yourself, and not rely on automatically added ones.
     """
+
     DISCONNECTED_SIGNALS = {
         # disconnect signals so that add_contributor does not send "fake" emails in tests
         contributor_added: [notify_added_contributor, subscribe_contributor],
-        project_created: [subscribe_creator]
+        project_created: [subscribe_creator],
     }
 
     def setUp(self):
@@ -288,28 +313,31 @@ class NotificationTestCase(OsfTestCase):
 
 
 class ApiWikiTestCase(ApiTestCase):
-
     def setUp(self):
         from osf_tests.factories import AuthUserFactory
+
         super().setUp()
         self.user = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
     def _add_project_wiki_page(self, node, user):
         from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+
         # Mock out update_search. TODO: Remove when StoredFileNode is implemented
-        with mock.patch('osf.models.AbstractNode.update_search'):
+        with mock.patch("osf.models.AbstractNode.update_search"):
             wiki_page = WikiFactory(node=node, user=user)
             wiki_version = WikiVersionFactory(wiki_page=wiki_page)
             return wiki_page
 
     def _add_project_wiki_version(self, node, user):
         from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+
         # Mock out update_search. TODO: Remove when StoredFileNode is implemented
-        with mock.patch('osf.models.AbstractNode.update_search'):
+        with mock.patch("osf.models.AbstractNode.update_search"):
             wiki_page = WikiFactory(node=node, user=user)
             wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user)
             return wiki_version
+
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals:
@@ -320,6 +348,7 @@ class CaptureSignals:
     blinker `NamedSignals` to patch. Each signal has its `send` mocked out.
 
     """
+
     def __init__(self, signals):
         """Patch all given signals and make them available as attributes.
 
@@ -333,8 +362,7 @@ class CaptureSignals:
             self._receivers[signal] = functools.partial(self._record, signal)
 
     def __getitem__(self, signal):
-        """All captured signals are available via `ctxt[signal]`.
-        """
+        """All captured signals are available via `ctxt[signal]`."""
         if isinstance(signal, blinker.base.NamedSignal):
             return self._records[signal]
         else:
@@ -357,7 +385,11 @@ class CaptureSignals:
         :rtype: list of blinker `NamedSignals`.
 
         """
-        return {signal for signal, _ in self._records.items() if self._records[signal]}
+        return {
+            signal
+            for signal, _ in self._records.items()
+            if self._records[signal]
+        }
 
 
 def capture_signals():
@@ -369,13 +401,15 @@ def assert_dict_contains_subset(a, b):
     assert set(a.items()).issubset(set(b.items()))
 
 
-def assert_is_redirect(response, msg='Response is a redirect.'):
+def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg
 
 
 def assert_before(lst, item1, item2):
     """Assert that item1 appears before item2 in lst."""
-    assert lst.index(item1) < lst.index(item2), f'{item1!r} appears before {item2!r}'
+    assert lst.index(item1) < lst.index(
+        item2
+    ), f"{item1!r} appears before {item2!r}"
 
 
 def assert_datetime_equal(dt1, dt2, allowance=500):

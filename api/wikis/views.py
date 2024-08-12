@@ -1,6 +1,10 @@
 from django.core import exceptions as django_exceptions
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound, ValidationError, MethodNotAllowed
+from rest_framework.exceptions import (
+    NotFound,
+    ValidationError,
+    MethodNotAllowed,
+)
 from rest_framework.views import Response
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -34,7 +38,7 @@ class WikiMixin:
     """
 
     serializer_class = WikiSerializer
-    wiki_lookup_url_kwarg = 'wiki_id'
+    wiki_lookup_url_kwarg = "wiki_id"
 
     def get_wiki(self, check_permissions=True):
         pk = self.kwargs[self.wiki_lookup_url_kwarg]
@@ -43,12 +47,15 @@ class WikiMixin:
             raise NotFound
 
         if wiki.node.addons_wiki_node_settings.deleted:
-            raise NotFound(detail='The wiki for this node has been disabled.')
+            raise NotFound(detail="The wiki for this node has been disabled.")
 
         if wiki.deleted:
-            raise Gone(detail='The wiki for this node has been deleted.')
+            raise Gone(detail="The wiki for this node has been deleted.")
 
-        if wiki.node.is_registration and self.request.method not in drf_permissions.SAFE_METHODS:
+        if (
+            wiki.node.is_registration
+            and self.request.method not in drf_permissions.SAFE_METHODS
+        ):
             raise MethodNotAllowed(method=self.request.method)
 
         if check_permissions:
@@ -57,7 +64,7 @@ class WikiMixin:
         return wiki
 
     def get_wiki_version(self, check_permissions=True):
-        version_lookup_url_kwarg = 'version_id'
+        version_lookup_url_kwarg = "version_id"
 
         version = self.kwargs[version_lookup_url_kwarg]
         wiki_page = self.get_wiki(check_permissions=False)
@@ -70,7 +77,9 @@ class WikiMixin:
             raise NotFound
 
 
-class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMixin):
+class WikiDetail(
+    JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMixin
+):
     """Details about a specific wiki.
 
     ###Permissions
@@ -123,6 +132,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
     #This Request/Response
 
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -134,8 +144,8 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
     required_write_scopes = [CoreScopes.WIKI_BASE_WRITE]
 
     serializer_class = NodeWikiDetailSerializer
-    view_category = 'wikis'
-    view_name = 'wiki-detail'
+    view_category = "wikis"
+    view_name = "wiki-detail"
 
     def get_serializer_class(self):
         wiki = self.get_wiki(check_permissions=False)
@@ -158,7 +168,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
 
 
 class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
-    """ View for rendering wiki page content."""
+    """View for rendering wiki page content."""
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -171,8 +181,8 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_write_scopes = [CoreScopes.NULL]
 
     renderer_classes = (PlainTextRenderer,)
-    view_category = 'wikis'
-    view_name = 'wiki-content'
+    view_category = "wikis"
+    view_name = "wiki-content"
 
     def get_serializer_class(self):
         return None
@@ -193,8 +203,8 @@ class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
         ContributorOrPublic,
         ExcludeWithdrawals,
     )
-    view_category = 'wikis'
-    view_name = 'wiki-versions'
+    view_category = "wikis"
+    view_name = "wiki-versions"
     serializer_class = WikiVersionSerializer
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -204,13 +214,14 @@ class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
         return self.get_wiki().get_versions()
 
     def perform_create(self, serializer):
-        serializer.save(content=self.request.data.get('content'))
+        serializer.save(content=self.request.data.get("content"))
 
 
 class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     """
     Details about a specific wiki version. *Read-only*.
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -223,8 +234,8 @@ class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'wikis'
-    view_name = 'wiki-version-detail'
+    view_category = "wikis"
+    view_name = "wiki-version-detail"
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -247,8 +258,8 @@ class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_write_scopes = [CoreScopes.NULL]
 
     renderer_classes = (PlainTextRenderer,)
-    view_category = 'wikis'
-    view_name = 'wiki-version-content'
+    view_category = "wikis"
+    view_name = "wiki-version-content"
 
     def get_serializer_class(self):
         return None

@@ -6,24 +6,24 @@ from framework.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
 
-FIELD_SEPARATOR = '\n'
-PAIR_SEPARATOR = ': '
+FIELD_SEPARATOR = "\n"
+PAIR_SEPARATOR = ": "
 
 
 def encode(match):
-    return f'%{ord(match.group()):02x}'
+    return f"%{ord(match.group()):02x}"
 
 
 def decode(match):
-    return chr(int(match.group().lstrip('%'), 16))
+    return chr(int(match.group().lstrip("%"), 16))
 
 
 def escape(value):
-    return re.sub(r'[%:\r\n]', encode, value)
+    return re.sub(r"[%:\r\n]", encode, value)
 
 
 def unescape(value):
-    return re.sub(r'%[0-9A-Fa-f]{2}', decode, value)
+    return re.sub(r"%[0-9A-Fa-f]{2}", decode, value)
 
 
 def request_identifiers(target_object):
@@ -42,14 +42,12 @@ def request_identifiers(target_object):
         return
     doi = client.build_doi(target_object)
     try:
-        identifiers = target_object.request_identifier(category='doi')
+        identifiers = target_object.request_identifier(category="doi")
     except exceptions.IdentifierAlreadyExists:
         identifiers = client.get_identifier(doi)
     except exceptions.ClientResponseError as error:
         raise HTTPError(error.response.status_code)
-    return {
-        'doi': identifiers.get('doi')
-    }
+    return {"doi": identifiers.get("doi")}
 
 
 def get_or_create_identifiers(target_object):
@@ -59,18 +57,19 @@ def get_or_create_identifiers(target_object):
     that build ARK URLs is responsible for adding the leading slash.
     Moved from website/project/views/register.py for use by other modules
     """
-    doi = request_identifiers(target_object)['doi']
+    doi = request_identifiers(target_object)["doi"]
     if not doi:
         client = target_object.get_doi_client()
         doi = client.build_doi(target_object)
 
-    ark = target_object.get_identifier(category='ark')
+    ark = target_object.get_identifier(category="ark")
     if ark:
-        return {'doi': doi, 'ark': ark}
+        return {"doi": doi, "ark": ark}
 
-    return {'doi': doi}
+    return {"doi": doi}
+
 
 # From https://stackoverflow.com/a/19016117
 # lxml does not accept strings with control characters
 def remove_control_characters(s):
-    return ''.join(ch for ch in s if unicodedata.category(ch)[0] != 'C')
+    return "".join(ch for ch in s if unicodedata.category(ch)[0] != "C")

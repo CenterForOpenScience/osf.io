@@ -21,17 +21,18 @@ def connect_s3(access_key=None, secret_key=None, node_settings=None):
     """
     if node_settings is not None:
         if node_settings.external_account is not None:
-            access_key, secret_key = node_settings.external_account.oauth_key, node_settings.external_account.oauth_secret
+            access_key, secret_key = (
+                node_settings.external_account.oauth_key,
+                node_settings.external_account.oauth_secret,
+            )
     connection = boto3.client(
-        's3',
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key
+        "s3", aws_access_key_id=access_key, aws_secret_access_key=secret_key
     )
     return connection
 
 
 def get_status_for_error(e: exceptions.ClientError) -> int:
-    return e.response['ResponseMetadata']['HTTPStatusCode']
+    return e.response["ResponseMetadata"]["HTTPStatusCode"]
 
 
 def get_bucket_names(node_settings):
@@ -42,7 +43,7 @@ def get_bucket_names(node_settings):
     except exceptions.ClientError as e:
         raise HTTPError(get_status_for_error(e))
 
-    return [bucket['Name'] for bucket in response['Buckets']]
+    return [bucket["Name"] for bucket in response["Buckets"]]
 
 
 def validate_bucket_location(location):
@@ -54,26 +55,29 @@ def validate_bucket_name(name):
     http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
     The laxer rules for US East (N. Virginia) are not supported.
     """
-    label = r'[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?'
-    validate_name = re.compile('^' + label + '(?:\\.' + label + ')*$')
-    is_ip_address = re.compile(r'^[0-9]+(?:\.[0-9]+){3}$')
+    label = r"[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?"
+    validate_name = re.compile("^" + label + "(?:\\." + label + ")*$")
+    is_ip_address = re.compile(r"^[0-9]+(?:\.[0-9]+){3}$")
     return (
-        len(name) >= 3 and len(name) <= 63 and bool(validate_name.match(name)) and not bool(is_ip_address.match(name))
+        len(name) >= 3
+        and len(name) <= 63
+        and bool(validate_name.match(name))
+        and not bool(is_ip_address.match(name))
     )
 
 
-def create_bucket(node_settings, bucket_name, location=''):
+def create_bucket(node_settings, bucket_name, location=""):
     client = connect_s3(node_settings=node_settings)
 
     # default bucket location won't work with location constraint
-    if not location or location == 'us-east-1':
+    if not location or location == "us-east-1":
         return client.create_bucket(Bucket=bucket_name)
     else:
         return client.create_bucket(
             Bucket=bucket_name,
             CreateBucketConfiguration={
-                'LocationConstraint': location,
-            }
+                "LocationConstraint": location,
+            },
         )
 
 
@@ -118,30 +122,32 @@ class Owner:
 
     @classmethod
     def from_dict(cls, data):
-        return cls(data['DisplayName'], data['ID'])
+        return cls(data["DisplayName"], data["ID"])
 
 
 def get_user_info(access_key: str, secret_key: str) -> Owner | None:
-    """Returns an S3 User with .display_name and .id, or None
-    """
+    """Returns an S3 User with .display_name and .id, or None"""
     if not (access_key and secret_key):
         return None
 
     try:
-        return Owner.from_dict(connect_s3(access_key, secret_key).list_buckets()['Owner'])
+        return Owner.from_dict(
+            connect_s3(access_key, secret_key).list_buckets()["Owner"]
+        )
     except exceptions.ClientError:
         return None
 
 
 def get_bucket_location_or_error(access_key, secret_key, bucket_name):
-    """Returns the location of a bucket or raises AddonError
-    """
+    """Returns the location of a bucket or raises AddonError"""
     # bucket names are dns-compliant, therefore must be lowercase
     bucket_name = bucket_name.lower()
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        return connect_s3(access_key, secret_key).get_bucket_location(Bucket=bucket_name)['LocationConstraint']
+        return connect_s3(access_key, secret_key).get_bucket_location(
+            Bucket=bucket_name
+        )["LocationConstraint"]
     except exceptions.NoCredentialsError:
         raise InvalidAuthError()
     except exceptions.ClientError:
@@ -150,25 +156,23 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
 
 def get_bucket_prefixes(access_key, secret_key, prefix, bucket_name):
     s3 = boto3.client(
-        's3',
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key
+        "s3", aws_access_key_id=access_key, aws_secret_access_key=secret_key
     )
 
-    result = s3.list_objects(Bucket=bucket_name, Prefix=prefix, Delimiter='/')
+    result = s3.list_objects(Bucket=bucket_name, Prefix=prefix, Delimiter="/")
     folders = []
-    for common_prefixes in result.get('CommonPrefixes', []):
-        key_name = common_prefixes.get('Prefix')
+    for common_prefixes in result.get("CommonPrefixes", []):
+        key_name = common_prefixes.get("Prefix")
         if key_name != prefix:
             folders.append(
                 {
-                    'path': key_name,
-                    'id': f'{bucket_name}:/{key_name}',
-                    'folder_id': key_name,
-                    'kind': 'folder',
-                    'bucket_name': bucket_name,
-                    'name': key_name.split('/')[-2],
-                    'addon': 's3',
+                    "path": key_name,
+                    "id": f"{bucket_name}:/{key_name}",
+                    "folder_id": key_name,
+                    "kind": "folder",
+                    "bucket_name": bucket_name,
+                    "name": key_name.split("/")[-2],
+                    "addon": "s3",
                 }
             )
 

@@ -7,14 +7,14 @@ from flask import request, current_app, has_request_context, g
 from werkzeug.local import LocalProxy
 
 LOCK_ERROR_CODE = http_status.HTTP_400_BAD_REQUEST
-NO_AUTO_TRANSACTION_ATTR = '_no_auto_transaction'
+NO_AUTO_TRANSACTION_ATTR = "_no_auto_transaction"
 
 logger = logging.getLogger(__name__)
 
 
 def _get_current_atomic():
     if has_request_context():
-        return g.get('current_atomic', None)
+        return g.get("current_atomic", None)
     return None
 
 
@@ -36,8 +36,7 @@ def view_has_annotation(attr):
 
 
 def transaction_before_request():
-    """Setup transaction before handling the request.
-    """
+    """Setup transaction before handling the request."""
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return None
     atomic = transaction.atomic()
@@ -74,7 +73,7 @@ def transaction_teardown_request(error=None):
 
 
 handlers = {
-    'before_request': transaction_before_request,
-    'after_request': transaction_after_request,
-    'teardown_request': transaction_teardown_request,
+    "before_request": transaction_before_request,
+    "after_request": transaction_after_request,
+    "teardown_request": transaction_teardown_request,
 }
