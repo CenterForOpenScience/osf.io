@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+
+{% block title %}
+    <title>Duplicate Notifications</title>
+{% endblock title %}
+
+{% block content %}
+    <h2>Duplicate Notifications</h2>
+
+    {% if message %}
+        <div class="alert alert-success">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    {% if duplicates %}
+        <form method="post">
+            {% csrf_token %}
+            <table class="table table-striped table-hover table-responsive">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>User</th>
+                        <th>Node</th>
+                        <th>Event Name</th>
+                        <th>Created</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for notification in duplicates %}
+                    <tr>
+                        <td><input type="checkbox" name="selected_notifications" value="{{ notification.id }}"></td>
+                        <td>{{ notification.user }}</td>
+                        <td>{{ notification.node }}</td>
+                        <td>{{ notification.event_name }}</td>
+                        <td>{{ notification.created }}</td>
+                        <td>{{ notification.count }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">No duplicate notifications found!</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit" class="btn btn-danger">Delete Selected</button>
+        </form>
+    {% else %}
+        <p>No duplicate notifications found.</p>
+    {% endif %}
+{% endblock content %}
