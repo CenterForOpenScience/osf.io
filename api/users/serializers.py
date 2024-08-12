@@ -140,7 +140,8 @@ class UserSerializer(JSONAPISerializer):
     )
     locale = HideIfDisabled(
         ser.CharField(
-            required=False, help_text="User's locale, e.g.  'en_US'"
+            required=False,
+            help_text="User's locale, e.g.  'en_US'",
         ),
     )
     social = SocialField(required=False, min_version="2.10")

@@ -734,7 +734,8 @@ class PreprintProviderWithdrawRequestList(
         context = super().get_renderer_context()
         if is_truthy(
             self.request.query_params.get(
-                "meta[requests_state_counts]", False
+                "meta[requests_state_counts]",
+                False,
             ),
         ):
             auth = get_user_auth(self.request)
