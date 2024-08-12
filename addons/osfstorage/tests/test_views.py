@@ -10,7 +10,7 @@ from website import settings
 
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.github.models import GithubFile
-from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFileNode
 from framework.auth.core import Auth
 from addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
@@ -24,7 +24,7 @@ from website.util import rubeus, api_url_for
 from framework.auth import cas
 
 from osf import features
-from osf.models import Tag, QuickFilesNode
+from osf.models import Tag
 from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils

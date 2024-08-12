@@ -1,4 +1,3 @@
-from unittest import mock
 import datetime as dt
 
 import pytest
@@ -12,7 +11,7 @@ from osf_tests.factories import (
 )
 from osf.models import NodeRelation
 from osf.utils import permissions
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants

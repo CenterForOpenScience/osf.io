@@ -432,7 +432,7 @@ class TestSubscriptionView(OsfTestCase):
         url = api_url_for('configure_subscription')
         self.app.post(url, json=new_payload, auth=self.node.creator.auth)
         s.reload()
-        assert not self.node.creator in getattr(s, payload['notification_type']).all()
+        assert self.node.creator not in getattr(s, payload['notification_type']).all()
         assert self.node.creator in getattr(s, new_payload['notification_type']).all()
 
     def test_cannot_create_registration_subscription(self):
@@ -483,11 +483,11 @@ class TestSubscriptionView(OsfTestCase):
 
         # assert that user is removed from the subscription entirely
         for n in constants.NOTIFICATION_TYPES:
-            assert not self.node.creator in getattr(s, n).all()
+            assert self.node.creator not in getattr(s, n).all()
 
     def test_configure_subscription_adds_node_id_to_notifications_configured(self):
         project = factories.ProjectFactory(creator=self.user)
-        assert not project._id in self.user.notifications_configured
+        assert project._id not in self.user.notifications_configured
         payload = {
             'id': project._id,
             'event': 'comments',

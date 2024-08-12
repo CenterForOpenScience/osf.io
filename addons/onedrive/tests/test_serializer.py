@@ -2,7 +2,6 @@
 from unittest import mock
 import pytest
 
-from addons.onedrive.models import OneDriveProvider
 from addons.onedrive.serializer import OneDriveSerializer
 from addons.onedrive.tests.factories import OneDriveAccountFactory
 from addons.onedrive.tests.utils import MockOneDriveClient, dummy_user_info, raw_root_folder_response

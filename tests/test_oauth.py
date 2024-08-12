@@ -2,13 +2,11 @@ from datetime import datetime
 import logging
 
 import pytest
-from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from rest_framework import status as http_status
 import json
-import logging
 from unittest import mock
 import time
-from urllib.parse import urlparse, urljoin, parse_qs
+from urllib.parse import urlparse, parse_qs
 
 import responses
 import pytz

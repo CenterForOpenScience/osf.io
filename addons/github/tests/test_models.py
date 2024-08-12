@@ -20,7 +20,6 @@ from framework.auth import Auth
 from addons.base import exceptions
 from addons.github.exceptions import NotFoundError
 
-from .utils import create_mock_github
 
 pytestmark = pytest.mark.django_db
 

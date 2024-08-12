@@ -1,7 +1,6 @@
 from rest_framework import status as http_status
 
 from unittest import mock
-import datetime
 import unittest
 import pytest
 
@@ -16,13 +15,11 @@ from osf_tests.factories import (
 from framework.exceptions import HTTPError
 from framework.auth import Auth
 
-from website.util import api_url_for
 from addons.base.tests.views import (
     OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
 )
 from addons.bitbucket import utils
 from addons.bitbucket.api import BitbucketClient
-from addons.bitbucket.models import BitbucketProvider
 from addons.bitbucket.serializer import BitbucketSerializer
 from addons.bitbucket.tests.factories import BitbucketAccountFactory
 from addons.bitbucket.tests.utils import BitbucketAddonTestCase, create_mock_bitbucket

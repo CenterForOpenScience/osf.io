@@ -1,16 +1,11 @@
-import os
-import json
 import logging
 import sys
 
 from django.db import transaction
-from django.apps import apps
 
 from scripts import utils as script_utils
-from scripts.populate_preprint_providers import update_or_create
 from osf.models import PreprintProvider, Subject
 from website.app import init_app
-from website import settings
 
 
 logger = logging.getLogger(__name__)

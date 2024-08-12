@@ -4,9 +4,7 @@ import smtplib
 from unittest import mock
 from unittest.mock import MagicMock
 
-import sendgrid
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Category
 
 from framework.email.tasks import send_email, _send_with_sendgrid
 from website import settings
@@ -18,7 +16,7 @@ SERVER_RUNNING = True
 try:
     s = smtplib.SMTP(settings.MAIL_SERVER)
     s.quit()
-except Exception as err:
+except Exception:
     SERVER_RUNNING = False
 
 

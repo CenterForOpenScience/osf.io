@@ -1,4 +1,3 @@
-import os
 from unittest import mock
 import lxml
 import pytest
@@ -9,13 +8,11 @@ from website.identifiers.clients import crossref
 
 from osf.models import NodeLicense
 from osf_tests.factories import (
-    ProjectFactory,
     PreprintFactory,
     PreprintProviderFactory,
     AuthUserFactory,
     InstitutionFactory
 )
-from framework.flask import rm_handlers
 from framework.auth.core import Auth
 from framework.auth.utils import impute_names
 

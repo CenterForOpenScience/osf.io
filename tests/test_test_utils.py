@@ -1,10 +1,8 @@
-from unittest import mock
-import unittest
 
 import pytest
 
 from framework.auth import Auth
-from osf.models import AbstractNode, NodeLog
+from osf.models import NodeLog
 
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory

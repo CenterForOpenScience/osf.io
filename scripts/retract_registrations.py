@@ -31,7 +31,7 @@ def main(dry_run=True):
                 parent_registration = retraction.registrations.get()
             except Exception as err:
                 logger.exception(f'Could not find registration associated with retraction {retraction}')
-                logger.error(f'Skipping...')
+                logger.error('Skipping...')
                 sentry.log_message(str(err))
                 continue
 

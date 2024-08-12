@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
-     PageCannotRenameError, PageConflictError, PageNotFoundError)
+     PageCannotRenameError, PageConflictError)
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from addons.wiki.utils import serialize_wiki_widget
 from framework.auth import Auth

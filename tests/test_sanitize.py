@@ -1,4 +1,3 @@
-import datetime
 import unittest
 
 from django.utils import timezone

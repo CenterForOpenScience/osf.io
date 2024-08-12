@@ -57,7 +57,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         retraction = self.registration._initiate_retraction(self.user)
         assert self.user._id in retraction.approval_state
-        assert not unconfirmed_user._id in retraction.approval_state
+        assert unconfirmed_user._id not in retraction.approval_state
 
     def test__initiate_retraction_adds_admins_on_child_nodes(self):
         project_admin = UserFactory()

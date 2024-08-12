@@ -1,6 +1,5 @@
 """Serializer tests for the Bitbucket addon."""
 
-from unittest import mock
 import pytest
 
 from tests.base import OsfTestCase

@@ -9,7 +9,6 @@ from django.db import IntegrityError
 from furl import furl
 
 from framework.auth import get_or_create_user
-from framework.auth.core import Auth
 
 from osf.models import OSFUser, AbstractNode
 from addons.wiki.models import WikiVersion

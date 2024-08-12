@@ -91,7 +91,7 @@ def create_mock_gitlab(user='osfio', private=False):
 
     branch = mock.Mock(**{
         'commit': {'author_email': f'{user}@gmail.com',
-            'author_name': f'',
+            'author_name': '',
             'authored_date': '2017-07-05T16:43:04.000+00:00',
             'committed_date': '2017-07-05T16:43:04.000+00:00',
             'committer_email': f'{user}@gmail.com',

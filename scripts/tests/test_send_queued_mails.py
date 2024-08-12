@@ -69,7 +69,7 @@ class TestSendQueuedMails(OsfTestCase):
         mails_ = list(pop_and_verify_mails_for_each_user(user_queue))
         assert len(mails_) == 2
         user_mails = [mail.user for mail in mails_]
-        assert not (user_with_email_sent in user_mails)
+        assert user_with_email_sent not in user_mails
         assert user_with_multiple_emails in user_mails
         assert user_with_no_emails_sent in user_mails
 

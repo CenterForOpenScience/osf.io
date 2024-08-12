@@ -1,9 +1,8 @@
 import pytest
 from addons.base.utils import get_mfr_url
 
-from addons.osfstorage.tests.utils import StorageTestCase
 from tests.base import OsfTestCase
-from osf_tests.factories import ProjectFactory, UserFactory, RegionFactory, CommentFactory
+from osf_tests.factories import ProjectFactory, UserFactory, CommentFactory
 from website.settings import MFR_SERVER_URL
 
 

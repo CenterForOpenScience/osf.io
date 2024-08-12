@@ -4,7 +4,6 @@ from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory
 from addons.osfstorage import settings as storage_settings
 
-import collections
 
 from framework.auth import Auth
 

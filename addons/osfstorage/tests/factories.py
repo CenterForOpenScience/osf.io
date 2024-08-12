@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 from django.apps import apps
 from django.utils import timezone
-from factory import SubFactory, post_generation, Sequence
+from factory import SubFactory, post_generation
 from factory.django import DjangoModelFactory
 
 from osf_tests.factories import AuthUserFactory
 
 from osf import models
-from addons.osfstorage.models import Region
 
 
 settings = apps.get_app_config('addons_osfstorage')

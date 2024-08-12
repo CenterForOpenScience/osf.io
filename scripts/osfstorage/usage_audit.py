@@ -112,7 +112,7 @@ def main(send_email=False):
             logger.info('Sending email...')
             mails.send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit', can_change_preferences=False,)
         else:
-            logger.info(f'send_email is False, not sending email')
+            logger.info('send_email is False, not sending email')
         logger.info(f'{len(lines)} offending project(s) and user(s) found')
     else:
         logger.info('No offending projects or users found')

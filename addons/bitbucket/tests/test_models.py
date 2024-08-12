@@ -4,7 +4,6 @@ import unittest
 
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (
-    ExternalAccountFactory,
     ProjectFactory,
     UserFactory,
     DraftRegistrationFactory,
@@ -13,7 +12,6 @@ from osf_tests.factories import (
 from framework.auth import Auth
 
 from addons.bitbucket.exceptions import NotFoundError
-from addons.bitbucket import settings as bitbucket_settings
 from addons.bitbucket.models import NodeSettings
 from addons.bitbucket.tests.factories import (
     BitbucketAccountFactory,

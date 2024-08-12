@@ -18,7 +18,7 @@ from framework import sentry
 from framework.celery_tasks import app as celery_app
 
 from website import settings
-from osf.models import Embargo, Registration, NodeLog
+from osf.models import Embargo, Registration
 
 from scripts import utils as scripts_utils
 

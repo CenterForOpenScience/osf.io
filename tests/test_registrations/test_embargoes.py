@@ -19,13 +19,12 @@ from osf_tests.factories import (
 )
 from tests import utils
 
-from framework.exceptions import PermissionsError, HTTPError
+from framework.exceptions import PermissionsError
 from framework.auth import Auth
 from osf.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from osf.utils import tokens
-from osf.models import AbstractNode
 from osf.models.sanctions import SanctionCallbackMixin, Embargo
 from osf.utils import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
@@ -73,7 +72,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             for_existing_registration=True
         )
         assert self.user._id in embargo.approval_state
-        assert not unconfirmed_user._id in embargo.approval_state
+        assert unconfirmed_user._id not in embargo.approval_state
 
     def test__initiate_embargo_adds_admins_on_child_nodes(self):
         project_admin = UserFactory()

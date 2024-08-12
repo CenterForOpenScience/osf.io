@@ -20,7 +20,6 @@ from flask import request, g
 from lxml import html
 from pytest import approx
 from rest_framework import status as http_status
-from werkzeug.test import ClientRedirectError
 
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage import settings as osfstorage_settings
@@ -4910,7 +4909,7 @@ class TestResetPassword(OsfTestCase):
         # check verification_key_v2 for OSF is destroyed and verification_key for CAS is in place
         self.user.reload()
         assert self.user.verification_key_v2 == {}
-        assert not self.user.verification_key is None
+        assert self.user.verification_key is not None
 
         # check redirection to CAS login with username and the new verification_key(CAS)
         assert res.status_code == 302

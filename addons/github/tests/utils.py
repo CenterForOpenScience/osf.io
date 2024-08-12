@@ -1,7 +1,6 @@
 from unittest import mock
 from json import dumps
 import github3
-from github3.repos import Repository
 from github3.session import GitHubSession
 
 from addons.github.api import GitHubClient

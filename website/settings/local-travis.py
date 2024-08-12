@@ -3,7 +3,6 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
-import inspect
 import logging
 
 from . import defaults

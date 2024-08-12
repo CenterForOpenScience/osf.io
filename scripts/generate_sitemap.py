@@ -5,7 +5,7 @@ import datetime
 import gzip
 import os
 import shutil
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin
 import xml
 
 import django
@@ -15,9 +15,7 @@ import tempfile
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from django.db.models import Q
-from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
-from osf.utils.workflows import DefaultStates
+from osf.models import OSFUser, AbstractNode, Preprint
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app

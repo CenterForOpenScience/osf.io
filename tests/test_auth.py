@@ -6,7 +6,7 @@ import pytest
 import logging
 
 from unittest import mock
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 from rest_framework import status as http_status
 from flask import Flask
 from werkzeug.wrappers import Response

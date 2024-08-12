@@ -27,11 +27,11 @@ from website.identifiers.utils import request_identifiers
 from framework.auth import signing
 from framework.celery_tasks import handlers
 from framework.postcommit_tasks.handlers import get_task_from_postcommit_queue, postcommit_celery_queue
-from framework.exceptions import PermissionsError, HTTPError
+from framework.exceptions import PermissionsError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
-from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject
+from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 
 from osf.utils.permissions import READ, WRITE, ADMIN

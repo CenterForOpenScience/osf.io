@@ -11,7 +11,6 @@ from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
 from tests.base import OsfTestCase
 from osf.utils.migrations import ensure_licenses
 from tests.utils import assert_logs, assert_not_logs
-from website import settings
 from osf.models.licenses import NodeLicense, serialize_node_license_record, serialize_node_license
 from osf.models import NodeLog
 from osf.exceptions import NodeStateError

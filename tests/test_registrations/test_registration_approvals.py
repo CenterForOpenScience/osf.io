@@ -1,13 +1,11 @@
-import datetime
 
 from unittest import mock
 
 import pytest
-from django.utils import timezone
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
-    EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, RegistrationApprovalFactory, UserFactory,
+    NodeFactory, ProjectFactory,
+    RegistrationFactory, UserFactory,
     UnconfirmedUserFactory
 )
 
@@ -55,7 +53,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             self.user
         )
         assert self.user._id in approval.approval_state
-        assert not unconfirmed_user._id in approval.approval_state
+        assert unconfirmed_user._id not in approval.approval_state
 
     def test__initiate_approval_adds_admins_on_child_nodes(self):
         project_admin = UserFactory()

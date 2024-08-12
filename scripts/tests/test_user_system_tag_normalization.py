@@ -2,10 +2,10 @@ import pytest
 import pytz
 from datetime import datetime
 
-from osf_tests.factories import PreprintFactory, UserFactory, ProjectFactory, TagFactory
+from osf_tests.factories import UserFactory
 from osf.models import Tag
 from scripts.normalize_user_tags import normalize_source_tags, add_claimed_tags, add_osf_provider_tags, add_prereg_campaign_tags, PROVIDER_SOURCE_TAGS, CAMPAIGN_SOURCE_TAGS, PROVIDER_CLAIMED_TAGS, CAMPAIGN_CLAIMED_TAGS
-from website.util.metrics import OsfSourceTags, CampaignSourceTags, OsfClaimedTags, CampaignClaimedTags
+from website.util.metrics import OsfSourceTags, CampaignSourceTags, OsfClaimedTags
 
 pytestmark = pytest.mark.django_db
 

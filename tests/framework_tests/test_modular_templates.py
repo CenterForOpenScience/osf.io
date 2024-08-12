@@ -7,14 +7,12 @@ import unittest
 import os
 
 import flask
-from lxml.html import fragment_fromstring
 import werkzeug.wrappers
 
 from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 from framework.routing import (
-    Renderer, JSONRenderer, WebRenderer,
-    render_mako_string,
+    Renderer, JSONRenderer, render_mako_string,
 )
 
 from tests.base import AppTestCase, OsfTestCase

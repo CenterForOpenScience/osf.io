@@ -1,7 +1,7 @@
 import pytest
 
 from framework.auth.core import Auth
-from osf_tests.factories import PreprintFactory, UserFactory, ProjectFactory
+from osf_tests.factories import UserFactory, ProjectFactory
 from scripts.fix_registration_unclaimed_records import main as fix_records_script
 from osf_tests.utils import mock_archive
 

@@ -12,7 +12,6 @@ from osf.utils.permissions import ADMIN
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
 from addons.base import exceptions
-from osf_tests.conftest import request_context
 
 pytestmark = pytest.mark.django_db
 
