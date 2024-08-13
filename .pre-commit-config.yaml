@@ -29,4 +29,4 @@ repos:
     - id: ruff-format
       args: ["--line-length=79"]
     - id: ruff
-      args: [ --fix, "--ignore=E501" ]
+      args: [ --fix, "--select=E501" ]
