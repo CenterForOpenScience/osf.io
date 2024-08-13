@@ -204,6 +204,7 @@ class TestInstitutionAuth:
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
         assert institution in user.get_affiliated_institutions()
+        assert f'source:institution|{institution._id}' in user.system_tags
 
     def test_existing_user_found_but_not_affiliated(self, app, institution, url_auth_institution):
 
@@ -219,6 +220,7 @@ class TestInstitutionAuth:
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert institution in user.get_affiliated_institutions()
+        assert f'source:institution|{institution._id}' not in user.system_tags
 
     def test_user_found_and_affiliated(self, app, institution, url_auth_institution):
 
@@ -811,6 +813,8 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         assert user.accepted_terms_of_service is None
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 not in user.get_affiliated_institutions()
+        assert f'source:institution|{institution_primary_type_1._id}' in user.system_tags
+        assert f'source:institution|{institution_secondary_type_1._id}' not in user.system_tags
 
     def test_new_user_primary_and_secondary(self, app, url_auth_institution,
                                             institution_primary_type_1, institution_secondary_type_1):
@@ -830,6 +834,8 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         assert user
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
+        assert f'source:institution|{institution_primary_type_1._id}' in user.system_tags
+        assert f'source:institution|{institution_secondary_type_1._id}' in user.system_tags
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 in user.get_affiliated_institutions()
 
@@ -1059,6 +1065,7 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType1:
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
         assert institution_selective_type_1 in user.get_affiliated_institutions()
+        assert f'source:institution|{institution_selective_type_1._id}' in user.system_tags
 
     def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_1):
 
@@ -1147,6 +1154,7 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType2:
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
         assert institution_selective_type_2 in user.get_affiliated_institutions()
+        assert f'source:institution|{institution_selective_type_2._id}' in user.system_tags
 
     def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_2):
 
@@ -1240,6 +1248,7 @@ class TestInstitutionAuthnWithIdentity:
         assert affiliation.sso_mail == sso_email
         assert affiliation.sso_identity == sso_identity
         assert affiliation.sso_department == department
+        assert f'source:institution|{institution._id}' in user.system_tags
 
     def test_existing_user_by_both_email_and_identity(self, app, url_auth_institution, institution):
 
