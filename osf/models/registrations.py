@@ -1,7 +1,7 @@
 import logging
 import datetime
 import html
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -14,7 +14,6 @@ from guardian.models import (
 )
 from dirtyfields import DirtyFieldsMixin
 
-from api.share.utils import update_share
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
@@ -22,32 +21,32 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
-from osf.models import (
+from .action import RegistrationAction
+from .archive import ArchiveJob
+from .contributor import DraftRegistrationContributor
+from .metaschema import RegistrationSchema
+from .node import Node
+from .sanctions import (
     Embargo,
     EmbargoTerminationApproval,
-    DraftRegistrationContributor,
-    Node,
-    OSFUser,
     RegistrationApproval,
-    RegistrationSchema,
     Retraction,
 )
-from osf.models.action import RegistrationAction
-from osf.models.archive import ArchiveJob
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.draft_node import DraftNode
-from osf.models.licenses import NodeLicenseRecord
-from osf.models.mixins import (
+from .user import OSFUser
+from .base import BaseModel, ObjectIDMixin
+from .draft_node import DraftNode
+from .licenses import NodeLicenseRecord
+from .mixins import (
     EditableFieldsMixin,
     Loggable,
     GuardianMixin,
     RegistrationResponseMixin,
 )
-from osf.models.node import AbstractNode
-from osf.models.nodelog import NodeLog
-from osf.models.provider import RegistrationProvider
-from osf.models.tag import Tag
-from osf.models.validators import validate_title
+from .node import AbstractNode
+from .nodelog import NodeLog
+from .provider import RegistrationProvider
+from .tag import Tag
+from .validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import notifications as notify
 from osf.utils.workflows import (
@@ -654,7 +653,7 @@ class Registration(AbstractNode):
         return retraction
 
     def delete_registration_tree(self, save=False):
-        logger.debug('Marking registration {} as deleted'.format(self._id))
+        logger.debug(f'Marking registration {self._id} as deleted')
         self.is_deleted = True
         self.deleted = timezone.now()
         if not getattr(self.embargo, 'for_existing_registration', False):
@@ -769,25 +768,25 @@ class Registration(AbstractNode):
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
-            super(Registration, self).add_tag(tag, auth, save, log, system)
+            super().add_tag(tag, auth, save, log, system)
         else:
             raise NodeStateError('Cannot add tags to withdrawn registrations.')
 
     def add_tags(self, tags, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
-            super(Registration, self).add_tags(tags, auth, save, log, system)
+            super().add_tags(tags, auth, save, log, system)
         else:
             raise NodeStateError('Cannot add tags to withdrawn registrations.')
 
     def remove_tag(self, tag, auth, save=True):
         if self.retraction is None:
-            super(Registration, self).remove_tag(tag, auth, save)
+            super().remove_tag(tag, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
     def remove_tags(self, tags, auth, save=True):
         if self.retraction is None:
-            super(Registration, self).remove_tags(tags, auth, save)
+            super().remove_tags(tags, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
@@ -825,21 +824,13 @@ class Registration(AbstractNode):
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity
         # to disapprove the retraction by this point)
-        for node in self.get_descendants_recursive(primary_only=True):
+        for node in self.node_and_primary_descendants():
             node.set_privacy('public', auth=None, log=False)
-            node.update_search()
-
-        # force a save before sending data to share or retraction will not be updated
-        self.set_privacy('public', auth=None, log=False)
-        self.update_search()
-        self.save()
-
-        if settings.SHARE_ENABLED:
-            update_share(self)
+        AbstractNode.bulk_update_search(list(self.node_and_primary_descendants()))
 
     def copy_registration_responses_into_schema_response(self, draft_registration=None, save=True):
         """Copies registration metadata into schema responses"""
-        from osf.models.schema_response import SchemaResponse
+        from .schema_response import SchemaResponse
         # TODO: stop populating registration_responses once all registrations
         #       have had initial responses backfilled
         if draft_registration:
@@ -862,8 +853,7 @@ class Registration(AbstractNode):
             archive_to_ia(children)
 
     def related_resource_updated(self, log_action=None, api_request=None, **log_params):
-        if settings.SHARE_ENABLED:
-            update_share(self)
+        self.update_search()
         if not log_action:
             return
 
@@ -1007,9 +997,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     # For ContributorMixin
     guardian_object_type = 'draft_registration'
 
-    READ_DRAFT_REGISTRATION = 'read_{}'.format(guardian_object_type)
-    WRITE_DRAFT_REGISTRATION = 'write_{}'.format(guardian_object_type)
-    ADMIN_DRAFT_REGISTRATION = 'admin_{}'.format(guardian_object_type)
+    READ_DRAFT_REGISTRATION = f'read_{guardian_object_type}'
+    WRITE_DRAFT_REGISTRATION = f'write_{guardian_object_type}'
+    ADMIN_DRAFT_REGISTRATION = f'admin_{guardian_object_type}'
 
     # For ContributorMixin
     base_perms = [READ_DRAFT_REGISTRATION, WRITE_DRAFT_REGISTRATION, ADMIN_DRAFT_REGISTRATION]
@@ -1094,9 +1084,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         node = self.branched_from
         branched_type = self.branched_from_type
         if branched_type == 'DraftNode':
-            path = '/draft_registrations/{}/'.format(self._id)
+            path = f'/draft_registrations/{self._id}/'
         elif branched_type == 'Node':
-            path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
+            path = f'/nodes/{node._id}/draft_registrations/{self._id}/'
         return api_v2_url(path)
 
     # used by django and DRF
@@ -1187,13 +1177,13 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def institutions_url(self):
         # For NodeInstitutionsRelationshipSerializer
-        path = '/draft_registrations/{}/institutions/'.format(self._id)
+        path = f'/draft_registrations/{self._id}/institutions/'
         return api_v2_url(path)
 
     @property
     def institutions_relationship_url(self):
         # For NodeInstitutionsRelationshipSerializer
-        path = '/draft_registrations/{}/relationships/institutions/'.format(self._id)
+        path = f'/draft_registrations/{self._id}/relationships/institutions/'
         return api_v2_url(path)
 
     def update_search(self):
@@ -1271,25 +1261,32 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         else:
             provider.validate_schema(schema)
 
-        if not node:
-            # If no node provided, a DraftNode is created for you
-            node = DraftNode.objects.create(creator=user, title='Untitled')
+        excluded_attributes = []
+        if node:
+            branched_from = node
+        else:
+            branched_from = DraftNode.objects.create(creator=user, title=settings.DEFAULT_DRAFT_NODE_TITLE)
+            excluded_attributes.append('title')
 
-        if not (isinstance(node, Node) or isinstance(node, DraftNode)):
+        if not isinstance(branched_from, (Node, DraftNode)):
             raise DraftRegistrationStateError()
 
         draft = cls(
             initiator=user,
-            branched_from=node,
+            branched_from=branched_from,
             registration_schema=schema,
             registration_metadata=data or {},
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.copy_editable_fields(
+            branched_from,
+            excluded_attributes=excluded_attributes
+        )
         draft.update(data, auth=Auth(user))
 
-        if node.type == 'osf.draftnode':
+        if not node:
+            draft.affiliated_institutions.add(*draft.creator.get_affiliated_institutions())
             initiator_permissions = draft.contributor_set.get(user=user).permission
             signals.contributor_added.send(
                 draft,
@@ -1426,11 +1423,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         # The related source tag behavior for draft registration is currently undefined
         # Therefore we don't add any source tags to it
         pass
-
-    def save(self, *args, **kwargs):
-        if 'old_subjects' in kwargs.keys():
-            kwargs.pop('old_subjects')
-        return super(DraftRegistration, self).save(*args, **kwargs)
 
     def update(self, fields, auth=None, save=True):
         """Update the draft registration with the given fields.

@@ -508,9 +508,7 @@ class NodeReindexShare(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
-        if settings.SHARE_ENABLED:
-            update_share(node)
-
+        update_share(node)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,

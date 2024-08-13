@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from osf.models.base import BaseModel
+from .base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
 
 
@@ -42,3 +42,9 @@ class CitationStyle(BaseModel):
     @property
     def has_parent_style(self):
         return self.parent_style is not None
+
+    def __str__(self):
+        return f'{self.title} ({self._id})'
+
+    def __repr__(self):
+        return f'{self.title} ({self._id})'

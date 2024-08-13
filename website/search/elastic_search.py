@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import division
-
 import copy
 import functools
 import logging
@@ -10,14 +6,12 @@ import re
 import unicodedata
 from framework import sentry
 
-import six
-
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
-                           RequestError, TransportError, helpers)
+                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
 from osf.models import AbstractNode
@@ -94,7 +88,7 @@ def client():
             logging.getLogger('urllib3').setLevel(logging.WARN)
             logging.getLogger('requests').setLevel(logging.WARN)
             CLIENT.cluster.health(wait_for_status='yellow')
-        except ConnectionError:
+        except ConnectionError as e:
             message = (
                 'The SEARCH_ENGINE setting is set to "elastic", but there '
                 'was a problem starting the elasticsearch interface. Is '
@@ -102,7 +96,7 @@ def client():
             )
             if settings.SENTRY_DSN:
                 try:
-                    sentry.log_exception()
+                    sentry.log_exception(e)
                     sentry.log_message(message)
                 except AssertionError:  # App has not yet been initialized
                     logger.exception(message)
@@ -126,7 +120,7 @@ def requires_search(func):
                     raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
-                if type(e.error) == dict:  # ES 2.0
+                if isinstance(e.error, dict):  # ES 2.0
                     try:
                         root_cause = e.error['root_cause'][0]
                         if root_cause['type'] == 'query_parsing_exception':
@@ -394,11 +388,7 @@ def update_user_async(self, user_id, index=None):
 def serialize_node(node, category):
     parent_id = node.parent_id
 
-    try:
-        normalized_title = six.u(node.title)
-    except TypeError:
-        normalized_title = node.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title)
+    normalized_title = unicodedata.normalize('NFKD', node.title)
     elastic_document = {
         **serialize_guid_metadata(node._id),
         'id': node._id,
@@ -447,11 +437,7 @@ def serialize_node(node, category):
     return elastic_document
 
 def serialize_preprint(preprint, category):
-    try:
-        normalized_title = six.u(preprint.title)
-    except TypeError:
-        normalized_title = preprint.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title)
+    normalized_title = unicodedata.normalize('NFKD', preprint.title)
     elastic_document = {
         'id': preprint._id,
         'contributors': [
@@ -480,11 +466,7 @@ def serialize_preprint(preprint, category):
     return elastic_document
 
 def serialize_group(group, category):
-    try:
-        normalized_title = six.u(group.name)
-    except TypeError:
-        normalized_title = group.name
-    normalized_title = unicodedata.normalize('NFKD', normalized_title)
+    normalized_title = unicodedata.normalize('NFKD', group.name)
     elastic_document = {
         'id': group._id,
         'members': [
@@ -517,7 +499,7 @@ def update_node(node, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
-        update_file(file_, index=index)
+        file_.update_search()
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     if node.is_deleted or not node.is_public or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
@@ -535,7 +517,7 @@ def update_preprint(preprint, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(preprint)), target_object_id=preprint.id)):
-        update_file(file_, index=index)
+        file_.update_search()
 
     is_qa_preprint = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(preprint.tags.all().values_list('name', flat=True))) or any(substring in preprint.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     if not preprint.verified_publishable or preprint.is_spam or (preprint.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
@@ -584,7 +566,7 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
                 'doc_as_upsert': True,
             })
     if actions:
-        return helpers.bulk(client(), actions)
+        return helpers.bulk(client(), actions, refresh=True)
 
 
 def serialize_collection_submission_contributor(contrib):
@@ -618,6 +600,8 @@ def serialize_collection_submission(collection_submission):
         'programArea': collection_submission.program_area,
         'schoolType': collection_submission.school_type,
         'studyDesign': collection_submission.study_design,
+        'disease': collection_submission.disease,
+        'dataType': collection_submission.data_type,
         'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
@@ -702,10 +686,6 @@ def update_user(user, index=None):
     normalized_names = {}
     for key, val in names.items():
         if val is not None:
-            try:
-                val = six.u(val)
-            except TypeError:
-                pass  # This is fine, will only happen in 2.x if val is already unicode
             normalized_names[key] = unicodedata.normalize('NFKD', val)
 
     user_doc = {
@@ -732,14 +712,7 @@ def update_file(file_, index=None, delete=False):
     index = index or INDEX
     target = file_.target
 
-    # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
-    file_node_is_qa = bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
-    ) or bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
-    ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
-            target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+    if not file_.should_update_search or delete:
         client().delete(
             index=index,
             doc_type='file',
@@ -749,18 +722,6 @@ def update_file(file_, index=None, delete=False):
         )
         return
 
-    if isinstance(target, Preprint):
-        if not getattr(target, 'verified_publishable', False) or target.primary_file != file_ or target.is_spam or (
-                target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
-            client().delete(
-                index=index,
-                doc_type='file',
-                id=file_._id,
-                refresh=True,
-                ignore=[404]
-            )
-            return
-
     # We build URLs manually here so that this function can be
     # run outside of a Flask request context (e.g. in a celery task)
     file_deep_url = '/{target_id}/files/{provider}{path}/'.format(
@@ -769,14 +730,14 @@ def update_file(file_, index=None, delete=False):
         path=file_.path,
     )
     if getattr(target, 'is_quickfiles', None):
-        node_url = '/{user_id}/quickfiles/'.format(user_id=target.creator._id)
+        node_url = f'/{target.creator._id}/quickfiles/'
     else:
-        node_url = '/{target_id}/'.format(target_id=target._id)
+        node_url = f'/{target._id}/'
 
     guid_url = None
     file_guid = file_.get_guid(create=False)
     if file_guid:
-        guid_url = '/{file_guid}/'.format(file_guid=file_guid._id)
+        guid_url = f'/{file_guid._id}/'
     # File URL's not provided for preprint files, because the File Detail Page will
     # just reroute to preprints detail
     file_doc = {
@@ -812,7 +773,7 @@ def update_institution(institution, index=None):
     else:
         institution_doc = {
             'id': id_,
-            'url': '/institutions/{}/'.format(institution._id),
+            'url': f'/institutions/{institution._id}/',
             'logo_path': institution.logo_path,
             'category': 'institution',
             'name': institution.name,
@@ -980,16 +941,12 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     exclude = exclude or []
     normalized_items = []
     for item in items:
-        try:
-            normalized_item = six.u(item)
-        except TypeError:
-            normalized_item = item
-        normalized_item = unicodedata.normalize('NFKD', normalized_item)
+        normalized_item = unicodedata.normalize('NFKD', item)
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = '  AND '.join('{}*~'.format(re.escape(item)) for item in items) + \
-            ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
+    query = '  AND '.join(f'{re.escape(item)}*~' for item in items) + \
+            ''.join(f' NOT id:"{excluded._id}"' for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']
@@ -1009,7 +966,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             n_projects_in_common = 0
 
         if user is None:
-            logger.error('Could not load user {0}'.format(doc['id']))
+            logger.error(f"Could not load user {doc['id']}")
             continue
         if user.is_active:  # exclude merged, unregistered, etc.
             current_employment = None

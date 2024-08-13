@@ -21,7 +21,7 @@ class TestMetricsReports:
 
     @pytest.fixture
     def mock_search(self):
-        with mock.patch('elasticsearch.Elasticsearch.search', autospec=True) as mock_search:
+        with mock.patch('elasticsearch6.Elasticsearch.search', autospec=True) as mock_search:
             yield mock_search
 
     def test_report_names(self, app, mock_domain):

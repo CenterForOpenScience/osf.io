@@ -1,5 +1,5 @@
-from django.conf.urls import include, re_path
-
+from django.conf.urls import include
+from django.urls import re_path
 from api.providers import views
 from api.subscriptions.views import (
     PreprintProviderSubscriptionDetail,
@@ -37,6 +37,12 @@ urlpatterns = [
                         r'^(?P<provider_id>\w+)/subscriptions/$',
                         PreprintProviderSubscriptionList.as_view(),
                         name=PreprintProviderSubscriptionList.view_name,
+                    ),
+                    # Retrieve citation styles associated with a specific preprint provider.
+                    re_path(
+                        r'^(?P<provider_id>\w+)/citation_styles/$',
+                        views.PreprintProviderCitationStylesView.as_view(),
+                        name=views.PreprintProviderCitationStylesView.view_name,
                     ),
                 ], 'preprints',
             ),
@@ -102,7 +108,8 @@ urlpatterns = [
                         RegistrationProviderSubscriptionList.as_view(),
                         name=RegistrationProviderSubscriptionList.view_name,
                     ),
-                ], 'registrations',
+                ],
+                'registrations',
             ),
             namespace='registration-providers',
         ),

@@ -14,11 +14,11 @@ from .focus import Focus
 Gatherer = typing.Callable[[Focus], typing.Iterable[tuple]]
 # module-private registry of gatherers by their iris of interest,
 # built by the @gatherer decorator (via add_gatherer)
-GathererRegistry = typing.Dict[             # outer dict maps
+GathererRegistry = dict[             # outer dict maps
     typing.Optional[rdflib.URIRef],         # from focustype_iri (or None)
-    typing.Dict[                            # to inner dict, which maps
+    dict[                            # to inner dict, which maps
         typing.Optional[rdflib.URIRef],     # from predicate_iri (or None)
-        typing.Set[Gatherer],               # to a set of gatherers.
+        set[Gatherer],               # to a set of gatherers.
     ],
 ]
 __gatherer_registry: GathererRegistry = {}
@@ -31,9 +31,9 @@ def gatherer(*predicate_iris, focustype_iris=None):
         ```
         from osf.metadata import gather
 
-        @gather.er(DCT.language, focustype_iris=[OSF.MyType])
+        @gather.er(DCTERMS.language, focustype_iris=[OSF.MyType])
         def gather_language(focus: gather.Focus):
-            yield (DCT.language, getattr(focus.dbmodel, 'language'))
+            yield (DCTERMS.language, getattr(focus.dbmodel, 'language'))
         ```
     """
     def _decorator(gatherer: Gatherer):

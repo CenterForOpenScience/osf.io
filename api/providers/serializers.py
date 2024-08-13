@@ -10,6 +10,7 @@ from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
+from osf.models import CitationStyle
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS, ADMIN
@@ -202,6 +203,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         'share_publish_type',
         'reviews_workflow',
         'permissions',
+        'advertise_on_discover_page',
     ])
     available_metrics = frozenset([
         'downloads',
@@ -210,6 +212,8 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
+    assertions_enabled = ser.BooleanField()
+    advertise_on_discover_page = ser.BooleanField(read_only=True)
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
@@ -227,6 +231,11 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    citation_styles = RelationshipField(
+        related_view='providers:preprint-providers:preprint-provider-citation-styles',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     moderators = RelationshipField(
         related_view='providers:preprint-providers:provider-moderator-list',
         related_view_kwargs={'provider_id': '<_id>'},
@@ -235,6 +244,11 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
     subscriptions = RelationshipField(
         related_view='providers:preprint-providers:notification-subscription-list',
         related_view_kwargs={'provider_id': '<_id>'},
+    )
+
+    brand = RelationshipField(
+        related_view='brands:brand-detail',
+        related_view_kwargs={'brand_id': '<brand.id>'},
     )
 
     def get_preprints_url(self, obj):
@@ -342,7 +356,7 @@ class ModeratorSerializer(JSONAPISerializer):
         perm_group = validated_data.pop('permission_group', '')
         if perm_group not in REVIEW_GROUPS:
             raise ValidationError('Unrecognized permission_group')
-        context['notification_settings_url'] = '{}reviews/preprints/{}/notifications'.format(DOMAIN, provider._id)
+        context['notification_settings_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/notifications'
         context['provider_name'] = provider.name
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
@@ -352,7 +366,7 @@ class ModeratorSerializer(JSONAPISerializer):
         mails.send_mail(
             user.username,
             template,
-            **context
+            **context,
         )
         return user
 
@@ -422,3 +436,13 @@ class CollectionsModeratorSerializer(ModeratorSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+
+class CitationStyleSerializer(ser.ModelSerializer):
+    """
+    Serializer for CitationStyle model.
+    """
+
+    class Meta:
+        model = CitationStyle
+        fields = '__all__'  # Or specify the fields you want to serialize

@@ -2071,7 +2071,7 @@ var Information = {
                             m('p.m-t-md', [
                                 m('p', 'Tags'),
                                 item.attributes.tags.map(function(tag){
-                                    return m('a.tag', { href : '/search/?q=(tags:' + tag + ')', onclick: function(){
+                                    return m('a.tag', { href : '/search/?q="' + tag + '"', onclick: function(){
                                         $osf.trackClick('myProjects', 'information-panel', 'navigate-to-search-by-tag');
                                     }}, tag);
                                 })

@@ -153,7 +153,7 @@ class TestNodeRelationshipNodeLinks:
             self, app, user, node_private, node_public,
             make_payload, url_private):
         res = app.post_json_api(
-            '{}?version=2.13'.format(url_private),
+            f'{url_private}?version=2.13',
             make_payload([node_public._id], False),
             auth=user.auth
         )
@@ -403,7 +403,7 @@ class TestNodeRelationshipNodeLinks:
 
     #   test_type_linked_nodes_not_acceptable_as_of_2_13
         res = app.post_json_api(
-            '{}?version=2.13'.format(url_private),
+            f'{url_private}?version=2.13',
             {
                 'data': [{
                     'type': 'linked_nodes',
@@ -580,7 +580,7 @@ class TestNodeRelationshipNodeLinks:
         node_linking_private.add_pointer(node_contrib, auth=Auth(user))
         res_relationship = app.get(url_private, auth=user.auth)
         res_node_links = app.get(
-            '/{}nodes/{}/node_links/'.format(API_BASE, node_linking_private._id),
+            f'/{API_BASE}nodes/{node_linking_private._id}/node_links/',
             auth=user.auth
         )
         node_links_id = [data['embeds']['target_node']['data']['id']
@@ -617,7 +617,7 @@ class TestNodeLinkedNodes:
 
     @pytest.fixture()
     def url_linked_nodes(self, node_linking):
-        return '/{}nodes/{}/linked_nodes/'.format(API_BASE, node_linking._id)
+        return f'/{API_BASE}nodes/{node_linking._id}/linked_nodes/'
 
     @pytest.fixture()
     def node_ids(self, node_linking):
@@ -638,7 +638,7 @@ class TestNodeLinkedNodes:
 
     def test_linked_nodes_returns_everything_2_13(
             self, app, user, node_ids, url_linked_nodes):
-        res = app.get('{}?version=2.13'.format(url_linked_nodes), auth=user.auth)
+        res = app.get(f'{url_linked_nodes}?version=2.13', auth=user.auth)
 
         assert res.status_code == 200
         nodes_returned = [
@@ -668,7 +668,7 @@ class TestNodeLinkedNodes:
         node_linking_two.save()
 
         res = app.get(
-            '/{}nodes/{}/linked_nodes/'.format(API_BASE, node_linking_two._id),
+            f'/{API_BASE}nodes/{node_linking_two._id}/linked_nodes/',
             auth=user_two.auth
         )
 

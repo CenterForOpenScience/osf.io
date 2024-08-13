@@ -12,11 +12,13 @@ from framework.exceptions import PermissionsError
 from framework.auth.core import get_user, Auth
 from framework.sentry import log_exception
 from osf.exceptions import BlockedEmailError
-from osf.models import base
-from osf.models.mixins import GuardianMixin, Loggable
-from osf.models import Node, OSFUser, NodeLog
-from osf.models.osf_grouplog import OSFGroupLog
-from osf.models.validators import validate_email
+from .base import BaseModel, ObjectIDMixin
+from .mixins import GuardianMixin, Loggable
+from .node import Node
+from .nodelog import NodeLog
+from .user import OSFUser
+from .osf_grouplog import OSFGroupLog
+from .validators import validate_email
 from osf.utils.permissions import ADMIN, READ_NODE, WRITE, MANAGER, MEMBER, MANAGE, reduce_permissions
 from osf.utils import sanitize
 from website.project import signals as project_signals
@@ -26,7 +28,7 @@ from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
 
-class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
+class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
     """
     OSFGroup model.  When an OSFGroup is created, a manager and member Django group are created.
     Managers belong to both manager and member groups.  Members belong to the member group only.
@@ -49,7 +51,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
     group_format = 'osfgroup_{self.id}_{group}'
 
     def __unicode__(self):
-        return 'OSFGroup_{}_{}'.format(self.id, self.name)
+        return f'OSFGroup_{self.id}_{self.name}'
 
     class Meta:
         permissions = (
@@ -101,13 +103,13 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/groups/{}/'.format(self._id)
+        path = f'/groups/{self._id}/'
         return api_v2_url(path)
 
     @property
     def url(self):
         # TODO - front end hasn't been set up
-        return '/{}/'.format(self._primary_key)
+        return f'/{self._primary_key}/'
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -144,7 +146,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         """
         permissions = node.groups.get(permission)
         if not permissions:
-            raise ValueError('{} is not a valid permission.'.format(permission))
+            raise ValueError(f'{permission} is not a valid permission.')
         return permissions
 
     def send_member_email(self, user, permission, auth=None):
@@ -460,7 +462,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
-        ret = super(OSFGroup, self).save(*args, **kwargs)
+        ret = super().save(*args, **kwargs)
         if first_save:
             self.update_group_permissions()
             self.make_manager(self.creator)
@@ -521,7 +523,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             search.search.update_group(self, bulk=False, async_update=True, deleted_id=deleted_id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
     @classmethod
     def bulk_update_search(cls, groups, index=None):
@@ -531,7 +533,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             search.search.bulk_update_nodes(serialize, groups, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception()
+            log_exception(e)
 
 
 @receiver(post_save, sender=OSFGroup)

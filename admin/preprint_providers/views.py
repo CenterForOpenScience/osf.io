@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import json
 
 
@@ -87,12 +85,15 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         subject_ids = preprint_provider.all_subjects.values_list('id', flat=True)
 
         preprint_provider_attributes = model_to_dict(preprint_provider)
+
+        preprint_provider_attributes['advertise_on_discover_page'] = preprint_provider.advertise_on_discover_page
+
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
 
         licenses_acceptable = list(preprint_provider.licenses_acceptable.values_list('name', flat=True))
         licenses_html = '<ul>'
         for license in licenses_acceptable:
-            licenses_html += '<li>{}</li>'.format(license)
+            licenses_html += f'<li>{license}</li>'
         licenses_html += '</ul>'
         preprint_provider_attributes['licenses_acceptable'] = licenses_html
 
@@ -100,23 +101,23 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         for parent in preprint_provider.top_level_subjects:
             mapped_text = ''
             if parent.bepress_subject and parent.text != parent.bepress_subject.text:
-                mapped_text = ' (mapped from {})'.format(parent.bepress_subject.text)
-            subject_html = subject_html + '<li>{}'.format(parent.text) + mapped_text + '</li>'
+                mapped_text = f' (mapped from {parent.bepress_subject.text})'
+            subject_html = subject_html + f'<li>{parent.text}' + mapped_text + '</li>'
             child_html = '<ul>'
             for child in parent.children.all():
                 grandchild_html = ''
                 if child.id in subject_ids:
                     child_mapped_text = ''
                     if child.bepress_subject and child.text != child.bepress_subject.text:
-                        child_mapped_text = ' (mapped from {})'.format(child.bepress_subject.text)
-                    child_html = child_html + '<li>{}'.format(child.text) + child_mapped_text + '</li>'
+                        child_mapped_text = f' (mapped from {child.bepress_subject.text})'
+                    child_html = child_html + f'<li>{child.text}' + child_mapped_text + '</li>'
                     grandchild_html = '<ul>'
                     for grandchild in child.children.all():
                         if grandchild.id in subject_ids:
                             grandchild_mapped_text = ''
                             if grandchild.bepress_subject and grandchild.text != grandchild.bepress_subject.text:
-                                grandchild_mapped_text = ' (mapped from {})'.format(grandchild.bepress_subject.text)
-                            grandchild_html = grandchild_html + '<li>{}'.format(grandchild.text) + grandchild_mapped_text + '</li>'
+                                grandchild_mapped_text = f' (mapped from {grandchild.bepress_subject.text})'
+                            grandchild_html = grandchild_html + f'<li>{grandchild.text}' + grandchild_mapped_text + '</li>'
                     grandchild_html += '</ul>'
                 child_html += grandchild_html
 
@@ -177,7 +178,7 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
         kwargs['preprint_provider_id'] = self.kwargs.get('preprint_provider_id')
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         kwargs['subject_ids'] = self.get_subject_ids(self.request)
-        return super(PreprintProviderChangeForm, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': self.kwargs.get('preprint_provider_id')})
@@ -198,7 +199,8 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             provider = PreprintProvider.objects.get(id=request.POST.get('provider_id'))
             try:
                 taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
-                if request.is_ajax():
+                # Replacement as is_ajax has been removed
+                if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
                     # An ajax request is for validation only, so run that validation!
                     response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
                     if response_data:
@@ -235,9 +237,9 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
 
         subject_html = '<ul class="other-levels" style="list-style-type:none">'
         for subject in subjects_from_parent:
-            subject_html += '<li><label><input type="checkbox" name="{}" value="{}" parent={}>{}</label>'.format(new_level, subject.id, parent_id, subject.text)
+            subject_html += f'<li><label><input type="checkbox" name="{new_level}" value="{subject.id}" parent={parent_id}>{subject.text}</label>'
             if subject.children.count():
-                    subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
+                subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
             subject_html += '</li>'
         subject_html += '</ul>'
 
@@ -277,9 +279,9 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         cleaned_fields['default_license'] = preprint_provider.default_license.license_id if preprint_provider.default_license else ''
         cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
         cleaned_data['fields'] = cleaned_fields
-        filename = '{}_export.json'.format(preprint_provider.name)
+        filename = f'{preprint_provider.name}_export.json'
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
-        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
     def serialize_subjects(self, provider):
@@ -306,13 +308,13 @@ class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
-        return super(DeletePreprintProvider, self).delete(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
-        return super(DeletePreprintProvider, self).get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         return PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
@@ -322,7 +324,7 @@ class CannotDeleteProvider(TemplateView):
     template_name = 'preprint_providers/cannot_delete.html'
 
     def get_context_data(self, **kwargs):
-        context = super(CannotDeleteProvider, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['provider'] = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         return context
 
@@ -384,7 +386,7 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
         except ValidationError as e:
             messages.error(request, e.message)
 
-        return redirect(reverse_lazy('preprint_providers:share_source', kwargs={'preprint_provider_id': provider.id}))
+        return redirect(reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': provider.id}))
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'
@@ -402,9 +404,9 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
 
         subject_html = '<ul class="other-levels" style="list-style-type:none">'
         for subject in subjects_from_parent:
-            subject_html += '<li><label><input type="checkbox" name="{}" value="{}" parent={}>{}</label>'.format(new_level, subject.id, parent_id, subject.text)
+            subject_html += f'<li><label><input type="checkbox" name="{new_level}" value="{subject.id}" parent={parent_id}>{subject.text}</label>'
             if subject.children.count():
-                    subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
+                subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
             subject_html += '</li>'
         subject_html += '</ul>'
 
@@ -423,7 +425,7 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
         kwargs['import_form'] = ImportFileForm()
         kwargs['show_taxonomies'] = False
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
-        return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
 
 class SharePreprintProviderWhitelist(PermissionRequiredMixin, View):
@@ -458,12 +460,12 @@ class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView
     form_class = PreprintProviderRegisterModeratorOrAdminForm
 
     def get_form_kwargs(self):
-        kwargs = super(PreprintProviderRegisterModeratorOrAdmin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['provider_id'] = self.kwargs['preprint_provider_id']
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super(PreprintProviderRegisterModeratorOrAdmin, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['provider_name'] = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id']).name
         return context
 
@@ -472,7 +474,7 @@ class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView
         osf_user = OSFUser.load(user_id)
 
         if not osf_user:
-            raise Http404('OSF user with id "{}" not found. Please double check.'.format(user_id))
+            raise Http404(f'OSF user with id "{user_id}" not found. Please double check.')
 
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
@@ -484,8 +486,8 @@ class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView
                 provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
 
         osf_user.save()
-        messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
-        return super(PreprintProviderRegisterModeratorOrAdmin, self).form_valid(form)
+        messages.success(self.request, f'Permissions update successful for OSF User {osf_user.username}!')
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('preprint_providers:register_moderator_admin', kwargs={'preprint_provider_id': self.kwargs['preprint_provider_id']})

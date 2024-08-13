@@ -27,7 +27,7 @@ class TestFileMetadataSchemaDetail:
 
     @pytest.fixture()
     def url(self, schema):
-        return '/{}schemas/files/{}/'.format(API_BASE, schema._id)
+        return f'/{API_BASE}schemas/files/{schema._id}/'
 
     def test_schema_detail_crud(self, app, user, schema, url):
         # test_authenticated_user_can_view_schema
@@ -45,6 +45,6 @@ class TestFileMetadataSchemaDetail:
         assert res.json['data']['id'] == schema._id
 
     def test_invalid_schema_not_found(self, app):
-        bad_url = '/{}schemas/files/garbage/'.format(API_BASE)
+        bad_url = f'/{API_BASE}schemas/files/garbage/'
         res = app.get(bad_url, expect_errors=True)
         assert res.status_code == 404

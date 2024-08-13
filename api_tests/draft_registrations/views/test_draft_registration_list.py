@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from framework.auth.core import Auth
@@ -9,7 +9,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
 from api.base.settings.defaults import API_BASE
 
 from osf.migrations import ensure_invisible_and_inactive_schema
-from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, Institution
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
@@ -31,7 +31,7 @@ def invisible_and_inactive_schema():
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return '/{}draft_registrations/?'.format(API_BASE)
+        return f'/{API_BASE}draft_registrations/?'
 
     # Overrides TestDraftRegistrationList
     def test_osf_group_with_admin_permissions_can_view(self):
@@ -76,7 +76,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     # Overrides `url_draft_registrations` in `TestDraftRegistrationCreate`
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return '/{}draft_registrations/?'.format(API_BASE)
+        return f'/{API_BASE}draft_registrations/?'
 
     # Overrides `payload` in TestDraftRegistrationCreate`
     @pytest.fixture()
@@ -186,7 +186,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         assert attributes['title'] == project_public.title
         assert attributes['description'] == project_public.description
         assert attributes['category'] == project_public.category
-        assert set(attributes['tags']) == set([tag.name for tag in project_public.tags.all()])
+        assert set(attributes['tags']) == {tag.name for tag in project_public.tags.all()}
         assert attributes['node_license']['year'] == '1998'
         assert attributes['node_license']['copyright_holders'] == ['Grapes McGee']
 
@@ -260,39 +260,76 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
 
         assert not mock_send_mail.called
 
-    def test_affiliated_institutions_are_copied_from_user(
-            self, app, user, url_draft_registrations, payload):
+    def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
+        """
+        Draft registrations that are based on projects get those project's user institutional affiliation,
+        those "no-project" registrations inherit the user's institutional affiliation.
+
+        This tests a scenario where a user bases a registration on a node without affiliations, and so the
+        draft registration has no institutional affiliation from the user or the node.
+        """
         project = ProjectFactory(is_public=True, creator=user)
-        InstitutionFactory()
         payload['data']['relationships']['branched_from']['data']['id'] = project._id
         res = app.post_json_api(
-            url_draft_registrations, payload,
-            auth=user.auth, expect_errors=True)
+            url_draft_registrations,
+            payload,
+            auth=user.auth,
+        )
         assert res.status_code == 201
         draft_registration = DraftRegistration.load(res.json['data']['id'])
         assert not draft_registration.affiliated_institutions.exists()
 
+    def test_affiliated_institutions_are_copied_from_node(self, app, user, url_draft_registrations, payload):
+        """
+        Draft registrations that are based on projects get those project's user institutional affiliation,
+        those "no-project" registrations inherit the user's institutional affiliation.
+
+        This tests a scenario where a user bases their registration on a project that has a current institutional
+        affiliation which is copied over to the draft registrations.
+        """
+        institution = InstitutionFactory()
+
         project = ProjectFactory(is_public=True, creator=user)
+        project.affiliated_institutions.add(institution)
         payload['data']['relationships']['branched_from']['data']['id'] = project._id
-        user.add_multiple_institutions_non_sso(Institution.objects.filter(id__lt=3))
         res = app.post_json_api(
-            url_draft_registrations, payload,
-            auth=user.auth, expect_errors=True)
+            url_draft_registrations,
+            payload,
+            auth=user.auth,
+        )
         assert res.status_code == 201
         draft_registration = DraftRegistration.load(res.json['data']['id'])
-        assert not draft_registration.affiliated_institutions.all() == user.get_affiliated_institutions()
+        assert list(draft_registration.affiliated_institutions.all()) == list(project.affiliated_institutions.all())
+
+    def test_affiliated_institutions_are_copied_from_user(self, app, user, url_draft_registrations, payload):
+        """
+        Draft registrations that are based on projects get those project's user institutional affiliation,
+        those "no-project" registrations inherit the user's institutional affiliation.
+        """
+        institution = InstitutionFactory()
+        user.add_or_update_affiliated_institution(institution)
+
+        del payload['data']['relationships']['branched_from']
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user.auth,
+        )
+        assert res.status_code == 201
+        draft_registration = DraftRegistration.load(res.json['data']['id'])
+        assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
 
 
 class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
     @pytest.fixture()
     def url_draft_registrations(self):
-        return '/{}draft_registrations/?'.format(API_BASE)
+        return f'/{API_BASE}draft_registrations/?'
 
     # Overrides TestDraftRegistrationList
     def test_admin_can_create_draft(
             self, app, user, url_draft_registrations,
             payload, metaschema_open_ended):
-        url = '{}embed=branched_from&embed=initiator'.format(url_draft_registrations)
+        url = f'{url_draft_registrations}embed=branched_from&embed=initiator'
         res = app.post_json_api(url, payload, auth=user.auth)
 
         assert res.status_code == 201
@@ -394,10 +431,10 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
         assert res.status_code == 201
         attributes = res.json['data']['attributes']
-        assert attributes['title'] == 'Untitled'
+        assert attributes['title'] == ''
         assert attributes['description'] != project_public.description
         assert attributes['category'] != project_public.category
-        assert set(attributes['tags']) != set([tag.name for tag in project_public.tags.all()])
+        assert set(attributes['tags']) != {tag.name for tag in project_public.tags.all()}
         assert attributes['node_license'] is None
 
         relationships = res.json['data']['relationships']

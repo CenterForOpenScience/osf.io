@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import datetime as dt
 
 import logging
@@ -9,8 +7,8 @@ from django.db.models import Q
 from django.db.models import Subquery
 from django.core.validators import URLValidator
 from flask import request
-from framework.sessions import session
 
+from framework.sessions import get_session
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.utils.requests import check_select_for_update
 from website import security, settings
@@ -18,10 +16,7 @@ from website import security, settings
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
-    'initials': lambda user: u'{surname}, {initial}.'.format(
-        surname=user.family_name,
-        initial=user.given_name_initial,
-    ),
+    'initials': lambda user: f'{user.family_name}, {user.given_name_initial}.',
 }
 
 logger = logging.getLogger(__name__)
@@ -57,6 +52,7 @@ def validate_year(item):
             if len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
 
+
 validate_url = URLValidator()
 
 
@@ -74,7 +70,9 @@ def validate_social(value):
 
 
 def get_current_user_id():
-    return session._get_current_object() and session.data.get('auth_user_id')
+    current_session = get_session()
+    return current_session.get('auth_user_id', None) if current_session else None
+
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
@@ -149,7 +147,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         qs = qs.filter(verification_key=token)
 
     if external_id_provider and external_id:
-        qs = qs.filter(**{'external_identity__{}__{}'.format(external_id_provider, external_id): 'VERIFIED'})
+        qs = qs.filter(**{f'external_identity__{external_id_provider}__{external_id}': 'VERIFIED'})
 
     try:
         user = qs.get()
@@ -159,7 +157,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         return None
 
 
-class Auth(object):
+class Auth:
 
     def __init__(self, user=None, api_node=None,
                  private_key=None):
@@ -170,6 +168,9 @@ class Auth(object):
     def __repr__(self):
         return ('<Auth(user="{self.user}", '
                 'private_key={self.private_key})>').format(self=self)
+
+    def to_header(self):
+        return f'Basic {self.user.username}'
 
     @property
     def logged_in(self):

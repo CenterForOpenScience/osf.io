@@ -1,9 +1,11 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '3.4'
-
 volumes:
+  redis_data_vol:
+    external: false
   postgres_data_vol:
+    external: false
+  gv_requirements_vol:
     external: false
   mongo_data_vol:
     external: false
@@ -31,7 +33,7 @@ volumes:
     external: false
   osfstoragecache_vol:
     external: false
-  osf_requirements_vol:
+  osf_requirements_3_12_vol:
     external: false
   osf_node_modules_vol:
     external: false
@@ -47,6 +49,14 @@ services:
   ###################
   # Shared Services #
   ###################
+
+  redis:
+    image: redis:7.0.9
+    restart: unless-stopped
+    ports:
+    - 6379:6379
+    volumes:
+      - redis_data_vol:/data
 
   elasticsearch:
     platform: linux/amd64
@@ -67,21 +77,17 @@ services:
     stdin_open: true
 
   postgres:
-    image: postgres:9.6
+    image: postgres:15.4
     command:
       - /bin/bash
       - -c
-      - echo "$$POSTGRES_INITDB" > /docker-entrypoint-initdb.d/commands.sh &&
-        chmod +x /docker-entrypoint-initdb.d/commands.sh &&
-        /docker-entrypoint.sh postgres
+      - echo "$$POSTGRES_INITDB_SQL" > /docker-entrypoint-initdb.d/commands.sql &&
+        docker-entrypoint.sh postgres
     ports:
       - 5432:5432
     environment:
-      POSTGRES_DB: osf
-      POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_INITDB: |
-        sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
-        sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
+      POSTGRES_INITDB_SQL: |
+        SELECT 'CREATE DATABASE gravyvalet' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gravyvalet')\gexec
     volumes:
       - "${POSTGRES_DATA_VOL:-postgres_data_vol}:/var/lib/postgresql/data/"
     stdin_open: true
@@ -252,11 +258,7 @@ services:
 
   ember_osf_web:
     image: quay.io/centerforopenscience/osf-web:develop-local
-    command:
-      - /bin/bash
-      - -c
-      - yarn --frozen-lockfile &&
-        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
+    command: yarn run start --path dist --host 0.0.0.0 --port 4200 --live-reload-port 41953
     restart: unless-stopped
     depends_on:
       - api
@@ -265,6 +267,9 @@ services:
       # Uncomment below to enable collections on ember
       # - COLLECTIONS_ENABLED=true
       - BACKEND=local
+      - SHARE_BASE_URL=http://localhost:8003/
+      - SHARE_API_URL=http://localhost:8003/api/v2
+      - SHARE_SEARCH_URL=http://localhost:8003/api/v2/search/creativeworks/_search
     expose:
       - 4200
       - 41953
@@ -292,7 +297,18 @@ services:
       - api
       - web
     environment:
-      - BACKEND=local
+      - BACKEND=env
+      - OSF_URL=http://localhost:5000/
+      - OSF_API_URL=http://localhost:8000
+      - OSF_MFR_URL=http://localhost:7778/
+      - OSF_RENDER_URL=http://localhost:7778/render
+      - OSF_FILE_URL=http://localhost:7777/
+      - OSF_HELP_URL=http://localhost:5000/help
+      - OSF_COOKIE_LOGIN_URL=http://localhost:8080/login
+      - OSF_OAUTH_URL=http://localhost:8080/oauth2/profile
+      - SHARE_BASE_URL=http://localhost:8003/
+      - SHARE_API_URL=http://localhost:8003/api/v2/
+      - SHARE_SEARCH_URL=http://localhost:8003/api/v2/search/creativeworks/_search
     expose:
       - 4201
       - 41954
@@ -341,41 +357,43 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --all &&
-        (python3 -m compileall /usr/lib/python3.6 || true) &&
-        rm -Rf /python3.6/* &&
-        cp -Rf -p /usr/lib/python3.6 /
+      - python -m venv /tmp/venv
+        && /tmp/venv/bin/pip install poetry==1.8.3 &&
+        /tmp/venv/bin/poetry install --no-root --without release --compile --sync &&
+        rm -rf /python3.12/* &&
+        cp -Rf -p /usr/local/lib/python3.12 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - ./:/code:cached
-      - osf_requirements_vol:/python3.6
+      - ./pyproject.toml:/code/pyproject.toml
+      - ./poetry.lock:/code/poetry.lock
+      - osf_requirements_3_12_vol:/python3.12
 
   assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke assets -dw
+    command: python3 -m invoke assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   admin_assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke admin.assets -dw
+    command: python3 -m invoke admin.assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -407,13 +425,13 @@ services:
 #      - .docker-compose.env
 #    volumes:
 #      - ./:/code
-#      - osf_requirements_vol:/usr/local/lib/python3.6
+#      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
 
   worker:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke celery_worker
+    command: python3 -m invoke celery-worker
     restart: unless-stopped
     depends_on:
       - postgres
@@ -427,7 +445,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
@@ -437,7 +455,7 @@ services:
 
   admin:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke adminserver -h 0.0.0.0
+    command: python3 -m invoke adminserver -h 0.0.0.0
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
@@ -452,7 +470,7 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -460,7 +478,7 @@ services:
 
   api:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke apiserver -h 0.0.0.0
+    command: python3 -m invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -468,20 +486,21 @@ services:
       - postgres
       - rabbitmq
       - elasticsearch
+      - redis
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke server -h 0.0.0.0
+    command: python3 -m invoke server -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 5000:5000
@@ -489,6 +508,7 @@ services:
       - postgres
       - rabbitmq
       - elasticsearch
+      - redis
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
@@ -496,12 +516,47 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web
       - preprints_dist_vol:/preprints
       - reviews_dist_vol:/reviews
+    stdin_open: true
+
+
+  ######
+  # GV #
+  ######
+
+  gv_requirements:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    command:
+      - /bin/bash
+      - -c
+      - pip install -r requirements/dev-requirements.txt &&
+        (python3 -m compileall /usr/local/lib/python3.12 || true) &&
+        rm -Rf /python3.12/* &&
+        cp -Rf -p /usr/local/lib/python3.12 /
+    restart: 'no'
+    volumes:
+      - gv_requirements_vol:/python3.12
+
+  gv:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    command: python manage.py runserver 0.0.0.0:8004
+    restart: unless-stopped
+    ports:
+      - 8004:8004
+    depends_on:
+      - postgres
+      - api
+    env_file:
+      - .docker-compose.gv.env
+    environment:
+      DJANGO_SETTINGS_MODULE: app.settings
+    volumes:
+      - gv_requirements_vol:/usr/local/lib/python3.12
     stdin_open: true
 
   pigeon:

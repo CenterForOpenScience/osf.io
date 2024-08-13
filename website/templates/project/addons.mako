@@ -130,7 +130,7 @@
                                         <h4>Don’t see your GitHub organization repositories?</h4>
                                         <p>
                                             You may need to reauthorize your GitHub access token.
-                                            Follow the steps in the <a class="alert-link" href="https://help.osf.io/hc/en-us/articles/360054256674-reauthorize-github" target="_black">help guide</a> to resolve the issue. <br>
+                                            Follow the steps in the <a class="alert-link" href="https://help.osf.io/article/216-reauthorize-github" target="_black">help guide</a> to resolve the issue. <br>
                                         </p>
                                         <p>
                                             Please contact <a class="alert-link" href="mailto:support@osf.io">support@osf.io</a> if you have questions.

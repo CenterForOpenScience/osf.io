@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from past.builtins import basestring
 import requests
 from django.db import transaction
 from flask import Request as FlaskRequest
@@ -10,7 +8,7 @@ from api.base import settings
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
-class DummyRequest(object):
+class DummyRequest:
     pass
 dummy_request = DummyRequest()
 
@@ -45,13 +43,14 @@ def get_request_and_user_id():
     Fetch a request and user id from either a Django or Flask request.
     """
     # TODO: This should be consolidated into framework
+    # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
     from framework.sessions import get_session
 
     req = get_current_request()
     user_id = None
     if isinstance(req, FlaskRequest):
-        session = get_session()
-        user_id = session.data.get('auth_user_id')
+        user_session = get_session()
+        user_id = user_session.get('auth_user_id', None)
     elif hasattr(req, 'user'):
         # admin module can return a user w/o an id
         user_id = getattr(req.user, '_id', None)
@@ -75,7 +74,7 @@ def get_headers_from_request(req):
             k: v
             for k, v in headers.items()
         }
-        headers['Remote-Addr'] = req.remote_addr
+        headers['Remote-Addr'] = getattr(req, 'remote_addr', None)
     return headers
 
 
@@ -85,7 +84,7 @@ def string_type_request_headers(req):
         request_headers = {
             k: v
             for k, v in get_headers_from_request(req).items()
-            if isinstance(v, basestring)
+            if isinstance(v, str)
         }
     return request_headers
 

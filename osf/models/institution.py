@@ -1,24 +1,27 @@
 from enum import Enum
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 import logging
+from collections.abc import Iterable
 
 from dirtyfields import DirtyFieldsMixin
 
-from django.conf import settings
+from django.conf import settings as django_conf_settings
 from django.contrib.postgres import fields
-from django.urls import reverse
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.urls import reverse
 from django.utils import timezone
 
 from framework import sentry
-from osf.utils.fields import NonNaiveDateTimeField
-from osf.models import base
-from osf.models.contributor import InstitutionalContributor
-from osf.models.institution_affiliation import InstitutionAffiliation
-from osf.models.mixins import Loggable, GuardianMixin
-from osf.models.storage import InstitutionAssetFile
+from .base import BaseModel, ObjectIDMixin
+from .contributor import InstitutionalContributor
+from .institution_affiliation import InstitutionAffiliation
+from .institution_storage_region import InstitutionStorageRegion
+from .mixins import Loggable, GuardianMixin
+from .storage import InstitutionAssetFile
+from .validators import validate_email
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from website import mails
 from website import settings as website_settings
 
@@ -36,11 +39,12 @@ class IntegrationType(Enum):
     NONE = ''  # Institution affiliation is done via email domain whitelist w/o SSO
 
 
-class SharedSsoAffiliationFilterCriteriaAction(Enum):
-    """Defines 2 criteria that determines if the secondary institution is eligible for affiliation via shared SSO.
+class SsoFilterCriteriaAction(Enum):
+    """Defines 2 criteria that when comparing filter attributes for shared SSO and selective SSO.
     """
     EQUALS_TO = 'equals_to'  # Type 1: SSO releases a single-value attribute with an exact value that matches
     CONTAINS = 'contains'  # Type 2: SSO releases a multi-value attribute, of which one value matches
+    IN = 'in'  # Type 3: SSO releases a single-value attribute that have multiple valid values
 
 
 class InstitutionManager(models.Manager):
@@ -52,15 +56,14 @@ class InstitutionManager(models.Manager):
         return super().get_queryset()
 
 
-class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel, GuardianMixin):
-
+class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, GuardianMixin):
     objects = InstitutionManager()
 
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
     INSTITUTION_GROUPS = {
-        'institutional_admins': ('view_institutional_metrics', ),
+        'institutional_admins': ('view_institutional_metrics',),
     }
     group_format = 'institution_{self._id}_{group}'
     groups = INSTITUTION_GROUPS
@@ -76,6 +79,13 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         default=''
     )
 
+    # Default Storage Region
+    storage_regions = models.ManyToManyField(
+        'addons_osfstorage.Region',
+        through=InstitutionStorageRegion,
+        related_name='institutions'
+    )
+
     # Verified employment/education affiliation source for `via-orcid` institutions
     orcid_record_verified_source = models.CharField(max_length=255, blank=True, default='')
 
@@ -85,9 +95,10 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
     email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
+    support_email = LowercaseEmailField(default='', blank=True, validators=[validate_email])
 
     contributors = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
+        django_conf_settings.AUTH_USER_MODEL,
         through=InstitutionalContributor,
         related_name='institutions'
     )
@@ -118,13 +129,13 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('node', None)
-        super(Institution, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __unicode__(self):
-        return u'{} : ({})'.format(self.name, self._id)
+        return f'{self.name} : ({self._id})'
 
     def __str__(self):
-        return u'{} : ({})'.format(self.name, self._id)
+        return f'{self.name} : ({self._id})'
 
     @property
     def api_v2_url(self):
@@ -132,7 +143,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     @property
     def absolute_url(self):
-        return urljoin(website_settings.DOMAIN, 'institutions/{}/'.format(self._id))
+        return urljoin(website_settings.DOMAIN, f'institutions/{self._id}/')
 
     @property
     def absolute_api_v2_url(self):
@@ -177,7 +188,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             return '/static/img/institutions/banners/placeholder-banner.png'
 
     def update_search(self):
-        from website.search.search import update_institution, update_node
+        from website.search.search import update_institution
         from website.search.exceptions import SearchUnavailableError
 
         try:
@@ -186,14 +197,11 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             logger.exception(e)
 
         for node in self.nodes.filter(is_deleted=False):
-            try:
-                update_node(node, async_update=False)
-            except SearchUnavailableError as e:
-                logger.exception(e)
+            node.update_search()
 
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields()
-        super(Institution, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         if saved_fields:
             self.update_search()
 
@@ -210,12 +218,12 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
                     to_addr=user.username,
                     mail=mails.INSTITUTION_DEACTIVATION,
                     user=user,
-                    forgot_password_link='{}{}'.format(website_settings.DOMAIN, forgot_password),
+                    forgot_password_link=f'{website_settings.DOMAIN}{forgot_password}',
                     osf_support_email=website_settings.OSF_SUPPORT_EMAIL
                 )
-            except Exception:
+            except Exception as e:
                 logger.error(f'Failed to send institution deactivation email to user [{user._id}] at [{self._id}]')
-                sentry.log_exception()
+                sentry.log_exception(e)
                 continue
             else:
                 success += 1
@@ -248,9 +256,25 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             sentry.log_message(message)
 
     def get_institution_users(self):
-        from osf.models.user import OSFUser
+        from .user import OSFUser
         qs = InstitutionAffiliation.objects.filter(institution__id=self.id).values_list('user', flat=True)
         return OSFUser.objects.filter(pk__in=qs)
+
+    def get_semantic_iri(self) -> str:
+        if self.ror_uri:  # prefer ROR if we have it
+            return self.ror_uri
+        if self.identifier_domain:  # if not ROR, at least URI
+            return self.identifier_domain
+        # fallback to a url on osf
+        return self.absolute_url
+
+    def get_semantic_iris(self) -> Iterable[str]:
+        yield from super().get_semantic_iris()
+        yield from filter(bool, [
+            self.ror_uri,
+            self.identifier_domain,
+            self.absolute_url,
+        ])
 
 
 @receiver(post_save, sender=Institution)

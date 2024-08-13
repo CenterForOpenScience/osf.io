@@ -18,7 +18,7 @@ class TestUserInstitutions:
 
     @pytest.fixture()
     def user_institutions_url(self, user):
-        return '/v2/users/{}/institutions/'.format(user._id)
+        return f'/v2/users/{user._id}/institutions/'
 
     def test_get_success(self, app, user, user_institutions_url):
         res = app.get(user_institutions_url)

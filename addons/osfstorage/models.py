@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import logging
 
 from django.apps import apps
@@ -75,7 +73,7 @@ class OsfStorageFileNode(BaseFileNode):
     @materialized_path.setter
     def materialized_path(self, val):
         # raise Exception('Cannot set materialized path on OSFStorage as it is computed.')
-        logger.warn('Cannot set materialized path on OSFStorage because it\'s computed.')
+        logger.warning('Cannot set materialized path on OSFStorage because it\'s computed.')
 
     @classmethod
     def get(cls, _id, target):
@@ -173,7 +171,7 @@ class OsfStorageFileNode(BaseFileNode):
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         self.update_region_from_latest_version(destination_parent)
-        return super(OsfStorageFileNode, self).move_under(destination_parent, name)
+        return super().move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
         """
@@ -213,7 +211,7 @@ class OsfStorageFileNode(BaseFileNode):
                             'download': '/project/{}/files/{}/{}/?action=download'.format(target._id,
                                                                                           self.provider,
                                                                                           self._id),
-                            'view': '/project/{}/files/{}/{}'.format(target._id, self.provider, self._id)},
+                            'view': f'/project/{target._id}/files/{self.provider}/{self._id}'},
                         'path': self.materialized_path
                     },
                     auth=Auth(user),
@@ -225,35 +223,72 @@ class OsfStorageFileNode(BaseFileNode):
     def save(self):
         self._path = ''
         self._materialized_path = ''
-        return super(OsfStorageFileNode, self).save()
+        return super().save()
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def _hashes(self):
-        last_version = self.versions.last()
-        if not last_version:
+        try:
+            latest_version = self.versions.latest('identifier')
+        except FileVersion.DoesNotExist:
             return None
         return {
-            'sha1': last_version.metadata.get('sha1', ''),
-            'sha256': last_version.metadata.get('sha256', ''),
-            'md5': last_version.metadata.get('md5', ''),
+            'sha1': latest_version.metadata.get('sha1', ''),
+            'sha256': latest_version.metadata.get('sha256', ''),
+            'md5': latest_version.metadata.get('md5', ''),
         }
 
     @property
     def last_known_metadata(self):
-        last_version = self.versions.last()
-        if not last_version:
+        try:
+            latest_version = self.versions.latest('identifier')
+        except FileVersion.DoesNotExist:
             size = None
         else:
-            size = last_version.size
+            size = latest_version.size
         return {
             'path': self.materialized_path,
             'hashes': self._hashes,
             'size': size,
             'last_seen': self.modified
         }
+
+    @property
+    def should_update_search(self):
+        target = self.target
+        qa_tags = set(website_settings.DO_NOT_INDEX_LIST['tags'])
+        if qa_tags.intersection(self.tags.all().values_list('name', flat=True)):
+            return False
+        if qa_tags.intersection(target.tags.all().values_list('name', flat=True)):
+            return False
+        if any(qa_substring in target.title for qa_substring in website_settings.DO_NOT_INDEX_LIST['titles']):
+            return False
+        if not self.name or self.is_deleted:
+            return False
+        if not self.versions.exists():
+            return False
+        spam_check_field = (
+            'is_spammy'
+            if website_settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
+            else 'is_spam'
+        )
+        target_check_fields = [
+            ('is_public', True),
+            ('deleted', None),
+            ('is_deleted', False),
+            ('is_retracted', False),
+            (spam_check_field, False),
+            ('archiving', False),
+            ('verified_publishable', True),
+            ('primary_file', self)
+        ]
+        for field_name, expected_value in target_check_fields:
+            if hasattr(target, field_name) and getattr(target, field_name, expected_value) != expected_value:
+                return False
+
+        return True
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
@@ -267,10 +302,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @history.setter
     def history(self, value):
-        logger.warn('Tried to set history on OsfStorageFile/Folder')
+        logger.warning('Tried to set history on OsfStorageFile/Folder')
 
     def serialize(self, include_full=None, version=None):
-        ret = super(OsfStorageFile, self).serialize()
+        ret = super().serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
 
@@ -305,7 +340,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
             del self.target.osfstorage_region
 
         version.region = self.target.osfstorage_region
-        version._find_matching_archive(save=False)
 
         version.save()
         # Adds version to the list of file versions - using custom through table
@@ -332,8 +366,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
             target = self.target
             params = {
                 'urls': {
-                    'download': '/{}/files/osfstorage/{}/?action=download'.format(target._id, self._id),
-                    'view': '/{}/files/osfstorage/{}/'.format(target._id, self._id)},
+                    'download': f'/{target._id}/files/osfstorage/{self._id}/?action=download',
+                    'view': f'/{target._id}/files/osfstorage/{self._id}/'},
                 'path': self.materialized_path,
                 'tag': tag,
             }
@@ -347,7 +381,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 auth=auth,
             )
         else:
-            raise NotImplementedError('Cannot add a tag log to a {}'.format(self.target.__class__.__name__))
+            raise NotImplementedError(f'Cannot add a tag log to a {self.target.__class__.__name__}')
 
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
@@ -392,17 +426,14 @@ class OsfStorageFile(OsfStorageFileNode, File):
             self.remove_tag(tag, auth, save)
 
     def delete(self, user=None, **kwargs):
-        from website.search import search
-
-        search.update_file(self, delete=True)
-        return super().delete(user, **kwargs)
+        ret = super().delete(user, **kwargs)
+        self.update_search()
+        return ret
 
     def save(self, skip_search=False, *args, **kwargs):
-        from website.search import search
-
-        ret = super(OsfStorageFile, self).save()
+        ret = super().save()
         if not skip_search:
-            search.update_file(self)
+            self.update_search()
         return ret
 
 
@@ -456,7 +487,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     def serialize(self, include_full=False, version=None):
         # Versions just for compatibility
-        ret = super(OsfStorageFolder, self).serialize()
+        ret = super().serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
         return ret
@@ -474,14 +505,14 @@ class Region(models.Model):
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
     def __unicode__(self):
-        return '{}'.format(self.name)
+        return f'{self.name}'
 
     def get_absolute_url(self):
-        return '{}regions/{}'.format(self.absolute_api_v2_url, self._id)
+        return f'{self.absolute_api_v2_url}regions/{self._id}'
 
     @property
     def absolute_api_v2_url(self):
-        path = '/regions/{}/'.format(self._id)
+        path = f'/regions/{self._id}/'
         return api_v2_url(path)
 
     class Meta:
@@ -606,7 +637,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.owner.add_log(
-            'osf_storage_{0}'.format(action),
+            f'osf_storage_{action}',
             auth=auth,
             params=params
         )

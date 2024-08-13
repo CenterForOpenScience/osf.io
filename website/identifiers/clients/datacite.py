@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import logging
 import re
 
 from datacite import DataCiteMDSClient
 from django.core.exceptions import ImproperlyConfigured
 
-from osf.metadata.osf_gathering import pls_gather_metadata_file
+from osf.metadata.tools import pls_gather_metadata_file, pls_gather_metadata_as_dict
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
@@ -30,16 +27,20 @@ class DataCiteClient(AbstractIdentifierClient):
         )
 
     def build_metadata(self, node, doi_value=None, as_xml=True):
-        """Return the formatted datacite metadata XML as a string.
-        """
-        return pls_gather_metadata_file(
-            osf_item=node,
-            format_key=('datacite-xml' if as_xml else 'datacite-json'),
-            serializer_config={
-                'doi_value': doi_value or self._get_doi_value(node),
-                'as_dict': (not as_xml),
-            },
-        ).serialized_metadata
+        doi_value = doi_value or self._get_doi_value(node)
+        if as_xml:
+            metadata_file = pls_gather_metadata_file(
+                osf_item=node,
+                format_key='datacite-xml',
+                serializer_config={'doi_value': doi_value},
+            )
+            return metadata_file.serialized_metadata
+        else:
+            return pls_gather_metadata_as_dict(
+                osf_item=node,
+                format_key='datacite-json',
+                serializer_config={'doi_value': doi_value},
+            )
 
     def build_doi(self, object):
         return settings.DOI_FORMAT.format(
@@ -52,24 +53,22 @@ class DataCiteClient(AbstractIdentifierClient):
 
     def create_identifier(self, node, category, doi_value=None):
         if category != 'doi':
-            raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
+            raise NotImplementedError(f'Creating an identifier with category {category} is not supported')
         doi_value = doi_value or self._get_doi_value(node)
-        metadata = self.build_metadata(node, doi_value=doi_value)
-
+        metadata_record_xml = self.build_metadata(node, doi_value, as_xml=True)
         if settings.DATACITE_ENABLED:
-            resp = self._client.metadata_post(metadata)
+            resp = self._client.metadata_post(metadata_record_xml)
             # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
             doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
             self._client.doi_post(doi, node.absolute_url)
-            return {'doi': doi, 'metadata': metadata}
+            return {'doi': doi, 'metadata': metadata_record_xml}
         else:
             logger.info('TEST ENV: DOI built but not minted')
-
-        return {'doi': doi_value, 'metadata': metadata}
+        return {'doi': doi_value, 'metadata': metadata_record_xml}
 
     def update_identifier(self, node, category, doi_value=None):
         if category != 'doi':
-            raise NotImplementedError('Updating metadata not supported for {}'.format(category))
+            raise NotImplementedError(f'Updating metadata not supported for {category}')
         doi_value = doi_value or self._get_doi_value(node)
 
         # Reuse create logic to post updated metadata if the resource is still public

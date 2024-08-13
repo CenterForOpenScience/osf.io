@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
@@ -61,11 +61,11 @@ class TestNodeForksList:
 
     @pytest.fixture()
     def private_project_url(self, private_project):
-        return '/{}nodes/{}/forks/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/forks/'
 
     @pytest.fixture()
     def public_project_url(self, public_project):
-        return '/{}nodes/{}/forks/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/forks/'
 
     def test_can_access_public_node_forks_list_when_unauthenticated(
             self, app, public_project, public_fork, public_project_url):
@@ -234,11 +234,11 @@ class TestNodeForkCreate:
 
     @pytest.fixture()
     def private_project_url(self, private_project):
-        return '/{}nodes/{}/forks/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/forks/'
 
     @pytest.fixture()
     def public_project_url(self, public_project):
-        return '/{}nodes/{}/forks/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/forks/'
 
     @pytest.fixture()
     def fork_data(self):
@@ -418,7 +418,7 @@ class TestNodeForkCreate:
             self, app, user, private_project, fork_data):
         registration = RegistrationFactory(project=private_project, user=user)
 
-        url = '/{}registrations/{}/forks/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}registrations/{registration._id}/forks/'
         res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == registration.forks.first()._id

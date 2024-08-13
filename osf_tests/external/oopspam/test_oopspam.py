@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import responses
 
 import pytest
@@ -15,25 +15,19 @@ from osf.models.spam import SpamStatus
 class TestUserSpamOOPSpam:
 
     @pytest.fixture
-    def user(self):
-        return AuthUserFactory()
-
-    def test_get_spam_content(self, user):
-        schools_list = []
-        expected_content = ''
-
-        for _ in range(2):
-            institution = fake.company()
-            degree = fake.catch_phrase()
-            schools_list.append({
-                'degree': degree,
-                'institution': institution
-            })
-            expected_content += '{} {} '.format(degree, institution)
-        saved_fields = {'schools': schools_list}
-
-        spam_content = user._get_spam_content(saved_fields)
-        assert spam_content == expected_content.strip()
+    def user(self, mock_spam_head_request):
+        test_user = AuthUserFactory()
+        test_user.schools = [
+            {'insitution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
+            for _ in range(2)
+        ]
+        test_user.jobs = [
+            {'insitution': fake.company(), 'department': 'QA', 'title': fake.catch_phrase()}
+            for _ in range(2)
+        ]
+        test_user.social['profileWebsites'] = ['osf.io', 'cos.io']
+        test_user.save()
+        return test_user
 
     @mock.patch('osf.external.oopspam.client.OOPSpamClient')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
@@ -48,7 +42,7 @@ class TestUserSpamOOPSpam:
         suspicious_content = 'spam eggs sausage and spam'
         with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                rsps.add(responses.POST, f'https://oopspam.p.rapidapi.com/v1/spamdetection', status=200, json={'Score': 6})
+                rsps.add(responses.POST, 'https://oopspam.p.rapidapi.com/v1/spamdetection', status=200, json={'Score': 6})
                 user.do_check_spam(
                     author=user.fullname,
                     author_email=user.username,
@@ -67,14 +61,12 @@ class TestUserSpamOOPSpam:
     def test_check_spam(self, mock_do_check_spam, user):
 
         # test check_spam for other saved fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
-            assert mock_do_check_spam.call_count == 0
+        assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+        assert mock_do_check_spam.call_count == 0
 
         # test check spam for correct saved_fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
-            assert mock_do_check_spam.call_count == 1
+        user.check_spam(saved_fields={'schools': [{'institution': 'UVA'}]}, request_headers=None)
+        assert mock_do_check_spam.call_count == 1
 
 
 @pytest.mark.django_db

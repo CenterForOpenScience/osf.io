@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
@@ -34,8 +33,8 @@ DEFAULT_PERMISSIONS = {
 
 def default_urls(node_api, short_name):
     return {
-        'fetch': u'{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
-        'upload': u'{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
+        'fetch': f'{node_api}{short_name}/hgrid/',
+        'upload': f'{node_api}{short_name}/',
     }
 
 
@@ -74,7 +73,7 @@ def build_addon_root(node_settings, name, permissions=None,
 
     permissions = permissions or DEFAULT_PERMISSIONS
     if name and not check_private_key_for_anonymized_link(private_key):
-        name = u'{0}: {1}'.format(node_settings.config.full_name, name)
+        name = f'{node_settings.config.full_name}: {name}'
     else:
         name = node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
@@ -139,7 +138,7 @@ def build_addon_button(text, action, title=''):
         'action': action,
     }
     if title:
-        button['attributes'] = 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title)
+        button['attributes'] = f'title="{title}" data-toggle="tooltip" data-placement="right" '
     return button
 
 
@@ -150,7 +149,7 @@ def sort_by_name(hgrid_data):
     return return_value
 
 
-class NodeFileCollector(object):
+class NodeFileCollector:
 
     """A utility class for creating rubeus formatted node data"""
     def __init__(self, node, auth, **kwargs):
@@ -203,8 +202,10 @@ class NodeFileCollector(object):
             for descendant in self.find_readable_descendants(bnode, visited=visited):
                 yield descendant
 
-    def _serialize_node(self, node, parent=None, grid_root=None, children=None):
+    def _serialize_node(self, node, parent=None, grid_root=None, children=None,
+                        active_addons=None):
         children = children or []
+        active_addons = active_addons or []
         is_pointer = parent and node.is_linked_node
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
 
@@ -230,6 +231,7 @@ class NodeFileCollector(object):
                 'fetch': None,
             },
             'children': children,
+            'activeAddons': active_addons,
             'isPointer': is_pointer,
             'isSmartFolder': False,
             'nodeType': 'component' if parent else 'project',
@@ -238,43 +240,47 @@ class NodeFileCollector(object):
 
     def _get_nodes(self, node, grid_root=None):
         data = []
+        active_addons = []
         if node.can_view(auth=self.auth):
-            serialized_addons = self._collect_addons(node)
+            serialized_addons, active_addons = self._collect_addons(node)
             serialized_children = [
                 self._serialize_node(child, parent=node, grid_root=grid_root)
                 for child in self.find_readable_descendants(node, visited=[])
             ]
             data = serialized_addons + serialized_children
-        return self._serialize_node(node, children=data)
+        return self._serialize_node(node, children=data, active_addons=active_addons)
 
     def _collect_addons(self, node):
-        rv = []
+        return_value = []
+        active_addons = []
         for addon in node.get_addons():
+            if addon.has_auth:
+                active_addons.append(addon.config.short_name)
             if addon.config.has_hgrid_files:
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 try:
                     temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
                 except Exception as e:
-                    logger.warn(
+                    logger.warning(
                         getattr(
                             e,
                             'data',
-                            'Unexpected error when fetching file contents for {0}.'.format(addon.config.full_name)
+                            f'Unexpected error when fetching file contents for {addon.config.full_name}.'
                         )
                     )
-                    sentry.log_exception()
-                    rv.append({
+                    sentry.log_exception(e)
+                    return_value.append({
                         KIND: FOLDER,
                         'unavailable': True,
                         'iconUrl': addon.config.icon_url,
                         'provider': addon.config.short_name,
                         'addonFullname': addon.config.full_name,
                         'permissions': {'view': False, 'edit': False},
-                        'name': '{} is currently unavailable'.format(addon.config.full_name),
+                        'name': f'{addon.config.full_name} is currently unavailable',
                     })
                     continue
-                rv.extend(sort_by_name(temp) or [])
-        return rv
+                return_value.extend(sort_by_name(temp) or [])
+        return return_value, active_addons
 
 
 # TODO: these might belong in addons module

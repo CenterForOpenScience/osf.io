@@ -20,7 +20,7 @@ class TestMeetingDetail:
 
     @pytest.fixture()
     def url(self, meeting):
-        return '/_/meetings/{}/?related_counts=submissions'.format(meeting.endpoint)
+        return f'/_/meetings/{meeting.endpoint}/?related_counts=submissions'
 
     @pytest.fixture()
     def user(self):
@@ -59,8 +59,8 @@ class TestMeetingDetail:
         assert data['attributes']['is_accepting_type_two'] is False
         assert data['attributes']['field_names']['submission1'] == 'poster'
         assert data['attributes']['field_names']['submission2'] == 'talk'
-        assert '_/meetings/{}/'.format(meeting.endpoint) in data['links']['self']
-        assert '_/meetings/{}/submissions'.format(meeting.endpoint) in data['relationships']['submissions']['links']['related']['href']
+        assert f'_/meetings/{meeting.endpoint}/' in data['links']['self']
+        assert f'_/meetings/{meeting.endpoint}/submissions' in data['relationships']['submissions']['links']['related']['href']
         assert data['relationships']['submissions']['links']['related']['meta']['count'] == 1
 
         # Inactive meetings do not serialize submission emails

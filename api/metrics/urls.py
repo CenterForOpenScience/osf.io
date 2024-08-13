@@ -1,4 +1,4 @@
-from django.conf.urls import re_path
+from django.urls import re_path, path
 
 from . import views
 
@@ -39,5 +39,10 @@ urlpatterns = [
         r'^query/unique_user_visits/$',
         views.UniqueUserVisitsQuery.as_view(),
         name=views.UniqueUserVisitsQuery.view_name,
+    ),
+    path(
+        'openapi.json',
+        views.MetricsOpenapiView.as_view(),
+        name=views.MetricsOpenapiView.view_name,
     ),
 ]

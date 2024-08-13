@@ -1,5 +1,4 @@
-import mock
-from nose.tools import assert_false, assert_equal
+from unittest import mock
 import pytest
 import unittest
 
@@ -47,7 +46,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
             auth=Auth(user=self.node.creator),
             draft_registration=DraftRegistrationFactory(branched_from=self.node)
         )
-        assert_false(registration.has_addon('figshare'))
+        assert not registration.has_addon('figshare')
 
     # Overrides
 
@@ -58,9 +57,9 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         mock_info.return_value = dict(path='project', name='Folder', id='1234567890')
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
-        assert_equal(self.node_settings.folder_id, folder_id)
+        assert self.node_settings.folder_id == folder_id
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
+        assert last_log.action == f'{self.short_name}_folder_selected'
 
     def test_serialize_settings(self):
         # Custom `expected`
@@ -69,7 +68,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
             'container_id': self.node_settings.folder_id,
             'container_type': self.node_settings.folder_path
         }
-        assert_equal(settings, expected)
+        assert settings == expected
 
 
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):

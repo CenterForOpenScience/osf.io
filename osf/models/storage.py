@@ -1,7 +1,6 @@
-
 from django.db import models
 
-from osf.models.base import BaseModel
+from .base import BaseModel
 
 PROVIDER_ASSET_NAME_CHOICES = [
     ('favicon', 'favicon'),

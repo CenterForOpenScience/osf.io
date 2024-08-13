@@ -1,0 +1,94 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix osf: <https://osf.io/vocab/2022/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://localhost:5000/w4ibb> a osf:Preprint ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:description "this is a preprint description!" ;
+    dcterms:hasVersion <https://doi.org/11.111/something-or-other> ;
+    dcterms:identifier "http://localhost:5000/w4ibb",
+        "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
+    dcterms:modified "2123-05-04" ;
+    dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
+    dcterms:subject <http://localhost:8000/v2/subjects/subjwibb>,
+        <http://localhost:8000/v2/subjects/subjwibbb>,
+        <http://localhost:8000/v2/subjects/subjwobb>,
+        <http://localhost:8000/v2/subjects/subjwobbb> ;
+    dcterms:title "this is a preprint title!" ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#Preprint> ;
+    owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
+    dcat:accessService <http://localhost:5000> ;
+    osf:hostingInstitution <https://cos.io/> ;
+    osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
+    osf:statedConflictOfInterest osf:no-conflict-of-interest .
+
+<http://localhost:5000> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "http://localhost:5000" ;
+    foaf:name "OSF" .
+
+<http://localhost:5000/preprints/preprovi> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "http://localhost:5000/preprints/preprovi" ;
+    foaf:name "PP the Preprint Provider" .
+
+<http://localhost:5000/w2ibb> a osf:Project ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:dateCopyrighted "2252" ;
+    dcterms:identifier "http://localhost:5000/w2ibb",
+        "https://doi.org/10.70102/FK2osf.io/w2ibb" ;
+    dcterms:publisher <http://localhost:5000> ;
+    dcterms:rights [ foaf:name "No license" ] ;
+    dcterms:rightsHolder "Me",
+        "You" ;
+    dcterms:title "this is a project title!" ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
+
+<http://localhost:8000/v2/subjects/subjwobb> a skos:Concept ;
+    skos:broader <http://localhost:8000/v2/subjects/subjwibb> ;
+    skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
+    skos:prefLabel "wobble" ;
+    skos:related <http://localhost:8000/v2/subjects/subjwobbb> .
+
+<https://cos.io/> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "https://cos.io/",
+        "https://ror.org/05d5mza29" ;
+    owl:sameAs <https://ror.org/05d5mza29> ;
+    foaf:name "Center for Open Science" .
+
+<https://doi.org/11.111/something-or-other> dcterms:identifier "https://doi.org/11.111/something-or-other" .
+
+<https://schema.datacite.org/meta/kernel-4/#Preprint> rdfs:label "Preprint"@en .
+
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:name "Person McNamington" .
+
+<http://localhost:8000/v2/providers/preprints/preprovi/subjects/> a skos:ConceptScheme ;
+    dcterms:title "preprovi" .
+
+<http://localhost:8000/v2/subjects/subjwibb> a skos:Concept ;
+    skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
+    skos:prefLabel "wibble" ;
+    skos:related <http://localhost:8000/v2/subjects/subjwibbb> .
+
+<http://localhost:8000/v2/subjects/subjwobbb> a skos:Concept ;
+    skos:broader <http://localhost:8000/v2/subjects/subjwibbb> ;
+    skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
+    skos:prefLabel "wobbble" .
+
+<https://bepress.com/reference_guide_dc/disciplines/> a skos:ConceptScheme ;
+    dcterms:title "bepress Digital Commons Three-Tiered Taxonomy" .
+
+<http://localhost:8000/v2/subjects/subjwibbb> a skos:Concept ;
+    skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
+    skos:prefLabel "wibbble" .
+

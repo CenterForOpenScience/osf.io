@@ -25,25 +25,25 @@ def migrate(dry=True):
     failures = []
     count = 0
 
-    logger.info('Preparing to migrate {} preprints.'.format(target_count))
+    logger.info(f'Preparing to migrate {target_count} preprints.')
     for preprint_id in targets:
         count += 1
-        logger.info('{}/{} - {}'.format(count, target_count, preprint_id))
+        logger.info(f'{count}/{target_count} - {preprint_id}')
         try:
             if not dry:
-                on_preprint_updated(preprint_id, update_share=True)
+                on_preprint_updated(preprint_id)
                 # Sleep in order to be nice to EZID
                 time.sleep(1)
         except Exception as e:
             # TODO: This reliably fails for certain nodes with
             # IncompleteRead(0 bytes read)
             failures.append(preprint_id)
-            logger.warn('Encountered exception {} while posting to SHARE for preprint {}'.format(e, preprint_id))
+            logger.warning(f'Encountered exception {e} while posting to SHARE for preprint {preprint_id}')
         else:
             successes.append(preprint_id)
 
-    logger.info('Successes: {}'.format(successes))
-    logger.info('Failures: {}'.format(failures))
+    logger.info(f'Successes: {successes}')
+    logger.info(f'Failures: {failures}')
 
 
 def main():

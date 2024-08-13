@@ -7,7 +7,7 @@ class InstitutionForm(forms.ModelForm):
         model = Institution
 
         exclude = [
-            'is_deleted', 'contributors'
+            'is_deleted', 'contributors', 'storage_regions',
         ]
 
 
@@ -17,6 +17,6 @@ class InstitutionalMetricsAdminRegisterForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('institution_id')
-        super(InstitutionalMetricsAdminRegisterForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     user_id = forms.CharField(required=True, max_length=5, min_length=5)

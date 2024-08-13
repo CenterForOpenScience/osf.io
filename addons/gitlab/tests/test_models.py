@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-
-import mock
+from unittest import mock
 import pytest
 import unittest
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, UserFactory, DraftRegistrationFactory
@@ -56,40 +53,40 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'host': 'some-super-secret', 'owner': 'abc', 'repo': 'mock', 'repo_id': '123'}
-        assert_equal(settings, expected)
+        assert settings == expected
 
     @mock.patch(
         'addons.gitlab.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_complete_has_auth_not_verified(self):
-        super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+        super().test_complete_has_auth_not_verified()
 
     @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json(self, mock_repos):
         mock_repos.return_value = {}
-        super(TestNodeSettings, self).test_to_json()
+        super().test_to_json()
 
     @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json_user_is_owner(self, mock_repos):
         mock_repos.return_value = {}
         result = self.node_settings.to_json(self.user)
-        assert_true(result['user_has_auth'])
-        assert_equal(result['gitlab_user'], 'abc')
-        assert_true(result['is_owner'])
-        assert_true(result['valid_credentials'])
-        assert_equal(result.get('gitlab_repo', None), 'mock')
+        assert result['user_has_auth']
+        assert result['gitlab_user'] == 'abc'
+        assert result['is_owner']
+        assert result['valid_credentials']
+        assert result.get('gitlab_repo', None) == 'mock'
 
     @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json_user_is_not_owner(self, mock_repos):
         mock_repos.return_value = {}
         not_owner = UserFactory()
         result = self.node_settings.to_json(not_owner)
-        assert_false(result['user_has_auth'])
-        assert_equal(result['gitlab_user'], 'abc')
-        assert_false(result['is_owner'])
-        assert_true(result['valid_credentials'])
-        assert_equal(result.get('repo_names', None), None)
+        assert not result['user_has_auth']
+        assert result['gitlab_user'] == 'abc'
+        assert not result['is_owner']
+        assert result['valid_credentials']
+        assert result.get('repo_names', None) is None
 
 
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
@@ -103,7 +100,7 @@ class TestCallbacks(OsfTestCase):
 
     def setUp(self):
 
-        super(TestCallbacks, self).setUp()
+        super().setUp()
 
         self.project = ProjectFactory.build()
         self.consolidated_auth = Auth(self.project.creator)
@@ -135,85 +132,70 @@ class TestCallbacks(OsfTestCase):
         mock_repo.side_effect = NotFoundError
 
         result = self.node_settings.before_make_public(self.project)
-        assert_is(result, None)
+        assert result is None
 
     def test_before_page_load_not_contributor(self):
         message = self.node_settings.before_page_load(self.project, UserFactory())
-        assert_false(message)
+        assert not message
 
     def test_before_page_load_not_logged_in(self):
         message = self.node_settings.before_page_load(self.project, None)
-        assert_false(message)
+        assert not message
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(
             self.project, self.project.creator
         )
-        assert_true(message)
+        assert message
 
     def test_before_remove_contributor_not_authenticator(self):
         message = self.node_settings.before_remove_contributor(
             self.project, self.non_authenticator
         )
-        assert_false(message)
+        assert not message
 
     def test_after_remove_contributor_authenticator_self(self):
         message = self.node_settings.after_remove_contributor(
             self.project, self.project.creator, self.consolidated_auth
         )
-        assert_equal(
-            self.node_settings.user_settings,
-            None
-        )
-        assert_true(message)
-        assert_not_in('You can re-authenticate', message)
+        assert self.node_settings.user_settings is None
+        assert message
+        assert 'You can re-authenticate' not in message
 
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
         message = self.node_settings.after_remove_contributor(
             self.project, self.project.creator, auth
         )
-        assert_equal(
-            self.node_settings.user_settings,
-            None
-        )
-        assert_true(message)
-        assert_in('You can re-authenticate', message)
+        assert self.node_settings.user_settings is None
+        assert message
+        assert 'You can re-authenticate' in message
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
             self.project, self.non_authenticator, self.consolidated_auth
         )
-        assert_not_equal(
-            self.node_settings.user_settings,
-            None,
-        )
+        assert self.node_settings.user_settings is not None
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
         clone = self.node_settings.after_fork(
             self.project, fork, self.project.creator,
         )
-        assert_equal(
-            self.node_settings.user_settings,
-            clone.user_settings,
-        )
+        assert self.node_settings.user_settings == clone.user_settings
 
     def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
         clone = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
-        assert_equal(
-            clone.user_settings,
-            None,
-        )
+        assert clone.user_settings is None
 
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
-        assert_true(self.node_settings.user_settings is None)
+        assert self.node_settings.user_settings is None
 
 
     @mock.patch('website.archiver.tasks.archive')
@@ -223,13 +205,13 @@ class TestCallbacks(OsfTestCase):
             auth=Auth(user=self.project.creator),
             draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
-        assert_false(registration.has_addon('gitlab'))
+        assert not registration.has_addon('gitlab')
 
 
 class TestGitLabNodeSettings(unittest.TestCase):
 
     def setUp(self):
-        super(TestGitLabNodeSettings, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user.add_addon('gitlab')
         self.user_settings = self.user.get_addon('gitlab')
@@ -241,5 +223,5 @@ class TestGitLabNodeSettings(unittest.TestCase):
     @mock.patch('addons.gitlab.api.GitLabClient.delete_hook')
     def test_delete_hook_no_hook(self, mock_delete_hook):
         res = self.node_settings.delete_hook()
-        assert_false(res)
-        assert_false(mock_delete_hook.called)
+        assert not res
+        assert not mock_delete_hook.called

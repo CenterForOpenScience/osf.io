@@ -34,11 +34,18 @@ class TestInstitutionDetail:
 
         res = app.get(url)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['name'] == institution.name
-        assert 'logo_path' in res.json['data']['attributes']
-        assert 'assets' in res.json['data']['attributes']
-        assert 'logo' in res.json['data']['attributes']['assets']
-        assert 'logo_rounded' in res.json['data']['attributes']['assets']
+        attrs = res.json['data']['attributes']
+        assert attrs['name'] == institution.name
+        assert attrs['iri'] == institution.identifier_domain
+        assert attrs['ror_iri'] == institution.ror_uri
+        assert set(attrs['iris']) == {
+            institution.ror_uri,
+            institution.identifier_domain,
+            institution.absolute_url,
+        }
+        assert 'logo_path' in attrs
+        assert set(attrs['assets'].keys()) == {'logo', 'logo_rounded', 'banner'}
+        assert res.json['data']['links']['self'].endswith(url)
 
         relationships = res.json['data']['relationships']
         assert self.expected_relationships == set(relationships.keys())

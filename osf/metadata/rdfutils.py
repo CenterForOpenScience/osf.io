@@ -12,13 +12,19 @@ OSF = rdflib.Namespace('https://osf.io/vocab/2022/')  # TODO: publish something 
 OSFIO = rdflib.Namespace(website_settings.DOMAIN)
 # external pid namespaces:
 DOI = rdflib.Namespace('https://doi.org/')
+DxDOI = rdflib.Namespace('http://dx.doi.org/')  # "earlier but no longer preferred" DOI namespace
 ORCID = rdflib.Namespace('https://orcid.org/')
 ROR = rdflib.Namespace('https://ror.org/')
 # external terminology namespaces:
-DCT = rdflib.Namespace('http://purl.org/dc/terms/')                     # "dublin core terms"
+DCTERMS = rdflib.Namespace('http://purl.org/dc/terms/')                 # "dublin core terms"
+DCMITYPE = rdflib.Namespace('http://purl.org/dc/dcmitype/')             # "dublin core metadata initiative type"
 FOAF = rdflib.Namespace('http://xmlns.com/foaf/0.1/')                   # "friend of a friend"
-OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "ontology web language"
+OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "web ontology language"
 RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resource description framework"
+SKOS = rdflib.Namespace('http://www.w3.org/2004/02/skos/core#')         # "simple knowledge organization system"
+DCAT = rdflib.Namespace('http://www.w3.org/ns/dcat#')                   # "data catalog (vocabulary)"
+# non-standard namespace for datacite terms (resolves to datacite docs)
+DATACITE = rdflib.Namespace('https://schema.datacite.org/meta/kernel-4/#')
 
 
 # namespace prefixes that will be shortened by default
@@ -26,16 +32,20 @@ RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resou
 # (in addition to rdflib's 'core' (rdf, rdfs...))
 OSF_CONTEXT = {
     'osf': OSF,
-    'dct': DCT,
+    'dcterms': DCTERMS,
     'foaf': FOAF,
     'owl': OWL,
+    'skos': SKOS,
+    'dcmitype': DCMITYPE,
+    'dcat': DCAT,
 }
 
 
-def contextualized_graph() -> rdflib.Graph:
-    '''get a new rdf graph with default namespace prefixes already bound
+def contextualized_graph(graph=None) -> rdflib.Graph:
+    '''bind default namespace prefixes to a new (or given) rdf graph
     '''
-    graph = rdflib.Graph()
+    if graph is None:
+        graph = rdflib.Graph()
     for prefix, namespace in OSF_CONTEXT.items():
         graph.bind(prefix, namespace)
     return graph
@@ -52,8 +62,8 @@ def checksum_iri(checksum_algorithm, checksum_hex) -> rdflib.URIRef:
     return rdflib.URIRef(urn)
 
 
-def format_dct_extent(number_of_bytes: int) -> str:
-    '''format filesize value for dct:extent
+def format_dcterms_extent(number_of_bytes: int) -> str:
+    '''format filesize value for dcterms:extent
 
     following the dcterms:extent recommendation to specify in megabytes:
     https://www.dublincore.org/specifications/dublin-core/dcmi-terms/terms/extent/
@@ -123,3 +133,15 @@ def primitivify_rdf(thing):
             for key, val in thing.items()
         }
     return thing  # end recursion with pass-thru
+
+
+def without_namespace(iri: rdflib.URIRef, namespace: rdflib.Namespace) -> str:
+    assert iri.startswith(namespace)
+    return iri[len(namespace):]
+
+
+def smells_like_iri(maybe_iri: str) -> bool:
+    return (
+        isinstance(maybe_iri, str)
+        and '://' in maybe_iri
+    )

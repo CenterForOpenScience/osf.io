@@ -33,12 +33,12 @@ def update_ia_metadata(node, data=None):
         if not data:
             allowed_metadata = Registration.SYNCED_WITH_IA.intersection(node.get_dirty_fields().keys())
             data = {key: str(getattr(node, key)) for key in allowed_metadata}
-
-        for key in data.keys():
-            data[Registration.IA_MAPPED_NAMES.get(key, key)] = data.pop(key)
+        data = {
+            Registration.IA_MAPPED_NAMES.get(key, key): data[key] for key in data
+        }
 
         if node.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name:
-            data['withdrawal_justification'] = node.retraction.justification
+            data['withdrawal_justification'] = node.withdrawal_justification
 
         if getattr(node, 'ia_url', None) and node.is_public:
             task = get_task_from_postcommit_queue(

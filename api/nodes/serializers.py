@@ -1,10 +1,9 @@
 from django.db import connection
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
     InvalidModelValueError,
-    RelationshipPostMakesNoChanges,
 )
 from api.base.serializers import (
     VersionedDateTimeField, HideIfRegistration, IDField,
@@ -63,7 +62,7 @@ def get_institutions_to_add_remove(institutions, new_institutions):
     for inst_id in diff['add']:
         inst = Institution.load(inst_id)
         if not inst:
-            raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
+            raise exceptions.NotFound(detail=f'Institution with id "{inst_id}" was not found')
         insts_to_add.append(inst)
 
     return insts_to_add, diff['remove'].values()
@@ -75,21 +74,18 @@ def update_institutions(node, new_institutions, user, post=False):
         new_institutions=new_institutions,
     )
 
-    if post and not len(add):
-        raise RelationshipPostMakesNoChanges
-
     if not post:
         for inst in remove:
             if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(
-                    detail='User needs to be affiliated with {}'.format(inst.name),
+                    detail=f'User needs to be affiliated with {inst.name}',
                 )
             node.remove_affiliated_institution(inst, user)
 
     for inst in add:
         if not user.is_affiliated_with_institution(inst):
             raise exceptions.PermissionDenied(
-                detail='User needs to be affiliated with {}'.format(inst.name),
+                detail=f'User needs to be affiliated with {inst.name}',
             )
         node.add_affiliated_institution(inst, user)
 
@@ -100,7 +96,7 @@ class RegionRelationshipField(RelationshipField):
         try:
             region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
         except Region.DoesNotExist:
-            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(data))
+            raise exceptions.ValidationError(detail=f'Region {data} is invalid.')
         return region_id
 
 
@@ -299,7 +295,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     type = TypeField()
 
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
-    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
+    category_choices_string = ', '.join([f"'{choice[0]}'" for choice in category_choices])
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -398,11 +394,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    wikis = HideIfWikiDisabled(RelationshipField(
-        related_view='nodes:node-wikis',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_wiki_page_count'},
-    ))
+    wikis = HideIfWikiDisabled(
+        RelationshipField(
+            related_view='nodes:node-wikis',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_wiki_page_count'},
+        ),
+    )
 
     forked_from = RelationshipField(
         related_view=lambda node: (
@@ -470,17 +468,21 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         required=False,
     )
 
-    draft_registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_draft_registration_count'},
-    ))
+    draft_registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-draft-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_draft_registration_count'},
+        ),
+    )
 
-    registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_registration_count'},
-    ))
+    registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_registration_count'},
+        ),
+    )
 
     region = RegionRelationshipField(
         related_view='regions:region-detail',
@@ -527,14 +529,29 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    preprints = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    preprints = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-preprints',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
     storage = RelationshipField(
         related_view='nodes:node-storage',
         related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    cedar_metadata_records = RelationshipField(
+        related_view='nodes:node-cedar-metadata-records-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    subjects_acceptable = HideIfRegistration(
+        RelationshipField(
+            related_view='subjects:subject-list',
+            related_view_kwargs={},
+            read_only=True,
+        ),
     )
 
     @property
@@ -560,7 +577,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         """
         user = self.context['request'].user
         request_version = self.context['request'].version
-        default_perm = [osf_permissions.READ] if StrictVersion(request_version) < StrictVersion('2.11') else []
+        default_perm = [osf_permissions.READ] if Version(request_version) < Version('2.11') else []
 
         # View only link users should always get `READ` permissions regardless of other permissions
         if Auth(private_key=self.context['request'].query_params.get('view_only')).private_link:
@@ -581,7 +598,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             user_perms = obj.get_permissions(user)[::-1]
 
         user_perms = user_perms or default_perm
-        if not user_perms and user in obj.parent_admin_users:
+        if not user_perms and user in getattr(obj, 'parent_admin_users', []):
             user_perms = [osf_permissions.READ]
         return user_perms
 
@@ -1021,7 +1038,7 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
                 folder_path = None
 
             if (folder_id or folder_path) and not (folder_id and folder_path):
-                raise exceptions.ValidationError(detail='Must specify both folder_id and folder_path for {}'.format(addon_name))
+                raise exceptions.ValidationError(detail=f'Must specify both folder_id and folder_path for {addon_name}')
 
             folder_info = {
                 'id': folder_id,
@@ -1036,15 +1053,17 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
         if not auth.user.external_accounts.filter(id=external_account.id).exists():
             raise exceptions.PermissionDenied('Requested action requires account ownership.')
         if external_account.provider != addon_name:
-            raise Conflict('Cannot authorize the {} addon with an account for {}'.format(addon_name, external_account.provider))
+            raise Conflict(f'Cannot authorize the {addon_name} addon with an account for {external_account.provider}')
         return external_account
 
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
-        if (folder_info and not (   # If we have folder information to set
+        if (
+            folder_info and not (   # If we have folder information to set
                 instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
                     instance.folder_id == folder_info or (hasattr(folder_info, 'get') and instance.folder_id == folder_info.get('id', False))
                 )
-        )):
+            )
+        ):
             if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
                 raise exceptions.PermissionDenied('Requested action requires addon ownership.')
             return True
@@ -1103,7 +1122,7 @@ class NodeDetailSerializer(NodeSerializer):
 class NodeForksSerializer(NodeSerializer):
 
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
-    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
+    category_choices_string = ', '.join([f"'{choice[0]}'" for choice in category_choices])
 
     title = ser.CharField(required=False)
     category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
@@ -1130,7 +1149,7 @@ class CompoundIDField(IDField):
     def __init__(self, *args, **kwargs):
         kwargs['source'] = kwargs.pop('source', '_id')
         kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<resource-id>-<related-id>". Example: "abc12-xyz34"')
-        super(CompoundIDField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _get_resource_id(self):
         return self.context['request'].parser_context['kwargs']['node_id']
@@ -1139,12 +1158,12 @@ class CompoundIDField(IDField):
     def get_id(self, obj):
         resource_id = self._get_resource_id()
         related_id = obj._id
-        return '{}-{}'.format(resource_id, related_id)
+        return f'{resource_id}-{related_id}'
 
     def to_representation(self, value):
         resource_id = self._get_resource_id()
-        related_id = super(CompoundIDField, self).to_representation(value)
-        return '{}-{}'.format(resource_id, related_id)
+        related_id = super().to_representation(value)
+        return f'{resource_id}-{related_id}'
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
@@ -1244,7 +1263,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         if user_id and email:
             raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
         if index is not None and index > len(node.contributors):
-            raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
+            raise exceptions.ValidationError(detail=f'{index} is not a valid contributor index for node with id {node._id}')
 
     def create(self, validated_data):
         id = validated_data.get('_id')
@@ -1262,7 +1281,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
 
         if send_email not in self.email_preferences:
-            raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
+            raise exceptions.ValidationError(detail=f'{send_email} is not a valid email preference.')
 
         try:
             contributor_dict = {
@@ -1357,7 +1376,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         if not pointer_node or pointer_node.is_collection:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
-                detail='Target Node \'{}\' not found.'.format(target_node_id),
+                detail=f'Target Node \'{target_node_id}\' not found.',
             )
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
@@ -1437,7 +1456,7 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_id(obj):
-        return '{}:{}'.format(obj.node._id, obj.provider)
+        return f'{obj.node._id}:{obj.provider}'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -1557,12 +1576,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         'html': 'get_absolute_url',
     })
 
-    affiliate_user_institutions = ser.BooleanField(
-        required=False,
-        default=True,
-        help_text='Specify whether user institution affiliations should be copied over to the draft registration.',
-    )
-
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
@@ -1603,7 +1616,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
         provider = validated_data.pop('provider', None)
-        affiliate_user_institutions = validated_data.pop('affiliate_user_institutions', True)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
@@ -1617,9 +1629,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
 
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
-
-        if affiliate_user_institutions and draft.branched_from_type == DraftNode:
-            draft.affiliated_institutions.set(draft.creator.affiliated_institutions.all())
 
         return draft
 
@@ -1928,7 +1937,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         Returns addon, if exists, otherwise returns None
         """
         addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
-        if type(addon) == bool:
+        if isinstance(addon, bool):
             addon = None
         return addon
 
@@ -2005,7 +2014,7 @@ class NodeGroupsCreateSerializer(NodeGroupsSerializer):
         try:
             osf_group = OSFGroup.objects.get(_id=_id)
         except OSFGroup.DoesNotExist:
-            raise exceptions.NotFound(detail='Group {} is invalid.'.format(_id))
+            raise exceptions.NotFound(detail=f'Group {_id} is invalid.')
         return osf_group
 
     def create(self, validated_data):
@@ -2015,7 +2024,7 @@ class NodeGroupsCreateSerializer(NodeGroupsSerializer):
         group = self.load_osf_group(validated_data.get('_id'))
         if group in node.osf_groups:
             raise exceptions.ValidationError(
-                'The group {} has already been added to the node {}'.format(group._id, node._id),
+                f'The group {group._id} has already been added to the node {node._id}',
             )
 
         try:

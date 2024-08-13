@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Box addon routes."""
 from framework.routing import Rule, json_renderer
 

@@ -54,7 +54,7 @@ def check_crossref_dois(dry_run=True):
         pending_dois = []
         for preprint in preprint_batch:
             prefix = preprint.provider.doi_prefix
-            pending_dois.append('doi:{}'.format(settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)))
+            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)}')
 
         url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
 
@@ -62,7 +62,7 @@ def check_crossref_dois(dry_run=True):
             resp = requests.get(url)
             resp.raise_for_status()
         except requests.exceptions.HTTPError as exc:
-            logger.error('Could not contact crossref to check for DOIs, response returned with exception {}'.format(exc))
+            logger.error(f'Could not contact crossref to check for DOIs, response returned with exception {exc}')
             raise exc
 
         preprints_response = resp.json()['message']['items']
@@ -95,7 +95,7 @@ def report_stuck_dois(dry_run=True):
         else:
             logger.info('DRY RUN')
 
-        logger.info('There were {} stuck registrations for CrossRef, email sent to help desk'.format(preprints_with_pending_dois.count()))
+        logger.info(f'There were {preprints_with_pending_dois.count()} stuck registrations for CrossRef, email sent to help desk')
 
 
 @celery_app.task(name='management.commands.check_crossref_dois')
@@ -108,7 +108,7 @@ class Command(BaseCommand):
     help = '''Checks if we've missed any Crossref DOI confirmation emails. '''
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

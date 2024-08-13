@@ -21,6 +21,17 @@ from django.contrib import messages
 from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 
 
+def _process_collection_choices(provider, choices_name, form):
+    collection = provider.primary_collection
+    choices_name_attr = f'{choices_name}_choices'
+    choices_added = form.cleaned_data[choices_name_attr]['added']
+    choices_removed = form.cleaned_data[choices_name_attr]['removed']
+
+    getattr(collection, choices_name_attr).extend(choices_added)
+    for item in choices_removed:
+        getattr(collection, choices_name_attr).remove(item)
+
+
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
     raise_exception = True
     permission_required = 'osf.change_collectionprovider'
@@ -47,6 +58,10 @@ class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
             self.object.primary_collection.school_type_choices.append(item)
         for item in form.cleaned_data['study_design_choices']['added']:
             self.object.primary_collection.study_design_choices.append(item)
+        for item in form.cleaned_data['data_type_choices']['added']:
+            self.object.primary_collection.data_type_choices.append(item)
+        for item in form.cleaned_data['disease_choices']['added']:
+            self.object.primary_collection.disease_choices.append(item)
         self.object.primary_collection.save()
         return super().form_valid(form)
 
@@ -111,7 +126,7 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         licenses_acceptable = list(collection_provider.licenses_acceptable.values_list('name', flat=True))
         licenses_html = '<ul>'
         for license in licenses_acceptable:
-            licenses_html += '<li>{}</li>'.format(license)
+            licenses_html += f'<li>{license}</li>'
         licenses_html += '</ul>'
         collection_provider_attributes['licenses_acceptable'] = licenses_html
 
@@ -119,35 +134,35 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         # compile html list of collected_type_choices
         collected_type_choices_html = '<ul>'
         for choice in primary_collection.collected_type_choices:
-            collected_type_choices_html += u'<li>{}</li>'.format(choice)
+            collected_type_choices_html += f'<li>{choice}</li>'
         collected_type_choices_html += '</ul>'
         kwargs['collected_type_choices'] = collected_type_choices_html
 
         # compile html list of status_choices
         status_choices_html = '<ul>'
         for choice in primary_collection.status_choices:
-            status_choices_html += u'<li>{}</li>'.format(choice)
+            status_choices_html += f'<li>{choice}</li>'
         status_choices_html += '</ul>'
         kwargs['status_choices'] = status_choices_html
 
         # compile html list of volume_choices
         volume_choices_html = '<ul>'
         for choice in primary_collection.volume_choices:
-            volume_choices_html += u'<li>{}</li>'.format(choice)
+            volume_choices_html += f'<li>{choice}</li>'
         volume_choices_html += '</ul>'
         kwargs['volume_choices'] = volume_choices_html
 
         # compile html list of issue_choices
         issue_choices_html = '<ul>'
         for choice in primary_collection.issue_choices:
-            issue_choices_html += u'<li>{}</li>'.format(choice)
+            issue_choices_html += f'<li>{choice}</li>'
         issue_choices_html += '</ul>'
         kwargs['issue_choices'] = issue_choices_html
 
         # compile html list of program_area_choices
         program_area_choices_html = '<ul>'
         for choice in primary_collection.program_area_choices:
-            program_area_choices_html += u'<li>{}</li>'.format(choice)
+            program_area_choices_html += f'<li>{choice}</li>'
         program_area_choices_html += '</ul>'
         kwargs['program_area_choices'] = program_area_choices_html
 
@@ -163,6 +178,16 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         ))
         kwargs['study_design_choices'] = study_design_choices_html
 
+        disease_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
+            f'<li>{choice}</li>' for choice in primary_collection.disease_choices
+        ))
+        kwargs['disease_choices'] = disease_choices_html
+
+        data_type_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
+            f'<li>{choice}</li>' for choice in primary_collection.data_type_choices
+        ))
+        kwargs['data_type_choices'] = data_type_choices_html
+
         # get a dict of model fields so that we can set the initial value for the update form
         fields = model_to_dict(collection_provider)
         fields['collected_type_choices'] = json.dumps(primary_collection.collected_type_choices)
@@ -175,40 +200,42 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
 
         fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
         fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
+        fields['data_type_choices'] = json.dumps(primary_collection.data_type_choices)
+        fields['disease_choices'] = json.dumps(primary_collection.disease_choices)
 
         # compile html list of collected_type_choices
         if collection_provider.primary_collection:
             collected_type_choices_html = '<ul>'
             for choice in collection_provider.primary_collection.collected_type_choices:
-                collected_type_choices_html += u'<li>{}</li>'.format(choice)
+                collected_type_choices_html += f'<li>{choice}</li>'
             collected_type_choices_html += '</ul>'
             kwargs['collected_type_choices'] = collected_type_choices_html
 
             # compile html list of status_choices
             status_choices_html = '<ul>'
             for choice in collection_provider.primary_collection.status_choices:
-                status_choices_html += u'<li>{}</li>'.format(choice)
+                status_choices_html += f'<li>{choice}</li>'
             status_choices_html += '</ul>'
             kwargs['status_choices'] = status_choices_html
 
             # compile html list of volume_choices
             volume_choices_html = '<ul>'
             for choice in collection_provider.primary_collection.volume_choices:
-                volume_choices_html += u'<li>{}</li>'.format(choice)
+                volume_choices_html += f'<li>{choice}</li>'
             volume_choices_html += '</ul>'
             kwargs['volume_choices'] = volume_choices_html
 
             # compile html list of issue_choices
             issue_choices_html = '<ul>'
             for choice in collection_provider.primary_collection.issue_choices:
-                issue_choices_html += u'<li>{}</li>'.format(choice)
+                issue_choices_html += f'<li>{choice}</li>'
             issue_choices_html += '</ul>'
             kwargs['issue_choices'] = issue_choices_html
 
             # compile html list of program_area_choices
             program_area_choices_html = '<ul>'
             for choice in collection_provider.primary_collection.program_area_choices:
-                program_area_choices_html += u'<li>{}</li>'.format(choice)
+                program_area_choices_html += f'<li>{choice}</li>'
             program_area_choices_html += '</ul>'
             kwargs['program_area_choices'] = program_area_choices_html
 
@@ -235,39 +262,13 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         if self.object.primary_collection:
-            self.object.primary_collection.collected_type_choices.extend(form.cleaned_data['collected_type_choices']['added'])
-            for item in form.cleaned_data['collected_type_choices']['removed']:
-                self.object.primary_collection.collected_type_choices.remove(item)
-
-            self.object.primary_collection.status_choices.extend(form.cleaned_data['status_choices']['added'])
-            for item in form.cleaned_data['status_choices']['removed']:
-                self.object.primary_collection.status_choices.remove(item)
-
-            self.object.primary_collection.issue_choices.extend(form.cleaned_data['issue_choices']['added'])
-            for item in form.cleaned_data['issue_choices']['removed']:
-                self.object.primary_collection.issue_choices.remove(item)
-
-            self.object.primary_collection.volume_choices.extend(form.cleaned_data['volume_choices']['added'])
-            for item in form.cleaned_data['volume_choices']['removed']:
-                self.object.primary_collection.volume_choices.remove(item)
-
-            self.object.primary_collection.program_area_choices.extend(form.cleaned_data['program_area_choices']['added'])
-            for item in form.cleaned_data['program_area_choices']['removed']:
-                self.object.primary_collection.program_area_choices.remove(item)
-
-        self.object.primary_collection.school_type_choices.extend(form.cleaned_data['school_type_choices']['added'])
-        for item in form.cleaned_data['school_type_choices']['removed']:
-            self.object.primary_collection.school_type_choices.remove(item)
-
-        self.object.primary_collection.study_design_choices.extend(form.cleaned_data['study_design_choices']['added'])
-        for item in form.cleaned_data['study_design_choices']['removed']:
-            self.object.primary_collection.study_design_choices.remove(item)
-
+            for choices_name in ['collected_type', 'status', 'issue', 'volume', 'program_area', 'school_type', 'study_design', 'data_type', 'disease']:
+                _process_collection_choices(self.object, choices_name, form)
         self.object.primary_collection.save()
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        super(CollectionProviderChangeForm, self).form_invalid(form)
+        super().form_invalid(form)
         err_message = ''
         for item in form.errors.values():
             err_message = err_message + item + '\n'
@@ -275,7 +276,7 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        return super(CollectionProviderChangeForm, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
     def get_object(self, queryset=None):
         provider_id = self.kwargs.get('collection_provider_id')
@@ -296,13 +297,13 @@ class DeleteCollectionProvider(PermissionRequiredMixin, DeleteView):
         provider = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
         if provider.primary_collection.collectionsubmission_set.count() > 0:
             return redirect('collection_providers:cannot_delete', collection_provider_id=provider.pk)
-        return super(DeleteCollectionProvider, self).delete(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         provider = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
         if provider.primary_collection.collectionsubmission_set.count() > 0:
             return redirect('collection_providers:cannot_delete', collection_provider_id=provider.pk)
-        return super(DeleteCollectionProvider, self).get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         return CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
@@ -312,7 +313,7 @@ class CannotDeleteProvider(TemplateView):
     template_name = 'collection_providers/cannot_delete.html'
 
     def get_context_data(self, **kwargs):
-        context = super(CannotDeleteProvider, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['provider'] = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
         return context
 
@@ -331,9 +332,9 @@ class ExportColectionProvider(PermissionRequiredMixin, View):
         if collection_provider.primary_collection:
             cleaned_fields['primary_collection'] = self.serialize_primary_collection(cleaned_fields['primary_collection'])
         cleaned_data['fields'] = cleaned_fields
-        filename = '{}_export.json'.format(collection_provider.name)
+        filename = f'{collection_provider.name}_export.json'
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
-        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
     def serialize_primary_collection(self, primary_collection):
@@ -399,6 +400,8 @@ class ImportCollectionProvider(ImportProviderView):
             provider.primary_collection.program_area_choices = primary_collection['fields']['program_area_choices']
             provider.primary_collection.school_type_choices = primary_collection['fields']['school_type_choices']
             provider.primary_collection.study_design_choices = primary_collection['fields']['study_design_choices']
+            provider.primary_collection.disease_choices = primary_collection['fields']['disease_choices']
+            provider.primary_collection.data_type_choices = primary_collection['fields']['data_type_choices']
             provider.primary_collection.save()
         if licenses:
             provider.licenses_acceptable.set(licenses)

@@ -1,27 +1,27 @@
-# -*- coding: utf-8 -*-
 # Tests ported from tests/test_models.py and tests/test_user.py
+import datetime
 import os
 import json
 import datetime as dt
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
+from urllib.parse import urlparse, urljoin, parse_qs
 
 from django.db import connection, transaction
 from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-import mock
+from django.conf import settings as django_conf_settings
+from unittest import mock
 import itsdangerous
 import pytest
-import pytz
+from importlib import import_module
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
-from framework.auth.signals import user_merged
+from framework.auth.signals import user_account_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.celery_tasks import handlers
 from website import settings
 from website import filters
-from website import mailchimp_utils
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
@@ -33,18 +33,21 @@ from osf.models import (
     OSFGroup,
     Tag,
     Contributor,
-    Session,
     NotableDomain,
     PreprintContributor,
     DraftRegistrationContributor,
+    DraftRegistration,
+    DraftNode,
+    UserSessionMap,
 )
+from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
-from osf.exceptions import ValidationError, BlockedEmailError, UserStateError
+from osf.exceptions import ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError
 
 from .utils import capture_signals
 from .factories import (
@@ -59,16 +62,20 @@ from .factories import (
     OSFGroupFactory,
     PreprintProviderFactory,
     ProjectFactory,
-    SessionFactory,
     TagFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
     UserFactory,
     RegistrationFactory,
-    PreprintFactory
+    PreprintFactory,
+    DraftNodeFactory
 )
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
+
+from osf.external.spam import tasks as spam_tasks
 
 
 pytestmark = pytest.mark.django_db
@@ -477,7 +484,7 @@ class TestOSFUser:
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
-        assert u.date_registered.tzinfo == pytz.utc
+        assert u.date_registered.tzinfo == datetime.UTC
 
     def test_cant_create_user_without_full_name(self):
         u = OSFUser(username=fake_email())
@@ -498,7 +505,7 @@ class TestOSFUser:
         random_string.return_value = 'abcde'
         u = UnconfirmedUserFactory()
         assert (u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard') ==
-                '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
+               f'{settings.DOMAIN}confirm/external/{u._id}/abcde/?destination=dashboard')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -555,9 +562,9 @@ class TestOSFUser:
         random_string.return_value = 'abcde'
         u = UserFactory()
         u.add_unconfirmed_email('foo@bar.com')
-        assert(
+        assert (
             u.get_confirmation_url('foo@bar.com') ==
-            '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde')
+            f'{settings.DOMAIN}confirm/{u._id}/abcde/'
         )
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
@@ -584,7 +591,7 @@ class TestOSFUser:
         random_string.return_value = '54321'
 
         url = u.get_confirmation_url('foo@bar.com', force=True)
-        expected = '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, '54321')
+        expected = f'{settings.DOMAIN}confirm/{u._id}/54321/'
         assert url == expected
 
     def test_confirm_primary_email(self):
@@ -678,26 +685,20 @@ class TestOSFUser:
     def test_format_surname(self):
         user = UserFactory(fullname='Duane Johnson')
         summary = user.get_summary(formatter='surname')
-        assert(
-            summary['user_display_name'] ==
-            'Johnson'
-        )
+        assert summary['user_display_name'] == 'Johnson'
 
     def test_format_surname_one_name(self):
         user = UserFactory(fullname='Rock')
         summary = user.get_summary(formatter='surname')
-        assert(
-            summary['user_display_name'] ==
-            'Rock'
-        )
+        assert summary['user_display_name'] == 'Rock'
 
     def test_url(self, user):
-        assert user.url == '/{0}/'.format(user._id)
+        assert user.url == f'/{user._id}/'
 
     def test_absolute_url(self, user):
-        assert(
+        assert (
             user.absolute_url ==
-            urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
+            urljoin(settings.DOMAIN, f'/{user._id}/')
         )
 
     def test_profile_image_url(self, user):
@@ -734,9 +735,7 @@ class TestOSFUser:
         assert size is None
 
     def test_activity_points(self, user):
-        assert(
-            user.get_activity_points() == get_total_activity_count(user._primary_key)
-        )
+        assert user.get_activity_points() == get_total_activity_count(user._primary_key)
 
     def test_contributed_property(self):
         user = UserFactory()
@@ -814,7 +813,7 @@ class TestOSFUser:
         institution = InstitutionFactory()
         email_domain = institution.email_domains[0]
 
-        user_email = '{}@{}'.format(fake.domain_word(), email_domain)
+        user_email = f'{fake.domain_word()}@{email_domain}'
         user = UserFactory(username=user_email)
         user.update_affiliated_institutions_by_email_domain()
 
@@ -855,11 +854,11 @@ class TestProjectsInCommon:
         group_project.add_osf_group(group)
         group_project.save()
 
-        project_keys = set([node._id for node in user.all_nodes])
+        project_keys = {node._id for node in user.all_nodes}
         projects = set(user.all_nodes)
-        user2_project_keys = set([node._id for node in user2.all_nodes])
+        user2_project_keys = {node._id for node in user2.all_nodes}
 
-        assert set(n._id for n in user.get_projects_in_common(user2)) == project_keys.intersection(user2_project_keys)
+        assert {n._id for n in user.get_projects_in_common(user2)} == project_keys.intersection(user2_project_keys)
         assert user.get_projects_in_common(user2) == projects.intersection(user2.all_nodes)
 
     def test_n_projects_in_common(self, user, auth):
@@ -885,31 +884,30 @@ class TestCookieMethods:
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
-        session = Session(data={
-            'auth_user_id': user._id,
-            'auth_user_username': user.username,
-            'auth_user_fullname': user.fullname,
-        })
-        session.save()
+        session = SessionStore()
+        session['auth_user_id'] = user._id
+        session['auth_user_username'] = user.username
+        session['auth_user_fullname'] = user.fullname
+        session.create()
+        UserSessionMap.objects.create(user=user, session_key=session.session_key)
 
-        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session._id
+        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session.session_key
 
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
-        assert(
-            Session.objects.filter(data__auth_user_id=user._id).count() == 0
-        )
+        assert UserSessionMap.objects.filter(user=user).count() == 0
 
         cookie = user.get_or_create_cookie(super_secret_key)
 
-        session = Session.objects.filter(data__auth_user_id=user._id).first()
+        session_map = UserSessionMap.objects.filter(user=user).first()
+        session = SessionStore(session_key=session_map.session_key)
 
-        assert session._id == signer.unsign(cookie).decode()
-        assert session.data['auth_user_id'] == user._id
-        assert session.data['auth_user_username'] == user.username
-        assert session.data['auth_user_fullname'] == user.fullname
+        assert session.session_key == signer.unsign(cookie).decode()
+        assert session['auth_user_id'] == user._id
+        assert session['auth_user_username'] == user.username
+        assert session['auth_user_fullname'] == user.fullname
 
     def test_get_user_by_cookie(self):
         user = UserFactory()
@@ -925,15 +923,18 @@ class TestCookieMethods:
     def test_get_user_by_cookie_no_user_id(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        session = Session.objects.get(data__auth_user_id=user._id)
-        del session.data['auth_user_id']
+        session_map = UserSessionMap.objects.filter(user=user).first()
+        session = SessionStore(session_key=session_map.session_key)
+        del session['auth_user_id']
         session.save()
         assert OSFUser.from_cookie(cookie) is None
 
     def test_get_user_by_cookie_no_session(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        Session.objects.all().delete()
+        session_map = UserSessionMap.objects.filter(user=user).first()
+        session = SessionStore(session_key=session_map.session_key)
+        session.flush()
         assert OSFUser.from_cookie(cookie) is None
 
 
@@ -1205,7 +1206,7 @@ class TestUnregisteredUser:
         domain = settings.DOMAIN
         assert (
             unreg_user.get_claim_url(pid, external=True) ==
-            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals())
+            f'{domain}user/{uid}/{pid}/claim/?token={token}'
         )
 
         # test_unreg_moderator
@@ -1215,7 +1216,7 @@ class TestUnregisteredUser:
         domain = settings.DOMAIN
         assert (
             unreg_moderator.get_claim_url(pid, external=True) ==
-            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals())
+            f'{domain}user/{uid}/{pid}/claim/?token={token}'
         )
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self, unreg_user, unreg_moderator):
@@ -1230,7 +1231,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert str(e.value) == 'Referrer does not have permission to add a contributor to {}'.format(project._primary_key)
+        assert str(e.value) == f'Referrer does not have permission to add a contributor to {project._primary_key}'
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
@@ -1238,7 +1239,7 @@ class TestUnregisteredUser:
             unreg_moderator.add_unclaimed_record(provider,
                 given_name='hodor', referrer=referrer)
             unreg_user.save()
-        assert str(e.value) == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
+        assert str(e.value) == f'Referrer does not have permission to add a moderator to provider {provider._id}'
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')
@@ -1342,6 +1343,7 @@ class TestRecentlyAdded:
 
 @pytest.mark.enable_implicit_clean
 class TestTagging:
+
     def test_add_system_tag(self, user):
         tag_name = fake.word()
         user.add_system_tag(tag_name)
@@ -1411,7 +1413,7 @@ class TestCitationProperties:
                 }
             )
 
-    def test_unregistered_user_csl(self, unreg_user, project):
+    def test_unregistered_user_csl(self, unreg_user, project, referrer):
         # Tests the csl name for an unregistered user
         name = unreg_user.unclaimed_records[project._primary_key]['name'].split(' ')
         family_name = name[-1]
@@ -1423,13 +1425,28 @@ class TestCitationProperties:
                 'family': family_name,
             }
         )
+        # Tests the csl name for a user with different names across unclaimed_records
+        project_2 = NodeFactory(creator=referrer)
+        unreg_user.add_unclaimed_record(
+            project_2,
+            given_name='Bob Bobson',
+            referrer=referrer,
+            email=unreg_user.username
+        )
+        assert bool(
+            unreg_user.csl_name(project_2._id) ==
+            {
+                'given': 'Bob',
+                'family': 'Bobson'
+            }
+        )
 
 # copied from tests/test_models.py
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.enable_implicit_clean
 class TestMergingUsers:
 
-    @pytest.yield_fixture()
+    @pytest.fixture()
     def email_subscriptions_enabled(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
         yield
@@ -1480,13 +1497,13 @@ class TestMergingUsers:
 
         with capture_signals() as mock_signals:
             merge_dupe()
-            assert mock_signals.signals_sent() == set([user_merged])
+            assert mock_signals.signals_sent() == {user_account_merged}
 
     @pytest.mark.enable_enqueue_task
-    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
-        list_name = 'foo'
+        list_name = settings.MAILCHIMP_GENERAL_LIST
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()
         merge_dupe()
@@ -1577,10 +1594,40 @@ class TestMergingUsers:
         with pytest.raises(ValueError):
             master.merge_user(master)
 
+    def test_merging_user_moves_all_institution_affiliations(self):
+        user_1 = UserFactory()
+        institution_1 = InstitutionFactory()
+        user_1.add_or_update_affiliated_institution(institution_1, sso_identity=f'{user_1._id}@{institution_1._id}', sso_mail=user_1.username)
+        user_2 = UserFactory()
+        institution_2 = InstitutionFactory()
+        institution_3 = InstitutionFactory()
+        user_2.add_or_update_affiliated_institution(institution_2, sso_identity=f'{user_2._id}@{institution_2._id}', sso_mail=user_2.username)
+        user_2.add_or_update_affiliated_institution(institution_3, sso_identity=None, sso_mail=user_2.username)
+        user_1.merge_user(user_2)
+        user_1.reload()
+        # Verify that the main user has the dupe user's institution affiliations
+        assert user_1.is_affiliated_with_institution(institution_2)
+        assert user_1.is_affiliated_with_institution(institution_3)
+        user_2.reload()
+        # Verify that the dupe user no longer has any institution affiliations
+        assert not user_2.is_affiliated_with_institution(institution_2)
+        assert not user_2.is_affiliated_with_institution(institution_3)
+        # Verify that only one user is found when identity is present
+        try:
+            user_by_identity, is_identity_eligible = get_user_by_institution_identity(institution_2, f'{user_2._id}@{institution_2._id}')
+            assert user_by_identity == user_1
+            assert is_identity_eligible is True
+        except InstitutionAffiliationStateError:
+            pytest.fail('get_user_by_institution_identity() failed with InstitutionAffiliationStateError')
+        # Verify that user is not found when identity is empty
+        user_by_identity, is_identity_eligible = get_user_by_institution_identity(institution_2, None)
+        assert user_by_identity is None
+        assert is_identity_eligible is False
+
 
 class TestDisablingUsers(OsfTestCase):
     def setUp(self):
-        super(TestDisablingUsers, self).setUp()
+        super().setUp()
         self.user = UserFactory()
 
     def test_user_enabled_by_default(self):
@@ -1622,8 +1669,13 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_deactivate_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionStore()
+        session1.create()
+        UserSessionMap.objects.create(user=self.user, session_key=session1.session_key)
+
+        session2 = SessionStore()
+        session2.create()
+        UserSessionMap.objects.create(user=self.user, session_key=session2.session_key)
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1633,19 +1685,15 @@ class TestDisablingUsers(OsfTestCase):
         assert isinstance(self.user.date_disabled, dt.datetime)
         assert self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] is False
 
-        assert not Session.load(session1._id)
-        assert not Session.load(session2._id)
+        assert not SessionStore().exists(session_key=session1.session_key)
+        assert not SessionStore().exists(session_key=session2.session_key)
 
-    def test_deactivate_account_api(self):
-        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
-        with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
-            self.user.deactivate_account()
 
 # Copied from tests/modes/test_user.py
 @pytest.mark.enable_bookmark_creation
 class TestUser(OsfTestCase):
     def setUp(self):
-        super(TestUser, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
@@ -1831,13 +1879,22 @@ class TestUser(OsfTestCase):
         projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
         assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
 
+    def test_remove_all_affiliated_institutions(self):
+        user = UserFactory()
+        for institution in [InstitutionFactory(), InstitutionFactory(), InstitutionFactory()]:
+            user.add_or_update_affiliated_institution(institution, sso_identity=f'{user._id}@{institution._id}', sso_mail=user.username)
+        assert user.get_affiliated_institutions().count() == 3
+        user.remove_all_affiliated_institutions()
+        user.reload()
+        assert user.get_affiliated_institutions().count() == 0
+
 
 # Copied from tests/models/test_user.py
 @pytest.mark.enable_implicit_clean
 @pytest.mark.enable_bookmark_creation
 class TestUserMerging(OsfTestCase):
     def setUp(self):
-        super(TestUserMerging, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         with self.context:
             handlers.celery_before_request()
@@ -1870,6 +1927,11 @@ class TestUserMerging(OsfTestCase):
         other_user = UserFactory()
         other_user.save()
 
+        # create session for other_user
+        other_user_session = SessionStore()
+        other_user_session.create()
+        UserSessionMap.objects.create(user=other_user, session_key=other_user_session.session_key)
+
         # define values for users' fields
         today = timezone.now()
         yesterday = today - dt.timedelta(days=1)
@@ -1891,14 +1953,9 @@ class TestUserMerging(OsfTestCase):
         other_user.external_accounts.add(ExternalAccountFactory())
 
         self.user.mailchimp_mailing_lists = {
-            'user': True,
-            'shared_gt': True,
-            'shared_lt': False,
         }
         other_user.mailchimp_mailing_lists = {
-            'other': True,
-            'shared_gt': False,
-            'shared_lt': True,
+            settings.MAILCHIMP_GENERAL_LIST: True
         }
 
         self.user.security_messages = {
@@ -1962,20 +2019,17 @@ class TestUserMerging(OsfTestCase):
             'notifications_configured': {
                 '123ab': True, 'abc12': True,
             },
-            'emails': set([
+            'emails': {
                 other_user.emails.first().id,
                 self.user.emails.first().id,
-            ]),
-            'external_accounts': set([
+            },
+            'external_accounts': {
                 self.user.external_accounts.first().id,
                 other_user.external_accounts.first().id,
-            ]),
+            },
             'recently_added': set(),
             'mailchimp_mailing_lists': {
-                'user': True,
-                'other': True,
-                'shared_gt': True,
-                'shared_lt': True,
+                settings.MAILCHIMP_GENERAL_LIST: True
             },
             'osf_mailing_lists': {
                 'Open Science Framework Help': True
@@ -2004,7 +2058,6 @@ class TestUserMerging(OsfTestCase):
         # mock mailchimp
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
         with run_celery_tasks():
             # perform the merge
@@ -2016,16 +2069,16 @@ class TestUserMerging(OsfTestCase):
         # check each field/value pair
         for k, v in expected.items():
             if is_mrm_field(getattr(self.user, k)):
-                assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
+                assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, f'{k} doesn\'t match expectations'
             else:
-                assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
+                assert getattr(self.user, k) == v, f'{k} doesn\'t match expectation'
 
         assert sorted(self.user.system_tags) == ['other', 'shared', 'user']
 
         # check fields set on merged user
         assert other_user.merged_by == self.user
 
-        assert not Session.objects.filter(data__auth_user_id=other_user._id).exists()
+        assert not SessionStore().exists(session_key=other_user_session.session_key)
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
@@ -2106,7 +2159,7 @@ class TestUserMerging(OsfTestCase):
 class TestUserValidation(OsfTestCase):
 
     def setUp(self):
-        super(TestUserValidation, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
     def test_validate_fullname_none(self):
@@ -2130,11 +2183,13 @@ class TestUserValidation(OsfTestCase):
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)
 
+        previous_number_of_domains = NotableDomain.objects.all().count()
         fails_at_end = False
         for should_pass in data['testsPositive']:
             try:
                 self.user.social = {'profileWebsites': [should_pass]}
-                self.user.save()
+                with mock.patch.object(spam_tasks.requests, 'head'):
+                    self.user.save()
                 assert self.user.social['profileWebsites'] == [should_pass]
             except ValidationError:
                 fails_at_end = True
@@ -2144,16 +2199,26 @@ class TestUserValidation(OsfTestCase):
             self.user.social = {'profileWebsites': [should_fail]}
             try:
                 with pytest.raises(ValidationError):
-                    self.user.save()
+                    with mock.patch.object(spam_tasks.requests, 'head'):
+                        self.user.save()
             except AssertionError:
                 fails_at_end = True
                 print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
         if fails_at_end:
             raise
 
+        # Not all domains that are permissable are possible to use as spam,
+        # some are correctly not extracted and not kept in notable domain so spot
+        # check some, not all, because not all `testsPositive` urls should be in
+        # NotableDomains
+        assert NotableDomain.objects.all().count() == previous_number_of_domains + 12
+        assert NotableDomain.objects.get(domain='definitelyawebsite.com')
+        assert NotableDomain.objects.get(domain='a.b-c.de')
+
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social['profileWebsites'] == ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']
 
     def test_validate_social_profile_websites_invalid(self):
@@ -2172,7 +2237,8 @@ class TestUserValidation(OsfTestCase):
 
     def test_profile_website_unchanged(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links['profileWebsites'] == ['http://cos.io/']
         assert len(self.user.social_links) == 1
 
@@ -2183,7 +2249,8 @@ class TestUserValidation(OsfTestCase):
             'github': ['CenterForOpenScience'],
             'scholar': 'ztt_j28AAAAJ'
         }
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/'],
             'twitter': 'http://twitter.com/OSFramework',
@@ -2197,7 +2264,8 @@ class TestUserValidation(OsfTestCase):
             'twitter': ['OSFramework'],
             'github': ['CenterForOpenScience']
         }
-        self.user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'http://twitter.com/OSFramework',
@@ -2330,6 +2398,12 @@ class TestUserGdprDelete:
         return registration
 
     @pytest.fixture()
+    def registration_with_draft_node(self, user, registration):
+        registration.branched_from = DraftNodeFactory(creator=user)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
     def project(self, user):
         project = ProjectFactory(creator=user)
         project.save()
@@ -2375,10 +2449,41 @@ class TestUserGdprDelete:
         user.gdpr_delete()
         assert user.nodes.exclude(is_deleted=True).count() == 0
 
+    def test_can_gdpr_delete_personal_registrations(self, user, registration_with_draft_node):
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+
+        registration_with_draft_node.remove_node(Auth(user))
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+        user.gdpr_delete()
+
+        # DraftNodes soft-deleted, DraftRegistions hard-deleted
+        assert user.nodes.exclude(is_deleted=True).count() == 0
+        assert DraftRegistration.objects.all().count() == 0
+
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 
         user.gdpr_delete()
         assert user.nodes.all().count() == 0
+
+    def test_can_gdpr_delete_shared_draft_registration_with_multiple_admins(self, user, registration):
+        other_admin = AuthUserFactory()
+        draft_registrations = user.draft_registrations.get()
+        draft_registrations.add_contributor(other_admin, permissions='admin')
+        assert draft_registrations.contributors.all().count() == 2
+        registration.delete_registration_tree(save=True)
+
+        user.gdpr_delete()
+        assert draft_registrations.contributors.get() == other_admin
+        assert user.nodes.filter(deleted__isnull=True).count() == 0
 
     def test_cant_gdpr_delete_registrations(self, user, registration):
 
@@ -2399,8 +2504,8 @@ class TestUserGdprDelete:
         with pytest.raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
-        assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
-                                         ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+        assert exc_info.value.args[0] == 'You cannot delete Node {} because it would' \
+                                         ' be a Node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
 
     def test_cant_gdpr_delete_osf_group_if_only_manager(self, user):
         group = OSFGroupFactory(name='My Group', creator=user)

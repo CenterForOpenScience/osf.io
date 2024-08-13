@@ -35,7 +35,7 @@ class GoogleDriveSerializer(StorageAddonSerializer):
 
     @property
     def serialized_node_settings(self):
-        result = super(GoogleDriveSerializer, self).serialized_node_settings
+        result = super().serialized_node_settings
         valid_credentials = True
         if self.node_settings.external_account is not None:
             try:

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from rest_framework import status as http_status
 import logging
 
@@ -295,7 +293,7 @@ def conference_results(meeting):
 
 
 def redirect_to_conference_results(meeting):
-    return redirect('/meetings/{}'.format(meeting))
+    return redirect(f'/meetings/{meeting}')
 
 
 def conference_submissions(**kwargs):

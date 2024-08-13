@@ -1,14 +1,13 @@
-
 import pytz
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from osf.models import Node
-from osf.models import NodeLog
-from osf.models.base import GuidMixin, Guid, BaseModel
-from osf.models.mixins import CommentableMixin
-from osf.models.spam import SpamMixin
-from osf.models import validators
+from .node import Node
+from .nodelog import NodeLog
+from .base import GuidMixin, Guid, BaseModel
+from .mixins import CommentableMixin
+from .spam import SpamMixin
+from .validators import CommentMaxLength, string_required
 from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.exceptions import PermissionsError
@@ -23,6 +22,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     OVERVIEW = 'node'
     FILES = 'files'
     WIKI = 'wiki'
+    SPAM_CHECK_FIELDS = {'content'}
 
     user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
     # the node that the comment belongs to
@@ -44,8 +44,10 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
     content = models.TextField(
-        validators=[validators.CommentMaxLength(settings.COMMENT_MAXLENGTH),
-                    validators.string_required]
+        validators=[
+            CommentMaxLength(settings.COMMENT_MAXLENGTH),
+            string_required,
+        ]
     )
 
     # The mentioned users
@@ -53,11 +55,11 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     @property
     def url(self):
-        return '/{}/'.format(self._id)
+        return f'/{self._id}/'
 
     @property
     def absolute_api_v2_url(self):
-        path = '/comments/{}/'.format(self._id)
+        path = f'/comments/{self._id}/'
         return api_v2_url(path)
 
     @property
@@ -136,7 +138,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
         if not comment.node.can_comment(auth):
-            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
+            raise PermissionsError(f'{auth.user!r} does not have permission to comment on this node')
         log_dict = {
             'project': comment.node.parent_id,
             'node': comment.node._id,
@@ -181,7 +183,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     def edit(self, content, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
-            raise PermissionsError('{0!r} does not have permission to edit this comment'.format(auth.user))
+            raise PermissionsError(f'{auth.user!r} does not have permission to edit this comment')
         log_dict = {
             'project': self.node.parent_id,
             'node': self.node._id,
@@ -209,7 +211,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     def delete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
-            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
+            raise PermissionsError(f'{auth.user!r} does not have permission to comment on this node')
         log_dict = {
             'project': self.node.parent_id,
             'node': self.node._id,
@@ -233,7 +235,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     def undelete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
-            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
+            raise PermissionsError(f'{auth.user!r} does not have permission to comment on this node')
         self.is_deleted = False
         self.deleted = None
         log_dict = {
@@ -253,3 +255,10 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 save=False,
             )
             self.node.save()
+
+    def _get_spam_content(self, *unused_args, **unused_kwargs):
+        '''For compatibility with the domain extraction management command.'''
+        content = [getattr(self, field, []) for field in self.SPAM_CHECK_FIELDS]
+        if not content:
+            return None
+        return ' '.join(content)

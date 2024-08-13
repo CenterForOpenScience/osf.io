@@ -1,6 +1,6 @@
 import json
 import pytest
-import mock
+from unittest import mock
 
 from django.test import RequestFactory
 
@@ -144,9 +144,9 @@ class TestShareSourceRegistrationProvider:
         view = views.ShareSourceRegistrationProvider()
         return setup_view(view, req, registration_provider_id=provider.id)
 
-    def test_share_source(self, mock_share, view, provider, req):
-        mock_share.reset()
-        mock_share.add(
+    def test_share_source(self, mock_share_responses, view, provider, req):
+        mock_share_responses.reset()
+        mock_share_responses.add(
             responses.POST,
             f'{settings.SHARE_URL}api/v2/sources/',
             json.dumps(
@@ -172,9 +172,9 @@ class TestShareSourceRegistrationProvider:
         assert provider.access_token == 'test access token'
 
     @mock.patch.object(settings, 'SHARE_PROVIDER_PREPEND', 'testenv')
-    def test_share_source_prefix(self, mock_share, view, provider, req):
-        mock_share.reset()
-        mock_share.add(
+    def test_share_source_prefix(self, mock_share_responses, view, provider, req):
+        mock_share_responses.reset()
+        mock_share_responses.add(
             responses.POST,
             f'{settings.SHARE_URL}api/v2/sources/',
             json.dumps(

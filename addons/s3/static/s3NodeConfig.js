@@ -28,7 +28,7 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             {   // TreeBeard Options
                 columnTitles: function() {
                     return [{
-                        title: 'Buckets',
+                        title: 'Buckets/Folders',
                         width: '75%',
                         sort: false
                     }, {
@@ -36,12 +36,6 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                         width: '25%',
                         sort: false
                     }];
-                },
-                resolveToggle: function(item) {
-                    return '';
-                },
-                resolveIcon: function(item) {
-                    return m('i.fa.fa-folder-o', ' ');
                 },
             },
             tbOpts

@@ -1,6 +1,5 @@
-from __future__ import unicode_literals
 from django.db import models
-from osf.models.base import BaseModel
+from .base import BaseModel
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import ChronosSubmissionStatus
 

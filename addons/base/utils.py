@@ -10,6 +10,7 @@ def get_mfr_url(target, provider_name):
         return target.osfstorage_region.mfr_url
     return MFR_SERVER_URL
 
+
 def serialize_addon_config(config, user):
     lookup = config.template_lookup
 
@@ -42,13 +43,13 @@ def format_last_known_metadata(auth, node, file, error_type):
         parts = [
             """</br>This file was """ if last_seen or hashes or path or size else '',
             """last seen on {} UTC """.format(last_seen.strftime('%c')) if last_seen else '',
-            """and found at path {} """.format(markupsafe.escape(path)) if last_seen and path else '',
-            """last found at path {} """.format(markupsafe.escape(path)) if not last_seen and path else '',
-            """with a file size of {} bytes""".format(size) if size and (last_seen or path) else '',
-            """last seen with a file size of {} bytes""".format(size) if size and not (last_seen or path) else '',
+            f"""and found at path {markupsafe.escape(path)} """ if last_seen and path else '',
+            f"""last found at path {markupsafe.escape(path)} """ if not last_seen and path else '',
+            f"""with a file size of {size} bytes""" if size and (last_seen or path) else '',
+            f"""last seen with a file size of {size} bytes""" if size and not (last_seen or path) else '',
             """.</br></br>""" if last_seen or hashes or path or size else '',
             """Hashes of last seen version:</br><p>{}</p>""".format(
-                '</br>'.join(['{}: {}'.format(k, v) for k, v in hashes.items()])
+                '</br>'.join([f'{k}: {v}' for k, v in hashes.items()])
             ) if hashes else '',  # TODO: Format better for UI
             msg
         ]

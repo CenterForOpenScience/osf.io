@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url
@@ -190,7 +190,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/logs/{}/'.format(self._id)
+        path = f'/logs/{self._id}/'
         return api_v2_url(path)
 
     def get_absolute_url(self):

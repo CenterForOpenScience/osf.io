@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 import unittest
 
@@ -40,8 +39,8 @@ class MendeleyProviderTestCase(CitationAddonProviderTestSuiteMixin, unittest.Tes
         mock_get_client.return_value = mock_client
         res = self.provider.handle_callback('testresponse')
         mock_get_client.assert_called_with(credentials='testresponse')
-        assert(res.get('provider_id') == 'testid')
-        assert(res.get('display_name') == 'testdisplay')
+        assert (res.get('provider_id') == 'testid')
+        assert (res.get('display_name') == 'testdisplay')
 
 class MendeleyNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unittest.TestCase):
     short_name = 'mendeley'
@@ -59,9 +58,9 @@ class MendeleyNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, uni
         mock_folders.return_value = [MockFolder(), MockFolder()]
         folders = self.node_settings.get_folders()
 
-        assert(len(folders) == 2)
-        assert(folders[0]['kind'] == 'folder')
-        assert(folders[1]['kind'] == 'folder')
+        assert (len(folders) == 2)
+        assert (folders[0]['kind'] == 'folder')
+        assert (folders[1]['kind'] == 'folder')
 
 class MendeleyUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
     short_name = 'mendeley'

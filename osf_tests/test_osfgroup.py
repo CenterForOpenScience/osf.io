@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import time
 from django.contrib.auth.models import Group
@@ -717,11 +717,11 @@ class TestNodeGroups:
 
     def test_node_get_permissions_override(self, project, manager, member, osf_group):
         project.add_osf_group(osf_group, WRITE)
-        assert set(project.get_permissions(member)) == set([READ, WRITE])
+        assert set(project.get_permissions(member)) == {READ, WRITE}
 
         project.remove_osf_group(osf_group)
         project.add_osf_group(osf_group, READ)
-        assert set(project.get_permissions(member)) == set([READ])
+        assert set(project.get_permissions(member)) == {READ}
 
         anon = AnonymousUser()
         assert project.get_permissions(anon) == []
@@ -775,12 +775,12 @@ class TestNodeGroups:
         grandchild_two = NodeFactory(parent=child_two, creator=manager)  # Member has implicit admin perms on grandchild_two through osf_group
         can_view = Node.objects.can_view(member)
         assert len(can_view) == 6
-        assert set(list(can_view.values_list('id', flat=True))) == set((project.id,
+        assert set(list(can_view.values_list('id', flat=True))) == {project.id,
                                                                         child.id,
                                                                         grandchild.id,
                                                                         project_two.id,
                                                                         child_two.id,
-                                                                        grandchild_two.id))
+                                                                        grandchild_two.id}
 
         grandchild_two.is_deleted = True
         grandchild_two.save()
@@ -955,9 +955,9 @@ class TestRemovingContributorOrGroupMembers:
         project_file = OsfStorageFile.create(
             target_object_id=project.id,
             target_content_type=ContentType.objects.get_for_model(project),
-            path='/{}'.format(filename),
+            path=f'/{filename}',
             name=filename,
-            materialized_path='/{}'.format(filename))
+            materialized_path=f'/{filename}')
 
         project_file.save()
         from addons.osfstorage import settings as osfstorage_settings

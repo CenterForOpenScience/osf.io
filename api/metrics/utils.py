@@ -6,14 +6,13 @@ from datetime import timedelta, datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from osf.metrics.utils import YearMonth
-
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M'
 DATE_FORMAT = '%Y-%m-%d'
 YEARMONTH_FORMAT = '%Y-%m'
 
 DEFAULT_DAYS_BACK = 5
+DEFAULT_MONTHS_BACK = 5 * 30  # days
 
 
 def parse_datetimes(query_params):
@@ -65,44 +64,36 @@ def parse_datetimes(query_params):
     return start_datetime, end_datetime
 
 
-def parse_date_param(param_value):
-    try:
-        return datetime.strptime(param_value, DATE_FORMAT).date()
-    except ValueError:
-        raise ValidationError(f'Invalid date value: "{param_value}" (expected format "YYYY-MM-DD")')
+def parse_date_param(param_value, is_monthly=False):
+    if is_monthly:
+        date = datetime.strptime(param_value, DATE_FORMAT).date()
+        return f'{date.year}-{date.month:>02}'
+    return datetime.strptime(param_value, DATE_FORMAT).date()
 
 
-def parse_yearmonth_param(param_value):
-    try:
-        date = datetime.strptime(param_value, YEARMONTH_FORMAT).date()
-    except ValueError:
-        raise ValidationError(f'Invalid date value: "{param_value}" (expected format "YYYY-MM")')
-    return YearMonth(date.year, date.month)
-
-
-def parse_dates(query_params):
+def parse_dates(query_params, is_monthly=False):
+    default_time_back = DEFAULT_MONTHS_BACK if is_monthly else DEFAULT_DAYS_BACK
     start_date_param = query_params.get('start_date', None)
     end_date_param = query_params.get('end_date', None)
 
     if end_date_param and not start_date_param:
         raise ValidationError('You cannot provide a specific end_date with no start_date')
-    start_date = (
-        parse_date_param(start_date_param)
-        if start_date_param
-        else (timezone.now() - timedelta(days=DEFAULT_DAYS_BACK)).date()
-    )
-    end_date = (
-        parse_date_param(end_date_param)
-        if end_date_param
-        else timezone.now().date()
-    )
+
+    if not start_date_param:
+        start_date_param = (timezone.now() - timedelta(days=default_time_back)).date()
+    if not end_date_param:
+        end_date_param = timezone.now().date()
+
+    start_date = parse_date_param(str(start_date_param), is_monthly)
+    end_date = parse_date_param(str(end_date_param), is_monthly)
 
     if start_date > end_date:
         raise ValidationError('The end_date must be after the start_date')
+
     return start_date, end_date
 
 
-def parse_date_range(query_params):
+def parse_date_range(query_params, is_monthly=False):
     if query_params.get('days_back', None):
         days_back = query_params.get('days_back', DEFAULT_DAYS_BACK)
         report_date_range = {'gte': f'now/d-{days_back}d'}
@@ -113,35 +104,13 @@ def parse_date_range(query_params):
             if m:
                 days_back = m.group(1)
             else:
-                raise Exception('Unsupported timeframe format: "{}"'.format(timeframe))
+                raise Exception(f'Unsupported timeframe format: "{timeframe}"')
             report_date_range = {'gte': f'now/d-{days_back}d'}
     elif query_params.get('timeframeStart'):
         tsStart = query_params.get('timeframeStart')
         tsEnd = query_params.get('timeframeEnd')
         report_date_range = {'gte': tsStart, 'lt': tsEnd}
     else:
-        start_date, end_date = parse_dates(query_params)
+        start_date, end_date = parse_dates(query_params, is_monthly=is_monthly)
         report_date_range = {'gte': str(start_date), 'lte': str(end_date)}
     return report_date_range
-
-
-def parse_yearmonth_range(query_params):
-    start_yearmonth_param = query_params.get('start_yearmonth', None)
-    end_yearmonth_param = query_params.get('end_yearmonth', None)
-
-    if end_yearmonth_param and not start_yearmonth_param:
-        raise ValidationError('You cannot provide a specific end_yearmonth with no start_yearmonth')
-    start_yearmonth = (
-        parse_yearmonth_param(start_yearmonth_param)
-        if start_yearmonth_param
-        else YearMonth.from_date(timezone.now() - timedelta(days=DEFAULT_DAYS_BACK))
-    )
-    end_yearmonth = (
-        parse_yearmonth_param(end_yearmonth_param)
-        if end_yearmonth_param
-        else YearMonth.from_date(timezone.now())
-    )
-
-    if start_yearmonth > end_yearmonth:
-        raise ValidationError('The end_yearmonth must be after the start_yearmonth')
-    return {'gte': str(start_yearmonth), 'lte': str(end_yearmonth)}

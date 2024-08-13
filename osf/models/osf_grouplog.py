@@ -1,5 +1,5 @@
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website.util import api_v2_url
 
@@ -41,7 +41,7 @@ class OSFGroupLog(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/logs/{}/'.format(self._id)
+        path = f'/logs/{self._id}/'
         return api_v2_url(path)
 
     def get_absolute_url(self):

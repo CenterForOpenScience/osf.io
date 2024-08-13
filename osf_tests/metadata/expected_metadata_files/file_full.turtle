@@ -1,0 +1,78 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix osf: <https://osf.io/vocab/2022/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://localhost:5000/w3ibb> a osf:File ;
+    dcat:accessService <http://localhost:5000> ;
+    dcterms:created "2123-05-04" ;
+    dcterms:identifier "http://localhost:5000/w3ibb" ;
+    dcterms:modified "2123-05-04" ;
+    osf:fileName "my-file.blarg" ;
+    osf:filePath "/my-file.blarg" ;
+    osf:hasFileVersion <http://localhost:5000/w3ibb?revision=1> ;
+    osf:isContainedBy <http://localhost:5000/w2ibb> .
+
+<http://localhost:5000/w2ibb> a osf:Project ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:dateCopyrighted "2250-2254" ;
+    dcterms:identifier "http://localhost:5000/w2ibb",
+        "https://doi.org/10.70102/FK2osf.io/w2ibb" ;
+    dcterms:publisher <http://localhost:5000> ;
+    dcterms:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
+    dcterms:rightsHolder "Me",
+        "You" ;
+    dcterms:title "this is a project title!"@en ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#Dataset> ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
+    osf:funder <https://doi.org/10.$>,
+        <https://doi.org/10.$$$$> ;
+    osf:hasFunding <https://moneypockets.example/millions>,
+        <https://moneypockets.example/millions-more> .
+
+<http://localhost:5000/w3ibb?revision=1> a osf:FileVersion ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:extent "0.000007 MB" ;
+    dcterms:format "img/png" ;
+    dcterms:modified "2123-05-04" ;
+    dcterms:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
+    osf:versionNumber "1" .
+
+<https://moneypockets.example/millions> a osf:FundingAward ;
+    dcterms:contributor <https://doi.org/10.$$$$> ;
+    dcterms:identifier "https://moneypockets.example/millions" ;
+    dcterms:title "because reasons" ;
+    osf:awardNumber "10000000" .
+
+<https://moneypockets.example/millions-more> a osf:FundingAward ;
+    dcterms:contributor <https://doi.org/10.$$$$> ;
+    dcterms:identifier "https://moneypockets.example/millions-more" ;
+    dcterms:title "because reasons!" ;
+    osf:awardNumber "2000000" .
+
+<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> dcterms:identifier "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" ;
+    foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
+
+<https://doi.org/10.$$$$> a dcterms:Agent ;
+    dcterms:identifier "https://doi.org/10.$$$$" ;
+    foaf:name "Mx. Moneypockets" .
+
+<https://doi.org/10.$> a dcterms:Agent ;
+    dcterms:identifier "https://doi.org/10.$" ;
+    foaf:name "Caring Fan" .
+
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:name "Person McNamington" .
+
+<http://localhost:5000> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "http://localhost:5000" ;
+    foaf:name "OSF" .
+
+<https://schema.datacite.org/meta/kernel-4/#Dataset> rdfs:label "Dataset"@en .

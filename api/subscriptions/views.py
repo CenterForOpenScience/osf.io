@@ -122,7 +122,7 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
                     provider__type=self.provider_class._typedmodels_type,
                 )
             except ObjectDoesNotExist:
-                    raise NotFound
+                raise NotFound
         self.check_object_permissions(self.request, obj)
         return obj
 

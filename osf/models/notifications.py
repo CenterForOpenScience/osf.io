@@ -1,9 +1,9 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from osf.models import Node
-from osf.models import OSFUser
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.validators import validate_subscription_type
+from .node import Node
+from .user import OSFUser
+from .base import BaseModel, ObjectIDMixin
+from .validators import validate_subscription_type
 from osf.utils.fields import NonNaiveDateTimeField
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import api_v2_url
@@ -56,7 +56,7 @@ class NotificationSubscription(BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/subscriptions/{}/'.format(self._id)
+        path = f'/subscriptions/{self._id}/'
         return api_v2_url(path)
 
     def add_user_to_subscription(self, user, notification_type, save=True):

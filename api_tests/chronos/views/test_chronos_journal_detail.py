@@ -12,7 +12,7 @@ class TestChronosJournalDetail:
 
     @pytest.fixture()
     def url(self, journal):
-        return '/_/chronos/journals/{}/'.format(journal.journal_id)
+        return f'/_/chronos/journals/{journal.journal_id}/'
 
     @pytest.fixture()
     def res(self, app, url):

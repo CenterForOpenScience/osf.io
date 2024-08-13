@@ -13,7 +13,7 @@ def confirm_spam(guid):
     node = guid.referent
     referent_type = 'preprint' if isinstance(node, Preprint) else 'node'
 
-    logger.info('Marking {} {} as spam...'.format(referent_type, node._id))
+    logger.info(f'Marking {referent_type} {node._id} as spam...')
 
     saved_fields = {'is_public', } if referent_type == 'node' else {'is_published', }
 
@@ -33,7 +33,7 @@ def confirm_spam(guid):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument('guids', type=str, nargs='+', help='List of Node or Preprint GUIDs')
 
     def handle(self, *args, **options):

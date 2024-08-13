@@ -32,7 +32,7 @@ def daily_reporters_go(also_send_to_keen=False, report_date=None, reporter_filte
         except Exception as e:
             errors[reporter_class.__name__] = repr(e)
             logger.exception(e)
-            sentry.log_exception()
+            sentry.log_exception(e)
             # continue with the next reporter
     return errors
 

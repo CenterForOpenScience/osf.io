@@ -1,11 +1,12 @@
-import mock
+from unittest import mock
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from types import SimpleNamespace
 from urllib.parse import urlparse
 
+from flask import g
+
 from addons.wiki.tests.factories import WikiVersionFactory
-from framework.sessions import set_session
 from osf.external.spam import tasks as spam_tasks
 from osf.models import (
     NotableDomain,
@@ -18,7 +19,7 @@ from osf_tests.factories import (
     NodeFactory,
     PreprintFactory,
     RegistrationFactory,
-    SessionFactory,
+    UserFactory
 )
 
 
@@ -26,119 +27,112 @@ class TestDomainExtraction:
 
     @pytest.mark.parametrize('protocol_component', ['', 'http://', 'https://', 'ftp://'])
     @pytest.mark.parametrize('www_component', ['', 'www.'])
-    def test_extract_domains__optional_components(self, protocol_component, www_component):
+    def test_extract_domains__optional_components(self, protocol_component, www_component, mock_spam_head_request):
         test_url = f'{protocol_component}{www_component}osf.io'
         sample_text = f'This is a link: {test_url}'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['osf.io']
+        domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__url_in_quotes(self):
+    def test_extract_domains__url_in_quotes(self, mock_spam_head_request):
         sample_text = '"osf.io"'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['osf.io']
+        domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__url_in_parens(self):
+    def test_extract_domains__url_in_parens(self, mock_spam_head_request):
         sample_text = '(osf.io)'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['osf.io']
+        domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__captures_domain_with_multiple_subdomains(self):
+    def test_extract_domains__captures_domain_with_multiple_subdomains(self, mock_spam_head_request):
         sample_text = 'This is a link: https://api.test.osf.io'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['api.test.osf.io']
+        domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == [('api.test.osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__captures_multiple_domains(self):
+    def test_extract_domains__captures_multiple_domains(self, mock_spam_head_request):
         sample_text = 'This is a domain: http://osf.io. This is another domain: www.cos.io'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = set(spam_tasks._extract_domains(sample_text))
-        assert domains == {'osf.io', 'cos.io'}
+        domains = set(spam_tasks._extract_domains(sample_text))
+        assert domains == {
+            ('osf.io', NotableDomain.Note.UNKNOWN),
+            ('cos.io', NotableDomain.Note.UNKNOWN),
+        }
 
-    def test_extract_domains__no_domains(self):
+    def test_extract_domains__no_domains(self, mock_spam_head_request):
         sample_text = 'http://fakeout!'
-        with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
-            domains = set(spam_tasks._extract_domains(sample_text))
+        domains = set(spam_tasks._extract_domains(sample_text))
         assert not domains
-        mock_head.assert_not_called()
 
-    def test_extract_domains__ignored_if_does_not_resolve(self):
+    def test_extract_domains__unverfied_if_does_not_resolve(self, mock_spam_head_request):
+        mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.ConnectionError
         sample_text = 'This.will.not.connect'
-        with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
-            mock_head.side_effect = spam_tasks.requests.exceptions.ConnectionError
-            domains = set(spam_tasks._extract_domains(sample_text))
-        assert not domains
 
-    def test_actract_domains__returned_on_error(self):
+        domains = set(spam_tasks._extract_domains(sample_text))
+        assert domains == {('This.will.not.connect', NotableDomain.Note.UNVERIFIED)}
+
+    def test_actract_domains__returned_on_error(self, mock_spam_head_request):
         sample_text = 'This.will.timeout'
-        with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
-            mock_head.side_effect = spam_tasks.requests.exceptions.Timeout
-            domains = set(spam_tasks._extract_domains(sample_text))
-        assert domains == {sample_text}
+        mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.Timeout
+        domains = set(spam_tasks._extract_domains(sample_text))
+        assert domains == {(sample_text, NotableDomain.Note.UNVERIFIED)}
 
     @pytest.mark.parametrize('status_code', [301, 302, 303, 307, 308])
-    def test_extract_domains__follows_redirect(self, status_code):
+    def test_extract_domains__follows_redirect(self, status_code, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = status_code
         mock_response.headers = {'location': 'redirected.com'}
-        sample_text = 'redirect.me'
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['redirected.com']
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains('redirect.me'))
+        assert domains == [('redirected.com', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_code_no_location(self):
+    def test_extract_domains__redirect_code_no_location(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {}
         sample_text = 'redirect.me'
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['redirect.me']
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == [('redirect.me', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_code_bad_location(self):
+    def test_extract_domains__redirect_code_bad_location(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {'location': 'haha'}
+        mock_spam_head_request.return_value = mock_response
         sample_text = 'redirect.me'
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['redirect.me']
+        domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == [('redirect.me', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_with_full_url_no_protocol(self):
+    def test_extract_domains__redirect_with_full_url_no_protocol(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {'location': 'osf.io'}
         target_url = 'redirect.me/this-is-a-path/another-level-path/index.php'
         sample_text = target_url
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response) as mock_object:
-            domains = list(spam_tasks._extract_domains(sample_text))
-            mock_object.assert_called_once_with(f'https://{target_url}')
-        assert domains == ['osf.io']
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains(sample_text))
+        mock_spam_head_request.assert_called_once_with(f'https://{target_url}', timeout=60)
+        assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__redirect_with_full_url_and_protocol(self):
+    def test_extract_domains__redirect_with_full_url_and_protocol(self, mock_spam_head_request):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
         mock_response.headers = {'location': 'osf.io'}
         target_url = 'ftp://redirect.me/this-is-a-path/another-level-path/index.php'
         sample_text = target_url
-        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response) as mock_object:
-            domains = list(spam_tasks._extract_domains(sample_text))
-            mock_object.assert_called_once_with(target_url)
-        assert domains == ['osf.io']
+        mock_spam_head_request.return_value = mock_response
+        domains = list(spam_tasks._extract_domains(sample_text))
+        mock_spam_head_request.assert_called_once_with(target_url, timeout=60)
+        assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__deduplicates(self):
+    def test_extract_domains__deduplicates(self, mock_spam_head_request):
         sample_text = 'osf.io osf.io osf.io and, oh, yeah, osf.io'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
-        assert domains == ['osf.io']
+        domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == [('osf.io', NotableDomain.Note.UNKNOWN)]
 
-    def test_extract_domains__ignores_floats(self):
+    def test_extract_domains__ignores_floats(self, mock_spam_head_request):
         sample_text = 'this is a number 3.1415 not a domain'
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            domains = list(spam_tasks._extract_domains(sample_text))
+        domains = list(spam_tasks._extract_domains(sample_text))
         assert not domains
+
 
 @pytest.mark.django_db
 class TestNotableDomain:
@@ -154,16 +148,13 @@ class TestNotableDomain:
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_check_resource_for_domains_moderation_queue(self, spam_domain, factory):
         obj = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj.guids.first()._id,
-                    content=spam_domain.geturl(),
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj.guids.first()._id,
+                content=spam_domain.geturl(),
             )
 
         obj.reload()
@@ -174,16 +165,13 @@ class TestNotableDomain:
         obj.reload()
         assert obj.spam_status == SpamStatus.UNKNOWN
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_check_resource_for_domains_spam(self, spam_domain, marked_as_spam_domain, factory):
         obj = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj.guids.first()._id,
-                    content=spam_domain.geturl(),
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj.guids.first()._id,
+                content=spam_domain.geturl(),
             )
 
         obj.reload()
@@ -210,9 +198,8 @@ class TestNotableDomain:
         obj.description = f'I\'m spam: {spam_domain.geturl()} me too: {spam_domain.geturl()}' \
                           f' iamNOTspam.org i-am-a-ham.io  https://stillNotspam.io'
         creator = getattr(obj, 'creator', None) or getattr(obj.node, 'creator')
-        s = SessionFactory(user=creator)
-        set_session(s)
         with mock.patch.object(spam_tasks.requests, 'head'):
+            g.current_session = {'auth_user_id': creator._id}
             obj.save()
 
         assert NotableDomain.objects.filter(
@@ -240,18 +227,15 @@ class TestNotableDomain:
         obj.reload()
         assert obj.spam_status == SpamStatus.SPAM
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_check_resource_for_duplicate_spam_domains(self, factory, spam_domain, marked_as_spam_domain):
         obj = factory()
         obj.spam_data['domains'] = [spam_domain.netloc]
         obj.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj.guids.first()._id,
-                    content=f'{spam_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj.guids.first()._id,
+                content=f'{spam_domain.geturl()}',
             )
 
         obj.reload()
@@ -276,9 +260,9 @@ class TestNotableDomain:
         project = wiki_version.wiki_page.node
         project.is_public = True
         project.save()
-        wiki_version.content = 'This has a domain: https://cos.io'
+        wiki_version.content = '[EXTREME VIDEO] <b><a href="https://cos.io/JAkeEloit">WATCH VIDEO</a></b>'
 
-        set_session(SessionFactory(user=project.creator))
+        g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             wiki_version.save()
 
@@ -293,8 +277,8 @@ class TestNotableDomain:
         wiki_version.content = 'This has a domain: https://cos.io'
         wiki_version.save()
 
-        set_session(SessionFactory(user=project.creator))
         assert DomainReference.objects.count() == 0
+        g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             project.set_privacy(permissions='public')
 
@@ -338,139 +322,125 @@ class TestNotableDomainReclassification:
             note=NotableDomain.Note.IGNORED,
         )
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_unknown_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert len(obj_one.spam_data['domains']) == 0
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_unknown_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_one.netloc, self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_one.netloc, self.spam_domain_two.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_two.netloc}
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_unknown_marked_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_three = factory()
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_three.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_three.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
-        assert set(obj_three.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_three.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
         assert len(obj_three.spam_data['domains']) == 0
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_ignored_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert len(obj_one.spam_data['domains']) == 0
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_ignored_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_one.netloc, self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_one.netloc, self.spam_domain_two.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.spam_domain_two.netloc}
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_spam_to_ignored_makred_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_three = factory()
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_three.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_three.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
-        assert set(obj_three.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        assert set(obj_three.spam_data['domains']) == {self.spam_domain_one.netloc}
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
         assert len(obj_three.spam_data['domains']) == 0
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_unknown_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
@@ -480,17 +450,15 @@ class TestNotableDomainReclassification:
         unknown_notable_domain.save()
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.unknown_domain.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.unknown_domain.netloc}
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_unknown_to_spam_unknown_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.unknown_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()}',
             )
 
         obj_two.reload()
@@ -500,17 +468,15 @@ class TestNotableDomainReclassification:
         unknown_notable_domain.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.unknown_domain.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.unknown_domain.netloc}
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_ignored_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
@@ -520,17 +486,15 @@ class TestNotableDomainReclassification:
         ignored_notable_domain.save()
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([self.ignored_domain.netloc])
+        assert set(obj_one.spam_data['domains']) == {self.ignored_domain.netloc}
 
-    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
     def test_from_ignored_to_spam_ignored_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.ignored_domain.geturl()}',
             )
 
         obj_two.reload()
@@ -540,4 +504,4 @@ class TestNotableDomainReclassification:
         ignored_notable_domain.save()
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_two.spam_data['domains']) == set([self.ignored_domain.netloc])
+        assert set(obj_two.spam_data['domains']) == {self.ignored_domain.netloc}

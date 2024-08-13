@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import json
 import logging
@@ -56,6 +55,7 @@ def get_admin_read_permissions():
         'view_registrationprovider',
         'view_management',
         'view_notabledomain',
+        'view_cedarmetadatatemplate',
     ])
 
 
@@ -97,6 +97,7 @@ def get_admin_write_permissions():
         'add_notabledomain',
         'change_notabledomain',
         'delete_notabledomain',
+        'change_cedarmetadatatemplate',
     ])
 
 
@@ -142,7 +143,7 @@ def update_provider_auth_groups(verbosity=0):
             for obj in subclass.objects.all():
                 obj.update_group_permissions()
                 if verbosity > 0:
-                    logger.info('Updated perms for {} {}'.format(obj.type, obj._id))
+                    logger.info(f'Updated perms for {obj.type} {obj._id}')
         except ProgrammingError:
             logger.info('Schema change for AbstractProvider detected, passing.')
             transaction.savepoint_rollback(savepoint_id)

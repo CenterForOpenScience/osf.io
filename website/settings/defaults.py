@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Base settings file, common to all environments.
 These settings can be overridden in local.py.
@@ -32,7 +31,7 @@ BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
 TEST_ENV = False
 
-with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+with open(os.path.join(APP_PATH, 'package.json')) as fobj:
     VERSION = json.load(fobj)['version']
 
 # Expiration time for verification key
@@ -167,6 +166,9 @@ MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+MAILCHIMP_LIST_MAP = {
+    MAILCHIMP_GENERAL_LIST: '123',
+}
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
@@ -210,7 +212,7 @@ PROFILE_IMAGE_PROVIDER = 'gravatar'
 CONFERENCE_MIN_COUNT = 5
 
 WIKI_WHITELIST = {
-    'tags': [
+    'tags': {
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
         'center', 'cite', 'code',
         'dd', 'del', 'dfn', 'div', 'dl', 'dt', 'em', 'embed', 'font',
@@ -219,7 +221,7 @@ WIKI_WHITELIST = {
         's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup',
         'table', 'tbody', 'td', 'th', 'thead', 'tr', 'tt', 'ul', 'u',
         'var', 'wbr',
-    ],
+    },
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
         'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
@@ -227,11 +229,11 @@ WIKI_WHITELIST = {
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    'styles': [
+    'styles': {
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
-    ]
+    },
 }
 
 # Maps category identifier => Human-readable representation for use in
@@ -310,12 +312,14 @@ GROUP_CONNECTED_EMAIL_THROTTLE = 24 * 3600
 
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
+GOOGLE_TAG_MANAGER_ID = None
 GOOGLE_SITE_VERIFICATION = None
 
 DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
+GRAVYVALET_URL = 'https://localhost:8004'
 
 ####################
 #   Identifiers   #
@@ -346,9 +350,11 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
 
-# ror
-OSF_ROR_ID = '05d5mza29'
-OSF_GRID_ID = 'grid.466501.0'
+# for metadata records maintained by this instance of osf
+# TODO: remove defaults
+HOSTING_INSTITUTION_NAME = os.environ.get('HOSTING_INSTITUTION_NAME', 'Center for Open Science')
+HOSTING_INSTITUTION_IRL = os.environ.get('HOSTING_INSTITUTION_IRL', 'https://cos.io/')
+HOSTING_INSTITUTION_ROR_ID = os.environ.get('HOSTING_INSTITUTION_ROR_ID', '05d5mza29')
 
 # if our DOIs cannot be confirmed after X amount of days email the admin
 DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
@@ -404,6 +410,12 @@ class CeleryConfig:
     task_low_queue = 'low'
     task_med_queue = 'med'
     task_high_queue = 'high'
+    task_remote_computing_queue = 'remote'
+    task_account_status_changes_queue = 'account_status_changes'
+
+    remote_computing_modules = {
+        'addons.boa.tasks.submit_to_boa',
+    }
 
     low_pri_modules = {
         'framework.analytics.tasks',
@@ -414,7 +426,7 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.clear_sessions',
+        'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
@@ -432,6 +444,7 @@ class CeleryConfig:
         'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
+        'osf.management.commands.ingest_cedar_metadata_templates',
     }
 
     med_pri_modules = {
@@ -441,7 +454,7 @@ class CeleryConfig:
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.collections.tasks',
-        'website.identifier.tasks',
+        'website.identifiers.tasks',
         'website.preprints.tasks',
         'website.project.tasks',
     }
@@ -456,7 +469,8 @@ class CeleryConfig:
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
-        'osf.management.commands.fix_quickfiles_waterbutler_logs'
+        'osf.management.commands.fix_quickfiles_waterbutler_logs',
+        'api.share.utils',
     }
 
     try:
@@ -465,14 +479,17 @@ class CeleryConfig:
         pass
     else:
         task_queues = (
-            Queue(task_low_queue, Exchange(task_low_queue), routing_key=task_low_queue,
-                consumer_arguments={'x-priority': -1}),
-            Queue(task_default_queue, Exchange(task_default_queue), routing_key=task_default_queue,
-                consumer_arguments={'x-priority': 0}),
-            Queue(task_med_queue, Exchange(task_med_queue), routing_key=task_med_queue,
-                consumer_arguments={'x-priority': 1}),
-            Queue(task_high_queue, Exchange(task_high_queue), routing_key=task_high_queue,
-                consumer_arguments={'x-priority': 10}),
+            Queue(task_remote_computing_queue, Exchange(task_remote_computing_queue),
+                  routing_key=task_remote_computing_queue, consumer_arguments={'x-priority': -10}),
+            Queue(task_low_queue, Exchange(task_low_queue),
+                  routing_key=task_low_queue,  consumer_arguments={'x-priority': -1}),
+            Queue(task_default_queue, Exchange(task_default_queue),
+                  routing_key=task_default_queue, consumer_arguments={'x-priority': 0}),
+            Queue(task_med_queue, Exchange(task_med_queue),
+                  routing_key=task_med_queue, consumer_arguments={'x-priority': 1}),
+            Queue(task_high_queue, Exchange(task_high_queue),
+                  routing_key=task_high_queue, consumer_arguments={'x-priority': 10}),
+            Queue(task_account_status_changes_queue, Exchange(task_account_status_changes_queue), routing_key=task_account_status_changes_queue)
         )
 
         task_default_exchange_type = 'direct'
@@ -480,7 +497,7 @@ class CeleryConfig:
         task_ignore_result = True
         task_store_errors_even_if_ignored = True
 
-    broker_url = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
+    broker_url = os.environ.get('BROKER_URL', f'amqp://{RABBITMQ_USERNAME}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_VHOST}')
     broker_use_ssl = False
 
     # Default RabbitMQ backend
@@ -498,6 +515,7 @@ class CeleryConfig:
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
+        'website.identifiers.tasks',
         'website.search.search',
         'website.project.tasks',
         'scripts.populate_new_and_noteworthy_projects',
@@ -508,11 +526,11 @@ class CeleryConfig:
         'scripts.approve_registrations',
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
-        'scripts.clear_sessions',
         'scripts.send_queued_mails',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
+        'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.deactivate_requested_accounts',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
@@ -531,6 +549,7 @@ class CeleryConfig:
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
+        'api.share.utils',
     )
 
     # Modules that need metrics and release requirements
@@ -599,8 +618,8 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
-            'clear_sessions': {
-                'task': 'scripts.clear_sessions',
+            'clear_expired_sessions': {
+                'task': 'management.commands.clear_expired_sessions',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
@@ -748,10 +767,6 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
-
-# switch for disabling things that shouldn't happen during
-# the modm to django migration
-RUNNING_MIGRATION = False
 
 # External Identity Provider
 EXTERNAL_IDENTITY_PROFILE = {
@@ -1958,6 +1973,7 @@ RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 # akismet spam check
 AKISMET_APIKEY = None
 AKISMET_ENABLED = False
+DOMAIN_EXTRACTION_TIMEOUT = 60  # seconds
 
 # OOPSpam options
 OOPSPAM_APIKEY = None
@@ -1976,7 +1992,10 @@ SPAM_AUTOBAN_IP_BLOCK = True
 SPAM_THROTTLE_AUTOBAN = True
 SPAM_CREATION_THROTTLE_LIMIT = 5
 
-SHARE_API_TOKEN = None
+# CEDAR API configs
+CEDAR_API_HOST = ''
+CEDAR_API_KEY = ''
+CEDAR_HOME_FOLDER_ID = ''
 
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
@@ -2109,8 +2128,8 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
-IA_ARCHIVE_ENABLED = True
 OSF_PIGEON_URL = os.environ.get('OSF_PIGEON_URL', None)
+IA_ARCHIVE_ENABLED = bool(OSF_PIGEON_URL)
 ID_VERSION = 'staging_v2'
 IA_ROOT_COLLECTION = 'cos-dev-sandbox'
 PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
@@ -2122,3 +2141,9 @@ CAS_LOG_LEVEL = 3  # ERROR
 PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
+DEFAULT_DRAFT_NODE_TITLE = 'Untitled'
+USE_COLOR = False
+
+# path to newrelic.ini config file
+# newrelic is only enabled when DEBUG_MODE is False
+NEWRELIC_INI_PATH = None

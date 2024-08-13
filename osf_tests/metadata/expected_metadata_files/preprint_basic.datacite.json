@@ -1,0 +1,123 @@
+{
+  "alternateIdentifiers": [
+    {
+      "alternateIdentifier": "http://localhost:5000/w4ibb",
+      "alternateIdentifierType": "URL"
+    }
+  ],
+  "contributors": [
+    {
+      "contributorName": {
+        "contributorName": "Center for Open Science",
+        "nameType": "Organizational"
+      },
+      "contributorType": "HostingInstitution",
+      "nameIdentifier": {
+        "nameIdentifier": "https://ror.org/05d5mza29",
+        "nameIdentifierScheme": "ROR"
+      }
+    }
+  ],
+  "creators": [
+    {
+      "creatorName": {
+        "creatorName": "Person McNamington",
+        "nameType": "Personal"
+      },
+      "nameIdentifier": {
+        "nameIdentifier": "http://localhost:5000/w1ibb",
+        "nameIdentifierScheme": "URL"
+      }
+    }
+  ],
+  "dates": [
+    {
+      "date": "2123-05-04",
+      "dateType": "Created"
+    },
+    {
+      "date": "2123-05-04",
+      "dateType": "Updated"
+    }
+  ],
+  "descriptions": [
+    {
+      "description": "this is a preprint description!",
+      "descriptionType": "Abstract"
+    }
+  ],
+  "fundingReferences": [],
+  "identifier": {
+    "identifier": "11.pp/FK2osf.io/w4ibb",
+    "identifierType": "DOI"
+  },
+  "publicationYear": "2123",
+  "publisher": "PP the Preprint Provider",
+  "relatedIdentifiers": [
+    {
+      "relatedIdentifier": "11.111/something-or-other",
+      "relatedIdentifierType": "DOI",
+      "relationType": "HasVersion"
+    },
+    {
+      "relatedIdentifier": "10.70102/FK2osf.io/w2ibb",
+      "relatedIdentifierType": "DOI",
+      "relationType": "IsSupplementedBy"
+    }
+  ],
+  "relatedItems": [
+    {
+      "publisher": "OSF",
+      "relatedItemIdentifier": {
+        "relatedItemIdentifier": "11.111/something-or-other",
+        "relatedItemIdentifierType": "DOI"
+      },
+      "relatedItemType": "Text",
+      "relationType": "HasVersion",
+      "titles": []
+    },
+    {
+      "publicationYear": "2252",
+      "publisher": "OSF",
+      "relatedItemIdentifier": {
+        "relatedItemIdentifier": "10.70102/FK2osf.io/w2ibb",
+        "relatedItemIdentifierType": "DOI"
+      },
+      "relatedItemType": "Text",
+      "relationType": "IsSupplementedBy",
+      "titles": [
+        {
+          "title": "this is a project title!"
+        }
+      ]
+    }
+  ],
+  "resourceType": {
+    "resourceType": "Preprint",
+    "resourceTypeGeneral": "Preprint"
+  },
+  "rightsList": [],
+  "subjects": [
+    {
+      "subject": "wibble",
+      "subjectScheme": "preprovi"
+    },
+    {
+      "subject": "wibbble",
+      "subjectScheme": "bepress Digital Commons Three-Tiered Taxonomy"
+    },
+    {
+      "subject": "wobble",
+      "subjectScheme": "preprovi"
+    },
+    {
+      "subject": "wobbble",
+      "subjectScheme": "bepress Digital Commons Three-Tiered Taxonomy"
+    }
+  ],
+  "titles": [
+    {
+      "title": "this is a preprint title!"
+    }
+  ]
+}

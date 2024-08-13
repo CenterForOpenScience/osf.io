@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 import pytest
-from nose.tools import *  # noqa
+from importlib import import_module
 
+from django.conf import settings as django_conf_settings
 
-from framework import sessions
-from framework.flask import request
-
-from osf.models import Session
 from addons.osfstorage.tests import factories
 from addons.osfstorage import utils
 
 from addons.osfstorage.tests.utils import StorageTestCase
 from website.files.utils import attach_versions
 
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 @pytest.mark.django_db
 class TestSerializeRevision(StorageTestCase):
 
     def setUp(self):
-        super(TestSerializeRevision, self).setUp()
+        super().setUp()
         self.path = 'kind-of-magic.webm'
         self.record = self.node_settings.get_root().append_file(self.path)
         self.versions = [
@@ -30,11 +27,11 @@ class TestSerializeRevision(StorageTestCase):
         self.record.save()
 
     def test_serialize_revision(self):
-        mock_session = Session()
-        sessions.sessions[request._get_current_object()] = mock_session
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 2, mock_session)
+        s = SessionStore()
+        s.create()
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 2, s.session_key)
         expected = {
             'index': 1,
             'user': {
@@ -52,17 +49,17 @@ class TestSerializeRevision(StorageTestCase):
             self.versions[0],
             0,
         )
-        assert_equal(expected, observed)
-        assert_equal(self.record.get_download_count(), 3)
-        assert_equal(self.record.get_download_count(version=2), 1)
-        assert_equal(self.record.get_download_count(version=0), 2)
+        assert expected == observed
+        assert self.record.get_download_count() == 3
+        assert self.record.get_download_count(version=2) == 1
+        assert self.record.get_download_count(version=0) == 2
 
     def test_anon_revisions(self):
-        mock_session = Session()
-        sessions.sessions[request._get_current_object()] = mock_session
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 2, mock_session)
+        s = SessionStore()
+        s.create()
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 2, s.session_key)
         expected = {
             'index': 2,
             'user': None,
@@ -78,4 +75,4 @@ class TestSerializeRevision(StorageTestCase):
             1,
             anon=True
         )
-        assert_equal(expected, observed)
+        assert expected == observed

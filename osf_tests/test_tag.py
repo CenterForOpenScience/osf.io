@@ -1,4 +1,3 @@
-import mock
 import pytest
 
 from django.db import DataError
@@ -52,9 +51,8 @@ class TestTags:
     def auth(self, project):
         return Auth(project.creator)
 
-    @mock.patch('osf.models.node.update_share')
-    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
     def test_add_tag(self, mock_update_share, project, auth):
+        mock_update_share.reset_mock()
         project.add_tag('scientific', auth=auth)
         assert 'scientific' in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_added'
@@ -69,16 +67,13 @@ class TestTags:
         with pytest.raises(DataError):
             project.add_tag('asdf' * 257, auth=auth)
 
-    @mock.patch('osf.models.node.update_share')
-    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
     def test_remove_tag(self, mock_update_share, project, auth):
+        mock_update_share.reset_mock()
         project.add_tag('scientific', auth=auth)
         mock_update_share.assert_called_once_with(project)
-
+        mock_update_share.reset_mock()
         project.remove_tag('scientific', auth=auth)
-        assert mock_update_share.call_count == 2
-        assert mock_update_share.call_args_list[1][0][0] == project
-
+        mock_update_share.assert_called_once_with(project)
         assert 'scientific' not in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_removed'
 

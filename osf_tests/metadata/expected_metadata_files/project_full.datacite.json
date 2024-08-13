@@ -1,0 +1,151 @@
+{
+  "alternateIdentifiers": [
+    {
+      "alternateIdentifier": "http://localhost:5000/w2ibb",
+      "alternateIdentifierType": "URL"
+    }
+  ],
+  "contributors": [
+    {
+      "contributorName": {
+        "contributorName": "Center for Open Science",
+        "nameType": "Organizational"
+      },
+      "contributorType": "HostingInstitution",
+      "nameIdentifier": {
+        "nameIdentifier": "https://ror.org/05d5mza29",
+        "nameIdentifierScheme": "ROR"
+      }
+    }
+  ],
+  "creators": [
+    {
+      "creatorName": {
+        "creatorName": "Person McNamington",
+        "nameType": "Personal"
+      },
+      "nameIdentifier": {
+        "nameIdentifier": "http://localhost:5000/w1ibb",
+        "nameIdentifierScheme": "URL"
+      }
+    }
+  ],
+  "dates": [
+    {
+      "date": "2123-05-04",
+      "dateType": "Created"
+    },
+    {
+      "date": "2123-05-04",
+      "dateType": "Updated"
+    }
+  ],
+  "descriptions": [
+    {
+      "description": "this is a project description!",
+      "descriptionType": "Abstract",
+      "lang": "en"
+    }
+  ],
+  "fundingReferences": [
+    {
+      "awardNumber": {
+        "awardNumber": "10000000",
+        "awardURI": "https://moneypockets.example/millions"
+      },
+      "awardTitle": "because reasons",
+      "funderIdentifier": {
+        "funderIdentifier": "https://doi.org/10.$$$$",
+        "funderIdentifierType": "Crossref Funder ID"
+      },
+      "funderName": "Mx. Moneypockets"
+    },
+    {
+      "awardNumber": {
+        "awardNumber": "2000000",
+        "awardURI": "https://moneypockets.example/millions-more"
+      },
+      "awardTitle": "because reasons!",
+      "funderIdentifier": {
+        "funderIdentifier": "https://doi.org/10.$$$$",
+        "funderIdentifierType": "Crossref Funder ID"
+      },
+      "funderName": "Mx. Moneypockets"
+    },
+    {
+      "funderIdentifier": {
+        "funderIdentifier": "https://doi.org/10.$",
+        "funderIdentifierType": "Crossref Funder ID"
+      },
+      "funderName": "Caring Fan"
+    }
+  ],
+  "identifier": {
+    "identifier": "10.70102/FK2osf.io/w2ibb",
+    "identifierType": "DOI"
+  },
+  "language": "en",
+  "publicationYear": "2123",
+  "publisher": "OSF",
+  "relatedIdentifiers": [
+    {
+      "relatedIdentifier": "http://localhost:5000/w5ibb",
+      "relatedIdentifierType": "URL",
+      "relationType": "HasVersion"
+    },
+    {
+      "relatedIdentifier": "11.pp/FK2osf.io/w4ibb",
+      "relatedIdentifierType": "DOI",
+      "relationType": "IsSupplementTo"
+    }
+  ],
+  "relatedItems": [
+    {
+      "publicationYear": "2123",
+      "publisher": "RegiProvi the Registration Provider",
+      "relatedItemIdentifier": {
+        "relatedItemIdentifier": "http://localhost:5000/w5ibb",
+        "relatedItemIdentifierType": "URL"
+      },
+      "relatedItemType": "StudyRegistration",
+      "relationType": "HasVersion",
+      "titles": [
+        {
+          "title": "this is a project title!"
+        }
+      ]
+    },
+    {
+      "publicationYear": "2123",
+      "publisher": "PP the Preprint Provider",
+      "relatedItemIdentifier": {
+        "relatedItemIdentifier": "11.pp/FK2osf.io/w4ibb",
+        "relatedItemIdentifierType": "DOI"
+      },
+      "relatedItemType": "Preprint",
+      "relationType": "IsSupplementTo",
+      "titles": [
+        {
+          "title": "this is a preprint title!"
+        }
+      ]
+    }
+  ],
+  "resourceType": {
+    "resourceType": "Project",
+    "resourceTypeGeneral": "Dataset"
+  },
+  "rightsList": [
+    {
+      "rights": "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International",
+      "rightsURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode"
+    }
+  ],
+  "subjects": [],
+  "titles": [
+    {
+      "lang": "en",
+      "title": "this is a project title!"
+    }
+  ]
+}

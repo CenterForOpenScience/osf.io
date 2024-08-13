@@ -10,9 +10,13 @@ from django.utils import timezone
 from django.db import transaction
 django.setup()
 
+# init_app must be called before sentry is imported
+from website.app import init_app
+init_app(routes=False)
+
+from framework import sentry
 from framework.celery_tasks import app as celery_app
 
-from website.app import init_app
 from website import settings
 from osf.models import Embargo, Registration, NodeLog
 
@@ -28,16 +32,16 @@ def main(dry_run=True):
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
-                logger.warn('Dry run mode')
+                logger.warning('Dry run mode')
             try:
                 parent_registration = Registration.objects.get(embargo=embargo)
             except Registration.DoesNotExist:
                 logger.error(
-                    'Embargo {} is not attached to a registration'.format(embargo._id)
+                    f'Embargo {embargo._id} is not attached to a registration'
                 )
                 continue
-            logger.warn(
-                'Embargo {0} approved. Activating embargo for registration {1}'
+            logger.warning(
+                'Embargo {} approved. Activating embargo for registration {}'
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
@@ -47,26 +51,30 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with transaction.atomic():
-                    try:
-                        # Call 'accept' trigger directly. This will terminate the embargo
-                        # if the registration is unmoderated or push it into the moderation
-                        # queue if it is part of a moderated registry.
-                        embargo.accept()
-                    except Exception as err:
-                        logger.error(
-                            'Unexpected error raised when activating embargo for '
-                            'registration {}. Continuing...'.format(parent_registration))
-                        logger.exception(err)
+                sid = transaction.savepoint()
+                try:
+                    # Call 'accept' trigger directly. This will terminate the embargo
+                    # if the registration is unmoderated or push it into the moderation
+                    # queue if it is part of a moderated registry.
+                    embargo.accept()
+                    transaction.savepoint_commit(sid)
+                except Exception as err:
+                    logger.error(
+                        f'Unexpected error raised when activating embargo for '
+                        f'registration {parent_registration._id}. Continuing...'
+                    )
+                    logger.exception(err)
+                    sentry.log_message(str(err))
+                    transaction.savepoint_rollback(sid)
 
     active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
     for embargo in active_embargoes:
         if embargo.end_date < timezone.now() and not embargo.is_deleted:
             if dry_run:
-                logger.warn('Dry run mode')
+                logger.warning('Dry run mode')
             parent_registration = Registration.objects.get(embargo=embargo)
-            logger.warn(
-                'Embargo {0} complete. Making registration {1} public'
+            logger.warning(
+                'Embargo {} complete. Making registration {} public'
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
@@ -76,14 +84,18 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with transaction.atomic():
-                    try:
-                        parent_registration.terminate_embargo()
-                    except Exception as err:
-                        logger.error(
-                            'Unexpected error raised when completing embargo for '
-                            'registration {}. Continuing...'.format(parent_registration))
-                        logger.exception(err)
+                sid = transaction.savepoint()
+                try:
+                    parent_registration.terminate_embargo()
+                    transaction.savepoint_commit(sid)
+                except Exception as err:
+                    logger.error(
+                        f'Unexpected error raised when completing embargo for '
+                        f'registration {parent_registration._id}. Continuing...'
+                    )
+                    logger.exception(err)
+                    sentry.log_message(str(err))
+                    transaction.savepoint_rollback(sid)
 
 
 def should_be_embargoed(embargo):
@@ -93,7 +105,6 @@ def should_be_embargoed(embargo):
 
 @celery_app.task(name='scripts.embargo_registrations')
 def run_main(dry_run=True):
-    init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)

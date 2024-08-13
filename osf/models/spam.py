@@ -5,14 +5,10 @@ from django.db import models
 from django.utils import timezone
 
 from osf.exceptions import ValidationValueError, ValidationTypeError
-from osf.external.spam.tasks import check_resource_for_domains
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
-
-from osf.external.spam.tasks import check_resource_with_spam_services
 from osf.external.askismet import tasks as akismet_tasks
-from osf.utils.fields import ensure_str
-
+from osf.external.spam.tasks import check_resource_for_domains_postcommit, check_resource_with_spam_services
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import ensure_str, NonNaiveDateTimeField
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -32,7 +28,7 @@ def _validate_reports(value, *args, **kwargs):
             )
 
 
-class SpamStatus(object):
+class SpamStatus:
     UNKNOWN = None
     FLAGGED = 1
     SPAM = 2
@@ -200,13 +196,13 @@ class SpamMixin(models.Model):
             return
 
         request_kwargs = {
-            'remote_addr': request_headers.get('Remote-Addr') or request_headers['Host'],  # for local testing
+            'remote_addr': request_headers.get('Remote-Addr') or request_headers.get('Host'),  # for local testing
             'user_agent': request_headers.get('User-Agent'),
             'referer': request_headers.get('Referer'),
         }
         request_kwargs.update(request_headers)
 
-        check_resource_for_domains(
+        check_resource_for_domains_postcommit(
             self.guids.first()._id,
             content,
         )

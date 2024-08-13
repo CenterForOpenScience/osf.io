@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
-from osf.models.base import BaseModel
+from .base import BaseModel
 from osf.utils.fields import LowercaseCharField
 from osf.external.spam.tasks import reclassify_domain_references
 
@@ -14,6 +14,7 @@ class NotableDomain(BaseModel):
         ASSUME_HAM_UNTIL_REPORTED = 1
         UNKNOWN = 2
         IGNORED = 3
+        UNVERIFIED = 4  # Timedout couldn't determine
 
         @classmethod
         def choices(cls):

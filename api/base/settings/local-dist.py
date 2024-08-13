@@ -12,7 +12,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # DEBUG_PROPAGATE_EXCEPTIONS = True
 
 if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
+    INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django')
     MIDDLEWARE += (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
         'nplusone.ext.django.NPlusOneMiddleware',
@@ -21,11 +21,11 @@ if DEBUG:
         'SHOW_TOOLBAR_CALLBACK': lambda _: True,
     }
     ALLOWED_HOSTS.append('localhost')
+    ALLOWED_HOSTS.append('192.168.168.167')  # allow requests from GV
 
     # django-silk
     INSTALLED_APPS += ('silk',)
     MIDDLEWARE += (
-        'django.contrib.sessions.middleware.SessionMiddleware',
         'silk.middleware.SilkyMiddleware',
     )
 
@@ -43,3 +43,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'files': '75/minute',
     'files-burst': '3/second',
 }
+
+# Can switch between using Redis and using postgres as session storage
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

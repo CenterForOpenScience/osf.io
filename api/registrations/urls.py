@@ -1,4 +1,4 @@
-from django.conf.urls import re_path
+from django.urls import re_path
 
 from api.registrations import views
 from website import settings
@@ -12,6 +12,7 @@ urlpatterns = [
     re_path(r'^$', views.RegistrationList.as_view(), name=views.RegistrationList.view_name),
     re_path(r'^(?P<node_id>\w+)/$', views.RegistrationDetail.as_view(), name=views.RegistrationDetail.view_name),
     re_path(r'^(?P<node_id>\w+)/bibliographic_contributors/$', views.RegistrationBibliographicContributorsList.as_view(), name=views.RegistrationBibliographicContributorsList.view_name),
+    re_path(r'^(?P<node_id>\w+)/cedar_metadata_records/$', views.RegistrationCedarMetadataRecordsList.as_view(), name=views.RegistrationCedarMetadataRecordsList.view_name),
     re_path(r'^(?P<node_id>\w+)/children/$', views.RegistrationChildrenList.as_view(), name=views.RegistrationChildrenList.view_name),
     re_path(r'^(?P<node_id>\w+)/comments/$', views.RegistrationCommentsList.as_view(), name=views.RegistrationCommentsList.view_name),
     re_path(r'^(?P<node_id>\w+)/contributors/$', views.RegistrationContributorsList.as_view(), name=views.RegistrationContributorsList.view_name),

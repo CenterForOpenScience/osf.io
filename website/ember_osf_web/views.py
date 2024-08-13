@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import json
 from website import settings
@@ -12,7 +11,6 @@ routes = [
     '/quickfiles/',
     '/<uid>/quickfiles/',
     '/institutions/',
-    '/support/',
 ]
 
 def use_ember_app(**kwargs):
