@@ -27,5 +27,5 @@ repos:
   rev: v0.5.7
   hooks:
     - id: ruff
-      args: [ --fix ]
+      args: [ --fix, "--select=E501" ]
     - id: ruff-format

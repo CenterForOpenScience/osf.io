@@ -173,14 +173,10 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.ruff]
-# Set the maximum line length to 79.
 line-length = 79
-exclude = [".venv", "requirements-dev.txt", "requirements.txt", ".txt", ".git", ".yaml", ".toml", "Dockerfile"]
+exclude = [".venv", "*.txt", ".git", "*.yaml", "*.toml", "Dockerfile"]
 extend-exclude = ["migrations"]
 
 [tool.ruff.lint]
-# Add the `line-too-long` rule to the enforced rule set. By default, Ruff omits rules that
-# overlap with the use of a formatter, like Black, but we can override this behavior by
-# explicitly adding the rule.
 extend-select = ["E501"]
 
