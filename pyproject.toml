@@ -178,6 +178,6 @@ exclude = [".venv", "*.txt", ".git", "*.yaml", "*.toml", "Dockerfile"]
 extend-exclude = ["migrations"]
 select = ["E", "F", "W"]
 
-#[tool.ruff.lint]
-#extend-select = ["E501"]
-
+[tool.ruff.lint]
+select = ["E", "F", "W", "Q", "I"]
+ignore = ["E203", "E501"]
