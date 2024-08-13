@@ -209,7 +209,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     affiliated_institutions = RelationshipField(
         related_view='preprints:preprints-institutions',
         related_view_kwargs={'preprint_id': '<_id>'},
-        self_view='preprints:preprints-institutions',
+        self_view='preprints:preprint-relationships-institutions',
         self_view_kwargs={'preprint_id': '<_id>'},
         read_only=False,
         required=False,

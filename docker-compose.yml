@@ -358,7 +358,7 @@ services:
       - /bin/bash
       - -c
       - python -m venv /tmp/venv
-        && /tmp/venv/bin/pip install poetry==1.8.3 &&
+        && /tmp/venv/bin/pip install poetry==1.8.0 &&
         /tmp/venv/bin/poetry install --no-root --without release --compile --sync &&
         rm -rf /python3.12/* &&
         cp -Rf -p /usr/local/lib/python3.12 /
@@ -366,8 +366,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - ./pyproject.toml:/code/pyproject.toml
-      - ./poetry.lock:/code/poetry.lock
+      - ./:/code:cached
       - osf_requirements_3_12_vol:/python3.12
 
   assets:
