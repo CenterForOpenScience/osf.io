@@ -27,6 +27,6 @@ repos:
   rev: v0.5.7
   hooks:
     - id: ruff
-      args: [ --fix, "--select=E501" ]
+      args: [ --fix ]
     - id: ruff-format
       args: ["--line-length=79"]

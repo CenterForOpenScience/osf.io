@@ -177,6 +177,6 @@ line-length = 79
 exclude = [".venv", "*.txt", ".git", "*.yaml", "*.toml", "Dockerfile"]
 extend-exclude = ["migrations"]
 
-[tool.ruff.lint]
-extend-select = ["E501"]
+#[tool.ruff.lint]
+#extend-select = ["E501"]
 
