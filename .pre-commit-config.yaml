@@ -26,7 +26,7 @@ repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.5.7
   hooks:
-    - id: ruff-format
-      args: ["--line-length=79"]
     - id: ruff
       args: [ --fix, "--select=E501" ]
+    - id: ruff-format
+      args: ["--line-length=79"]
