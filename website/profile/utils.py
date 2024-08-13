@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from framework import auth
 
 from website import settings

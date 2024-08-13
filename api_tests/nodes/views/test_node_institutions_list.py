@@ -40,7 +40,7 @@ class TestNodeInstitutionList:
         return self.build_resource_institution_url(node_two)
 
     def build_resource_institution_url(self, resource):
-        return '/{0}{1}s/{2}/institutions/'.format(API_BASE, resource.__class__.__name__.lower(), resource._id)
+        return f'/{API_BASE}{resource.__class__.__name__.lower()}s/{resource._id}/institutions/'
 
     def test_node_institution_detail(
         self, app, user, user_two, institution, node_one, node_two, node_one_url, node_two_url,

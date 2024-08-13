@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
 from framework.exceptions import HTTPError
@@ -22,7 +21,7 @@ class ZoteroCitationsProvider(CitationsProvider):
         Serializes setting needed to build the widget
         library_id added specifically for zotero
         """
-        ret = super(ZoteroCitationsProvider, self).widget(node_addon)
+        ret = super().widget(node_addon)
         ret.update({
             'library_id': node_addon.library_id
         })
@@ -52,7 +51,7 @@ class ZoteroCitationsProvider(CitationsProvider):
 
         if external_library_id:
             node_addon.owner.add_log(
-                '{0}_library_selected'.format(self.provider_name),
+                f'{self.provider_name}_library_selected',
                 params={
                     'project': node_addon.owner.parent_id,
                     'node': node_addon.owner._id,
@@ -63,7 +62,7 @@ class ZoteroCitationsProvider(CitationsProvider):
             )
         else:
             node_addon.owner.add_log(
-                '{0}_folder_selected'.format(self.provider_name),
+                f'{self.provider_name}_folder_selected',
                 params={
                     'project': node_addon.owner.parent_id,
                     'node': node_addon.owner._id,
@@ -101,7 +100,7 @@ class ZoteroCitationsProvider(CitationsProvider):
                 ancestor_id = folders[list_id].get('parent_list_id')
 
             while ancestor_id != attached_list_id:
-                if ancestor_id is '__':
+                if ancestor_id == '__':
                     raise HTTPError(http_status.HTTP_403_FORBIDDEN)
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
 

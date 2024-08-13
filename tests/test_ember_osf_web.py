@@ -1,5 +1,4 @@
-
-import mock
+from unittest import mock
 from flask import request
 
 from tests.base import OsfTestCase
@@ -12,7 +11,7 @@ from django.contrib.auth.models import Group
 class TestEmberFlagIsActive(OsfTestCase):
 
     def setUp(self):
-        super(TestEmberFlagIsActive, self).setUp()
+        super().setUp()
         self.flag = FlagFactory(name='active_flag')
         FlagFactory(name='inactive_flag', everyone=False).save()
         self.mock_func = lambda: 'test value'

@@ -9,7 +9,7 @@ class TestActionDetailNodeRequests(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):
         action = node_request.actions.last()
-        return '/{}actions/{}/'.format(API_BASE, action._id)
+        return f'/{API_BASE}actions/{action._id}/'
 
     def test_admin_cannot_view_action(self, app, url, admin):
         res = app.get(url, auth=admin.auth, expect_errors=True)
@@ -35,7 +35,7 @@ class TestActionDetailNodeRequests(NodeRequestTestMixin):
 class TestActionDetailPreprintRequests(PreprintRequestTestMixin):
     def url(self, request):
         action = request.actions.last()
-        return '/{}actions/{}/'.format(API_BASE, action._id)
+        return f'/{API_BASE}actions/{action._id}/'
 
     def test_no_one_can_view_these_actions(self, app, admin, write_contrib, noncontrib, moderator, pre_request, post_request, none_request):
         pre_url = self.url(pre_request)

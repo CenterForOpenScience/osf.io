@@ -25,8 +25,8 @@ WHERE PC.id IN (
         INNER JOIN osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
         INNER JOIN osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
 '''
-REVERSE_SQL = '{} {}'.format(REVERSE_SQL_BASE, NO_LIMIT_CLAUSE)
-REVERSE_SQL_LIMITED = '{} {}'.format(REVERSE_SQL_BASE, LIMIT_CLAUSE)
+REVERSE_SQL = f'{REVERSE_SQL_BASE} {NO_LIMIT_CLAUSE}'
+REVERSE_SQL_LIMITED = f'{REVERSE_SQL_BASE} {LIMIT_CLAUSE}'
 
 FORWARD_SQL_BASE = '''
     UPDATE osf_pagecounter PC
@@ -45,8 +45,8 @@ FORWARD_SQL_BASE = '''
                       INNER JOIN osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
                   WHERE (PC.resource_id IS NULL OR PC.file_id IS NULL)
 '''
-FORWARD_SQL = '{} {}'.format(FORWARD_SQL_BASE, NO_LIMIT_CLAUSE)
-FORWARD_SQL_LIMITED = '{} {}'.format(FORWARD_SQL_BASE, LIMIT_CLAUSE)
+FORWARD_SQL = f'{FORWARD_SQL_BASE} {NO_LIMIT_CLAUSE}'
+FORWARD_SQL_LIMITED = f'{FORWARD_SQL_BASE} {LIMIT_CLAUSE}'
 
 COUNT_SQL = '''
 SELECT count(PC.id)
@@ -59,10 +59,10 @@ where (PC.resource_id IS NULL or PC.file_id IS NULL);
 @celery_app.task(name='management.commands.migrate_pagecounter_data')
 def migrate_page_counters(dry_run=False, rows=10000, reverse=False):
     script_start_time = datetime.datetime.now()
-    logger.info('Script started time: {}'.format(script_start_time))
+    logger.info(f'Script started time: {script_start_time}')
 
     sql_query = REVERSE_SQL_LIMITED if reverse else FORWARD_SQL_LIMITED
-    logger.info('SQL Query: {}'.format(sql_query))
+    logger.info(f'SQL Query: {sql_query}')
 
     with connection.cursor() as cursor:
         if not dry_run:
@@ -70,13 +70,13 @@ def migrate_page_counters(dry_run=False, rows=10000, reverse=False):
         if not reverse:
             cursor.execute(COUNT_SQL)
             number_of_entries_left = cursor.fetchone()[0]
-            logger.info('Entries left: {}'.format(number_of_entries_left))
+            logger.info(f'Entries left: {number_of_entries_left}')
             if number_of_entries_left == 0:
                 sentry.log_message('Migrate pagecounter data complete')
 
     script_finish_time = datetime.datetime.now()
-    logger.info('Script finished time: {}'.format(script_finish_time))
-    logger.info('Run time {}'.format(script_finish_time - script_start_time))
+    logger.info(f'Script finished time: {script_finish_time}')
+    logger.info(f'Run time {script_finish_time - script_start_time}')
 
 
 class Command(BaseCommand):

@@ -3,9 +3,10 @@ from website.search.search import update_file
 from osf.models import Node, NodeLog
 from addons.osfstorage.models import OsfStorageFileNode
 from django.core.management.base import BaseCommand
+from tqdm import tqdm
 
 PAGE_SIZE = 100
-from tqdm import tqdm
+
 
 def paginated_progressbar(queryset, page_size, function):
     paginator = Paginator(queryset, page_size)

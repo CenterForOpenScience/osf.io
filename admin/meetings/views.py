@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from copy import deepcopy
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -33,7 +32,7 @@ class MeetingListView(PermissionRequiredMixin, ListView):
         )
         kwargs.setdefault('meetings', list(map(serialize_meeting, queryset)))
         kwargs.setdefault('page', page)
-        return super(MeetingListView, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
 
 class MeetingFormView(PermissionRequiredMixin, FormView):
@@ -50,16 +49,16 @@ class MeetingFormView(PermissionRequiredMixin, FormView):
             raise Http404('Meeting with endpoint "{}" not found'.format(
                 endpoint
             ))
-        return super(MeetingFormView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         kwargs.setdefault('endpoint', self.kwargs.get('endpoint'))
-        return super(MeetingFormView, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
     def get_initial(self):
         self.initial = serialize_meeting(self.conf)
         self.initial.setdefault('edit', True)
-        return super(MeetingFormView, self).get_initial()
+        return super().get_initial()
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
@@ -80,7 +79,7 @@ class MeetingFormView(PermissionRequiredMixin, FormView):
         self.conf.auto_check_spam = data.get('auto_check_spam')
         self.conf.field_names.update(custom_fields)
         self.conf.save()
-        return super(MeetingFormView, self).form_valid(form)
+        return super().form_valid(form)
 
     @property
     def success_url(self):
@@ -97,7 +96,7 @@ class MeetingCreateFormView(PermissionRequiredMixin, FormView):
     def get_initial(self):
         self.initial.update(DEFAULT_FIELD_NAMES)
         self.initial.setdefault('edit', False)
-        return super(MeetingCreateFormView, self).get_initial()
+        return super().get_initial()
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
@@ -117,7 +116,7 @@ class MeetingCreateFormView(PermissionRequiredMixin, FormView):
         new_conf.admins.add(*admin_users)
         new_conf.field_names.update(custom_fields)
         new_conf.save()
-        return super(MeetingCreateFormView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('meetings:detail',

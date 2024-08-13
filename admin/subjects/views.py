@@ -15,13 +15,13 @@ class SubjectListView(PermissionRequiredMixin, ListView):
 
     def get_queryset(self):
         req_obj = self.request.GET
-        qs = super(SubjectListView, self).get_queryset().order_by('text')
+        qs = super().get_queryset().order_by('text')
         if PreprintProvider.objects.filter(_id=req_obj.get('provider_id')).exists():
             qs = qs.filter(provider___id=req_obj.get('provider_id'))
         return qs
 
     def get_context_data(self, **kwargs):
-        context = super(SubjectListView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['filterable_provider_ids'] = dict({'': '---'}, **dict(PreprintProvider.objects.values_list('_id', 'name')))
         return context
 

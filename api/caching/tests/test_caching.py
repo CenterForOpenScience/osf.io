@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import copy
 import random
 import unittest
@@ -18,15 +16,15 @@ from tests.base import DbTestCase
 # from datadiff import tools
 
 class TestVarnish(DbTestCase):
-    local_varnish_base_url = '{}/v2/'.format(django_settings.VARNISH_SERVERS[0])
+    local_varnish_base_url = f'{django_settings.VARNISH_SERVERS[0]}/v2/'
     local_python_base_url = 'http://localhost:8000/v2/'
 
     @classmethod
     def setUpClass(cls):
-        super(TestVarnish, cls).setUpClass()
+        super().setUpClass()
         username = uuid.uuid4()
         cls.user = OSFUser.create_confirmed(
-            username='{}@mail.com'.format(str(username)),
+            username=f'{str(username)}@mail.com',
             password='password',
             fullname='Mocha Test User',
         )
@@ -36,10 +34,16 @@ class TestVarnish(DbTestCase):
         small = 5
         large = 10
 
-        components = [[[range(small, random.randint(small, large))
-                        for x in range(small, random.randint(small, large))]
-                       for y in range(small, random.randint(small, large))]
-                      for z in range(small, random.randint(small, large))]
+        components = [
+            [
+                [
+                    range(small, random.randint(small, large))
+                    for _ in range(small, random.randint(small, large))
+                ]
+                for _ in range(small, random.randint(small, large))
+            ]
+            for _ in range(small, random.randint(small, large))
+        ]
 
         number_of_projects = random.randint(1, 11)
         number_of_tags = random.randint(1, 11)
@@ -122,33 +126,41 @@ class TestVarnish(DbTestCase):
                     timeout=120,
                 )
 
-                python_data[key]['_'.join(
-                    embed_values,
-                )] = python_resp.json()
+                python_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = python_resp.json()
                 self.validate_keys(
                     python_resp.json(),
                     original_embed_values,
                 )
 
-                python_authed_data[key]['_'.join(
-                    embed_values,
-                )] = python_authed_resp.json()
+                python_authed_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = python_authed_resp.json()
                 self.validate_keys(
                     python_authed_resp.json(),
                     original_embed_values,
                 )
 
-                varnish_data[key]['_'.join(
-                    embed_values,
-                )] = varnish_resp.json()
+                varnish_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = varnish_resp.json()
                 self.validate_keys(
                     varnish_resp.json(),
                     original_embed_values,
                 )
 
-                varnish_authed_data[key]['_'.join(
-                    embed_values,
-                )] = varnish_authed_resp.json()
+                varnish_authed_data[key][
+                    '_'.join(
+                        embed_values,
+                    )
+                ] = varnish_authed_resp.json()
                 self.validate_keys(
                     varnish_authed_resp.json(),
                     original_embed_values,
@@ -193,7 +205,7 @@ class TestVarnish(DbTestCase):
             ),
         )
         create_response = requests.post(
-            '{}nodes/'.format(self.local_python_base_url),
+            f'{self.local_python_base_url}nodes/',
             json=payload,
             auth=self.authorization,
         )
@@ -242,7 +254,7 @@ class TestVarnish(DbTestCase):
         assert individual_response_before_update.headers['x-cache'] == 'HIT', 'Request never made it to cache'
 
         update_response = requests.put(
-            '{}/v2/nodes/{}/'.format(django_settings.VARNISH_SERVERS[0], node_id),
+            f'{django_settings.VARNISH_SERVERS[0]}/v2/nodes/{node_id}/',
             json=new_data_object, auth=self.authorization,
         )
 

@@ -52,19 +52,19 @@ class BoaSerializer(StorageAddonSerializer):
 
     @property
     def serialized_node_settings(self):
-        result = super(BoaSerializer, self).serialized_node_settings
+        result = super().serialized_node_settings
         result['hosts'] = DEFAULT_HOSTS
         return result
 
     @property
     def serialized_user_settings(self):
-        result = super(BoaSerializer, self).serialized_user_settings
+        result = super().serialized_user_settings
         result['hosts'] = DEFAULT_HOSTS
         return result
 
     def serialize_settings(self, node_settings, current_user, client=None):
         if client is not None:
             sentry.log_message('Client ignored for Boa Serializer in serialize_settings()')
-        ret = super(BoaSerializer, self).serialize_settings(node_settings, current_user, client=client)
+        ret = super().serialize_settings(node_settings, current_user, client=client)
         ret['hosts'] = DEFAULT_HOSTS
         return ret

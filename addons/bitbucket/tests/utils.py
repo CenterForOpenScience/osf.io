@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from addons.bitbucket.api import BitbucketClient
 
@@ -13,7 +13,7 @@ class BitbucketAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     Provider = BitbucketProvider
 
     def set_node_settings(self, settings):
-        super(BitbucketAddonTestCase, self).set_node_settings(settings)
+        super().set_node_settings(settings)
         settings.repo = 'abc'
         settings.user = 'octo-cat'
 
@@ -36,9 +36,9 @@ def create_mock_bitbucket(user='octo-cat', private=False):
         'owner': {'username': user},
     }
     bitbucket_mock.repos.return_value = [
-        {'full_name': '{}/cow-problems-app'.format(user)},
-        {'full_name': '{}/duck-problems-app'.format(user)},
-        {'full_name': '{}/horse-problems-app'.format(user)},
+        {'full_name': f'{user}/cow-problems-app'},
+        {'full_name': f'{user}/duck-problems-app'},
+        {'full_name': f'{user}/horse-problems-app'},
     ]
     bitbucket_mock.team_repos.return_value = [
         {'full_name': 'team-barn-devs/pig-problems-app'},

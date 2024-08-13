@@ -24,6 +24,8 @@ def osf_storage_root(addon_config, node_settings, auth, **kwargs):
 
 
 class OSFStorageAddonAppConfig(BaseAddonAppConfig):
+
+    default = True
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
     full_name = 'OSF Storage'

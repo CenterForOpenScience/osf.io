@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from rest_framework import exceptions
@@ -60,7 +60,7 @@ class TestNodeWikiList:
 
     @pytest.fixture()
     def public_url(self, public_project, public_wiki):
-        return '/{}nodes/{}/wikis/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/wikis/'
 
     @pytest.fixture()
     def private_project(self, user):
@@ -72,7 +72,7 @@ class TestNodeWikiList:
 
     @pytest.fixture()
     def private_url(self, private_project, private_wiki):
-        return '/{}nodes/{}/wikis/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/wikis/'
 
     @pytest.fixture()
     def public_registration(self, user, public_project, public_wiki):
@@ -269,7 +269,7 @@ class TestFilterNodeWikiList:
 
     @pytest.fixture()
     def base_url(self, private_project):
-        return '/{}nodes/{}/wikis/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/wikis/'
 
     @pytest.fixture()
     def wiki(self, user, private_project):
@@ -297,17 +297,17 @@ class TestFilterNodeWikiList:
         assert res.json['data'][0]['attributes']['name'] == 'home'
 
     #   test_filter_wikis_modified_on_date
-        url = base_url + '?filter[date_modified][eq]={}'.format(date)
+        url = base_url + f'?filter[date_modified][eq]={date}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     #   test_filter_wikis_modified_before_date
-        url = base_url + '?filter[date_modified][lt]={}'.format(date)
+        url = base_url + f'?filter[date_modified][lt]={date}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 0
 
     #   test_filter_wikis_modified_after_date
-        url = base_url + '?filter[date_modified][gt]={}'.format(date)
+        url = base_url + f'?filter[date_modified][gt]={date}'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 0
 
@@ -317,19 +317,19 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
 
     @pytest.fixture
     def url_node_public(self, project_public):
-        return '/{}nodes/{}/wikis/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/wikis/'
 
     @pytest.fixture
     def url_node_private(self, project_private):
-        return '/{}nodes/{}/wikis/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/wikis/'
 
     @pytest.fixture
     def url_registration_public(self, wiki_registration_public):
-        return '/{}registrations/{}/wikis/'.format(API_BASE, wiki_registration_public.node._id)
+        return f'/{API_BASE}registrations/{wiki_registration_public.node._id}/wikis/'
 
     @pytest.fixture
     def url_registration_private(self, wiki_registration_private):
-        return '/{}registrations/{}/wikis/'.format(API_BASE, wiki_registration_private.node._id)
+        return f'/{API_BASE}registrations/{wiki_registration_private.node._id}/wikis/'
 
     def test_create_public_wiki_page(self, app, user_write_contributor, url_node_public):
         page_name = fake.word()
@@ -374,7 +374,7 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
         # test_do_not_create_wiki_page_name_exists
         res = app.post_json_api(url_node_public, create_wiki_payload(wiki_public.page_name), auth=user_creator.auth, expect_errors=True)
         assert res.status_code == 409
-        assert res.json['errors'][0]['detail'] == "A wiki page with the name '{}' already exists.".format(wiki_public.page_name)
+        assert res.json['errors'][0]['detail'] == f"A wiki page with the name '{wiki_public.page_name}' already exists."
 
         # test_do_not_create_public_wiki_page_as_read_contributor
         res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=user_read_contributor.auth, expect_errors=True)

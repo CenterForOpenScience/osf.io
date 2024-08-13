@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import furl
+from furl import furl
 import lxml
 import lxml.builder
 import time
@@ -27,6 +26,7 @@ CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
 CROSSREF_SUFFIX_LIMIT = 10
 CROSSREF_SURNAME_LIMIT = 60
 CROSSREF_GIVEN_NAME_LIMIT = 60
+
 
 class CrossRefClient(AbstractIdentifierClient):
 
@@ -100,7 +100,7 @@ class CrossRefClient(AbstractIdentifierClient):
         posted_content.append(element.posted_date(*self._crossref_format_date(element, preprint.date_published)))
 
         if status == 'public':
-            posted_content.append(element.item_number('osf.io/{}'.format(preprint._id)))
+            posted_content.append(element.item_number(f'osf.io/{preprint._id}'))
 
             if preprint.description:
                 posted_content.append(
@@ -217,7 +217,7 @@ class CrossRefClient(AbstractIdentifierClient):
         return elements
 
     def _build_url(self, **query):
-        url = furl.furl(self.base_url)
+        url = furl(self.base_url)
         url.args.update(query)
         return url.url
 
@@ -226,7 +226,7 @@ class CrossRefClient(AbstractIdentifierClient):
             metadata = self.build_metadata(preprint, include_relation)
             doi = self.build_doi(preprint)
             username, password = self.get_credentials()
-            logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
+            logger.info(f'Sending metadata for DOI {doi}:\n{metadata}')
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
             requests.post(

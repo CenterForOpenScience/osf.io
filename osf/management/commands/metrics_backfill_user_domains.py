@@ -33,7 +33,7 @@ def main(source, dry_run=False, resume_from=None):
         if resume_from is not None and count < resume_from:
             continue
 
-        logger.info('count:({}) this_year:({})'.format(count, this_year))
+        logger.info(f'count:({count}) this_year:({this_year})')
 
         event_ts = _timestamp_to_dt(row['keen.timestamp'])
         event_date = event_ts.date()
@@ -82,7 +82,7 @@ def _upload_data_and_purge(tally, dry_run):
                 'new_user_count': count,
             }
 
-            logger.info('    *** {}::{}::{}'.format(event_date_str, domain, count))
+            logger.info(f'    *** {event_date_str}::{domain}::{count}')
             logger.info('    *** {}::{}: something wonderful:({})'.format(event_date_str, domain,
                                                                           something_wonderful))
 
@@ -94,7 +94,7 @@ def _upload_data_and_purge(tally, dry_run):
 
 
 def _timestamp_to_dt(timestamp):
-    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
+    return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.UTC)
 
 def _timestamp_to_date(timestamp):
     dt_obj = _timestamp_to_dt(timestamp)
@@ -104,7 +104,7 @@ def _timestamp_to_date(timestamp):
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--source',
             type=open,

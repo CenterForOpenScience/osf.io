@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 import unittest
 
@@ -21,7 +20,7 @@ pytestmark = pytest.mark.django_db
 
 class TestOneDriveProvider(unittest.TestCase):
     def setUp(self):
-        super(TestOneDriveProvider, self).setUp()
+        super().setUp()
         self.provider = OneDriveProvider()
 
     @mock.patch.object(OneDriveClient, 'user_info')
@@ -42,7 +41,7 @@ class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
     ExternalAccountFactory = OneDriveAccountFactory
 
     def setUp(self):
-        super(TestUserSettings, self).setUp()
+        super().setUp()
 
         self.mock_client_folders = mock.patch(
             'addons.onedrive.client.OneDriveClient.folders',
@@ -60,7 +59,7 @@ class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
         self.mock_client_user.stop()
         self.mock_client_folders.stop()
 
-        super(TestUserSettings, self).tearDown()
+        super().tearDown()
 
 
 class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
@@ -93,13 +92,13 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         )
         self.mock_client_user.start()
 
-        super(TestNodeSettings, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_client_user.stop()
         self.mock_client_folders.stop()
         self.mock_refresh.stop()
-        super(TestNodeSettings, self).tearDown()
+        super().tearDown()
 
     @mock.patch('addons.onedrive.models.OneDriveProvider')
     def test_api_not_cached(self, mock_odp):
@@ -137,7 +136,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert self.node_settings.folder_id == folder['id']
         # Log was saved
         last_log = self.node.logs.latest()
-        assert last_log.action == '{0}_folder_selected'.format(self.short_name)
+        assert last_log.action == f'{self.short_name}_folder_selected'
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()

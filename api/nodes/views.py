@@ -3,7 +3,7 @@ import typing
 
 import dataclasses
 
-from distutils.version import StrictVersion
+from packaging.version import Version
 from django.apps import apps
 from django.db.models import F, Max, Q, Subquery
 from django.utils import timezone
@@ -156,6 +156,7 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
+    Preprint,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -170,7 +171,7 @@ HTTP_CODE_MAP = {
 }
 
 
-class NodeMixin(object):
+class NodeMixin:
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the node_id kwarg.
     """
@@ -202,7 +203,7 @@ class NodeMixin(object):
         return node
 
 
-class DraftMixin(object):
+class DraftMixin:
 
     serializer_class = DraftRegistrationLegacySerializer
 
@@ -253,12 +254,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     model_class = apps.get_model('osf.AbstractNode')
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-modified',)  # default ordering
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -294,13 +295,13 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             return NodeSerializer
 
     def get_serializer_context(self):
-        context = super(NodeList, self).get_serializer_context()
+        context = super().get_serializer_context()
         region_id = self.request.query_params.get('region', None)
         if region_id:
             try:
                 region_id = Region.objects.filter(_id=region_id).values_list('id', flat=True).get()
             except Region.DoesNotExist:
-                raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
+                raise InvalidQueryStringError(f'Region {region_id} is invalid.')
             context.update({
                 'region_id': region_id,
             })
@@ -378,7 +379,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     serializer_class = NodeDetailSerializer
     view_category = 'nodes'
@@ -402,7 +403,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
             raise PermissionDenied(str(err))
 
     def get_renderer_context(self):
-        context = super(NodeDetail, self).get_renderer_context()
+        context = super().get_renderer_context()
         show_counts = is_truthy(self.request.query_params.get('related_counts', False))
         if show_counts:
             node = self.get_object()
@@ -426,7 +427,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = OSFUser
 
-    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
@@ -552,7 +553,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     model_class = OSFUser
 
-    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
 
     serializer_class = UserSerializer
     view_category = 'nodes'
@@ -605,7 +606,7 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
     model_class = OSFUser
 
-    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
@@ -617,7 +618,7 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
         return self.get_node()
 
     def get_default_queryset(self):
-        contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
+        contributors = super().get_default_queryset()
         return contributors.filter(visible=True)
 
 
@@ -633,7 +634,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         base_permissions.TokenHasScope,
     )
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
@@ -645,7 +646,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     ordering = ('-modified',)
 
     def get_serializer_class(self):
-        if StrictVersion(getattr(self.request, 'version', '2.0')) >= StrictVersion(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
+        if Version(getattr(self.request, 'version', '2.0')) >= Version(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
             return DraftRegistrationSerializer
         return DraftRegistrationLegacySerializer
 
@@ -666,7 +667,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
         base_permissions.TokenHasScope,
         IsAdminContributor,
     )
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
@@ -676,7 +677,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     view_name = 'node-draft-registration-detail'
 
     def get_serializer_class(self):
-        if StrictVersion(getattr(self.request, 'version', '2.0')) >= StrictVersion(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
+        if Version(getattr(self.request, 'version', '2.0')) >= Version(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
             return DraftRegistrationDetailSerializer
         return DraftRegistrationDetailLegacySerializer
 
@@ -733,7 +734,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         try:
             serializer.save(draft=draft)
         except ValidationError as e:
-            log_exception()
+            log_exception(e)
             raise e
 
 
@@ -750,14 +751,14 @@ class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, N
     model_class = Node
 
     def get_serializer_context(self):
-        context = super(NodeChildrenList, self).get_serializer_context()
+        context = super().get_serializer_context()
         region__id = self.request.query_params.get('region', None)
         id = None
         if region__id:
             try:
                 id = Region.objects.filter(_id=region__id).values_list('id', flat=True).get()
             except Region.DoesNotExist:
-                raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
+                raise InvalidQueryStringError(f'Region {region__id} is invalid.')
 
         context.update({
             'region_id': id,
@@ -818,7 +819,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
             citation = render_citation(node=node, style=style)
         except ValueError as err:  # style requested could not be found
             csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
-            raise NotFound('{} is not a known style.'.format(csl_name))
+            raise NotFound(f'{csl_name} is not a known style.')
 
         return {'citation': citation, 'id': style}
 
@@ -922,7 +923,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeLinksList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -1117,7 +1118,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    throttle_classes = (FilesBurstRateThrottle, FilesRateThrottle, )
+    throttle_classes = (FilesBurstRateThrottle, FilesRateThrottle)
 
     view_category = 'nodes'
     view_name = 'node-files'
@@ -1197,7 +1198,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         return queryset.annotate(
             date_modified=file_annotations.DATE_MODIFIED,
-            **file_annotations.make_show_as_unviewed_annotations(self.request.user)
+            **file_annotations.make_show_as_unviewed_annotations(self.request.user),
         )
 
 
@@ -1278,7 +1279,7 @@ class NodeGroupsList(NodeGroupsBase, generics.ListCreateAPIView, ListFilterMixin
                 raise ValidationError('{} is not a filterable permission.'.format(operation['value']))
             return Q(id__in=groups_with_perm_ids)
 
-        return super(NodeGroupsList, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
     # overrides ListCreateAPIView
     def get_serializer_class(self):
@@ -1292,13 +1293,13 @@ class NodeGroupsList(NodeGroupsBase, generics.ListCreateAPIView, ListFilterMixin
         """
         Extra context for NodeGroupsSerializer
         """
-        context = super(NodeGroupsList, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['node'] = self.get_node(check_object_permissions=False)
         return context
 
     @require_flag(OSF_GROUPS)
     def perform_create(self, serializer):
-        return super(NodeGroupsList, self).perform_create(serializer)
+        return super().perform_create(serializer)
 
 
 class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
@@ -1322,7 +1323,7 @@ class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
         # Node permissions checked when group is loaded
         group = self.get_osf_group(self.kwargs.get('group_id'))
         if not group.get_permission_to_node(node):
-            raise NotFound('Group {} does not have permissions to node {}.'.format(group._id, node._id))
+            raise NotFound(f'Group {group._id} does not have permissions to node {node._id}.')
         return group
 
     # Overrides RetrieveUpdateDestroyAPIView
@@ -1340,7 +1341,7 @@ class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
         """
         Extra context for NodeGroupsSerializer
         """
-        context = super(NodeGroupsDetail, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['node'] = self.get_node(check_object_permissions=False)
         return context
 
@@ -1408,16 +1409,16 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         node = self.get_node()
         if node.has_addon(addon):
             raise InvalidModelValueError(
-                detail='Add-on {} already enabled for node {}'.format(addon, node._id),
+                detail=f'Add-on {addon} already enabled for node {node._id}',
             )
 
-        return super(NodeAddonDetail, self).perform_create(serializer)
+        return super().perform_create(serializer)
 
     def perform_destroy(self, instance):
         addon = instance.config.short_name
         node = self.get_node()
         if not node.has_addon(instance.config.short_name):
-            raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
+            raise NotFound(f'Node {node._id} does not have add-on {addon}')
 
         node.delete_addon(addon, auth=get_user_auth(self.request))
 
@@ -1455,7 +1456,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         if not node_addon.has_auth:
             raise JSONAPIException(
                 detail='This addon is enabled but an account has not been imported from your user settings',
-                meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)},
+                meta={'link': f'{API_BASE}users/me/addons/{node_addon.config.short_name}/accounts/'},
             )
 
         path = self.request.query_params.get('path')
@@ -1514,6 +1515,8 @@ class NodeStorageProvider:
 
     @property
     def root_folder(self):
+        if isinstance(self.resource, Preprint):
+            return self.resource.root_folder
         if self.provider_settings:
             return self.provider_settings.root_node
         return None
@@ -1588,7 +1591,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
     log_lookup_url_kwarg = 'node_id'
 
-    ordering = ('-date', )
+    ordering = ('-date',)
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1627,7 +1630,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     view_category = 'nodes'
     view_name = 'node-comments'
 
-    ordering = ('-created', )  # default ordering
+    ordering = ('-created',)  # default ordering
 
     def get_default_queryset(self):
         return Comment.objects.filter(node=self.get_node(), root_target__isnull=False)
@@ -1651,7 +1654,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeCommentsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -1755,7 +1758,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = NodeInstitutionsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'nodes'
     view_name = 'node-relationships-institutions'
@@ -1787,7 +1790,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret
@@ -1881,7 +1884,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
     view_category = 'nodes'
     view_name = 'node-wikis'
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-modified',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -1972,7 +1975,7 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        queryset = super(LinkedNodesList, self).get_queryset()
+        queryset = super().get_queryset()
         return queryset.exclude(type='osf.registration')
 
     # overrides APIView
@@ -1980,7 +1983,7 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -2122,14 +2125,14 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        return super(NodeLinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
+        return super().get_queryset().filter(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeLinkedRegistrationsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -2236,7 +2239,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         base_permissions.TokenHasScope,
         ContributorOrPublic,
     )
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -2270,7 +2273,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
     required_write_scopes = [CoreScopes.NODE_REQUESTS_WRITE]
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     serializer_class = NodeRequestSerializer
 
@@ -2319,7 +2322,7 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         Extra context for NodeSettingsSerializer - this will prevent loading
         addons multiple times in SerializerMethodFields
         """
-        context = super(NodeSettings, self).get_serializer_context()
+        context = super().get_serializer_context()
         node = self.get_node(check_object_permissions=False)
         context['wiki_addon'] = node.get_addon('wiki')
         context['forward_addon'] = node.get_addon('forward')

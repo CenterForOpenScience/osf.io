@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Serializer tests for the Mendeley addon."""
 import pytest
 

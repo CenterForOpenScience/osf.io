@@ -5,7 +5,7 @@ from osf import features
 import flask
 
 
-class MockUser(object):
+class MockUser:
     is_authenticated = False
 
 

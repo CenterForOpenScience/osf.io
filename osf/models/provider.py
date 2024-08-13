@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import json
 import requests
 
@@ -164,7 +163,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
 
     def __str__(self):
-        return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
+        return f'[{self.readable_type}] {self.name} - {self.id}'
 
     @property
     def all_subjects(self):
@@ -271,7 +270,7 @@ class CollectionProvider(AbstractProvider):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/providers/collections/{}/'.format(self._id)
+        path = f'/providers/collections/{self._id}/'
         return api_v2_url(path)
 
     def get_semantic_iri(self):
@@ -342,7 +341,7 @@ class RegistrationProvider(AbstractProvider):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/providers/registrations/{}/'.format(self._id)
+        path = f'/providers/registrations/{self._id}/'
         return api_v2_url(path)
 
     def get_semantic_iri(self):
@@ -415,7 +414,7 @@ class PreprintProvider(AbstractProvider):
             # TODO: Delet this when all PreprintProviders have a mapping
             if len(self.subjects_acceptable) == 0:
                 return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
-            tops = set([sub[0][0] for sub in self.subjects_acceptable])
+            tops = {sub[0][0] for sub in self.subjects_acceptable}
             return Subject.objects.filter(_id__in=tops)
 
     @property
@@ -423,11 +422,11 @@ class PreprintProvider(AbstractProvider):
         return self.domain or self.get_semantic_iri()
 
     def get_absolute_url(self):
-        return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
+        return f'{self.absolute_api_v2_url}preprint_providers/{self._id}'
 
     @property
     def absolute_api_v2_url(self):
-        path = '/providers/preprints/{}/'.format(self._id)
+        path = f'/providers/preprints/{self._id}/'
         return api_v2_url(path)
 
     def get_semantic_iri(self):
@@ -479,7 +478,7 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
         user = getattr(instance, '_creator', None)  # Temp attr set in admin view
         if user:
             c = Collection(
-                title='{}\'s Collection'.format(instance.name),
+                title=f'{instance.name}\'s Collection',
                 creator=user,
                 provider=instance,
                 is_promoted=True,
@@ -490,7 +489,7 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
             instance.save()
         else:
             # A user is required for Collections / Groups
-            sentry.log_message('Unable to create primary_collection for {}Provider {}'.format(instance.readable_type.capitalize(), instance.name))
+            sentry.log_message(f'Unable to create primary_collection for {instance.readable_type.capitalize()}Provider {instance.name}')
 
 class WhitelistedSHAREPreprintProvider(BaseModel):
     id = models.AutoField(primary_key=True)

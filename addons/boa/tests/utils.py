@@ -3,7 +3,7 @@ from addons.boa.models import BoaProvider, BoaSerializer, NodeSettings
 from addons.boa.tests.factories import BoaAccountFactory, BoaNodeSettingsFactory, BoaUserSettingsFactory
 
 
-class BoaAddonTestCaseBaseMixin(object):
+class BoaAddonTestCaseBaseMixin:
 
     short_name = 'boa'
     full_name = 'Boa'
@@ -22,12 +22,12 @@ class BoaAddonTestCaseBaseMixin(object):
 class BoaBasicAuthAddonTestCase(BoaAddonTestCaseBaseMixin, OAuthAddonTestCaseMixin, AddonTestCase):
 
     def __init__(self, *args, **kwargs):
-        super(BoaBasicAuthAddonTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.auth = None
         self.external_account = None
 
     def set_user_settings(self, settings):
-        super(BoaBasicAuthAddonTestCase, self).set_user_settings(settings)
+        super().set_user_settings(settings)
 
     def set_node_settings(self, settings):
-        super(BoaBasicAuthAddonTestCase, self).set_node_settings(settings)
+        super().set_node_settings(settings)

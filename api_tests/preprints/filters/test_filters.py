@@ -8,7 +8,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class PreprintsListFilteringMixin(object):
+class PreprintsListFilteringMixin:
 
     @pytest.fixture()
     def user(self):
@@ -94,31 +94,31 @@ class PreprintsListFilteringMixin(object):
 
     @pytest.fixture()
     def provider_url(self, url):
-        return '{}filter[provider]='.format(url)
+        return f'{url}filter[provider]='
 
     @pytest.fixture()
     def id_url(self, url):
-        return '{}filter[id]='.format(url)
+        return f'{url}filter[id]='
 
     @pytest.fixture()
     def created_url(self, url):
-        return '{}filter[date_created]='.format(url)
+        return f'{url}filter[date_created]='
 
     @pytest.fixture()
     def date_modified_url(self, url):
-        return '{}filter[date_modified]='.format(url)
+        return f'{url}filter[date_modified]='
 
     @pytest.fixture()
     def date_published_url(self, url):
-        return '{}filter[date_published]='.format(url)
+        return f'{url}filter[date_published]='
 
     @pytest.fixture()
     def original_publication_date_url(self, url):
-        return '{}filter[original_publication_date]='.format(url)
+        return f'{url}filter[original_publication_date]='
 
     @pytest.fixture()
     def is_published_url(self, url):
-        return '{}filter[is_published]='.format(url)
+        return f'{url}filter[is_published]='
 
     @pytest.fixture()
     def is_published_and_modified_url(self, url):
@@ -127,24 +127,24 @@ class PreprintsListFilteringMixin(object):
 
     @pytest.fixture()
     def node_is_public_url(self, url):
-        return '{}filter[node_is_public]='.format(url)
+        return f'{url}filter[node_is_public]='
 
     def test_provider_filter_null(self, app, user, provider_url):
         expected = []
-        res = app.get('{}null'.format(provider_url), auth=user.auth)
+        res = app.get(f'{provider_url}null', auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
     def test_id_filter_null(self, app, user, id_url):
         expected = []
-        res = app.get('{}null'.format(id_url), auth=user.auth)
+        res = app.get(f'{id_url}null', auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
     def test_id_filter_equals_returns_one(
             self, app, user, preprint_two, id_url):
         expected = [preprint_two._id]
-        res = app.get('{}{}'.format(id_url, preprint_two._id), auth=user.auth)
+        res = app.get(f'{id_url}{preprint_two._id}', auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
@@ -172,13 +172,13 @@ class PreprintsListFilteringMixin(object):
 
     def test_date_created_filter_equals_returns_multiple(
             self, app, user, preprint_two, preprint_three, created_url):
-        expected = set([preprint_two._id, preprint_three._id])
+        expected = {preprint_two._id, preprint_three._id}
         res = app.get(
             '{}{}'.format(
                 created_url,
                 preprint_two.created),
             auth=user.auth)
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     def test_date_modified_filter_equals_returns_none(
@@ -198,15 +198,15 @@ class PreprintsListFilteringMixin(object):
     def test_date_modified_filter_equals_returns_multiple(
             self, app, user, preprint_one, preprint_two,
             preprint_three, date_modified_url):
-        expected = set([preprint_one._id,
+        expected = {preprint_one._id,
                         preprint_two._id,
-                        preprint_three._id])
+                        preprint_three._id}
         res = app.get(
             '{}{}'.format(
                 date_modified_url,
                 preprint_one.modified),
             auth=user.auth)
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     def test_date_published_filter_equals_returns_none(
@@ -233,13 +233,13 @@ class PreprintsListFilteringMixin(object):
 
     def test_date_published_filter_equals_returns_multiple(
             self, app, user, preprint_two, preprint_three, date_published_url):
-        expected = set([preprint_two._id, preprint_three._id])
+        expected = {preprint_two._id, preprint_three._id}
         res = app.get(
             '{}{}'.format(
                 date_published_url,
                 preprint_two.date_published),
             auth=user.auth)
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     def test_original_publication_date_filter_equals_returns_none(
@@ -266,13 +266,13 @@ class PreprintsListFilteringMixin(object):
 
     def test_original_publication_date_filter_equals_returns_multiple(
             self, app, user, preprint_two, preprint_three, original_publication_date_url):
-        expected = set([preprint_two._id, preprint_three._id])
+        expected = {preprint_two._id, preprint_three._id}
         res = app.get(
             '{}{}'.format(
                 original_publication_date_url,
                 preprint_two.original_publication_date),
             auth=user.auth)
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     def test_is_published_false_filter_equals_returns_one(
@@ -284,19 +284,19 @@ class PreprintsListFilteringMixin(object):
 
     def test_is_published_true_filter_equals_returns_multiple(
             self, app, user, preprint_one, preprint_two, is_published_url):
-        expected = set([preprint_one._id, preprint_two._id])
+        expected = {preprint_one._id, preprint_two._id}
         res = app.get('{}{}'.format(is_published_url, 'true'), auth=user.auth)
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     def test_multiple_filters_returns_one(
             self, app, user, preprint_two, is_published_and_modified_url):
-        expected = set([preprint_two._id])
+        expected = {preprint_two._id}
         res = app.get(
             is_published_and_modified_url,
             auth=user.auth
         )
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     def test_node_is_public_filter(
@@ -316,8 +316,8 @@ class PreprintsListFilteringMixin(object):
                 node_is_public_url,
                 'false'),
             auth=user.auth)
-        expected = set([p._id for p in preprints if not p.node.is_public])
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        expected = {p._id for p in preprints if not p.node.is_public}
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
         res = app.get(
@@ -325,8 +325,8 @@ class PreprintsListFilteringMixin(object):
                 node_is_public_url,
                 'true'),
             auth=user.auth)
-        expected = set([p._id for p in preprints if p.node.is_public])
-        actual = set([preprint['id'] for preprint in res.json['data']])
+        expected = {p._id for p in preprints if p.node.is_public}
+        actual = {preprint['id'] for preprint in res.json['data']}
         assert expected == actual
 
     @pytest.mark.parametrize('group_name', ['admin', 'moderator'])
@@ -342,7 +342,7 @@ class PreprintsListFilteringMixin(object):
 
         def actual():
             res = app.get(url, auth=another_user.auth)
-            return set([preprint['id'] for preprint in res.json['data']])
+            return {preprint['id'] for preprint in res.json['data']}
 
         expected = set()
         assert expected == actual()

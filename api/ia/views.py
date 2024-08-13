@@ -30,7 +30,7 @@ class IACallbackView(APIView):
 
     def post(self, request, *args, **kwargs):
         registration = self.get_object()
-        ia_url = json.loads(request._request._body.decode())['ia_url']
+        ia_url = json.loads(request.body)['ia_url']
         registration.ia_url = ia_url
         registration.save()
         return JsonResponse({'status': 'complete'})

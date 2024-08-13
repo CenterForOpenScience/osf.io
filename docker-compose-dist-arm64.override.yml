@@ -1,7 +1,5 @@
 ## Reference README-docker-compose.md for instructions.
 
-version: '3.4'
-
 services:
 
   #######

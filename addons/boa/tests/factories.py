@@ -1,4 +1,5 @@
-from factory import DjangoModelFactory, Sequence, SubFactory
+from factory import Sequence, SubFactory
+from factory.django import DjangoModelFactory
 
 from addons.boa.models import UserSettings, NodeSettings
 from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
@@ -12,9 +13,9 @@ class BoaAccountFactory(ExternalAccountFactory):
 
     provider = 'boa'
     provider_name = 'Fake Boa Provider'
-    provider_id = Sequence(lambda n: '{0}:{1}-{2}'.format(BOA_HOST, BOA_USERNAME, n))
-    profile_url = Sequence(lambda n: 'http://localhost:9999/{0}/boa'.format(n))
-    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
+    provider_id = Sequence(lambda n: f'{BOA_HOST}:{BOA_USERNAME}-{n}')
+    profile_url = Sequence(lambda n: f'http://localhost:9999/{n}/boa')
+    oauth_secret = Sequence(lambda n: f'secret-{n}')
     oauth_key = BOA_PASSWORD
     display_name = 'Fake Boa'
 

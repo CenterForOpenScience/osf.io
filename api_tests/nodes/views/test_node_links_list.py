@@ -15,7 +15,7 @@ from tests.utils import assert_latest_log
 
 
 def node_url_for(n_id):
-    return '/{}nodes/{}/'.format(API_BASE, n_id)
+    return f'/{API_BASE}nodes/{n_id}/'
 
 
 @pytest.fixture()
@@ -42,7 +42,7 @@ class TestNodeLinksList:
 
     @pytest.fixture()
     def private_url(self, private_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/node_links/'
 
     @pytest.fixture()
     def public_pointer_project(self, user):
@@ -56,7 +56,7 @@ class TestNodeLinksList:
 
     @pytest.fixture()
     def public_url(self, public_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/node_links/'
 
     def test_non_mutational_node_links_list_tests(
             self, app, user, public_non_contrib, public_pointer_project, private_project,
@@ -114,7 +114,7 @@ class TestNodeLinksList:
         assert res.status_code == 200
 
     #   test_node_links_bad_version
-        url = '{}?version=2.1'.format(public_url)
+        url = f'{public_url}?version=2.1'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'This feature is deprecated as of version 2.1'
@@ -146,7 +146,7 @@ class TestNodeLinkCreate:
 
     @pytest.fixture()
     def private_url(self, user, private_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/node_links/'
 
     @pytest.fixture()
     def public_project(self, user):
@@ -158,7 +158,7 @@ class TestNodeLinkCreate:
 
     @pytest.fixture()
     def public_url(self, public_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/node_links/'
 
     @pytest.fixture()
     def fake_url(self):
@@ -174,7 +174,7 @@ class TestNodeLinkCreate:
 
     @pytest.fixture()
     def user_two_url(self, user_two_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, user_two_project._id)
+        return f'/{API_BASE}nodes/{user_two_project._id}/node_links/'
 
     @pytest.fixture()
     def make_payload(self):
@@ -590,7 +590,7 @@ class TestNodeLinkCreate:
     def test_cannot_add_link_to_registration(
             self, app, user, public_pointer_project, make_payload):
         registration = RegistrationFactory(creator=user)
-        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}nodes/{registration._id}/node_links/'
         payload = make_payload(id=public_pointer_project._id)
 
         res = app.post_json_api(
@@ -620,7 +620,7 @@ class TestNodeLinksBulkCreate:
 
     @pytest.fixture()
     def private_url(self, private_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/node_links/'
 
     @pytest.fixture()
     def public_project(self, user):
@@ -636,7 +636,7 @@ class TestNodeLinksBulkCreate:
 
     @pytest.fixture()
     def public_url(self, public_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/node_links/'
 
     @pytest.fixture()
     def user_two_project(self, user_two):
@@ -644,7 +644,7 @@ class TestNodeLinksBulkCreate:
 
     @pytest.fixture()
     def user_two_url(self, user_two_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, user_two_project._id)
+        return f'/{API_BASE}nodes/{user_two_project._id}/node_links/'
 
     @pytest.fixture()
     def private_payload(
@@ -1030,7 +1030,7 @@ class TestNodeLinksBulkCreate:
             self, app, user, public_pointer_project_one):
         registration = RegistrationFactory(creator=user)
 
-        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+        url = f'/{API_BASE}nodes/{registration._id}/node_links/'
         payload = {
             'data': [{
                 'type': 'node_links',
@@ -1094,7 +1094,7 @@ class TestBulkDeleteNodeLinks:
 
     @pytest.fixture()
     def private_url(self, private_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, private_project._id)
+        return f'/{API_BASE}nodes/{private_project._id}/node_links/'
 
     @pytest.fixture()
     def public_project(self, user):
@@ -1133,7 +1133,7 @@ class TestBulkDeleteNodeLinks:
 
     @pytest.fixture()
     def public_url(self, public_project):
-        return '/{}nodes/{}/node_links/'.format(API_BASE, public_project._id)
+        return f'/{API_BASE}nodes/{public_project._id}/node_links/'
 
     def test_bulk_delete_errors(
             self, app, user, non_contrib, public_project,

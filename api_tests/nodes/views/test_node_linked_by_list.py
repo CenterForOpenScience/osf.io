@@ -27,7 +27,7 @@ class TestNodeLinkedByNodesList:
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/linked_by_nodes/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/linked_by_nodes/'
 
     def test_linked_by_nodes_lists_nodes(self, app, url_public, user, project_public, project_private):
         res = app.get(url_public, auth=user.auth)
@@ -99,7 +99,7 @@ class TestNodeLinkedByRegistrationsList:
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/linked_by_registrations/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/linked_by_registrations/'
 
     def test_linked_by_registrations_links_registrations(self, app, url_public, user, project_public, project_private):
         res = app.get(url_public, auth=user.auth)
