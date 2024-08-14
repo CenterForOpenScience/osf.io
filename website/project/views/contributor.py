@@ -119,22 +119,27 @@ def get_contributors(auth, node, **kwargs):
     # Limit is either an int or None:
     # if int, contribs list is sliced to specified length
     # if None, contribs list is not sliced
-    if offset > len(node.visible_contributors):
+    visible_contributors = Contributor.objects.filter(
+            node=node,
+            visible=True
+        ).include('user__ext', 'node', 'user__groups', 'user__guids')
+    
+    if offset > len(visible_contributors):
         contribs = []
     elif 'slim' in request.args:
         contribs = [
             {
-                'id': contrib._id,
-                'registered': contrib.is_registered,
-                'fullname': contrib.fullname,
-                'url': contrib.url,
+                'id': contrib.user._id,
+                'registered': contrib.user.is_registered,
+                'fullname': contrib.user.fullname,
+                'url': contrib.user.url,
                 'permission': contrib.permission if isinstance(contrib, Contributor) else node.contributor_set.filter(user=contrib, visible=True).get().permission
             }
-            for contrib in node.visible_contributors[offset:limit + offset]
+            for contrib in visible_contributors[offset:None if not limit else limit + offset]
         ]
     else:
         contribs = profile_utils.serialize_contributors(
-            node.visible_contributors[offset:limit + offset],
+            visible_contributors[offset:None if not limit else limit + offset],
             node=node,
         )
 
@@ -142,7 +147,7 @@ def get_contributors(auth, node, **kwargs):
     if limit:
         return {
             'contributors': contribs,
-            'more': max(0, len(node.visible_contributors) - offset - limit)
+            'more': max(0, len(visible_contributors) - offset - limit)
         }
     else:
         return {'contributors': contribs}
@@ -1059,8 +1064,12 @@ def claim_user_form(auth, **kwargs):
 def claim_user_activate(**kwargs):
     uid, pid = kwargs['uid'], kwargs['pid']
     user = OSFUser.load(uid)
-    url = user.get_claim_url(project_id=pid)
-
+    if not user:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+    try:
+        url = user.get_claim_url(project_id=pid)
+    except ValueError:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return {'url': url}
 
 

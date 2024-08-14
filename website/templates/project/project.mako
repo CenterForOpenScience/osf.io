@@ -608,17 +608,17 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">${_("Recent Activity")}</h3>
                 <div id="ClearLogFilterBtn" class="btn btn-sm btn-default pull-right" style="margin-left: 5px">${_("Clear Filters")}</div>
-                <div id="RefreshLog" class="btn btn-sm btn-default pull-right">${_("Refresh")}</div>
+                <div id="RefreshLog" class="btn btn-sm btn-default pull-right">${_("Update")}</div>
             </div>
             <div class="panel-body">
                 <input type="hidden" id="LogSearchUserKeys">
                 <div class="container-fluid" style="padding: 0px">
                     <div>
                         <div class="pull-left" style="margin-bottom: 5px">
-                            <input type="text" id="LogSearchS" placeholder='${_("Start date")}' size="10" autocomplete="off">
+                            <input type="text" id="LogSearchS" placeholder='${_("Start time")}' size="14" autocomplete="off">
                         </div>
                         <div class="pull-left" style="margin-left: 10px; margin-bottom: 5px">
-                            <input type="text" id="LogSearchE" placeholder='${_("End date")}' size="10" autocomplete="off">
+                            <input type="text" id="LogSearchE" placeholder='${_("End time")}' size="14" autocomplete="off">
                         </div>
                         <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;" id="useDropdown">
                             <input class="form-check-input" type="checkbox" id="useDropdownCheckbox">
@@ -646,8 +646,9 @@
             </div>
             % if 'admin' in user['permissions']:
             <div class="panel-heading clearfix">
-                <h4 class="panel-title">${_("Download as file")}</h4>
-                <div id="DownloadLog" class="btn btn-sm btn-default pull-right">${_("Download")}</div>
+                <input type='hidden' id='totalLogs' />
+                <h4 id="downloadHeader" class="panel-title">${_('Download as file for 0 logs')}</h4>
+                <div id="DownloadLog" class="btn btn-sm btn-default pull-right disabled">${_('Download')}</div>
             </div>
             % endif
         </div>
