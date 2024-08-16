@@ -12,6 +12,7 @@ from api.base.serializers import (
     BaseAPISerializer,
     ShowIfVersion,
     IDField,
+    ShowIfObjectPermission,
 )
 
 from api.nodes.serializers import CompoundIDField
@@ -35,6 +36,10 @@ class InstitutionSerializer(JSONAPISerializer):
     ror_iri = ser.CharField(read_only=True, source='ror_uri')
     iris = ser.SerializerMethodField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
+    link_to_external_reports_archive = ShowIfObjectPermission(
+        ser.CharField(read_only=True),
+        permission='view_institutional_metrics',
+    )
     links = LinksField({
         'self': 'get_api_url',
         'html': 'get_absolute_html_url',
@@ -55,19 +60,28 @@ class InstitutionSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<_id>'},
     )
 
-    department_metrics = RelationshipField(
-        related_view='institutions:institution-department-metrics',
-        related_view_kwargs={'institution_id': '<_id>'},
+    department_metrics = ShowIfObjectPermission(
+        RelationshipField(
+            related_view='institutions:institution-department-metrics',
+            related_view_kwargs={'institution_id': '<_id>'},
+        ),
+        permission='view_institutional_metrics',
     )
 
-    user_metrics = RelationshipField(
-        related_view='institutions:institution-user-metrics',
-        related_view_kwargs={'institution_id': '<_id>'},
+    user_metrics = ShowIfObjectPermission(
+        RelationshipField(
+            related_view='institutions:institution-user-metrics',
+            related_view_kwargs={'institution_id': '<_id>'},
+        ),
+        permission='view_institutional_metrics',
     )
 
-    summary_metrics = RelationshipField(
-        related_view='institutions:institution-summary-metrics',
-        related_view_kwargs={'institution_id': '<_id>'},
+    summary_metrics = ShowIfObjectPermission(
+        RelationshipField(
+            related_view='institutions:institution-summary-metrics',
+            related_view_kwargs={'institution_id': '<_id>'},
+        ),
+        permission='view_institutional_metrics',
     )
 
     def get_api_url(self, obj):
