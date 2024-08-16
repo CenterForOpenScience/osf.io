@@ -168,9 +168,9 @@ def get_addon_user_config(**kwargs):
 
 
 def _download_is_from_mfr(waterbutler_data):
-    metrics_data = waterbutler_data['metrics']
-    uri = metrics_data['uri']
-    is_render_uri = furl(uri or '').query.params.get('mode') == 'render'
+    metrics_data = waterbutler_data.get('metrics', {})
+    uri = metrics_data.get('uri', '')
+    is_render_uri = furl(uri).query.params.get('mode') == 'render'
     return (
         # This header is sent for download requests that
         # originate from MFR, e.g. for the code pygments renderer
@@ -261,7 +261,7 @@ def _decrypt_and_decode_jwt_payload():
             payload_decrypted,
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
-            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
         )['data']
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
@@ -324,8 +324,8 @@ def _get_token_scopes_from_cas(auth_header):
     try:
         access_token = cas.parse_auth_header(auth_header)
         cas_resp = client.profile(access_token)
-    except cas.CasError:
-        sentry.log_exception()
+    except cas.CasError as e:
+        sentry.log_exception(e)
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     if not cas_resp.authenticated:
@@ -346,7 +346,11 @@ def _check_hierarchical_permissions(resource, auth, action):
     if not isinstance(resource, AbstractNode):
         return False
 
-    if action != 'copyfrom' or not (resource.type == 'Registration' and action == 'upload'):
+    supported_actions = ['copyfrom']
+    if isinstance(resource, Registration):
+        supported_actions.append('upload')
+
+    if action not in supported_actions:
         return False
 
     permissions_resource = resource.parent_node

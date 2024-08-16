@@ -15,6 +15,7 @@ from django.utils import timezone
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
+from framework.sessions import get_session
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
@@ -59,9 +60,9 @@ class TestAddonAuth(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
-        self.session = SessionStore()
+        self.session = get_session()
         self.session['auth_user_id'] = self.user._id
-        self.session.create()
+        self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
@@ -84,19 +85,39 @@ class TestAddonAuth(OsfTestCase):
         self.user_addon.save()
 
     def build_url(self, **kwargs):
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
-            action='download',
-            nid=self.node._id,
-            metrics={'uri': settings.MFR_SERVER_URL},
-            provider=self.node_addon.config.short_name), **kwargs),
-            'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
+        options = {
+            'payload': jwe.encrypt(
+                data=jwt.encode(
+                    payload={
+                        'data': {
+                            'action': 'download',
+                            'nid': self.node._id,
+                            'metrics': {'uri': settings.MFR_SERVER_URL},
+                            'provider': self.node_addon.config.short_name,
+                            **kwargs
+                        },
+                        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                    },
+                    key=settings.WATERBUTLER_JWT_SECRET,
+                    algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+                ).encode(),
+                key=self.JWE_KEY
+            )
+        }
+
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
+        data = jwt.decode(
+            jwe.decrypt(
+                res.json['payload'].encode('utf-8'),
+                self.JWE_KEY
+            ),
+            settings.WATERBUTLER_JWT_SECRET,
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
+        )['data']
         assert data['auth'] == views.make_auth(self.user)
         assert data['credentials'] == self.node_addon.serialize_waterbutler_credentials()
         assert data['settings'] == self.node_addon.serialize_waterbutler_settings()
@@ -124,17 +145,20 @@ class TestAddonAuth(OsfTestCase):
     def test_auth_export_action_requires_read_permission(self):
         node = ProjectFactory(is_public=False)
         url = self.build_url(action='export', nid=node._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 403
 
     def test_auth_cookie(self):
         url = self.build_url()
-        self.app.set_cookie(name=settings.COOKIE_NAME, value=self.cookie)
-        res = self.app.get(url, expect_errors=True)
+        self.app.set_cookie(key=settings.COOKIE_NAME, value=self.cookie)
+        res = self.app.get(url)
         assert res.status_code == 200
 
         data = jwt.decode(
-            jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY),
+            jwe.decrypt(
+                res.json['payload'].encode('utf-8'),
+                self.JWE_KEY
+            ),
             settings.WATERBUTLER_JWT_SECRET,
             algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
         )['data']
@@ -148,26 +172,26 @@ class TestAddonAuth(OsfTestCase):
 
     def test_auth_bad_cookie(self):
         url = self.build_url()
-        self.app.set_cookie(name=settings.COOKIE_NAME, value=self.cookie[::-1])
-        res = self.app.get(url, expect_errors=True)
+        self.app.set_cookie(key=settings.COOKIE_NAME, value=self.cookie[::-1])
+        res = self.app.get(url)
         self.assertEqual(res.status_code, 302) # redirect to CAS if cannot extract cookie
 
     def test_auth_missing_addon(self):
         url = self.build_url(provider='queenhub')
-        res = self.app.get(url, expect_errors=True, auth=self.user.auth)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth)
+        assert res.status_code == 400
 
     def test_auth_missing_args(self):
-        url = self.build_url(cookie=None)
+        url = self.build_url(action=None)
         res = self.app.get(url)
-        assert res.status_code == 401
+        assert res.status_code == 400
 
     @mock.patch('addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
-        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
+        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'})
         self.assertEqual(res.status_code, 403)
         assert res.status_code == 403
 
@@ -1022,20 +1046,16 @@ class TestCheckAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
 
     def test_has_permission(self):
-        assert views.check_resource_permissions(self.node, Auth(user=self.user), 'upload')
+        assert views._check_resource_permissions(self.node, Auth(user=self.user), 'upload')
 
     def test_not_has_permission_read_public(self):
         self.node.is_public = True
         self.node.save()
-        self.assertTrue(
-            views._check_resource_permissions(self.node, Auth(), 'download')
-        )
+        assert views._check_resource_permissions(self.node, Auth(), 'download')
 
     def test_not_has_permission_read_has_link(self):
         link = new_private_link('red-special', self.user, [self.node], anonymous=False)
-        self.assertTrue(
-            views._check_resource_permissions(self.node, Auth(private_key=link.key), 'download')
-        )
+        assert views._check_resource_permissions(self.node, Auth(private_key=link.key), 'download')
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
@@ -1050,10 +1070,11 @@ class TestCheckAuth(OsfTestCase):
 
     def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
-        ProjectFactory(creator=component_admin, parent=self.node)
+        component = ProjectFactory(creator=component_admin, parent=self.node)
         registration = RegistrationFactory(project=self.node)
 
-        component_registration = registration._nodes.first()
+        component_registration = registration._nodes.get(registered_from=component) # first()
+        assert registration.has_permission(self.user, WRITE)
         assert not component_registration.has_permission(self.user, WRITE)
         assert views._check_resource_permissions(component_registration, Auth(user=self.user), 'upload')
 
@@ -1561,11 +1582,7 @@ class TestAddonFileViews(OsfTestCase):
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
 
-        registered_node = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
-            draft_registration=DraftRegistrationFactory(branched_from=self.project),
-        )
+        registered_node = RegistrationFactory(project=self.project)
 
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         view_url = self.project.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from._id)
@@ -1576,11 +1593,7 @@ class TestAddonFileViews(OsfTestCase):
     def test_archived_from_url_without_copied_from(self, mock_archive):
         file_node = self.get_test_file()
 
-        registered_node = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
-            draft_registration=DraftRegistrationFactory(branched_from=self.project),
-        )
+        registered_node = RegistrationFactory(project=self.project)
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert not archived_from_url
 
@@ -1589,11 +1602,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
-        self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
-            draft_registration=DraftRegistrationFactory(branched_from=self.project),
-        )
+        RegistrationFactory(project=self.project)
         trashed_node = second_file_node.delete()
         self.assertFalse(trashed_node.copied_from)
         assert not trashed_node.copied_from

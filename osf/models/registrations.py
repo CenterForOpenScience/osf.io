@@ -429,6 +429,9 @@ class Registration(AbstractNode):
 
         return False
 
+    def can_view_files(self, auth):
+        return self.can_view(auth) or self.registered_from.can_view(auth)
+
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
         self.registration_approval = RegistrationApproval.objects.create(
