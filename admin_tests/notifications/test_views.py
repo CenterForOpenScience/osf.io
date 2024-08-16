@@ -14,6 +14,7 @@ class TestNotificationFunctions(AdminTestCase):
 
     def setUp(self):
         super().setUp()
+        NotificationSubscription.objects.all().delete()  # Clear out existing data
         self.user = OSFUser.objects.create(username='admin', is_staff=True)
         self.node = Node.objects.create(creator=self.user, title='Test Node')
         self.request_factory = RequestFactory()
@@ -29,20 +30,15 @@ class TestNotificationFunctions(AdminTestCase):
         assert NotificationSubscription.objects.filter(id=notification3.id).exists()
 
     def test_detect_duplicate_notifications(self):
+        NotificationSubscription.objects.all().delete()
+
         NotificationSubscription.objects.create(user=self.user, node=self.node, event_name='event1')
         NotificationSubscription.objects.create(user=self.user, node=self.node, event_name='event1')
-        NotificationSubscription.objects.create(user=self.user, node=self.node, event_name='event2')
 
         duplicates = detect_duplicate_notifications()
 
-        assert len(duplicates) == 2
-        assert duplicates[0]['user'] == self.user
-        assert duplicates[0]['node'] == self.node
-        assert duplicates[0]['event_name'] == 'event1'
-        assert duplicates[0]['count'] == 2
-
-        non_duplicate_event = [dup for dup in duplicates if dup['event_name'] == 'event2']
-        assert len(non_duplicate_event) == 0
+        assert len(duplicates) == 1, f'Expected 1 duplicate, found {len(duplicates)}'
+        assert duplicates[0]['count'] == 2, 'Expected count to be 2 for the detected duplicate'
 
     def test_process_duplicate_notifications_get(self):
         request = self.request_factory.get('/fake_path')

@@ -22,32 +22,51 @@
                 <thead>
                     <tr>
                         <th>Select</th>
-                        <th>User</th>
-                        <th>Node</th>
+                        <th>ID</th>
                         <th>Event Name</th>
                         <th>Created</th>
                         <th>Count</th>
+                        <th>Email Transactional</th>
+                        <th>Email Digest</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for notification in duplicates %}
                     <tr>
                         <td><input type="checkbox" name="selected_notifications" value="{{ notification.id }}"></td>
-                        <td>{{ notification.user }}</td>
-                        <td>{{ notification.node }}</td>
+                        <td>{{ notification.notification_id }}</td>
                         <td>{{ notification.event_name }}</td>
                         <td>{{ notification.created }}</td>
                         <td>{{ notification.count }}</td>
+                        <td>{{ notification.email_transactional|join:", " }}</td>
+                        <td>{{ notification.email_digest|join:", " }}</td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6">No duplicate notifications found!</td>
+                        <td colspan="7">No duplicate notifications found!</td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
             <button type="submit" class="btn btn-danger">Delete Selected</button>
         </form>
+        <div class="pagination">
+            <span class="step-links">
+                {% if duplicates.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ duplicates.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ duplicates.number }} of {{ duplicates.paginator.num_pages }}.
+                </span>
+
+                {% if duplicates.has_next %}
+                    <a href="?page={{ duplicates.next_page_number }}">next</a>
+                    <a href="?page={{ duplicates.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
     {% else %}
         <p>No duplicate notifications found.</p>
     {% endif %}
