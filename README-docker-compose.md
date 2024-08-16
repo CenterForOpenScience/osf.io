@@ -80,9 +80,9 @@
 * _NOTE: After making changes to `Environment Variables` or `Volume Mounts` you will need to recreate the container(s)._
 
   ```bash
-  docker compose up --force-recreate --no-deps preprints`
+  docker compose up --force-recreate --no-deps preprints
   ```
-  
+
 1. Application Settings
   - e.g. OSF & OSF API local.py
     ```bash
@@ -112,11 +112,6 @@
   * _NOTE: The `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
 
   - Running containers with docker compose
-
-    - Copy an ARM64-compatible configuration to `docker-compose.override.yml`:
-    ```bash
-    cp ./docker-compose-dist-arm64.override.yml ./docker-compose.override.yml
-    ```
 
     - In `webite/settings/local.py`, disable `SEARCH_ENGINE`
     ```python
@@ -155,7 +150,7 @@
   _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services (Detached)
-   
+
     ```bash
     docker compose up -d elasticsearch postgres mongo rabbitmq
     ```
@@ -170,7 +165,7 @@
   _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
   When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
   containers._
-  
+
 4. Start the Services (Detached)
     ```bash
     docker compose up -d mfr wb fakecas sharejs
@@ -212,9 +207,9 @@
 
 - Attach to container logs
   - dcl <container>. Ie. `dcl web` will log only the web container
-  ```bash
-  alias dcl="docker compose logs -f --tail 100 "
-  ```
+	  ```bash
+	  alias dcl="docker compose logs -f --tail 100 "
+	  ```
 
 - Run migrations (Starting a fresh database or changes to migrations)
   ```bash
@@ -348,32 +343,22 @@ $ docker compose run --rm --service-ports web
 ## Application Tests
 - Run All Tests
   ```bash
-  docker compose run --rm web invoke test
-  ```
-
-- Run OSF Specific Tests
-  ```bash
-  docker compose run --rm web invoke test_osf
+  docker compose run --rm web python3 -m pytest
   ```
 
 - Test a Specific Module
   ```bash
-  docker compose run --rm web invoke test_module -m tests/test_conferences.py
+  docker compose run --rm web python3 -m pytest tests/test_conferences.py
   ```
 
 - Test a Specific Class
   ```bash
-  docker compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode
+  docker compose run --rm web python3 -m pytest tests/test_conferences.py::TestProvisionNode
   ```
 
 - Test a Specific Method
   ```bash
-  docker compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload
-  ```
-
-- Test with Specific Parameters (1 cpu, capture stdout)
-  ```bash
-  docker compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload -n 1 --params '--capture=sys'
+  docker compose run --rm web python3 -m pytest tests/test_conferences.py::TestProvisionNode::test_upload
   ```
 
 ## Managing Container State
@@ -426,11 +411,11 @@ resetting docker. To back up your database, follow the following sequence of com
 ```
 2. Delete a persistent storage volume:
   **WARNING: All postgres data will be destroyed.**
-   ```bash
-   docker compose stop -t 0 postgres
-   docker compose rm postgres
-   docker volume rm osfio_postgres_data_vol
-   ```
+```bash
+docker compose stop -t 0 postgres
+docker compose rm postgres
+docker volume rm osfio_postgres_data_vol
+```
 3. Starting a new postgres container.
 ```bash
 docker compose up -d postgres
