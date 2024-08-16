@@ -3,8 +3,7 @@
 
 1. Install the Docker Client
   - OSX: https://www.docker.com/products/docker#/mac
-  - Ubuntu
-    - docker: https://docs.docker.com/engine/installation/linux/ubuntulinux
+  - Ubuntu: https://docs.docker.com/engine/installation/linux/ubuntulinux
   - Windows: https://www.docker.com/products/docker#/windows
 2. Grant the docker client additional resources (recommended minimums of 1 CPU, 8GB memory, 2GB swap, and 32GB disk image size)
    - OSX: https://docs.docker.com/docker-for-mac/#/preferences
@@ -53,8 +52,10 @@
       `sudo usermod -aG docker $USER`
 
     - In order to run OSF Preprints, raise fs.inotify.max_user_watches from default value
-      `echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf`
-      `sudo sysctl -p`
+		```bash
+      	echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf
+      	sudo sysctl -p`
+		```
 
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
