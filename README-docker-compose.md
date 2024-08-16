@@ -222,7 +222,7 @@
   ```
 
 - Restart the containers
-  - `$ dcr <container>`. Ie. `dcr web` will restart the web container
+  - `dcr <container>`. Ie. `dcr web` will restart the web container
   ```bash
   alias dcr="docker compose restart -t 0 "
   ```
@@ -320,10 +320,10 @@ You should run the `web` and/or `api` container (depending on which codebase the
 
 ```bash
 # Kill the already-running web container
-$ docker compose kill web
+docker compose kill web
 
 # Run a web container. App logs and breakpoints will show up here.
-$ docker compose run --rm --service-ports web
+docker compose run --rm --service-ports web
 ```
 
 **IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker compose ps`), e.g. `docker attach osf_web_run_1`.
@@ -432,7 +432,7 @@ instructions on dropping postgres data volumes)
 
 When ready, run the restore command from a local terminal:
 ```bash
-$ pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host localhost ~/Desktop/osf_backup
+pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host localhost ~/Desktop/osf_backup
 ```
 
 (shorthand) `pg_restore -U postgres -c -d osf -Fd -j 4 -h localhost ~/Desktop/osf_backup`
@@ -442,7 +442,7 @@ $ pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host
 Resetting the Environment:
 
   **WARNING: All volumes and containers are destroyed**
-  - `$ docker compose down -v`
+  - `docker compose down -v`
 
 Delete a persistent storage volume:
 
@@ -456,17 +456,17 @@ Delete a persistent storage volume:
 ## Updating
 
 ```bash
-$ git stash # if you have any changes that need to be stashed
-$ git pull upstream develop # (replace upstream with the name of your remote)
-$ git stash pop # unstash changes
+git stash # if you have any changes that need to be stashed
+git pull upstream develop # (replace upstream with the name of your remote)
+git stash pop # unstash changes
 # If you get an out of space error
-$ docker image prune
+docker image prune
 # Pull latest images
-$ docker compose pull
+docker compose pull
 # It is recommended to run requirements only for services that require update, not to wear off local SSD more than needed
-$ docker compose up requirements mfr_requirements wb_requirements gv_requirements
+docker compose up requirements mfr_requirements wb_requirements gv_requirements
 # Run db migrations
-$ docker compose run --rm web python3 manage.py migrate
+docker compose run --rm web python3 manage.py migrate
 ```
 
 ## Miscellaneous
