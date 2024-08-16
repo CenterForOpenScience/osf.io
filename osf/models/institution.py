@@ -118,6 +118,12 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         blank=True,
         help_text='The full domain this institutions that will appear in DOI metadata.'
     )
+    link_to_external_reports_archive = models.URLField(
+        max_length=2048,
+        blank=True,
+        default='',
+        help_text='Full URL where institutional admins can access archived metrics reports.',
+    )
 
     class Meta:
         # custom permissions for use in the OSF Admin App

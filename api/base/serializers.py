@@ -171,6 +171,18 @@ class ShowIfAdminScopeOrAnonymous(ConditionalField):
         return request and (request.user.is_anonymous or has_admin_scope)
 
 
+class ShowIfObjectPermission(ConditionalField):
+    """Show the field only for users with a given object permission
+    """
+    def __init__(self, field, *, permission: str, **kwargs):
+        super().__init__(field, **kwargs)
+        self._required_object_permission = permission
+
+    def should_show(self, instance):
+        _request = self.context.get('request')
+        return _request.user.has_perm(self._required_object_permission, obj=instance)
+
+
 class HideIfRegistration(ConditionalField):
     """
     If node is a registration, this field will return None.
