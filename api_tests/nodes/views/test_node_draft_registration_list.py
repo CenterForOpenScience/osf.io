@@ -342,7 +342,7 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         assert res.status_code == 409
 
     def test_admin_can_create_draft(
-            self, app, user, project_public, url_draft_registrations, payload, metaschema_open_ended
+        self, app, user, project_public, url_draft_registrations, payload, metaschema_open_ended
     ):
         res = app.post_json_api(
             f'{url_draft_registrations}&embed=branched_from&embed=initiator',

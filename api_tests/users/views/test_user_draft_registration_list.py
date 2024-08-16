@@ -142,7 +142,7 @@ class TestUserDraftRegistrationList(AbstractDraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_can_access_own_draft_registrations_with_guid(self, app, user, draft_registration):
-        url = '/{}users/{}/draft_registrations/'.format(API_BASE, user._id)
+        url = f'/{API_BASE}users/{user._id}/draft_registrations/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
