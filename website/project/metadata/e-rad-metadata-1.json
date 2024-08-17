@@ -253,10 +253,14 @@
           "space_normalization": true,
           "suggestion": [
             {
-              "key": "asset:title",
-              "template": "<div style=\"background-color: white;\"><span>{{title}}</span></div>",
+              "key": "asset:title-ja",
+              "template": "<div style=\"background-color: white;\"><span>{{title-ja}} | {{title-en}}</span></div>",
               "autofill": {
-                "grdm-file:title-ja": "title"
+                "grdm-file:title-ja": "title-ja",
+                "grdm-file:title-en": "title-en",
+                "grdm-file:data-description-ja": "data-description-ja",
+                "grdm-file:data-description-en": "data-description-en",
+                "grdm-file:data-type": "data-type"
               }
             }
           ]
@@ -272,10 +276,14 @@
           "space_normalization": true,
           "suggestion": [
             {
-              "key": "asset:title",
-              "template": "<div style=\"background-color: white;\"><span>{{title}}</span></div>",
+              "key": "asset:title-en",
+              "template": "<div style=\"background-color: white;\"><span>{{title-ja}} | {{title-en}}</span></div>",
               "autofill": {
-                "grdm-file:title-en": "title"
+                "grdm-file:title-ja": "title-ja",
+                "grdm-file:title-en": "title-en",
+                "grdm-file:data-description-ja": "data-description-ja",
+                "grdm-file:data-description-en": "data-description-en",
+                "grdm-file:data-type": "data-type"
               }
             }
           ]
@@ -286,7 +294,6 @@
           "title": "掲載日・掲載更新日|Date (Issued / Updated)",
           "type": "string",
           "format": "date",
-          "required": true,
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
@@ -659,8 +666,7 @@
           "title": "リポジトリ情報 (日本語)|Repository information (Japanese)",
           "type": "string",
           "format": "text",
-          "required": false,
-          "required_if": "grdm-file:repo-information-en"
+          "required": false
         },
         {
           "qid": "grdm-file:repo-information-en",
@@ -668,8 +674,7 @@
           "title": "Repository information (English)",
           "type": "string",
           "format": "text",
-          "required": false,
-          "required_if": "grdm-file:repo-information-ja"
+          "required": false
         },
         {
           "qid": "grdm-file:repo-url-doi-link",
