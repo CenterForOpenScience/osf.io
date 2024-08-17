@@ -454,10 +454,10 @@ class FileMetadata(BaseModel):
     def load(cls, project_id, path, select_for_update=False):
         try:
             if select_for_update:
-                return cls.objects.filter(project__id=project_id, path=path, deleted__is_null=True) \
+                return cls.objects.filter(project__id=project_id, path=path, deleted__isnull=True) \
                     .select_for_update().get()
             else:
-                return cls.objects.get(project__id=project_id, path=path, deleted__is_null=True)
+                return cls.objects.get(project__id=project_id, path=path, deleted__isnull=True)
         except cls.DoesNotExist:
             return None
 
