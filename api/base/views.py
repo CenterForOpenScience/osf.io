@@ -97,8 +97,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             if not isinstance(view, ListModelMixin):
                 try:
-                    _cache_key = (v.cls, field_name, view.get_serializer_class(),view_kwargs_tuple)
+                    _cache_key = (v.cls, view.get_serializer_class(),view_kwargs_tuple)
                     if _cache_key in cache:
+                        # We already have the result for this embed, return it
                         item = cache[_cache_key]
                     else:
                         item = view.get_object()
@@ -108,7 +109,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
                         ret = view.handle_exception(e).data
                     return ret
 
-            _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
+            _cache_key = (v.cls, view.get_serializer_class(), (type(item), item.id))
+
             if _cache_key in cache:
                 # We already have the result for this embed, return it
                 return cache[_cache_key]
