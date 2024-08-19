@@ -6,9 +6,12 @@ from website.reviews import signals as reviews_signals
 from website.settings import OSF_PREPRINTS_LOGO, OSF_REGISTRIES_LOGO, DOMAIN
 
 
-# Handle email notifications including: update comment, accept, and reject of submission.
 @reviews_signals.reviews_email.connect
 def reviews_notification(self, creator, template, context, action):
+    """
+    Handle email notifications including: update comment, accept, and reject of submission, but not initial submission
+    or resubmission.
+    """
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import notify_global_event
     recipients = list(action.target.contributors)
@@ -25,9 +28,14 @@ def reviews_notification(self, creator, template, context, action):
     )
 
 
-# Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect
-def reviews_submit_notification(self, recipients, context):
+def reviews_submit_notification(self, recipients, context, template=None):
+    """
+    Handle email notifications for a new submission or a resubmission
+    """
+    if not template:
+        template = mails.REVIEWS_SUBMISSION_CONFIRMATION
+
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import get_user_subscriptions
 
@@ -51,15 +59,17 @@ def reviews_submit_notification(self, recipients, context):
         context['provider_name'] = context['reviewable'].provider.name
         mails.send_mail(
             recipient.username,
-            mails.REVIEWS_SUBMISSION_CONFIRMATION,
+            template,
             user=recipient,
             **context
         )
 
 
-# Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
 def reviews_submit_notification_moderators(self, timestamp, context):
+    """
+    Handle email notifications to notify moderators of new submissions or resubmission.
+    """
     # imports moved here to avoid AppRegistryNotReady error
     from osf.models import NotificationSubscription
     from website.profile.utils import get_profile_image_url

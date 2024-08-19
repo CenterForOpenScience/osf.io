@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 <div style="margin: 40px;">
-    <p>Hello ${recipient.fullname},</p>
+    <p>Hello ${referrer.fullname},</p>
         <p>
             The ${document_type}
             <a href="${reviewable.absolute_url}">${reviewable.title}</a>
