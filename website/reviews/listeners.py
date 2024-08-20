@@ -97,7 +97,10 @@ def reviews_submit_notification_moderators(self, timestamp, context):
         context['message'] = f'submitted updates to "{resource.title}".'
         context['reviews_submission_url'] += f'&revisionId={revision_id}'
     else:
-        context['message'] = f'submitted "{resource.title}".'
+        if context.get('resubmission'):
+            context['message'] = f'resubmitted "{resource.title}".'
+        else:
+            context['message'] = f'submitted "{resource.title}".'
 
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription, created = NotificationSubscription.objects.get_or_create(

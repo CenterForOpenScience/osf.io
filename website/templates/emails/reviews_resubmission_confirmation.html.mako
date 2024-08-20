@@ -2,17 +2,17 @@
 <%def name="content()">
     <div style="margin: 40px;">
        <p>
-            Hello ${recipient.fullname},
+            Hello ${referrer.fullname},
        </p>
        <p>
             The ${document_type} <a href="${reviewable.absolute_url}">${reviewable.title}</a> has been successfully
-            re-submitted to ${reviewable.provider.name}.
+            resubmitted to ${reviewable.provider.name}.
        </p>
        <p>
             ${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which
             means your submission is pending until accepted by a moderator.
-            % if not no_future_emails: You will receive
-                a separate notification informing you of any status changes.
+            % if not no_future_emails:
+                You will receive a separate notification informing you of any status changes.
             % endif
        </p>
        <p>
