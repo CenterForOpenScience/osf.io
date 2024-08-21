@@ -1,7 +1,3 @@
-from django.contrib.auth.decorators import user_passes_test
-from django.shortcuts import render, redirect
-from django.urls import reverse
-from admin.base.utils import osf_staff_check
 from osf.models.notifications import NotificationSubscription
 from django.db.models import Count
 
@@ -32,26 +28,3 @@ def detect_duplicate_notifications(node_id=None):
             })
 
     return detailed_duplicates
-
-
-def process_duplicate_notifications(request, node_id=None):
-    detailed_duplicates = detect_duplicate_notifications(node_id)
-
-    if request.method == 'POST':
-        selected_ids = request.POST.getlist('selected_notifications')
-        delete_selected_notifications(selected_ids)
-        return detailed_duplicates, 'Selected duplicate notifications have been deleted.', True
-
-    return detailed_duplicates, '', False
-
-@user_passes_test(osf_staff_check)
-def handle_duplicate_notifications(request):
-    node_id = request.GET.get('node_id')
-    detailed_duplicates, message, is_post = process_duplicate_notifications(request, node_id)
-
-    context = {'duplicates': detailed_duplicates, 'node_id': node_id}
-    if is_post:
-        context['message'] = message
-        return redirect(f"{reverse('notifications:handle_duplicate_notifications')}?node_id={node_id}")
-
-    return render(request, 'notifications/handle_duplicate_notifications.html', context)

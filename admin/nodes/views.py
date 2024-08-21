@@ -107,6 +107,7 @@ class NodeView(NodeMixin, GuidView):
 
         return context
 
+class NodeRemoveNotificationView(View):
     def post(self, request, *args, **kwargs):
         selected_ids = request.POST.getlist('selected_notifications')
         if selected_ids:
@@ -115,8 +116,7 @@ class NodeView(NodeMixin, GuidView):
         else:
             messages.error(request, 'No notifications selected for deletion.')
 
-        return redirect(self.get_success_url())
-
+        return redirect('nodes:node', guid=kwargs.get('guid'))
 
 class NodeSearchView(PermissionRequiredMixin, FormView):
     """ Allows authorized users to search for a node by it's guid.

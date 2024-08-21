@@ -109,7 +109,7 @@
                         <td colspan="2">
                             <h3>Duplicate Notifications</h3>
                             {% if duplicates %}
-                                <form method="post" action="{% url 'nodes:node' node.guid %}">
+                                <form method="post" action="{% url 'nodes:node-remove-notifications' node.guid %}">
                                     {% csrf_token %}
                                     <table class="table table-striped table-hover table-responsive">
                                         <thead>
