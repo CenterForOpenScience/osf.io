@@ -31,7 +31,7 @@ from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
-from api.preprints.serializers import PreprintSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintDraftSerializer
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.resources import annotations as resource_annotations
@@ -420,33 +420,22 @@ class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, Prepr
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        CurrentUser,
     )
 
     ordering = ('-created')
-    model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
 
-    serializer_class = PreprintSerializer
+    serializer_class = PreprintDraftSerializer
     view_category = 'users'
-    view_name = 'user-preprints'
+    view_name = 'user-draft-preprints'
 
     def get_default_queryset(self):
-        # the user who is requesting
-        auth = get_user_auth(self.request)
-        auth_user = getattr(auth, 'user', None)
-
-        # the user data being requested
-        target_user = self.get_user(check_permissions=False)
-
-        return self.preprints_queryset(
-            Preprint.objects.filter(
-                _contributors__guids___id=target_user._id,
-                machine_state='initial'
-            ),
-            auth_user,
-            allow_contribs=False
+        user = self.get_user()
+        return user.preprints.filter(
+            machine_state='initial',
         )
 
     def get_queryset(self):
