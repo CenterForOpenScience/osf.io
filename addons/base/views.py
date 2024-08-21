@@ -317,6 +317,9 @@ def get_authenticated_resource(resource_id):
     if resource.deleted:
         raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been deleted.')
 
+    if getattr(resource, 'is_retracted', False):
+        raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been retracted.')
+
     return resource
 
 

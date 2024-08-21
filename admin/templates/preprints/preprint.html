@@ -74,10 +74,6 @@
                         <td>Published</td>
                         <td>{{ preprint.is_published }}</td>
                     </tr>
-                    <tr>
-                        <td>Machine State</td>
-                        <td>{{ preprint.machine_state }}</td>
-                    </tr>
                     {%  if preprint.is_published %}
                         <tr>
                             <td>Date Published</td>
@@ -104,6 +100,7 @@
                         </tr>
                     {% endif %}
                     {% include "preprints/provider.html" with preprint=preprint %}
+                    {% include "preprints/machine_state.html" with preprint=preprint %}
                     <tr>
                         <td>Subjects</td>
                         <td>

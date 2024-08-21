@@ -3256,7 +3256,7 @@ class TestAuthViews(OsfTestCase):
         user = OSFUser.objects.get(username=email)
         assert user.accepted_terms_of_service is None
 
-    @mock.patch('framework.auth.views.send_confirm_email')
+    @mock.patch('framework.auth.views.send_confirm_email_async')
     def test_register_scrubs_username(self, _):
         url = api_url_for('register_user')
         name = "<i>Eunice</i> O' \"Cornwallis\"<script type='text/javascript' src='http://www.cornify.com/js/cornify.js'></script><script type='text/javascript'>cornify_add()</script>"
@@ -3438,8 +3438,8 @@ class TestAuthViews(OsfTestCase):
         assert new_user.check_password(password)
         assert new_user.fullname == real_name
 
-    @mock.patch('framework.auth.views.send_confirm_email')
-    def test_register_sends_user_registered_signal(self, mock_send_confirm_email):
+    @mock.patch('framework.auth.views.send_confirm_email_async')
+    def test_register_sends_user_registered_signal(self, mock_send_confirm_email_async):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
         with capture_signals() as mock_signals:
@@ -3453,7 +3453,7 @@ class TestAuthViews(OsfTestCase):
                 }
             )
         assert mock_signals.signals_sent() == {auth.signals.user_registered, auth.signals.unconfirmed_user_created}
-        assert mock_send_confirm_email.called
+        assert mock_send_confirm_email_async.called
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation(self, send_mail: MagicMock):

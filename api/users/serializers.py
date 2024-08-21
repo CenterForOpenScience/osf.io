@@ -19,11 +19,10 @@ from api.base.serializers import (
     JSONAPIListField,
     ShowIfCurrentUser,
 )
-from api.base.utils import absolute_reverse, get_user_auth, is_deprecated, hashids
-from api.base.utils import default_node_list_queryset
+from api.base.utils import absolute_reverse, default_node_list_queryset, get_user_auth, is_deprecated, hashids
 from api.base.versioning import get_kebab_snake_case_field
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
-from framework.auth.views import send_confirm_email
+from framework.auth.views import send_confirm_email_async
 from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
 from osf.models import Email, Node, OSFUser, Preprint, Registration
 from osf.models.provider import AbstractProviderGroupObjectPermission
@@ -610,7 +609,7 @@ class UserEmailsSerializer(JSONAPISerializer):
             token = user.add_unconfirmed_email(address)
             user.save()
             if CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(user, email=address)
+                send_confirm_email_async(user, email=address)
                 user.email_last_sent = timezone.now()
                 user.save()
         except ValidationError as e:

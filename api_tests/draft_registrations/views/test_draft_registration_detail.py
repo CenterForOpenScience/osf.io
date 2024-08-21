@@ -2,10 +2,10 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_detail import (
-    TestDraftRegistrationDetail,
     TestDraftRegistrationUpdate,
     TestDraftRegistrationPatch,
     TestDraftRegistrationDelete,
+    AbstractDraftRegistrationTestCase
 )
 from osf.models import DraftNode, Node, NodeLicense, RegistrationSchema
 from osf.utils.permissions import ADMIN, READ, WRITE
@@ -16,58 +16,34 @@ from osf_tests.factories import (
     SubjectFactory,
     ProjectFactory,
 )
+from website.settings import API_DOMAIN
 
 
 @pytest.mark.django_db
-class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
+class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}draft_registrations/{}/'.format(
-            API_BASE, draft_registration._id)
+        return f'/{API_BASE}draft_registrations/{draft_registration._id}/'
 
-    # Overrides TestDraftRegistrationDetail
-    def test_admin_group_member_can_view(self, app, user, draft_registration, project_public,
-            schema, url_draft_registrations, group_mem):
-
-        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 403
-
-    def test_can_view_draft(
-            self, app, user_write_contrib, project_public,
-            user_read_contrib, user_non_contrib,
-            url_draft_registrations, group, group_mem):
-
-        #   test_read_only_contributor_can_view_draft
-        res = app.get(
-            url_draft_registrations,
-            auth=user_read_contrib.auth,
-            expect_errors=False)
+    def test_read_only_contributor_can_view_draft(self, app, user_read_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_read_contrib.auth)
         assert res.status_code == 200
 
-        #   test_read_write_contributor_can_view_draft
-        res = app.get(
-            url_draft_registrations,
-            auth=user_write_contrib.auth,
-            expect_errors=False)
+    def test_read_write_contributor_can_view_draft(self, app, user_write_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth)
         assert res.status_code == 200
 
-    def test_cannot_view_draft(
-            self, app, project_public,
-            user_non_contrib, url_draft_registrations):
-
-        #   test_logged_in_non_contributor_cannot_view_draft
-        res = app.get(
-            url_draft_registrations,
-            auth=user_non_contrib.auth,
-            expect_errors=True)
+    def test_logged_in_non_contributor_cannot_view_draft(self, app, user_non_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-        #   test_unauthenticated_user_cannot_view_draft
+    def test_unauthenticated_user_cannot_view_draft(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
-    def test_detail_view_returns_editable_fields(self, app, user, draft_registration,
-            url_draft_registrations, project_public):
+    def test_detail_view_returns_editable_fields(
+            self, app, user, draft_registration, url_draft_registrations, project_public
+    ):
 
         res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
         attributes = res.json['data']['attributes']
@@ -77,7 +53,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert attributes['category'] == project_public.category
         assert attributes['has_project']
 
-        res.json['data']['links']['self'] == url_draft_registrations
+        assert res.json['data']['links']['self'] == f'{API_DOMAIN}{url_draft_registrations.lstrip("/")}'
 
         relationships = res.json['data']['relationships']
         assert Node.load(relationships['branched_from']['data']['id']) == draft_registration.branched_from
@@ -89,8 +65,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
     def test_detail_view_returns_editable_fields_no_specified_node(self, app, user):
 
         draft_registration = DraftRegistrationFactory(initiator=user, branched_from=None)
-        url = '/{}draft_registrations/{}/'.format(
-            API_BASE, draft_registration._id)
+        url = f'{API_DOMAIN}{API_BASE}draft_registrations/{draft_registration._id}/'
 
         res = app.get(url, auth=user.auth, expect_errors=True)
         attributes = res.json['data']['attributes']
@@ -101,7 +76,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert attributes['node_license'] is None
         assert not attributes['has_project']
 
-        res.json['data']['links']['self'] == url
+        assert res.json['data']['links']['self'] == url
         relationships = res.json['data']['relationships']
 
         assert 'affiliated_institutions' in relationships
@@ -112,16 +87,13 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(draft_node_link, auth=user.auth)
         assert DraftNode.load(res.json['data']['id']) == draft_registration.branched_from
 
-    def test_draft_registration_perms_checked_on_draft_not_node(self, app, user, project_public,
-            draft_registration, url_draft_registrations):
-
-        # Admin on node and draft
+    def test_admin_node_and_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
         assert project_public.has_permission(user, ADMIN) is True
         assert draft_registration.has_permission(user, ADMIN) is True
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
 
-        # Admin on node but not draft
+    def test_admin_node_not_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
         node_admin = AuthUserFactory()
         project_public.add_contributor(node_admin, ADMIN)
         assert project_public.has_permission(node_admin, ADMIN) is True
@@ -129,7 +101,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # Admin on draft but not node
+    def test_admin_draft_not_node(self, app, user, project_public, draft_registration, url_draft_registrations):
         draft_admin = AuthUserFactory()
         draft_registration.add_contributor(draft_admin, ADMIN)
         assert project_public.has_permission(draft_admin, ADMIN) is False
@@ -137,19 +109,66 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=draft_admin.auth)
         assert res.status_code == 200
 
-    # Overwrites TestDraftRegistrationDetail
-    def test_can_view_after_added(
-            self, app, schema, draft_registration, url_draft_registrations):
-        # Draft Registration permissions are no longer based on the branched from project
+    def test_write_node_and_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
+        assert project_public.has_permission(user, WRITE) is True
+        assert draft_registration.has_permission(user, WRITE) is True
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
 
+    def test_write_node_not_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
+        node_admin = AuthUserFactory()
+        project_public.add_contributor(node_admin, WRITE)
+        assert project_public.has_permission(node_admin, WRITE) is True
+        assert draft_registration.has_permission(node_admin, WRITE) is False
+        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_write_draft_not_node(self, app, user, project_public, draft_registration, url_draft_registrations):
+        draft_admin = AuthUserFactory()
+        draft_registration.add_contributor(draft_admin, WRITE)
+        assert project_public.has_permission(draft_admin, WRITE) is False
+        assert draft_registration.has_permission(draft_admin, WRITE) is True
+        res = app.get(url_draft_registrations, auth=draft_admin.auth)
+        assert res.status_code == 200
+
+    def test_read_node_and_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
+        assert project_public.has_permission(user, READ) is True
+        assert draft_registration.has_permission(user, READ) is True
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+
+    def test_read_node_not_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
+        node_admin = AuthUserFactory()
+        project_public.add_contributor(node_admin, READ)
+        assert project_public.has_permission(node_admin, READ) is True
+        assert draft_registration.has_permission(node_admin, READ) is False
+        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_read_draft_not_node(self, app, user, project_public, draft_registration, url_draft_registrations):
+        draft_admin = AuthUserFactory()
+        draft_registration.add_contributor(draft_admin, READ)
+        assert project_public.has_permission(draft_admin, READ) is False
+        assert draft_registration.has_permission(draft_admin, READ) is True
+        res = app.get(url_draft_registrations, auth=draft_admin.auth)
+        assert res.status_code == 200
+
+    def test_can_view_after_added(self, app, schema, draft_registration, url_draft_registrations):
+        """
+        Ensure Draft Registration permissions are no longer based on the branched from project
+        """
         user = AuthUserFactory()
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
         res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
+        draft_registration.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
 
-    def test_current_permissions_field(self, app, user_read_contrib,
-            user_write_contrib, user, draft_registration, url_draft_registrations):
+    def test_current_permissions_field(
+            self, app, user_read_contrib, user_write_contrib, user, draft_registration, url_draft_registrations
+    ):
         res = app.get(url_draft_registrations, auth=user_read_contrib.auth, expect_errors=False)
         assert res.json['data']['attributes']['current_user_permissions'] == [READ]
 
@@ -548,9 +567,8 @@ class TestDraftRegistrationPatchNew(TestDraftRegistrationPatch):
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
 
-class TestDraftRegistrationDelete(TestDraftRegistrationDelete):
+class TestDraftRegistrationDeleteDetail(TestDraftRegistrationDelete):
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
         # Overrides TestDraftRegistrationDelete
-        return '/{}draft_registrations/{}/'.format(
-            API_BASE, draft_registration._id)
+        return f'/{API_BASE}draft_registrations/{draft_registration._id}/'
