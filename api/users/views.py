@@ -413,6 +413,46 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         return self.get_queryset_from_request()
 
 
+class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/).
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    ordering = ('-created')
+    model_class = AbstractNode
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
+
+    serializer_class = PreprintSerializer
+    view_category = 'users'
+    view_name = 'user-preprints'
+
+    def get_default_queryset(self):
+        # the user who is requesting
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
+
+        # the user data being requested
+        target_user = self.get_user(check_permissions=False)
+
+        return self.preprints_queryset(
+            Preprint.objects.filter(
+                _contributors__guids___id=target_user._id,
+                machine_state='initial'
+            ),
+            auth_user,
+            allow_contribs=False
+        )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_institutions_list).
     """
