@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
     """
 
     dependencies = [
-        ('osf', '0011_institution_rework_post_release'),
+        ('osf', '0022_alter_abstractnode_subjects_alter_abstractnode_tags_and_more'),
     ]
 
     operations = [
@@ -44,6 +44,10 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='abstractnode',
             name='type',
-            field=models.CharField(choices=[('osf.node', 'node'), ('osf.draftnode', 'draft node'), ('osf.registration', 'registration')], db_index=True, max_length=255),
+            field=models.CharField(choices=[
+                ('osf.node', 'node'),
+                ('osf.draftnode', 'draft node'),
+                ('osf.registration', 'registration')
+            ], db_index=True, max_length=255),
         ),
     ]

@@ -1,4 +1,4 @@
-FROM python:3.12-alpine3.17 as base
+FROM python:3.12-alpine3.17 AS base
 
 # Creation of www-data group was removed as it is created by default in alpine 3.14 and higher
 # Alpine does not create a www-data user, so we still need to create that. 82 is the standard
@@ -30,7 +30,7 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_OPTIONS_ALWAYS_COPY=1 \
     POETRY_VIRTUALENVS_CREATE=0
 
-FROM base as build
+FROM base AS build
 
 ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
     YARN_CACHE_FOLDER=/tmp/yarn-cache \
@@ -128,7 +128,7 @@ RUN \
 COPY ./ ./
 
 ARG GIT_COMMIT=
-ENV GIT_COMMIT ${GIT_COMMIT}
+ENV GIT_COMMIT=${GIT_COMMIT}
 
 # TODO: Admin/API should fully specify their bower static deps, and not
 #       include ./website/static in their defaults.py.
@@ -149,7 +149,7 @@ RUN for module in \
    ; done \
    && rm ./website/settings/local.py ./api/base/settings/local.py
 
-FROM base as runtime
+FROM base AS runtime
 
 WORKDIR /code
 COPY --from=build /usr/local/lib/python3.12 /usr/local/lib/python3.12

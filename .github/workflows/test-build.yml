@@ -21,7 +21,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        key: reqs_${{ hashFiles('**/pyproject.toml') }}
         restore-keys: reqs
     - run: |
         mkdir -p ~/.cache/downloads
