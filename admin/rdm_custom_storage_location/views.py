@@ -234,8 +234,8 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('s3compatinstitutions_access_key'),
                 data.get('s3compatinstitutions_secret_key'),
                 data.get('s3compatinstitutions_bucket'),
-                bool(strtobool(data.get('s3compatinstitutions_server_side_encryption'))),
                 provider_short_name,
+                bool(strtobool(data.get('s3compatinstitutions_server_side_encryption'))),
             )
         elif provider_short_name == 'ociinstitutions':
             result = utils.save_ociinstitutions_credentials(
@@ -323,6 +323,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
         status = result[1]
         if status == http_status.HTTP_200_OK:
+            utils.update_nodes_storage(institution)
             utils.change_allowed_for_institutions(
                 institution, provider_short_name)
         return JsonResponse(result[0], status=status)

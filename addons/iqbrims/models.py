@@ -391,6 +391,9 @@ def update_folder_name(sender, instance, created, **kwargs):
         management_node=node
     ).exists():
         return
+    if iqbrims.folder_id is None:
+        logger.info('No folder_id for IQB-RIMS: node={}'.format(node._id))
+        return
     try:
         access_token = iqbrims.fetch_access_token()
         client = IQBRIMSClient(access_token)
@@ -410,7 +413,9 @@ def update_folder_name(sender, instance, created, **kwargs):
 def change_iqbrims_addon_enabled(sender, instance, created, **kwargs):
     if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
         return
-
+    if instance.provider != IQBRIMSAddonConfig.short_name:
+        # Ignore if the changed instance is not for IQB-RIMS
+        return
     if instance.is_allowed and instance.management_node is not None:
         for node in AbstractNode.find_by_institutions(instance.institution):
             if instance.organizational_node:
@@ -429,6 +434,9 @@ def setup_iqbrims_addon_auth_of_management_node(sender, instance, created, **kwa
     if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
         return
     if GoogleDriveAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+    if instance.provider != IQBRIMSAddonConfig.short_name:
+        # Ignore if the changed instance is not for IQB-RIMS
         return
     if instance.management_node is None:
         return

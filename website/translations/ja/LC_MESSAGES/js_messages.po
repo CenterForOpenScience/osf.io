@@ -8726,3 +8726,12 @@ msgstr "このエクスポート プロセスをアボートできません。"
 
 msgid "Cannot be restored because export data does not exist"
 msgstr "エクスポートデータが存在しないため、復元できません。"
+
+msgid "Download as file for %1$s logs"
+msgstr "%1$s件のファイルをダウンロード"
+
+msgid "Downloading"
+msgstr "ダウンロード中"
+
+msgid "Download failed."
+msgstr "ダウンロードが失敗されました。"
