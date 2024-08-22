@@ -21,6 +21,7 @@ from django.urls import reverse_lazy
 from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
+from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -92,12 +93,30 @@ class NodeView(NodeMixin, GuidView):
     raise_exception = True
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
+        context = super().get_context_data(**kwargs)
+        node = self.get_object()
+
+        detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
+
+        context.update({
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
-            'node': kwargs.pop('object', self.get_object()),
-        }, **kwargs)
+            'node': node,
+            'duplicates': detailed_duplicates
+        })
 
+        return context
+
+class NodeRemoveNotificationView(View):
+    def post(self, request, *args, **kwargs):
+        selected_ids = request.POST.getlist('selected_notifications')
+        if selected_ids:
+            delete_selected_notifications(selected_ids)
+            messages.success(request, 'Selected notifications were successfully deleted.')
+        else:
+            messages.error(request, 'No notifications selected for deletion.')
+
+        return redirect('nodes:node', guid=kwargs.get('guid'))
 
 class NodeSearchView(PermissionRequiredMixin, FormView):
     """ Allows authorized users to search for a node by it's guid.
