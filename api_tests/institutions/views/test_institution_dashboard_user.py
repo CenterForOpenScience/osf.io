@@ -1,4 +1,3 @@
-import csv
 import pytest
 
 from osf_tests.factories import (
@@ -9,7 +8,6 @@ from osf_tests.factories import (
     PreprintFactory
 )
 from django.shortcuts import reverse
-from osf.models import BaseFileNode
 
 
 @pytest.mark.django_db
@@ -58,7 +56,7 @@ class TestInstitutionUsersList:
         )
         user_one.add_or_update_affiliated_institution(
             institution,
-            sso_department="Science Department"
+            sso_department='Science Department'
         )
         user_two.add_or_update_affiliated_institution(institution)
         user_three.add_or_update_affiliated_institution(institution)
@@ -123,16 +121,16 @@ class TestInstitutionUsersList:
         ('[full_name]', 'Example', 3),  # Multiple users should be returned here
         ('[email_address]', 'bob@example.com', 1),
         ('[department]', 'Science Department', 1),
-        ('[number_of_public_projects][lte]', '1', 2),
-        ('[number_of_private_projects][lt]', '1', 3),
-        ('[number_of_private_projects][gte]', '1', 3),
-        ('[number_of_public_registrations][lte]', '1', 1),
-        ('[number_of_private_registrations][lte]', '1', 3),
-        ('[number_of_preprints][lte]', '2', 1),
-        ('[number_of_files][lte]', '1', 0),
+        ('[public_projects][lte]', '1', 2),
+        ('[private_projects][lte]', '1', 3),
+        ('[private_projects][gte]', '1', 3),
+        ('[public_registrations][lte]', '1', 3),
+        ('[embargoed_registrations][lte]', '1', 3),
+        ('[published_preprints][lte]', '1', 2),
+        ('[public_files][lt]', '1', 1),
+        ('[public_files][lte]', '1', 2),
         ('[last_login][lte]', '2-11-2018', 0),
-        ('[last_log]', 'account_created', 0),
-        ('[account_created_date]', '2-11-2018', 0),
+        ('[account_created]', '2-11-2018', 0),
         ('[has_orcid]', 'True', 0),
     ])
     def test_filter_users(self, app, institution, users, attribute, value, expected_count):

@@ -94,7 +94,6 @@ class RunningTotal(InnerDoc):
     total = metrics.Integer()
     total_daily = metrics.Integer()
 
-
 class FileRunningTotals(InnerDoc):
     total = metrics.Integer()
     public = metrics.Integer()
@@ -112,9 +111,6 @@ class NodeRunningTotals(InnerDoc):
     total_daily_excluding_spam = metrics.Integer()
     public_daily = metrics.Integer()
     private_daily = metrics.Integer()
-
-
-
 
 class RegistrationRunningTotals(InnerDoc):
     total = metrics.Integer()

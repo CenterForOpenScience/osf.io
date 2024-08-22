@@ -1,12 +1,10 @@
-from django.db.models import Count, Q, F, Value, BooleanField, IntegerField
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Q, F
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -545,43 +543,43 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     def get_default_queryset(self):
         institution = self.get_institution()
-        from django.db.models import OuterRef, Subquery, Count, Q, F, Value, BooleanField, IntegerField
+        from django.db.models import IntegerField, Value, BooleanField, BigIntegerField
         from django.db.models.functions import Coalesce
-        from django.db.models.expressions import RawSQL
+        from django.db.models.expressions import RawSQL, F
 
         return institution.get_institution_users().annotate(
             email_address=F('username'),
             department=F('institutionaffiliation__sso_department'),
-            # Count of public projects (assuming a related_name 'projects' from OSFUser to Project)
-            number_of_public_projects=Count(
+            # Count of public projects
+            public_projects=Count(
                 'nodes',
                 filter=(Q(nodes__is_public=True) & Q(nodes__type='osf.node')),
-                distinct=True
+                distinct=True,
             ),
-            number_of_private_projects=Count(
+            private_projects=Count(
                 'nodes',
                 filter=(Q(nodes__is_public=False) & Q(nodes__type='osf.node')),
-                distinct=True
+                distinct=True,
             ),
             # Count of public and private registrations
-            number_of_public_registrations=Count(
+            public_registrations=Count(
                 'nodes',
                 filter=(Q(nodes__is_public=True) & Q(nodes__type='osf.registration')),
-                distinct=True
+                distinct=True,
             ),
-            number_of_private_registrations=Count(
+            embargoed_registrations=Count(
                 'nodes',
                 filter=(Q(nodes__is_public=False) & Q(nodes__type='osf.registration')),
-                distinct=True
+                distinct=True,
             ),
             # Count of preprints
-            number_of_preprints=Count(
+            published_preprints=Count(
                 'preprints',
                 filter=Q(preprints__is_public=True),
-                distinct=True
+                distinct=True,
             ),
-            # Count files associated with nodes
-            number_of_node_files=RawSQL(
+            # Count files associated with nodes using RawSQL
+            public_node_files=RawSQL(
                 """
                 SELECT COUNT(f.id)
                 FROM osf_basefilenode f
@@ -589,14 +587,15 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
                 INNER JOIN django_content_type ct ON ct.id = f.target_content_type_id
                 WHERE ct.model = 'abstractnode'
                 AND n.type = 'osf.node'
+                AND n.is_public = TRUE
                 AND f.type = 'osf.osfstoragefile'
                 AND n.creator_id = osf_osfuser.id
                 """,
                 [],
-                output_field=IntegerField()
+                output_field=IntegerField(),
             ),
             # Count files associated with registrations using RawSQL
-            number_of_registration_files=RawSQL(
+            public_registration_files=RawSQL(
                 """
                 SELECT COUNT(f.id)
                 FROM osf_basefilenode f
@@ -604,14 +603,15 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
                 INNER JOIN django_content_type ct ON ct.id = f.target_content_type_id
                 WHERE ct.model = 'abstractnode'
                 AND r.type = 'osf.registration'
+                AND r.is_public = TRUE
                 AND f.type = 'osf.osfstoragefile'
                 AND r.creator_id = osf_osfuser.id
                 """,
                 [],
-                output_field=IntegerField()
+                output_field=IntegerField(),
             ),
             # Count files associated with preprints using RawSQL
-            number_of_preprint_files=RawSQL(
+            public_preprint_files=RawSQL(
                 """
                 SELECT COUNT(f.id)
                 FROM osf_basefilenode f
@@ -623,21 +623,49 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
                 AND p.creator_id = osf_osfuser.id
                 """,
                 [],
-                output_field=IntegerField()
+                output_field=IntegerField(),
             ),
-            number_of_files=Coalesce(
-                F('number_of_node_files') +
-                F('number_of_registration_files') +
-                F('number_of_preprint_files'),
+            public_files=Coalesce(
+                F('public_node_files') +
+                F('public_registration_files') +
+                F('public_preprint_files'),
                 Value(0),
-                output_field=IntegerField()
+                output_field=IntegerField(),
             ),
+            storage_byte_count=RawSQL(
+                """
+                SELECT COALESCE(SUM(version.size), 0) FROM osf_basefileversionsthrough AS obfnv
+                LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+                LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+                LEFT JOIN django_content_type type on file.target_content_type_id = type.id
+                WHERE file.provider = 'osfstorage'
+                AND type.model = 'abstractnode'
+                AND file.deleted_on IS NULL
+                AND file.target_object_id IN (
+                    SELECT id FROM osf_abstractnode
+                    WHERE creator_id = osf_osfuser.id
+                )
+                """,
+                [],
+                output_field=BigIntegerField(),
+            ),
+            total_object_count=Coalesce(
+                F('public_projects') +
+                F('private_projects') +
+                F('public_registrations') +
+                F('embargoed_registrations') +
+                F('published_preprints'),
+                Value(0),
+                output_field=IntegerField(),
+            ),
+            month_last_login=F('last_login'),
+            month_last_active=F('last_login'),
             has_orcid=Coalesce(
                 Q(external_identity__has_key='ORCID'),
                 Value(False),
-                output_field=BooleanField()
+                output_field=BooleanField(),
             ),
-            account_created_date=F('created')
+            account_created=F('created'),
         )
 
     # overrides RetrieveAPIView
@@ -653,24 +681,34 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
     def create_csv_response(self):
         queryset = self.get_default_queryset()
         import csv
-        from django.http import JsonResponse, HttpResponse, Http404
+        from django.http import HttpResponse
 
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="institution_users.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['ID', 'Email', 'Department', 'Public Projects', 'Private Projects', 'Public Registrations',
-                         'Private Registrations', 'Preprints'])
+        writer.writerow(
+            [
+                'ID',
+                'Email',
+                'Department',
+                'Public Projects',
+                'Private Projects',
+                'Public Registrations',
+                'Private Registrations',
+                'Preprints',
+            ],
+        )
 
         for user in queryset:
             writer.writerow([
                 user.id,
                 user.email_address,
                 user.department,
-                user.number_of_public_projects,
-                user.number_of_private_projects,
-                user.number_of_public_registrations,
-                user.number_of_private_registrations,
-                user.number_of_preprints,
+                user.public_projects,
+                user.private_projects,
+                user.public_registrations,
+                user.embargoed_registrations,
+                user.published_preprints,
             ])
         return response

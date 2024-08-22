@@ -57,15 +57,15 @@ class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'email_address',  # For Institutional Dashboard only
         'department',  # For Institutional Dashboard only
-        'number_of_public_projects',  # For Institutional Dashboard only
-        'number_of_private_projects',  # For Institutional Dashboard only
-        'number_of_public_registrations',  # For Institutional Dashboard only
-        'number_of_private_registrations',  # For Institutional Dashboard only
-        'number_of_preprints',  # For Institutional Dashboard only
-        'number_of_files',  # For Institutional Dashboard only
+        'public_projects',  # For Institutional Dashboard only
+        'private_projects',  # For Institutional Dashboard only
+        'public_registrations',  # For Institutional Dashboard only
+        'embargoed_registrations',  # For Institutional Dashboard only
+        'published_preprints',  # For Institutional Dashboard only
+        'public_files',  # For Institutional Dashboard only
         'has_orcid',  # For Institutional Dashboard only
-        'account_created_date',  # For Institutional Dashboard only
-        'last_log',  # For Institutional Dashboard only
+        'account_created',  # For Institutional Dashboard only
+        'last_login',  # For Institutional Dashboard only
         'full_name',
         'given_name',
         'middle_names',
@@ -100,18 +100,20 @@ class UserSerializer(JSONAPISerializer):
 
     email_address = ser.CharField(required=False, allow_blank=True, help_text='For Institutional Dashboard only')
     department = ser.CharField(required=False, allow_blank=True, help_text='For Institutional Dashboard only')
-    number_of_public_projects = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_private_projects = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_public_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_private_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_preprints = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_node_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_registration_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_preprint_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
-    number_of_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    public_projects = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    private_projects = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    public_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    embargoed_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    published_preprints = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    public_node_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    public_registration_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    public_preprint_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    public_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    storage_byte_count = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    total_object_count = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
     has_orcid = ser.BooleanField(required=False, help_text='For Institutional Dashboard only')
-    account_created_date = VersionedDateTimeField(required=False, help_text='For Institutional Dashboard only')
-    last_log = VersionedDateTimeField(required=False, help_text='For Institutional Dashboard only')
+    account_created = VersionedDateTimeField(required=False, help_text='For Institutional Dashboard only')
+    last_login = VersionedDateTimeField(required=False, help_text='For Institutional Dashboard only')
 
     links = HideIfDisabled(
         LinksField(
