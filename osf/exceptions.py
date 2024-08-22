@@ -15,7 +15,7 @@ class TokenError(Exception):
 
 class TokenHandlerNotFound(TokenError):
     def __init__(self, action, *args, **kwargs):
-        super(TokenHandlerNotFound, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.action = action
 
@@ -118,13 +118,13 @@ class InvalidTriggerError(Exception):
         self.trigger = trigger
         self.state = state
         self.valid_triggers = valid_triggers
-        self.message = 'Cannot trigger "{}" from state "{}". Valid triggers: {}'.format(trigger, state, valid_triggers)
+        self.message = f'Cannot trigger "{trigger}" from state "{state}". Valid triggers: {valid_triggers}'
         super(Exception, self).__init__(self.message)
 
 
 class InvalidTransitionError(Exception):
     def __init__(self, machine, transition):
-        self.message = 'Machine "{}" received invalid transitions: "{}" expected but not defined'.format(machine, transition)
+        self.message = f'Machine "{machine}" received invalid transitions: "{transition}" expected but not defined'
 
 
 class PreprintError(OSFError):
@@ -199,7 +199,7 @@ class RegistrationBulkCreationRowError(OSFError):
         # The error information for logging, sentry and email
         self.error = error if error else 'Draft registration creation error'
         # The short error message to be added to the error list that will be returned to the initiator via email
-        self.short_message = 'Title: {}, External ID: {}, Error: {}'.format(title, external_id, self.error)
+        self.short_message = f'Title: {title}, External ID: {external_id}, Error: {self.error}'
         # The long error message for logging and sentry
         self.long_message = 'Draft registration creation failed: [upload_id="{}", row_id="{}", title="{}", ' \
                             'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, self.error)

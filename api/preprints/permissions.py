@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import permissions
 from rest_framework import exceptions
 
@@ -47,7 +46,7 @@ class PreprintPublishedOrWrite(PreprintPublishedOrAdmin):
             obj = obj.get('self', None)
 
         if request.method in permissions.SAFE_METHODS:
-            return super(PreprintPublishedOrWrite, self).has_object_permission(request, view, obj)
+            return super().has_object_permission(request, view, obj)
         else:
             if not obj.has_permission(auth.user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail='User must have admin or write permissions to the preprint.')
@@ -70,7 +69,7 @@ class ContributorDetailPermissions(PreprintPublishedOrAdmin):
         user = OSFUser.load(context['user_id'])
 
         if request.method in permissions.SAFE_METHODS:
-            return super(ContributorDetailPermissions, self).has_object_permission(request, view, preprint)
+            return super().has_object_permission(request, view, preprint)
         elif request.method == 'DELETE':
             return preprint.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
         else:
@@ -88,7 +87,7 @@ class PreprintIdentifierDetailPermissions(PreprintPublishedOrAdmin):
         if not isinstance(referent, Preprint):
             return True
 
-        return super(PreprintIdentifierDetailPermissions, self).has_object_permission(request, view, referent)
+        return super().has_object_permission(request, view, referent)
 
 
 class AdminOrPublic(NodeAdminOrPublic):
@@ -112,7 +111,7 @@ class PreprintFilesPermissions(PreprintPublishedOrAdmin):
         if preprint.is_retracted and request.method in permissions.SAFE_METHODS:
             return preprint.can_view_files(get_user_auth(request))
 
-        return super(PreprintFilesPermissions, self).has_object_permission(request, view, preprint)
+        return super().has_object_permission(request, view, preprint)
 
 
 class ModeratorIfNeverPublicWithdrawn(permissions.BasePermission):

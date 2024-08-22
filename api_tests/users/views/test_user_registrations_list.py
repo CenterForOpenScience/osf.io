@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from django.utils.timezone import now
@@ -147,19 +146,19 @@ class TestUserRegistrations:
             project_deleted_user_one):
 
         #   test_authorized_in_gets_200
-        url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/registrations/'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_anonymous_gets_200
-        url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/registrations/'
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_registrations_logged_in
-        url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/registrations/'
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -173,7 +172,7 @@ class TestUserRegistrations:
         assert project_deleted_user_one._id not in ids
 
     #   test_get_registrations_not_logged_in
-        url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
+        url = f'/{API_BASE}users/{user_one._id}/registrations/'
         res = app.get(url)
         node_json = res.json['data']
 
@@ -187,7 +186,7 @@ class TestUserRegistrations:
         assert project_deleted_user_one._id not in ids
 
     #   test_get_registrations_logged_in_as_different_user
-        url = '/{}users/{}/registrations/'.format(API_BASE, user_two._id)
+        url = f'/{API_BASE}users/{user_two._id}/registrations/'
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -201,7 +200,7 @@ class TestUserRegistrations:
         assert project_deleted_user_one._id not in ids
 
     #   test_get_registrations_logged_in_group_member
-        url = '/{}users/{}/registrations/'.format(API_BASE, group_member._id)
+        url = f'/{API_BASE}users/{group_member._id}/registrations/'
         res = app.get(url, auth=group_member.auth)
         node_json = res.json['data']
 
@@ -221,4 +220,4 @@ class TestRegistrationListFiltering(
         RegistrationListFilteringMixin,
         ApiTestCase):
 
-    url = '/{}users/me/registrations/?'.format(API_BASE)
+    url = f'/{API_BASE}users/me/registrations/?'

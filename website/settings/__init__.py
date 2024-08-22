@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''Consolidates settings from defaults.py and local.py.
 
 ::
@@ -6,7 +5,6 @@
     >>> settings.MAIL_SERVER
     'smtp.sendgrid.net'
 '''
-import os
 from .defaults import *  # noqa
 
 try:
@@ -22,4 +20,4 @@ if not DEV_MODE:
     from . import local
     from . import defaults
     for setting in ('WATERBUTLER_JWE_SECRET', 'WATERBUTLER_JWE_SALT', 'WATERBUTLER_JWT_SECRET', 'JWT_SECRET', 'DEFAULT_HMAC_SECRET', 'POPULAR_LINKS_NODE', 'NEW_AND_NOTEWORTHY_LINKS_NODE', 'SENSITIVE_DATA_SALT', 'SENSITIVE_DATA_SECRET'):
-        assert getattr(local, setting, None) and getattr(local, setting, None) != getattr(defaults, setting, None), '{} must be specified in local.py when DEV_MODE is False'.format(setting)
+        assert getattr(local, setting, None) and getattr(local, setting, None) != getattr(defaults, setting, None), f'{setting} must be specified in local.py when DEV_MODE is False'

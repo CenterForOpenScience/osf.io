@@ -2,6 +2,36 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+24.05.0 (2024-07-22)
+====================
+- Bump base python version from py3.6 to py3.12.
+- Switch to using poetry for dependency management
+- Bump most (not all) dependencies to their maximum version as of mid-March.
+- Significantly update Dockerfile
+- Upgrade Django to v4.2
+- Generate test summary reports in CI
+
+24.04.0 (2024-07-08)
+====================
+- Preprints into Ember OSF Web, Phase 2 Backend Release
+
+24.03.0 (2024-07-08)
+====================
+- Allow AbstractProviders to specify Discover page presence
+- Update get_auth
+- Expand Addons Service support functionality, waffled
+- Set default Resource Type General for Registrations
+- Bug fix: Archiver Unicode edge cases
+- Bug fix: RelationshipField during project creation
+
+24.02.0 (2024-04-30)
+====================
+- Initial Addons Service work, Waffled
+- Improve default `description` for Google Dataset Discovery
+- Improve Embargo visibility for moderators
+- Bug fix: PreprintProvider highlighted subjects
+- Bug fix: PreprintProvider `advisory_board` styling
+
 24.01.0 (2024-02-26)
 ====================
 - Support CEDAR Embeddable Editor

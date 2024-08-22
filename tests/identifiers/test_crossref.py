@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
-import mock
+from unittest import mock
 import lxml
 import pytest
 import responses
-from nose.tools import *  # noqa
 
 from website import settings
 from website.identifiers.clients import crossref
@@ -109,7 +105,7 @@ class TestCrossRefClient:
 
         assert root.find('.//{%s}group_title' % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
         assert root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text == preprint.title
-        assert root.find('.//{%s}item_number' % crossref.CROSSREF_NAMESPACE).text == 'osf.io/{}'.format(preprint._id)
+        assert root.find('.//{%s}item_number' % crossref.CROSSREF_NAMESPACE).text == f'osf.io/{preprint._id}'
         assert root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE).text == preprint.description
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).text == 'https://creativecommons.org/licenses/by/4.0/legalcode'
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).get('start_date') == preprint.date_published.strftime('%Y-%m-%d')
@@ -241,7 +237,7 @@ class TestCrossRefClient:
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
-        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).text == 'https://orcid.org/{}'.format(ORCID)
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).text == f'https://orcid.org/{ORCID}'
         assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).attrib == {'authenticated': 'true'}
 
         # unverified (only in profile)

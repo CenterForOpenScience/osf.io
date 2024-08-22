@@ -46,7 +46,7 @@ from api.institutions.permissions import UserIsAffiliated
 from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
 
 
-class InstitutionMixin(object):
+class InstitutionMixin:
     """Mixin with convenience method get_institution
     """
 
@@ -79,7 +79,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    ordering = ('name', )
+    ordering = ('name',)
 
     def get_default_queryset(self):
         return Institution.objects.filter(_id__isnull=False, is_deleted=False)
@@ -126,7 +126,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -159,30 +159,13 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
     serializer_class = UserSerializer
     view_category = 'institutions'
-    view_name = 'institution-users-list'
+    view_name = 'institution-users'
 
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        return self.get_institution().get_institution_users().annotate(
-            email_address=F('username'),
-            department=F('institutionaffiliation__sso_department'),
-            # Count of public projects (assuming a related_name 'projects' from OSFUser to Project)
-            number_of_public_projects=Count('nodes', filter=Q(nodes__is_public=True) & Q(nodes__type='osf.node')),
-            number_of_private_projects=Count('nodes', filter=Q(nodes__is_public=False) & Q(nodes__type='osf.node')),
-            # Example for registrations, assuming a similar setup
-            number_of_public_registrations=Count('nodes', filter=Q(nodes__is_public=True) & Q(nodes__type='osf.registration')),
-            number_of_private_registrations=Count('nodes', filter=Q(nodes__is_public=False) & Q(nodes__type='osf.registration')),
-            # Assuming 'preprints' is a related name from OSFUser to a Preprint model
-            number_of_preprints=Count('preprints', distinct=True),
-            last_log=...,
-            account_created_date=...,
-            has_orcid=...,
-            # Assuming there's a File model related to users for counting files
-
-            # count the files on nodes where users have WRITE perms
-            # number_of_files=Count('files', distinct=True)
-        )
+        institution = self.get_institution()
+        return institution.get_institution_users()
 
     # overrides RetrieveAPIView
     def get_queryset(self):
@@ -209,7 +192,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
-    authentication_classes = (InstitutionAuthentication, )
+    authentication_classes = (InstitutionAuthentication,)
     view_category = 'institutions'
     view_name = 'institution-auth'
 
@@ -223,7 +206,7 @@ class InstitutionRegistrationList(InstitutionNodeList):
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     def get_default_queryset(self):
         institution = self.get_institution()
@@ -278,7 +261,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
     serializer_class = InstitutionRegistrationsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'institutions'
     view_name = 'institution-relationships-registrations'
@@ -302,7 +285,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
         for id_ in ids:
             registration = Registration.load(id_)
             if not registration.has_permission(user, osf_permissions.WRITE):
-                raise exceptions.PermissionDenied(detail='Write permission on registration {} required'.format(id_))
+                raise exceptions.PermissionDenied(detail=f'Write permission on registration {id_} required')
             registrations.append(registration)
 
         for registration in registrations:
@@ -311,7 +294,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(InstitutionRegistrationsRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
@@ -362,7 +345,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = InstitutionNodesRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'institutions'
     view_name = 'institution-relationships-nodes'
@@ -386,7 +369,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for id_ in ids:
             node = Node.load(id_)
             if not node.has_permission(user, osf_permissions.WRITE):
-                raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(id_))
+                raise exceptions.PermissionDenied(detail=f'Write permission on node {id_} required')
             nodes.append(node)
 
         for node in nodes:
@@ -395,7 +378,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(InstitutionNodesRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
@@ -489,10 +472,10 @@ class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
 
     serializer_class = InstitutionDepartmentMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionDepartmentMetricsCSVRenderer,)
 
-    ordering_fields = ('-number_of_users', 'name', )
-    ordering = ('-number_of_users', 'name', )
+    ordering_fields = ('-number_of_users', 'name')
+    ordering = ('-number_of_users', 'name')
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
@@ -514,10 +497,10 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     view_name = 'institution-user-metrics'
 
     serializer_class = InstitutionUserMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionUserMetricsCSVRenderer,)
 
-    ordering_fields = ('user_name', 'department', )
-    ordering = ('user_name', )
+    ordering_fields = ('user_name', 'department')
+    ordering = ('user_name',)
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()

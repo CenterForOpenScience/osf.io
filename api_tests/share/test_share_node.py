@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 import responses
-
+from pytest import mark
 from osf.models import CollectionSubmission, SpamStatus, Outcome
 from osf.utils.outcomes import ArtifactTypes
 
@@ -184,6 +184,7 @@ class TestNodeShare:
         on_node_updated(node._id, user._id, False, {'is_public'})
         assert len(responses.calls) == 0
 
+    @mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_retry(self, mock_share_responses, node, user):
         """This is meant to simulate a temporary outage, so the retry mechanism should kick in and complete it."""
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
@@ -193,6 +194,7 @@ class TestNodeShare:
         with expect_ingest_request(mock_share_responses, node._id, count=2):
             on_node_updated(node._id, user._id, False, {'is_public'})
 
+    @mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_failure(self, mock_share_responses, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
@@ -200,6 +202,7 @@ class TestNodeShare:
         with expect_ingest_request(mock_share_responses, node._id, count=5):  # tries five times
             on_node_updated(node._id, user._id, False, {'is_public'})
 
+    @mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_no_call_async_update_on_400_failure(self, mock_share_responses, node, user):
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
         mock_share_responses.replace(responses.POST, sharev2_push_url(), status=400)

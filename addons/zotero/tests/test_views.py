@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
-from future.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 import responses
 
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_true, assert_false)
 from addons.base.tests import views
 from addons.base.tests.utils import MockLibrary, MockFolder
 from addons.zotero.models import Zotero
@@ -26,7 +24,7 @@ class TestAuthViews(ZoteroTestCase, views.OAuthAddonAuthViewsTestCaseMixin, OsfT
             'oauth_token': 'token',
             'oauth_secret': 'secret',
         }
-        super(TestAuthViews, self).test_oauth_start()
+        super().test_oauth_start()
 
 
 class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -41,7 +39,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
     mockResponsesFiledUnfiled = mock_responses_with_filed_and_unfiled
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super().setUp()
         self.foldersApiUrl = urljoin(API_URL, 'users/{}/collections'
             .format(self.external_account.provider_id))
         self.documentsApiUrl = urljoin(API_URL, 'users/{}/items/top'
@@ -70,13 +68,13 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
             self.library.json['id'],
             self.library.name
         )
-        assert_false(self.node_settings.complete)
-        assert_equal(self.node_settings.list_id, None)
-        assert_equal(self.node_settings.library_id, 'Fake Library Key')
+        assert not self.node_settings.complete
+        assert self.node_settings.list_id == None
+        assert self.node_settings.library_id == 'Fake Library Key'
         res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
-        assert_false(res['complete'])
-        assert_equal(res['list_id'], None)
-        assert_equal(res['library_id'], 'Fake Library Key')
+        assert not res['complete']
+        assert res['list_id'] == None
+        assert res['library_id'] == 'Fake Library Key'
 
     def test_widget_view_complete(self):
         # JSON: everything a widget needs
@@ -99,13 +97,13 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
             self.folder.name,
             Auth(self.user),
         )
-        assert_true(self.node_settings.complete)
-        assert_equal(self.node_settings.list_id, 'Fake Key')
-        assert_equal(self.node_settings.library_id, 'Fake Library Key')
+        assert self.node_settings.complete
+        assert self.node_settings.list_id == 'Fake Key'
+        assert self.node_settings.library_id == 'Fake Library Key'
         res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
-        assert_true(res['complete'])
-        assert_equal(res['list_id'], 'Fake Key')
-        assert_equal(res['library_id'], 'Fake Library Key')
+        assert res['complete']
+        assert res['list_id'] == 'Fake Key'
+        assert res['library_id'] == 'Fake Library Key'
 
     @responses.activate
     def test_citation_list_root_only_unfiled_items_included(self):
@@ -128,14 +126,14 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         )
 
         res = self.app.get(
-            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME), list_id='ROOT'),
+            self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_citation_list', list_id='ROOT'),
             auth=self.user.auth
         )
 
         children = res.json['contents']
         # There are three items, one folder and two files, but one of the files gets pulled out because it
         # belongs to a collection
-        assert_equal(len(children), 2)
-        assert_equal(children[0]['kind'], 'folder')
-        assert_equal(children[1]['kind'], 'file')
-        assert_true(children[1].get('csl') is not None)
+        assert len(children) == 2
+        assert children[0]['kind'] == 'folder'
+        assert children[1]['kind'] == 'file'
+        assert children[1].get('csl') is not None

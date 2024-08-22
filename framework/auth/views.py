@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-import furl
+from furl import furl, urljoin
 from rest_framework import status as http_status
-from future.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 import markupsafe
 from django.core.exceptions import ValidationError
@@ -29,7 +28,6 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
@@ -38,7 +36,6 @@ from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from website.ember_osf_web.decorators import ember_flag_is_active
 from osf import features
-# from osf.models import PreprintProvider
 
 
 @block_bing_preview
@@ -250,9 +247,11 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
         forms.push_errors_to_status(form.errors)
     else:
         email = form.email.data
-        status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to '
-                          'reset the OSF password has been sent to {0}. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support. ').format(email)
+        status_message = (
+            f'If there is an OSF account associated with {email}, an email with instructions on how to '
+            f'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
+            'you should have, please contact OSF Support. '
+        )
         kind = 'success'
         # check if the user exists
         user_obj = get_user(email=email)
@@ -268,7 +267,7 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                 user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
-                reset_link = furl.urljoin(
+                reset_link = urljoin(
                     settings.DOMAIN,
                     web_url_for(
                         reset_route,
@@ -362,7 +361,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             data['next_url'] = web_url_for(redirect_view, campaigns=None, next=next_url)
             data['campaign'] = None
             sentry.log_message(
-                '{} is not a valid campaign. Please add it if this is a new one'.format(campaign)
+                f'{campaign} is not a valid campaign. Please add it if this is a new one'
             )
     # login or register with next parameter
     elif next_url:
@@ -655,14 +654,6 @@ def external_login_confirm_email_get(auth, uid, token):
     service_url = request.url
 
     if external_status == 'CREATE':
-        mails.send_mail(
-            to_addr=user.username,
-            mail=mails.WELCOME,
-            user=user,
-            domain=settings.DOMAIN,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            storage_flag_is_active=storage_i18n_flag_active(),
-        )
         service_url += '&{}'.format(urlencode({'new': 'true'}))
     elif external_status == 'LINK':
         mails.send_mail(
@@ -739,16 +730,6 @@ def confirm_email_get(token, auth=None, **kwargs):
     if is_initial_confirmation:
         user.update_date_last_login()
         user.save()
-
-        # send out our welcome message
-        mails.send_mail(
-            to_addr=user.username,
-            mail=mails.WELCOME,
-            user=user,
-            domain=settings.DOMAIN,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            storage_flag_is_active=storage_i18n_flag_active(),
-        )
 
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.
     user.verification_key = generate_verification_key()
@@ -862,11 +843,11 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     elif merge_target:
         # Merge account confirmation
         mail_template = mails.CONFIRM_MERGE
-        confirmation_url = '{}?logout=1'.format(confirmation_url)
+        confirmation_url = f'{confirmation_url}?logout=1'
     elif user.is_active:
         # Add email confirmation
         mail_template = mails.CONFIRM_EMAIL
-        confirmation_url = '{}?logout=1'.format(confirmation_url)
+        confirmation_url = f'{confirmation_url}?logout=1'
     elif campaign:
         # Account creation confirmation: from campaign
         mail_template = campaigns.email_template_for_campaign(campaign)
@@ -1001,9 +982,11 @@ def resend_confirmation_post(auth):
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
-        status_message = ('If there is an OSF account associated with this unconfirmed email address {0}, '
-                          'a confirmation email has been resent to it. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support.').format(clean_email)
+        status_message = (
+            f'If there is an OSF account associated with this unconfirmed email address {clean_email}, '
+            'a confirmation email has been resent to it. If you do not receive an email and believe '
+            'you should have, please contact OSF Support.'
+        )
         kind = 'success'
         if user:
             if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
@@ -1011,7 +994,7 @@ def resend_confirmation_post(auth):
                     send_confirm_email(user, clean_email, renew=True)
                 except KeyError:
                     # already confirmed, redirect to dashboard
-                    status_message = 'This email {0} has already been confirmed.'.format(clean_email)
+                    status_message = f'This email {clean_email} has already been confirmed.'
                     kind = 'warning'
                 user.email_last_sent = timezone.now()
                 user.save()
@@ -1075,8 +1058,8 @@ def external_login_email_post():
             # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
             # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
             # not vice versa.
-            campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
-            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
+            campaign_url = furl(campaigns.campaign_url_for(campaign)).url
+            external_campaign_url = furl(campaigns.external_campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
                 if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):

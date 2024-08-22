@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-from gevent import monkey
-monkey.patch_all()
-
-# PATCH: avoid deadlock on getaddrinfo, this patch is necessary while waiting for
-# the final gevent 1.1 release (https://github.com/gevent/gevent/issues/349)
-#  'foo'.encode('idna')  # noqa
-
 import os
 
 from website import settings

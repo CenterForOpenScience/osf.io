@@ -1,4 +1,3 @@
-
 from rest_framework.negotiation import DefaultContentNegotiation
 
 
@@ -17,4 +16,4 @@ class JSONAPIContentNegotiation(DefaultContentNegotiation):
         if 'application/json' in accepts:
             return (renderers[0], renderers[0].media_type)
 
-        return super(JSONAPIContentNegotiation, self).select_renderer(request, renderers)
+        return super().select_renderer(request, renderers)

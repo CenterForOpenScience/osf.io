@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import logging
 from website.app import setup_django, init_app
@@ -18,12 +17,12 @@ def do_migration():
     date_modified_field = AbstractNode._meta.get_field('date_modified')
     date_modified_field.auto_now = False
     for node in nodes:
-        logger.info('Casting Registration {} to a Node'.format(node._id))
+        logger.info(f'Casting Registration {node._id} to a Node')
         node._is_templated_clone = True
         node.recast('osf.node')
         node.save()
     date_modified_field.auto_now = True
-    logger.info('Migrated {} nodes'.format(nodes.count()))
+    logger.info(f'Migrated {nodes.count()} nodes')
 
 
 def main(dry=True):

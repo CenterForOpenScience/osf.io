@@ -14,20 +14,21 @@ from django.shortcuts import reverse
 @pytest.mark.django_db
 class TestInstitutionUsersList:
     """
-        'name',
-        '_id',
-        'email',
-        'department',
-        'number_of_public_projects',
-        'number_of_private_projects',
-        'number_of_public_registrations',
-        'number_of_private_registrations',
-        'number_of_preprints',
-        'number_of_files',
-        'last_login',
-        'last_log',
-        'account_created_date',
-        'has_orcid',
+        These are attrturbutes the users must be sortable for on the institutional dashboard:
+            'name',
+            '_id',
+            'email',
+            'department',
+            'number_of_public_projects',
+            'number_of_private_projects',
+            'number_of_public_registrations',
+            'number_of_private_registrations',
+            'number_of_preprints',
+            'number_of_files',
+            'last_login',
+            'last_log',
+            'account_created_date',
+            'has_orcid'
     """
 
     @pytest.fixture()
@@ -36,7 +37,6 @@ class TestInstitutionUsersList:
 
     @pytest.fixture()
     def users(self, institution):
-        # Create users with varied attributes
         user_one = AuthUserFactory(
             fullname='Alice Example',
             username='alice@example.com'
@@ -145,7 +145,6 @@ class TestInstitutionUsersList:
 
 @pytest.mark.django_db
 class TestInstitutionUsersListCSVRenderer:
-    # Existing setup and tests...
 
     def test_csv_output(self, app, institution, users):
         """

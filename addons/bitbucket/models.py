@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
-
 import markupsafe
 
 from django.db import models
 
 from addons.base import exceptions
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
-
+from addons.base.models import (
+    BaseOAuthNodeSettings,
+    BaseOAuthUserSettings,
+    BaseStorageAddon,)
 from addons.bitbucket.api import BitbucketClient
 from addons.bitbucket.serializer import BitbucketSerializer
 from addons.bitbucket import settings as bitbucket_settings
@@ -34,7 +33,7 @@ class BitbucketFile(BitbucketFileNode, File):
 
     def touch(self, auth_header, revision=None, commitSha=None, branch=None, **kwargs):
         revision = revision or commitSha or branch
-        return super(BitbucketFile, self).touch(auth_header, revision=revision, **kwargs)
+        return super().touch(auth_header, revision=revision, **kwargs)
 
     @property
     def _hashes(self):
@@ -133,7 +132,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def folder_name(self):
         if self.complete:
-            return '{}/{}'.format(self.user, self.repo)
+            return f'{self.user}/{self.repo}'
         return None
 
     @property
@@ -178,7 +177,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.clear_auth()
 
     def delete(self, save=False):
-        super(NodeSettings, self).delete(save=False)
+        super().delete(save=False)
         self.deauthorize(log=False)
         if save:
             self.save()
@@ -186,9 +185,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def repo_url(self):
         if self.user and self.repo:
-            return 'https://bitbucket.org/{0}/{1}/'.format(
-                self.user, self.repo
-            )
+            return f'https://bitbucket.org/{self.user}/{self.repo}/'
 
     @property
     def short_url(self):
@@ -211,7 +208,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
-        ret = super(NodeSettings, self).to_json(user)
+        ret = super().to_json(user)
         user_settings = user.get_addon('bitbucket')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
@@ -238,7 +235,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'node_has_auth': True,
                 'bitbucket_user': self.user or '',
                 'bitbucket_repo': self.repo or '',
-                'bitbucket_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
+                'bitbucket_repo_full_name': f'{self.user} / {self.repo}' if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
@@ -274,14 +271,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         try:
             sha = metadata['extra']['commitSha']
             urls = {
-                'view': '{0}?commitSha={1}'.format(url, sha),
-                'download': '{0}?action=download&commitSha={1}'.format(url, sha)
+                'view': f'{url}?commitSha={sha}',
+                'download': f'{url}?action=download&commitSha={sha}'
             }
         except KeyError:
             pass
 
         self.owner.add_log(
-            'bitbucket_{0}'.format(action),
+            f'bitbucket_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,
@@ -371,7 +368,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         """
         try:
-            message = (super(NodeSettings, self).before_remove_contributor_message(node, removed) +
+            message = (super().before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
                 url=node.api_url + 'bitbucket/tarball/'
@@ -397,8 +394,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.user_settings = None
             self.save()
             message = (
-                u'Because the Bitbucket add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
+                'Because the Bitbucket add-on for {category} "{title}" was authenticated '
+                'by {user}, authentication information has been deleted.'
             ).format(
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
@@ -408,7 +405,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    ' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -424,7 +421,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
         """
-        clone = super(NodeSettings, self).after_fork(
+        clone = super().after_fork(
             node, fork, user, save=False
         )
 

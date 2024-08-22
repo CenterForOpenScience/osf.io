@@ -121,6 +121,7 @@ class TestPreprintShare:
         with expect_preprint_ingest_request(mock_share_responses, preprint):
             preprint.remove_contributor(contributor=user2, auth=auth)
 
+    @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_failure(self, mock_share_responses, preprint, auth):
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
         mock_share_responses.replace(responses.POST, sharev2_push_url(), status=500)

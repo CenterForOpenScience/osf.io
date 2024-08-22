@@ -31,7 +31,7 @@ class TestNodeSparseFieldsList:
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/?fields[nodes]='.format(API_BASE)
+        return f'/{API_BASE}nodes/?fields[nodes]='
 
     def test_node_sparse_fields_list(
             self, app, user, deleted_project,
@@ -42,18 +42,18 @@ class TestNodeSparseFieldsList:
         node_json = res.json['data'][0]
 
         assert node_json['attributes'] == {}
-        assert set(node_json.keys()) == set(
-            ['links', 'type', 'id', 'attributes'])
+        assert set(node_json.keys()) == {
+            'links', 'type', 'id', 'attributes'}
 
     #   test_sparse_fields_includes_relationships
         res = app.get(url + 'children')
         node_json = res.json['data'][0]
 
         assert node_json['attributes'] == {}
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes', 'relationships'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes', 'relationships'}
         assert node_json['relationships']['children']['links']['related']['href'].endswith(
-            '/{}nodes/{}/children/'.format(API_BASE, public_project._id))
+            f'/{API_BASE}nodes/{public_project._id}/children/')
 
     #   test_returns_expected_nodes
         res = app.get(url + 'title')
@@ -68,8 +68,8 @@ class TestNodeSparseFieldsList:
         node_json = data[0]
         assert node_json['attributes']['title'] == public_project.title
         assert len(node_json['attributes']) == 1
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes'}
 
     #   test_filtering_by_id
         url = '/{}nodes/?filter[id]={}&fields[nodes]='.format(
@@ -80,8 +80,8 @@ class TestNodeSparseFieldsList:
             public_project._id]
 
         node_json = res.json['data'][0]
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes'}
         assert node_json['attributes'] == {}
 
     #   test_filtering_by_excluded_field
@@ -93,8 +93,8 @@ class TestNodeSparseFieldsList:
             public_project._id]
 
         node_json = res.json['data'][0]
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes'}
         assert node_json['attributes'] == {}
 
     #   test_create_with_sparse_fields
@@ -112,8 +112,8 @@ class TestNodeSparseFieldsList:
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert set(list(res.json['data'].keys())) == set(
-            ['links', 'type', 'id', 'attributes'])
+        assert set(list(res.json['data'].keys())) == {
+            'links', 'type', 'id', 'attributes'}
         assert res.json['data']['attributes'] == {}
 
 
@@ -126,7 +126,7 @@ class TestNodeSparseFieldsDetail:
 
     @pytest.fixture()
     def url(self, node):
-        return '/{}nodes/{}/'.format(API_BASE, node._id)
+        return f'/{API_BASE}nodes/{node._id}/'
 
     def test_node_sparse_fields_detail_non_mutating_tests(
             self, app, user, node, url):
@@ -136,20 +136,20 @@ class TestNodeSparseFieldsDetail:
         node_json = res.json['data']
 
         assert node_json['attributes'] == {}
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes'}
 
     #   test_embed_sparse_same_type
         child = ProjectFactory(parent=node, is_public=True, creator=user)
-        res_url = '{}?embed=children&fields[nodes]=title,children'.format(url)
+        res_url = f'{url}?embed=children&fields[nodes]=title,children'
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes', 'relationships', 'embeds'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes', 'relationships', 'embeds'}
         assert list(node_json['attributes'].keys()) == ['title']
-        assert set(list(node_json['embeds']['children']['data'][0].keys())) == set(
-            ['links', 'type', 'id', 'attributes', 'relationships'])
+        assert set(list(node_json['embeds']['children']['data'][0].keys())) == {
+            'links', 'type', 'id', 'attributes', 'relationships'}
         assert list(node_json['embeds']['children']['data'][0]['attributes'].keys()) == [
             'title']
         assert node_json['embeds']['children']['data'][0]['attributes']['title'] == child.title
@@ -160,8 +160,8 @@ class TestNodeSparseFieldsDetail:
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes', 'embeds', 'relationships'}
         assert list(node_json['attributes'].keys()) == ['title']
         assert len(list(node_json['embeds']['contributors']['data'])) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
@@ -170,12 +170,12 @@ class TestNodeSparseFieldsDetail:
                    ['data'][0]['attributes']) > 1
 
     #   test_sparse_embedded_type
-        res_url = '{}?embed=contributors&fields[contributors]='.format(url)
+        res_url = f'{url}?embed=contributors&fields[contributors]='
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes', 'embeds', 'relationships'}
         assert len(list(node_json['attributes'].keys())) > 1
         assert len(node_json['embeds']['contributors']['data']) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
@@ -189,8 +189,8 @@ class TestNodeSparseFieldsDetail:
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(list(node_json.keys())) == set(
-            ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
+        assert set(list(node_json.keys())) == {
+            'links', 'type', 'id', 'attributes', 'embeds', 'relationships'}
         assert list(node_json['attributes'].keys()) == ['title']
         assert len(node_json['embeds']['contributors']['data']) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
@@ -199,7 +199,7 @@ class TestNodeSparseFieldsDetail:
             'bibliographic']
 
     def test_update_with_sparse_fields(self, app, user, node, url):
-        res_url = '{}?fields[nodes]='.format(url)
+        res_url = f'{url}?fields[nodes]='
         old_title = node.title
         payload = {'data': {
             'id': node._id,
@@ -262,7 +262,7 @@ class TestSparseViewOnlyLinks:
 
     @pytest.fixture()
     def private_node_one_url(self, private_node_one):
-        return '/{}nodes/{}/'.format(API_BASE, private_node_one._id)
+        return f'/{API_BASE}nodes/{private_node_one._id}/'
 
     def test_sparse_fields_with_anonymous_link(
             self, app, private_node_one_url, private_node_one_anonymous_link):

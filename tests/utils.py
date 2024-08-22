@@ -1,12 +1,10 @@
 import contextlib
 import datetime
 import functools
-import mock
+from unittest import mock
 
 from django.http import HttpRequest
 from django.utils import timezone
-from nose import SkipTest
-from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
@@ -50,8 +48,8 @@ def assert_logs(log_action, node_key, index=-1):
             func(self, *args, **kwargs)
             node.reload()
             new_log = node.logs.order_by('-date')[-index - 1]
-            assert_not_equal(last_log._id, new_log._id)
-            assert_equal(new_log.action, log_action)
+            assert last_log._id != new_log._id
+            assert new_log.action == log_action
             node.save()
         return wrapper
     return outer_wrapper
@@ -77,8 +75,8 @@ def assert_preprint_logs(log_action, preprint_key, index=-1):
             func(self, *args, **kwargs)
             preprint.reload()
             new_log = preprint.logs.order_by('-created')[-index - 1]
-            assert_not_equal(last_log._id, new_log._id)
-            assert_equal(new_log.action, log_action)
+            assert last_log._id != new_log._id
+            assert new_log.action == log_action
             preprint.save()
         return wrapper
     return outer_wrapper
@@ -92,8 +90,8 @@ def assert_not_logs(log_action, node_key, index=-1):
             func(self, *args, **kwargs)
             node.reload()
             new_log = node.logs.order_by('-date')[-index - 1]
-            assert_not_equal(new_log.action, log_action)
-            assert_equal(last_log._id, new_log._id)
+            assert new_log.action != log_action
+            assert last_log._id == new_log._id
             node.save()
         return wrapper
     return outer_wrapper
@@ -215,7 +213,7 @@ def make_drf_request_with_version(version='2.0', *args, **kwargs):
     req.version = version
     return req
 
-class MockAuth(object):
+class MockAuth:
 
     def __init__(self, user):
         self.user = user

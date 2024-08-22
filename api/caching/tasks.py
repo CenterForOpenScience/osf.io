@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from django.db import connection
 from django.db.models import Sum
 
@@ -27,7 +27,7 @@ def get_bannable_urls(instance):
     parsed_absolute_url = {}
 
     if not hasattr(instance, 'absolute_api_v2_url'):
-        logger.warning('Tried to ban {}:{} but it didn\'t have a absolute_api_v2_url method'.format(instance.__class__, instance))
+        logger.warning(f'Tried to ban {instance.__class__}:{instance} but it didn\'t have a absolute_api_v2_url method')
         return [], ''
 
     for host in get_varnish_servers():
@@ -72,6 +72,7 @@ def get_bannable_urls(instance):
     return bannable_urls, parsed_absolute_url.hostname
 
 
+# this task is not runnable with celery as instance is not json serializable
 @app.task(max_retries=5, default_retry_delay=60)
 def ban_url(instance):
     # TODO: Refactor; Pull url generation into postcommit_task handling so we only ban urls once per request
@@ -87,20 +88,26 @@ def ban_url(instance):
                     ),
                 )
             except Exception as ex:
-                logger.error('Banning {} failed: {}'.format(
-                    url_to_ban,
-                    ex.message,
-                ))
+                logger.error(
+                    'Banning {} failed: {}'.format(
+                        url_to_ban,
+                        ex.message,
+                    ),
+                )
             else:
                 if not response.ok:
-                    logger.error('Banning {} failed: {}'.format(
-                        url_to_ban,
-                        response.text,
-                    ))
+                    logger.error(
+                        'Banning {} failed: {}'.format(
+                            url_to_ban,
+                            response.text,
+                        ),
+                    )
                 else:
-                    logger.info('Banning {} succeeded'.format(
-                        url_to_ban,
-                    ))
+                    logger.info(
+                        'Banning {} succeeded'.format(
+                            url_to_ban,
+                        ),
+                    )
 
 
 @app.task(max_retries=5, default_retry_delay=10)
@@ -139,7 +146,7 @@ def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
 
     if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
-        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
+        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id), {}, celery=True)
 
 def update_storage_usage_with_size(payload):
     BaseFileNode = apps.get_model('osf.basefilenode')

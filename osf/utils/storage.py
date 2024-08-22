@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from django.db import models
 from website.util import api_v2_url
 
@@ -31,4 +29,4 @@ class BannerImageStorage(Storage):
         return name
 
     def url(self, name):
-        return api_v2_url('/banners/{}/'.format(name), base_prefix='_/')
+        return api_v2_url(f'/banners/{name}/', base_prefix='_/')

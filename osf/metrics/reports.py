@@ -1,7 +1,7 @@
 import datetime
 
 from django.dispatch import receiver
-from elasticsearch_dsl import InnerDoc
+from elasticsearch6_dsl import InnerDoc
 from elasticsearch_metrics import metrics
 from elasticsearch_metrics.signals import pre_save as metrics_pre_save
 
@@ -202,17 +202,17 @@ class InstitutionSummaryReport(DailyReport):
 
 class InstitutionDashboardSummaryReport(DailyReport):
     """
-
-        Counts
-        Users
-        Top-level Public projects*
-        Top-level Private projects*
-        Public registrations
-        Private registrations
-        preprints
-        Files
-        Data stored (both public and private; OSF storage only)
-        Tables
+        These are the following attributes necessary for the Institutional Dashboard Summary:
+            Counts
+            Users
+            Top-level Public projects*
+            Top-level Private projects*
+            Public registrations
+            Private registrations
+            preprints
+            Files
+            Data stored (both public and private; OSF storage only)
+            Tables
     """
 
     DAILY_UNIQUE_FIELD = 'institution_id'

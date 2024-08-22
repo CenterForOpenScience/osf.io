@@ -203,6 +203,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         'share_publish_type',
         'reviews_workflow',
         'permissions',
+        'advertise_on_discover_page',
     ])
     available_metrics = frozenset([
         'downloads',
@@ -212,6 +213,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
     assertions_enabled = ser.BooleanField()
+    advertise_on_discover_page = ser.BooleanField(read_only=True)
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
@@ -354,7 +356,7 @@ class ModeratorSerializer(JSONAPISerializer):
         perm_group = validated_data.pop('permission_group', '')
         if perm_group not in REVIEW_GROUPS:
             raise ValidationError('Unrecognized permission_group')
-        context['notification_settings_url'] = '{}reviews/preprints/{}/notifications'.format(DOMAIN, provider._id)
+        context['notification_settings_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/notifications'
         context['provider_name'] = provider.name
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
@@ -364,7 +366,7 @@ class ModeratorSerializer(JSONAPISerializer):
         mails.send_mail(
             user.username,
             template,
-            **context
+            **context,
         )
         return user
 

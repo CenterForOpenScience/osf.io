@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
 """
@@ -102,7 +101,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
         cmd += ' --noreload'
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
-        cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
+        cmd += f' --certificate {settings.OSF_SERVER_CERT} --key {settings.OSF_SERVER_KEY}'
 
     if wait:
         return ctx.run(cmd, echo=True, pty=pty)
@@ -115,10 +114,10 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python3 manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    cmd = f'{env} python3 manage.py runserver {host}:{port} --nothreading'
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
-        cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
+        cmd += f' --certificate {settings.OSF_SERVER_CERT} --key {settings.OSF_SERVER_KEY}'
     ctx.run(cmd, echo=True, pty=pty)
 
 @task
@@ -147,25 +146,25 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
         os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
 
     share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
-    ctx.run('node {0}'.format(share_server))
+    ctx.run(f'node {share_server}')
 
 
 @task(aliases=['celery'])
 def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, concurrency=None, max_tasks_per_child=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    cmd = 'celery worker -A framework.celery_tasks -Ofair -l {0}'.format(level)
+    cmd = f'celery -A framework.celery_tasks worker -Ofair -l {level}'
     if hostname:
-        cmd = cmd + ' --hostname={}'.format(hostname)
+        cmd += f' --hostname={hostname}'
     # beat sets up a cron like scheduler, refer to website/settings
     if beat:
-        cmd = cmd + ' --beat'
+        cmd += ' --beat'
     if queues:
-        cmd = cmd + ' --queues={}'.format(queues)
+        cmd += f' --queues={queues}'
     if concurrency:
-        cmd = cmd + ' --concurrency={}'.format(concurrency)
+        cmd += f' --concurrency={concurrency}'
     if max_tasks_per_child:
-        cmd = cmd + ' --maxtasksperchild={}'.format(max_tasks_per_child)
+        cmd += f' --max-tasks-per-child={max_tasks_per_child}'
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -174,9 +173,9 @@ def celery_beat(ctx, level='debug', schedule=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     # beat sets up a cron like scheduler, refer to website/settings
-    cmd = 'celery beat -A framework.celery_tasks -l {0} --pidfile='.format(level)
+    cmd = f'celery -A framework.celery_tasks beat -l {level} --pidfile='
     if schedule:
-        cmd = cmd + ' --schedule={}'.format(schedule)
+        cmd += f' --schedule={schedule}'
     ctx.run(bin_prefix(cmd), pty=True)
 
 @task
@@ -211,11 +210,11 @@ def rebuild_search(ctx):
         uri=settings.ELASTIC_URI.rstrip('/'),
         index=settings.ELASTIC_INDEX,
     )
-    print('Deleting index {}'.format(settings.ELASTIC_INDEX))
-    print('----- DELETE {}*'.format(url))
+    print(f'Deleting index {settings.ELASTIC_INDEX}')
+    print(f'----- DELETE {url}*')
     requests.delete(url + '*')
-    print('Creating index {}'.format(settings.ELASTIC_INDEX))
-    print('----- PUT {}'.format(url))
+    print(f'Creating index {settings.ELASTIC_INDEX}')
+    print(f'----- PUT {url}')
     requests.put(url)
     migrate_search(ctx, delete=False)
 
@@ -223,7 +222,7 @@ def rebuild_search(ctx):
 @task
 def mailserver(ctx, port=1025):
     """Run a SMTP test server."""
-    cmd = 'python3 -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
+    cmd = f'python3 -m smtpd -n -c DebuggingServer localhost:{port}'
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -284,10 +283,9 @@ def requirements(ctx, base=False, addons=False, release=False, dev=True, all=Tru
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False, junit=False):
     """Helper for running tests.
     """
-    from past.builtins import basestring
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
     if not numprocesses:
@@ -297,6 +295,8 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = []
+    if junit:
+        args.extend(['--junit-xml', 'report.xml'])
     if coverage:
         args.extend([
             '--cov-report', 'term-missing',
@@ -310,14 +310,14 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if not nocapture:
         args += ['-s']
     if numprocesses > 1:
-        args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
-    modules = [module] if isinstance(module, basestring) else module
+        args += [f'-n {numprocesses}', '--max-worker-restart=0']
+    modules = [module] if isinstance(module, str) else module
     args.extend(modules)
     if testmon:
         args.extend(['--testmon'])
 
     if params:
-        params = [params] if isinstance(params, basestring) else params
+        params = [params] if isinstance(params, str) else params
         args.extend(params)
 
     retcode = pytest.main(args)
@@ -399,52 +399,52 @@ ADMIN_TESTS = [
 
 
 @task
-def test_osf(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the OSF test suite."""
-    print('Testing modules "{}"'.format(OSF_TESTS))
-    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    print(f'Testing modules "{OSF_TESTS}"')
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
-def test_website(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the old test suite."""
-    print('Testing modules "{}"'.format(WEBSITE_TESTS))
-    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    print(f'Testing modules "{WEBSITE_TESTS}"')
+    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
-def test_api1(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_api1(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
-
-
-@task
-def test_api2(ctx, numprocesses=None, coverage=False, testmon=False):
-    """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS2))
-    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    print(f'Testing modules "{API_TESTS1 + ADMIN_TESTS}"')
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_api3(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
+    print(f'Testing modules "{API_TESTS2}"')
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+
+
+@task
+def test_api3(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    """Run the API test suite."""
+    print(f'Testing modules "{API_TESTS3 + OSF_TESTS}"')
     # NOTE: There may be some concurrency issues with ES
-    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_admin(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_admin(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
-    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_addons(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run all the tests in the addons directory.
     """
-    print('Testing modules "{}"'.format(ADDON_TESTS))
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    print(f'Testing modules "{ADDON_TESTS}"')
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
@@ -470,48 +470,48 @@ def remove_failures_from_testmon(ctx, db_path=None):
 
     conn = sqlite3.connect(db_path)
     tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
-    ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
+    ctx.run(f'echo {tests_decached} failures purged from travis cache')
 
 @task
 def travis_setup(ctx):
-    with open('package.json', 'r') as fobj:
+    with open('package.json') as fobj:
         package_json = json.load(fobj)
         ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
 
 @task
-def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """
     Run half of the tests to help travis go faster.
     """
     #travis_setup(ctx)
     syntax(ctx)
-    test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
-def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """
     Run other half of the tests to help travis go faster.
     """
     #travis_setup(ctx)
-    test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #travis_setup(ctx)
-    test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #travis_setup(ctx)
-    test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #travis_setup(ctx)
-    test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
+    test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
 def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
@@ -537,7 +537,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} '.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    cmd = f'pip3 wheel --find-links={WHEELHOUSE_PATH} -r {req_file} --wheel-dir={WHEELHOUSE_PATH} '
     ctx.run(cmd, pty=pty)
 
 
@@ -549,7 +549,7 @@ def addon_requirements(ctx):
 
         requirements_file = os.path.join(path, 'requirements.txt')
         if os.path.isdir(path) and os.path.isfile(requirements_file):
-            print('Installing requirements for {0}'.format(directory))
+            print(f'Installing requirements for {directory}')
             ctx.run(
                 pip_install(requirements_file),
                 echo=True
@@ -566,7 +566,7 @@ def travis_addon_settings(ctx):
             try:
                 open(os.path.join(path, 'local-travis.py'))
                 ctx.run('cp {path}/local-travis.py {path}/local.py'.format(path=path))
-            except IOError:
+            except OSError:
                 pass
 
 
@@ -578,7 +578,7 @@ def copy_addon_settings(ctx):
             try:
                 open(os.path.join(path, 'local-dist.py'))
                 ctx.run('cp {path}/local-dist.py {path}/local.py'.format(path=path))
-            except IOError:
+            except OSError:
                 pass
 
 
@@ -598,8 +598,8 @@ def copy_settings(ctx, addons=False):
 def bower_install(ctx):
     print('Installing bower-managed packages')
     bower_bin = os.path.join(HERE, 'node_modules', '.bin', 'bower')
-    ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
-    ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
+    ctx.run(f'{bower_bin} prune --allow-root', echo=True)
+    ctx.run(f'{bower_bin} install --allow-root', echo=True)
 
 
 @task
@@ -646,17 +646,17 @@ def hotfix(ctx, name, finish=False, push=False):
     print('Checking out master to calculate curent version')
     ctx.run('git checkout master')
     latest_version = latest_tag_info()['current_version']
-    print('Current version is: {}'.format(latest_version))
+    print(f'Current version is: {latest_version}')
     major, minor, patch = latest_version.split('.')
     next_patch_version = '.'.join([major, minor, str(int(patch) + 1)])
-    print('Bumping to next patch version: {}'.format(next_patch_version))
+    print(f'Bumping to next patch version: {next_patch_version}')
     print('Renaming branch...')
 
-    new_branch_name = 'hotfix/{}'.format(next_patch_version)
-    ctx.run('git checkout {}'.format(name), echo=True)
-    ctx.run('git branch -m {}'.format(new_branch_name), echo=True)
+    new_branch_name = f'hotfix/{next_patch_version}'
+    ctx.run(f'git checkout {name}', echo=True)
+    ctx.run(f'git branch -m {new_branch_name}', echo=True)
     if finish:
-        ctx.run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
+        ctx.run(f'git flow hotfix finish {next_patch_version}', echo=True, pty=True)
     if push:
         ctx.run('git push --follow-tags origin master', echo=True)
         ctx.run('git push origin develop', echo=True)
@@ -666,9 +666,9 @@ def hotfix(ctx, name, finish=False, push=False):
 def feature(ctx, name, finish=False, push=False):
     """Rename the current branch to a feature branch and optionally finish it."""
     print('Renaming branch...')
-    ctx.run('git branch -m feature/{}'.format(name), echo=True)
+    ctx.run(f'git branch -m feature/{name}', echo=True)
     if finish:
-        ctx.run('git flow feature finish {}'.format(name), echo=True)
+        ctx.run(f'git flow feature finish {name}', echo=True)
     if push:
         ctx.run('git push origin develop', echo=True)
 
@@ -691,7 +691,7 @@ def latest_tag_info():
         ).decode().split('-')
     except subprocess.CalledProcessError as err:
         raise err
-        # logger.warn("Error when running git describe")
+        # logger.warning("Error when running git describe")
         return {}
 
     info = {}
@@ -715,7 +715,7 @@ def latest_tag_info():
 
 @task
 def generate_key(ctx, domain, bits=2048):
-    cmd = 'openssl genrsa -des3 -out {0}.key {1}'.format(domain, bits)
+    cmd = f'openssl genrsa -des3 -out {domain}.key {bits}'
     ctx.run(cmd)
 
 
@@ -754,7 +754,7 @@ def bundle_certs(ctx, domain, cert_path):
     files must be in the same directory.
     """
     cert_files = [
-        '{0}.crt'.format(domain),
+        f'{domain}.crt',
         'COMODORSADomainValidationSecureServerCA.crt',
         'COMODORSAAddTrustCA.crt',
         'AddTrustExternalCARoot.crt',
@@ -775,7 +775,7 @@ def clean_assets(ctx):
     """Remove built JS files."""
     public_path = os.path.join(HERE, 'website', 'static', 'public')
     js_path = os.path.join(public_path, 'js')
-    ctx.run('rm -rf {0}'.format(js_path), echo=True)
+    ctx.run(f'rm -rf {js_path}', echo=True)
 
 
 @task(aliases=['pack'])
@@ -831,7 +831,7 @@ def generate_self_signed(ctx, domain):
 def update_citation_styles(ctx):
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
-    print('Parsed {} styles'.format(total))
+    print(f'Parsed {total} styles')
 
 
 @task

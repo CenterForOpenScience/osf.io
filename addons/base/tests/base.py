@@ -4,7 +4,7 @@ from framework.auth import Auth
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
-class AddonTestCase(object):
+class AddonTestCase:
     """General Addon TestCase that automatically sets up a user and node with
     an addon.
 
@@ -31,7 +31,7 @@ class AddonTestCase(object):
     NODE_USER_FIELD = 'user_settings'
 
     def __init__(self, *args, **kwargs):
-        super(AddonTestCase,self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.node_settings = None
         self.project = None
         self.user = None
@@ -57,7 +57,7 @@ class AddonTestCase(object):
         if 'user' not in self.OWNERS:
             return
         self.user.add_addon(self.ADDON_SHORT_NAME)
-        assert self.user.has_addon(self.ADDON_SHORT_NAME), '{0} is not enabled'.format(self.ADDON_SHORT_NAME)
+        assert self.user.has_addon(self.ADDON_SHORT_NAME), f'{self.ADDON_SHORT_NAME} is not enabled'
         self.user_settings = self.user.get_addon(self.ADDON_SHORT_NAME)
         self.set_user_settings(self.user_settings)
         self.user_settings.save()
@@ -78,7 +78,7 @@ class AddonTestCase(object):
 
     def setUp(self):
 
-        super(AddonTestCase, self).setUp()
+        super().setUp()
 
         self.user = self.create_user()
         if not self.ADDON_SHORT_NAME:
@@ -90,14 +90,14 @@ class AddonTestCase(object):
         self.create_node_settings()
 
 
-class OAuthAddonTestCaseMixin(object):
+class OAuthAddonTestCaseMixin:
 
     @property
     def ExternalAccountFactory(self):
         raise NotImplementedError()
 
     def __init__(self, *args, **kwargs):
-        super(OAuthAddonTestCaseMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.auth = None
         self.external_account = None
         self.project = None

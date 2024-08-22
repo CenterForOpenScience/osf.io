@@ -1,7 +1,7 @@
 import contextlib
 import datetime as dt
 import functools
-import mock
+from unittest import mock
 
 from framework.auth import Auth
 from django.utils import timezone
@@ -30,7 +30,7 @@ from .factories import (
 )
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
-class CaptureSignals(object):
+class CaptureSignals:
     """Testing utility for capturing blinker signals.
 
     Context manager which mocks out selected signals and registers which
@@ -56,7 +56,7 @@ class CaptureSignals(object):
         if isinstance(signal, blinker.base.NamedSignal):
             return self._records[signal]
         else:
-            super(CaptureSignals, self).__setitem__(signal)
+            super().__setitem__(signal)
 
     def _record(self, signal, *args, **kwargs):
         self._records[signal].append((args, kwargs))
@@ -75,7 +75,7 @@ class CaptureSignals(object):
         :rtype: list of blinker `NamedSignals`.
 
         """
-        return set([signal for signal, _ in self._records.items() if self._records[signal]])
+        return {signal for signal, _ in self._records.items() if self._records[signal]}
 
 
 def capture_signals():
@@ -250,5 +250,5 @@ def assert_notification_correctness(send_mail_mock, expected_template, expected_
     try:
         assert templates == {expected_template}
     except AssertionError:  # the non-static subject attributes mean we need a different comparison
-        assert set([template.tpl_prefix for template in list(templates)]) == {expected_template.tpl_prefix}
-        assert set([template._subject for template in list(templates)]) == {expected_template._subject}
+        assert {template.tpl_prefix for template in list(templates)} == {expected_template.tpl_prefix}
+        assert {template._subject for template in list(templates)} == {expected_template._subject}

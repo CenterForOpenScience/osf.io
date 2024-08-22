@@ -5,7 +5,7 @@ from website import settings
 from osf.external.oopspam.exceptions import OOPSpamClientError
 
 
-class OOPSpamClient(object):
+class OOPSpamClient:
 
     def __init__(self, apikey=None, website=None):
         self.apikey = apikey or settings.OOPSPAM_APIKEY

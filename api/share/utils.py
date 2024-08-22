@@ -82,17 +82,17 @@ def task__update_share(self, guid: str, is_backfill=False):
         resp.raise_for_status()
     except Exception as e:
         if self.request.retries == self.max_retries:
-            log_exception()
+            log_exception(e)
         elif resp.status_code >= 500:
             try:
                 self.retry(
                     exc=e,
                     countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
                 )
-            except Retry:  # Retry is only raise after > 5 retries
-                log_exception()
+            except Retry as e:  # Retry is only raise after > 5 retries
+                log_exception(e)
         else:
-            log_exception()
+            log_exception(e)
 
     return resp
 
@@ -241,7 +241,7 @@ the preprint, person, and identifier, plus another node representing the
 """
 
 
-class GraphNode(object):
+class GraphNode:
     """Utility class for building a JSON-LD graph suitable for pushing to SHARE
 
     WARNING: In this context, "graph node" does NOT have anything to do with
@@ -275,7 +275,7 @@ class GraphNode(object):
         return {'@id': self.id, '@type': self.type}
 
     def __init__(self, type_, **attrs):
-        self.id = '_:{}'.format(uuid.uuid4())
+        self.id = f'_:{uuid.uuid4()}'
         self.type = type_.lower()
         self.attrs = attrs
 
@@ -284,8 +284,7 @@ class GraphNode(object):
             if isinstance(value, GraphNode):
                 yield value
             elif isinstance(value, list):
-                for val in value:
-                    yield val
+                yield from value
 
     def serialize(self):
         ser = {}
@@ -308,7 +307,7 @@ def format_user(user):
             'given_name': user.given_name,
             'family_name': user.family_name,
             'additional_name': user.middle_names,
-        }
+        },
     )
 
     person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri=user.absolute_url)]
@@ -423,7 +422,7 @@ def serialize_preprint(preprint, old_subjects=None):
             ),
             'date_updated': preprint.modified.isoformat(),
             'date_published': preprint.date_published.isoformat() if preprint.date_published else None,
-        }
+        },
     )
     to_visit = [
         preprint_graph,
@@ -512,7 +511,7 @@ def serialize_osf_node(osf_node, additional_attrs=None):
                 or is_qa_resource(osf_node)
             ),
             **(additional_attrs or {}),
-        }
+        },
     )
 
     to_visit = [
@@ -562,16 +561,16 @@ def async_update_resource_share(self, guid, old_subjects=None):
         resp.raise_for_status()
     except Exception as e:
         if self.request.retries == self.max_retries:
-            log_exception()
+            log_exception(e)
         elif resp.status_code >= 500:
             try:
                 self.retry(
                     exc=e,
                     countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
                 )
-            except Retry:  # Retry is only raise after > 5 retries
-                log_exception()
+            except Retry as e:  # Retry is only raise after > 5 retries
+                log_exception(e)
         else:
-            log_exception()
+            log_exception(e)
 
     return resp

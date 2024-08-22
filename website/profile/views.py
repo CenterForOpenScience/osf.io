@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 from rest_framework import status as http_status
 
@@ -16,7 +15,11 @@ from framework.auth.decorators import must_be_logged_in
 from framework.auth.decorators import must_be_confirmed
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
-from framework.auth.signals import user_merged
+from framework.auth.signals import (
+    user_account_merged,
+    user_account_deactivated,
+    user_account_reactivated,
+)
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -36,6 +39,11 @@ from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
+from osf.external.messages.celery_publishers import (
+    publish_reactivate_user,
+    publish_deactivated_user,
+    publish_merged_user
+)
 
 from api.waffle.utils import storage_i18n_flag_active
 
@@ -165,14 +173,11 @@ def update_user(auth):
         ############
 
         # get the first email that is set to primary and has an address
-        primary_email = next(
-            (
-                each for each in data['emails']
+        primary_email = next(each for each in data['emails']
                 # email is primary
                 if each.get('primary') and each.get('confirmed')
                 # an address is specified (can't trust those sneaky users!)
                 and each.get('address')
-            )
         )
 
         if primary_email:
@@ -333,7 +338,7 @@ def user_account_password(auth, **kwargs):
 
 
 @must_be_logged_in
-@ember_flag_is_active(features.EMBER_USER_SETTINGS_ADDONS)
+@ember_flag_is_active(features.ENABLE_GV)
 def user_addons(auth, **kwargs):
 
     user = auth.user
@@ -393,7 +398,7 @@ def oauth_application_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http_status.HTTP_410_GONE)
 
-    app_detail_url = api_v2_url('applications/{}/'.format(client_id))  # Send request to this URL
+    app_detail_url = api_v2_url(f'applications/{client_id}/')  # Send request to this URL
     return {'app_list_url': '',
             'app_detail_url': app_detail_url}
 
@@ -431,7 +436,7 @@ def personal_access_token_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http_status.HTTP_410_GONE)
 
-    token_detail_url = api_v2_url('tokens/{}/'.format(_id))  # Send request to this URL
+    token_detail_url = api_v2_url(f'tokens/{_id}/')  # Send request to this URL
     return {'token_list_url': '',
             'token_detail_url': token_detail_url,
             'scope_options': get_available_scopes()}
@@ -506,8 +511,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': all_mailing_lists}, 200
 
 
-@user_merged.connect
-def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
+def update_mailchimp_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -521,10 +525,38 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
             pass
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
+            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
         except (MailChimpError, OSFError):
             # User has already unsubscribed, so nothing to do
             pass
+
+
+@user_account_merged.connect
+def send_account_merged_message(user):
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been merged."""
+    publish_merged_user(user)
+
+
+@user_account_merged.connect
+def unsubscribe_old_merged_account_from_mailchimp(user):
+    """ This is a merged account (an old account that was merged into an active one) so it needs to be unsubscribed
+    from mailchimp."""
+    for key, value in user.mailchimp_mailing_lists.items():
+        subscription = value or user.merged_by.mailchimp_mailing_lists.get(key)
+        update_mailchimp_subscription(user.merged_by, list_name=key, subscription=subscription)
+        update_mailchimp_subscription(user, list_name=key, subscription=False)
+
+
+@user_account_deactivated.connect
+def send_account_deactivation_message(user):
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been deactivated."""
+    publish_deactivated_user(user)
+
+
+@user_account_reactivated.connect
+def send_account_reactivation_message(user):
+    """ Sends a message using Celery messaging to alert other services that an osf.io user has been reactivated."""
+    publish_reactivate_user(user)
 
 
 def mailchimp_get_endpoint(**kwargs):
@@ -544,8 +576,8 @@ def sync_data_from_mailchimp(**kwargs):
 
         try:
             user = OSFUser.objects.get(username=username)
-        except OSFUser.DoesNotExist:
-            sentry.log_exception()
+        except OSFUser.DoesNotExist as e:
+            sentry.log_exception(e)
             sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))

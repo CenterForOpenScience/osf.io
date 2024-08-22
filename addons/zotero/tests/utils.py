@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.base.tests.utils import MockFolder
 from addons.zotero.tests.factories import ZoteroAccountFactory
@@ -12,7 +11,7 @@ class ZoteroTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     Provider = Zotero
 
     def set_node_settings(self, settings):
-        super(ZoteroTestCase, self).set_node_settings(settings)
+        super().set_node_settings(settings)
         settings.list_id = MockFolder().json['id']
         settings.external_account = self.external_account
         settings.save()

@@ -2,14 +2,15 @@ import gc
 from io import StringIO
 import cProfile
 import pstats
-import threading
 from importlib import import_module
 
 from django.conf import settings
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils.deprecation import MiddlewareMixin
-from raven.contrib.django.raven_compat.models import sentry_exception_handler
-import corsheaders.middleware
+from sentry_sdk import init
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from framework.postcommit_tasks.handlers import (
     postcommit_after_request,
@@ -26,6 +27,14 @@ from api.base.authentication.drf import drf_get_session_from_cookie
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
+
+enabled = (not settings.DEV_MODE) and settings.SENTRY_DSN
+if enabled:
+    init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[CeleryIntegration(), DjangoIntegration(), FlaskIntegration()],
+    )
+
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
 
@@ -34,7 +43,6 @@ class CeleryTaskMiddleware(MiddlewareMixin):
 
     def process_exception(self, request, exception):
         """If an exception occurs, clear the celery task queue so process_response has nothing."""
-        sentry_exception_handler(request=request)
         celery_teardown_request(error=True)
         return None
 
@@ -49,11 +57,11 @@ class DjangoGlobalMiddleware(MiddlewareMixin):
     """
     Store request object on a thread-local variable for use in database caching mechanism.
     """
+
     def process_request(self, request):
         api_globals.request = request
 
     def process_exception(self, request, exception):
-        sentry_exception_handler(request=request)
         api_globals.request = None
         return None
 
@@ -64,46 +72,11 @@ class DjangoGlobalMiddleware(MiddlewareMixin):
         return response
 
 
-class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
-    """
-    Augment CORS origin white list with the Institution model's domains.
-    """
-
-    _context = threading.local()
-
-    def origin_found_in_white_lists(self, origin, url):
-        settings.CORS_ORIGIN_WHITELIST = list(set(settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
-        # Check if origin is in the dynamic custom domain whitelist
-        found = super().origin_found_in_white_lists(origin, url)
-        # Check if a cross-origin request using the Authorization header
-        if not found:
-            if not self._context.request.COOKIES:
-                if self._context.request.META.get('HTTP_AUTHORIZATION'):
-                    return True
-                elif (
-                    self._context.request.method == 'OPTIONS' and
-                    'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in self._context.request.META and
-                    'authorization' in list(map(
-                        lambda h: h.strip(),
-                        self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(','),
-                    ))
-                ):
-                    return True
-
-        return found
-
-    def process_response(self, request, response):
-        self._context.request = request
-        try:
-            return super(CorsMiddleware, self).process_response(request, response)
-        finally:
-            self._context.request = None
-
-
 class PostcommitTaskMiddleware(MiddlewareMixin):
     """
     Handle postcommit tasks for django.
     """
+
     def process_request(self, request):
         postcommit_before_request()
 
@@ -125,6 +98,7 @@ class ProfileMiddleware(MiddlewareMixin):
     It's set up to only be available in django's debug mode, is available for superuser otherwise,
     but you really shouldn't add this middleware to any production configuration.
     """
+
     def process_request(self, request):
         if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
             self.prof = cProfile.Profile()
@@ -151,6 +125,7 @@ class UnsignCookieSessionMiddleware(SessionMiddleware):
     to retrieve the session key for finding the correct session
     by unsigning the cookie value using server secret
     """
+
     def process_request(self, request):
         cookie = request.COOKIES.get(settings.SESSION_COOKIE_NAME)
         if cookie:
