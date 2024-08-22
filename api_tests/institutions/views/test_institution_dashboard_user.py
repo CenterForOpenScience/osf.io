@@ -1,3 +1,4 @@
+import csv
 import pytest
 
 from osf_tests.factories import (
@@ -163,3 +164,37 @@ class TestInstitutionUsersList:
         # Extracting sorted attribute values from response
         sorted_values = [user['attributes'][attribute] for user in res.json['data']]
         assert sorted_values == sorted(sorted_values), 'Values are not sorted correctly'
+
+
+@pytest.mark.django_db
+class TestInstitutionUsersListCSVRenderer:
+    # Existing setup and tests...
+
+    def test_csv_output(self, app, institution, users):
+        """
+        Test to ensure the CSV renderer returns data in the expected CSV format with correct headers.
+        """
+        url = reverse(
+            'institutions:institution-users-list-dashboard',
+            kwargs={
+                'version': 'v2',
+                'institution_id': institution._id
+            }
+        ) + '?format=csv'
+        response = app.get(url)
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'text/csv'
+
+        # Read the content of the response as CSV
+        content = response.content.decode('utf-8')
+        csv_reader = csv.reader(io.StringIO(content))
+        headers = next(csv_reader)  # First line contains headers
+
+        # Define expected headers based on the serializer used
+        expected_headers = ['ID', 'Email', 'Department', 'Public Projects', 'Private Projects', 'Public Registrations',
+                            'Private Registrations', 'Preprints']
+        assert headers == expected_headers, "CSV headers do not match expected headers"
+
+        # Optionally, check a few lines of actual data if necessary
+        for row in csv_reader:
+            assert len(row) == len(expected_headers), "Number of data fields in CSV does not match headers"
