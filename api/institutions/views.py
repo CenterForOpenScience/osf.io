@@ -1,4 +1,5 @@
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, V
+from django.db.models.functions import Coalesce
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
@@ -556,7 +557,16 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
             # Assuming there's a File model related to users for counting files
 
             # count the files on nodes where users have WRITE perms
-            # number_of_files=Count('files', distinct=True)
+            number_of_node_files=Count('nodes__files', distinct=True),
+            # Count files associated with registrations
+            number_of_registration_files=Count('registrations__files', distinct=True),
+            # Count files associated with preprints
+            number_of_preprint_files=Count('preprints__files', distinct=True),
+            number_of_files=Coalesce(
+                F('number_of_node_files') +
+                F('number_of_registration_files') +
+                F('number_of_preprint_files'), V(0)
+            )
         )
 
     # overrides RetrieveAPIView
@@ -571,6 +581,9 @@ class InstitutionDashboardUserList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     def create_csv_response(self):
         queryset = self.get_default_queryset()
+        import csv
+        from django.http import JsonResponse, HttpResponse, Http404
+
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="institution_users.csv"'
 
