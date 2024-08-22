@@ -103,16 +103,6 @@ class FileRunningTotals(InnerDoc):
     public_daily = metrics.Integer()
     private_daily = metrics.Integer()
 
-
-class DataRunningTotals(InnerDoc):
-    total = metrics.Integer()
-    public = metrics.Integer()
-    private = metrics.Integer()
-    total_daily = metrics.Integer()
-    public_daily = metrics.Integer()
-    private_daily = metrics.Integer()
-
-
 class NodeRunningTotals(InnerDoc):
     total = metrics.Integer()
     total_excluding_spam = metrics.Integer()
@@ -124,15 +114,6 @@ class NodeRunningTotals(InnerDoc):
     private_daily = metrics.Integer()
 
 
-class ProjectRootRunningTotals(InnerDoc):
-    total = metrics.Integer()
-    total_excluding_spam = metrics.Integer()
-    public = metrics.Integer()
-    private = metrics.Integer()
-    total_daily = metrics.Integer()
-    total_daily_excluding_spam = metrics.Integer()
-    public_daily = metrics.Integer()
-    private_daily = metrics.Integer()
 
 
 class RegistrationRunningTotals(InnerDoc):
@@ -145,15 +126,6 @@ class RegistrationRunningTotals(InnerDoc):
     public_daily = metrics.Integer()
     embargoed_daily = metrics.Integer()
     embargoed_v2_daily = metrics.Integer()
-    withdrawn_daily = metrics.Integer()
-
-
-class PreprintRunningTotals(InnerDoc):
-    total = metrics.Integer()
-    public = metrics.Integer()
-    withdrawn = metrics.Integer()
-    total_daily = metrics.Integer()
-    public_daily = metrics.Integer()
     withdrawn_daily = metrics.Integer()
 
 ##### END reusable inner objects #####
@@ -198,61 +170,6 @@ class InstitutionSummaryReport(DailyReport):
     projects = metrics.Object(NodeRunningTotals)
     registered_nodes = metrics.Object(RegistrationRunningTotals)
     registered_projects = metrics.Object(RegistrationRunningTotals)
-
-
-class InstitutionDashboardSummaryReport(DailyReport):
-    """
-        These are the following attributes necessary for the Institutional Dashboard Summary:
-            Counts
-            Users
-            Top-level Public projects*
-            Top-level Private projects*
-            Public registrations
-            Private registrations
-            preprints
-            Files
-            Data stored (both public and private; OSF storage only)
-            Tables
-    """
-
-    DAILY_UNIQUE_FIELD = 'institution_id'
-
-    institution_id = metrics.Keyword()
-    institution_name = metrics.Keyword()
-    users = metrics.Object(RunningTotal)
-    projects = metrics.Object(NodeRunningTotals)
-    registrations = metrics.Object(RegistrationRunningTotals)
-    preprint = metrics.Object(PreprintRunningTotals)
-    files = metrics.Object(FileRunningTotals)
-    data = metrics.Object(DataRunningTotals)
-
-    # Visualizations
-    ## Users by department pie chart
-    users_by_departments = metrics.Object()
-
-    ## Line graph of recent user activity [Wip]
-
-    ## Stacked bar chart showing types of OSF objects
-    types_of_resource = metrics.Object()
-
-    ## simple bar chart showing public vs. private data
-    private_data = metrics.Integer()
-    public_data = metrics.Integer()
-
-    ## Pie chart showing addons used
-    types_of_addons = metrics.Object(StorageAddonUsage)
-
-    ## Pie chart of storage regions
-    storage_regions = metrics.Object()
-
-    ## Pie chart of licenses
-    types_of_licenses = metrics.Object()
-
-    ## FAIR assessment star plot (a star plot with each arm being the presence of a metadata element or identifier) or
-    # other FAIR metric? [WIP]
-
-    ## Something to represent the size of projects … like a scatter plot? Each dot is a project and one axis is size of
-    # data, but not sure what the other axis would be
 
 
 class NewUserDomainReport(DailyReport):
