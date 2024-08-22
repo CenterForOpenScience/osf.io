@@ -63,6 +63,9 @@ class UserSerializer(JSONAPISerializer):
         'number_of_private_registrations',  # For Institutional Dashboard only
         'number_of_preprints',  # For Institutional Dashboard only
         'number_of_files',  # For Institutional Dashboard only
+        'has_orcid',  # For Institutional Dashboard only
+        'account_created_date',  # For Institutional Dashboard only
+        'last_log',  # For Institutional Dashboard only
         'full_name',
         'given_name',
         'middle_names',
@@ -102,7 +105,13 @@ class UserSerializer(JSONAPISerializer):
     number_of_public_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
     number_of_private_registrations = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
     number_of_preprints = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_node_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_registration_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    number_of_preprint_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
     number_of_files = ser.IntegerField(required=False, help_text='For Institutional Dashboard only')
+    has_orcid = ser.BooleanField(required=False, help_text='For Institutional Dashboard only')
+    account_created_date = VersionedDateTimeField(required=False, help_text='For Institutional Dashboard only')
+    last_log = VersionedDateTimeField(required=False, help_text='For Institutional Dashboard only')
 
     links = HideIfDisabled(
         LinksField(
