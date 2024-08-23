@@ -28,12 +28,3 @@ class NewUserDomainReporter(DailyReporter):
             )
             for domain_name, count in domain_names.items()
         ]
-
-    def keen_events_from_report(self, report):
-        events = [
-            {'domain': report.domain_name, 'date': str(report.report_date)}
-            for _ in range(report.new_user_count)
-        ]
-        return {
-            'user_domain_events': events,
-        }
