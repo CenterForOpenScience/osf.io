@@ -1,3 +1,4 @@
+from collections import abc
 import datetime
 
 from django.dispatch import receiver
@@ -20,9 +21,13 @@ class DailyReport(metrics.Metric):
     There's something we'd like to know about every so often,
     so let's regularly run a report and stash the results here.
     """
-    DAILY_UNIQUE_FIELD = None  # set in subclasses that expect multiple reports per day
+    UNIQUE_TOGETHER_FIELDS = ('report_date',)  # override in subclasses for multiple reports per day
 
     report_date = metrics.Date(format='strict_date', required=True)
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        assert 'report_date' in cls.UNIQUE_TOGETHER_FIELDS, f'DailyReport subclasses must have "report_date" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
 
     class Meta:
         abstract = True
@@ -58,6 +63,7 @@ class YearmonthField(metrics.Date):
 class MonthlyReport(metrics.Metric):
     """MonthlyReport (abstract base for report-based metrics that run monthly)
     """
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth',)  # override in subclasses for multiple reports per month
 
     report_yearmonth = YearmonthField()
 
@@ -66,26 +72,31 @@ class MonthlyReport(metrics.Metric):
         dynamic = metrics.MetaField('strict')
         source = metrics.MetaField(enabled=True)
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        assert 'report_yearmonth' in cls.UNIQUE_TOGETHER_FIELDS, f'MonthlyReport subclasses must have "report_yearmonth" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
+
 
 @receiver(metrics_pre_save)
 def set_report_id(sender, instance, **kwargs):
-    # Set the document id to a hash of "unique together"
-    # values (just `report_date` by default) to get
-    # "ON CONFLICT UPDATE" behavior -- if the document
-    # already exists, it will be updated rather than duplicated.
-    # Cannot detect/avoid conflicts this way, but that's ok.
-
-    if issubclass(sender, DailyReport):
-        duf_name = instance.DAILY_UNIQUE_FIELD
-        if duf_name is None:
-            instance.meta.id = stable_key(instance.report_date)
-        else:
-            duf_value = getattr(instance, duf_name)
-            if not duf_value or not isinstance(duf_value, str):
-                raise ReportInvalid(f'{sender.__name__}.{duf_name} MUST have a non-empty string value (got {duf_value})')
-            instance.meta.id = stable_key(instance.report_date, duf_value)
-    elif issubclass(sender, MonthlyReport):
-        instance.meta.id = stable_key(instance.report_yearmonth)
+    try:
+        _unique_together_fields = instance.UNIQUE_TOGETHER_FIELDS
+    except AttributeError:
+        pass
+    else:
+        # Set the document id to a hash of "unique together" fields
+        # for "ON CONFLICT UPDATE" behavior -- if the document
+        # already exists, it will be updated rather than duplicated.
+        # Cannot detect/avoid conflicts this way, but that's ok.
+        _key_values = []
+        for _field_name in _unique_together_fields:
+            _field_value = getattr(instance, _field_name)
+            if not _field_value or (
+                isinstance(_field_value, abc.Iterable) and not isinstance(_field_value, str)
+            ):
+                raise ReportInvalid(f'because "{_field_name}" is in {sender.__name__}.UNIQUE_TOGETHER_FIELDS, {sender.__name__}.{_field_name} MUST have a non-empty scalar value (got {_field_value} of type {type(_field_value)})')
+            _key_values.append(_field_value)
+        instance.meta.id = stable_key(*_key_values)
 
 
 #### BEGIN reusable inner objects #####
@@ -157,7 +168,7 @@ class DownloadCountReport(DailyReport):
 
 
 class InstitutionSummaryReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'institution_id'
+    UNIQUE_TOGETHER_FIELDS = ('report_date', 'institution_id',)
 
     institution_id = metrics.Keyword()
     institution_name = metrics.Keyword()
@@ -169,7 +180,7 @@ class InstitutionSummaryReport(DailyReport):
 
 
 class NewUserDomainReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'domain_name'
+    UNIQUE_TOGETHER_FIELDS = ('report_date', 'domain_name',)
 
     domain_name = metrics.Keyword()
     new_user_count = metrics.Integer()
@@ -187,7 +198,7 @@ class OsfstorageFileCountReport(DailyReport):
 
 
 class PreprintSummaryReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'provider_key'
+    UNIQUE_TOGETHER_FIELDS = ('report_date', 'provider_key',)
 
     provider_key = metrics.Keyword()
     preprint_count = metrics.Integer()
