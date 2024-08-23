@@ -18,16 +18,3 @@ class UserCountReporter(DailyReporter):
         )
 
         return [report]
-
-    def keen_events_from_report(self, report):
-        event = {
-            'status': {
-                'active': report.active,
-                'deactivated': report.deactivated,
-                'merged': report.merged,
-                'new_users_daily': report.new_users_daily,
-                'new_users_with_institution_daily': report.new_users_with_institution_daily,
-                'unconfirmed': report.unconfirmed,
-            }
-        }
-        return {'user_summary': [event]}

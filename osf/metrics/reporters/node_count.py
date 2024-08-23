@@ -90,12 +90,3 @@ class NodeCountReporter(DailyReporter):
         )
 
         return [report]
-
-    def keen_events_from_report(self, report):
-        event = {
-            'nodes': report.nodes.to_dict(),
-            'projects': report.projects.to_dict(),
-            'registered_nodes': report.registered_nodes.to_dict(),
-            'registered_projects': report.registered_projects.to_dict(),
-        }
-        return {'node_summary': [event]}
