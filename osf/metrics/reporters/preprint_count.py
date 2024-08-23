@@ -58,12 +58,3 @@ class PreprintCountReporter(DailyReporter):
             logger.info('{} Preprints counted for the provider {}'.format(resp['hits']['total'], preprint_provider.name))
 
         return reports
-
-    def keen_events_from_report(self, report):
-        event = {
-            'provider': {
-                'name': report.provider_key,
-                'total': report.preprint_count,
-            },
-        }
-        return {'preprint_summary': [event]}

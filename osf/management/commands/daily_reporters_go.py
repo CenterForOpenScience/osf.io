@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='management.commands.daily_reporters_go')
-def daily_reporters_go(also_send_to_keen=False, report_date=None, reporter_filter=None):
+def daily_reporters_go(report_date=None, reporter_filter=None, **kwargs):
     init_app()  # OSF-specific setup
 
     if report_date is None:  # default to yesterday
@@ -45,12 +45,6 @@ def daily_reporter_go(task, reporter_key: str, report_date: str):
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
-            '--keen',
-            type=bool,
-            default=False,
-            help='also send reports to keen',
-        )
-        parser.add_argument(
             '--date',
             type=datetime.date.fromisoformat,
             help='run for a specific date (default: yesterday)',
@@ -63,7 +57,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         errors = daily_reporters_go(
             report_date=options.get('date'),
-            also_send_to_keen=options['keen'],
             reporter_filter=options.get('filter'),
         )
         for error_key, error_val in errors.items():
