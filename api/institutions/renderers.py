@@ -6,12 +6,14 @@ class MetricsCSVRenderer(CSVRenderer):
     CSVRenderer with updated render method to export `data` dictionary of API Response to CSV
     """
 
-    def render(self, data, media_type=None, renderer_context={}, writer_opts=None):
+    def render(self, data, media_type=None, renderer_context=None, writer_opts=None):
         """
         Overwrites CSVRenderer.render() to create a CSV with the data dictionary
         instead of the entire API response. This is necessary for results to be
         separated into different rows.
         """
+        if not renderer_context:
+            renderer_context = {}
         data = data.get('data')
         return super().render(data, media_type=media_type, renderer_context=renderer_context, writer_opts=writer_opts)
 

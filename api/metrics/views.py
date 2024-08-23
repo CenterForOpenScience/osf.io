@@ -266,6 +266,7 @@ class RegistriesModerationMetricsView(GenericAPIView):
 VIEWABLE_REPORTS = {
     'download_count': reports.DownloadCountReport,
     'institution_summary': reports.InstitutionSummaryReport,
+    'institution_dashboard_summary': reports.InstitutionDashboardSummaryReport,
     'node_summary': reports.NodeSummaryReport,
     'osfstorage_file_count': reports.OsfstorageFileCountReport,
     'preprint_summary': reports.PreprintSummaryReport,
