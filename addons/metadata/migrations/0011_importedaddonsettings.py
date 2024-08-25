@@ -11,7 +11,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('addons_metadata', '0008_add_metadata_asset_pool'),
+        ('addons_metadata', '0010_add_unique_file_metadata'),
     ]
 
     operations = [
