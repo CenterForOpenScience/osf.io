@@ -31,7 +31,7 @@ from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
-from api.preprints.serializers import PreprintSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintDraftSerializer
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.resources import annotations as resource_annotations
@@ -408,6 +408,35 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         # Permissions on the list objects are handled by the query
         default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id).exclude(machine_state='initial')
         return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/).
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    ordering = ('-created')
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
+
+    serializer_class = PreprintDraftSerializer
+    view_category = 'users'
+    view_name = 'user-draft-preprints'
+
+    def get_default_queryset(self):
+        user = self.get_user()
+        return user.preprints.filter(
+            machine_state='initial',
+        )
 
     def get_queryset(self):
         return self.get_queryset_from_request()

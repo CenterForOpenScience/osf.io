@@ -447,6 +447,21 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             raise exceptions.ValidationError(detail=str(e))
 
 
+class PreprintDraftSerializer(PreprintSerializer):
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user-draft-preprints',
+            kwargs={
+                'preprint_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    class Meta:
+        type_ = 'draft-preprints'
+
+
 class PreprintCreateSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make id nullable, adds `create`
     id = IDField(source='_id', required=False, allow_null=True)
