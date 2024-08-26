@@ -97,7 +97,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             if not isinstance(view, ListModelMixin):
                 try:
-                    _cache_key = (v.cls, view.get_serializer_class(),view_kwargs_tuple)
+                    _cache_key = (v.cls, view.get_serializer_class(), view_kwargs_tuple)
                     if _cache_key in cache:
                         # We already have the result for this embed, return it
                         item = cache[_cache_key]
