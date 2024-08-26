@@ -1,9 +1,8 @@
+import dataclasses
 import re
 import datetime
-import typing
 from hashlib import sha256
-
-import pytz
+from typing import ClassVar
 
 
 def stable_key(*key_parts):
@@ -20,11 +19,12 @@ def stable_key(*key_parts):
     return sha256(bytes(plain_key, encoding='utf')).hexdigest()
 
 
-class YearMonth(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class YearMonth:
     year: int
     month: int
 
-    YEARMONTH_RE = re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
+    YEARMONTH_RE: ClassVar[re.Pattern] = re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
 
     @classmethod
     def from_date(cls, date):
@@ -46,9 +46,9 @@ class YearMonth(typing.NamedTuple):
         return f'{self.year}-{self.month:0>2}'
 
     def target_month(self):
-        return datetime.datetime(self.year, self.month, 1, tzinfo=pytz.utc)
+        return datetime.datetime(self.year, self.month, 1, tzinfo=datetime.UTC)
 
     def next_month(self):
         if self.month == 12:
-            return datetime.datetime(self.year + 1, 1, 1, tzinfo=pytz.utc)
-        return datetime.datetime(self.year, self.month + 1, 1, tzinfo=pytz.utc)
+            return datetime.datetime(self.year + 1, 1, 1, tzinfo=datetime.UTC)
+        return datetime.datetime(self.year, self.month + 1, 1, tzinfo=datetime.UTC)
