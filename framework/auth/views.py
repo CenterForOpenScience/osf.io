@@ -993,7 +993,7 @@ def resend_confirmation_post(auth):
         if user:
             if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 try:
-                    send_confirm_email_async(user, clean_email, renew=True)
+                    send_confirm_email(user, clean_email, renew=True)
                 except KeyError:
                     # already confirmed, redirect to dashboard
                     status_message = f'This email {clean_email} has already been confirmed.'
