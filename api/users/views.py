@@ -333,6 +333,9 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         return (
             self.get_queryset_from_request()
             .select_related('node_license')
+            """
+            https://github.com/RCOSDP/RDM-osf.io/pull/505
+            """
             .include('root__guids', limit_includes=10)
         )
 

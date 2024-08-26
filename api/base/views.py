@@ -79,6 +79,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             request.parents.setdefault(type(item), {})[item._id] = item
 
+            """
+            https://github.com/RCOSDP/RDM-osf.io/pull/505
+            """
             view_kwargs_tuple = tuple(value for key, value in view_kwargs.items())
 
             view_kwargs.update({
@@ -97,6 +100,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             if not isinstance(view, ListModelMixin):
                 try:
+                    """
+                    https://github.com/RCOSDP/RDM-osf.io/pull/505
+                    """
                     _cache_key = (v.cls, view.get_serializer_class(), view_kwargs_tuple)
                     if _cache_key in cache:
                         # We already have the result for this embed, return it

@@ -17,6 +17,9 @@ from api.base.utils import absolute_reverse
 from osf.models import AbstractNode, Comment, Preprint, Guid, DraftRegistration
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
+"""
+https://github.com/RCOSDP/RDM-osf.io/pull/505
+"""
 class OptimaizedPagination(pagination.PageNumberPagination):
     """
     A pagination class that optimizes for the number of queries.
@@ -39,7 +42,7 @@ class OptimaizedPagination(pagination.PageNumberPagination):
             self.page = paginator.page(page_number)
         except InvalidPage as exc:
             msg = self.invalid_page_message.format(
-                page_number=page_number, message=six.text_type(exc)
+                page_number=page_number, message=six.text_type(exc),
             )
             raise NotFound(msg)
 
