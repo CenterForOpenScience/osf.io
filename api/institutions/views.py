@@ -499,8 +499,8 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     serializer_class = InstitutionUserMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionUserMetricsCSVRenderer,)
 
-    ordering_fields = ('user_name', 'department')
-    ordering = ('user_name',)
+    ordering_fields = ('department', 'has_orcid')
+    ordering = ('department',)
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
