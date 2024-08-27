@@ -60,6 +60,7 @@ def postcommit_after_request(response, base_status_error_code=500):
                 for task in postcommit_celery_queue().values():
                     logger.warning(f'Executing task {task}')
                     task()
+                    task()
 
     except AttributeError as ex:
         logger.error(f'Post commit task queue not initialized: {ex}')
@@ -116,7 +117,7 @@ def run_postcommit(once_per_request=True, celery=False):
     """
     def wrapper(func):
         # if we're local dev or running unit tests, run without queueing
-        if settings.warning_MODE:
+        if settings.DEBUG_MODE:
             return func
 
         @functools.wraps(func)
