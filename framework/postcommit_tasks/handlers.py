@@ -59,23 +59,39 @@ def postcommit_after_request(response, base_status_error_code=500):
             else:
                 for task in postcommit_celery_queue().values():
                     logger.warning(f'Executing task {task}')
+                    task()
 
     except AttributeError as ex:
         logger.error(f'Post commit task queue not initialized: {ex}')
     except Exception as ex:
-        logger.error(f'Exception during postcommit processing: {ex}')
+        logger.error(f"Exception during postcommit processing: {ex}")
     return response
 
+def get_task_from_postcommit_queue(name, predicate, celery=True):
+    queue = postcommit_celery_queue() if celery else postcommit_queue()
+    matches = [task for key, task in queue.items() if task.type.name == name and predicate(task)]
+    if len(matches) == 1:
+        return matches[0]
+    elif len(matches) > 1:
+        raise ValueError()
+    return False
+
 def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=True):
+    """
+    Any task queued with this function where celery=True will be run asynchronously.
+    """
     if has_app_context() and current_app.config.get('TESTING', False):
+        # For testing purposes only: run fn directly
         fn(*args, **kwargs)
     else:
+        # make a hash of the pertinent data
         raw = [fn.__name__, fn.__module__, args, kwargs]
         m = hashlib.md5()
         m.update('-'.join([x.__repr__() for x in raw]).encode())
         key = m.hexdigest()
 
         if not once_per_request:
+            # we want to run it once for every occurrence, add a random string
             key = f'{key}:{binascii.hexlify(os.urandom(8))}'
 
         if celery and isinstance(fn, PromiseProxy):
@@ -91,8 +107,16 @@ handlers = {
 }
 
 def run_postcommit(once_per_request=True, celery=False):
+    """
+    Delays function execution until after the request's transaction has been committed.
+    If you set the celery kwarg to True args and kwargs must be JSON serializable
+    Tasks will only be run if the response's status code is < 500.
+    Any task queued with this function where celery=True will be run asynchronously.
+    :return:
+    """
     def wrapper(func):
-        if settings.DEBUG_MODE:
+        # if we're local dev or running unit tests, run without queueing
+        if settings.warning_MODE:
             return func
 
         @functools.wraps(func)
