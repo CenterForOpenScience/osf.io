@@ -646,7 +646,6 @@ class CeleryConfig:
             'daily_reporters_go': {
                 'task': 'management.commands.daily_reporters_go',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
-                'kwargs': {'also_send_to_keen': True},
             },
             'monthly_reporters_go': {
                 'task': 'management.commands.monthly_reporters_go',
