@@ -10,6 +10,7 @@ from .osfstorage_file_count import OsfstorageFileCountReporter
 from .preprint_count import PreprintCountReporter
 from .user_count import UserCountReporter
 from .spam_count import SpamCountReporter
+from .institutional_users import InstitutionalUsersReporter
 
 
 class AllDailyReporters(enum.Enum):
@@ -26,3 +27,4 @@ class AllDailyReporters(enum.Enum):
 
 class AllMonthlyReporters(enum.Enum):
     SPAM_COUNT = SpamCountReporter
+    INSTITUTION_USERS = InstitutionalUsersReporter
