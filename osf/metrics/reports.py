@@ -225,3 +225,22 @@ class SpamSummaryReport(MonthlyReport):
     preprint_flagged = metrics.Integer()
     user_marked_as_spam = metrics.Integer()
     user_marked_as_ham = metrics.Integer()
+
+
+class InstitutionalUserReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'institution_id', 'user_id',)
+    institution_id = metrics.Keyword()
+    # user info:
+    user_id = metrics.Keyword()
+    department_name = metrics.Keyword()
+    month_last_login = YearmonthField()
+    account_creation_date = YearmonthField()
+    orcid_id = metrics.Keyword()
+    # counts:
+    public_project_count = metrics.Integer()
+    private_project_count = metrics.Integer()
+    public_registration_count = metrics.Integer()
+    embargoed_registration_count = metrics.Integer()
+    published_preprint_count = metrics.Integer()
+    public_file_count = metrics.Integer()
+    storage_byte_count = metrics.Integer()
