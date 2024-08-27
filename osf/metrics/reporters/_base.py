@@ -1,5 +1,7 @@
+from collections import abc
 import logging
 
+from osf.metrics.reports import MonthlyReport
 from osf.metrics.utils import YearMonth
 
 
@@ -7,12 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 class MonthlyReporter:
-    def report(self, report_yearmonth: YearMonth):
+    def report(
+        self,
+        report_yearmonth: YearMonth,
+    ) -> abc.Iterable[MonthlyReport] | abc.Iterator[MonthlyReport]:
         """build a report for the given month
         """
         raise NotImplementedError(f'{self.__name__} must implement `report`')
 
-    def run_and_record_for_month(self, report_yearmonth: YearMonth):
+    def run_and_record_for_month(self, report_yearmonth: YearMonth) -> None:
         reports = self.report(report_yearmonth)
         for report in reports:
             assert report.report_yearmonth == str(report_yearmonth)

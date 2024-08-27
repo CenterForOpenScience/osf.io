@@ -4,6 +4,7 @@ import enum
 from .storage_addon_usage import StorageAddonUsageReporter
 from .download_count import DownloadCountReporter
 from .institution_summary import InstitutionSummaryReporter
+from .institutional_users import InstitutionalUsersReporter
 from .new_user_domain import NewUserDomainReporter
 from .node_count import NodeCountReporter
 from .osfstorage_file_count import OsfstorageFileCountReporter
@@ -26,3 +27,4 @@ class AllDailyReporters(enum.Enum):
 
 class AllMonthlyReporters(enum.Enum):
     SPAM_COUNT = SpamCountReporter
+    INSTITUTIONAL_USERS = InstitutionalUsersReporter
