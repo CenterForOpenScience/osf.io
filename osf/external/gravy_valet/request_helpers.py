@@ -139,6 +139,26 @@ def get_gv_result(
     return JSONAPIResultEntry(data, included_entities_lookup)
 
 
+def get_gv_result_json(
+        endpoint_url: str,
+        requesting_user,
+        requested_resource=None,
+        request_method='GET',
+        params: dict = None,
+):
+    '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
+    response_json = _make_gv_request(
+        endpoint_url=endpoint_url,
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        request_method=request_method,
+        params=params,
+    ).json()
+    if not response_json['data']:
+        return dict()
+    return response_json['data']
+
+
 def iterate_gv_results(
     endpoint_url: str,
     requesting_user,
