@@ -48,7 +48,7 @@
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
-                            % if addons[addon]['has_page']:
+                            % if addons[addon].get('has_page', False):
                                 <li>
                                     <a href="${node['url']}${addons[addon]['short_name']}" class="subnav-header">
 

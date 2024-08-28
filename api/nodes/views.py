@@ -1551,8 +1551,8 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
             self.get_provider_item(addon, node=node)
             for addon
             in node.get_addons()
-            if addon.config.has_hgrid_files
-            and addon.configured
+
+            if getattr(addon.config, "has_hgrid_files", True) and addon.configured
         ]
 
 
