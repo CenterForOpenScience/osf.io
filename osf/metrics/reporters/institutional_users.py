@@ -1,8 +1,7 @@
-import datetime
 from django.contrib.contenttypes.models import ContentType
 
 from osf import models as osfdb
-from osf.metrics.reports import InstitutionalUsersReport
+from osf.metrics.reports import InstitutionalUserReport
 from osf.metrics.utils import YearMonth
 from website import settings as website_settings
 from api.caching.utils import storage_usage_cache
@@ -11,7 +10,7 @@ from api.caching.settings import STORAGE_USAGE_KEY
 from ._base import MonthlyReporter
 
 
-class InstitutionalUsersReporter(MonthlyReporter):
+class InstitutionalUserReporter(MonthlyReporter):
     def report(self, yearmonth: YearMonth):
         before_datetime = yearmonth.next_month()
         institutions = osfdb.Institution.objects.all()
@@ -24,7 +23,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
 
     def generate_report(self, institution, user, yearmonth, before_datetime):
         affiliation = user.get_institution_affiliation(institution._id)
-        report = InstitutionalUsersReport(
+        report = InstitutionalUserReport(
             report_yearmonth=yearmonth,
             institution_id=institution._id,
             user_id=user._id,
