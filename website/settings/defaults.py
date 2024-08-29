@@ -105,6 +105,7 @@ ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
+ELASTIC6_URI = os.environ.get('ELASTIC6_URI', '127.0.0.1:9201')
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 ELASTIC_KWARGS = {
