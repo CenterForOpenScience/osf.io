@@ -125,6 +125,8 @@ def _test_speedups_disable(request, settings, _test_speedups):
 @pytest.fixture(scope='session')
 def setup_connections():
     connections.create_connection(hosts=['http://localhost:9201'])
+    connections.create_connection(hosts=['http://127.0.0.1:9201'])
+    connections.create_connection(hosts=['http://192.168.168.167:9201'])
 
 
 @pytest.fixture(scope='function')
