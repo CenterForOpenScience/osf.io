@@ -63,9 +63,8 @@ def postcommit_after_request(response, base_status_error_code=500):
                     task()
 
     except AttributeError as ex:
-        logger.error(f'Post commit task queue not initialized: {ex}')
-    except Exception as ex:
-        logger.error(f"Exception during postcommit processing: {ex}")
+        if not settings.DEBUG_MODE:
+            logger.error(f'Post commit task queue not initialized: {ex}')
     return response
 
 def get_task_from_postcommit_queue(name, predicate, celery=True):
