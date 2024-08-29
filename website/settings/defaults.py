@@ -114,6 +114,7 @@ ELASTIC_KWARGS = {
     # 'client_cert': None,
     # 'client_key': None
 }
+ELASTIC6_URI = os.environ.get('ELASTIC6_URI', '127.0.0.1:9201')
 
 # Sessions
 COOKIE_NAME = 'osf'
