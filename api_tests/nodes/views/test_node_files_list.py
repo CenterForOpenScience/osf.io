@@ -4,6 +4,7 @@ import json
 from furl import furl
 import responses
 from django.utils import timezone
+from waffle.testutils import override_flag
 
 from framework.auth.core import Auth
 
@@ -13,6 +14,7 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api.base.utils import waterbutler_api_url_for
 from api_tests import utils as api_utils
+from osf.models import Node
 from tests.base import ApiTestCase
 from osf.models.files import FileVersionUserMetadata
 from osf_tests.factories import (
@@ -24,6 +26,8 @@ from osf_tests.factories import (
 from osf.utils.permissions import READ
 from dateutil.parser import parse as parse_date
 from website import settings
+from osf.features import ENABLE_GV
+from website.settings import GRAVYVALET_URL
 
 
 def prepare_mock_wb_response(
@@ -434,6 +438,276 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert res.status_code == 200
         assert 'relationships' in res.json['data'][0]
+
+class TestGVNodeFileList(ApiTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flag_override = override_flag(ENABLE_GV, True)
+        self.flag_override.__enter__()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.private_url = f"/{API_BASE}nodes/{self.project._id}/files/"
+        self.resource_reference_id = '2fe95af1-e06e-4f5a-9fef-6fe85a88f62a'
+        self.configured_storage_addon_id = 'self.configured_storage_addon_id'
+
+        self.user_two = AuthUserFactory()
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_url = f"/{API_BASE}nodes/{self.public_project._id}/files/"
+
+    def resource_reference(self, project: Node):
+        return {
+            'data': [
+                {
+                    'type': 'resource-references',
+                    'id': self.resource_reference_id,
+                    'attributes': {
+                        'resource_uri': f"http://localhost:5000/{project._id}"
+                    },
+                    'relationships': {
+                        'configured_storage_addons': {
+                            'links': {
+                                'related': f"http://192.168.168.167:8004/v1/resource-references/{self.resource_reference_id}/configured_storage_addons"
+                            }
+                        }
+                    },
+                    'links': {
+                        'self': f"http://192.168.168.167:8004/v1/resource-references/{self.resource_reference_id}"
+                    },
+                }
+            ]
+        }
+
+    def configured_storage_addons(self):
+        return {
+            'data': [
+                {
+                    'type': 'configured-storage-addons',
+                    'id': '{self.configured_storage_addon_id}',
+                    'attributes': {
+                        'display_name': '67',
+                        'root_folder': '',
+                        'connected_capabilities': ['UPDATE', 'ACCESS'],
+                        'connected_operation_names': [
+                            'get_item_info',
+                            'list_child_items',
+                            'list_root_items',
+                        ],
+                    },
+                    'relationships': {
+                        'base_account': {
+                            'links': {
+                                'related': f"http://192.168.168.167:8004/v1/configured-storage-addons/{self.configured_storage_addon_id}/base_account"
+                            },
+                            'data': {
+                                'type': 'authorized-storage-accounts',
+                                'id': '7ecfb0c5-e6c6-43b0-97e9-4e5234593d63',
+                            },
+                        },
+                        'authorized_resource': {
+                            'links': {
+                                'related': f"http://192.168.168.167:8004/v1/configured-storage-addons/{self.configured_storage_addon_id}/authorized_resource"
+                            },
+                            'data': {
+                                'type': 'resource-references',
+                                'id': '2fe95af1-e06e-4f5a-9fef-6fe85a88f62a',
+                            },
+                        },
+                        'connected_operations': {
+                            'links': {
+                                'related': f"http://192.168.168.167:8004/v1/configured-storage-addons/{self.configured_storage_addon_id}/connected_operations"
+                            }
+                        },
+                    },
+                    'links': {
+                        'self': f"http://192.168.168.167:8004/v1/configured-storage-addons/{self.configured_storage_addon_id}"
+                    },
+                }
+            ],
+            'included': [
+                {
+                    'type': 'authorized-storage-accounts',
+                    'id': '7ecfb0c5-e6c6-43b0-97e9-4e5234593d63',
+                    'attributes': {
+                        'display_name': '677',
+                        'api_base_url': 'https://api.box.com/2.0/',
+                        'auth_url': None,
+                        'authorized_capabilities': ['UPDATE', 'ACCESS'],
+                        'authorized_operation_names': [
+                            'get_item_info',
+                            'list_child_items',
+                            'list_root_items',
+                        ],
+                        'default_root_folder': '',
+                        'credentials_available': True,
+                    },
+                    'relationships': {
+                        'account_owner': {
+                            'links': {
+                                'related': 'http://192.168.168.167:8004/v1/authorized-storage-accounts/7ecfb0c5-e6c6-43b0-97e9-4e5234593d63/account_owner'
+                            },
+                            'data': {
+                                'type': 'user-references',
+                                'id': 'e1727f7a-b663-41c5-af72-7942d2954b38',
+                            },
+                        },
+                        'authorized_operations': {
+                            'links': {
+                                'related': 'http://192.168.168.167:8004/v1/authorized-storage-accounts/7ecfb0c5-e6c6-43b0-97e9-4e5234593d63/authorized_operations'
+                            }
+                        },
+                        'configured_storage_addons': {
+                            'links': {
+                                'related': 'http://192.168.168.167:8004/v1/authorized-storage-accounts/7ecfb0c5-e6c6-43b0-97e9-4e5234593d63/configured_storage_addons'
+                            }
+                        },
+                        'external_storage_service': {
+                            'links': {
+                                'related': 'http://192.168.168.167:8004/v1/authorized-storage-accounts/7ecfb0c5-e6c6-43b0-97e9-4e5234593d63/external_storage_service'
+                            },
+                            'data': {
+                                'type': 'external-storage-services',
+                                'id': '4f741727-84ef-4aaa-a5d8-210eb204f3cf',
+                            },
+                        },
+                    },
+                    'links': {
+                        'self': 'http://192.168.168.167:8004/v1/authorized-storage-accounts/7ecfb0c5-e6c6-43b0-97e9-4e5234593d63'
+                    },
+                },
+                {
+                    'type': 'external-storage-services',
+                    'id': '4f741727-84ef-4aaa-a5d8-210eb204f3cf',
+                    'attributes': {
+                        'auth_uri': 'https://www.box.com/api/oauth2/authorize',
+                        'credentials_format': 'OAUTH2',
+                        'max_concurrent_downloads': 10,
+                        'max_upload_mb': 10,
+                        'display_name': 'BOX',
+                        'wb_key': 'box',
+                        'configurable_api_root': False,
+                    },
+                    'relationships': {
+                        'addon_imp': {
+                            'links': {
+                                'related': 'http://192.168.168.167:8004/v1/external-storage-services/4f741727-84ef-4aaa-a5d8-210eb204f3cf/addon_imp'
+                            },
+                            'data': {'type': 'addon-imps', 'id': 'Qk9YX0RPVF9DT00='},
+                        }
+                    },
+                    'links': {
+                        'self': 'http://192.168.168.167:8004/v1/external-storage-services/4f741727-84ef-4aaa-a5d8-210eb204f3cf'
+                    },
+                },
+            ],
+        }
+
+    def add_responses(self, project: Node):
+        responses.add(
+            responses.Response(
+                method='GET',
+                url=f"{GRAVYVALET_URL}/v1/resource-references",
+                json=self.resource_reference(project),
+                headers={'content-type': 'application/vnd.api+json'},
+            ),
+        )
+        responses.add(
+            responses.Response(
+                method='GET',
+                url=f"{GRAVYVALET_URL}/v1/resource-references/{self.resource_reference_id}/configured_storage_addons",
+                json=self.configured_storage_addons(),
+                headers={'content-type': 'application/vnd.api+json'},
+            ),
+        )
+
+    def add_empty_responses(self, ):
+        responses.add(
+            responses.Response(
+                method='GET',
+                url=f"{GRAVYVALET_URL}/v1/resource-references",
+                json={'data': []},
+                headers={'content-type': 'application/vnd.api+json'},
+            ),
+        )
+        responses.add(
+            responses.Response(
+                method='GET',
+                url=f"{GRAVYVALET_URL}/v1/resource-references/{self.resource_reference_id}/configured_storage_addons",
+                json={'data': []},
+                headers={'content-type': 'application/vnd.api+json'},
+            ),
+        )
+
+    def tearDown(self):
+        super().tearDown()
+        self.flag_override.__exit__(None, None, None)
+
+    @responses.activate
+    def test_returns_public_files_logged_out_no_gv_response(self):
+        self.add_responses(self.public_project)
+        res = self.app.get(self.public_url, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+        assert res.json['data'][1]['attributes']['provider'] == 'box'
+        assert res.content_type == 'application/vnd.api+json'
+
+    @responses.activate
+    def test_returns_public_files_logged_in_no_gv_response(self):
+        self.add_empty_responses()
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+
+    @responses.activate
+    def test_returns_public_files_logged_in_with_gv_response(self):
+        self.add_responses(self.public_project)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 2, 'invalid addon count'
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+        assert res.json['data'][1]['attributes']['provider'] == 'box', 'addon returned from gv is not of expected provider'
+
+    @responses.activate
+    def test_returns_storage_addons_link(self):
+        self.add_responses(self.project)
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert 'storage_addons' in res.json['data'][1]['links']
+
+    @responses.activate
+    def test_returns_private_files_logged_out(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+    @responses.activate
+    def test_returns_private_files_logged_in_contributor(self):
+        self.add_responses(self.project)
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 2
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+        assert res.json['data'][1]['attributes']['provider'] == 'box'
+
+    @responses.activate
+    def test_returns_private_files_logged_in_non_contributor(self):
+        res = self.app.get(
+            self.private_url, auth=self.user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
+    @responses.activate
+    def test_returns_private_files_logged_in_osf_group_member(self):
+        self.add_responses(self.project)
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        self.project.add_osf_group(group, READ)
+        res = self.app.get(self.private_url, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 200
 
 
 class TestNodeFilesListFiltering(ApiTestCase):
