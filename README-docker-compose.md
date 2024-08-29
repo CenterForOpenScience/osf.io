@@ -129,10 +129,6 @@
       git checkout <master|develop|etc>
       docker buildx build --platform linux/arm64 -t osf:<branch>-arm64 .
       ```
-      - In `docker-compose.override.yml`, replace any `quay.io/centerforopenscience/osf:develop-arm64` with the locally-tagged image above:
-      ```yml
-      image: osf:<branch>-arm64
-      ```
 
 ## Application Runtime
 
