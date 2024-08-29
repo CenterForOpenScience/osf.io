@@ -386,13 +386,13 @@ class CountedAuthUsageView(JSONAPIBaseView):
     serializer_class = CountedAuthUsageSerializer
 
     def post(self, request, *args, **kwargs):
-        # serializer = self.serializer_class(data=request.data)
-        # serializer.is_valid(raise_exception=True)
-        # session_id, user_is_authenticated = self._get_session_id(
-        #     request,
-        #     client_session_id=serializer.validated_data.get('client_session_id'),
-        # )
-        # serializer.save(session_id=session_id, user_is_authenticated=user_is_authenticated)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        session_id, user_is_authenticated = self._get_session_id(
+            request,
+            client_session_id=serializer.validated_data.get('client_session_id'),
+        )
+        serializer.save(session_id=session_id, user_is_authenticated=user_is_authenticated)
         return HttpResponse(status=201)
 
     def _get_session_id(self, request, client_session_id=None):
