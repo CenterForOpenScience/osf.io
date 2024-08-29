@@ -7,5 +7,5 @@ services:
   #######
 
   elasticsearch6:
-    image: quay.io/centerforopenscience/elasticsearch/es6-arm-6.3.1
+    image: quay.io/centerforopenscience/elasticsearch:es6-arm-6.3.1
     platform: linux/arm64
