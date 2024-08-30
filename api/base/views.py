@@ -79,11 +79,6 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             request.parents.setdefault(type(item), {})[item._id] = item
 
-            """
-            https://github.com/RCOSDP/RDM-osf.io/pull/505
-            """
-            view_kwargs_tuple = tuple(value for key, value in view_kwargs.items())
-
             view_kwargs.update({
                 'request': request,
                 'is_embedded': True,
@@ -100,23 +95,13 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             if not isinstance(view, ListModelMixin):
                 try:
-                    """
-                    https://github.com/RCOSDP/RDM-osf.io/pull/505
-                    """
-                    _cache_key = (v.cls, view.get_serializer_class(), view_kwargs_tuple)
-                    if _cache_key in cache:
-                        # We already have the result for this embed, return it
-                        item = cache[_cache_key]
-                    else:
-                        item = view.get_object()
-                        cache[_cache_key] = item
+                    item = view.get_object()
                 except Exception as e:
                     with transaction.atomic():
                         ret = view.handle_exception(e).data
                     return ret
 
-            _cache_key = (v.cls, view.get_serializer_class(), (type(item), item.id))
-
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
             if _cache_key in cache:
                 # We already have the result for this embed, return it
                 return cache[_cache_key]

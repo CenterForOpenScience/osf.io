@@ -53,7 +53,7 @@ class OptimaizedPagination(pagination.PageNumberPagination):
         self.request = request
         return self.page.object_list.iterator()
 
-class JSONAPIPagination(pagination.PageNumberPagination):
+class JSONAPIPagination(OptimaizedPagination):
     """
     Custom paginator that formats responses in a JSON-API compatible format.
 
