@@ -436,6 +436,7 @@ class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, Prepr
         user = self.get_user()
         return user.preprints.filter(
             machine_state='initial',
+            deleted__isnull=True,
         )
 
     def get_queryset(self):

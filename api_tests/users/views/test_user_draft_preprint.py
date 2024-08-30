@@ -8,7 +8,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from api.base.settings.defaults import API_BASE
-
+from django.utils import timezone
 
 @pytest.mark.django_db
 class TestPreprintDraftList:
@@ -97,6 +97,20 @@ class TestPreprintDraftList:
             machine_state='initial'
         )
 
+    @pytest.fixture()
+    def deleted_preprint(self, admin, provider, subject, public_project):
+        preprint = PreprintFactory(
+            creator=admin,
+            provider=provider,
+            project=public_project,
+            is_published=False,
+            is_public=False,
+            machine_state='initial',
+        )
+        preprint.deleted = timezone.now()
+        preprint.save()
+        return preprint
+
     def test_gets_preprint_drafts(self, app, admin, abandoned_public_preprint, abandoned_private_preprint, published_preprint):
         res = app.get(
             f'/{API_BASE}users/{admin._id}/draft_preprints/',
@@ -131,3 +145,16 @@ class TestPreprintDraftList:
             expect_errors=True
         )
         assert res.status_code == 403
+
+    def test_deleted_drafts_excluded(self, app, admin, abandoned_public_preprint, abandoned_private_preprint, published_preprint, deleted_preprint):
+        res = app.get(
+            f'/{API_BASE}users/{admin._id}/draft_preprints/',
+            auth=admin.auth
+        )
+        assert res.status_code == 200
+
+        ids = [each['id'] for each in res.json['data']]
+        assert abandoned_public_preprint._id in ids
+        assert abandoned_private_preprint._id in ids
+        assert published_preprint._id not in ids
+        assert deleted_preprint._id not in ids  # Make sure deleted preprints are not listed
