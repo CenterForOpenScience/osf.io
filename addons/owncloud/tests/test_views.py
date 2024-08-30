@@ -12,9 +12,15 @@ pytestmark = pytest.mark.django_db
 class TestAuthViews(OwnCloudBasicAuthAddonTestCase, OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
 
     def test_oauth_start(self):
+        """Not applicable for non-oauth addons"""
         pass
 
     def test_oauth_finish(self):
+        """Not applicable for non-oauth addons"""
+        pass
+
+    def test_oauth_finish_enable_gv(self):
+        """Not applicable for non-oauth addons"""
         pass
 
 
