@@ -110,7 +110,11 @@
 
   #### Special Instructions for Apple Chipset (M1, M2, etc.) and other ARM64 architecture
 
-  * _NOTE: The `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
+  * _NOTE: The default `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
+
+  - To run `elasticsearch6` on ARM64 architecture:
+
+    - Copy `docker-compose-dist-arm64.override.yml` into your `docker-compose.override.yml` file
 
   - Running containers with docker compose
 
@@ -119,20 +123,6 @@
     # SEARCH_ENGINE = 'elastic'
     SEARCH_ENGINE = None
     ```
-
-  - Building the Docker image
-
-    - If you wish to use an OSF image other than the latest `develop-arm64`:
-      - Build the image
-      ```bash
-      cd <path-to-osf.io>
-      git checkout <master|develop|etc>
-      docker buildx build --platform linux/arm64 -t osf:<branch>-arm64 .
-      ```
-      - In `docker-compose.override.yml`, replace any `quay.io/centerforopenscience/osf:develop-arm64` with the locally-tagged image above:
-      ```yml
-      image: osf:<branch>-arm64
-      ```
 
 ## Application Runtime
 
