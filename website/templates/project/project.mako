@@ -616,7 +616,7 @@
         % if addons:
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
-                % if addons[addon]['has_widget']:
+                % if addons[addon].get('has_widget'):
                     %if addon != 'wiki': ## We already show the wiki widget at the top
                         ${ render_addon_widget.render_addon_widget(addon, addons_widget_data[addon]) }
                     %endif

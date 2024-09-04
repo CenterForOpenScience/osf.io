@@ -319,7 +319,7 @@ DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
-GRAVYVALET_URL = 'https://localhost:8004'
+GRAVYVALET_URL = 'http://192.168.168.167:8004'
 
 ####################
 #   Identifiers   #

@@ -202,7 +202,7 @@ class _FakeAddon(_FakeGVEntity):
         }
 
 
-class FakeGravyValet():
+class FakeGravyValet:
 
     ROUTES = {
         r'v1/user-references(/(?P<pk>\d+)|(\?filter\[user_uri\]=(?P<user_uri>[^&]+)))': '_get_user',
@@ -249,6 +249,9 @@ class FakeGravyValet():
             self._known_users[user_uri] = user_pk
             self._known_users[user_pk] = user_uri
         return user_uri, user_pk
+
+    def configure_resource(self, resource: AbstractNode):
+        return self._get_or_create_resource_entry(resource)
 
     def _get_or_create_resource_entry(self, resource: AbstractNode):
         resource_uri = resource.get_semantic_iri()

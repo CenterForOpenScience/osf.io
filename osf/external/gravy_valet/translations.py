@@ -1,6 +1,7 @@
 import enum
 
 import dataclasses
+from dataclasses import asdict
 
 from addons.box.apps import BoxAddonAppConfig
 from . import request_helpers as gv_requests
@@ -46,6 +47,10 @@ class EphemeralAddonConfig:
     short_name: str
     full_name: str
 
+    @property
+    def has_hgrid_files(self):
+        return True
+
     @classmethod
     def from_legacy_config(cls, legacy_config):
         return cls(
@@ -54,6 +59,9 @@ class EphemeralAddonConfig:
             full_name=legacy_config.full_name,
             short_name=legacy_config.short_name,
         )
+
+    def to_json(self):
+        return asdict(self)
 
 
 @dataclasses.dataclass
@@ -83,6 +91,9 @@ class EphemeralNodeSettings:
             include_path=['base_account'],
             attribute_name='credentials_available'
         )
+
+    def before_page_load(self, *args, **kwargs):
+        pass
 
     @property
     def folder_id(self):

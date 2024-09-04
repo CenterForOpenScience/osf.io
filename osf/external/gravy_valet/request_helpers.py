@@ -105,7 +105,7 @@ def get_gv_result(
         params=params,
     ).json()
 
-    if not response_json['data']:
+    if not response_json.get('data'):
         return None
     data = response_json['data']
     if isinstance(data, list):
