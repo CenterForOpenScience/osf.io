@@ -47,6 +47,10 @@ class EphemeralAddonConfig:
     short_name: str
     full_name: str
 
+    @property
+    def has_hgrid_files(self):
+        return True
+
     @classmethod
     def from_legacy_config(cls, legacy_config):
         return cls(
