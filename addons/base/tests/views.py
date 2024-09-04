@@ -22,6 +22,14 @@ from website.settings import GRAVYVALET_URL
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
+    def setUp(self):
+
+        super().setUp()
+        if self.Provider._oauth_version == 1:
+            self.expected_oauth_callback_url_path = '/v1/oauth1/callback'
+        elif self.Provider._oauth_version == 2 :
+            self.expected_oauth_callback_url_path = '/v1/oauth2/callback'
+
     @property
     def ADDON_SHORT_NAME(self):
         raise NotImplementedError()
@@ -78,10 +86,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         gv_callback_url = mock_requests_get.call_args[0][0]
         parsed_callback_url = urlparse(gv_callback_url)
         assert parsed_callback_url.netloc == urlparse(GRAVYVALET_URL).netloc
-        if self.Provider._oauth_version == 1:
-            assert parsed_callback_url.path == '/v1/oauth1/callback'
-        elif self.Provider._oauth_version == 2:
-            assert parsed_callback_url.path == '/v1/oauth2/callback'
+        assert parsed_callback_url.path == self.expected_oauth_callback_url_path
         assert dict(parse_qsl(parsed_callback_url.query)) == query_params
 
     def test_delete_external_account(self):
