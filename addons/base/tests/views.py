@@ -1,3 +1,4 @@
+from osf.models.external import ExternalProvider
 import pytest
 from urllib.parse import urlparse, parse_qs
 from unittest import mock
@@ -21,6 +22,16 @@ from website.settings import GRAVYVALET_URL
 
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
+
+    def setUp(self):
+
+        super().setUp()
+        if issubclass(self.Provider, ExternalProvider):
+            # only setup expected_oauth_callback_url_path if the provider uses oauth
+            if self.Provider._oauth_version == 1:
+                self.expected_oauth_callback_url_path = '/v1/oauth1/callback'
+            elif self.Provider._oauth_version == 2 :
+                self.expected_oauth_callback_url_path = '/v1/oauth2/callback'
 
     @property
     def ADDON_SHORT_NAME(self):
@@ -78,7 +89,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         gv_callback_url = mock_requests_get.call_args[0][0]
         parsed_callback_url = urlparse(gv_callback_url)
         assert parsed_callback_url.netloc == urlparse(GRAVYVALET_URL).netloc
-        assert parsed_callback_url.path == '/v1/oauth/callback'
+        assert parsed_callback_url.path == self.expected_oauth_callback_url_path
         assert dict(parse_qsl(parsed_callback_url.query)) == query_params
 
     def test_delete_external_account(self):

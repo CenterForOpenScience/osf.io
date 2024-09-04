@@ -25,6 +25,10 @@ class TestAuthViews(BoaBasicAuthAddonTestCase, OAuthAddonAuthViewsTestCaseMixin,
         """Not applicable to non-oauth add-ons."""
         pass
 
+    def test_oauth_finish_enable_gv(self):
+        """Not applicable to non-oauth add-ons"""
+        pass
+
 
 class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
 
