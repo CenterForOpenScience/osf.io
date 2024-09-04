@@ -1,3 +1,4 @@
+from osf.models.external import ExternalProvider
 import pytest
 from urllib.parse import urlparse, parse_qs
 from unittest import mock
@@ -25,10 +26,12 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
     def setUp(self):
 
         super().setUp()
-        if self.Provider._oauth_version == 1:
-            self.expected_oauth_callback_url_path = '/v1/oauth1/callback'
-        elif self.Provider._oauth_version == 2 :
-            self.expected_oauth_callback_url_path = '/v1/oauth2/callback'
+        if isinstance(self.Provider, ExternalProvider):
+            # only setup expected_oauth_callback_url_path if the provider uses oauth
+            if self.Provider._oauth_version == 1:
+                self.expected_oauth_callback_url_path = '/v1/oauth1/callback'
+            elif self.Provider._oauth_version == 2 :
+                self.expected_oauth_callback_url_path = '/v1/oauth2/callback'
 
     @property
     def ADDON_SHORT_NAME(self):
