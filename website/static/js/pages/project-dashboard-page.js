@@ -33,7 +33,7 @@ var currentUserRequestState = ctx.currentUserRequestState;
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
-var { ContributorsControl } = require("js/contributors");
+var { ContributorsControl } = require('js/contributors');
 
 var datetimepicker = require('js/rdmDatetimepicker');
 var moment = require('moment');
@@ -191,8 +191,8 @@ var initDropdownSuggestContributors = function (placeholder) {
     };
     var options = {
         ajax: {
-            url: nodeApiUrl + "get_contributors/",
-            dataType: "json",
+            url: nodeApiUrl + 'get_contributors/',
+            dataType: 'json',
             results: function (data, page, query) {
                 return {
                     results: $.map(data.contributors, makeData),
@@ -445,7 +445,7 @@ $(document).ready(function () {
         return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
     });
 
-    new ContributorsControl({ apiUrl: nodeApiUrl }, "#contributorsList");
+    new ContributorsControl({ apiUrl: nodeApiUrl }, '#contributorsList');
 
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {

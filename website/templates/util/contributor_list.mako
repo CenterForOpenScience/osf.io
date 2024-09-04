@@ -20,21 +20,21 @@
 
 <%def name="render_contributors_full()">
   <!-- ko foreach: {data: contributors, afterRender: afterRender} -->
-  <li data-bind="attr: { 'data-pk': id }, 
-                  css: { 'contributor': true, 
-                          'contributor-registered': registered, 
-                          'contributor-unregistered': !registered, 
-                          'contributor-self': $parent.user.id == id }">
-      <!-- ko if: registered -->
-      <a class="overflow"
-          data-bind="attr: { rel: is_condensed ? 'tooltip' : '', href: url, title: fullname }, 
-                    text: condensedFullname"></a>
-      <!-- /ko -->
-      <!-- ko ifnot: registered -->
-      <span class="overflow"
-          data-bind="attr: { rel: is_condensed ? 'tooltip' : '', title: fullname }, 
-                    text: condensedFullname"></span>
-      <!-- /ko -->
+  <li data-bind="attr: { 'data-pk': id },
+    css: { 'contributor': true,
+        'contributor-registered': registered,
+        'contributor-unregistered': !registered,
+        'contributor-self': $parent.user.id == id }">
+    <!-- ko if: registered -->
+    <a class="overflow"
+      data-bind="attr: { rel: is_condensed ? 'tooltip' : '', href: url, title: fullname },
+          text: condensedFullname"></a>
+    <!-- /ko -->
+    <!-- ko ifnot: registered -->
+    <span class="overflow"
+      data-bind="attr: { rel: is_condensed ? 'tooltip' : '', title: fullname },
+          text: condensedFullname"></span>
+    <!-- /ko -->
   </li>
   <!-- /ko -->
 </%def>

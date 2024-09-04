@@ -574,7 +574,7 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
 
 ContribAdder.prototype.init = function() {
     var self = this;
-    // var treebeardUrl = window.contextVars.node.urls.api + 'tree/'; 
+    // var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
     self.viewModel.getContributors();
     // self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
     //     new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);

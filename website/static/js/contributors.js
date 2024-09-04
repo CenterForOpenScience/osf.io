@@ -1,6 +1,6 @@
-var $ = require("jquery");
-var ko = require("knockout");
-var $osf = require("js/osfHelpers");
+var $ = require('jquery');
+var ko = require('knockout');
+var $osf = require('js/osfHelpers');
 
 var FullContributors = function (params) {
   var self = this;
@@ -19,16 +19,16 @@ var FullContributors = function (params) {
 
     function loadNextBatch() {
       if (!self.hasMoreData()) {
-        console.log("All data loaded");
+        console.log('All data loaded');
         return;
       }
       self.isLoading(true);
 
       var url =
         self.apiUrl +
-        "get_contributors/?slim&limit=" +
+        'get_contributors/?slim&limit=' +
         self.pageSize +
-        "&offset=" +
+        '&offset=' +
         self.currentPage() * self.pageSize;
       $.getJSON(url, function (data) {
         var contributors = data.contributors.map(function (contributor) {
@@ -36,7 +36,7 @@ var FullContributors = function (params) {
           contributor.condensedFullname = ko.computed(function () {
             var fullname = contributor.fullname;
             if (fullname.length >= 50) {
-              return fullname.slice(0, 23) + "..." + fullname.slice(-23);
+              return fullname.slice(0, 23) + '...' + fullname.slice(-23);
             }
             return fullname;
           });
@@ -64,13 +64,13 @@ var FullContributors = function (params) {
     var fullname = contributor.user_fullname;
     if (fullname.length >= 50) {
       self.is_condensed(true);
-      return fullname.slice(0, 23) + "..." + fullname.slice(-23);
+      return fullname.slice(0, 23) + '...' + fullname.slice(-23);
     }
     return fullname;
   };
 
   self.afterRender = function (elements, data) {
-    window.dispatchEvent(new Event("resize"));
+    window.dispatchEvent(new Event('resize'));
   };
 };
 

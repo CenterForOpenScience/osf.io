@@ -1,14 +1,14 @@
-"use strict";
+'use strict';
 
-var $osf = require("js/osfHelpers");
-var $ = require("jquery");
-var ko = require("knockout");
-var _ = require("js/rdmGettext")._;
-var NodesDelete = require("js/nodesDelete");
-var { Contributors } = require("js/contributors");
+var $osf = require('js/osfHelpers');
+var $ = require('jquery');
+var ko = require('knockout');
+var _ = require('js/rdmGettext')._;
+var NodesDelete = require('js/nodesDelete');
+var { Contributors } = require('js/contributors');
 
 var ctx = window.contextVars;
-var selector = "#containment";
+var selector = '#containment';
 
 window._ = _;
 
@@ -25,25 +25,25 @@ var NodeRenderViewModel = function (nodeData) {
 
     self.localizedNodeType = ko.computed(function () {
         var nodeType = self.node.node_type;
-        return _("Linked " + localizeNodeType(nodeType));
+        return _('Linked ' + localizeNodeType(nodeType));
     });
 
     self.displayText = ko.computed(function () {
         if (self.node.is_registration) {
-            return "Private Registration";
+            return 'Private Registration';
         } else if (self.node.is_fork) {
-            return "Private Fork";
+            return 'Private Fork';
         } else if (!self.node.primary) {
-            return "Private Link";
+            return 'Private Link';
         } else {
-            return "Private Component";
+            return 'Private Component';
         }
     });
 
     function localizeNodeType(nodeType) {
         var localizedNames = {
-            project: _("Project"),
-            component: _("Component"),
+            project: _('Project'),
+            component: _('Component'),
         };
         return localizedNames[nodeType] || nodeType;
     }
@@ -69,7 +69,7 @@ var NodesRenderViewModel = function () {
         );
     };
 
-    $.getJSON(self.apiUrl + "components/", function (data) {
+    $.getJSON(self.apiUrl + 'components/', function (data) {
         data.nodes.map(function (nodeData) {
             self.nodes.push(new NodeRenderViewModel(nodeData));
         });

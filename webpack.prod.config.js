@@ -4,7 +4,7 @@ var webpack = require('webpack');
 var common = require('./webpack.common.config.js');
 var assign = require('object-assign');
 var SaveAssetsJson = require('assets-webpack-plugin');
-var UglifyJsPlugin = require("uglifyjs-webpack-plugin");
+var UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = assign(common, {
     stats: {reasons: false},

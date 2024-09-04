@@ -60,15 +60,15 @@
             <div class="pull-right">
                 <!-- ko if: !node.primary && $parent.hasPermission('write') && !node.is_registration -->
                 <i class="fa fa-times remove-pointer"
-                data-bind="attr: { 'data-id': node.id }, 
-                            tooltip: { title: _('Remove link') }">
+                    data-bind="attr: { 'data-id': node.id },
+                        tooltip: { title: _('Remove link') }">
                 </i>
-                <i class="fa fa-code-fork" 
-                data-bind="click: function() { NodeActions.forkPointer(node.id, node.primary_id); }, 
-                            tooltip: { title: _('Create a fork of %(summaryTitle)s', {summaryTitle: node.title}) }">
+                <i class="fa fa-code-fork"
+                    data-bind="click: function() { NodeActions.forkPointer(node.id, node.primary_id); },
+                        tooltip: { title: _('Create a fork of %(summaryTitle)s', {summaryTitle: node.title}) }">
                 </i>
                 <!-- /ko -->
-                
+
                 <!-- ko if: node.primary && node.logged_in && node.is_contributor_or_group_member && !node.is_registration -->
                 <div class="generic-dropdown dropdown pull-right">
                     <button class="btn btn-default dropdown-toggle dropdown-toggle-sm" type="button" data-toggle="dropdown">
@@ -76,22 +76,22 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-right">
                         <li>
-                            <a tabindex="-1" 
-                            data-bind="attr: { href: domain + node.id + '/contributors/' }, 
+                            <a tabindex="-1"
+                            data-bind="attr: { href: domain + node.id + '/contributors/' },
                                         text: _('Manage Contributors')">
                             </a>
                         </li>
                         <li>
-                            <a tabindex="-1" 
-                            data-bind="attr: { href: domain + node.id + '/settings/' }, 
+                            <a tabindex="-1"
+                            data-bind="attr: { href: domain + node.id + '/settings/' },
                                         text: _('Settings')">
                             </a>
                         </li>
                         <!-- ko if: node.is_admin -->
                         <li>
-                            <a tabindex="-1" 
+                            <a tabindex="-1"
                             data-toggle="modal" data-target="#nodesDelete"
-                            data-bind="click: function() { $root.delete(node.childExists, node.node_type, node.is_supplemental_project, node.api_url); }, 
+                            data-bind="click: function() { $root.delete(node.childExists, node.node_type, node.is_supplemental_project, node.api_url); },
                                         text: _('Delete')">
                             </a>
                         </li>

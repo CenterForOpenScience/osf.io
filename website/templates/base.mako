@@ -254,7 +254,6 @@
                 analyticsMeta: {},
                 osfSupportEmail: ${osf_support_email | sjson, n },
                 csrfCookieName: ${ csrf_cookie_name | sjson, n },
-                xAmznTraceId: ${ x_amzn_trace_id | sjson, n },
             });
         </script>
 
