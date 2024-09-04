@@ -120,10 +120,10 @@ def get_contributors(auth, node, **kwargs):
     # if int, contribs list is sliced to specified length
     # if None, contribs list is not sliced
     visible_contributors = Contributor.objects.filter(
-            node=node,
-            visible=True
-        ).include('user__ext', 'node', 'user__groups', 'user__guids')
-    
+        node=node,
+        visible=True,
+    ).include('user__ext', 'node', 'user__groups', 'user__guids')
+
     if offset > len(visible_contributors):
         contribs = []
     elif 'slim' in request.args:

@@ -105,9 +105,6 @@ def get_globals():
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
-    
-    segment = xray_recorder.current_segment()
-    x_amzn_trace_id=f"Root={segment.trace_id};Parent={segment.id};Sampled=1"
 
     return {
         'user_merge': settings.ENABLE_USER_MERGE,
@@ -202,8 +199,7 @@ def get_globals():
         'waffle': waffle,
         'csrf_cookie_name': api_settings.CSRF_COOKIE_NAME,
         'permissions': permissions,
-        'enable_private_search': settings.ENABLE_PRIVATE_SEARCH,
-        'x_amzn_trace_id': x_amzn_trace_id
+        'enable_private_search': settings.ENABLE_PRIVATE_SEARCH
     }
 
 

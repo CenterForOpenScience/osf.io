@@ -314,6 +314,14 @@ AddContributorViewModel = oop.extend(Paginator, {
     afterRender: function (elm, data) {
         var self = this;
         self.addTips(elm, data);
+        // var treebeardUrl = window.contextVars.node.urls.api + "tree/";
+        // self.fetchNodeTree(treebeardUrl).done(function (response) {
+        //   new NodeSelectTreebeard(
+        //     "addContributorsTreebeard",
+        //     response,
+        //     self.viewModel.nodesState
+        //   );
+        // });
     },
     makeAfterRender: function () {
         var self = this;
@@ -566,7 +574,11 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
 
 ContribAdder.prototype.init = function() {
     var self = this;
+    // var treebeardUrl = window.contextVars.node.urls.api + 'tree/'; 
     self.viewModel.getContributors();
+    // self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
+    //     new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
+    // });
     $osf.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
