@@ -26,7 +26,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
     def setUp(self):
 
         super().setUp()
-        if isinstance(self.Provider, ExternalProvider):
+        if issubclass(self.Provider, ExternalProvider):
             # only setup expected_oauth_callback_url_path if the provider uses oauth
             if self.Provider._oauth_version == 1:
                 self.expected_oauth_callback_url_path = '/v1/oauth1/callback'
