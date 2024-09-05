@@ -21,6 +21,7 @@ from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.spam import SpamStatus
+from osf.utils.users import get_or_refresh_confirmation_link
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 
@@ -456,10 +457,10 @@ class GetUserLink(UserMixin, TemplateView):
 
 class GetUserConfirmationLink(GetUserLink):
     def get_link(self, user):
-        try:
-            return user.get_confirmation_url(user.username, force=True)
-        except KeyError as e:
-            return str(e)
+        result = get_or_refresh_confirmation_link(user._id)
+        if 'confirmation_link' in result:
+            return result['confirmation_link']
+        return result['error']
 
     def get_link_type(self):
         return 'User Confirmation'
