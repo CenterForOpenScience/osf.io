@@ -232,7 +232,8 @@ class InstitutionalUserReport(MonthlyReport):
     institution_id = metrics.Keyword()
     # user info:
     user_id = metrics.Keyword()
-    department_name = metrics.Keyword()
+    user_name = metrics.Text()
+    department_name = metrics.Text()
     month_last_login = YearmonthField()
     account_creation_date = YearmonthField()
     orcid_id = metrics.Keyword()
