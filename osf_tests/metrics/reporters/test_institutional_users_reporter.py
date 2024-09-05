@@ -54,6 +54,7 @@ class TestInstiUsersReporter(TestCase):
         self.assertEqual(report.institution_id, setup.institution._id)
         # user info:
         self.assertEqual(report.user_id, setup.user._id)
+        self.assertEqual(report.user_name, setup.user.fullname)
         self.assertEqual(report.department_name, setup.department_name)
         self.assertEqual(report.month_last_login, YearMonth.from_date(setup.user.date_last_login))
         self.assertEqual(report.account_creation_date, YearMonth.from_date(setup.user.created))

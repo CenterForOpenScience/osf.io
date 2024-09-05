@@ -40,6 +40,7 @@ class _InstiUserReportHelper:
             report_yearmonth=self.yearmonth,
             institution_id=self.institution._id,
             user_id=self.user._id,
+            user_name=self.user.fullname,
             department_name=(_affiliation.sso_department or None),
             month_last_login=YearMonth.from_date(self.user.date_last_login),
             account_creation_date=YearMonth.from_date(self.user.created),
