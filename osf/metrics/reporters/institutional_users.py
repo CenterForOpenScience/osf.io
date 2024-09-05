@@ -131,4 +131,4 @@ class _InstiUserReportHelper:
             created__lt=self.before_datetime,
             purged__isnull=True,
             basefilenode__in=self._public_osfstorage_file_queryset(),
-        ).aggregate(storage_bytes=Sum('size'))['storage_bytes']
+        ).aggregate(storage_bytes=Sum('size', default=0))['storage_bytes']

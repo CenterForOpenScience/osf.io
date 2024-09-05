@@ -5,6 +5,7 @@ import unittest
 
 from django.test import TestCase
 
+from api_tests.utils import create_test_file
 from osf import models as osfdb
 from osf.metrics.reports import InstitutionalUserReport
 from osf.metrics.reporters import InstitutionalUsersReporter
@@ -42,7 +43,11 @@ class TestInstiUsersReporter(TestCase):
             cls._institution = InstitutionFactory()
             cls._user_setup_with_nothing = _InstiUserSetup(0, 0, 0, 0, 0, cls._institution, cls._now)
             cls._user_setup_with_ones = _InstiUserSetup(1, 1, 1, 1, 1, cls._institution, cls._now)
-            cls._user_setup_with_stuff = _InstiUserSetup(2, 3, 5, 3, 2, cls._institution, cls._now)
+            cls._user_setup_with_stuff = _InstiUserSetup(
+                2, 3, 5, 3, 2, cls._institution, cls._now,
+                orcid_id='1111-2222-3333-4444',
+                department_name='blargl studies',
+            )
             cls._user_setup_with_stuff.fill_uncounted_objects()
 
     def _assert_report_matches_setup(self, report: InstitutionalUserReport, setup: _InstiUserSetup):
@@ -82,11 +87,41 @@ class TestInstiUsersReporter(TestCase):
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_ones)
 
-    def test_one_user_with_stuff(self):
+    def test_one_user_with_stuff_and_no_files(self):
         self._user_setup_with_stuff.affiliate_user()
         _reports = list(InstitutionalUsersReporter().report(self._yearmonth))
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_stuff)
+        self.assertEqual(_reports[0].public_file_count, 0)
+        self.assertEqual(_reports[0].storage_byte_count, 0)
+
+    def test_one_user_with_stuff_and_a_file(self):
+        self._user_setup_with_stuff.affiliate_user()
+        _user = self._user_setup_with_stuff.user
+        _project = _user.nodes.first()
+        with _patch_now(self._now):
+            create_test_file(target=_project, user=_user, size=37)
+        (_report,) = InstitutionalUsersReporter().report(self._yearmonth)
+        self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
+        self.assertEqual(_report.public_file_count, 1)
+        self.assertEqual(_report.storage_byte_count, 37)
+
+    def test_one_user_with_stuff_and_multiple_files(self):
+        self._user_setup_with_stuff.affiliate_user()
+        _user = self._user_setup_with_stuff.user
+        _project = _user.nodes.first()
+        with _patch_now(self._now):
+            create_test_file(target=_project, user=_user, size=37, filename='b')
+            create_test_file(target=_project, user=_user, size=73, filename='bl')
+            _component = ProjectFactory(parent=_project, creator=_user, is_public=True)
+            _component.affiliated_institutions.add(self._institution)
+            create_test_file(target=_component, user=_user, size=53, filename='bla')
+            create_test_file(target=_component, user=_user, size=51, filename='blar')
+            create_test_file(target=_component, user=_user, size=47, filename='blarg')
+        (_report,) = InstitutionalUsersReporter().report(self._yearmonth)
+        self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
+        self.assertEqual(_report.public_file_count, 5)
+        self.assertEqual(_report.storage_byte_count, 37 + 73 + 53 + 51 + 47)
 
     def test_several_users(self):
         _setups = [
@@ -105,7 +140,6 @@ class TestInstiUsersReporter(TestCase):
         for _actual_report in _reports:
             _setup = _setup_by_userid[_actual_report.user_id]
             self._assert_report_matches_setup(_actual_report, _setup)
-
 
 # helper class for test-case setup
 @dataclasses.dataclass
@@ -219,3 +253,4 @@ class _InstiUserSetup:
                 creator=self.user,
                 is_public=True,
             )
+        return None
