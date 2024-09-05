@@ -17,7 +17,7 @@ def get_or_refresh_confirmation_link(uid):
             if data['email'] == u.username and data['expiration'] < timezone.now():
                 u.email_verifications[token]['expiration'] = timezone.now() + timezone.timedelta(days=30)
                 u.save()
-                confirmation_link = f'{DOMAIN}/confirm/{u._id}/{token}'
+                confirmation_link = f'{DOMAIN.rstrip("/")}/confirm/{u._id}/{token}'
                 return {'confirmation_link': confirmation_link}
     else:
         try:
@@ -25,7 +25,7 @@ def get_or_refresh_confirmation_link(uid):
             u.save()
             for token, data in u.email_verifications.items():
                 if data['email'] == u.username:
-                    confirmation_link = f'{DOMAIN}/confirm/{u._id}/{token}'
+                    confirmation_link = f'{DOMAIN.rstrip("/")}/confirm/{u._id}/{token}'
                     return {'confirmation_link': confirmation_link}
         except ValidationError:
             return {'error': f'Invalid email for user {uid}'}

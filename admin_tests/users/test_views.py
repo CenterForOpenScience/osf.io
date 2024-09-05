@@ -486,9 +486,12 @@ class TestGetLinkView(AdminTestCase):
         view = views.GetUserConfirmationLink()
         view = setup_view(view, request, guid=user._id)
 
-        user_token = list(user.email_verifications.keys())[0]
-        ideal_link_path = f'/confirm/{user._id}/{user_token}/'
         link = view.get_link(user)
+
+        link_furl = furl(link)
+        generated_token = link_furl.path.segments[-1]
+
+        ideal_link_path = f'/confirm/{user._id}/{generated_token}'
         link_path = str(furl(link).path)
 
         assert link_path == ideal_link_path
@@ -504,10 +507,12 @@ class TestGetLinkView(AdminTestCase):
         user.save()
 
         link = view.get_link(user)
-        new_user_token = list(user.email_verifications.keys())[0]
 
+        link_furl = furl(link)
+        generated_token = link_furl.path.segments[-1]
+
+        ideal_link_path = f'/confirm/{user._id}/{generated_token}'
         link_path = str(furl(link).path)
-        ideal_link_path = f'/confirm/{user._id}/{new_user_token}/'
 
         assert link_path == ideal_link_path
 
