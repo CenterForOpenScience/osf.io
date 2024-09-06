@@ -17,6 +17,7 @@ from rest_framework.reverse import reverse as drf_reverse
 
 from api.base import utils
 from api.base.exceptions import EnumFieldMemberError
+from osf.metrics.utils import YearMonth
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
@@ -2024,3 +2025,18 @@ class EnumField(ser.ChoiceField):
             return self._enum_class[data.upper()].value
         except KeyError:
             raise EnumFieldMemberError(self._enum_class, data)
+
+
+class YearmonthField(ser.Field):
+    def to_representation(self, value: YearMonth | None) -> str | None:
+        if value is None:
+            return None
+        return str(value)
+
+    def to_internal_value(self, data: str | None) -> YearMonth | None:
+        if data is None:
+            return None
+        try:
+            return YearMonth.from_str(data)
+        except ValueError as e:
+            raise ser.ValidationError(str(e))
