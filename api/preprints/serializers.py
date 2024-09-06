@@ -406,7 +406,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             'why_no_prereg',
             'prereg_links',
             'has_prereg_links',
-            'prereg_link_info'
+            'prereg_link_info',
         }
         if author_assertions & validated_data.keys():
             if not preprint.is_admin_contributor(auth.user):
