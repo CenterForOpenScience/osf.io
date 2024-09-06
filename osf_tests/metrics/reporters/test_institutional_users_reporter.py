@@ -59,14 +59,11 @@ class TestInstiUsersReporter(TestCase):
         self.assertEqual(report.month_last_login, YearMonth.from_date(setup.user.date_last_login))
         self.assertEqual(report.account_creation_date, YearMonth.from_date(setup.user.created))
         self.assertEqual(report.orcid_id, setup.orcid_id)
-        # counts:
+        # counts (NOTE: report.public_file_count and report.storage_byte_count tested separately)
         self.assertEqual(report.public_project_count, setup.public_project_count)
         self.assertEqual(report.private_project_count, setup.private_project_count)
         self.assertEqual(report.public_registration_count, setup.public_registration_count)
         self.assertEqual(report.embargoed_registration_count, setup.embargoed_registration_count)
-        # NOTE: currently untested due to the annoyance involved:
-        # self.assertEqual(report.public_file_count, ...)
-        # self.assertEqual(report.storage_byte_count, ...)
         if _can_affiliate_preprints():
             self.assertEqual(report.published_preprint_count, setup.published_preprint_count)
         else:
@@ -142,10 +139,13 @@ class TestInstiUsersReporter(TestCase):
             _setup = _setup_by_userid[_actual_report.user_id]
             self._assert_report_matches_setup(_actual_report, _setup)
 
-# helper class for test-case setup
+
 @dataclasses.dataclass
 class _InstiUserSetup:
-    '''oof, so many things to set up, gross'''
+    '''helper class to simplify database setup for a test-case
+
+    (note: public_file_count and storage_byte_count set up separately)
+    '''
     public_project_count: int
     private_project_count: int
     public_registration_count: int

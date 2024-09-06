@@ -16,9 +16,15 @@ _CHUNK_SIZE = 500
 
 
 class InstitutionalUsersReporter(MonthlyReporter):
+    '''build an InstitutionalUserReport for each institution-user affiliation
+
+    built for the institution dashboard at ://osf.example/institutions/<id>/dashboard/,
+    which offers institutional admins insight into how people at their institution are
+    using osf, based on their explicitly-affiliated osf objects
+    '''
     def report(self, yearmonth: YearMonth):
         _before_datetime = yearmonth.next_month()
-        for _institution in osfdb.Institution.objects.all():
+        for _institution in osfdb.Institution.objects.filter(created__lt=_before_datetime):
             _user_qs = _institution.get_institution_users().filter(created__lt=_before_datetime)
             for _user in _user_qs.iterator(chunk_size=_CHUNK_SIZE):
                 _helper = _InstiUserReportHelper(_institution, _user, yearmonth, _before_datetime)
