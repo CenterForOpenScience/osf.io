@@ -1,22 +1,28 @@
-import pytest
 import datetime
 import csv
 from io import StringIO
 from random import random
-import time
+
+import pytest
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
+import osf.features
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
 
 from osf.metrics import UserInstitutionProjectCounts
-from api.base import settings
 
 @pytest.mark.es
 @pytest.mark.django_db
 class TestInstitutionUserMetricList:
+
+    @pytest.fixture(autouse=True)
+    def _waffled(self):
+        with override_flag(osf.features.INSTITUTIONAL_DASHBOARD_2024, active=False):
+            yield  # these tests apply only before institution dashboard improvements
 
     @pytest.fixture()
     def institution(self):
@@ -52,17 +58,17 @@ class TestInstitutionUserMetricList:
     @pytest.fixture()
     def populate_counts(self, institution, user, user2):
         # Old data that shouldn't appear in responses
-        UserInstitutionProjectCounts.record(
+        UserInstitutionProjectCounts(
             user_id=user._id,
             institution_id=institution._id,
             department='Biology dept',
             public_project_count=4,
             private_project_count=4,
             timestamp=datetime.date(2019, 6, 4)
-        ).save()
+        ).save(refresh=True)
 
         # New data
-        UserInstitutionProjectCounts.record(
+        UserInstitutionProjectCounts(
             user_id=user._id,
             institution_id=institution._id,
             department='Biology dept',
@@ -70,15 +76,13 @@ class TestInstitutionUserMetricList:
             private_project_count=5,
         ).save()
 
-        UserInstitutionProjectCounts.record(
+        UserInstitutionProjectCounts(
             user_id=user2._id,
             institution_id=institution._id,
             department='Psychology dept',
             public_project_count=3,
             private_project_count=2,
-        ).save()
-
-        time.sleep(10)
+        ).save(refresh=True)
 
     @pytest.fixture()
     def populate_more_counts(self, institution, user, user2, user3, populate_counts):
@@ -89,7 +93,7 @@ class TestInstitutionUserMetricList:
             users.append(AuthUserFactory())
 
         for test_user in users:
-            UserInstitutionProjectCounts.record(
+            UserInstitutionProjectCounts(
                 user_id=test_user._id,
                 institution_id=institution._id,
                 department='Psychology dept',
@@ -97,26 +101,22 @@ class TestInstitutionUserMetricList:
                 private_project_count=int(10 * random()),
             ).save()
 
-        UserInstitutionProjectCounts.record(
+        UserInstitutionProjectCounts(
             user_id=user3._id,
             institution_id=institution._id,
             department='Psychology dept',
             public_project_count=int(10 * random()),
             private_project_count=int(10 * random()),
-        ).save()
-
-        time.sleep(10)
+        ).save(refresh=True)
 
     @pytest.fixture()
     def populate_na_department(self, institution, user4):
-        UserInstitutionProjectCounts.record(
+        UserInstitutionProjectCounts(
             user_id=user4._id,
             institution_id=institution._id,
             public_project_count=1,
             private_project_count=1,
-        ).save()
-
-        time.sleep(10)
+        ).save(refresh=True)
 
     @pytest.fixture()
     def url(self, institution):
@@ -218,7 +218,6 @@ class TestInstitutionUserMetricList:
         resp = app.get(f'{url}?filter[department]=Psychology dept', auth=admin.auth)
         assert resp.json['data'][0]['attributes']['department'] == 'Psychology dept'
 
-    @pytest.mark.skipif(settings.TRAVIS_ENV, reason='Non-deterministic fails on travis')
     def test_sort_and_pagination(self, app, url, user, user2, user3, admin, populate_counts, populate_more_counts, institution):
         resp = app.get(f'{url}?sort=user_name&page[size]=1&page=2', auth=admin.auth)
         assert resp.status_code == 200
@@ -229,7 +228,6 @@ class TestInstitutionUserMetricList:
         assert resp.json['links']['meta']['total'] == 11
         assert resp.json['data'][-1]['attributes']['user_name'] == 'Zedd'
 
-    @pytest.mark.skipif(settings.TRAVIS_ENV, reason='Non-deterministic fails on travis')
     def test_filter_and_pagination(self, app, user, user2, user3, url, admin, populate_counts, populate_more_counts, institution):
         resp = app.get(f'{url}?page=2', auth=admin.auth)
         assert resp.json['links']['meta']['total'] == 11
@@ -238,7 +236,6 @@ class TestInstitutionUserMetricList:
         assert resp.json['links']['meta']['total'] == 1
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
 
-    @pytest.mark.skipif(settings.TRAVIS_ENV, reason='Non-deterministic fails on travis')
     def test_filter_and_sort(self, app, url, user, user2, user3, admin, user4, populate_counts, populate_na_department, institution):
         """
         Testing for bug where sorting and filtering would throw 502.
