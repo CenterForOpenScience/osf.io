@@ -6,7 +6,12 @@ from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDeni
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import ReviewAction, Preprint, PreprintContributor
+from osf.models import (
+    ReviewAction,
+    Preprint,
+    PreprintContributor,
+    Institution,
+)
 from osf.utils.requests import check_select_for_update
 
 from api.actions.permissions import ReviewActionPermission
@@ -17,12 +22,13 @@ from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
-    JSONAPIOnetoOneRelationshipParser,
-    JSONAPIOnetoOneRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
+    JSONAPIOnetoOneRelationshipParser,
+    JSONAPIOnetoOneRelationshipParserForRegularJSON,
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
 )
-
 from api.base.utils import absolute_reverse, get_user_auth, get_object_or_error
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation
@@ -35,15 +41,14 @@ from api.preprints.serializers import (
     PreprintStorageProviderSerializer,
     PreprintNodeRelationshipSerializer,
     PreprintContributorsCreateSerializer,
+    PreprintsInstitutionsRelationshipSerializer,
 )
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import (
-    NodeCitationStyleSerializer,
-)
-
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
+from api.institutions.serializers import InstitutionSerializer
 from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeStorageProvidersList, NodeStorageProvider
+from api.nodes.serializers import NodeCitationStyleSerializer
 from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
     PreprintPublishedOrWrite,
@@ -51,16 +56,17 @@ from api.preprints.permissions import (
     AdminOrPublic,
     ContributorDetailPermissions,
     PreprintFilesPermissions,
+    PreprintInstitutionPermissionList,
 )
-from api.nodes.permissions import (
-    ContributorOrPublic,
-)
+from api.nodes.permissions import ContributorOrPublic
+from api.base.permissions import WriteOrPublicForRelationshipInstitutions
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList, SubjectRelationshipBaseView
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
+
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
@@ -647,3 +653,60 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_institutions_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintInstitutionPermissionList,
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionSerializer
+
+    model = Institution
+    view_category = 'preprints'
+    view_name = 'preprints-institutions'
+
+    ordering = ('-id',)
+
+    def get_resource(self):
+        return self.get_preprint()
+
+    def get_queryset(self):
+        return self.get_resource().affiliated_institutions.all()
+
+
+class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+    """ """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        WriteOrPublicForRelationshipInstitutions,
+    )
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
+    serializer_class = PreprintsInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
+
+    view_category = 'preprints'
+    view_name = 'preprint-relationships-institutions'
+
+    def get_resource(self):
+        return self.get_preprint(check_object_permissions=False)
+
+    def get_object(self):
+        preprint = self.get_resource()
+        obj = {
+            'data': preprint.affiliated_institutions.all(),
+            'self': preprint,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def patch(self, *args, **kwargs):
+        raise MethodNotAllowed(self.request.method)
