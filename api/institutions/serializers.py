@@ -15,6 +15,7 @@ from api.base.serializers import (
     ShowIfObjectPermission,
 )
 
+from api.base.serializers import YearmonthField
 from api.nodes.serializers import CompoundIDField
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse
@@ -323,4 +324,28 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'institution-users'
 
-    ...  # TODO: serializer fields
+    id = IDField(source='meta.id', read_only=True)
+    user_name = ser.CharField(read_only=True)
+    department = ser.CharField(read_only=True, source='department_name')
+    orcid_id = ser.CharField(read_only=True)
+    month_last_login = YearmonthField(read_only=True)
+    account_creation_date = YearmonthField(read_only=True)
+
+    public_projects = ser.IntegerField(read_only=True, source='public_project_count')
+    private_projects = ser.IntegerField(read_only=True, source='private_project_count')
+    public_registration_count = ser.IntegerField(read_only=True)
+    embargoed_registration_count = ser.IntegerField(read_only=True)
+    published_preprint_count = ser.IntegerField(read_only=True)
+    public_file_count = ser.IntegerField(read_only=True)
+    storage_byte_count = ser.IntegerField(read_only=True)
+
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user_id>'},
+    )
+    institution = RelationshipField(
+        related_view='institutions:institution-detail',
+        related_view_kwargs={'institution_id': '<institution_id>'},
+    )
+
+    links = LinksField({})
