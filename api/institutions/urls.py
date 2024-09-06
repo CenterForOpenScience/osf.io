@@ -15,5 +15,5 @@ urlpatterns = [
     re_path(r'^(?P<institution_id>\w+)/users/$', views.InstitutionUserList.as_view(), name=views.InstitutionUserList.view_name),
     re_path(r'^(?P<institution_id>\w+)/metrics/summary/$', views.InstitutionSummaryMetrics.as_view(), name=views.InstitutionSummaryMetrics.view_name),
     re_path(r'^(?P<institution_id>\w+)/metrics/departments/$', views.InstitutionDepartmentList.as_view(), name=views.InstitutionDepartmentList.view_name),
-    re_path(r'^(?P<institution_id>\w+)/metrics/users/$', views.InstitutionUserMetricsList.as_view(), name=views.InstitutionUserMetricsList.view_name),
+    re_path(r'^(?P<institution_id>\w+)/metrics/users/$', views.institution_user_metrics_list_view, name=views.institution_user_metrics_list_view.view_name),
 ]

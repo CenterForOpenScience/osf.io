@@ -2,6 +2,7 @@ from furl import furl
 from urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from packaging.version import Version
 from hashids import Hashids
+import waffle
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
@@ -275,3 +276,21 @@ class MockQueryset(list):
     def add_dict_as_item(self, dict):
         item = type('item', (object,), dict)
         self.append(item)
+
+
+def toggle_view_by_flag(flag_name, old_view, new_view):
+    '''toggle between view implementations based on a feature flag
+
+    returns a wrapper view function that:
+    - when the given flag is inactive, passes thru to `old_view`
+    - when the given flag is active, passes thru to `new_view`
+    '''
+    def _view_by_flag(request, *args, **kwargs):
+        if waffle.flag_is_active(request, flag_name):
+            return new_view(request, *args, **kwargs)
+        return old_view(request, *args, **kwargs)
+    if hasattr(new_view, 'view_class'):
+        # set view_class to masquerade as a class-based view, for sake of assumptions
+        # in `api_tests.base.test_views` and `api.base.serializers.RelationshipField`
+        _view_by_flag.view_class = new_view.view_class  # type: ignore[attr-defined]
+    return _view_by_flag

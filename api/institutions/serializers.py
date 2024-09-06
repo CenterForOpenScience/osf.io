@@ -270,7 +270,12 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
         )
 
 
-class InstitutionUserMetricsSerializer(JSONAPISerializer):
+class OldInstitutionUserMetricsSerializer(JSONAPISerializer):
+    '''serializer for institution-users metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is NOT active
+    (and should be removed when that flag is permanently active)
+    '''
 
     class Meta:
         type_ = 'institution-users'
@@ -306,3 +311,16 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
                 'version': 'v2',
             },
         )
+
+
+class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
+    '''serializer for institution-users metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
+    (and should be renamed without "New" when that flag is permanently active)
+    '''
+
+    class Meta:
+        type_ = 'institution-users'
+
+    ...  # TODO: serializer fields

@@ -8,13 +8,14 @@ from rest_framework.settings import api_settings
 
 from framework.auth.oauth_scopes import CoreScopes
 
+import osf.features
 from osf.metrics import InstitutionProjectCounts
 from osf.models import OSFUser, Node, Institution, Registration
 from osf.metrics import UserInstitutionProjectCounts
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
-from api.base.filters import ListFilterMixin
+from api.base.filters import ListFilterMixin, FilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
@@ -25,7 +26,10 @@ from api.base.parsers import (
 )
 from api.base.settings import MAX_SIZE_OF_ES_QUERY
 from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.utils import MockQueryset
+from api.base.utils import (
+    MockQueryset,
+    toggle_view_by_flag,
+)
 from api.base.settings import DEFAULT_ES_NULL_VALUE
 from api.metrics.permissions import IsInstitutionalMetricsUser
 from api.nodes.serializers import NodeSerializer
@@ -40,7 +44,8 @@ from api.institutions.serializers import (
     InstitutionRegistrationsRelationshipSerializer,
     InstitutionSummaryMetricSerializer,
     InstitutionDepartmentMetricsSerializer,
-    InstitutionUserMetricsSerializer,
+    NewInstitutionUserMetricsSerializer,
+    OldInstitutionUserMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
 from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
@@ -493,10 +498,15 @@ class InstitutionDepartmentList(InstitutionImpactList):
         return self._make_elasticsearch_results_filterable(search, id=institution._id)
 
 
-class InstitutionUserMetricsList(InstitutionImpactList):
+class _OldInstitutionUserMetricsList(InstitutionImpactList):
+    '''list view for institution-users metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is NOT active
+    (and should be removed when that flag is permanently active)
+    '''
     view_name = 'institution-user-metrics'
 
-    serializer_class = InstitutionUserMetricsSerializer
+    serializer_class = OldInstitutionUserMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionUserMetricsCSVRenderer,)
 
     ordering_fields = ('user_name', 'department')
@@ -521,3 +531,32 @@ class InstitutionUserMetricsList(InstitutionImpactList):
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
         return self._make_elasticsearch_results_filterable(search, id=institution._id, department=DEFAULT_ES_NULL_VALUE)
+
+
+class _NewInstitutionUserMetricsList(InstitutionMixin, FilterMixin, JSONAPIBaseView):
+    '''list view for institution-users metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
+    (and should be renamed without "New" when that flag is permanently active)
+    '''
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsInstitutionalMetricsUser,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'institutions'
+    view_name = 'institution-user-metrics'
+
+    serializer_class = NewInstitutionUserMetricsSerializer
+
+
+institution_user_metrics_list_view = toggle_view_by_flag(
+    flag_name=osf.features.INSTITUTIONAL_DASHBOARD_2024,
+    old_view=_OldInstitutionUserMetricsList.as_view(),
+    new_view=_NewInstitutionUserMetricsList.as_view(),
+)
+institution_user_metrics_list_view.view_name = 'institution-user-metrics'
