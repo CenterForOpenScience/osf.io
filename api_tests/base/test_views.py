@@ -43,9 +43,9 @@ for mod in URLS_MODULES:
         if hasattr(patt, 'url_patterns'):
             # Namespaced list of patterns
             for subpatt in patt.url_patterns:
-                VIEW_CLASSES.append(subpatt.callback.cls)
+                VIEW_CLASSES.append(subpatt.callback.view_class)
         else:
-            VIEW_CLASSES.append(patt.callback.cls)
+            VIEW_CLASSES.append(patt.callback.view_class)
 
 
 class TestApiBaseViews(ApiTestCase):
