@@ -36,9 +36,8 @@ class TestPreprintInstitutionsRelationship:
     def institution_F(self):
         return InstitutionFactory()
 
-
     @pytest.fixture()
-    def admin_with_institutional_affiliation(self, institution_A, institution_B, institution_C,  preprint):
+    def admin_with_institutional_affiliation(self, institution_A, institution_B, institution_C, preprint):
         user = AuthUserFactory()
         preprint.add_contributor(user, permissions=ADMIN)
         user.add_or_update_affiliated_institution(institution_A)
