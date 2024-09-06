@@ -174,5 +174,5 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
             return resource.is_public or resource.can_view(auth)
         else:
             if isinstance(resource, Preprint):
-                return resource.can_edit(auth.user)
+                return resource.can_edit(auth=auth)
             return resource.has_permission(auth.user, osf_permissions.WRITE)
