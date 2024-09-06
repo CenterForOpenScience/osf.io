@@ -57,6 +57,7 @@ from api.base.views import (
     WaterButlerMixin,
 )
 from api.base.waffle_decorators import require_flag
+from api.base.permissions import WriteOrPublicForRelationshipInstitutions
 from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
 from api.cedar_metadata_records.utils import can_view_record
 from api.citations.utils import render_citation
@@ -87,7 +88,6 @@ from api.nodes.permissions import (
     NodeGroupDetailPermissions,
     IsContributorOrGroupMember,
     AdminDeletePermissions,
-    WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
