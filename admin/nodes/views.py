@@ -33,7 +33,7 @@ from osf.models.admin_log_entry import (
 )
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
-from website.project.tasks import update_node_share
+from api.share.utils import update_share
 from website.project.views.register import osf_admin_change_status_identifier
 from website.util import quota
 
@@ -449,7 +449,7 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
             message='Confirmed HAM: {}'.format(node._id),
             action_flag=CONFIRM_HAM
         )
-        if isinstance(node, Node):
+        if isinstance(node, Node) or isinstance(node, Registration):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
 class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
@@ -462,7 +462,7 @@ class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
-        update_node_share(node)
+        update_share(node)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
