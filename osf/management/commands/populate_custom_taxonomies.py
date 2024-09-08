@@ -176,7 +176,7 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
 
         # Update preprint in SHARE
         if not dry_run:
-            on_preprint_updated(preprint._id, old_subjects=old_subjects, update_share=True)
+            on_preprint_updated(preprint._id, old_subjects=old_subjects)
         preprint.reload()
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))

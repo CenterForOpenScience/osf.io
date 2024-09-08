@@ -1581,15 +1581,14 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
-
-        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
-        # TODO: this
-        # if not provider.schemas_acceptable.filter(id=schema.id).exists():
-        #     raise exceptions.ValidationError('Invalid schema for provider.')
+        provider = validated_data.pop('provider', None)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
-        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        try:
+            draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
 
         if metadata:
             self.update_metadata(draft, metadata)

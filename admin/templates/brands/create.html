@@ -7,7 +7,6 @@
 {% endblock title %}
 
 {% block content %}
-    <form action="{% url 'brands:create' %}" method="post">
     {% if messages %}
     <ul class="messages">
         {% for message in messages %}
@@ -19,20 +18,18 @@
     {% endif %}
     {{ form.non_field_errors }}
     {% csrf_token %}
-    {% for field in form %}
-        {% if not field.is_hidden %}
-        <div class="fieldWrapper">
-            <span class="text-danger">{{ field.errors }}</span>
-            {{ field.label_tag }} <br>
-            {{ field }}
-        </div>
-        {% endif %}
-        <br>
-    {% endfor %}
+    <div class="col-md-7">
+        <form action="{% url 'brands:create' %}" method="post">
+            {% csrf_token %}
+            {{ change_form.as_p }}
+            <input class="form-button" type="submit" value="Submit" />
+
+        </form>
+    </div>
+    <br>
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
     {% endfor %}
-    <input type="submit" class="btn btn-primary" value="Save">
     </form>
 {% endblock content %}
 {% block bottom_js %}

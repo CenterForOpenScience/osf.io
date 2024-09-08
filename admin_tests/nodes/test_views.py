@@ -1,8 +1,10 @@
 import datetime as dt
 import pytest
+import json
 import mock
 import pytz
 import datetime
+import responses
 
 from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
 from admin.nodes.views import (
@@ -313,29 +315,34 @@ class TestNodeReindex(AdminTestCase):
         self.node = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.node, creator=self.user)
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_node_data')
-    def test_reindex_node_share(self, mock_update_share):
+    def test_reindex_node_share(self):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.node._id)
-        view.delete(self.request)
+        with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
+            with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
+                with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                    rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
+                    view.delete(self.request)
+                    data = json.loads(rsps.calls[-1].request.body.decode())
 
-        nt.assert_true(mock_update_share.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+                    assert data['data']['attributes']['data']['@graph'][0]['creative_work']['@type'] == 'project'
+                    nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_node_data')
-    def test_reindex_registration_share(self, mock_update_share):
+    def test_reindex_registration_share(self):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        view.delete(self.request)
+        with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
+            with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
+                with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                    rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
+                    view.delete(self.request)
+                    data = json.loads(rsps.calls[-1].request.body.decode())
 
-        nt.assert_true(mock_update_share.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+                    assert any(graph for graph in data['data']['attributes']['data']['@graph']
+                               if graph['@type'] == self.registration.provider.share_publish_type.lower())
+                    nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
     def test_reindex_node_elastic(self, mock_update_node):
@@ -378,9 +385,12 @@ class TestNodeConfirmHamView(AdminTestCase):
     def test_confirm_registration_as_ham(self):
         view = NodeConfirmHamView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        view.delete(self.request)
+        resp = view.delete(self.request)
+
+        nt.assert_true(resp.status_code == 302)
 
         self.registration.refresh_from_db()
+        nt.assert_false(self.registration.is_public)
         nt.assert_true(self.registration.spam_status == 4)
 
 

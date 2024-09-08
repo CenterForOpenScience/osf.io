@@ -481,3 +481,8 @@ PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
     'preprint_withdrawal_request_declined',
     subject='Your withdrawal request has been declined',
 )
+
+TOU_NOTIF = Mail(
+    'tou_notif',
+    subject='Updated Terms of Use for COS Websites and Services',
+)
