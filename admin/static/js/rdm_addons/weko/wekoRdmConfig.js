@@ -61,7 +61,9 @@ const ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                     externalAccount.wekoName = displayName.name;
                     return externalAccount;
                 }));
-                $('#weko-header').osfToggleHeight({height: 160});
+                $('#weko-header')
+                    .css('overflow', 'hidden')
+                    .osfToggleHeight({height: 160});
             })
             .fail(function(xhr, status, error) {
                 self.changeMessage(language.accountsError, 'text-danger');

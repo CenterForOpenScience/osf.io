@@ -221,38 +221,14 @@
             },
             "creatorNames[]": [
                 {
-                    "@createIf": "{{object_name_ja_last}}{{object_name_ja_middle}}{{object_name_ja_first}}",
-                    "creatorName": "{{object_name_ja_last}}, {{object_name_ja_middle}}{% if object_name_ja_middle %} {% endif %}{{object_name_ja_first}}",
+                    "@createIf": "{{object_name_ja}}",
+                    "creatorName": "{{object_name_ja}}",
                     "creatorNameLang": "ja"
                 },
                 {
-                    "@createIf": "{{object_name_en_last}}{{object_name_en_middle}}{{object_name_en_first}}",
-                    "creatorName": "{{object_name_en_last}}, {{object_name_en_middle}}{% if object_name_ja_middle %} {% endif %}{{object_name_en_first}}",
+                    "@createIf": "{{object_name_en}}",
+                    "creatorName": "{{object_name_en}}",
                     "creatorNameLang": "en"
-                }
-            ],
-            "familyNames[]": [
-                {
-                    "@createIf": "{{object_name_ja_last}}",
-                    "familyName": "{{object_name_ja_last}}",
-                    "familyNameLang": "ja"
-                },
-                {
-                    "@createIf": "{{object_name_en_last}}",
-                    "familyName": "{{object_name_en_last}}",
-                    "familyNameLang": "en"
-                }
-            ],
-            "givenNames[]": [
-                {
-                    "@createIf": "{{object_name_ja_middle}}{{object_name_ja_first}}",
-                    "givenName": "{{object_name_ja_middle}}{% if object_name_ja_middle %} {% endif %}{{object_name_ja_first}}",
-                    "givenNameLang": "ja"
-                },
-                {
-                    "@createIf": "{{object_name_en_middle}}{{object_name_en_first}}",
-                    "givenName": "{{object_name_en_middle}}{% if object_name_en_middle %} {% endif %}{{object_name_en_first}}",
-                    "givenNameLang": "en"
                 }
             ]
         }
@@ -303,43 +279,23 @@
         }
     },
     "grdm-file:data-man-name-ja": {
-        "@type": "object",
-        "@createIf": "{% if grdm_file_data_man_type_value == \"individual\" %}{{object_last}}{{object_middle}}{{object_first}}{% endif %}",
+        "@type": "string",
+        "@createIf": "{% if grdm_file_data_man_type_value == \"individual\" %}{{value}}{% endif %}",
         "metadata.item_1617349709064[DATA_MANAGER]": {
             "contributorType": "DataManager",
             "contributorNames[]": {
-                "contributorName": "{{object_last}}, {{object_middle}}{% if object_middle %} {% endif %}{{object_first}}",
-                "lang": "ja"
-            },
-            "familyNames[]": {
-                "@createIf": "{{object_last}}",
-                "familyName": "{{object_last}}",
-                "lang": "ja"
-            },
-            "givenNames[]": {
-                "@createIf": "{{object_middle}}{{object_first}}",
-                "givenName": "{{object_middle}}{% if object_middle %} {% endif %}{{object_first}}",
+                "contributorName": "{{value}}",
                 "lang": "ja"
             }
         }
     },
     "grdm-file:data-man-name-en": {
-        "@type": "object",
-        "@createIf": "{% if grdm_file_data_man_type_value == \"individual\" %}{{object_last}}{{object_middle}}{{object_first}}{% endif %}",
+        "@type": "string",
+        "@createIf": "{% if grdm_file_data_man_type_value == \"individual\" %}{{value}}{% endif %}",
         "metadata.item_1617349709064[DATA_MANAGER]": {
             "contributorType": "DataManager",
             "contributorNames[]": {
-                "contributorName": "{{object_last}}, {{object_middle}}{% if object_middle %} {% endif %}{{object_first}}",
-                "lang": "en"
-            },
-            "familyNames[]": {
-                "@createIf": "{{object_last}}",
-                "familyName": "{{object_last}}",
-                "lang": "en"
-            },
-            "givenNames[]": {
-                "@createIf": "{{object_middle}}{{object_first}}",
-                "givenName": "{{object_middle}}{% if object_middle %} {% endif %}{{object_first}}",
+                "contributorName": "{{value}}",
                 "lang": "en"
             }
         }

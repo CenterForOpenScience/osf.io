@@ -3149,6 +3149,8 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         (item.data.provider === 'dataverse' && item.data.extra.hasPublishedVersion) ||
         // no moving folders into dataverse
         (folder.data.provider === 'dataverse' && item.data.kind === 'folder') ||
+        // no moving items from weko
+        (item.data.provider === 'weko') ||
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||

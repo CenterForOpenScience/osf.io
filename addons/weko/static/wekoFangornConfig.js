@@ -14,14 +14,8 @@ const _ = rdmGettext._;
 const sprintf = require('agh.sprintf').sprintf;
 
 const logPrefix = '[weko]';
-const refreshingIds = {};
-const metadataRefreshingRetries = 3;
-const metadataRefreshingTimeout = 1000;
-const metadataRefreshingTimeoutExp = 2;
 var fileViewButtons = null;
 var hashProcessed = false;
-var uploadCount = 0;
-var uploadReservedHandler = null;
 var lastTreebeard = null;
 
 // Define Fangorn Button Actions
@@ -198,17 +192,7 @@ function wekoWEKOTitle(item, col) {
 }
 
 function wekoColumns(item) {
-    const treebeard = this;
-    checkAndReserveRefreshingMetadata(
-        item,
-        function(item) {
-            const parentItem = findItem(treebeard.treeData, item.parentID);
-            reserveDeposit(treebeard, item, function() {
-                treebeard.updateFolder(null, parentItem);
-            });
-        }
-    );
-    var tb = this;
+    lastTreebeard = this;
     var columns = [];
     columns.push({
         data : 'name',
@@ -378,23 +362,8 @@ function cancelDepositing(tb, item) {
     tb.redraw();
 }
 
-function reserveDeposit(treebeard, item, cancelCallback) {
-    if (uploadCount <= 0) {
-        deposit(treebeard, item, cancelCallback);
-        return;
-    }
-    if (uploadReservedHandler) {
-        console.warn(logPrefix, 'Upload handler already reserved', item);
-        return;
-    }
-    console.log(logPrefix, 'Reserve upload handler', item);
-    uploadReservedHandler = function() {
-        deposit(treebeard, item, cancelCallback);
-    };
-}
-
 function deposit(treebeard, item, cancelCallback) {
-    showConfirmDeposit(treebeard, item, function(deposit, options) {
+    showConfirmDeposit(item, function(deposit, options) {
         if (!deposit) {
             if (!cancelCallback) {
                 return;
@@ -625,7 +594,7 @@ function createMetadataSelectorForJQuery(item, changedCallback) {
         .append(metadataSelectPanel);
 }
 
-function showConfirmDeposit(tb, contextItem, callback) {
+function showConfirmDeposit(contextItem, callback) {
     var options = {};
     const okHandler = function (dismiss) {
         dismiss()
@@ -680,76 +649,6 @@ function showConfirmDeposit(tb, contextItem, callback) {
     dialog.modal('show');
 }
 
-function checkAndReserveRefreshingMetadata(item, callback) {
-    if (!item.data) {
-        return;
-    }
-    const id = item.data.id;
-    if (refreshingIds[id]) {
-        // Already reserved
-        return;
-    }
-    const metadatas = searchMetadatas(item);
-    if (metadatas.length === 0 || metadatas.some(function(m) {
-        return m.metadata === undefined;
-    })) {
-        // Not loaded
-        return;
-    }
-    if (metadatas.every(function(m) {
-        return m.metadata;
-    })) {
-        // Already loaded
-        return;
-    }
-    refreshingIds[id] = Date.now();
-    reserveMetadataRefresh(
-        item,
-        metadataRefreshingTimeout,
-        metadataRefreshingRetries,
-        callback
-    );
-}
-
-function reserveMetadataRefresh(item, timeout, retries, callback) {
-    if (!contextVars.metadata) {
-        console.warn('Metadata addon is not available');
-        return;
-    }
-    console.log(logPrefix, 'reserveRefreshMetadata', item);
-    setTimeout(function() {
-        contextVars.metadata.loadMetadata(
-            item.data.nodeId,
-            item.data.nodeApiUrl,
-            function() {
-                const metadatas = searchMetadatas(item);
-                if (metadatas.length > 0 && metadatas.every(function(m) {
-                    return m.metadata;
-                })) {
-                    console.log(logPrefix, 'metadata refreshed', metadatas, item);
-                    refreshingIds[item.data.id] = null;
-                    if (!callback) {
-                        return;
-                    }
-                    callback(item);
-                    return;
-                }
-                console.log(logPrefix, 'refreshMetadata', metadatas, item);
-                if (retries <= 0) {
-                    console.log(logPrefix, 'Metadata refreshing cancelled', item);
-                    return;
-                }
-                reserveMetadataRefresh(
-                    item,
-                    timeout * metadataRefreshingTimeoutExp,
-                    retries - 1,
-                    callback
-                );
-            }
-        );
-    }, timeout);
-}
-
 function searchMetadatas(tree, recursive) {
     const data = tree.data;
     var r = [];
@@ -776,6 +675,9 @@ function searchMetadatas(tree, recursive) {
 function isTopLevelDraft(item) {
     const data = item.data;
     if (!data) {
+        return false;
+    }
+    if (data.provider !== 'weko') {
         return false;
     }
     const extra = data.extra;
@@ -880,34 +782,36 @@ function initFileView() {
     observer.observe(toggleBar, {attributes: false, childList: true, subtree: false});
 }
 
-function wekoUploadAdd(file, item) {
-    console.log(logPrefix, 'Detected: uploadAdded', file);
-    uploadCount ++;
-}
-
-function wekoUploadSuccess(file, row) {
-    console.log(logPrefix, 'Detected: uploadSuccess', file);
-    uploadCount --;
-    if (!uploadReservedHandler) {
+function attachMoveCompleteHandler() {
+    if (contextVars.metadataAddonEnabled && !contextVars.metadata) {
+        console.log(logPrefix, 'Waiting for metadata addon...');
+        setTimeout(attachMoveCompleteHandler, 500);
         return;
     }
-    if (uploadCount > 0) {
-        console.log(logPrefix, 'Reserved upload handler exists. waiting for ', uploadCount, ' files');
+    if (!contextVars.metadata) {
+        console.warn(logPrefix, 'Metadata addon is not available');
         return;
     }
-    console.log(logPrefix, 'Processing reserved upload handler...');
-    const f = uploadReservedHandler;
-    uploadReservedHandler = null;
-    setTimeout(function() {
-        // If uploadAdded is called immediately afterwards, then revert to the reserved state again.
-        if (uploadCount > 0) {
-            console.log(logPrefix, 'Reserved upload handler restored');
-            uploadReservedHandler = f;
+    contextVars.metadata.addMoveCompleteHandler(function(item, nodeId, metadata) {
+        console.log(logPrefix, 'Move completed', item, nodeId, metadata);
+        if (!isTopLevelDraft(item)) {
             return;
         }
-        f();
-        console.log(logPrefix, 'Reserved upload handler processed');
-    }, 500);
+        const metadatas = searchMetadatas(item);
+        if (metadatas.length === 0) {
+            return;
+        }
+        if (!metadatas.every(function(m) {
+            return m.metadata;
+        })) {
+            console.log(logPrefix, 'Metadata not found', item, metadatas);
+            return;
+        }
+        const parentItem = findItem(lastTreebeard.treeData, item.parentID);
+        deposit(lastTreebeard, item, function() {
+            lastTreebeard.updateFolder(null, parentItem);
+        });
+});
 }
 
 function addDepositButtonToMetadataDialog() {
@@ -937,8 +841,6 @@ Fangorn.config.weko = {
     folderIcon: wekoFolderIcons,
     itemButtons: wekoItemButtons,
     resolveRows: wekoColumns,
-    uploadAdd: wekoUploadAdd,
-    uploadSuccess: wekoUploadSuccess,
 };
 
 addDepositButtonToMetadataDialog();
@@ -946,4 +848,6 @@ addDepositButtonToMetadataDialog();
 if ($('#fileViewPanelLeft').length > 0) {
     // File View
     initFileView();
+} else {
+    attachMoveCompleteHandler();
 }

@@ -9,6 +9,7 @@ import furl
 from addons.base.models import BaseUserSettings, BaseNodeSettings
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base.utils import waterbutler_api_url_for
+from django.core.exceptions import MultipleObjectsReturned
 from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -574,6 +575,10 @@ class FileMetadata(BaseModel):
         except AttributeError:
             # File node inconsistency detected
             logger.exception('File node inconsistency detected')
+            return None
+        except MultipleObjectsReturned:
+            # Multiple file nodes returned due to the duplicate file node
+            logger.exception(f'Multiple file nodes returned for {path} @ {node._id}')
             return None
 
     def update_search(self):
