@@ -926,6 +926,9 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     folder_id = ser.CharField(required=False, allow_null=True)
     folder_path = ser.CharField(required=False, allow_null=True)
 
+    # GRDM-44417: features to check abilities of the addon
+    features = ser.DictField(required=False, read_only=True)
+
     # Forward-specific
     label = ser.CharField(required=False, allow_blank=True)
     url = ser.URLField(required=False, allow_blank=True)

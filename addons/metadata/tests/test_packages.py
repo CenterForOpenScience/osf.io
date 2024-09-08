@@ -368,7 +368,7 @@ class TestExportAndImport(OsfTestCase):
                 'root/osfstorage/sample/sub_folder/file_in_sub_folder',
                 './root/osfstorage/sample/sub_folder/',
                 '#./root/osfstorage/sample/sub_folder/#0',
-                '#metadata-schema-公的資金による研究データのメタデータ登録-2',
+                '#metadata-schema-公的資金による研究データのメタデータ登録-3',
                 './root/osfstorage/sample/empty/',
                 './root/osfstorage/sample/',
                 'root/osfstorage/file_in_root',
@@ -417,16 +417,16 @@ class TestExportAndImport(OsfTestCase):
             },
             'encodingFormat': 'application/json',
             'rdmSchema': {
-                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2'
+                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'
             },
             'text': "{\"test\": true}",
             'version': 'active'
         })
-        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2'), {
-            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2',
+        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'), {
+            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3',
             '@type': 'RDMMetadataSchema',
             'name': '\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332',
-            'version': 2
+            'version': 3
         })
         assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
             '@id': 'ro-crate-metadata.json',
@@ -542,7 +542,7 @@ class TestExportAndImport(OsfTestCase):
                 'root/osfstorage/sample/sub_folder/file_in_sub_folder',
                 './root/osfstorage/sample/sub_folder/',
                 '#./root/osfstorage/sample/sub_folder/#0',
-                '#metadata-schema-公的資金による研究データのメタデータ登録-2',
+                '#metadata-schema-公的資金による研究データのメタデータ登録-3',
                 './root/osfstorage/sample/empty/',
                 './root/osfstorage/sample/',
                 'root/osfstorage/file_in_root',
@@ -594,18 +594,18 @@ class TestExportAndImport(OsfTestCase):
             },
             'encodingFormat': 'application/json',
             'rdmSchema': {
-                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2'
+                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'
             },
             'text': "{\"test\": true}",
             'version': 'active'
         })
         assert_true('dateModified' in _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'))
         assert_true('dateCreated' in _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'))
-        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2'), {
-            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2',
+        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'), {
+            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3',
             '@type': 'RDMMetadataSchema',
             'name': '\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332',
-            'version': 2
+            'version': 3
         })
         assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
             '@id': 'ro-crate-metadata.json',
@@ -768,7 +768,7 @@ class TestExportAndImport(OsfTestCase):
                 'root/osfstorage/sample/sub_folder/file_in_sub_folder',
                 './root/osfstorage/sample/sub_folder/',
                 '#./root/osfstorage/sample/sub_folder/#0',
-                '#metadata-schema-公的資金による研究データのメタデータ登録-2',
+                '#metadata-schema-公的資金による研究データのメタデータ登録-3',
                 './root/osfstorage/sample/empty/',
                 './root/osfstorage/sample/',
                 'root/osfstorage/file_in_root',
@@ -821,16 +821,16 @@ class TestExportAndImport(OsfTestCase):
             },
             'encodingFormat': 'application/json',
             'rdmSchema': {
-                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2'
+                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'
             },
             'text': "{\"test\": true}",
             'version': 'active'
         })
-        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2'), {
-            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-2',
+        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'), {
+            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3',
             '@type': 'RDMMetadataSchema',
             'name': '\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332',
-            'version': 2
+            'version': 3
         })
         assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
             '@id': 'ro-crate-metadata.json',

@@ -16,7 +16,11 @@ from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from addons.metadata import SHORT_NAME
-from addons.metadata.settings import METADATA_ASSET_POOL_BASE_PATH, METADATA_ASSET_POOL_MAX_FILESIZE
+from addons.metadata.settings import (
+    METADATA_ASSET_POOL_BASE_PATH,
+    METADATA_ASSET_POOL_MAX_FILESIZE,
+    USE_EXPORTING,
+)
 from framework.celery_tasks import app as celery_app
 from osf.models import DraftRegistration, BaseFileNode, NodeLog, AbstractNode
 from osf.models.user import OSFUser
@@ -133,6 +137,12 @@ class NodeSettings(BaseNodeSettings):
     def complete(self):
         # Implementation for enumeration with <node_id>/addons API
         return True
+
+    @property
+    def features(self):
+        return {
+            'exporting': USE_EXPORTING,
+        }
 
     def get_file_metadatas(self):
         files = []
