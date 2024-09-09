@@ -125,6 +125,11 @@ def ensure_registration_report(schema_name, report_name, csv_template):
     template_query = RegistrationReportFormat.objects.filter(
         registration_schema_id=registration_schema._id, name=report_name
     )
+    if csv_template is None:
+        if template_query.exists():
+            template_query.delete()
+            logger.info(f'Format deleted: {registration_schema._id}, {report_name}')
+        return
     if template_query.exists():
         template = template_query.first()
     else:
@@ -133,5 +138,5 @@ def ensure_registration_report(schema_name, report_name, csv_template):
             name=report_name
         )
     template.csv_template = csv_template
-    logger.info(f'Format registered: {registration_schema._id}')
+    logger.info(f'Format registered: {registration_schema._id}, {report_name}')
     template.save()

@@ -315,6 +315,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'url': url,
                 'schema_id': schema_id,
                 'acceptable': ['registration'],
+                'provider': SHORT_NAME,
+                'folder': f'{parent}{index.title}',
             },
         ]
         url = self.owner.api_url_for(
@@ -330,6 +332,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'url': url,
                 'schema_id': schema_id,
                 'acceptable': ['draft_registration'],
+                'provider': SHORT_NAME,
+                'folder': f'{parent}{index.title}',
             },
         ]
         for child in index.children:
