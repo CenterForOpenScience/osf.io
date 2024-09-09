@@ -12,10 +12,12 @@ import osf.features
 from osf.metrics import InstitutionProjectCounts
 from osf.models import OSFUser, Node, Institution, Registration
 from osf.metrics import UserInstitutionProjectCounts
+from osf.metrics.reports import InstitutionalUserReport
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
-from api.base.filters import ListFilterMixin, FilterMixin
+from api.base.elasticsearch_dsl_views import ElasticsearchListView
+from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
@@ -533,7 +535,7 @@ class _OldInstitutionUserMetricsList(InstitutionImpactList):
         return self._make_elasticsearch_results_filterable(search, id=institution._id, department=DEFAULT_ES_NULL_VALUE)
 
 
-class _NewInstitutionUserMetricsList(InstitutionMixin, FilterMixin, JSONAPIBaseView):
+class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
     '''list view for institution-users metrics
 
     used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
@@ -552,6 +554,31 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, FilterMixin, JSONAPIBaseV
     view_name = 'institution-user-metrics'
 
     serializer_class = NewInstitutionUserMetricsSerializer
+
+    default_ordering = '-storage_byte_count'
+    ordering_fields = frozenset((
+        'user_name',
+        'department',
+        'month_last_login',
+        'account_creation_date',
+        'public_projects',
+        'private_projects',
+        'public_registration_count',
+        'embargoed_registration_count',
+        'published_preprint_count',
+        'public_file_count',
+        'storage_byte_count',
+    ))
+
+    def get_default_search(self):
+        _yearmonth = InstitutionalUserReport.most_recent_yearmonth()
+        if _yearmonth is None:
+            return None
+        return (
+            InstitutionalUserReport.search()
+            .filter('term', report_yearmonth=str(_yearmonth))
+            .filter('term', institution_id=self.get_institution()._id)
+        )
 
 
 institution_user_metrics_list_view = toggle_view_by_flag(

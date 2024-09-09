@@ -1,3 +1,4 @@
+from __future__ import annotations
 import dataclasses
 import re
 import datetime
@@ -27,12 +28,12 @@ class YearMonth:
     YEARMONTH_RE: ClassVar[re.Pattern] = re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
 
     @classmethod
-    def from_date(cls, date):
+    def from_date(cls, date: datetime.date) -> YearMonth:
         assert isinstance(date, (datetime.datetime, datetime.date))
         return cls(date.year, date.month)
 
     @classmethod
-    def from_str(cls, input_str):
+    def from_str(cls, input_str: str) -> YearMonth:
         match = cls.YEARMONTH_RE.fullmatch(input_str)
         if match:
             return cls(
