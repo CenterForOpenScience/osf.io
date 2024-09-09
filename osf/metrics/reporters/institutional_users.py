@@ -43,7 +43,6 @@ class _InstiUserReportHelper:
     def __post_init__(self):
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
         self.report = InstitutionalUserReport(
-            report_yearmonth=self.yearmonth,
             institution_id=self.institution._id,
             user_id=self.user._id,
             user_name=self.user.fullname,
