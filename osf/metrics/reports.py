@@ -46,8 +46,10 @@ class YearmonthField(metrics.Date):
             return YearMonth.from_str(data)
         elif isinstance(data, (datetime.datetime, datetime.date)):
             return YearMonth.from_date(data)
+        elif data is None:
+            return None
         else:
-            raise ValueError('unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
+            raise ValueError(f'unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
 
     def serialize(self, data):
         if isinstance(data, str):
@@ -56,6 +58,8 @@ class YearmonthField(metrics.Date):
             return str(data)
         elif isinstance(data, (datetime.datetime, datetime.date)):
             return str(YearMonth.from_date(data))
+        elif data is None:
+            return None
         else:
             raise ValueError(f'unsure how to serialize "{data}" (of type {type(data)}) as YYYY-MM')
 
