@@ -290,10 +290,13 @@ class NodeSettings(BaseNodeSettings):
         for addon in self.owner.get_addons():
             if not hasattr(addon, 'has_metadata') or not addon.has_metadata:
                 continue
-            dests = addon.get_metadata_destinations(schemas)
-            if dests is None:
-                continue
-            destinations += dests
+            try:
+                dests = addon.get_metadata_destinations(schemas)
+                if dests is None:
+                    continue
+                destinations += dests
+            except Exception:
+                logger.exception(f'Failed to get metadata destinations for {addon.config.short_name}')
         return {
             'formats': formats,
             'destinations': destinations,
