@@ -13,7 +13,6 @@ class SpamCountReporter(MonthlyReporter):
         next_month = report_yearmonth.next_month()
 
         report = SpamSummaryReport(
-            report_yearmonth=str(report_yearmonth),
             # Node Log entries
             node_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,

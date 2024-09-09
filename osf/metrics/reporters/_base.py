@@ -20,7 +20,7 @@ class MonthlyReporter:
     def run_and_record_for_month(self, report_yearmonth: YearMonth) -> None:
         reports = self.report(report_yearmonth)
         for report in reports:
-            assert str(report.report_yearmonth) == str(report_yearmonth)
+            report.report_yearmonth = report_yearmonth
             report.save()
 
 
