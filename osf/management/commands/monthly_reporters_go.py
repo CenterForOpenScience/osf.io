@@ -58,10 +58,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        errors = monthly_reporters_go(
+        monthly_reporters_go(
             report_year=getattr(options.get('yearmonth'), 'year', None),
             report_month=getattr(options.get('yearmonth'), 'month', None),
         )
-        for error_key, error_val in errors.items():
-            self.stdout.write(self.style.ERROR(f'error running {error_key}: ') + error_val)
-        self.stdout.write(self.style.SUCCESS('done.'))
+        self.stdout.write(self.style.SUCCESS('reporter tasks scheduled.'))
