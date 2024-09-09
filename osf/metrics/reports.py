@@ -21,7 +21,7 @@ class DailyReport(metrics.Metric):
     There's something we'd like to know about every so often,
     so let's regularly run a report and stash the results here.
     """
-    UNIQUE_TOGETHER_FIELDS = ('report_date',)  # override in subclasses for multiple reports per day
+    UNIQUE_TOGETHER_FIELDS: tuple[str, ...] = ('report_date',)  # override in subclasses for multiple reports per day
 
     report_date = metrics.Date(format='strict_date', required=True)
 
@@ -46,6 +46,10 @@ class YearmonthField(metrics.Date):
             return YearMonth.from_str(data)
         elif isinstance(data, (datetime.datetime, datetime.date)):
             return YearMonth.from_date(data)
+        elif isinstance(data, int):
+            # elasticsearch stores dates in milliseconds since the unix epoch
+            _as_datetime = datetime.datetime.fromtimestamp(data // 1000)
+            return YearMonth.from_date(_as_datetime)
         elif data is None:
             return None
         else:
@@ -67,7 +71,7 @@ class YearmonthField(metrics.Date):
 class MonthlyReport(metrics.Metric):
     """MonthlyReport (abstract base for report-based metrics that run monthly)
     """
-    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth',)  # override in subclasses for multiple reports per month
+    UNIQUE_TOGETHER_FIELDS: tuple[str, ...] = ('report_yearmonth',)  # override in subclasses for multiple reports per month
 
     report_yearmonth = YearmonthField(required=True)
 
@@ -75,6 +79,23 @@ class MonthlyReport(metrics.Metric):
         abstract = True
         dynamic = metrics.MetaField('strict')
         source = metrics.MetaField(enabled=True)
+
+    @classmethod
+    def most_recent_yearmonth(cls, base_search=None) -> YearMonth | None:
+        _search = base_search or cls.search()
+        _search = _search.update_from_dict({'size': 0})  # omit hits
+        _search.aggs.bucket(
+            'agg_most_recent_yearmonth',
+            'terms',
+            field='report_yearmonth',
+            order={'_key': 'desc'},
+            size=1,
+        )
+        _response = _search.execute()
+        if not _response.aggregations:
+            return None
+        (_bucket,) = _response.aggregations.agg_most_recent_yearmonth.buckets
+        return _bucket.key
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

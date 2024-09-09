@@ -324,6 +324,11 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'institution-users'
 
+    filterable_fields = frozenset({
+        'department',
+        'orcid_id',
+    })
+
     id = IDField(source='meta.id', read_only=True)
     user_name = ser.CharField(read_only=True)
     department = ser.CharField(read_only=True, source='department_name')
@@ -349,3 +354,6 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
     )
 
     links = LinksField({})
+
+    def get_absolute_url(self):
+        return None  # there is no detail view for institution-users
