@@ -37,7 +37,7 @@ class DailyReport(metrics.Metric):
 
 class YearmonthField(metrics.Date):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, format='strict_year_month', required=True)
+        super().__init__(*args, **kwargs, format='strict_year_month')
 
     def deserialize(self, data):
         if isinstance(data, YearMonth):
@@ -65,7 +65,7 @@ class MonthlyReport(metrics.Metric):
     """
     UNIQUE_TOGETHER_FIELDS = ('report_yearmonth',)  # override in subclasses for multiple reports per month
 
-    report_yearmonth = YearmonthField()
+    report_yearmonth = YearmonthField(required=True)
 
     class Meta:
         abstract = True
