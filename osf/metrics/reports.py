@@ -236,8 +236,8 @@ class InstitutionalUserReport(MonthlyReport):
     institution_id = metrics.Keyword()
     # user info:
     user_id = metrics.Keyword()
-    user_name = metrics.Text()
-    department_name = metrics.Text()
+    user_name = metrics.Keyword()
+    department_name = metrics.Keyword()
     month_last_login = YearmonthField()
     account_creation_date = YearmonthField()
     orcid_id = metrics.Keyword()
@@ -247,5 +247,5 @@ class InstitutionalUserReport(MonthlyReport):
     public_registration_count = metrics.Integer()
     embargoed_registration_count = metrics.Integer()
     published_preprint_count = metrics.Integer()
-    public_file_count = metrics.Integer()
-    storage_byte_count = metrics.Integer()
+    public_file_count = metrics.Long()
+    storage_byte_count = metrics.Long()
