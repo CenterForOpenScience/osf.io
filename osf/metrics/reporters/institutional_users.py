@@ -48,7 +48,11 @@ class _InstiUserReportHelper:
             user_id=self.user._id,
             user_name=self.user.fullname,
             department_name=(_affiliation.sso_department or None),
-            month_last_login=YearMonth.from_date(self.user.date_last_login),
+            month_last_login=(
+                YearMonth.from_date(self.user.date_last_login)
+                if self.user.date_last_login is not None
+                else None
+            ),
             account_creation_date=YearMonth.from_date(self.user.created),
             orcid_id=self.user.get_verified_external_id('ORCID', verified_only=True),
             public_project_count=self._public_project_queryset().count(),
