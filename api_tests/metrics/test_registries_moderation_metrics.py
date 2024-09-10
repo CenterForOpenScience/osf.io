@@ -22,7 +22,7 @@ class TestRegistrationModerationMetrics:
         with override_switch(features.ELASTICSEARCH_METRICS, active=True):
             yield
 
-    @pytest.mark.es
+    @pytest.mark.es_metrics
     def test_record_transitions(self, registration):
         registration._write_registration_action(
             RegistrationModerationStates.INITIAL,
@@ -70,7 +70,7 @@ class TestRegistrationModerationMetricsView:
     def base_url(self):
         return '/_/metrics/registries_moderation/transitions/'
 
-    @pytest.mark.es
+    @pytest.mark.es_metrics
     def test_registries_moderation_view(self, app, user, base_url, registration):
         registration._write_registration_action(
             RegistrationModerationStates.INITIAL,

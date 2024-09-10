@@ -45,7 +45,7 @@ class TestReindexingMetrics:
     def url(self):
         return f'{settings.API_DOMAIN}_/metrics/preprints/downloads/'
 
-    @pytest.mark.es
+    @pytest.mark.es_metrics
     @pytest.mark.skipif(django_settings.TRAVIS_ENV, reason='Non-deterministic fails on travis')
     def test_reindexing(self, app, url, preprint, user, admin, es6_client):
         preprint_download = PreprintDownload.record_for_preprint(

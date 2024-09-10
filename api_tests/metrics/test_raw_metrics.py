@@ -14,13 +14,19 @@ from api.base.settings import API_PRIVATE_BASE as API_BASE
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.es
+@pytest.mark.es_metrics
 class TestRawMetrics:
 
     @pytest.fixture(autouse=True)
     def enable_elasticsearch_metrics(self):
         with override_switch(features.ENABLE_RAW_METRICS, active=True):
             yield
+
+    @pytest.fixture(autouse=True)
+    def teardown_customer_index(self, es6_client):
+        es6_client.indices.delete(index='customer', ignore_unavailable=True)
+        yield
+        es6_client.indices.delete(index='customer', ignore_unavailable=True)
 
     @pytest.fixture
     def user(self):
@@ -132,7 +138,7 @@ class TestRawMetrics:
 
         time.sleep(3)
 
-        get_url = f'{base_url}_search?q=*'
+        get_url = f'{base_url}customer/_search?q=*'
         res = app.get(get_url, auth=user.auth)
 
         assert res.json['hits']['total'] == 1
