@@ -17,7 +17,7 @@ from osf_tests.factories import (
 from osf.metrics import UserInstitutionProjectCounts
 from osf.metrics.reports import InstitutionalUserReport
 
-@pytest.mark.es
+@pytest.mark.es_metrics
 @pytest.mark.django_db
 class TestOldInstitutionUserMetricList:
 
@@ -266,6 +266,7 @@ class TestOldInstitutionUserMetricList:
         assert data[2]['attributes']['department'] == 'Psychology dept'
 
 
+@pytest.mark.es_metrics
 @pytest.mark.django_db
 class TestNewInstitutionUserMetricList:
     @pytest.fixture(autouse=True)
@@ -336,13 +337,11 @@ class TestNewInstitutionUserMetricList:
         _resp = app.get(url, auth=rando.auth, expect_errors=True)
         assert _resp.status_code == 403
 
-    @pytest.mark.es
     def test_get_empty(self, app, url, institutional_admin):
         _resp = app.get(url, auth=institutional_admin.auth)
         assert _resp.status_code == 200
         assert _resp.json['data'] == []
 
-    @pytest.mark.es
     def test_get_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
         _resp = app.get(url, auth=institutional_admin.auth)
         assert _resp.status_code == 200
@@ -350,7 +349,6 @@ class TestNewInstitutionUserMetricList:
         _expected_user_ids = {_report.user_id for _report in reports}
         assert set(_user_ids(_resp)) == _expected_user_ids
 
-    @pytest.mark.es
     def test_filter_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
         for _query, _expected_user_ids in (
             ({'filter[department]': 'nunavum'}, set()),
@@ -386,7 +384,6 @@ class TestNewInstitutionUserMetricList:
             assert _resp.status_code == 200
             assert set(_user_ids(_resp)) == _expected_user_ids
 
-    @pytest.mark.es
     def test_sort_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
         for _query, _expected_user_id_list in (
             ({'sort': 'storage_byte_count'}, ['u_sparse', 'u_orc', 'u_blargl', 'u_orcomma']),
@@ -396,7 +393,6 @@ class TestNewInstitutionUserMetricList:
             assert _resp.status_code == 200
             assert list(_user_ids(_resp)) == _expected_user_id_list
 
-    @pytest.mark.es
     def test_paginate_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
         for _query, _expected_user_id_list in (
             ({'sort': 'storage_byte_count', 'page[size]': 2}, ['u_sparse', 'u_orc']),

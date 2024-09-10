@@ -29,7 +29,7 @@ def base_url():
     return f'/{API_BASE}metrics/preprints/'
 
 
-@pytest.mark.es
+@pytest.mark.es_metrics
 @pytest.mark.django_db
 class TestElasticSearch:
 
