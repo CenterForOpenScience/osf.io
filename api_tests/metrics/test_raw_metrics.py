@@ -14,7 +14,7 @@ from api.base.settings import API_PRIVATE_BASE as API_BASE
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.es
+@pytest.mark.es_metrics
 class TestRawMetrics:
 
     @pytest.fixture(autouse=True)

@@ -14,7 +14,7 @@ from osf_tests.factories import (
 from osf.metrics import UserInstitutionProjectCounts
 from api.base import settings
 
-@pytest.mark.es
+@pytest.mark.es_metrics
 @pytest.mark.django_db
 class TestInstitutionUserMetricList:
 

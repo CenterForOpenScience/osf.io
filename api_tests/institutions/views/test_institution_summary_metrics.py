@@ -9,7 +9,7 @@ from osf_tests.factories import (
 from osf.metrics import InstitutionProjectCounts
 
 
-@pytest.mark.es
+@pytest.mark.es_metrics
 @pytest.mark.django_db
 class TestInstitutionSummaryMetrics:
 

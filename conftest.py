@@ -1,3 +1,4 @@
+import contextlib
 from unittest import mock
 import logging
 import os
@@ -5,7 +6,9 @@ import re
 
 from django.core.management import call_command
 from django.db import transaction
+from elasticsearch import exceptions as es_exceptions
 from elasticsearch_dsl.connections import connections
+from elasticsearch_metrics.registry import registry as es_metrics_registry
 from faker import Factory
 import pytest
 import responses
@@ -133,22 +136,41 @@ def es6_client(setup_connections):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_marker(request):
+def _es_metrics_marker(request):
     """Clear out all indices and index templates before and after
-    tests marked with ``es``.
+    tests marked with `es_metrics`.
     """
-    marker = request.node.get_closest_marker('es')
+    marker = request.node.get_closest_marker('es_metrics')
     if marker:
         es6_client = request.getfixturevalue('es6_client')
+        _temp_prefix = 'temp_metrics_'
+        _temp_wildcard = f'{_temp_prefix}*'
 
-        def teardown_es():
-            es6_client.indices.delete(index='*')
-            es6_client.indices.delete_template('*')
+        def _teardown_es_temps():
+            es6_client.indices.delete(index=_temp_wildcard)
+            try:
+                es6_client.indices.delete_template(_temp_wildcard)
+            except es_exceptions.NotFoundError:
+                pass
 
-        teardown_es()
-        call_command('sync_metrics')
-        yield
-        teardown_es()
+        @contextlib.contextmanager
+        def _mock_metric_names():
+            with contextlib.ExitStack() as _exit:
+                for _metric_class in es_metrics_registry.get_metrics():
+                    _exit.enter_context(mock.patch.multiple(
+                        _metric_class,
+                        # `_template_name` also used to construct index names
+                        _template_name=f'{_temp_prefix}{_metric_class._template_name}',
+                        # `_template` is a wildcard string for indexes and templates
+                        _template=f'{_temp_prefix}{_metric_class._template}',
+                    ))
+                yield
+
+        _teardown_es_temps()
+        with _mock_metric_names():
+            call_command('sync_metrics')
+            yield
+        _teardown_es_temps()
     else:
         yield
 
