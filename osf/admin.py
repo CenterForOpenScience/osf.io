@@ -6,6 +6,7 @@ from django.contrib.auth.models import Group
 from django.db.models import Q, Count
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+import waffle
 
 from osf.external.spam.tasks import reclassify_domain_references
 from osf.models import OSFUser, Node, NotableDomain, NodeLicense
@@ -140,7 +141,24 @@ class NotableDomainAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request).annotate(number_of_references=Count('domainreference'))
         return qs
 
+
+class _ManygroupWaffleFlagAdmin(waffle.admin.FlagAdmin):
+    '''customized `waffle.admin.FlagAdmin` to support many groups
+
+    waffle assumes "there are likely not that many" groups [0],
+    but in osf there are, in fact, that many groups.
+
+    [0]: https://github.com/jazzband/django-waffle/commit/bf36c19ee03baf1c5850ffe0b284900a5c416f53
+    '''
+    raw_id_fields = (*waffle.admin.FlagAdmin.raw_id_fields, 'groups')
+
+
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
 admin.site.register(NotableDomain, NotableDomainAdmin)
 admin.site.register(NodeLicense, LicenseAdmin)
+
+# waffle admins, with Flag admin override
+admin.site.register(waffle.models.Flag, _ManygroupWaffleFlagAdmin)
+admin.site.register(waffle.models.Sample, waffle.admin.SampleAdmin)
+admin.site.register(waffle.models.Switch, waffle.admin.SwitchAdmin)

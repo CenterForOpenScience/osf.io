@@ -364,3 +364,5 @@ CI_ENV = False
 
 CITATION_STYLES_REPO_URL = 'https://github.com/CenterForOpenScience/styles/archive/88e6ed31a91e9f5a480b486029cda97b535935d4.zip'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+WAFFLE_ENABLE_ADMIN_PAGES = False  # instead, customized waffle admins in osf/admin.py
