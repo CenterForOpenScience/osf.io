@@ -93,17 +93,3 @@ class InstitutionSummaryReporter(DailyReporter):
 
             reports.append(report)
         return reports
-
-    def keen_events_from_report(self, report):
-        event = {
-            'institution': {
-                'id': report.institution_id,
-                'name': report.institution_name,
-            },
-            'users': report.users.to_dict(),
-            'nodes': report.nodes.to_dict(),
-            'projects': report.projects.to_dict(),
-            'registered_nodes': report.registered_nodes.to_dict(),
-            'registered_projects': report.registered_projects.to_dict(),
-        }
-        return {'institution_summary': [event]}

@@ -124,7 +124,7 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
 @pytest.fixture(scope='session')
 def setup_connections():
-    connections.create_connection(hosts=['http://localhost:9201'])
+    connections.create_connection(hosts=[website_settings.ELASTIC6_URI])
 
 
 @pytest.fixture(scope='function')

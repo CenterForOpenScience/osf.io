@@ -699,6 +699,10 @@ def osfstoragefile_mark_viewed(self, auth, fileversion, file_node):
 @file_signals.file_viewed.connect
 def osfstoragefile_update_view_analytics(self, auth, fileversion, file_node):
     resource = file_node.target
+    user = getattr(auth, 'user', None)
+    if hasattr(resource, 'is_contributor_or_group_member') and resource.is_contributor_or_group_member(user):
+        # Don't record views by contributors
+        return
     enqueue_update_analytics(
         resource,
         file_node,
@@ -710,6 +714,10 @@ def osfstoragefile_update_view_analytics(self, auth, fileversion, file_node):
 @file_signals.file_viewed.connect
 def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
     resource = file_node.target
+    user = getattr(auth, 'user', None)
+    if hasattr(resource, 'is_contributor_or_group_member') and resource.is_contributor_or_group_member(user):
+        # Don't record views by contributors
+        return
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintView.record_for_preprint(
@@ -733,6 +741,10 @@ def osfstoragefile_downloaded_update_analytics(self, auth, fileversion, file_nod
 @file_signals.file_downloaded.connect
 def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node):
     resource = file_node.target
+    user = getattr(auth, 'user', None)
+    if hasattr(resource, 'is_contributor_or_group_member') and resource.is_contributor_or_group_member(user):
+        # Don't record downloads by contributors
+        return
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
             PreprintDownload.record_for_preprint(
