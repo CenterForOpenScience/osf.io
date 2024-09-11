@@ -1794,7 +1794,9 @@ function MetadataButtons() {
                           return tempIdCounterForDataset ++;
                         }
                       });
-                      viewButtons.push(importDatasetButton.createButton());
+                      if (importDatasetButton.isAvailable()) {
+                        viewButtons.push(importDatasetButton.createButton());
+                      }
                     }
                     return m('span', viewButtons);
                   }
@@ -2256,7 +2258,7 @@ function MetadataButtons() {
     const dialog = $('<div class="modal fade"></div>');
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
-    const del = $('<a href="#" class="btn btn-success"></a>').text(_('Delete'));
+    const del = $('<a href="#" class="btn btn-danger"></a>').text(_('Delete'));
     del.click(function() {
       osfBlock.block()
       self.deleteConfirmedModal()

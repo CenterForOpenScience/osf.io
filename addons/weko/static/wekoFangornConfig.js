@@ -70,11 +70,14 @@ const wekoItemButtons = {
                         {treebeard : tb, mode : mode, item : aritem })
                 );
             } else if ((item.data.extra || {}).weko === 'draft') {
+                const projectMetadata = contextVars.metadata && contextVars.metadata.getProjectMetadata(
+                    item.data.nodeId
+                );
                 const metadata = contextVars.metadata && contextVars.metadata.getFileMetadata(
                     item.data.nodeId,
                     item.data.provider + item.data.materialized
                 );
-                if (metadata) {
+                if (projectMetadata && projectMetadata.editable && metadata) {
                     buttons.push(m.component(Fangorn.Components.button, {
                         onclick: function (event) {
                             deposit(tb, item);
@@ -700,6 +703,17 @@ function refreshFileViewButtons(item) {
         return;
     }
     if (!isTopLevelDraft(item)) {
+        return;
+    }
+    const projectMetadata = contextVars.metadata && contextVars.metadata.getProjectMetadata(
+        item.data.nodeId
+    );
+    if (!projectMetadata) {
+        console.warn(logPrefix, 'Project metadata not found', item);
+        return;
+    }
+    if (!projectMetadata.editable) {
+        console.log(logPrefix, 'Project metadata is not editable', item);
         return;
     }
     const metadata = contextVars.metadata && contextVars.metadata.getFileMetadata(

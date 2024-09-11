@@ -221,6 +221,23 @@ function ImportDatasetButton(treebeard, item, tempIdProvider) {
     });
   };
 
+  self.isAvailable = function() {
+    if (!self.item.data) {
+      return false;
+    }
+    if (!self.item.data.permissions) {
+      return false;
+    }
+    if (!self.item.data.permissions.edit) {
+      return false;
+    }
+    // weko does not support importing dataset
+    if (self.item.data.provider === 'weko') {
+      return false;
+    }
+    return true;
+  };
+
   self.createButton = function() {
     const button = m.component(Fangorn.Components.button, {
       onclick: function(event) {
