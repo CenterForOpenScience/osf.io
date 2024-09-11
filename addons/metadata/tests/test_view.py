@@ -30,17 +30,16 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
     def test_no_file_metadata(self):
         url = self.project.api_url_for('{}_get_project'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.json, {
-            'data': {
-                'attributes': {
-                    'editable': True,
-                    'files': [],
-                    'repositories': [],
-                },
-                'id': self.node_settings.owner._id,
-                'type': 'metadata-node-project',
-            },
-        })
+        assert_true('data' in res.json)
+        assert_equals(res.json['data']['type'], 'metadata-node-project')
+        assert_equals(res.json['data']['id'], self.node_settings.owner._id)
+        assert_true('attributes' in res.json['data'])
+        assert_equals(res.json['data']['attributes']['editable'], True)
+        assert_true('features' in res.json['data']['attributes'])
+        assert_true('dataset_importing' in res.json['data']['attributes']['features'])
+        assert_true('exporting' in res.json['data']['attributes']['features'])
+        assert_equals(res.json['data']['attributes']['files'], [])
+        assert_equals(res.json['data']['attributes']['repositories'], [])
 
     def test_single_file_metadata(self):
         self.node_settings.set_file_metadata('osfstorage/', {

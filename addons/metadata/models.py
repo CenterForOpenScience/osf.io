@@ -20,6 +20,7 @@ from addons.metadata.settings import (
     METADATA_ASSET_POOL_BASE_PATH,
     METADATA_ASSET_POOL_MAX_FILESIZE,
     USE_EXPORTING,
+    USE_DATASET_IMPORTING,
 )
 from framework.celery_tasks import app as celery_app
 from osf.models import DraftRegistration, BaseFileNode, NodeLog, AbstractNode
@@ -142,6 +143,7 @@ class NodeSettings(BaseNodeSettings):
     def features(self):
         return {
             'exporting': USE_EXPORTING,
+            'dataset_importing': USE_DATASET_IMPORTING,
         }
 
     def get_file_metadatas(self):

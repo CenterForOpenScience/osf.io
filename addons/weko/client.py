@@ -1,6 +1,7 @@
 import logging
 import requests
 from requests.exceptions import HTTPError
+from .settings import DEFAULT_TIMEOUT
 
 
 logger = logging.getLogger(__name__)
@@ -100,11 +101,21 @@ class Client(object):
             headers = headers.copy() if headers is not None else {}
             token = self.token.decode('utf8') if isinstance(self.token, bytes) else self.token
             headers['Authorization'] = 'Bearer ' + token
-            return {'headers': headers}
+            return {
+                'headers': headers,
+                'timeout': DEFAULT_TIMEOUT,
+            }
         elif headers is not None:
-            return {'auth': (self.username, self.password), 'headers': headers}
+            return {
+                'auth': (self.username, self.password),
+                'headers': headers,
+                'timeout': DEFAULT_TIMEOUT,
+            }
         else:
-            return {'auth': (self.username, self.password)}
+            return {
+                'auth': (self.username, self.password),
+                'timeout': DEFAULT_TIMEOUT,
+            }
 
 
 class Index(object):

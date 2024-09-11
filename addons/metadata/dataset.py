@@ -21,7 +21,11 @@ from website.project.decorators import (
 from website.util import api_url_for, waterbutler
 
 from . import SHORT_NAME
-from .settings import MAX_IMPORTABLE_DATASET_BYTES
+from .settings import (
+    MAX_IMPORTABLE_DATASET_HTML_BYTES,
+    MAX_IMPORTABLE_DATASET_DATA_BYTES,
+    DEFAULT_DATASET_TIMEOUT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -104,9 +108,28 @@ def import_dataset(self, user_id, node_id, dataset_url, provider, filepath):
         'node': node_id,
         'filenames': None,
     })
-    response = requests.get(dataset_url)
+    response = requests.get(
+        dataset_url,
+        stream=True,
+        timeout=DEFAULT_DATASET_TIMEOUT,
+    )
     response.raise_for_status()
-    html = BeautifulSoup(response.content, 'html.parser')
+    if 'Content-Type' not in response.headers:
+        raise ValueError('No Content-Type header found in dataset')
+    content_type = response.headers['Content-Type']
+    if 'html' not in content_type:
+        raise ValueError('Dataset is not HTML')
+    if 'Content-Length' in response.headers:
+        total_size = int(response.headers['Content-Length'])
+        if total_size > MAX_IMPORTABLE_DATASET_HTML_BYTES:
+            raise ValueError('Dataset too large')
+    response.raw.decode_content = True
+    body = b''
+    for chunk in response.iter_content(chunk_size=1024 * 1024):
+        body += chunk
+        if len(body) > MAX_IMPORTABLE_DATASET_HTML_BYTES:
+            raise ValueError('Dataset HTML too large')
+    html = BeautifulSoup(body, 'html.parser')
     logger.info('Downloaded dataset from {}'.format(dataset_url))
     logger.debug('HTML: {}'.format(html))
     self.update_state(state='parsing dataset', meta={
@@ -162,18 +185,22 @@ def import_dataset(self, user_id, node_id, dataset_url, provider, filepath):
     try:
         for index, content_url in enumerate(content_urls):
             logger.info('Downloading file {} from {}'.format(index, content_url))
-            response = requests.get(content_url, stream=True)
+            response = requests.get(
+                content_url,
+                stream=True,
+                timeout=DEFAULT_DATASET_TIMEOUT,
+            )
             response.raise_for_status()
             response.raw.decode_content = True
             temp_filepath = os.path.join(work_dir, 'temp.dat')
             if 'Content-Length' in response.headers:
                 total_size = int(response.headers['Content-Length'])
-                if total_size > MAX_IMPORTABLE_DATASET_BYTES:
+                if total_size > MAX_IMPORTABLE_DATASET_DATA_BYTES:
                     raise ValueError('Dataset too large')
             total_size = 0
             with open(temp_filepath, 'wb') as temp_file:
                 for chunk in response.iter_content(chunk_size=1024 * 1024):
-                    if total_size + len(chunk) > MAX_IMPORTABLE_DATASET_BYTES:
+                    if total_size + len(chunk) > MAX_IMPORTABLE_DATASET_DATA_BYTES:
                         raise ValueError('Dataset too large')
                     temp_file.write(chunk)
                     total_size += len(chunk)

@@ -6,3 +6,4 @@ PUBLISH_TASK_EXPIRATION = 60 * 60 * 24  # 24 hours
 
 # Maximum size of files that can be uploaded ... 1GB
 MAX_UPLOAD_SIZE = 1024 * 1024 * 1024
+DEFAULT_TIMEOUT = 30  # seconds

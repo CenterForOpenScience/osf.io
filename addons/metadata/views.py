@@ -49,6 +49,7 @@ def _response_config(addon):
 def _response_project_metadata(user, addon):
     attr = {
         'editable': addon.owner.has_permission(user, WRITE),
+        'features': addon.features,
     }
     attr.update(addon.get_project_metadata())
     return {

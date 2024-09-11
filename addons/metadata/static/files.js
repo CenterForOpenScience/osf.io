@@ -1789,11 +1789,16 @@ function MetadataButtons() {
                                   item : item }),
                     ].concat(buttons);
                     if (item.kind === 'folder' && !item.data.addonFullname) {
-                      const importDatasetButton = new ImportDatasetButton(tb, item, {
-                        assign: function() {
-                          return tempIdCounterForDataset ++;
+                      const importDatasetButton = new ImportDatasetButton(
+                        tb,
+                        item,
+                        self.contexts,
+                        {
+                          assign: function() {
+                            return tempIdCounterForDataset ++;
+                          }
                         }
-                      });
+                      );
                       if (importDatasetButton.isAvailable()) {
                         viewButtons.push(importDatasetButton.createButton());
                       }
