@@ -27,8 +27,8 @@ runs:
   - name: Copy Settings
     shell: bash
     run: |
-      cp website/settings/local-travis.py website/settings/local.py
-      cp api/base/settings/local-travis.py api/base/settings/local.py
+      cp website/settings/local-ci.py website/settings/local.py
+      cp api/base/settings/local-ci.py api/base/settings/local.py
       mkdir -p ~/preprints
       touch ~/preprints/index.html
   - name: PIP install
@@ -41,7 +41,7 @@ runs:
     shell: bash
     run: |
       # bumped psycopg to match requirements.txt, as otherwise build would fail
-      poetry run python3 -m invoke travis-addon-settings
+      poetry run python3 -m invoke ci-addon-settings
       pip uninstall uritemplate.py --yes
       # use yarn add --exact to match versions in yarn.lock w/o installing all deps
       yarn add --exact bower@^1.8.8
