@@ -92,12 +92,28 @@ class EphemeralNodeSettings:
             attribute_name='credentials_available'
         )
 
+    @property
+    def deleted(self):
+        return False
+
+    @property
+    def id(self):
+        return self.gv_id
+
+    @property
+    def has_auth(self):
+        return True
+
+    @property
+    def complete(self):
+        return True
+
     def before_page_load(self, *args, **kwargs):
         pass
 
     @property
     def folder_id(self):
-        return self.gv_data.get_attribute('root_folder')
+        return self.gv_data.get_attribute('root_folder').split(':')[1]
 
     def serialize_waterbutler_credentials(self):
         # sufficient for most OAuth services, including Box
