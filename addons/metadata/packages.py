@@ -677,7 +677,13 @@ class BaseROCrateFactory(object):
                 '@id': node_id,
             },
         }
-        if hasattr(addon, 'folder_id'):
+        if hasattr(addon, 'folder_id_for_export'):
+            props['rdmFolderId'] = addon.folder_id_for_export
+        elif hasattr(addon, 'user') and hasattr(addon, 'repo'):
+            # GitHub, GitLab, Bitbucket
+            props['rdmFolderId'] = f'{addon.user}/{addon.repo}'
+        elif hasattr(addon, 'folder_id'):
+            # Other storage addons
             props['rdmFolderId'] = addon.folder_id
         if extra_props is not None:
             props.update(extra_props)
@@ -822,6 +828,9 @@ class ROCrateFactory(BaseROCrateFactory):
             addon_name = addon_app.short_name
             if addon_name == 'wiki':
                 # wiki is handled separately
+                continue
+            if addon_name in settings.EXCLUDED_ADDONS_FOR_EXPORT:
+                logger.info(f'Skipped {addon_name} due to settings.EXCLUDED_ADDONS_FOR_EXPORT')
                 continue
             addon = node.get_addon(addon_name)
             if addon is None:
@@ -1274,18 +1283,11 @@ def to_creators_metadata(users):
     ]
 
 def _to_user_metadata(user):
+    middle_names_en = '' if not user.middle_names else f'{user.middle_names} '
     return {
         'number': user.erad,
-        'name-ja': {
-            'last': user.family_name_ja,
-            'middle': user.middle_names_ja,
-            'first': user.given_name_ja,
-        },
-        'name-en': {
-            'last': user.family_name,
-            'middle': user.middle_names,
-            'first': user.given_name,
-        },
+        'name_ja': f'{user.family_name_ja}{user.middle_names_ja}{user.given_name_ja}',
+        'name_en': f'{user.given_name} {middle_names_en}{user.family_name}',
     }
 
 def _snake_to_camel(name):

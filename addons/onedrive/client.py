@@ -27,6 +27,25 @@ class OneDriveClient(BaseClient):
             return self._build_url(settings.ONEDRIVE_API_URL, 'drives', self.drive_id)
         return self._build_url(settings.ONEDRIVE_API_URL, 'drive')
 
+    def folder(self, folder_id):
+        """Get metadata for the folder with id ``folder_id``
+
+        API Docs:  https://docs.microsoft.com/en-us/graph/api/driveitem-get
+
+        :param str folder_id: the id of the folder
+        :rtype: dict
+        :return: a dict containing metadata about the folder
+        """
+        url = self._build_url(self._drive_url, 'items', folder_id)
+        resp = self._make_request(
+            'GET',
+            url,
+            headers=self._default_headers,
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return resp.json()
+
     def folders(self, folder_id=None):
         """Get list of subfolders of the folder with id ``folder_id``
 

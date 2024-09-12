@@ -670,7 +670,7 @@ class ImportedAddonSettings(BaseModel):
         addon = node.get_addon(self.name)
         if addon is None:
             return False
-        return hasattr(addon, 'complete') and addon.complete
+        return hasattr(addon, 'configured') and addon.configured
 
     @property
     def full_name(self):
@@ -682,11 +682,12 @@ class ImportedAddonSettings(BaseModel):
 
     def apply(self, auth):
         node = self.node_settings.owner
+        logger.info(f'Importing {self.name} settings to {node._id}')
         addon = node.get_addon(self.name)
         if addon is None:
             raise ValueError('Addon not found')
-        if not hasattr(addon, 'set_folder'):
-            raise ValueError('Addon has no set_folder')
+        if not hasattr(addon, 'set_folder') and not hasattr(addon, 'set_folder_by_id'):
+            raise ValueError('Addon has no set_folder or set_folder_by_id')
         if not hasattr(addon, 'has_auth'):
             raise ValueError('Addon has no has_auth')
         if not addon.has_auth:
@@ -696,6 +697,7 @@ class ImportedAddonSettings(BaseModel):
             addon.set_folder_by_id(self.folder_id, auth)
         else:
             addon.set_folder(self.folder_id, auth)
+        addon.save()
         logger.info(f'Imported {self.name} settings to {node._id}')
         return True
 

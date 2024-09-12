@@ -14,3 +14,7 @@ METADATA_ASSET_POOL_MAX_FILESIZE = 1024 * 1024 * 10  # 10MB
 MAX_IMPORTABLE_DATASET_HTML_BYTES = 1024 * 1024 * 10  # 10MB
 MAX_IMPORTABLE_DATASET_DATA_BYTES = 1024 * 1024 * 1024  # 1GB
 DEFAULT_DATASET_TIMEOUT = 60  # seconds
+
+# List of addons that are not allowed to be exported
+EXCLUDED_ADDONS_FOR_EXPORT = ['mendeley', 'zotero', 'iqbrims']
+EXCLUDED_ADDONS_FOR_EXPORT += ['dropboxbusiness', 'nextcloudinstitutions', 'ociinstitutions', 'onedrivebusiness', 's3compatinstitutions']

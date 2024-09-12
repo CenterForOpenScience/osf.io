@@ -80,6 +80,7 @@ function ViewModel(nodeId, url) {
         initHooks(self.nodeId, self.importedAddonSettings(), function(targetAddon) {
             console.log(logPrefix, 'initHooks callback', targetAddon);
             self.waitForAddonSetting(targetAddon, function(addons) {
+                console.log(logPrefix, 'waitForAddonSetting callback', addons);
                 const nonAppliedAddons = addons.filter(function(addon) {
                     return !addon.applied;
                 });
