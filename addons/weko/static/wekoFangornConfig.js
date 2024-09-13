@@ -289,7 +289,7 @@ function checkDepositing(tb, contextItem, url) {
         }
         if (data.data && data.data.attributes && data.data.attributes.result) {
             console.log(logPrefix, 'uploaded', data.data.attributes.result);
-            if (tb) {
+            if (tb && findItem(tb.treeData, contextItem.parentID)) {
                 tb.updateFolder(null, findItem(tb.treeData, contextItem.parentID));
             } else {
                 $('#weko-deposit i')
