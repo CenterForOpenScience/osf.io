@@ -51,7 +51,10 @@ class OptimaizedPagination(pagination.PageNumberPagination):
             self.display_page_controls = True
 
         self.request = request
-        return self.page.object_list.iterator()
+        if hasattr(self.page.object_list, 'iterator'):
+            return self.page.object_list.iterator()
+        else:
+            return iter(self.page.object_list)
 
 class JSONAPIPagination(OptimaizedPagination):
     """
