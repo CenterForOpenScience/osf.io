@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import logging
+import re
 from jinja2 import Environment
 from osf.models.metaschema import RegistrationSchema
 
@@ -117,11 +118,17 @@ def make_report_as_csv(format, draft_metadata, schema):
     template_metadata = _convert_metadata(draft_metadata, questions)
     return 'report.csv', template.render(**template_metadata)
 
-def ensure_registration_report(schema_name, report_name, csv_template):
+def ensure_registration_report(schema_name, report_name_and_order, csv_template):
     from .models import RegistrationReportFormat
     registration_schema = RegistrationSchema.objects.filter(
         name=schema_name
     ).order_by('-schema_version').first()
+    report_name = report_name_and_order
+    order = None
+    m = re.match(r'^(\d+):\s*(.*)$', report_name_and_order)
+    if m:
+        order = int(m.group(1))
+        report_name = m.group(2)
     template_query = RegistrationReportFormat.objects.filter(
         registration_schema_id=registration_schema._id, name=report_name
     )
@@ -138,5 +145,7 @@ def ensure_registration_report(schema_name, report_name, csv_template):
             name=report_name
         )
     template.csv_template = csv_template
-    logger.info(f'Format registered: {registration_schema._id}, {report_name}')
+    if order is not None:
+        template.order = order
+    logger.info(f'Format registered: {registration_schema._id}, "{report_name}" as index {order}')
     template.save()
