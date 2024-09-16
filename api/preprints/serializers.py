@@ -625,14 +625,10 @@ class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     links = LinksField({
         'self': 'get_self_url',
-        'html': 'get_related_url',
     })
 
     def get_self_url(self, obj):
-        return obj['self'].absolute_api_v2_url
-
-    def get_related_url(self, obj):
-        return f"{obj['self'].absolute_api_v2_url}institutions/"
+        return obj['self'].institutions_relationship_url
 
     class Meta:
         type_ = 'institutions'
