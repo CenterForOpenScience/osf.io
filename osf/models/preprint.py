@@ -434,6 +434,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return self.absolute_api_v2_url + 'relationships/node/'
 
     @property
+    def institutions_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
+
+    @property
     def admin_contributor_or_group_member_ids(self):
         # Overrides ContributorMixin
         # Preprints don't have parents or group members at the moment, so this is just admin group member ids
