@@ -167,18 +167,22 @@ class TestPreprintInstitutionsRelationship:
         preprint.affiliated_institutions.add(institution_A)
         preprint.save()
         update_institutions_payload = {'data': []}
-        res = app.put_json_api(url, update_institutions_payload, auth=write_user_with_institutional_affiliation.auth, expect_errors=True)
+        res = app.put_json_api(url, update_institutions_payload, auth=write_user_with_institutional_affiliation.auth)
         assert res.status_code == 200
+        preprint.reload()
+        assert institution_A in preprint.affiliated_institutions.all()
 
     def test_update_affiliated_institutions_remove_admin_without_affiliation(self, app, admin_without_institutional_affiliation, preprint, url, institution_A):
         """
-        Test that admins without affiliation can remove institutions.
+        Test that admins without affiliation cannot remove institutions.
         """
         preprint.affiliated_institutions.add(institution_A)
         preprint.save()
         update_institutions_payload = {'data': []}
         res = app.put_json_api(url, update_institutions_payload, auth=admin_without_institutional_affiliation.auth)
         assert res.status_code == 200
+        preprint.reload()
+        assert institution_A in preprint.affiliated_institutions.all()
 
     def test_update_affiliated_institutions_remove_admin_with_affiliation(self, app, admin_with_institutional_affiliation, preprint, url, institution_A):
         """
@@ -198,16 +202,16 @@ class TestPreprintInstitutionsRelationship:
 
     def test_preprint_institutions_list_get_unauthenticated(self, app, url):
         """
-        Test that unauthenticated users cannot retrieve the list of affiliated institutions for a preprint.
+        Test that unauthenticated users can retrieve the list of affiliated institutions for a preprint.
         """
-        res = app.get(url, expect_errors=True)
+        res = app.get(url)
         assert res.status_code == 200
 
     def test_preprint_institutions_list_get_no_permissions(self, app, user, url):
         """
-        Test that users without permissions cannot retrieve the list of affiliated institutions for a preprint.
+        Test that users without permissions can retrieve the list of affiliated institutions for a preprint.
         """
-        res = app.get(url, auth=user.auth, expect_errors=True)
+        res = app.get(url, auth=user.auth)
         assert res.status_code == 200
 
     def test_preprint_institutions_list_get_read_user(self, app, read_user_with_institutional_affiliation, preprint, url):
