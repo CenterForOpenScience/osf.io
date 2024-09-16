@@ -2263,7 +2263,11 @@ function MetadataButtons() {
     const dialog = $('<div class="modal fade"></div>');
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
-    const del = $('<a href="#" class="btn btn-danger"></a>').text(_('Delete'));
+    /*
+      Workaround: Cannot use .modal-footer here, because .modal-footer .btn-danger combination
+      may be unintentionally manipulated by Fangorn
+    */
+    const del = $('<a href="#" class="btn btn-danger" style="margin-left: 5px"></a>').text(_('Delete'));
     del.click(function() {
       osfBlock.block()
       self.deleteConfirmedModal()
@@ -2282,7 +2286,7 @@ function MetadataButtons() {
               .append($('<div class="row"></div>')
                 .append($('<div class="col-sm-12"></div>')
                   .append(_('Do you want to delete metadata? This operation cannot be undone.')))))
-            .append($('<div class="modal-footer"></div>')
+            .append($('<div style="padding: 15px; text-align: right;"></div>')
               .append(close).append(del)))));
     dialog.appendTo($('#treeGrid'));
     return dialog;
