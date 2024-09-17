@@ -1,0 +1,22 @@
+{% load node_extras %}
+<tr>
+    <td>Machine State</td>
+    <td>
+        <h4 >{{ preprint.machine_state }}</h4>
+        <h4 >{{ preprint.state }}</h4>
+        {% if perms.osf.change_preprint %}
+            <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseChangeMachineState">
+                Change preprint machine_state
+            </a>
+            <div class="collapse" id="collapseChangeMachineState">
+                <div class="well">
+                    <form action="{% url 'preprints:preprint-machine-state' guid=preprint.guid %}" method="post">
+                        {% csrf_token %}
+                        {{ change_machine_state_form.as_p }}
+                        <input class="btn-btn-primary" type="submit" value="Submit" />
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </td>
+</tr>
