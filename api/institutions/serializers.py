@@ -357,3 +357,88 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
 
     def get_absolute_url(self):
         return None  # there is no detail view for institution-users
+
+
+class DepartmentInstitutionSerializer(BaseAPISerializer):
+    id = ser.CharField()
+    total = ser.IntegerField()
+    name = ser.CharField()
+
+
+class LicenseInstitutionSerializer(BaseAPISerializer):
+    id = ser.CharField()
+    total = ser.IntegerField()
+    name = ser.CharField()
+
+
+class AddonsInstitutionSerializer(BaseAPISerializer):
+    id = ser.CharField()
+    total = ser.IntegerField()
+    name = ser.CharField()
+
+
+class StorageRegionInstitutionSerializer(BaseAPISerializer):
+    id = ser.CharField()
+    total = ser.IntegerField()
+    name = ser.CharField()
+
+
+class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
+    '''serializer for institution-summary metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
+    (and should be renamed without "New" when that flag is permanently active)
+
+    Summary contains counts of
+    - Total users in the institution
+    - Total public project count for the institution
+    - Total private project count for the institution
+    - Total public registration count for the institution
+    - Total private registration count for the institution
+    - Total published preprint count for the institution
+
+    Summary contains graphs of
+    - Total users by department
+    - Total Licenses by license name
+    - Total Add-ons connected by add-on name
+    - Total amount of bytes stored in each Storage Regions by region name
+    - Total public storage usage in bytes
+    - Total private storage usage in bytes
+    '''
+
+    class Meta:
+        type_ = 'institution-monthly-summary'
+
+    filterable_fields = frozenset({
+        'id'
+    })
+
+    id = IDField(read_only=True)
+
+    total_users = ser.IntegerField(read_only=True)
+    public_project_count = ser.IntegerField(read_only=True)
+    private_project_count = ser.IntegerField(read_only=True)
+    public_registration_count = ser.IntegerField(read_only=True)
+    embargoed_registration_count = ser.IntegerField(read_only=True)
+    published_preprint_count = ser.IntegerField(read_only=True)
+    public_file_count = ser.IntegerField(read_only=True)
+    public_storage_count = ser.IntegerField(read_only=True)
+    private_storage_count = ser.IntegerField(read_only=True)
+    departments = ser.ListField(child=DepartmentInstitutionSerializer())
+    licenses = ser.ListField(child=LicenseInstitutionSerializer())
+    addons = ser.ListField(child=AddonsInstitutionSerializer())
+    storage_regions = ser.ListField(child=StorageRegionInstitutionSerializer())
+
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user_id>'},
+    )
+    institution = RelationshipField(
+        related_view='institutions:institution-detail',
+        related_view_kwargs={'institution_id': '<institution_id>'},
+    )
+
+    links = LinksField({})
+
+    def get_absolute_url(self):
+        return None  # there is no detail view for institution-users

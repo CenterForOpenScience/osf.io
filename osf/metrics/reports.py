@@ -270,3 +270,46 @@ class InstitutionalUserReport(MonthlyReport):
     published_preprint_count = metrics.Integer()
     public_file_count = metrics.Long()
     storage_byte_count = metrics.Long()
+
+
+class Department(InnerDoc):
+    id = metrics.Keyword()
+    name = metrics.Keyword()
+    total = metrics.Long()
+
+
+class License(InnerDoc):
+    id = metrics.Keyword()
+    name = metrics.Keyword()
+    total = metrics.Long()
+
+
+class Addon(InnerDoc):
+    id = metrics.Keyword()
+    name = metrics.Keyword()
+    total = metrics.Long()
+
+
+class StorageRegion(InnerDoc):
+    id = metrics.Keyword()
+    name = metrics.Keyword()
+    total = metrics.Long()
+
+
+class InstitutionMonthlySummaryReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'institution_id', )
+    institution_id = metrics.Keyword()
+    public_project_count = metrics.Integer()
+    private_project_count = metrics.Integer()
+    public_registration_count = metrics.Integer()
+    embargoed_registration_count = metrics.Integer()
+    published_preprint_count = metrics.Integer()
+    public_file_count = metrics.Long()
+    private_file_count = metrics.Long()
+    public_storage_count = metrics.Long()
+    private_storage_count = metrics.Long()
+
+    departments = metrics.Object(Department, multi=True)
+    licenses = metrics.Object(License, multi=True)
+    addons = metrics.Object(Addon, multi=True)
+    storage_regions = metrics.Object(StorageRegion, multi=True)
