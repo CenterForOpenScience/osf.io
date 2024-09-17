@@ -620,7 +620,7 @@ class CeleryConfig:
                 'kwargs': {'dry_run': False},
             },
             'clear_expired_sessions': {
-                'task': 'management.commands.clear_expired_sessions',
+                'task': 'osf.management.commands.clear_expired_sessions',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },

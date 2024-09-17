@@ -9,41 +9,21 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
 )
-from osf.utils.permissions import WRITE, READ, ADMIN
-from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from osf.utils.permissions import ADMIN
+from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
+from framework.auth.core import Auth
 
 SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
-class TestDraftRegistrationDetail(DraftRegistrationTestCase):
-
-    @pytest.fixture()
-    def schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-    @pytest.fixture()
-    def draft_registration(self, user, project_public, schema):
-        return DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema,
-            branched_from=project_public
-        )
-
-    @pytest.fixture()
-    def project_other(self, user):
-        return ProjectFactory(creator=user)
+class TestDraftRegistrationDetail(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
-            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
+        return f'/{API_BASE}nodes/{project_public._id}/draft_registrations/{draft_registration._id}/?version=2.19'
 
-    def test_admin_can_view_draft(
-            self, app, user, draft_registration, project_public,
-            schema, url_draft_registrations, group_mem):
+    def test_node_admin_can_view_draft(self, app, user, draft_registration, schema, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -51,75 +31,55 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
-    def test_admin_group_member_can_view(
-        self, app, user, draft_registration, project_public,
-            schema, url_draft_registrations, group_mem):
-
-        res = app.get(url_draft_registrations, auth=group_mem.auth)
+    def test_read_contributor_can_view_draft(self, app, user_read_contrib, url_draft_registrations):
+        """
+        Note this is the Node permissions not DraftRegistration permission
+        """
+        res = app.get(url_draft_registrations, auth=user_read_contrib.auth)
         assert res.status_code == 200
 
-    def test_cannot_view_draft(
-            self, app, user_write_contrib, project_public,
-            user_read_contrib, user_non_contrib,
-            url_draft_registrations, group, group_mem):
+    def test_write_contributor_can_view_draft(self, app, user_write_contrib, url_draft_registrations):
+        """
+        Note this is the Node permissions not DraftRegistration permission
+        """
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth)
+        assert res.status_code == 200
 
-        #   test_read_only_contributor_cannot_view_draft
-        res = app.get(
-            url_draft_registrations,
-            auth=user_read_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
+    def test_logged_in_non_contributor_cannot_view_draft(self, app, user_non_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
 
-    #   test_read_write_contributor_cannot_view_draft
-        res = app.get(
-            url_draft_registrations,
-            auth=user_write_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_logged_in_non_contributor_cannot_view_draft
-        res = app.get(
-            url_draft_registrations,
-            auth=user_non_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_unauthenticated_user_cannot_view_draft
+    def test_unauthenticated_user_cannot_view_draft(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
-    #   test_group_mem_read_cannot_view
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, READ)
-        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 403
-
-    def test_cannot_view_deleted_draft(
-            self, app, user, url_draft_registrations):
+    def test_cannot_view_deleted_draft(self, app, user, url_draft_registrations):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
         assert res.status_code == 204
 
         res = app.get(
             url_draft_registrations,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 410
 
-    def test_draft_must_be_branched_from_node_in_kwargs(
-            self, app, user, project_other, draft_registration):
-        url = '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_other._id, draft_registration._id)
-        res = app.get(url, auth=user.auth, expect_errors=True)
+    def test_draft_must_be_branched_from_node_in_kwargs(self, app, user, project_other, draft_registration):
+        res = app.get(
+            f'/{API_BASE}nodes/{project_other._id}/draft_registrations/{draft_registration._id}/',
+            auth=user.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
     def test_draft_registration_serializer_usage(self, app, user, project_public, draft_registration):
         # Tests the usage of DraftRegistrationDetailSerializer for version 2.20
-        url_draft_registrations = '/{}nodes/{}/draft_registrations/{}/?{}'.format(
-            API_BASE, project_public._id, draft_registration._id, 'version=2.20')
-
-        res = app.get(url_draft_registrations, auth=user.auth)
+        res = app.get(
+            f'/{API_BASE}nodes/{project_public._id}/draft_registrations/{draft_registration._id}/?version=2.20',
+            auth=user.auth
+        )
         assert res.status_code == 200
         data = res.json['data']
 
@@ -128,8 +88,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['attributes']['description']
         assert data['relationships']['affiliated_institutions']
 
-    def test_can_view_after_added(
-            self, app, schema, draft_registration, url_draft_registrations):
+    def test_can_view_after_added(self, app, schema, draft_registration, url_draft_registrations):
         user = AuthUserFactory()
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
@@ -138,21 +97,11 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
 
 @pytest.mark.django_db
-class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
+class TestDraftRegistrationUpdate(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
-    def schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-    @pytest.fixture()
-    def draft_registration(self, user, project_public, schema):
-        return DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema,
-            branched_from=project_public
-        )
+    def url_draft_registrations(self, project_public, draft_registration):
+        return f'/{API_BASE}nodes/{project_public._id}/draft_registrations/{draft_registration._id}/?version=2.19'
 
     @pytest.fixture()
     def reg_schema(self):
@@ -170,19 +119,12 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         )
 
     @pytest.fixture()
-    def metadata_registration(
-            self, metadata,
-            draft_registration_prereg):
+    def metadata_registration(self, metadata, draft_registration_prereg):
         return metadata(draft_registration_prereg)
 
     @pytest.fixture()
     def project_other(self, user):
         return ProjectFactory(creator=user)
-
-    @pytest.fixture()
-    def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
-            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -267,12 +209,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
-    def test_cannot_update_draft(
-            self, app, user_write_contrib, project_public,
-            user_read_contrib, user_non_contrib,
-            payload, url_draft_registrations, group, group_mem):
+    def test_read_only_contributor_cannot_update_draft(
+            self, app, user_read_contrib, payload, url_draft_registrations,
+    ):
 
-        #   test_read_only_contributor_cannot_update_draft
         res = app.put_json_api(
             url_draft_registrations,
             payload,
@@ -280,37 +220,20 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_logged_in_non_contributor_cannot_update_draft
+    def test_logged_in_non_contributor_cannot_update_draft(
+        self, app, user_non_contrib, payload, url_draft_registrations,
+    ):
         res = app.put_json_api(
             url_draft_registrations,
             payload,
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    #   test_unauthenticated_user_cannot_update_draft
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, expect_errors=True)
+    def test_unauthenticated_user_cannot_update_draft(self, app, payload, url_draft_registrations):
+        res = app.put_json_api(url_draft_registrations, payload, expect_errors=True)
         assert res.status_code == 401
-
-    #   test_osf_group_member_admin_cannot_update_draft
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, expect_errors=True,
-            auth=group_mem.auth
-        )
-        assert res.status_code == 403
-
-    #   test_osf_group_member_write_cannot_update_draft
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, WRITE)
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, expect_errors=True,
-            auth=group_mem.auth
-        )
-        assert res.status_code == 403
 
     def test_registration_metadata_does_not_need_to_be_supplied(
             self, app, user, payload, url_draft_registrations):
@@ -528,21 +451,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
 
 @pytest.mark.django_db
-class TestDraftRegistrationPatch(DraftRegistrationTestCase):
-
-    @pytest.fixture()
-    def schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-    @pytest.fixture()
-    def draft_registration(self, user, project_public, schema):
-        return DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema,
-            branched_from=project_public
-        )
+class TestDraftRegistrationPatch(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
     def reg_schema(self):
@@ -561,10 +470,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     @pytest.fixture()
     def metadata_registration(self, metadata, draft_registration_prereg):
         return metadata(draft_registration_prereg)
-
-    @pytest.fixture()
-    def project_other(self, user):
-        return ProjectFactory(creator=user)
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
@@ -604,110 +509,68 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
         assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
-    def test_cannot_update_draft(
-            self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib,
-            payload, url_draft_registrations, group_mem):
-
-        #   test_read_only_contributor_cannot_update_draft
+    def test_read_only_contributor_cannot_update_draft(
+            self, app, user_read_contrib, payload, url_draft_registrations
+    ):
         res = app.patch_json_api(
             url_draft_registrations,
             payload,
             auth=user_read_contrib.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    #   test_logged_in_non_contributor_cannot_update_draft
+    def test_logged_in_non_contributor_cannot_update_draft(
+            self, app, user_non_contrib, payload, url_draft_registrations
+    ):
         res = app.patch_json_api(
             url_draft_registrations,
             payload,
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    #   test_unauthenticated_user_cannot_update_draft
-        res = app.patch_json_api(
-            url_draft_registrations,
-            payload, expect_errors=True)
-        assert res.status_code == 401
-
-        # group admin cannot update draft
+    def test_unauthenticated_user_cannot_update_draft(
+            self, app, user_non_contrib, payload, url_draft_registrations
+    ):
         res = app.patch_json_api(
             url_draft_registrations,
             payload,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 403
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
 
 @pytest.mark.django_db
-class TestDraftRegistrationDelete(DraftRegistrationTestCase):
-
-    @pytest.fixture()
-    def schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-    @pytest.fixture()
-    def draft_registration(self, user, project_public, schema):
-        return DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema,
-            branched_from=project_public
-        )
-
-    @pytest.fixture()
-    def project_other(self, user):
-        return ProjectFactory(creator=user)
+class TestDraftRegistrationDelete(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
-            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
+        return f'/{API_BASE}nodes/{project_public._id}/draft_registrations/{draft_registration._id}/?version=2.19'
 
     def test_admin_can_delete_draft(self, app, user, url_draft_registrations, project_public):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
         assert res.status_code == 204
 
-    def test_cannot_delete_draft(
-            self, app, user_write_contrib, project_public,
-            user_read_contrib, user_non_contrib,
-            url_draft_registrations, group, group_mem):
-
-        #   test_read_only_contributor_cannot_delete_draft
-        res = app.delete_json_api(
-            url_draft_registrations,
-            auth=user_read_contrib.auth,
-            expect_errors=True)
+    def test_read_only_contributor_cannot_delete_draft(self, app, user_read_contrib, url_draft_registrations):
+        res = app.delete_json_api(url_draft_registrations, auth=user_read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-    #   test_read_write_contributor_cannot_delete_draft
-        res = app.delete_json_api(
-            url_draft_registrations,
-            auth=user_write_contrib.auth,
-            expect_errors=True)
+    def test_read_write_draft_contributor_cannot_delete_draft(
+            self, app, user_write_contrib, url_draft_registrations, project_public
+    ):
+        project_public.remove_contributor(user_write_contrib, Auth(user_write_contrib))  # Draft contributor only
+        res = app.delete_json_api(url_draft_registrations, auth=user_write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-    #   test_logged_in_non_contributor_cannot_delete_draft
-        res = app.delete_json_api(
-            url_draft_registrations,
-            auth=user_non_contrib.auth,
-            expect_errors=True)
+    def test_logged_in_non_contributor_cannot_delete_draft(self, app, user_non_contrib, url_draft_registrations):
+        res = app.delete_json_api(url_draft_registrations, auth=user_non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-    #   test_unauthenticated_user_cannot_delete_draft
+    def test_unauthenticated_user_cannot_delete_draft(self, app, url_draft_registrations):
         res = app.delete_json_api(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
-
-    #   test_group_member_admin_cannot_delete_draft
-        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
-        assert res.status_code == 403
-
-    #   test_group_member_write_cannot_delete_draft
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, WRITE)
-        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
-        assert res.status_code == 403
 
     def test_draft_that_has_been_registered_cannot_be_deleted(
             self, app, user, project_public, draft_registration, url_draft_registrations):

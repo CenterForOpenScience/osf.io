@@ -43,13 +43,19 @@ def notify_submit(resource, user, *args, **kwargs):
     )
 
 
-def notify_resubmit(resource, user, action, *args, **kwargs):
+def notify_resubmit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
-    reviews_signals.reviews_email.send(
-        creator=user,
+    context['referrer'] = user
+    context['resubmission'] = True
+    recipients = list(resource.contributors)
+    reviews_signals.reviews_email_submit.send(
+        recipients=recipients,
         context=context,
-        template='reviews_resubmission_confirmation',
-        action=action
+        template=mails.REVIEWS_RESUBMISSION_CONFIRMATION,
+    )
+    reviews_signals.reviews_email_submit_moderators_notifications.send(
+        timestamp=timezone.now(),
+        context=context
     )
 
 

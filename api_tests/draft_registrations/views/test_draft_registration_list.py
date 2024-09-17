@@ -2,20 +2,19 @@ from unittest import mock
 import pytest
 
 from framework.auth.core import Auth
-from api_tests.nodes.views.test_node_draft_registration_list import (
-    TestDraftRegistrationList,
-    TestDraftRegistrationCreate
-)
+from django.utils import timezone
+from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
 from api.base.settings.defaults import API_BASE
 
 from osf.migrations import ensure_invisible_and_inactive_schema
-from osf.models import DraftRegistration, NodeLicense, RegistrationProvider
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
     ProjectFactory,
     AuthUserFactory,
-    InstitutionFactory
+    InstitutionFactory,
+    DraftRegistrationFactory,
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
@@ -28,52 +27,143 @@ def invisible_and_inactive_schema():
 
 
 @pytest.mark.django_db
-class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
+class TestDraftRegistrationListTopLevelEndpoint:
+
     @pytest.fixture()
-    def url_draft_registrations(self, project_public):
-        return f'/{API_BASE}draft_registrations/?'
+    def url_draft_registrations(self):
+        return f'/{API_BASE}draft_registrations/'
 
-    # Overrides TestDraftRegistrationList
-    def test_osf_group_with_admin_permissions_can_view(self):
-        # DraftRegistration endpoints permissions are not calculated from the node
-        return
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
-    # Overrides TestDraftRegistrationList
-    def test_cannot_view_draft_list(
-            self, app, user_write_contrib, project_public,
-            user_read_contrib, user_non_contrib, draft_registration,
-            url_draft_registrations, group, group_mem):
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
 
-        # test_read_only_contributor_can_view_draft_list
+    @pytest.fixture()
+    def user_write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_read_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def group_mem(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def schema(self):
+        return RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=3)
+
+    @pytest.fixture()
+    def draft_registration(self, user, project, schema, user_write_contrib, user_read_contrib, user_admin_contrib):
+        draft = DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=schema,
+            branched_from=project
+        )
+        draft.add_contributor(user_read_contrib, permissions=READ)
+        draft.add_contributor(user_write_contrib, permissions=WRITE)
+        draft.add_contributor(user_admin_contrib, permissions=ADMIN)
+        return draft
+
+    def test_read_only_contributor_can_view_draft_list(
+            self, app, user_read_contrib, draft_registration, url_draft_registrations
+    ):
         res = app.get(
             url_draft_registrations,
-            auth=user_read_contrib.auth)
+            auth=user_read_contrib.auth
+        )
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
-        #   test_read_write_contributor_can_view_draft_list
-        res = app.get(
-            url_draft_registrations,
-            auth=user_write_contrib.auth)
+    def test_read_write_contributor_can_view_draft_list(
+            self, app, user_write_contrib, draft_registration, url_draft_registrations
+    ):
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
-        #   test_logged_in_non_contributor_can_view_draft_list
-        res = app.get(
-            url_draft_registrations,
-            auth=user_non_contrib.auth,
-            expect_errors=True)
+    def test_admin_can_view_draft_list(
+            self, app, user_admin_contrib, draft_registration, schema, url_draft_registrations
+    ):
+        res = app.get(url_draft_registrations, auth=user_admin_contrib.auth)
+
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
+
+        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
+        assert data[0]['id'] == draft_registration._id
+        assert data[0]['attributes']['registration_metadata'] == {}
+
+    def test_logged_in_non_contributor_has_empty_list(
+            self, app, user_non_contrib, url_draft_registrations
+    ):
+        res = app.get(url_draft_registrations, auth=user_non_contrib.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
-        #   test_unauthenticated_user_cannot_view_draft_list
+    def test_unauthenticated_user_cannot_view_draft_list(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
+    def test_logged_in_non_contributor_cannot_view_draft_list(self, app, user_non_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_non_contrib.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
 
-class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
+    def test_deleted_draft_registration_does_not_show_up_in_draft_list(self, app, user, draft_registration, url_draft_registrations):
+        draft_registration.deleted = timezone.now()
+        draft_registration.save()
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        assert not res.json['data']
 
-    # Overrides `url_draft_registrations` in `TestDraftRegistrationCreate`
+    def test_draft_with_registered_node_does_not_show_up_in_draft_list(
+            self, app, user, project, draft_registration, url_draft_registrations
+    ):
+        registration = RegistrationFactory(
+            project=project,
+            draft_registration=draft_registration
+        )
+        draft_registration.registered_node = registration
+        draft_registration.save()
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        assert not res.json['data']
+
+    def test_draft_with_deleted_registered_node_shows_up_in_draft_list(
+            self, app, user, project, draft_registration, schema, url_draft_registrations
+    ):
+        registration = RegistrationFactory(project=project, draft_registration=draft_registration)
+        draft_registration.registered_node = registration
+        draft_registration.save()
+        registration.deleted = timezone.now()
+        registration.save()
+        draft_registration.deleted = None
+        draft_registration.save()
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
+        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
+        assert data[0]['id'] == draft_registration._id
+        assert data[0]['attributes']['registration_metadata'] == {}
+
+
+class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
+
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
         return f'/{API_BASE}draft_registrations/?'
@@ -125,29 +215,35 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         new_payload['data']['relationships']['provider']['data']['id'] = provider_alt._id
         return new_payload
 
-    # Overrides TestDraftRegistrationList
-    def test_cannot_create_draft_errors(self, app, user, payload_alt, project_public, url_draft_registrations):
-        #   test_cannot_create_draft_from_a_registration
+    def test_cannot_create_draft_from_a_registration(self, app, user, payload_alt, project_public, url_draft_registrations):
         registration = RegistrationFactory(
-            project=project_public, creator=user)
+            project=project_public,
+            creator=user
+        )
         payload_alt['data']['relationships']['branched_from']['data']['id'] = registration._id
         res = app.post_json_api(
-            url_draft_registrations, payload_alt, auth=user.auth,
-            expect_errors=True)
+            url_draft_registrations,
+            payload_alt,
+            auth=user.auth,
+            expect_errors=True
+        )
         assert res.status_code == 404
 
-    #   test_cannot_create_draft_from_deleted_node
+    def test_cannot_create_draft_from_deleted_node(self, app, user, payload_alt, project_public, url_draft_registrations):
         project = ProjectFactory(is_public=True, creator=user)
         project.is_deleted = True
         project.save()
         payload_alt['data']['relationships']['branched_from']['data']['id'] = project._id
         res = app.post_json_api(
-            url_draft_registrations, payload_alt,
-            auth=user.auth, expect_errors=True)
+            url_draft_registrations,
+            payload_alt,
+            auth=user.auth,
+            expect_errors=True
+        )
         assert res.status_code == 410
         assert res.json['errors'][0]['detail'] == 'The requested node is no longer available.'
 
-    #   test_cannot_create_draft_from_collection
+    def test_cannot_create_draft_from_collection(self, app, user, payload_alt, project_public, url_draft_registrations):
         collection = CollectionFactory(creator=user)
         payload_alt['data']['relationships']['branched_from']['data']['id'] = collection._id
         res = app.post_json_api(
@@ -155,8 +251,9 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
             expect_errors=True)
         assert res.status_code == 404
 
-    def test_draft_registration_attributes_copied_from_node(self, app, project_public,
-            url_draft_registrations, user, payload_alt):
+    def test_draft_registration_attributes_copied_from_node(
+            self, app, project_public, url_draft_registrations, user, payload_alt
+    ):
 
         write_contrib = AuthUserFactory()
         read_contrib = AuthUserFactory()
@@ -175,8 +272,9 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         project_public.add_contributor(write_contrib, WRITE)
         project_public.add_contributor(read_contrib, READ)
 
+        # Only an admin can create a DraftRegistration
         res = app.post_json_api(url_draft_registrations, payload_alt, auth=write_contrib.auth, expect_errors=True)
-        assert res.status_code == 201
+        assert res.status_code == 403
         res = app.post_json_api(url_draft_registrations, payload_alt, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -196,67 +294,55 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         assert 'subjects' in relationships
         assert 'contributors' in relationships
 
-    def test_cannot_create_draft(
-            self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib,
-            project_public, payload_alt, group,
-            url_draft_registrations, group_mem):
-
-        #   test_write_only_contributor_cannot_create_draft
+    def test_write_only_contributor_cannot_create_draft(
+            self, app, user_write_contrib, project_public, payload_alt, url_draft_registrations
+    ):
         assert user_write_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=user_write_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 201
+            expect_errors=True
+        )
+        assert res.status_code == 403
 
-    #   test_read_only_contributor_cannot_create_draft
+    def test_read_only_contributor_cannot_create_draft(
+            self, app, user_write_contrib, user_read_contrib, project_public, payload_alt, url_draft_registrations
+    ):
         assert user_read_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=user_read_contrib.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    #   test_non_authenticated_user_cannot_create_draft
+    def test_non_authenticated_user_cannot_create_draft(
+            self, app, user_write_contrib, payload_alt, group, url_draft_registrations
+    ):
         res = app.post_json_api(
             url_draft_registrations,
-            payload_alt, expect_errors=True)
+            payload_alt,
+            expect_errors=True
+        )
         assert res.status_code == 401
 
-    #   test_logged_in_non_contributor_cannot_create_draft
+    def test_logged_in_non_contributor_cannot_create_draft(
+            self, app, user_non_contrib, payload_alt, url_draft_registrations
+    ):
+
         res = app.post_json_api(
             url_draft_registrations,
             payload_alt,
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    #   test_group_admin_cannot_create_draft
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload_alt,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 201
-
-    #   test_group_write_contrib_cannot_create_draft
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, WRITE)
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload_alt,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 201
-
-    def test_create_project_based_draft_does_not_email_initiator(
-            self, app, user, url_draft_registrations, payload):
-        post_url = url_draft_registrations + 'embed=branched_from&embed=initiator'
+    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
         with mock.patch.object(mails, 'send_mail') as mock_send_mail:
-            app.post_json_api(post_url, payload, auth=user.auth)
+            app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
 
         assert not mock_send_mail.called
 
@@ -320,7 +406,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
 
 
-class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
+class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
     def url_draft_registrations(self):
         return f'/{API_BASE}draft_registrations/?'
@@ -346,13 +432,14 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
-    def test_create_no_project_draft_emails_initiator(
-            self, app, user, url_draft_registrations, payload):
-        post_url = url_draft_registrations + 'embed=branched_from&embed=initiator'
-
+    def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
         # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
         with mock.patch.object(mails, 'send_mail') as mock_send_mail:
-            resp = app.post_json_api(post_url, payload, auth=user.auth)
+            resp = app.post_json_api(
+                f'{url_draft_registrations}?embed=branched_from&embed=initiator',
+                payload,
+                auth=user.auth
+            )
         assert mock_send_mail.called
 
         # Python 3.6 does not support mock.call_args.args/kwargs
@@ -363,7 +450,9 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         assert mock_send_kwargs['user'] == user
         assert mock_send_kwargs['node'] == DraftRegistration.load(resp.json['data']['id'])
 
-    def test_create_draft_with_provider(self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider):
+    def test_create_draft_with_provider(
+            self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider
+    ):
         res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
@@ -373,14 +462,9 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         draft = DraftRegistration.load(data['id'])
         assert draft.provider == non_default_provider
 
-    # Overrides TestDraftRegistrationList
-    def test_cannot_create_draft(
-            self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib,
-            project_public, payload, group,
-            url_draft_registrations, group_mem):
-
-        #   test_write_contrib (no node supplied, so any logged in user can create)
+    def test_write_contrib(self, app, user, project_public, payload, url_draft_registrations, user_write_contrib):
+        """(no node supplied, so any logged in user can create)
+        """
         assert user_write_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
@@ -388,7 +472,9 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
             auth=user_write_contrib.auth)
         assert res.status_code == 201
 
-    #   test_read_only (no node supplied, so any logged in user can create)
+    def test_read_only(self, app, user, url_draft_registrations, user_read_contrib, project_public, payload):
+        '''(no node supplied, so any logged in user can create)
+        '''
         assert user_read_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
@@ -396,23 +482,23 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
             auth=user_read_contrib.auth)
         assert res.status_code == 201
 
-    #   test_non_authenticated_user_cannot_create_draft
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, expect_errors=True)
-        assert res.status_code == 401
-
-    #   test_logged_in_non_contributor (no node supplied, so any logged in user can create)
+    def test_non_authenticated_user_cannot_create_draft(self, app, user, url_draft_registrations, payload):
         res = app.post_json_api(
             url_draft_registrations,
             payload,
-            auth=user_non_contrib.auth)
-        assert res.status_code == 201
+            expect_errors=True
+        )
+        assert res.status_code == 401
 
-    # Overrides TestDraftRegistrationList
-    def test_cannot_create_draft_errors(self):
-        # The original test assumes a node is being passed in
-        return
+    def test_logged_in_non_contributor(self, app, user, url_draft_registrations, user_non_contrib, payload):
+        '''(no node supplied, so any logged in user can create)
+        '''
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_non_contrib.auth
+        )
+        assert res.status_code == 201
 
     def test_draft_registration_attributes_not_copied_from_node(self, app, project_public,
             url_draft_registrations, user, payload):
