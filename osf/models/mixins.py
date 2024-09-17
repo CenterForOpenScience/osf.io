@@ -1451,22 +1451,29 @@ class ContributorMixin(models.Model):
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(self, referrer=auth.user,
-                                         given_name=fullname, email=email)
         try:
-            contributor.save()
-        except ValidationError:  # User with same email already exists
-            contributor = get_user(email=email)
-            # Unregistered users may have multiple unclaimed records, so
-            # only raise error if user is registered.
-            if contributor.is_registered or self.is_contributor(contributor):
-                raise
-
             contributor.add_unclaimed_record(
-                self, referrer=auth.user, given_name=fullname, email=email
+                self,
+                referrer=auth.user,
+                given_name=fullname,
+                email=email,
             )
+        except ValidationError as e:
+            if 'Osf user with this Username already exists.' in e.message_dict.get('username'):
+                contributor = get_user(email=email)
+                # Unregistered users may have multiple unclaimed records, so
+                # only raise error if user is registered.
+                if contributor.is_registered or self.is_contributor(contributor):
+                    raise
 
-            contributor.save()
+                contributor.add_unclaimed_record(
+                    self,
+                    referrer=auth.user,
+                    given_name=fullname,
+                    email=email,
+                )
+            else:
+                raise e
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,

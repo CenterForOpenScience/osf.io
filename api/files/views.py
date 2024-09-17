@@ -54,6 +54,9 @@ class FileMixin:
         if getattr(obj.target, 'deleted', None):
             raise Gone(detail='The requested file is no longer available')
 
+        if getattr(obj.target, 'is_retracted', False):
+            raise Gone(detail='The requested file is no longer available.')
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)

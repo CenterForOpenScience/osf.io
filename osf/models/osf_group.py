@@ -233,8 +233,12 @@ class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
                 raise ValueError('User already exists.')
         else:
             user = OSFUser.create_unregistered(fullname=fullname, email=email)
-        user.add_unclaimed_record(self, referrer=auth.user, given_name=fullname, email=email)
-        user.save()
+        user.add_unclaimed_record(
+            self,
+            referrer=auth.user,
+            given_name=fullname,
+            email=email,
+        )
 
         if role == MANAGER:
             self.make_manager(user, auth=auth)

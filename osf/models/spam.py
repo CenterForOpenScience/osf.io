@@ -200,7 +200,6 @@ class SpamMixin(models.Model):
             'user_agent': request_headers.get('User-Agent'),
             'referer': request_headers.get('Referer'),
         }
-        request_kwargs.update(request_headers)
 
         check_resource_for_domains_postcommit(
             self.guids.first()._id,

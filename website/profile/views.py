@@ -14,7 +14,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.decorators import must_be_confirmed
 from framework.auth.exceptions import ChangePasswordError
-from framework.auth.views import send_confirm_email
+from framework.auth.views import send_confirm_email_async
 from framework.auth.signals import (
     user_account_merged,
     user_account_deactivated,
@@ -83,7 +83,7 @@ def resend_confirmation(auth):
 
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-        send_confirm_email(user, email=address)
+        send_confirm_email_async(user, email=address)
         user.email_last_sent = timezone.now()
 
     user.save()
@@ -166,7 +166,7 @@ def update_user(auth):
                 if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                     raise HTTPError(http_status.HTTP_400_BAD_REQUEST,
                                     data={'message_long': 'Too many requests. Please wait a while before adding an email to your account.'})
-                send_confirm_email(user, email=address)
+                send_confirm_email_async(user, email=address)
 
         ############
         # Username #
