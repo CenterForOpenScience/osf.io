@@ -129,7 +129,7 @@ class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
             if not node.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(node_dict['_id']))
             if not node.is_affiliated_with_institution(inst):
-                node.add_affiliated_institution(inst, user, save=True)
+                node.add_affiliated_institution(inst, user)
                 changes_flag = True
 
         if not changes_flag:
@@ -174,7 +174,7 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
             if not registration.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail='Write permission on registration {} required'.format(registration_dict['_id']))
             if not registration.is_affiliated_with_institution(inst):
-                registration.add_affiliated_institution(inst, user, save=True)
+                registration.add_affiliated_institution(inst, user)
                 changes_flag = True
 
         if not changes_flag:
@@ -292,3 +292,9 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
                 'version': 'v2',
             },
         )
+
+
+class InstitutionRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'institutions'
