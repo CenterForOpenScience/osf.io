@@ -1,19 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, F, Sum, Count
+from django.db.models import Q, F, Sum
 
 from osf.models import Institution, Preprint, AbstractNode, FileVersion
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
-from osf.metrics.reports import (
-    InstitutionMonthlySummaryReport,
-    License as ReporterLicense,
-    Addon as ReporterAddon,
-    StorageRegion as ReporterStorageRegion,
-    Department as ReporterDepartment,
-)
+from osf.metrics.reports import InstitutionMonthlySummaryReport
 from osf.metrics.utils import YearMonth
 from ._base import MonthlyReporter
-from website import settings
+from datetime import datetime
 
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
@@ -28,19 +22,16 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
 
         return InstitutionMonthlySummaryReport(
             institution_id=institution._id,
-            public_project_count=self._get_count(node_queryset, 'osf.node', is_public=True),
             private_project_count=self._get_count(node_queryset, 'osf.node', is_public=False),
+            public_project_count=self._get_count(node_queryset, 'osf.node', is_public=True),
+            user_count=institution.get_institution_users().count(),
             public_registration_count=self._get_count(node_queryset, 'osf.registration', is_public=True),
             embargoed_registration_count=self._get_count(node_queryset, 'osf.registration', is_public=False),
-            published_preprint_count=self.get_published_preprints(institution).count(),
+            preprint_count=self.get_published_preprints(institution).count(),
+            storage_byte_count=self.get_storage_size(node_queryset, institution),
             public_file_count=self.get_files(node_queryset, institution, is_public=True).count(),
-            private_file_count=self.get_files(node_queryset, institution, is_public=False).count(),
-            public_storage_count=self.get_storage_size(node_queryset, institution, is_public=True),
-            private_storage_count=self.get_storage_size(node_queryset, institution, is_public=False),
-            departments=self.get_department_count(institution),
-            licenses=self.get_license_count(node_queryset),
-            addons=self.get_addons_count(),
-            storage_regions=self.get_storage_region_count(node_queryset),
+            monthly_logged_in_user_count=self.get_monthly_logged_in_user_count(institution, yearmonth),
+            monthly_active_user_count=self.get_monthly_active_user_count(institution, yearmonth),
         )
 
     def _get_count(self, node_queryset, node_type, is_public):
@@ -53,9 +44,13 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             affiliated_institutions=institution
         ).exclude(spam_status=SpamStatus.SPAM)
 
-    def get_files(self, node_queryset, institution, is_public):
+    def get_files(self, node_queryset, institution, is_public=None):
+        public_kwargs = {}
+        if is_public:
+            public_kwargs = {'is_public': is_public}
+
         target_node_q = Q(
-            target_object_id__in=node_queryset.filter(is_public=is_public).values("pk"),
+            target_object_id__in=node_queryset.filter(**public_kwargs).values("pk"),
             target_content_type=ContentType.objects.get_for_model(AbstractNode),
         )
         target_preprint_q = Q(
@@ -66,76 +61,35 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             deleted__isnull=True, purged__isnull=True
         ).filter(target_node_q | target_preprint_q)
 
-    def get_storage_size(self, node_queryset, institution, is_public):
-        files = self.get_files(node_queryset, institution, is_public)
+    def get_storage_size(self, node_queryset, institution):
+        files = self.get_files(node_queryset, institution)
         return FileVersion.objects.filter(
-            size__gt=0, purged__isnull=True, basefilenode__in=files
+            size__gt=0,
+            purged__isnull=True,
+            basefilenode__in=files
         ).aggregate(storage_bytes=Sum("size", default=0))["storage_bytes"]
 
-    def get_license_count(self, node_queryset):
-        licenses = node_queryset.exclude(node_license=None).values(
-            "node_license__node_license__name", "node_license___id"
-        ).annotate(total=Count("node_license"))
+    def get_month_start_end(self, yearmonth):
+        # Get the first day of the month
+        start_date = datetime(yearmonth.year, yearmonth.month, 1)
+        # Calculate the first day of the next month
+        if yearmonth.month == 12:
+            end_date = datetime(yearmonth.year + 1, 1, 1)
+        else:
+            end_date = datetime(yearmonth.year, yearmonth.month + 1, 1)
+        return start_date, end_date
 
-        license_list = [
-            ReporterLicense(
-                id=license_data["node_license___id"],
-                name=license_data["node_license__node_license__name"],
-                total=license_data["total"],
-            )
-            for license_data in licenses
-        ]
+    def get_monthly_logged_in_user_count(self, institution, yearmonth):
+        start_date, end_date = self.get_month_start_end(yearmonth)
+        return institution.get_institution_users().filter(
+            date_last_login__gte=start_date,
+            date_last_login__lte=end_date
+        ).count()
 
-        license_list.append(
-            ReporterLicense(
-                id=None,
-                name="Default (No license selected)",
-                total=node_queryset.filter(node_license=None).count(),
-            )
-        )
-
-        return license_list
-
-    def get_addons_count(self):
-        storage_addons = [
-            addon for addon in settings.ADDONS_AVAILABLE if "storage" in addon.categories
-        ]
-
-        addon_counts = []
-        for addon in storage_addons:
-            node_settings = addon.get_model("NodeSettings").objects.exclude(
-                owner__isnull=True,
-                owner__deleted__isnull=False,
-                owner__spam_status=SpamStatus.SPAM,
-            )
-            is_oauth = hasattr(addon.get_model("NodeSettings"), "external_account")
-            filter_condition = Q(external_account__isnull=False) if is_oauth else Q()
-            count = node_settings.filter(filter_condition).count()
-            addon_counts.append(ReporterAddon(name=addon.short_name, total=count))
-
-        return addon_counts
-
-    def get_storage_region_count(self, node_queryset):
-        region_counts = node_queryset.values(
-            "addons_osfstorage_node_settings__region___id",
-            "addons_osfstorage_node_settings__region__name",
-        ).annotate(total=Count("addons_osfstorage_node_settings__region___id"))
-
-        return [
-            ReporterStorageRegion(
-                id=region["addons_osfstorage_node_settings__region___id"],
-                name=region["addons_osfstorage_node_settings__region__name"],
-                total=region["total"],
-            )
-            for region in region_counts
-        ]
-
-    def get_department_count(self, institution):
-        departments = institution.institutionaffiliation_set.exclude(
-            sso_department__isnull=True
-        ).values("sso_department").annotate(total=Count("sso_department"))
-
-        return [
-            ReporterDepartment(name=dept["sso_department"], total=dept["total"])
-            for dept in departments
-        ]
+    def get_monthly_active_user_count(self, institution, yearmonth):
+        start_date, end_date = self.get_month_start_end(yearmonth)
+        return institution.get_institution_users().filter(
+            date_disabled__isnull=True,
+            date_last_login__gte=start_date,
+            date_last_login__lte=end_date
+        ).count()
