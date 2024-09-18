@@ -7,6 +7,7 @@ from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
+    BaseAPISerializer,
     JSONAPISerializer,
     IDField,
     TypeField,
@@ -35,10 +36,11 @@ from api.nodes.serializers import (
     NodeTagField,
 )
 from api.base.metrics import MetricsSerializerMixin
+from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
     BaseFileNode,
     Preprint,
@@ -47,8 +49,6 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-
-from osf.exceptions import PreprintStateError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -206,6 +206,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         ),
     )
 
+    affiliated_institutions = RelationshipField(
+        related_view='preprints:preprints-institutions',
+        related_view_kwargs={'preprint_id': '<_id>'},
+        self_view='preprints:preprint-relationships-institutions',
+        self_view_kwargs={'preprint_id': '<_id>'},
+        read_only=False,
+        required=False,
+        allow_null=True,
+    )
+
     links = LinksField(
         {
             'self': 'get_preprint_url',
@@ -359,59 +369,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
             save_preprint = True
 
-        if 'has_coi' in validated_data:
-            try:
-                preprint.update_has_coi(auth, validated_data['has_coi'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'conflict_of_interest_statement' in validated_data:
-            try:
-                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'has_data_links' in validated_data:
-            try:
-                preprint.update_has_data_links(auth, validated_data['has_data_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'why_no_data' in validated_data:
-            try:
-                preprint.update_why_no_data(auth, validated_data['why_no_data'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'data_links' in validated_data:
-            try:
-                preprint.update_data_links(auth, validated_data['data_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'has_prereg_links' in validated_data:
-            try:
-                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'why_no_prereg' in validated_data:
-            try:
-                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'prereg_links' in validated_data:
-            try:
-                preprint.update_prereg_links(auth, validated_data['prereg_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'prereg_link_info' in validated_data:
-            try:
-                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+        self.handle_author_assertions(preprint, validated_data, auth)
 
         if published is not None:
             if not preprint.primary_file:
@@ -437,6 +395,76 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     )
 
         return preprint
+
+    def handle_author_assertions(self, preprint, validated_data, auth):
+        author_assertions = {
+            'has_coi',
+            'conflict_of_interest_statement',
+            'has_data_links',
+            'why_no_data',
+            'data_links',
+            'why_no_prereg',
+            'prereg_links',
+            'has_prereg_links',
+            'prereg_link_info',
+        }
+        if author_assertions & validated_data.keys():
+            if not preprint.is_admin_contributor(auth.user):
+                raise exceptions.PermissionDenied('User must be admin to add author assertions')
+
+            if 'has_coi' in validated_data:
+                try:
+                    preprint.update_has_coi(auth, validated_data['has_coi'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'conflict_of_interest_statement' in validated_data:
+                try:
+                    preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'has_data_links' in validated_data:
+                try:
+                    preprint.update_has_data_links(auth, validated_data['has_data_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'why_no_data' in validated_data:
+                try:
+                    preprint.update_why_no_data(auth, validated_data['why_no_data'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'data_links' in validated_data:
+                try:
+                    preprint.update_data_links(auth, validated_data['data_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'has_prereg_links' in validated_data:
+                try:
+                    preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'why_no_prereg' in validated_data:
+                try:
+                    preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'prereg_links' in validated_data:
+                try:
+                    preprint.update_prereg_links(auth, validated_data['prereg_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'prereg_link_info' in validated_data:
+                try:
+                    preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
 
     def set_field(self, func, val, auth, save=False):
         try:
@@ -589,3 +617,39 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     links = LinksField({
         'self': 'get_self_url',
     })
+
+
+class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
+    from api.institutions.serializers import InstitutionRelated  # Avoid circular import
+    data = ser.ListField(child=InstitutionRelated())
+
+    links = LinksField({
+        'self': 'get_self_url',
+    })
+
+    def get_self_url(self, obj):
+        return obj['self'].institutions_relationship_url
+
+    class Meta:
+        type_ = 'institutions'
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions.all(),
+            'self': obj,
+        }
+
+    def update(self, instance, validated_data):
+        preprint = instance['self']
+        user = self.context['request'].user
+        update_institutions_if_user_associated(preprint, validated_data['data'], user)
+        preprint.save()
+        return self.make_instance_obj(preprint)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        preprint = instance['self']
+        user = self.context['request'].user
+        update_institutions_if_user_associated(preprint, validated_data['data'], user)
+        preprint.save()
+        return self.make_instance_obj(preprint)
