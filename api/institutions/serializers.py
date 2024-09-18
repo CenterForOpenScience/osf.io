@@ -359,30 +359,6 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
         return None  # there is no detail view for institution-users
 
 
-class DepartmentInstitutionSerializer(BaseAPISerializer):
-    id = ser.CharField()
-    total = ser.IntegerField()
-    name = ser.CharField()
-
-
-class LicenseInstitutionSerializer(BaseAPISerializer):
-    id = ser.CharField()
-    total = ser.IntegerField()
-    name = ser.CharField()
-
-
-class AddonsInstitutionSerializer(BaseAPISerializer):
-    id = ser.CharField()
-    total = ser.IntegerField()
-    name = ser.CharField()
-
-
-class StorageRegionInstitutionSerializer(BaseAPISerializer):
-    id = ser.CharField()
-    total = ser.IntegerField()
-    name = ser.CharField()
-
-
 class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
     '''serializer for institution-summary metrics
 
@@ -397,13 +373,6 @@ class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
     - Total private registration count for the institution
     - Total published preprint count for the institution
 
-    Summary contains graphs of
-    - Total users by department
-    - Total Licenses by license name
-    - Total Add-ons connected by add-on name
-    - Total amount of bytes stored in each Storage Regions by region name
-    - Total public storage usage in bytes
-    - Total private storage usage in bytes
     '''
 
     class Meta:
@@ -424,10 +393,6 @@ class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
     public_file_count = ser.IntegerField(read_only=True)
     public_storage_count = ser.IntegerField(read_only=True)
     private_storage_count = ser.IntegerField(read_only=True)
-    departments = ser.ListField(child=DepartmentInstitutionSerializer())
-    licenses = ser.ListField(child=LicenseInstitutionSerializer())
-    addons = ser.ListField(child=AddonsInstitutionSerializer())
-    storage_regions = ser.ListField(child=StorageRegionInstitutionSerializer())
 
     user = RelationshipField(
         related_view='users:user-detail',
