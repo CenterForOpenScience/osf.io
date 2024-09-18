@@ -18,7 +18,6 @@ class DatapackageSerializer(_base.MetadataSerializer):
             sort_keys=True,
         )
 
-    # NOTE: this mapping can be done by `dplib-py` on Python3.8+
     def metadata_as_dict(self) -> dict:
         dataset = DataciteJsonMetadataSerializer(self.basket).metadata_as_dict()
         package = {"$schema": PROFILE_URL, "resources": []}
@@ -96,8 +95,5 @@ class DatapackageSerializer(_base.MetadataSerializer):
                 contributor = {k: v for k, v in contributor.items() if v is not None}
                 if contributor:
                     package.setdefault("contributors", []).append(contributor)
-
-        # Resources
-        # TODO: is there a way to get actual file urls from the metadata?
 
         return package
