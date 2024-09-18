@@ -104,6 +104,50 @@
                     {% include "nodes/registration_approval.html" with registration_approval=node.registration_approval %}
                     {% include "nodes/actions.html" with actions=node.actions.all|order_by:"created" %}
                     {% include "nodes/storage_usage.html" with node=node %}
+
+                    <tr>
+                        <td colspan="2">
+                            <h3>Duplicate Notifications</h3>
+                            {% if duplicates %}
+                                <form method="post" action="{% url 'nodes:node-remove-notifications' node.guid %}">
+                                    {% csrf_token %}
+                                    <table class="table table-striped table-hover table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>Select</th>
+                                                <th>Event Name</th>
+                                                <th>Created</th>
+                                                <th>Count</th>
+                                                <th>Email Transactional</th>
+                                                <th>Email Digest</th>
+                                                <th>None</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for notification in duplicates %}
+                                            <tr>
+                                                <td><input type="checkbox" name="selected_notifications" value="{{ notification.id }}"></td>
+                                                <td>{{ notification.event_name }}</td>
+                                                <td>{{ notification.created }}</td>
+                                                <td>{{ notification.count }}</td>
+                                                <td>{{ notification.email_transactional|join:", " }}</td>
+                                                <td>{{ notification.email_digest|join:", " }}</td>
+                                                <td>{{ notification.none|join:", " }}</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="6">No duplicate notifications found!</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <button type="submit" class="btn btn-danger">Delete Selected</button>
+                                </form>
+                            {% else %}
+                                <p>No duplicate notifications found.</p>
+                            {% endif %}
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

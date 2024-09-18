@@ -215,7 +215,7 @@ class TestUserEmailsList:
         assert res.status_code == 200
         assert unconfirmed_address in [result['attributes']['email_address'] for result in res.json['data']]
 
-    @mock.patch('api.users.serializers.send_confirm_email')
+    @mock.patch('api.users.serializers.send_confirm_email_async')
     def test_create_new_email_current_user(self, mock_send_confirm_mail, user_one, user_two, app, url, payload):
         new_email = 'hhh@wwe.test'
         payload['data']['attributes']['email_address'] = new_email
@@ -228,7 +228,7 @@ class TestUserEmailsList:
         assert new_email in user_one.unconfirmed_emails
         assert mock_send_confirm_mail.called
 
-    @mock.patch('api.users.serializers.send_confirm_email')
+    @mock.patch('api.users.serializers.send_confirm_email_async')
     def test_create_new_email_not_current_user(self, mock_send_confirm_mail, app, url, payload, user_one, user_two):
         new_email = 'HHH@wwe.test'
         payload['data']['attributes']['email_address'] = new_email
@@ -238,7 +238,7 @@ class TestUserEmailsList:
         assert new_email not in user_one.unconfirmed_emails
         assert not mock_send_confirm_mail.called
 
-    @mock.patch('api.users.serializers.send_confirm_email')
+    @mock.patch('api.users.serializers.send_confirm_email_async')
     def test_create_email_already_exists(self, mock_send_confirm_mail, app, url, payload, user_one):
         new_email = 'hello@email.test'
         Email.objects.create(address=new_email, user=user_one)
@@ -577,28 +577,28 @@ class TestUserEmailDetail:
         assert res.json['data']['attributes']['confirmed'] is True
         assert res.json['data']['attributes']['is_merge'] is False
 
-    @mock.patch('api.users.views.send_confirm_email')
-    def test_resend_confirmation_email(self, mock_send_confirm_email, app, user_one, unconfirmed_url, confirmed_url):
+    @mock.patch('api.users.views.send_confirm_email_async')
+    def test_resend_confirmation_email(self, mock_send_confirm_email_async, app, user_one, unconfirmed_url, confirmed_url):
         url = f'{unconfirmed_url}?resend_confirmation=True'
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 202
-        assert mock_send_confirm_email.called
-        call_count = mock_send_confirm_email.call_count
+        assert mock_send_confirm_email_async.called
+        call_count = mock_send_confirm_email_async.call_count
 
         # make sure setting false does not send confirm email
         url = f'{unconfirmed_url}?resend_confirmation=False'
         res = app.get(url, auth=user_one.auth)
         # should return 200 instead of 202 because nothing has been done
         assert res.status_code == 200
-        assert mock_send_confirm_email.call_count
+        assert mock_send_confirm_email_async.call_count
 
         # make sure normal GET request does not re-send confirmation email
         res = app.get(unconfirmed_url, auth=user_one.auth)
-        assert mock_send_confirm_email.call_count == call_count
+        assert mock_send_confirm_email_async.call_count == call_count
         assert res.status_code == 200
 
         # resend confirmation with confirmed email address does not send confirmation email
         url = f'{confirmed_url}?resend_confirmation=True'
         res = app.get(url, auth=user_one.auth)
-        assert mock_send_confirm_email.call_count == call_count
+        assert mock_send_confirm_email_async.call_count == call_count
         assert res.status_code == 200
