@@ -976,7 +976,7 @@ class TestProjectViews(OsfTestCase):
         assert_in(registration.title, res.body.decode())
         assert_equal(res.status_code, 200)
 
-        for route in ['files', 'wiki/home', 'settings', 'withdraw', 'register', 'register/fakeid']:
+        for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
             res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
             assert_equal(res.status_code, 302, route)
             res = res.follow()
@@ -3444,6 +3444,7 @@ class TestPointerViews(OsfTestCase):
         node = ProjectFactory(creator=user)
         project.add_pointer(node, auth=Auth(user=user), save=save)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_write_contributor_can_remove_private_component_entry(self):
         """Ensure that write contributors see the button to delete a pointer,
             even if they cannot see what it is pointing at"""
@@ -3462,6 +3463,7 @@ class TestPointerViews(OsfTestCase):
         has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_true(has_controls)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
@@ -3477,6 +3479,7 @@ class TestPointerViews(OsfTestCase):
             '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(has_controls), 3)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
         user2 = AuthUserFactory()
@@ -3495,6 +3498,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(pointer_nodes), 1)
         assert_false(has_controls)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_read_contributor_cannot_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
