@@ -12,7 +12,7 @@ import osf.features
 from osf.metrics import InstitutionProjectCounts
 from osf.models import OSFUser, Node, Institution, Registration
 from osf.metrics import UserInstitutionProjectCounts
-from osf.metrics.reports import InstitutionalUserReport
+from osf.metrics.reports import InstitutionalUserReport, InstitutionMonthlySummaryReport
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -48,6 +48,7 @@ from api.institutions.serializers import (
     InstitutionDepartmentMetricsSerializer,
     NewInstitutionUserMetricsSerializer,
     OldInstitutionUserMetricsSerializer,
+    NewInstitutionSummaryMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
 from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
@@ -391,7 +392,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         return ret
 
 
-class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+class _OldInstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -579,6 +580,53 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
             .filter('term', report_yearmonth=str(_yearmonth))
             .filter('term', institution_id=self.get_institution()._id)
         )
+
+
+class _NewInstitutionSummaryMetricsList(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+    '''list view for institution-summary metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
+    (and should be renamed without "New" when that flag is permanently active)
+    '''
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsInstitutionalMetricsUser,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'institutions'
+    view_name = 'institution-summary-metrics'
+
+    serializer_class = NewInstitutionSummaryMetricsSerializer
+
+    def get_object(self):
+        institution = self.get_institution()
+        search_object = self.get_default_search()
+        if search_object:
+            object = search_object.execute()[0]
+            object.id = institution._id
+            return object
+
+    def get_default_search(self):
+        _yearmonth = InstitutionMonthlySummaryReport.most_recent_yearmonth()
+        if _yearmonth is None:
+            return None
+        return (
+            InstitutionMonthlySummaryReport.search()
+            .filter('term', report_yearmonth=str(_yearmonth))
+            .filter('term', institution_id=self.get_institution()._id)
+        )
+
+
+institution_summary_metrics_list_view = toggle_view_by_flag(
+    flag_name=osf.features.INSTITUTIONAL_DASHBOARD_2024,
+    old_view=_OldInstitutionSummaryMetrics.as_view(),
+    new_view=_NewInstitutionSummaryMetricsList.as_view(),
+)
+institution_summary_metrics_list_view.view_name = 'institution-summary-metrics'
 
 
 institution_user_metrics_list_view = toggle_view_by_flag(

@@ -270,3 +270,18 @@ class InstitutionalUserReport(MonthlyReport):
     published_preprint_count = metrics.Integer()
     public_file_count = metrics.Long()
     storage_byte_count = metrics.Long()
+
+
+class InstitutionMonthlySummaryReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'institution_id', )
+    institution_id = metrics.Keyword()
+    user_count = metrics.Integer()
+    public_project_count = metrics.Integer()
+    private_project_count = metrics.Integer()
+    public_registration_count = metrics.Integer()
+    embargoed_registration_count = metrics.Integer()
+    published_preprint_count = metrics.Integer()
+    storage_byte_count = metrics.Long()
+    public_file_count = metrics.Long()
+    monthly_logged_in_user_count = metrics.Long()
+    monthly_active_user_count = metrics.Long()
