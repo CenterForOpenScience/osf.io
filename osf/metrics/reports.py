@@ -286,3 +286,22 @@ class InstitutionMonthlySummaryReport(MonthlyReport):
     public_file_count = metrics.Long()
     monthly_logged_in_user_count = metrics.Long()
     monthly_active_user_count = metrics.Long()
+
+
+class PublicItemUsageReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'item_osfid')
+
+    # where noted, fields correspond to defined terms from COUNTER
+    # https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
+    item_osfid = metrics.Keyword()                    # counter:Item
+    item_type = metrics.Keyword(multi=True)           # counter:Data-Type
+    provider_id = metrics.Keyword(multi=True)         # counter:Database(?)
+    platform_iri = metrics.Keyword(multi=True)        # counter:Platform
+
+    # view counts include views on components or files contained by this item
+    view_count = metrics.Long()                       # counter:Total_Item_Investigations
+    view_session_count = metrics.Long()               # counter:Unique_Item_Investigations
+
+    # download counts of this item only (not including contained components or files)
+    download_count = metrics.Long()                   # counter:Total_Item_Requests
+    download_session_count = metrics.Long()           # counter:Unique_Item_Requests
