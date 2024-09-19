@@ -1,12 +1,16 @@
 import pytest
 import datetime
 
+from waffle.testutils import override_flag
+from osf.metrics import InstitutionProjectCounts
+
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
+    InstitutionFactory,
     AuthUserFactory,
-    InstitutionFactory
 )
-from osf.metrics import InstitutionProjectCounts
+from osf.metrics.reports import InstitutionMonthlySummaryReport
+from osf import features
 
 
 @pytest.mark.es_metrics
@@ -92,3 +96,115 @@ class TestInstitutionSummaryMetrics:
                 'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/summary/'
             }
         }
+
+
+@pytest.mark.es_metrics
+@pytest.mark.django_db
+class TestNewInstitutionSummaryMetricsList:
+    @pytest.fixture(autouse=True)
+    def _waffled(self):
+        with override_flag(features.INSTITUTIONAL_DASHBOARD_2024, active=True):
+            yield
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def rando(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def institutional_admin(self, institution):
+        admin_user = AuthUserFactory()
+        institution.get_group('institutional_admins').user_set.add(admin_user)
+        return admin_user
+
+    @pytest.fixture()
+    def unshown_reports(self, institution):
+        # Reports that should not be shown in the results
+        # Report from another institution
+        another_institution = InstitutionFactory()
+        _summary_report_factory('2024-08', another_institution)
+        # Old report from the same institution
+        _summary_report_factory('2024-07', institution)
+        _summary_report_factory('2018-02', institution)
+
+    @pytest.fixture()
+    def reports(self, institution):
+        return [
+            _summary_report_factory(
+                '2024-08', institution,
+                user_count=100,
+                public_project_count=50,
+                private_project_count=25,
+                public_registration_count=10,
+                embargoed_registration_count=5,
+                published_preprint_count=15,
+                public_file_count=20,
+                storage_byte_count=5000000000,
+                monthly_logged_in_user_count=80,
+                monthly_active_user_count=60,
+            ),
+            _summary_report_factory(
+                '2024-08', institution,
+                user_count=200,
+                public_project_count=150,
+                private_project_count=125,
+                public_registration_count=110,
+                embargoed_registration_count=105,
+                published_preprint_count=115,
+                public_file_count=120,
+                storage_byte_count=15000000000,
+                monthly_logged_in_user_count=180,
+                monthly_active_user_count=160,
+            ),
+        ]
+
+    @pytest.fixture()
+    def url(self, institution):
+        return f'/{API_BASE}institutions/{institution._id}/metrics/summary/'
+
+    def test_anon(self, app, url):
+        resp = app.get(url, expect_errors=True)
+        assert resp.status_code == 401
+
+    def test_rando(self, app, url, rando):
+        resp = app.get(url, auth=rando.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+    def test_get_empty(self, app, url, institutional_admin):
+        resp = app.get(url, auth=institutional_admin.auth)
+        assert resp.status_code == 200
+        assert resp.json['meta'] == {'version': '2.0'}
+
+    def test_get_report(self, app, url, institutional_admin, institution, reports, unshown_reports):
+        resp = app.get(url, auth=institutional_admin.auth)
+        assert resp.status_code == 200
+
+        data = resp.json['data']
+
+        assert data['id'] == institution._id
+        assert data['type'] == 'institution-summary-metrics'
+
+        attributes = data['attributes']
+        assert attributes['user_count'] == 200
+        assert attributes['public_project_count'] == 150
+        assert attributes['private_project_count'] == 125
+        assert attributes['public_registration_count'] == 110
+        assert attributes['embargoed_registration_count'] == 105
+        assert attributes['published_preprint_count'] == 115
+        assert attributes['public_file_count'] == 120
+        assert attributes['storage_byte_count'] == 15000000000
+        assert attributes['monthly_logged_in_user_count'] == 180
+        assert attributes['monthly_active_user_count'] == 160
+
+
+def _summary_report_factory(yearmonth, institution, **kwargs):
+    report = InstitutionMonthlySummaryReport(
+        report_yearmonth=yearmonth,
+        institution_id=institution._id,
+        **kwargs,
+    )
+    report.save(refresh=True)
+    return report
