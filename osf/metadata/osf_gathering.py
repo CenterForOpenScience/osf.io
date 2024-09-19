@@ -823,7 +823,7 @@ def gather_agents(focus):
 def gather_affiliated_institutions(focus):
     if hasattr(focus.dbmodel, 'get_affiliated_institutions'):   # like OSFUser
         institution_qs = focus.dbmodel.get_affiliated_institutions()
-    elif hasattr(focus.dbmodel, 'affiliated_institutions'):     # like AbstractNode
+    elif hasattr(focus.dbmodel, 'affiliated_institutions'):     # like AbstractNode or Preprint
         institution_qs = focus.dbmodel.affiliated_institutions.all()
     else:
         institution_qs = ()

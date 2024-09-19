@@ -103,8 +103,6 @@ class _InstiUserReportHelper:
         )
 
     def _published_preprint_queryset(self):
-        if not hasattr(osfdb.Preprint, 'affiliated_institutions'):
-            return osfdb.Preprint.objects.none()  # HACK: preprints affiliation project still in-progress
         return (
             osfdb.Preprint.objects.can_view()  # published/publicly-viewable
             .filter(
