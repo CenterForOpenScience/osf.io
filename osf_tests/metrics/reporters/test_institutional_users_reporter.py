@@ -20,11 +20,6 @@ from osf_tests.factories import (
 )
 
 
-def _can_affiliate_preprints() -> bool:
-    # HACK: preprints affiliation project still in-progress
-    return hasattr(osfdb.Preprint, 'affiliated_institutions')
-
-
 def _patch_now(fakenow: datetime.datetime):
     return unittest.mock.patch('django.utils.timezone.now', return_value=fakenow)
 
@@ -64,10 +59,7 @@ class TestInstiUsersReporter(TestCase):
         self.assertEqual(report.private_project_count, setup.private_project_count)
         self.assertEqual(report.public_registration_count, setup.public_registration_count)
         self.assertEqual(report.embargoed_registration_count, setup.embargoed_registration_count)
-        if _can_affiliate_preprints():
-            self.assertEqual(report.published_preprint_count, setup.published_preprint_count)
-        else:
-            self.assertEqual(report.published_preprint_count, 0)
+        self.assertEqual(report.published_preprint_count, setup.published_preprint_count)
 
     def test_no_users(self):
         _actual_reports = list(InstitutionalUsersReporter().report(self._yearmonth))
@@ -90,8 +82,8 @@ class TestInstiUsersReporter(TestCase):
         _reports = list(InstitutionalUsersReporter().report(self._yearmonth))
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_stuff)
-        self.assertEqual(_reports[0].public_file_count, 0)
-        self.assertEqual(_reports[0].storage_byte_count, 0)
+        self.assertEqual(_reports[0].public_file_count, 2)  # preprint 2 files
+        self.assertEqual(_reports[0].storage_byte_count, 2674)  # preprint bytes
 
     def test_one_user_with_stuff_and_a_file(self):
         self._user_setup_with_stuff.affiliate_user()
@@ -101,8 +93,8 @@ class TestInstiUsersReporter(TestCase):
             create_test_file(target=_project, user=_user, size=37)
         (_report,) = InstitutionalUsersReporter().report(self._yearmonth)
         self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
-        self.assertEqual(_report.public_file_count, 1)
-        self.assertEqual(_report.storage_byte_count, 37)
+        self.assertEqual(_report.public_file_count, 3)  # 2 preprint files
+        self.assertEqual(_report.storage_byte_count, 2711)  # 2 preprint files
 
     def test_one_user_with_stuff_and_multiple_files(self):
         self._user_setup_with_stuff.affiliate_user()
@@ -118,8 +110,8 @@ class TestInstiUsersReporter(TestCase):
             create_test_file(target=_component, user=_user, size=47, filename='blarg')
         (_report,) = InstitutionalUsersReporter().report(self._yearmonth)
         self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
-        self.assertEqual(_report.public_file_count, 5)
-        self.assertEqual(_report.storage_byte_count, 37 + 73 + 53 + 51 + 47)
+        self.assertEqual(_report.public_file_count, 7)  # 2 preprint files
+        self.assertEqual(_report.storage_byte_count, 2935)  # 2 preprint files + 37 + 73 + 53 + 51 + 47
 
     def test_several_users(self):
         _setups = [
@@ -249,9 +241,7 @@ class _InstiUserSetup:
         )
 
     def _add_published_preprint(self) -> osfdb.Preprint | None:
-        if _can_affiliate_preprints():  # HACK: preprints affiliation project still in-progress
-            return PreprintFactory(
-                creator=self.user,
-                is_public=True,
-            )
-        return None
+        return PreprintFactory(
+            creator=self.user,
+            is_public=True,
+        )
