@@ -104,10 +104,10 @@ def _fill_pageview_info(counted_usage):
 
 def _fill_osfguid_info(counted_usage, guid_referent):
     counted_usage.item_public = _get_ispublic(guid_referent)
-    counted_usage.item_type = type(guid_referent).__name__.lower()
+    counted_usage.item_type = get_item_type(guid_referent)
     counted_usage.surrounding_guids = _get_surrounding_guids(guid_referent)
     if not counted_usage.provider_id:
-        counted_usage.provider_id = _get_provider_id(guid_referent)
+        counted_usage.provider_id = get_provider_id(guid_referent)
 
 
 def _fill_document_id(counted_usage):
@@ -153,13 +153,17 @@ def _get_ispublic(guid_referent):
     return getattr(maybe_public, 'is_public', None)     # quacks like AbstractNode
 
 
-def _get_provider_id(guid_referent):
+def get_provider_id(guid_referent):
     provider = getattr(guid_referent, 'provider', None)
     if isinstance(provider, str):
         return provider         # quacks like BaseFileNode
     elif provider:
         return provider._id     # quacks like Registration, Preprint, Collection
     return 'osf'                # quacks like Node, Comment, WikiPage
+
+
+def get_item_type(guid_referent):
+    return type(guid_referent).__name__.lower()
 
 
 def _get_immediate_wrapper(guid_referent):
