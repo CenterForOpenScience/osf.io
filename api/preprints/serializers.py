@@ -369,7 +369,67 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
             save_preprint = True
 
-        self.handle_author_assertions(preprint, validated_data, auth)
+        if 'has_coi' in validated_data:
+            try:
+                preprint.update_has_coi(auth, validated_data['has_coi'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'conflict_of_interest_statement' in validated_data:
+            try:
+                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'has_data_links' in validated_data:
+            try:
+                preprint.update_has_data_links(auth, validated_data['has_data_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'why_no_data' in validated_data:
+            try:
+                preprint.update_why_no_data(auth, validated_data['why_no_data'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'data_links' in validated_data:
+            try:
+                preprint.update_data_links(auth, validated_data['data_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'has_prereg_links' in validated_data:
+            try:
+                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'why_no_prereg' in validated_data:
+            try:
+                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'prereg_links' in validated_data:
+            try:
+                preprint.update_prereg_links(auth, validated_data['prereg_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'prereg_link_info' in validated_data:
+            try:
+                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
 
         if published is not None:
             if not preprint.primary_file:
