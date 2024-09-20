@@ -7,7 +7,6 @@ from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionMonthlySummaryReport
 from osf.metrics.utils import YearMonth
 from ._base import MonthlyReporter
-from datetime import datetime
 
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
@@ -88,6 +87,7 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
     def get_monthly_active_user_count(self, institution, yearmonth):
         return institution.get_institution_users().filter(
             date_disabled__isnull=True,
-            date_last_login__gte=yearmonth.target_month(),
-            date_last_login__lt=yearmonth.next_month()
+            logs__created__gte=yearmonth.target_month(),
+            logs__created__lt=yearmonth.next_month(),
+
         ).count()
