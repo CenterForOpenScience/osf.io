@@ -55,6 +55,7 @@ from osf.metrics import (
     RegistriesModerationMetrics,
     CountedAuthUsage,
 )
+from osf.metrics.openapi import get_metrics_openapi_json_dict
 from osf.models import AbstractNode
 
 
@@ -324,10 +325,12 @@ class RecentReportList(JSONAPIBaseView):
             report_class = VIEWABLE_REPORTS[report_name]
         except KeyError:
             return Response(
-                {'errors': [{
-                    'title': 'unknown report name',
-                    'detail': f'unknown report: "{report_name}"',
-                }]},
+                {
+                    'errors': [{
+                        'title': 'unknown report name',
+                        'detail': f'unknown report: "{report_name}"',
+                    }],
+                },
                 status=404,
             )
         is_daily = issubclass(report_class, reports.DailyReport)
@@ -561,7 +564,7 @@ class UserVisitsQuery(JSONAPIBaseView):
     DAYS_PER_PERIOD = {'day': 1, 'month': 31, 'year': 365}
 
     def get(self, request, *args):
-        report_date = {'gte': f'now/d-1d'}
+        report_date = {'gte': 'now/d-1d'}
 
         if request.GET.get('timeframe', False):
             timeframe = request.GET.get('timeframe')
@@ -572,7 +575,7 @@ class UserVisitsQuery(JSONAPIBaseView):
                     period = m.group(2)
                     days_back = int(period_count) * self.DAYS_PER_PERIOD[period]
                 else:
-                    raise Exception('Unsupported timeframe format: "{}"'.format(timeframe))
+                    raise Exception(f'Unsupported timeframe format: "{timeframe}"')
                 report_date = {'gte': f'now/d-{days_back}d'}
         elif request.GET.get('timeframeStart'):
             tsStart = request.GET.get('timeframeStart')
@@ -633,3 +636,26 @@ class UniqueUserVisitsQuery(UserVisitsQuery):
         payload = super()._build_query_payload(timespan)
         payload['query']['bool']['filter'].insert(0, {'term': {'user_is_authenticated': True}})
         return payload
+
+
+class MetricsOpenapiView(GenericAPIView):
+    permission_classes = (
+        TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'metrics'
+    view_name = 'openapi-json'
+
+    def get(self, request):
+        _openapi_json = get_metrics_openapi_json_dict(reports=VIEWABLE_REPORTS)
+        return JsonResponse(
+            _openapi_json,
+            json_dumps_params={'indent': 2},
+            headers={
+                'Cache-Control': f'immutable, public, max-age={60 * 60 * 24 * 7}',  # pls cache for a week
+            },
+        )

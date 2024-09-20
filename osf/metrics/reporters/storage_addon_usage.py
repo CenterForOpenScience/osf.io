@@ -78,14 +78,14 @@ def storage_addon_user_counts(date, usersettings_model):
         'deleted_daily': Count('pk', filter=(deleted_today)),
     }
     if issubclass(usersettings_model, BaseOAuthUserSettings):
-        # adding a temporary function (in the pg_temp schema) to contain
-        # all jsonb shenanigans -- this function counts the number of
-        # '<ExternalAccount._id>' keys nested one level deep
+        # adding a function to contain all jsonb shenanigans
+        # this function counts the number of '<ExternalAccount._id>'
+        # keys nested one level deep
         # (see addons.base.models.BaseOAuthUserSettings for the expected
         # structure of `oauth_grants`)
         temp_function__count_oauth_grants = '''
             CREATE OR REPLACE FUNCTION
-            pg_temp.count_oauth_grants(usersettings_oauth_grants jsonb)
+            public.count_oauth_grants(usersettings_oauth_grants jsonb)
             RETURNS bigint AS $$
                 SELECT count(*)
                 FROM jsonb_object_keys(usersettings_oauth_grants) AS guid
@@ -96,7 +96,7 @@ def storage_addon_user_counts(date, usersettings_model):
             cursor.execute(temp_function__count_oauth_grants)
 
         usersettings_qs = usersettings_qs.annotate(
-            grant_count=Func('oauth_grants', function='pg_temp.count_oauth_grants'),
+            grant_count=Func('oauth_grants', function='public.count_oauth_grants'),
         )
         # each "grant" is a "link" to a node
         has_link = ~deleted_before & Q(grant_count__gt=0)
@@ -167,23 +167,3 @@ class StorageAddonUsageReporter(DailyReporter):
             report_date=date,
             usage_by_addon=usage_by_addon,
         )]
-
-    def keen_events_from_report(self, report):
-        events = [
-            {
-                'provider': {
-                    'name': addon_usage.addon_shortname,
-                },
-                'users': {
-                    'enabled': addon_usage.enabled_usersettings,
-                    'linked': addon_usage.linked_usersettings,
-                },
-                'nodes': {
-                    'connected': addon_usage.connected_nodesettings,
-                    'deleted': addon_usage.deleted_nodesettings,
-                    'disconnected': addon_usage.disconnected_nodesettings
-                },
-            }
-            for addon_usage in report.usage_by_addon
-        ]
-        return {'addon_snapshot': events}

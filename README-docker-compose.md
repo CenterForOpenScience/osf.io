@@ -3,9 +3,7 @@
 
 1. Install the Docker Client
   - OSX: https://www.docker.com/products/docker#/mac
-  - Ubuntu
-    - docker: https://docs.docker.com/engine/installation/linux/ubuntulinux
-    - docker-compose: https://docs.docker.com/compose/install/
+  - Ubuntu: https://docs.docker.com/engine/installation/linux/ubuntulinux
   - Windows: https://www.docker.com/products/docker#/windows
 2. Grant the docker client additional resources (recommended minimums of 1 CPU, 8GB memory, 2GB swap, and 32GB disk image size)
    - OSX: https://docs.docker.com/docker-for-mac/#/preferences
@@ -26,16 +24,21 @@
 
   - Ubuntu
     - Add loopback alias
-      `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
+      ```bash
+      sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up
+      ```
 
       - For persistance, add to /etc/network/interfaces...
         Add lo:0 to auto line...
-        ```auto lo lo:0```
+        ```bash
+        auto lo lo:0
+        ```
         Add stanza for lo:0...
-        ```iface lo:0 inet static
-               address 192.168.168.167
-               netmask 255.255.255.255
-               network 192.168.168.167
+        ```bash
+        iface lo:0 inet static
+              address 192.168.168.167
+              netmask 255.255.255.255
+              network 192.168.168.167
         ```
     - If UFW enabled. Enable UFW forwarding.
       - https://docs.docker.com/engine/installation/linux/linux-postinstall/#allow-access-to-the-remote-api-through-a-firewall
@@ -43,10 +46,16 @@
       - https://docs.docker.com/engine/installation/linux/linux-postinstall/#specify-dns-servers-for-docker
     - Configure docker to start at boot for Ubuntu 15.04 onwards
       `sudo systemctl enable docker`
+      `sudo systemctl start docker` required only for the first time
+    - Grant local user privileges to interact with docker (system restart required)
+      `sudo groupadd docker` may be not needed
+      `sudo usermod -aG docker $USER`
 
     - In order to run OSF Preprints, raise fs.inotify.max_user_watches from default value
-      `echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf`
-      `sudo sysctl -p`
+		```bash
+      	echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf
+      	sudo sysctl -p`
+		```
 
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
@@ -71,19 +80,22 @@
 
 * _NOTE: After making changes to `Environment Variables` or `Volume Mounts` you will need to recreate the container(s)._
 
-  - `$ docker-compose up --force-recreate --no-deps preprints`
+  ```bash
+  docker compose up --force-recreate --no-deps preprints
+  ```
 
 1. Application Settings
   - e.g. OSF & OSF API local.py
-
-    `$ cp ./website/settings/local-dist.py ./website/settings/local.py`
-
-    `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
-
-    `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
+    ```bash
+    cp ./website/settings/local-dist.py ./website/settings/local.py
+    cp ./api/base/settings/local-dist.py ./api/base/settings/local.py
+    cp ./docker-compose-dist.override.yml ./docker-compose.override.yml
+    ```
 
     For local tasks, (dev only)
-    `$ cp ./tasks/local-dist.py ./tasks/local.py`
+    ```bash
+    cp ./tasks/local-dist.py ./tasks/local.py
+    ```
 
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
@@ -98,63 +110,63 @@
 
   #### Special Instructions for Apple Chipset (M1, M2, etc.) and other ARM64 architecture
 
-  * _NOTE: The `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
+  * _NOTE: The default `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
 
-  - Running containers with docker-compose
+  - To run `elasticsearch6` on ARM64 architecture:
 
-    - Copy an ARM64-compatible configuration to `docker-compose.override.yml`:
+    - Copy `docker-compose-dist-arm64.override.yml` into your `docker-compose.override.yml` file
 
-    `$ cp ./docker-compose-dist-arm64.override.yml ./docker-compose.override.yml`
+  - Running containers with docker compose
 
     - In `webite/settings/local.py`, disable `SEARCH_ENGINE`
     ```python
-      # SEARCH_ENGINE = 'elastic'
-      SEARCH_ENGINE = None
+    # SEARCH_ENGINE = 'elastic'
+    SEARCH_ENGINE = None
     ```
-
-  - Building the Docker image
-
-    - If you wish to use an OSF image other than the latest `develop-arm64`:
-      - Build the image
-      ```bash
-      $ cd <path-to-osf.io>
-      $ git checkout <master|develop|etc>
-      $ docker buildx build --platform linux/arm64 -t osf:<branch>-arm64 .
-      ```
-      - In `docker-compose.override.yml`, replace any `quay.io/centerforopenscience/osf:develop-arm64` with the locally-tagged image above:
-      ```yml
-      image: osf:<branch>-arm64
-      ```
 
 ## Application Runtime
 
 * _NOTE: Running docker containers detached (`-d`) will execute them in the background, if you would like to view/follow their console log output use the following command._
 
-  - `$ docker-compose logs -f --tail 1000 web`
+  ```bash
+  docker compose logs -f --tail 1000 web
+  ```
 
 1. Application Environment
 
-  - `$ docker-compose up requirements mfr_requirements wb_requirements`
+    ```bash
+    docker compose up requirements mfr_requirements wb_requirements gv_requirements
+    ```
 
-    _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
+  _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services (Detached)
-  - `$ docker-compose up -d elasticsearch postgres mongo rabbitmq`
+
+    ```bash
+    docker compose up -d elasticsearch postgres mongo rabbitmq
+    ```
 
 3. Remove your existing node_modules and start the assets watcher (Detached)
-  - `$ rm -Rf ./node_modules`
-  - `$ docker-compose up -d assets`
-  - `$ docker-compose up -d admin_assets`
+    ```bash
+    rm -Rf ./node_modules
+    docker compose up -d assets
+    docker compose up -d admin_assets
+    ```
 
-    _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
-    When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
-    containers._
+  _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
+  When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
+  containers._
+
 4. Start the Services (Detached)
-  - `$ docker-compose up -d mfr wb fakecas sharejs`
+    ```bash
+    docker compose up -d mfr wb fakecas sharejs
+    ```
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Start the OSF Web, API Server, and Preprints (Detached)
-  - `$ docker-compose up -d worker web api admin preprints ember_osf_web`
+    ```bash
+    docker compose up -d worker web api admin preprints ember_osf_web gv
+    ```
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -163,52 +175,52 @@
 - Once the requirements have all been installed, you can start the OSF in the background with
 
   ```bash
-  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints ember_osf_web
+  docker compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints ember_osf_web gv
   ```
 
 - To view the logs for a given container:
 
   ```bash
-  $ docker-compose logs -f --tail 100 web
+  docker compose logs -f --tail 100 web
   ```
 
 ### Helpful aliases
 
 - Start all containers
   ```bash
-  alias dcsa="docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch6 web api admin preprints"
+  alias dcsa="docker compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch6 web api admin preprints gv"
   ```
 
 - Shut down all containers
   ```bash
-  alias dchs="docker-compose down"
+  alias dchs="docker compose down"
   ```
 
 - Attach to container logs
   - dcl <container>. Ie. `dcl web` will log only the web container
-  ```bash
-  alias dcl="docker-compose logs -f --tail 100 "
-  ```
+	  ```bash
+	  alias dcl="docker compose logs -f --tail 100 "
+	  ```
 
 - Run migrations (Starting a fresh database or changes to migrations)
   ```bash
-  alias dcm="docker-compose run --rm web python3 manage.py migrate"
+  alias dcm="docker compose run --rm web python3 manage.py migrate"
   ```
 
 - Download requirements (Whenever the requirements change or first-time set-up)
   ```bash
-  alias dcreq="docker-compose up requirements mfr_requirements wb_requirements"
+  alias dcreq="docker compose up requirements mfr_requirements wb_requirements gv_requirements"
   ```
 
 - Restart the containers
-  - `$ dcr <container>`. Ie. `dcr web` will restart the web container
+  - `dcr <container>`. Ie. `dcr web` will restart the web container
   ```bash
-  alias dcr="docker-compose restart -t 0 "
+  alias dcr="docker compose restart -t 0 "
   ```
 
 - Start the OSF shell (Interactive python shell that allows working directly with the osf on a code level instead of a web level.)
   ```bash
-  alias dcosfs="docker-compose run --rm web python3 manage.py osf_shell"
+  alias dcosfs="docker compose run --rm web python3 manage.py osf_shell"
   ```
 
 - List all these commands
@@ -218,32 +230,60 @@
 
 ## Running arbitrary commands
 
-- View logs: `$ docker-compose logs -f --tail 100 <container_name>`
+- View logs:
+  ```bash
+  docker compose logs -f --tail 100 <container_name>
+  ```
     - _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
-    - `docker-compose run --rm web python3 manage.py migrate`
+    - To run `osf` migrations:
+      ```bash
+        docker compose run --rm web python3 manage.py migrate
+      ```
+    - To run `gravyvalet(gv)` migrations:
+      ```bash
+        docker compose run --rm gv python manage.py migrate
+      ```
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
-    - `docker-compose run --rm web python3 -m scripts.populate_institutions -e test -a`
+      ```bash
+      docker compose run --rm web python3 -m scripts.populate_institutions -e test -a
+      ```
 - Populate preprint, registration, and collection providers:
   - After resetting your database or with a new install, the required providers and subjects will be created automatically **when you run migrations.** To create more:
-    - `docker-compose run --rm web python3 manage.py populate_fake_providers`
+      ```bash
+      docker compose run --rm web python3 manage.py populate_fake_providers
+      ```
+    - _NOTE: In case, you encounter error with missing data, when running the `'populate_fake_providers'` command. Fix this with 'update_taxonomies' command:_
+      ```bash
+      docker compose run --rm web python3 -m scripts.update_taxonomies
+      ```
 - Populate citation styles
   - Needed for api v2 citation style rendering.
-    - `docker-compose run --rm web python3 -m scripts.parse_citation_styles`
+      ```bash
+      docker compose run --rm web python3 -m scripts.parse_citation_styles
+      ```
 - Start ember_osf_web
   - Needed for quickfiles feature:
-    - `docker-compose up -d ember_osf_web`
+      ```bash
+      docker compose up -d ember_osf_web
+      ```
 - OPTIONAL: Register OAuth Scopes
   - Needed for things such as the ember-osf dummy app
-    - `docker-compose run --rm web python3 -m scripts.register_oauth_scopes`
+      ```bash
+      docker compose run --rm web python3 -m scripts.register_oauth_scopes
+      ```
 - OPTIONAL: Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
-    - `docker-compose run --rm web python3 manage.py makemigrations`
+      ```bash
+      docker compose run --rm web python3 manage.py makemigrations
+      ```
 - OPTIONAL: Destroy and recreate an empty database:
   - **WARNING**: This will delete all data in your database.
-    - `docker-compose run --rm web python3 manage.py reset_db --noinput`
+      ```bash
+      docker compose run --rm web python3 manage.py reset_db --noinput
+      ```
 
 ## Application Debugging
 
@@ -253,7 +293,7 @@ If you want to debug your changes by using print statements, you'll have to have
 
   1. Edit your container configuration in docker-compose.mfr.env or docker-compose.mfr.env to include the new environment variable by uncommenting PYTHONUNBUFFERED=0
   2. If you're using a container running Python 3 you can insert the following code prior to a print statement:
-   ```
+   ```python
     import functools
     print = functools.partial(print, flush=True)
    ```
@@ -271,13 +311,13 @@ You should run the `web` and/or `api` container (depending on which codebase the
 
 ```bash
 # Kill the already-running web container
-$ docker-compose kill web
+docker compose kill web
 
 # Run a web container. App logs and breakpoints will show up here.
-$ docker-compose run --rm --service-ports web
+docker compose run --rm --service-ports web
 ```
 
-**IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker-compose ps`), e.g. `docker attach osf_web_run_1`.
+**IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker compose ps`), e.g. `docker attach osf_web_run_1`.
 
 ### Remote Debugging with PyCharm
 
@@ -293,37 +333,47 @@ $ docker-compose run --rm --service-ports web
 
 ## Application Tests
 - Run All Tests
-  - `$ docker-compose run --rm web invoke test`
-
-- Run OSF Specific Tests
-  - `$ docker-compose run --rm web invoke test_osf`
+  ```bash
+  docker compose run --rm web python3 -m pytest
+  ```
 
 - Test a Specific Module
-  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py`
+  ```bash
+  docker compose run --rm web python3 -m pytest tests/test_conferences.py
+  ```
 
 - Test a Specific Class
-  - `docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode`
+  ```bash
+  docker compose run --rm web python3 -m pytest tests/test_conferences.py::TestProvisionNode
+  ```
 
 - Test a Specific Method
-  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
-
-- Test with Specific Parameters (1 cpu, capture stdout)
-  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload -n 1 --params '--capture=sys'`
+  ```bash
+  docker compose run --rm web python3 -m pytest tests/test_conferences.py::TestProvisionNode::test_upload
+  ```
 
 ## Managing Container State
 
 Restart a container:
-  - `$ docker-compose restart -t 0 assets`
+```bash
+docker compose restart -t 0 assets
+```
 
 Recreate a container _(useful to ensure all environment variables/volume changes are in order)_:
-  - `$ docker-compose up --force-recreate --no-deps assets`
+  ```bash
+  docker compose up --force-recreate --no-deps assets
+  ```
 
 Delete a container _(does not remove volumes)_:
-  - `$ docker-compose stop -t 0 assets`
-  - `$ docker-compose rm assets`
+  ```bash
+  docker compose stop -t 0 assets
+  docker compose rm assets
+  ```
 
 List containers and status:
-  - `$ docker-compose ps`
+```bash
+docker compose ps
+```
 
 ### Backing up your database
 In certain cases, you may wish to remove all docker container images, but preserve a copy of the database used by your
@@ -332,25 +382,48 @@ resetting docker. To back up your database, follow the following sequence of com
 
 1. Install Postgres on your local machine, outside of docker. (eg `brew install postgres`) To avoid migrations, the
   version you install must match the one used by the docker container.
-  ([as of this writing](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L53), Postgres 9.6)
+  ([as of this writing](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L53), Postgres 15)
 2. Start postgres locally. This must be on a different port than the one used by [docker postgres](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L61).
   Eg, `pg_ctl -D /usr/local/var/postgres start -o "-p 5433"`
-3. Verify that the postgres docker container is running (`docker-compose up -d postgres`)
+3. Verify that the postgres docker container is running (`docker compose up -d postgres`)
 4. Tell your local (non-docker) version of postgres to connect to (and back up) data from the instance in docker
-  (defaults to port 5432):
-  `pg_dump --username postgres --compress 9 --create --clean --format d --jobs 4 --host localhost --file ~/Desktop/osf_backup osf`
+  (defaults to port 5432). For `osf` run:
+  ```bash
+  pg_dump --username postgres --compress 9 --create --clean --format d --jobs 4 --host localhost --file ~/Desktop/osf_backup osf
+  ```
+6. The same can be done for `grayvalet`, just replace `osf` with `gravyvalet` (this applies for all following commands related to backups)
 
 (shorthand: `pg_dump -U postgres -Z 9 -C --c -Fd --j 4 -h localhost --f ~/Desktop/osf_backup osf`)
 
+### Migration of Postgres from 9.6 to 15 version
+1. Dumping the database from the existing postgres 9.6 container.
+```bash
+  docker exec -i osfio-postgres-1 /bin/bash -c "pg_dump --username postgres osf" > ./dump.sql
+```
+2. Delete a persistent storage volume:
+  **WARNING: All postgres data will be destroyed.**
+```bash
+docker compose stop -t 0 postgres
+docker compose rm postgres
+docker volume rm osfio_postgres_data_vol
+```
+3. Starting a new postgres container.
+```bash
+docker compose up -d postgres
+```
+4.  Restoring the database from the dump file into the new postgres container.
+```bash
+docker exec -i osfio-postgres-1 /bin/bash -c "psql --username postgres osf" < ./dump.sql
+```
 
-#### Restoring your database
+### Restoring your database
 To restore a local copy of your database for use inside docker, make sure to start both local and dockerized postgres
 (as shown above). For best results, start from a clean postgres container with no other data. (see below for
 instructions on dropping postgres data volumes)
 
 When ready, run the restore command from a local terminal:
 ```bash
-$ pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host localhost ~/Desktop/osf_backup
+pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host localhost ~/Desktop/osf_backup
 ```
 
 (shorthand) `pg_restore -U postgres -c -d osf -Fd -j 4 -h localhost ~/Desktop/osf_backup`
@@ -360,29 +433,31 @@ $ pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host
 Resetting the Environment:
 
   **WARNING: All volumes and containers are destroyed**
-  - `$ docker-compose down -v`
+  - `docker compose down -v`
 
 Delete a persistent storage volume:
 
   **WARNING: All postgres data will be destroyed.**
-  - `$ docker-compose stop -t 0 postgres`
-  - `$ docker-compose rm postgres`
-  - `$ docker volume rm osfio_postgres_data_vol`
+  ```bash
+  docker compose stop -t 0 postgres
+  docker compose rm postgres
+  docker volume rm osfio_postgres_data_vol
+  ```
 
 ## Updating
 
 ```bash
-$ git stash # if you have any changes that need to be stashed
-$ git pull upstream develop # (replace upstream with the name of your remote)
-$ git stash pop # unstash changes
+git stash # if you have any changes that need to be stashed
+git pull upstream develop # (replace upstream with the name of your remote)
+git stash pop # unstash changes
 # If you get an out of space error
-$ docker image prune
+docker image prune
 # Pull latest images
-$ docker-compose pull
-
-$ docker-compose up requirements mfr_requirements wb_requirements
+docker compose pull
+# It is recommended to run requirements only for services that require update, not to wear off local SSD more than needed
+docker compose up requirements mfr_requirements wb_requirements gv_requirements
 # Run db migrations
-$ docker-compose run --rm web python3 manage.py migrate
+docker compose run --rm web python3 manage.py migrate
 ```
 
 ## Miscellaneous
@@ -399,7 +474,7 @@ The issue is that docker containers run in unprivileged mode by default.
 
 For `docker run`, you can use `--privilege=true` to give the container extended privileges. You can also add or drop capabilities by using `cap-add` and `cap-drop`. Since Docker 1.12, there is no need to add `--security-opt seccomp=unconfined` because the seccomp profile will adjust to selected capabilities. ([Reference](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities))
 
-When using `docker-compose`, set `privileged: true` for individual containers in the `docker-compose.yml`. ([Reference](https://docs.docker.com/compose/compose-file/#domainname-hostname-ipc-mac_address-privileged-read_only-shm_size-stdin_open-tty-user-working_dir)) Here is an example for WaterButler:
+When using `docker compose`, set `privileged: true` for individual containers in the `docker-compose.yml`. ([Reference](https://docs.docker.com/compose/compose-file/#domainname-hostname-ipc-mac_address-privileged-read_only-shm_size-stdin_open-tty-user-working_dir)) Here is an example for WaterButler:
 
 ```yml
 wb:

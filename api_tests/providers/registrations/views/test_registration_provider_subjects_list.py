@@ -16,11 +16,11 @@ class TestRegistrationProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return '/{}providers/registrations/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_1._id)
+        return f'/{API_BASE}providers/registrations/{provider_1._id}/taxonomies/?page[size]=15&'
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return '/{}providers/registrations/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
+        return f'/{API_BASE}providers/registrations/{provider_2._id}/taxonomies/?page[size]=15&'
 
 
 class TestRegistrationProviderHighlightedTaxonomies(ProviderHighlightedSubjectsMixin):
@@ -28,7 +28,7 @@ class TestRegistrationProviderHighlightedTaxonomies(ProviderHighlightedSubjectsM
 
     @pytest.fixture()
     def url(self, provider):
-        return '/{}providers/registrations/{}/taxonomies/highlighted/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/registrations/{provider._id}/taxonomies/highlighted/'
 
 
 class TestRegistrationProviderCustomTaxonomy(ProviderCustomTaxonomyMixin):
@@ -44,11 +44,11 @@ class TestRegistrationProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
 
     @pytest.fixture()
     def url_1(self, provider_1):
-        return '/{}providers/registrations/{}/subjects/?page[size]=15&'.format(API_BASE, provider_1._id)
+        return f'/{API_BASE}providers/registrations/{provider_1._id}/subjects/?page[size]=15&'
 
     @pytest.fixture()
     def url_2(self, provider_2):
-        return '/{}providers/registrations/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)
+        return f'/{API_BASE}providers/registrations/{provider_2._id}/subjects/?page[size]=15&'
 
 
 class TestRegistrationProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
@@ -56,7 +56,7 @@ class TestRegistrationProviderHighlightedSubjects(ProviderHighlightedSubjectsMix
 
     @pytest.fixture()
     def url(self, provider):
-        return '/{}providers/registrations/{}/subjects/highlighted/'.format(API_BASE, provider._id)
+        return f'/{API_BASE}providers/registrations/{provider._id}/subjects/highlighted/'
 
 
 class TestRegistrationProviderCustomSubjects(ProviderCustomSubjectMixin):

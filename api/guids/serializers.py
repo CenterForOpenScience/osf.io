@@ -1,4 +1,4 @@
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.urls import resolve, reverse
 
@@ -29,7 +29,7 @@ def get_referent_view(record):
     kind = get_type(record)
     # slight hack, works for existing types
     singular = kind.rstrip('s')
-    return '{}:{}-detail'.format(kind, singular)
+    return f'{kind}:{singular}-detail'
 
 def get_referent_view_kwargs(record):
     kind = get_type(record)
@@ -39,7 +39,7 @@ def get_referent_view_kwargs(record):
     if singular == 'registration':
         singular = 'node'
     return {
-        '{}_id'.format(singular): '<_id>',
+        f'{singular}_id': '<_id>',
     }
 
 def get_custom_metadata_view(referent):
@@ -89,7 +89,7 @@ class GuidSerializer(JSONAPISerializer):
     def get_absolute_html_url(self, obj):
         if not isinstance(obj.referent, BaseFileNode):
             return obj.referent.absolute_url
-        return urljoin(website_settings.DOMAIN, '/{}/'.format(obj._id))
+        return urljoin(website_settings.DOMAIN, f'/{obj._id}/')
 
     def to_representation(self, obj):
         if self.context['view'].kwargs.get('is_embedded'):

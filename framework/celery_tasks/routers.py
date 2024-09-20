@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from website.settings import CeleryConfig
 
 
@@ -14,10 +13,12 @@ def match_by_module(task_path):
             return CeleryConfig.task_high_queue
         if task_subpath in CeleryConfig.remote_computing_modules:
             return CeleryConfig.task_remote_computing_queue
+        if task_subpath in CeleryConfig.task_account_status_changes_queue:
+            return CeleryConfig.task_account_status_changes_queue
     return CeleryConfig.task_default_queue
 
 
-class CeleryRouter(object):
+class CeleryRouter:
     def route_for_task(self, task, args=None, kwargs=None):
         """ Handles routing of celery tasks.
         See http://docs.celeryproject.org/en/latest/userguide/routing.html#routers

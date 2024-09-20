@@ -33,7 +33,7 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
                 except (KeyError, AttributeError, ValueError) as error:
                     logger.info(error)
                 if not item.referrer.spam_data.get('domains') and not item.referrer.spam_data.get('who_flagged'):
-                        item.referrer.unspam(save=False)
+                    item.referrer.unspam(save=False)
             item.save()
             item.referrer.save()
 
@@ -46,15 +46,20 @@ def _check_resource_for_domains(guid, content):
     resource = guid.referent
     spammy_domains = []
     referrer_content_type = ContentType.objects.get_for_model(resource)
-    for domain in _extract_domains(content):
-        notable_domain, _ = NotableDomain.objects.get_or_create(domain=domain)
+    for domain, note in _extract_domains(content):
+        notable_domain, _ = NotableDomain.objects.get_or_create(
+            domain=domain,
+            defaults={'note': note}
+        )
         if notable_domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
             spammy_domains.append(notable_domain.domain)
         DomainReference.objects.get_or_create(
             domain=notable_domain,
             referrer_object_id=resource.id,
             referrer_content_type=referrer_content_type,
-            defaults={'is_triaged': notable_domain.note != NotableDomain.Note.UNKNOWN}
+            defaults={
+                'is_triaged': notable_domain.note not in (NotableDomain.Note.UNKNOWN, NotableDomain.Note.UNVERIFIED)
+            }
         )
     if spammy_domains:
         resource.confirm_spam(save=True, domains=list(spammy_domains))
@@ -72,8 +77,11 @@ def check_resource_for_domains_async(guid, content):
 
 
 def _extract_domains(content):
+    from osf.models import NotableDomain
+
     extracted_domains = set()
     for match in DOMAIN_REGEX.finditer(content):
+        note = NotableDomain.Note.UNKNOWN
         domain = match.group('domain')
         if not domain or domain in extracted_domains:
             continue
@@ -85,10 +93,11 @@ def _extract_domains(content):
 
         try:
             response = requests.head(constructed_url, timeout=settings.DOMAIN_EXTRACTION_TIMEOUT)
-        except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
+        except requests.exceptions.InvalidURL:
+            # Likely false-positive from a filename.ext
             continue
         except requests.exceptions.RequestException:
-            pass
+            note = NotableDomain.Note.UNVERIFIED
         else:
             # Store the redirect location (to help catch link shorteners)
             if response.status_code in REDIRECT_CODES and 'location' in response.headers:
@@ -99,7 +108,7 @@ def _extract_domains(content):
         # Avoid returning a duplicate domain discovered via redirect
         if domain not in extracted_domains:
             extracted_domains.add(domain)
-            yield domain
+            yield domain, note
 
 
 @run_postcommit(once_per_request=False, celery=True)

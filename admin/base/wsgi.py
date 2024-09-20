@@ -8,12 +8,12 @@ https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 """
 from website import settings
 
-if not settings.DEBUG_MODE:
-    from gevent import monkey
-    monkey.patch_all()
-    # PATCH: avoid deadlock on getaddrinfo, this patch is necessary while waiting for
-    # the final gevent 1.1 release (https://github.com/gevent/gevent/issues/349)
-    #  'foo'.encode('idna')  # noqa
+if settings.NEWRELIC_INI_PATH:
+    try:
+        import newrelic.agent
+        newrelic.agent.initialize(settings.NEWRELIC_INI_PATH)
+    except Exception as err:
+        raise Exception(f'Unable to initialize newrelic! {err}')
 
 import os  # noqa
 from django.core.wsgi import get_wsgi_application  # noqa

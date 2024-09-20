@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Serializer tests for the Box addon."""
-import mock
+from unittest import mock
 import pytest
 
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
@@ -27,11 +26,11 @@ class TestBoxSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
             return_value=True
         )
         self.mock_valid.start()
-        super(TestBoxSerializer, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_valid.stop()
-        super(TestBoxSerializer, self).tearDown()
+        super().tearDown()
 
     def set_provider_id(self, pid):
         self.node_settings.folder_id = pid

@@ -49,7 +49,7 @@ def withdraw_all_preprints(provider_id, page_size, user_guid, comment=None):
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--provider-id',
             dest='provider_id',

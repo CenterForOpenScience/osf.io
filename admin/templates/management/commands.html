@@ -89,11 +89,6 @@
                     <input type="date" name="report_date" id="report_date"/>
                     (default: yesterday)
                     <br>
-                    <label for="also_send_to_keen">
-                        Also send to keen?
-                    </label>
-                    <input type="checkbox" name="also_send_to_keen" id="also_send_to_keen"/>
-                    (may result in duplicates)
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>
@@ -111,6 +106,20 @@
                     <input type="date" name="monthly_report_date" id="monthly_report_date"/>
                     (default: yesterday)
                     <br>
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Ingest Cedar Metadata templates</u></h4>
+                <p>
+                    Use this management command to ingest CEDAR metadata templates from CEDAR Workbench.
+                    Note: This requires CEDAR_API_HOST and CEDAR_API_KEY to be set for the environment.
+                </p>
+                <form method="post"
+                      action="{% url 'management:ingest_cedar_metadata_templates'%}">
+                    {% csrf_token %}
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>

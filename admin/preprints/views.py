@@ -15,7 +15,7 @@ from django.urls import reverse_lazy
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.nodes.views import NodeRemoveContributorView
-from admin.preprints.forms import ChangeProviderForm
+from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
 
@@ -62,6 +62,21 @@ class PreprintView(PreprintMixin, GuidView):
     """
     template_name = 'preprints/preprint.html'
     permission_required = ('osf.view_preprint', 'osf.change_preprint',)
+
+    def get_context_data(self, **kwargs):
+        preprint = self.get_object()
+        return super().get_context_data(**{
+            'preprint': preprint,
+            'SPAM_STATUS': SpamStatus,
+            'change_provider_form': ChangeProviderForm(instance=preprint),
+            'change_machine_state_form': MachineStateForm(instance=preprint),
+        }, **kwargs)
+
+
+class PreprintProviderChangeView(PreprintMixin, GuidView):
+    """ Allows authorized users to view preprint info and change a preprint's provider.
+    """
+    permission_required = ('osf.view_preprint', 'osf.change_preprint',)
     form_class = ChangeProviderForm
 
     def post(self, request, *args, **kwargs):
@@ -79,13 +94,26 @@ class PreprintView(PreprintMixin, GuidView):
 
         return redirect(self.get_success_url())
 
-    def get_context_data(self, **kwargs):
+
+class PreprintMachineStateView(PreprintMixin, GuidView):
+    """ Allows authorized users to view preprint info and change a preprint's machine_state.
+    """
+    permission_required = ('osf.view_preprint', 'osf.change_preprint',)
+    form_class = MachineStateForm
+
+    def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-        return super().get_context_data(**{
-            'preprint': preprint,
-            'SPAM_STATUS': SpamStatus,
-            'form': ChangeProviderForm(instance=preprint),
-        }, **kwargs)
+        new_machine_state = request.POST.get('machine_state')
+        if new_machine_state and preprint.machine_state != new_machine_state:
+            preprint.machine_state = new_machine_state
+            try:
+                preprint.save()
+            except Exception as e:
+                messages.error(self.request, e.message)
+
+            preprint.refresh_from_db()
+
+        return redirect(self.get_success_url())
 
 
 class PreprintSearchView(PermissionRequiredMixin, FormView):

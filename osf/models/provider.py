@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import json
 import requests
 
@@ -122,6 +121,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
+    advertise_on_discover_page = models.BooleanField(default=True, help_text='Indicates if the provider should be advertised on the discovery page.')
     advisory_board = models.TextField(default='', blank=True)
     description = models.TextField(default='', blank=True)
     domain = models.URLField(blank=True, default='', max_length=200)
@@ -163,7 +163,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
 
     def __str__(self):
-        return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
+        return f'[{self.readable_type}] {self.name} - {self.id}'
 
     @property
     def all_subjects(self):
@@ -181,9 +181,9 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     @property
     def highlighted_subjects(self):
         if self.has_highlighted_subjects:
-            return self.subjects.filter(highlighted=True).order_by('text')[:10]
+            return self.subjects.filter(highlighted=True).order_by('text')
         else:
-            return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
+            return sorted(self.top_level_subjects, key=lambda s: s.text)
 
     @property
     def top_level_subjects(self):
@@ -270,7 +270,7 @@ class CollectionProvider(AbstractProvider):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/providers/collections/{}/'.format(self._id)
+        path = f'/providers/collections/{self._id}/'
         return api_v2_url(path)
 
     def get_semantic_iri(self):
@@ -341,7 +341,7 @@ class RegistrationProvider(AbstractProvider):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/providers/registrations/{}/'.format(self._id)
+        path = f'/providers/registrations/{self._id}/'
         return api_v2_url(path)
 
     def get_semantic_iri(self):
@@ -407,17 +407,6 @@ class PreprintProvider(AbstractProvider):
             return rules_to_subjects(self.subjects_acceptable)
 
     @property
-    def has_highlighted_subjects(self):
-        return self.subjects.filter(highlighted=True).exists()
-
-    @property
-    def highlighted_subjects(self):
-        if self.has_highlighted_subjects:
-            return self.subjects.filter(highlighted=True).order_by('text')[:10]
-        else:
-            return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
-
-    @property
     def top_level_subjects(self):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
@@ -425,7 +414,7 @@ class PreprintProvider(AbstractProvider):
             # TODO: Delet this when all PreprintProviders have a mapping
             if len(self.subjects_acceptable) == 0:
                 return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
-            tops = set([sub[0][0] for sub in self.subjects_acceptable])
+            tops = {sub[0][0] for sub in self.subjects_acceptable}
             return Subject.objects.filter(_id__in=tops)
 
     @property
@@ -433,11 +422,11 @@ class PreprintProvider(AbstractProvider):
         return self.domain or self.get_semantic_iri()
 
     def get_absolute_url(self):
-        return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
+        return f'{self.absolute_api_v2_url}preprint_providers/{self._id}'
 
     @property
     def absolute_api_v2_url(self):
-        path = '/providers/preprints/{}/'.format(self._id)
+        path = f'/providers/preprints/{self._id}/'
         return api_v2_url(path)
 
     def get_semantic_iri(self):
@@ -489,7 +478,7 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
         user = getattr(instance, '_creator', None)  # Temp attr set in admin view
         if user:
             c = Collection(
-                title='{}\'s Collection'.format(instance.name),
+                title=f'{instance.name}\'s Collection',
                 creator=user,
                 provider=instance,
                 is_promoted=True,
@@ -500,7 +489,7 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
             instance.save()
         else:
             # A user is required for Collections / Groups
-            sentry.log_message('Unable to create primary_collection for {}Provider {}'.format(instance.readable_type.capitalize(), instance.name))
+            sentry.log_message(f'Unable to create primary_collection for {instance.readable_type.capitalize()}Provider {instance.name}')
 
 class WhitelistedSHAREPreprintProvider(BaseModel):
     id = models.AutoField(primary_key=True)

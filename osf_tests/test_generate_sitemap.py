@@ -1,11 +1,12 @@
 import os
 
 import pytest
-import mock
+from unittest import mock
 import shutil
 import tempfile
 import xml
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
+from django.utils import timezone
 
 from scripts import generate_sitemap
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
@@ -99,6 +100,15 @@ class TestGenerateSitemap:
                                              provider=provider_osf)
 
     @pytest.fixture(autouse=True)
+    def preprint_withdrawn(self, project_preprint_osf, user_admin_project_public, provider_osf):
+        preprint = PreprintFactory(project=project_preprint_osf,
+                                             creator=user_admin_project_public,
+                                             provider=provider_osf)
+        preprint.date_withdrawn = timezone.now()
+        preprint.save()
+        return preprint
+
+    @pytest.fixture(autouse=True)
     def preprint_other(self, project_preprint_other, user_admin_project_public, provider_other):
         return PreprintFactory(project=project_preprint_other,
                                              creator=user_admin_project_public,
@@ -107,8 +117,8 @@ class TestGenerateSitemap:
     @pytest.fixture(autouse=True)
     def all_included_links(self, user_admin_project_public, user_admin_project_private, project_registration_public,
                              project_preprint_osf, project_preprint_other,
-                             registration_active, provider_other, preprint_osf,
-                             preprint_other):
+                             registration_active, provider_other, provider_osf,
+                             preprint_osf, preprint_other, preprint_withdrawn):
         # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
@@ -118,8 +128,11 @@ class TestGenerateSitemap:
             project_preprint_osf.url,
             project_preprint_other.url,
             registration_active.url,
-            '/{}/'.format(preprint_osf._id),
-            '/preprints/{}/{}/'.format(provider_other._id, preprint_other._id),
+            f'/preprints/{provider_osf._id}/{preprint_osf._id}',
+            f'/preprints/{provider_other._id}/{preprint_other._id}',
+            f'/preprints/{provider_osf._id}/{preprint_withdrawn._id}',
+            f'/{preprint_osf._id}/download/?format=pdf',
+            f'/{preprint_other._id}/download/?format=pdf'
         ])
         urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
 

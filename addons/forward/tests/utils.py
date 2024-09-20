@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from addons.base.tests.base import AddonTestCase
 
 

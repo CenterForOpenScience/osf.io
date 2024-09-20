@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -14,7 +14,7 @@ class TestThrottling:
 
     @pytest.fixture()
     def url(self):
-        return '/{}test/throttle/'.format(API_BASE)
+        return f'/{API_BASE}test/throttle/'
 
     def test_user_rate_throttle(self, app, url, user):
         res = app.get(url, auth=user.auth)

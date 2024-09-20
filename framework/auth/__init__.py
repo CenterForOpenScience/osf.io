@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import uuid
 
 from django.utils import timezone
@@ -13,6 +12,7 @@ from framework.auth.utils import LogLevel, print_cas_log
 from framework.celery_tasks.handlers import enqueue_task
 from framework.sessions import get_session, create_session
 from framework.sessions.utils import remove_session
+from website.util.metrics import institution_source_tag
 
 
 __all__ = [
@@ -104,7 +104,7 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
         user.update_guessed_names()
         user.save()
     else:
-        raise DuplicateEmailError('OSFUser {0!r} already exists'.format(username))
+        raise DuplicateEmailError(f'OSFUser {username!r} already exists')
     return user
 
 
@@ -154,6 +154,7 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     # Note: Institution users are created as confirmed with a strong and random password. Users don't need the
     # password since they sign in via SSO. They can reset their password to enable email/password login.
     user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
+    user.add_system_tag(institution_source_tag(primary_institution._id))
     return user, True, None, None, sso_identity
 
 

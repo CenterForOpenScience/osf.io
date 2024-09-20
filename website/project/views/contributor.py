@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+from urllib.parse import unquote_plus
 
 from rest_framework import status as http_status
 
@@ -188,10 +188,12 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
         # Add unclaimed record if necessary
         if not contributor.is_registered:
-            contributor.add_unclaimed_record(node, referrer=auth.user,
+            contributor.add_unclaimed_record(
+                node,
+                referrer=auth.user,
                 given_name=fullname,
-                email=email)
-            contributor.save()
+                email=email,
+            )
 
         contribs.append({
             'user': contributor,
@@ -667,7 +669,7 @@ def claim_user_registered(auth, node, **kwargs):
     current_user = auth.user
     current_session = get_session()
 
-    sign_out_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=request.url))
+    sign_out_url = cas.get_logout_url(service_url=unquote_plus(cas.get_login_url(service_url=request.url)))
     if not current_user:
         return redirect(sign_out_url)
 

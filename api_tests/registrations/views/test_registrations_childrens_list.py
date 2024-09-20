@@ -97,7 +97,7 @@ class TestRegistrationsChildrenList:
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
 
         # view only link is not attached to components
-        view_only_link_url = '{}?view_only={}'.format(registration_with_children_url, view_only_link.key)
+        view_only_link_url = f'{registration_with_children_url}?view_only={view_only_link.key}'
         res = app.get(view_only_link_url)
         ids = [node['id'] for node in res.json['data']]
         assert res.status_code == 200

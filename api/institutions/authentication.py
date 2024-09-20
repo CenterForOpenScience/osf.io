@@ -25,6 +25,7 @@ from osf.models.institution import SsoFilterCriteriaAction
 
 from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
+from website.util.metrics import institution_source_tag
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +127,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 jwe.decrypt(request.body, settings.JWE_SECRET),
                 settings.JWT_SECRET,
                 options={'verify_exp': False},
-                algorithm='HS256',
+                algorithms=['HS256'],
             )
         except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
             raise AuthenticationFailed(detail='InstitutionSsoRequestNotAuthorized')
@@ -388,6 +389,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 sso_mail=sso_email,
                 sso_department=department,
             )
+            if is_created:
+                user.add_system_tag(institution_source_tag(secondary_institution._id))
 
         # Storage region is only updated if the user is created via institutional SSO; the region will be set to the
         # institution's preferred one if the user's current region is not in the institution's default region list.

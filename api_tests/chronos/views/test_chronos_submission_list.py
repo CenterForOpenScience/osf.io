@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from datetime import timedelta
@@ -73,7 +73,7 @@ class TestChronosSubmissionList:
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/_/chronos/{}/submissions/'.format(preprint._id)
+        return f'/_/chronos/{preprint._id}/submissions/'
 
     def create_payload(self, journal):
         return {
@@ -215,7 +215,7 @@ class TestChronosSubmissionAutomaticUpdate:
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/_/chronos/{}/submissions/'.format(preprint._id)
+        return f'/_/chronos/{preprint._id}/submissions/'
 
     @mock.patch('api.chronos.views.enqueue_task')
     def test_enqueue_is_called_with_submission_is_stale(self, mock_enqueue, app, url, submission_stale, submitter):

@@ -20,7 +20,7 @@ class scope(namedtuple('scope', ['parts_', 'description', 'is_public'])):
         return frozenset((CoreScopes.ALWAYS_PUBLIC, )).union(self.parts_)
 
 
-class CoreScopes(object):
+class CoreScopes:
     """
     The smallest units of permission that can be granted- all other scopes are built out of these.
     Each named constant is a single string."""
@@ -160,6 +160,9 @@ class CoreScopes(object):
 
     WAFFLE_READ = 'waffle_read'
 
+    CEDAR_METADATA_RECORD_READ = 'cedar_metadata_record_read'
+    CEDAR_METADATA_RECORD_WRITE = 'cedar_metadata_record_write'
+
     NULL = 'null'
 
     # NOTE: Use with extreme caution.
@@ -200,7 +203,7 @@ class CoreScopes(object):
     WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
 
 
-class ComposedScopes(object):
+class ComposedScopes:
     """
     Composed scopes, listed in increasing order of access (most restrictive first). Each named constant is a tuple.
     """
@@ -316,6 +319,7 @@ class ComposedScopes(object):
                 + PREPRINT_ALL_READ\
                 + GROUP_READ\
                 + (
+                    CoreScopes.CEDAR_METADATA_RECORD_READ,
                     CoreScopes.MEETINGS_READ,
                     CoreScopes.INSTITUTION_READ,
                     CoreScopes.SEARCH,
@@ -336,6 +340,7 @@ class ComposedScopes(object):
                  + PREPRINT_ALL_WRITE\
                  + GROUP_WRITE\
                  + (
+                     CoreScopes.CEDAR_METADATA_RECORD_WRITE,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION
                  )

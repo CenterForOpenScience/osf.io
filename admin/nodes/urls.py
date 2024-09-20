@@ -1,4 +1,4 @@
-from django.conf.urls import re_path
+from django.urls import re_path
 from admin.nodes import views
 
 app_name = 'admin'
@@ -37,4 +37,5 @@ urlpatterns = [
         name='recalculate-node-storage'),
     re_path(r'^(?P<guid>[a-z0-9]+)/make_private/$', views.NodeMakePrivate.as_view(), name='make-private'),
     re_path(r'^(?P<guid>[a-z0-9]+)/make_public/$', views.NodeMakePublic.as_view(), name='make-public'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/remove_notifications/$', views.NodeRemoveNotificationView.as_view(), name='node-remove-notifications'),
 ]

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from django.contrib import admin
 from django.contrib.admin.models import DELETION
 from django.contrib.auth.models import Permission
@@ -18,7 +16,7 @@ class AdminAdmin(admin.ModelAdmin):
     def permission_groups(self):
         perm_groups = ', '.join(
             [perm.name for perm in self.user.groups.all()]) if self.user.groups.all() else 'No permission groups'
-        return u'<a href="/account/register/?id={id}">{groups}</a>'.format(id=self.user._id, groups=perm_groups)
+        return f'<a href="/account/register/?id={self.user._id}">{perm_groups}</a>'
 
     def user_name(self):
         return self.user.username
@@ -76,17 +74,17 @@ class LogEntryAdmin(admin.ModelAdmin):
             link = escape(obj.object_repr)
         else:
             ct = obj.content_type
-            link = u'<a href="%s">%s</a>' % (
-                reverse('admin:%s_%s_change' % (ct.app_label, ct.model), args=[obj.object_id]),
+            link = '<a href="{}">{}</a>'.format(
+                reverse(f'admin:{ct.app_label}_{ct.model}_change', args=[obj.object_id]),
                 escape(obj.object_repr),
             )
         return link
     object_link.allow_tags = True
     object_link.admin_order_field = 'object_repr'
-    object_link.short_description = u'object'
+    object_link.short_description = 'object'
 
     def queryset(self, request):
-        return super(LogEntryAdmin, self).queryset(request) \
+        return super().queryset(request) \
             .prefetch_related('content_type')
 
 

@@ -1,6 +1,6 @@
 import hmac
 import uuid
-from future.moves.urllib.parse import unquote_plus
+from urllib.parse import unquote_plus
 import hashlib
 from rest_framework import status as http_status
 
@@ -11,11 +11,11 @@ from addons.gitlab.api import GitLabClient
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
-    'add': 'Added {0}'.format(MESSAGE_BASE),
-    'move': 'Moved {0}'.format(MESSAGE_BASE),
-    'copy': 'Copied {0}'.format(MESSAGE_BASE),
-    'update': 'Updated {0}'.format(MESSAGE_BASE),
-    'delete': 'Deleted {0}'.format(MESSAGE_BASE),
+    'add': f'Added {MESSAGE_BASE}',
+    'move': f'Moved {MESSAGE_BASE}',
+    'copy': f'Copied {MESSAGE_BASE}',
+    'update': f'Updated {MESSAGE_BASE}',
+    'delete': f'Deleted {MESSAGE_BASE}',
 }
 
 

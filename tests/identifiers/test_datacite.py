@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import lxml
 import pytest
 import responses
@@ -80,7 +79,7 @@ class TestDataCiteClient:
         parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
         root = lxml.etree.fromstring(metadata_xml, parser=parser)
         xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
-        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.4/metadata.xsd'
+        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.5/metadata.xsd'
         assert root.attrib[xsi_location] == expected_location
 
         identifier = root.find('{%s}identifier' % schema40.ns[None])
@@ -98,13 +97,13 @@ class TestDataCiteClient:
 
         resource_type = root.find('{%s}resourceType' % schema40.ns[None])
         assert resource_type.text == 'Pre-registration'
-        assert resource_type.attrib['resourceTypeGeneral'] == 'Text'
+        assert resource_type.attrib['resourceTypeGeneral'] == 'StudyRegistration'
 
     def test_datcite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
-        visible_contrib2.given_name = u'ヽ༼ ಠ益ಠ ༽ﾉ'
-        visible_contrib2.family_name = u'ლ(´◉❥◉｀ლ)'
+        visible_contrib2.given_name = 'ヽ༼ ಠ益ಠ ༽ﾉ'
+        visible_contrib2.family_name = 'ლ(´◉❥◉｀ლ)'
         visible_contrib2.save()
         invisible_contrib = AuthUserFactory()
         invisible_contrib.given_name = 'Shady'
@@ -228,7 +227,7 @@ class TestDataCiteViews(OsfTestCase):
     """ This tests the v1 views for Project/Registration DOI creation."""
 
     def setUp(self):
-        super(TestDataCiteViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
         self.client = DataCiteClient(self.node)
@@ -284,7 +283,6 @@ class TestDataCiteViews(OsfTestCase):
                 category='doi',
                 value='fakedoi',
             ),
-            expect_errors=True,
         )
         assert res.status_code == 404
 

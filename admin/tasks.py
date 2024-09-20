@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
 import os
 
 from invoke import task
@@ -18,7 +16,7 @@ def manage(ctx, cmd_str):
     """
     manage_cmd = os.path.join(HERE, '..', 'manage.py')
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python {} {}'.format(env, manage_cmd, cmd_str)
+    cmd = f'{env} python {manage_cmd} {cmd_str}'
     ctx.run(cmd, echo=True, pty=True)
 
 
@@ -57,7 +55,7 @@ def webpack(ctx, clean=False, watch=False, dev=False):
     if watch:
         args += ['--watch']
     config_file = 'webpack.admin.config.js' if dev else 'webpack.prod.config.js'
-    args += ['--config {0}'.format(config_file)]
+    args += [f'--config {config_file}']
     command = ' '.join(args)
     ctx.run(command, echo=True)
 
@@ -67,7 +65,7 @@ def clean_assets(ctx):
     """Remove built JS files."""
     public_path = os.path.join(HERE, 'static', 'public')
     js_path = os.path.join(public_path, 'js')
-    ctx.run('rm -rf {0}'.format(js_path), echo=True)
+    ctx.run(f'rm -rf {js_path}', echo=True)
 
 
 @task(aliases=['bower'])
@@ -75,5 +73,5 @@ def bower_install(ctx):
     if os.getcwd() != HERE:
         os.chdir(HERE)
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
-    ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
-    ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
+    ctx.run(f'{bower_bin} prune --allow-root', echo=True)
+    ctx.run(f'{bower_bin} install --allow-root', echo=True)

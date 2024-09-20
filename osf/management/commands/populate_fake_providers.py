@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 A management command to populate preprint providers for local development.
 
@@ -12,7 +10,6 @@ In order to make additional changes to a preprint provider
 you should run the admin app which will allow you to edit a preprint provider.
 """
 
-from __future__ import unicode_literals
 import json
 import logging
 import random
@@ -189,7 +186,7 @@ def get_subject_id(name):
         try:
             SUBJECTS_CACHE[name] = Subject.objects.filter(text=name, provider___id='osf', provider__type='osf.preprintprovider').values_list('_id', flat=True).get()
         except Subject.DoesNotExist:
-            raise Exception('Subject: "{}" not found'.format(name))
+            raise Exception(f'Subject: "{name}" not found')
 
     return SUBJECTS_CACHE[name]
 
@@ -197,7 +194,7 @@ def get_license(name):
     try:
         license = NodeLicense.objects.get(name=name)
     except NodeLicense.DoesNotExist:
-        raise Exception('License: "{}" not found'.format(name))
+        raise Exception(f'License: "{name}" not found')
     return license
 
 def populate_preprint_providers(*args):
@@ -217,17 +214,17 @@ def populate_preprint_providers(*args):
         if default_license:
             provider.default_license = get_license(default_license)
         if custom_taxonomy and not provider.subjects.exists():
-            logger.info('Adding custom taxonomy for: {}'.format(_id))
+            logger.info(f'Adding custom taxonomy for: {_id}')
             call_command('populate_custom_taxonomies', '--provider', _id, '--data', json.dumps(custom_taxonomy))
         if created:
-            logger.info('Added preprint provider: {}'.format(_id))
+            logger.info(f'Added preprint provider: {_id}')
         else:
-            logger.info('Updated preprint provider: {}'.format(_id))
+            logger.info(f'Updated preprint provider: {_id}')
 
 def remove_preprint_providers(*args):
     providers = PreprintProvider.objects.exclude(_id='osf')
     for provider in providers:
-        logger.info('Removing preprint provider: {}'.format(provider._id))
+        logger.info(f'Removing preprint provider: {provider._id}')
         provider.delete()
 
 
@@ -244,14 +241,14 @@ def populate_registration_providers(*args):
         if default_license:
             provider.default_license = get_license(default_license)
         if created:
-            logger.info('Added registration provider: {}'.format(_id))
+            logger.info(f'Added registration provider: {_id}')
         else:
-            logger.info('Updated registration provider: {}'.format(_id))
+            logger.info(f'Updated registration provider: {_id}')
 
 def remove_registration_providers(*args):
     providers = RegistrationProvider.objects.exclude(_id=RegistrationProvider.default__id)
     for provider in providers:
-        logger.info('Removing registration provider: {}'.format(provider._id))
+        logger.info(f'Removing registration provider: {provider._id}')
         provider.delete()
 
 def populate_collection_providers(add_data):
@@ -272,7 +269,7 @@ def populate_collection_providers(add_data):
             provider.default_license = get_license(default_license)
 
         if custom_taxonomy and not provider.subjects.exists():
-            logger.info('Adding custom taxonomy for: {}'.format(_id))
+            logger.info(f'Adding custom taxonomy for: {_id}')
             call_command('populate_custom_taxonomies', '--provider', _id, '--type', 'osf.collectionprovider', '--data', json.dumps(custom_taxonomy))
 
         provider_subjects = provider.subjects.all()
@@ -305,14 +302,14 @@ def populate_collection_providers(add_data):
 def remove_collection_providers(*args):
     providers = CollectionProvider.objects.exclude(_id='osf')
     for provider in providers:
-        logger.info('Removing collection provider: {}'.format(provider._id))
+        logger.info(f'Removing collection provider: {provider._id}')
         provider.delete()
 
 
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

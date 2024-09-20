@@ -57,6 +57,8 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     CONFIRM_HAM = 'confirm_ham'
     FLAG_SPAM = 'flag_spam'
     CONFIRM_SPAM = 'confirm_spam'
+    AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
+    AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
     actions = ([
         DELETED,
@@ -114,7 +116,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/logs/{}/'.format(self._id)
+        path = f'/logs/{self._id}/'
         return api_v2_url(path)
 
     def get_absolute_url(self):

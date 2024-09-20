@@ -1,7 +1,5 @@
-import mock
+from unittest import mock
 import pytest
-
-from nose.tools import assert_raises
 
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
@@ -154,7 +152,7 @@ class TestCreateSchemaResponse():
     def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
         registration.registered_schema.clear()
         registration.save()
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             schema_response.SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration
@@ -164,7 +162,7 @@ class TestCreateSchemaResponse():
         alt_schema = RegistrationSchema.objects.exclude(
             id=registration.registration_schema.id
         ).first()
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             schema_response.SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
@@ -196,7 +194,7 @@ class TestCreateSchemaResponse():
             parent=registration,
         )
 
-        with assert_raises(PreviousSchemaResponseError):
+        with pytest.raises(PreviousSchemaResponseError):
             schema_response.SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
@@ -293,7 +291,7 @@ class TestCreateSchemaResponse():
 
         initial_response.approvals_state_machine.set_state(invalid_response_state)
         initial_response.save()
-        with assert_raises(PreviousSchemaResponseError):
+        with pytest.raises(PreviousSchemaResponseError):
             schema_response.SchemaResponse.create_from_previous_response(
                 initiator=initial_response.initiator,
                 previous_response=intermediate_response
@@ -437,10 +435,10 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
     def test_update_with_unsupported_key_raises(self, revised_response):
-        with assert_raises(SchemaResponseUpdateError) as manager:
+        with pytest.raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses({'q7': 'sneaky'})
 
-        assert manager.exception.unsupported_keys == {'q7'}
+        assert manager.value.unsupported_keys == {'q7'}
 
     @pytest.mark.parametrize(
         'updated_responses',
@@ -452,7 +450,7 @@ class TestUpdateSchemaResponses():
     )
     def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
             self, updated_responses, revised_response):
-        with assert_raises(SchemaResponseUpdateError):
+        with pytest.raises(SchemaResponseUpdateError):
             revised_response.update_responses(updated_responses)
 
         revised_response.refresh_from_db()
@@ -460,20 +458,20 @@ class TestUpdateSchemaResponses():
         assert revised_response.all_responses['q2'] == updated_responses['q2']
 
     def test_update_fails_with_invalid_response_types(self, revised_response):
-        with assert_raises(SchemaResponseUpdateError) as manager:
+        with pytest.raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses(
                 {'q1': 1, 'q2': ['this is a list'], 'q3': 'B', 'q4': 'this is a string'}
             )
 
-        assert set(manager.exception.invalid_responses.keys()) == {'q1', 'q2', 'q4'}
+        assert set(manager.value.invalid_responses.keys()) == {'q1', 'q2', 'q4'}
 
     def test_update_fails_with_invalid_response_values(self, revised_response):
-        with assert_raises(SchemaResponseUpdateError) as manager:
+        with pytest.raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses(
                 {'q3': 'Q', 'q4': ['D', 'A']}
             )
 
-        assert set(manager.exception.invalid_responses.keys()) == {'q3', 'q4'}
+        assert set(manager.value.invalid_responses.keys()) == {'q3', 'q4'}
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -489,7 +487,7 @@ class TestUpdateSchemaResponses():
     )
     def test_update_fails_if_state_is_invalid(self, invalid_response_state, initial_response):
         initial_response.approvals_state_machine.set_state(invalid_response_state)
-        with assert_raises(SchemaResponseStateError):
+        with pytest.raises(SchemaResponseStateError):
             initial_response.update_responses({'q1': 'harrumph'})
 
     def test_update_file_is_noop_if_no_change_in_ids(self, revised_response):
@@ -544,7 +542,7 @@ class TestDeleteSchemaResponse():
     def test_delete_fails_if_state_is_invalid(self, invalid_response_state, initial_response):
         initial_response.approvals_state_machine.set_state(invalid_response_state)
         initial_response.save()
-        with assert_raises(SchemaResponseStateError):
+        with pytest.raises(SchemaResponseStateError):
             initial_response.delete()
 
 
@@ -607,7 +605,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.submit(required_approvers=[admin_user])
 
     def test_submit_fails_with_invalid_response_value(self, initial_response, admin_user):
@@ -617,7 +615,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         invalid_block.response = 1
         invalid_block.save()
 
-        with assert_raises(SchemaResponseStateError):
+        with pytest.raises(SchemaResponseStateError):
             initial_response.submit(user=admin_user, required_approvers=[admin_user])
 
     def test_submit_fails_with_missing_required_response(self, initial_response, admin_user):
@@ -627,19 +625,19 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         invalid_block.response = ''
         invalid_block.save()
 
-        with assert_raises(SchemaResponseStateError):
+        with pytest.raises(SchemaResponseStateError):
             initial_response.submit(user=admin_user, required_approvers=[admin_user])
 
     def test_submit_response_requires_required_approvers(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             initial_response.submit(user=admin_user)
 
     def test_non_parent_admin_cannot_submit_response(self, initial_response, alternate_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.submit(user=alternate_user)
 
     def test_approve_response_requires_all_approvers(
@@ -713,7 +711,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.approve()
 
     def test_non_approver_cannot_approve_response(
@@ -722,7 +720,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.approve(user=alternate_user)
 
     def test_reject_response_moves_state_to_in_progress(self, initial_response, admin_user, alternate_user):
@@ -786,7 +784,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.reject()
 
     def test_non_approver_cannnot_reject_response(
@@ -795,7 +793,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.reject(user=alternate_user)
 
     def test_approver_cannot_call_accept_directly(self, initial_response, admin_user):
@@ -803,7 +801,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with assert_raises(MachineError):
+        with pytest.raises(MachineError):
             initial_response.accept(user=admin_user)
 
     def test_internal_accept_advances_state(self, initial_response, admin_user, alternate_user):
@@ -997,7 +995,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.submit(user=moderator, required_approvers=[moderator])
 
     def test_moderator_cannot_approve_in_unapproved_state(
@@ -1005,7 +1003,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.approve(user=moderator)
 
     def test_moderator_cannot_reject_in_unapproved_state(
@@ -1013,26 +1011,26 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.reject(user=moderator)
 
     def test_admin_cannot_accept_in_pending_moderation(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.accept(user=admin_user)
 
     def test_admin_cannot_reject_in_pending_moderation(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.reject(user=admin_user)
 
     def test_user_required_to_accept_in_pending_moderation(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with assert_raises(PermissionsError):
+        with pytest.raises(PermissionsError):
             initial_response.accept()

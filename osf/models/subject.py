@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.db.models import Q, QuerySet
@@ -8,7 +7,7 @@ from django.utils.functional import cached_property
 from website.util import api_v2_url
 
 from .base import BaseModel, ObjectIDMixin
-from .validators import validate_subject_hierarchy_length, validate_subject_highlighted_count
+from .validators import validate_subject_hierarchy_length
 
 class SubjectQuerySet(QuerySet):
     def include_children(self):
@@ -36,15 +35,15 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         )
 
     def __unicode__(self):
-        return '{} with id {}'.format(self.text, self.id)
+        return f'{self.text} with id {self.id}'
 
     @property
     def absolute_api_v2_url(self):
-        return api_v2_url('taxonomies/{}/'.format(self._id))
+        return api_v2_url(f'taxonomies/{self._id}/')
 
     @property
     def absolute_api_v2_subject_url(self):
-        return api_v2_url('subjects/{}/'.format(self._id))
+        return api_v2_url(f'subjects/{self._id}/')
 
     @property
     def child_count(self):
@@ -57,7 +56,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     def get_semantic_iri(self) -> str:
         _identified_subject = (
             self.bepress_subject
-            if self.bepress_subject and (self.text != self.bepress_subject.text)
+            if self.bepress_subject and (self.text == self.bepress_subject.text)
             else self
         )
         return _identified_subject.absolute_api_v2_subject_url.rstrip('/')
@@ -86,12 +85,11 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
 
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields() or []
-        validate_subject_highlighted_count(self.provider, bool('highlighted' in saved_fields and self.highlighted))
         if 'text' in saved_fields and self.pk and (self.preprints.exists() or self.abstractnodes.exists()):
             raise ValidationError('Cannot edit a used Subject')
-        return super(Subject, self).save()
+        return super().save()
 
     def delete(self, *args, **kwargs):
         if self.preprints.exists() or self.abstractnodes.exists():
             raise ValidationError('Cannot delete a used Subject')
-        return super(Subject, self).delete()
+        return super().delete()

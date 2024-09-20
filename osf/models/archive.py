@@ -35,7 +35,7 @@ class ArchiveTarget(ObjectIDMixin, BaseModel):
     errors = ArrayField(models.TextField(), default=list, blank=True)
 
     def __repr__(self):
-        return '<{0}(_id={1}, name={2}, status={3})>'.format(
+        return '<{}(_id={}, name={}, status={})>'.format(
             self.__class__.__name__,
             self._id,
             self.name,

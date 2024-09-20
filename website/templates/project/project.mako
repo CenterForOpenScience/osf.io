@@ -401,6 +401,20 @@
                                     </div>
                                 % endif
                                 <hr>
+                                % if collection['disease'] and collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i> |&nbsp; Data Type: <i>${collection['data_type']}</i>
+                                    </div>
+                                % elif collection['disease']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i>
+                                    </div>
+                                % elif collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Data Type: <i>${collection['data_type']}</i>
+                                    </div>
+                                % endif
+                                <hr>
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
                                 % if user['is_admin']:
                                     <a class="fa fa-close collections-cancel-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} aria-label="Cancel Submission Request Button"></a>
@@ -446,6 +460,19 @@
                                 % elif collection['program_area']:
                                     <div  style="padding-left: 30px;">
                                         Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % endif
+                                % if collection['disease'] and collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i> |&nbsp; Data Type: <i>${collection['data_type']}</i>
+                                    </div>
+                                % elif collection['disease']:
+                                    <div  style="padding-left: 30px;">
+                                        Disease: <i>${collection['disease']}</i>
+                                    </div>
+                                % elif collection['data_type']:
+                                    <div  style="padding-left: 30px;">
+                                        Data Type: <i>${collection['data_type']}</i>
                                     </div>
                                 % endif
                                 <hr>

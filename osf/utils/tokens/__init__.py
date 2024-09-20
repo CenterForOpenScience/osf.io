@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import status as http_status
 import functools
 import jwt
@@ -9,7 +11,7 @@ from website import settings
 from osf.utils.tokens import handlers
 from osf.exceptions import TokenHandlerNotFound
 
-class TokenHandler(object):
+class TokenHandler:
 
     HANDLERS = {
         'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
@@ -31,7 +33,7 @@ class TokenHandler(object):
     def from_string(cls, encoded_token):
         try:
             payload = decode(encoded_token)
-        except jwt.DecodeError as e:
+        except jwt.InvalidTokenError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
                 data={
@@ -76,7 +78,7 @@ def process_token_or_pass(func):
                     http_status.HTTP_400_BAD_REQUEST,
                     data={
                         'message_short': 'Invalid Token',
-                        'message_long': 'No token handler for action: {} found'.format(e.action)
+                        'message_long': f'No token handler for action: {e.action} found'
                     }
                 )
             if res:
@@ -85,15 +87,15 @@ def process_token_or_pass(func):
     return wrapper
 
 
-def encode(payload):
+def encode(payload: dict[str, Any]) -> str:
     return jwt.encode(
         payload,
         settings.JWT_SECRET,
         algorithm=settings.JWT_ALGORITHM
-    ).decode()
+    )
 
 
-def decode(encoded_token):
+def decode(encoded_token: str | bytes) -> dict[str, Any]:
     return jwt.decode(
         encoded_token,
         settings.JWT_SECRET,

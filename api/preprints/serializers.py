@@ -7,6 +7,7 @@ from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
+    BaseAPISerializer,
     JSONAPISerializer,
     IDField,
     TypeField,
@@ -35,10 +36,11 @@ from api.nodes.serializers import (
     NodeTagField,
 )
 from api.base.metrics import MetricsSerializerMixin
+from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
     BaseFileNode,
     Preprint,
@@ -47,8 +49,6 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-
-from osf.exceptions import PreprintStateError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -111,6 +111,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
+    custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -118,14 +119,17 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     is_preprint_orphan = NoneIfWithdrawal(ser.BooleanField(read_only=True))
     license_record = NodeLicenseSerializer(required=False, source='license')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_is_public = ser.BooleanField(read_only=True, source='node__is_public', help_text='Is supplementary project public?')
+    node_is_public = ser.BooleanField(
+        read_only=True, source='node__is_public',
+        help_text='Is supplementary project public?',
+    )
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
 
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
-        'for the current user on this preprint.',
+                  'for the current user on this preprint.',
     )
     public = ser.BooleanField(source='is_public', required=False, read_only=True)
     contributors = RelationshipField(
@@ -139,23 +143,29 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
-    citation = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:preprint-citation',
-        related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    citation = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:preprint-citation',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
-    identifiers = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:identifier-list',
-        related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    identifiers = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:identifier-list',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
-    node = NoneIfWithdrawal(NodeRelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'},
-        read_only=False,
-        self_view='preprints:preprint-node-relationship',
-        self_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    node = NoneIfWithdrawal(
+        NodeRelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<node._id>'},
+            read_only=False,
+            self_view='preprints:preprint-node-relationship',
+            self_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
@@ -169,26 +179,42 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         read_only=False,
     )
 
-    files = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:preprint-storage-providers',
-        related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    files = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:preprint-storage-providers',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
-    primary_file = NoneIfWithdrawal(PrimaryFileRelationshipField(
-        related_view='files:file-detail',
-        related_view_kwargs={'file_id': '<primary_file._id>'},
-        read_only=False,
-    ))
+    primary_file = NoneIfWithdrawal(
+        PrimaryFileRelationshipField(
+            related_view='files:file-detail',
+            related_view_kwargs={'file_id': '<primary_file._id>'},
+            read_only=False,
+        ),
+    )
 
     review_actions = RelationshipField(
         related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'},
     )
 
-    requests = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:preprint-request-list',
+    requests = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:preprint-request-list',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
+
+    affiliated_institutions = RelationshipField(
+        related_view='preprints:preprints-institutions',
         related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+        self_view='preprints:preprint-relationships-institutions',
+        self_view_kwargs={'preprint_id': '<_id>'},
+        read_only=False,
+        required=False,
+        allow_null=True,
+    )
 
     links = LinksField(
         {
@@ -222,14 +248,24 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         # Overrides TaxonomizableSerializerMixin
         return {'preprint_id': '<_id>'}
 
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'preprints:preprint-relationships-subjects'
+
     def get_preprint_url(self, obj):
-        return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
+        return absolute_reverse(
+            'preprints:preprint-detail', kwargs={
+                'preprint_id': obj._id, 'version':
+                self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
 
     def get_article_doi_url(self, obj):
-        return 'https://doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+        return f'https://doi.org/{obj.article_doi}' if obj.article_doi else None
 
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
@@ -244,7 +280,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         elif obj.is_published:
             client = obj.get_doi_client()
             doi = client.build_doi(preprint=obj) if client else None
-        return 'https://doi.org/{}'.format(doi) if doi else None
+        return f'https://doi.org/{doi}' if doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
@@ -255,15 +291,18 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
-            raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
-                preprint.provider.name,
-                absolute_reverse(
-                    'preprints:preprint-review-action-list', kwargs={
-                        'version': self.context['request'].parser_context['kwargs']['version'],
-                        'preprint_id': preprint._id,
-                    },
-                ),
-            ))
+            url = absolute_reverse(
+                'preprints:preprint-review-action-list',
+                kwargs={
+                    'version': self.context['request'].parser_context['kwargs']['version'],
+                    'preprint_id': preprint._id,
+                },
+            )
+            raise Conflict(
+                f'{preprint.provider.name} uses a moderation workflow, so preprints must be submitted '
+                'for review instead of published directly. '
+                f'Submit a preprint by creating a `submit` Action at {url}',
+            )
 
         save_preprint = False
         recently_published = False
@@ -311,7 +350,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             if validated_data['article_doi'] == doi:
                 raise exceptions.ValidationError(
                     detail=f'The `article_doi` "{doi}" is already associated with this'
-                    f' preprint please enter a peer-reviewed publication\'s DOI',
+                           f' preprint please enter a peer-reviewed publication\'s DOI',
                 )
 
             preprint.article_doi = validated_data['article_doi']
@@ -326,63 +365,17 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
 
-        if 'has_coi' in validated_data:
-            try:
-                preprint.update_has_coi(auth, validated_data['has_coi'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+        if 'custom_publication_citation' in validated_data:
+            preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
+            save_preprint = True
 
-        if 'conflict_of_interest_statement' in validated_data:
-            try:
-                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'has_data_links' in validated_data:
-            try:
-                preprint.update_has_data_links(auth, validated_data['has_data_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'why_no_data' in validated_data:
-            try:
-                preprint.update_why_no_data(auth, validated_data['why_no_data'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'data_links' in validated_data:
-            try:
-                preprint.update_data_links(auth, validated_data['data_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'has_prereg_links' in validated_data:
-            try:
-                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'why_no_prereg' in validated_data:
-            try:
-                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'prereg_links' in validated_data:
-            try:
-                preprint.update_prereg_links(auth, validated_data['prereg_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'prereg_link_info' in validated_data:
-            try:
-                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+        self.handle_author_assertions(preprint, validated_data, auth)
 
         if published is not None:
             if not preprint.primary_file:
-                raise exceptions.ValidationError(detail='A valid primary_file must be set before publishing a preprint.')
+                raise exceptions.ValidationError(
+                    detail='A valid primary_file must be set before publishing a preprint.',
+                )
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
@@ -394,9 +387,84 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if recently_published:
             for author in preprint.contributors:
                 if author != auth.user:
-                    project_signals.contributor_added.send(preprint, contributor=author, auth=auth, email_template='preprint')
+                    project_signals.contributor_added.send(
+                        preprint,
+                        contributor=author,
+                        auth=auth,
+                        email_template='preprint',
+                    )
 
         return preprint
+
+    def handle_author_assertions(self, preprint, validated_data, auth):
+        author_assertions = {
+            'has_coi',
+            'conflict_of_interest_statement',
+            'has_data_links',
+            'why_no_data',
+            'data_links',
+            'why_no_prereg',
+            'prereg_links',
+            'has_prereg_links',
+            'prereg_link_info',
+        }
+        if author_assertions & validated_data.keys():
+            if not preprint.is_admin_contributor(auth.user):
+                raise exceptions.PermissionDenied('User must be admin to add author assertions')
+
+            if 'has_coi' in validated_data:
+                try:
+                    preprint.update_has_coi(auth, validated_data['has_coi'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'conflict_of_interest_statement' in validated_data:
+                try:
+                    preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'has_data_links' in validated_data:
+                try:
+                    preprint.update_has_data_links(auth, validated_data['has_data_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'why_no_data' in validated_data:
+                try:
+                    preprint.update_why_no_data(auth, validated_data['why_no_data'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'data_links' in validated_data:
+                try:
+                    preprint.update_data_links(auth, validated_data['data_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'has_prereg_links' in validated_data:
+                try:
+                    preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'why_no_prereg' in validated_data:
+                try:
+                    preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'prereg_links' in validated_data:
+                try:
+                    preprint.update_prereg_links(auth, validated_data['prereg_links'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
+
+            if 'prereg_link_info' in validated_data:
+                try:
+                    preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+                except PreprintStateError as e:
+                    raise exceptions.ValidationError(detail=str(e))
 
     def set_field(self, func, val, auth, save=False):
         try:
@@ -405,6 +473,21 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             raise exceptions.PermissionDenied(detail=str(e))
         except (ValueError, ValidationError, NodeStateError) as e:
             raise exceptions.ValidationError(detail=str(e))
+
+
+class PreprintDraftSerializer(PreprintSerializer):
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'users:user-draft-preprints',
+            kwargs={
+                'preprint_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    class Meta:
+        type_ = 'draft-preprints'
 
 
 class PreprintCreateSerializer(PreprintSerializer):
@@ -426,7 +509,6 @@ class PreprintCreateSerializer(PreprintSerializer):
 
 
 class PreprintCitationSerializer(NodeCitationSerializer):
-
     class Meta:
         type_ = 'preprint-citation'
 
@@ -439,10 +521,12 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
         related_view_kwargs={'preprint_id': '<preprint._id>'},
     )
 
-    node = HideIfPreprint(RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'},
-    ))
+    node = HideIfPreprint(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<node._id>'},
+        ),
+    )
 
     class Meta:
         type_ = 'contributors'
@@ -510,7 +594,10 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
 
         if data.get('type', None) is not None and data.get('id', None) is not None:
-            raise DRFValidationError({'data': 'Data must be null. This endpoint can only be used to unset the supplemental project.'}, 400)
+            raise DRFValidationError(
+                {'data': 'Data must be null. This endpoint can only be used to unset the supplemental project.'},
+                400,
+            )
         return data
 
     def make_instance_obj(self, obj):
@@ -530,3 +617,39 @@ class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
     links = LinksField({
         'self': 'get_self_url',
     })
+
+
+class PreprintsInstitutionsRelationshipSerializer(BaseAPISerializer):
+    from api.institutions.serializers import InstitutionRelated  # Avoid circular import
+    data = ser.ListField(child=InstitutionRelated())
+
+    links = LinksField({
+        'self': 'get_self_url',
+    })
+
+    def get_self_url(self, obj):
+        return obj['self'].institutions_relationship_url
+
+    class Meta:
+        type_ = 'institutions'
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions.all(),
+            'self': obj,
+        }
+
+    def update(self, instance, validated_data):
+        preprint = instance['self']
+        user = self.context['request'].user
+        update_institutions_if_user_associated(preprint, validated_data['data'], user)
+        preprint.save()
+        return self.make_instance_obj(preprint)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        preprint = instance['self']
+        user = self.context['request'].user
+        update_institutions_if_user_associated(preprint, validated_data['data'], user)
+        preprint.save()
+        return self.make_instance_obj(preprint)

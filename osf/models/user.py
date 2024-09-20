@@ -1,14 +1,13 @@
 import datetime as dt
 import logging
 import re
-from future.moves.urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
 
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
-from past.builtins import basestring
 
 # OSF imports
 import itsdangerous
@@ -56,8 +55,9 @@ from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, 
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
-from website.util.metrics import OsfSourceTags
+from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
+from osf.utils.requests import get_headers_from_request
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -72,10 +72,7 @@ def get_default_mailing_lists():
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
-    'initials': lambda user: u'{surname}, {initial}.'.format(
-        surname=user.family_name,
-        initial=user.given_name_initial,
-    ),
+    'initials': lambda user: f'{user.family_name}, {user.given_name_initial}.',
 }
 
 
@@ -154,19 +151,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': u'http://orcid.org/{}',
-        'github': u'http://github.com/{}',
-        'scholar': u'http://scholar.google.com/citations?user={}',
-        'twitter': u'http://twitter.com/{}',
+        'orcid': 'http://orcid.org/{}',
+        'github': 'http://github.com/{}',
+        'scholar': 'http://scholar.google.com/citations?user={}',
+        'twitter': 'http://twitter.com/{}',
         'profileWebsites': [],
-        'linkedIn': u'https://www.linkedin.com/{}',
-        'impactStory': u'https://impactstory.org/u/{}',
-        'researcherId': u'http://researcherid.com/rid/{}',
-        'researchGate': u'https://researchgate.net/profile/{}',
-        'academiaInstitution': u'https://{}',
-        'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
-        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
+        'linkedIn': 'https://www.linkedin.com/{}',
+        'impactStory': 'https://impactstory.org/u/{}',
+        'researcherId': 'http://researcherid.com/rid/{}',
+        'researchGate': 'https://researchgate.net/profile/{}',
+        'academiaInstitution': 'https://{}',
+        'academiaProfileID': '.academia.edu/{}',
+        'baiduScholar': 'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
     }
 
     SPAM_USER_PROFILE_FIELDS = {
@@ -407,16 +404,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     is_staff = models.BooleanField(default=False)
 
     def __repr__(self):
-        return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
+        return f'<OSFUser({self.username!r}) with guid {self._id!r}>'
 
     @property
     def deep_url(self):
         """Used for GUID resolution."""
-        return '/profile/{}/'.format(self._primary_key)
+        return f'/profile/{self._primary_key}/'
 
     @property
     def url(self):
-        return '/{}/'.format(self._id)
+        return f'/{self._id}/'
 
     @property
     def absolute_url(self):
@@ -425,15 +422,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def absolute_api_v2_url(self):
         from website import util
-        return util.api_v2_url('users/{}/'.format(self._id))
+        return util.api_v2_url(f'users/{self._id}/')
 
     @property
     def api_url(self):
-        return '/api/v1/profile/{}/'.format(self._id)
+        return f'/api/v1/profile/{self._id}/'
 
     @property
     def profile_url(self):
-        return '/{}/'.format(self._id)
+        return f'/{self._id}/'
 
     @property
     def is_disabled(self):
@@ -487,14 +484,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if isinstance(self.SOCIAL_FIELDS[key], basestring):
-                    if isinstance(val, basestring):
+                if isinstance(self.SOCIAL_FIELDS[key], str):
+                    if isinstance(val, str):
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
                     else:
                         # Only provide the first url for services where multiple accounts are allowed
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    if isinstance(val, basestring):
+                    if isinstance(val, str):
                         social_user_fields[key] = [val]
                     else:
                         social_user_fields[key] = val
@@ -692,7 +689,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return all((addon.can_be_merged for addon in self.get_addons()))
+        return all(addon.can_be_merged for addon in self.get_addons())
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
@@ -745,15 +742,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured = user.notifications_configured.copy()
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
-        if not website_settings.RUNNING_MIGRATION:
-            for key, value in user.mailchimp_mailing_lists.items():
-                # subscribe to each list if either user was subscribed
-                subscription = value or self.mailchimp_mailing_lists.get(key)
-                signals.user_merged.send(self, list_name=key, subscription=subscription)
-
-                # clear subscriptions for merged user
-                signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
-
         for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
                 self.comments_viewed_timestamp[target_id] = timestamp
@@ -871,6 +859,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
+        signals.user_account_merged.send(user)
 
     def _merge_users_preprints(self, user):
         """
@@ -985,6 +974,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
         self.is_disabled = True
+        signals.user_account_deactivated.send(self)
 
         # we must call both methods to ensure the current session is cleared and all existing
         # sessions are revoked.
@@ -1001,6 +991,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.requested_deactivation = False
         from website.mailchimp_utils import subscribe_on_confirm
         subscribe_on_confirm(self)
+        signals.user_account_reactivated.send(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
@@ -1025,8 +1016,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
-        dirty_fields = set(self.get_dirty_fields(check_relationship=True))
-        ret = super(OSFUser, self).save(*args, **kwargs)
+
+        dirty_fields = self.get_dirty_fields(check_relationship=True)
+        ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
+        if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
+            request = get_current_request()
+            headers = get_headers_from_request(request)
+            self.check_spam(dirty_fields, request_headers=headers)
+
+        dirty_fields = set(dirty_fields)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
@@ -1056,6 +1054,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         user.update_guessed_names()
         user.set_password(password)
+        user.save()
         return user
 
     def set_password(self, raw_password, notify=True):
@@ -1072,7 +1071,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         had_existing_password = bool(self.has_usable_password() and self.is_confirmed)
         if self.username == raw_password:
             raise ChangePasswordError(['Password cannot be the same as your email address'])
-        super(OSFUser, self).set_password(raw_password)
+        super().set_password(raw_password)
         if had_existing_password and notify:
             mails.send_mail(
                 to_addr=self.username,
@@ -1310,13 +1309,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     return new_token
                 if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
-                        raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
+                        raise ExpiredTokenError(f'Token for email "{email}" is expired')
                     else:
                         new_token = self.add_unconfirmed_email(email)
                         self.save()
                         return new_token
                 return token
-        raise KeyError('No confirmation token for email "{0}"'.format(email))
+        raise KeyError(f'No confirmation token for email "{email}"')
 
     def get_confirmation_url(self, email,
                              external=True,
@@ -1341,7 +1340,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
         destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
-        return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
+        return f'{base}confirm/{external}{self._primary_key}/{token}/{destination}'
 
     def register(self, username, password=None, accepted_terms_of_service=None):
         """Registers the user.
@@ -1370,9 +1369,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # If this email is confirmed on another account, abort
         try:
             if check_select_for_update():
-                user_to_merge = OSFUser.objects.filter(emails__address=email).select_for_update().get()
+                user_to_merge = OSFUser.objects.exclude(id=self.id).filter(emails__address=email).select_for_update().get()
             else:
-                user_to_merge = OSFUser.objects.get(emails__address=email)
+                user_to_merge = OSFUser.objects.exclude(id=self.id).get(emails__address=email)
         except OSFUser.DoesNotExist:
             user_to_merge = None
 
@@ -1628,18 +1627,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
+                    f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
                 )
 
         elif isinstance(claim_origin, OSFGroup):
             if not claim_origin.has_permission(referrer, MANAGE):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a member to {0}'.format(claim_origin._id)
+                    f'Referrer does not have permission to add a member to {claim_origin._id}'
                 )
         else:
             if not claim_origin.has_permission(referrer, ADMIN):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id)
+                    f'Referrer does not have permission to add a contributor to {claim_origin._id}'
                 )
 
         pid = str(claim_origin._id)
@@ -1663,6 +1662,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'email': clean_email,
         }
         self.unclaimed_records[pid] = record
+
+        self.save()  # must save for PK to add system tags
+        self.add_system_tag(unregistered_created_source_tag(referrer_id))
+
         return record
 
     def get_unclaimed_record(self, project_id):
@@ -1673,8 +1676,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # reraise as ValueError
-            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
-                                .format(**locals()))
+            raise ValueError(f'No unclaimed record for user {self._id} on node {project_id}')
 
     def get_claim_url(self, project_id, external=False):
         """Return the URL that an unclaimed user should use to claim their
@@ -1690,8 +1692,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base_url = website_settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
-                    .format(**locals())
+        return f'{base_url}user/{uid}/{project_id}/claim/?token={token}'
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with the given ``institution``."""
@@ -1859,28 +1860,37 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
     def _get_spam_content(self, saved_fields=None, **unused_kwargs):
-        spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS.keys())
-        spam_check_source = {}
-        if saved_fields:
-            spam_check_source = saved_fields
-            spam_check_fields = spam_check_fields.intersection(set(saved_fields.keys()))
-        else:
-            spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
+        """
+        Retrieves content for spam checking from specified fields.
+        Sometimes from validated serializer data, sometimes from
+        dirty_fields.
 
-        spam_check_contents = []
-        for spam_field in spam_check_fields:
-            spam_field_content = spam_check_source[spam_field]
-            if not spam_field_content:
-                continue
-            if spam_field in ['schools', 'jobs']:
-                spam_check_contents.extend(
-                    _get_nested_spam_check_content(spam_check_source, spam_field)
-                )
-            else:  # Only other currently checked field is social['profileWebsites']
-                spam_check_contents.extend(
-                    spam_check_source.get('social', dict()).get('profileWebsites', list())
-                )
-        return ' '.join(spam_check_contents).strip()
+        Parameters:
+        - saved_fields (dict): Fields that have been saved and their values.
+        - unused_kwargs: Ignored additional keyword arguments.
+
+        Returns:
+        - str: A string containing the spam check contents, joined by spaces.
+        """
+        # Determine which fields to check for spam, preferring saved_fields if provided.
+        spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS)
+        if saved_fields:
+            spam_check_fields = set(saved_fields).intersection(spam_check_fields)
+
+        spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
+
+        spam_contents = []
+        for field in spam_check_fields:
+            validated_data_from_serializer = spam_check_source.get(field)
+            # Validated fields aren't from dirty_fields, they have values.
+            if validated_data_from_serializer:
+                spam_contents.extend(_get_nested_spam_check_content(spam_check_source, field))
+            else:
+                # these are the changed fields from dirty_fields, they have need current model values before saving.
+                value = getattr(self, field, {})
+                spam_contents.extend(_get_nested_spam_check_content(value, field))
+
+        return ' '.join(spam_contents).strip()
 
     def check_spam(self, saved_fields, request_headers):
         is_spam = False
@@ -2101,11 +2111,30 @@ def create_bookmark_collection(sender, instance, created, **kwargs):
 
 
 def _get_nested_spam_check_content(spam_check_source, field_name):
-    spam_check_data = spam_check_source[field_name]
+    """
+    Social fields are formatted differently when coming from the serializer or save
+    """
+    if spam_check_source:
+        if field_name == 'social':
+            # Attempt to extract from the nested 'social' field first, then fall back to 'profileWebsites'.
+            data = spam_check_source.get('profileWebsites', [])
+            return spam_check_source.get('social', {}).get('profileWebsites', []) or data
+
     spam_check_content = []
-    for entry in spam_check_data:
-        for spam_check_subfield in OSFUser.SPAM_USER_PROFILE_FIELDS[field_name]:
-            subfield_content = entry.get(spam_check_subfield)
-            if subfield_content:
-                spam_check_content.append(subfield_content)
+    if spam_check_source and isinstance(spam_check_source, dict):
+        # Ensure spam_check_source[field_name] is always a list for uniform processing
+        source_data = spam_check_source.get(field_name, [])
+        if not isinstance(source_data, list):
+            source_data = [source_data]
+    elif spam_check_source and not isinstance(spam_check_source, dict):
+        source_data = spam_check_source
+    else:
+        return spam_check_content
+
+    keys = OSFUser.SPAM_USER_PROFILE_FIELDS.get(field_name, [])
+    for data in source_data:
+        for key in keys:
+            if data.get(key):
+                spam_check_content.append(data[key])
+
     return spam_check_content

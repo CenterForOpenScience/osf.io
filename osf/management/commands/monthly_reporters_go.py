@@ -1,11 +1,11 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from django.db.utils import OperationalError
 from django.utils import timezone
 
-from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.metrics.reporters import MONTHLY_REPORTERS
+from osf.metrics.reporters import AllMonthlyReporters
 from osf.metrics.utils import YearMonth
 from website.app import init_app
 
@@ -28,17 +28,24 @@ def monthly_reporters_go(report_year=None, report_month=None):
             year=today.year if today.month > 1 else today.year - 1,
             month=today.month - 1 or MAXMONTH,
         )
+    for _reporter_key in AllMonthlyReporters.__members__.keys():
+        monthly_reporter_go.apply_async(kwargs={
+            'reporter_key': _reporter_key,
+            'yearmonth': str(report_yearmonth),
+        })
 
-    errors = {}
-    for reporter_class in MONTHLY_REPORTERS:
-        try:
-            reporter_class().run_and_record_for_month(report_yearmonth)
-        except Exception as e:
-            errors[reporter_class.__name__] = str(e)
-            logger.exception(e)
-            sentry.log_exception()
-            # continue with the next reporter
-    return errors
+
+@celery_app.task(
+    name='management.commands.monthly_reporter_go',
+    autoretry_for=(OperationalError,),
+    max_retries=5,
+    retry_backoff=True,
+    bind=True,
+)
+def monthly_reporter_go(task, reporter_key: str, yearmonth: str):
+    _reporter_class = AllMonthlyReporters[reporter_key].value
+    _parsed_yearmonth = YearMonth.from_str(yearmonth)
+    _reporter_class().run_and_record_for_month(_parsed_yearmonth)
 
 
 class Command(BaseCommand):

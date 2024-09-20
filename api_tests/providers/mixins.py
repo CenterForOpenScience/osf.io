@@ -9,7 +9,7 @@ from osf_tests.factories import (
 from osf.models import NodeLicense, RegistrationProvider
 
 
-class ProviderMixinBase(object):
+class ProviderMixinBase:
     @property
     def provider_class(self):
         raise NotImplementedError
@@ -50,13 +50,13 @@ class ProviderExistsMixin(ProviderMixinBase):
         detail_res = app.get(provider_url)
         assert detail_res.status_code == 200
 
-        licenses_res = app.get('{}licenses/'.format(provider_url))
+        licenses_res = app.get(f'{provider_url}licenses/')
         assert licenses_res.status_code == 200
 
         res = app.get(provider_list_url)
         assert res.status_code == 200
 
-        taxonomies_res = app.get('{}taxonomies/'.format(provider_url))
+        taxonomies_res = app.get(f'{provider_url}taxonomies/')
         assert taxonomies_res.status_code == 200
 
         #   test_preprint_provider_does_not_exist_returns_404
@@ -64,7 +64,7 @@ class ProviderExistsMixin(ProviderMixinBase):
         assert detail_res.status_code == 404
 
         licenses_res = app.get(
-            '{}licenses/'.format(fake_url),
+            f'{fake_url}licenses/',
             expect_errors=True)
         assert licenses_res.status_code == 404
 
@@ -74,7 +74,7 @@ class ProviderExistsMixin(ProviderMixinBase):
         assert res.status_code == 404
 
         taxonomies_res = app.get(
-            '{}taxonomies/'.format(fake_url),
+            f'{fake_url}taxonomies/',
             expect_errors=True)
         assert taxonomies_res.status_code == 404
 
@@ -463,12 +463,12 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
         assert res_1.json['links']['meta']['total'] == 4
         assert res_2.json['links']['meta']['total'] == 3
 
-        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) &
-                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+        assert len({d['attributes']['text'] for d in res_1.json['data']} &
+                   {d['attributes']['text'] for d in res_2.json['data']}) \
                == 0
 
-        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) |
-                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+        assert len({d['attributes']['text'] for d in res_1.json['data']} |
+                   {d['attributes']['text'] for d in res_2.json['data']}) \
                == 7
 
     def test_mapped_subjects_are_not_shared_filter(self, app, url_1, url_2, root_subject_1, root_subject_2):
@@ -486,12 +486,12 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
         assert res_1.json['links']['meta']['total'] == 1
         assert res_2.json['links']['meta']['total'] == 1
 
-        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) &
-                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+        assert len({d['attributes']['text'] for d in res_1.json['data']} &
+                   {d['attributes']['text'] for d in res_2.json['data']}) \
                == 0
 
-        assert len(set([d['attributes']['text'] for d in res_1.json['data']]) |
-                   set([d['attributes']['text'] for d in res_2.json['data']])) \
+        assert len({d['attributes']['text'] for d in res_1.json['data']} |
+                   {d['attributes']['text'] for d in res_2.json['data']}) \
                == 2
 
     def test_mapped_subjects_filter_wrong_provider(self, app, url_1, url_2, root_subject_1, root_subject_2):
@@ -686,10 +686,10 @@ class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
         detail_res = app.get(provider_url)
         assert detail_res.status_code == 200
 
-        licenses_res = app.get('{}licenses/'.format(provider_url))
+        licenses_res = app.get(f'{provider_url}licenses/')
         assert licenses_res.status_code == 200
 
-        taxonomies_res = app.get('{}taxonomies/'.format(provider_url))
+        taxonomies_res = app.get(f'{provider_url}taxonomies/')
         assert taxonomies_res.status_code == 200
 
         #  test_submission_provider_does_not_exist_returns_404
@@ -697,7 +697,7 @@ class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
         assert detail_res.status_code == 404
 
         licenses_res = app.get(
-            '{}licenses/'.format(fake_url),
+            f'{fake_url}licenses/',
             expect_errors=True)
         assert licenses_res.status_code == 404
 
@@ -707,11 +707,11 @@ class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
         assert res.status_code == 404
 
         taxonomies_res = app.get(
-            '{}taxonomies/'.format(fake_url),
+            f'{fake_url}taxonomies/',
             expect_errors=True)
         assert taxonomies_res.status_code == 404
 
-class ProviderSubmissionMixinBase(object):
+class ProviderSubmissionMixinBase:
     @property
     def submission_class(self):
         raise NotImplementedError
@@ -924,21 +924,21 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         assert res.status_code == 201
 
     def test_filters(self, app, submission_provider, collection_with_provider, collection_without_provider, user_one, user_two, submission_one, submission_two, subject_one, url, payload):
-        res = app.get('{}?filter[id]={}'.format(url, submission_one._id), auth=user_one.auth)
+        res = app.get(f'{url}?filter[id]={submission_one._id}', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[id]={}'.format(url, submission_two._id), auth=user_one.auth)
+        res = app.get(f'{url}?filter[id]={submission_two._id}', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
-        res = app.get('{}?filter[status]=fdsa'.format(url), auth=user_one.auth)
+        res = app.get(f'{url}?filter[status]=fdsa', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[collected_type]=asdf'.format(url), auth=user_one.auth)
+        res = app.get(f'{url}?filter[collected_type]=asdf', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
         # Sanity
-        res = app.get('{}?filter[subjects]={}'.format(url, subject_one._id), auth=user_one.auth)
+        res = app.get(f'{url}?filter[subjects]={subject_one._id}', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
@@ -949,10 +949,10 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
             auth=user_one.auth)
         assert res.status_code == 201
 
-        res = app.get('{}?filter[subjects]={}'.format(url, subject_one._id), auth=user_one.auth)
+        res = app.get(f'{url}?filter[subjects]={subject_one._id}', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[collected_type]=asdf'.format(url), auth=user_one.auth)
+        res = app.get(f'{url}?filter[collected_type]=asdf', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
@@ -993,7 +993,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert res.json['links']['meta']['total'] == len(licenses)
 
         # test filter on name
-        res = app.get('{}?filter[name]={}'.format(url, license_one.name))
+        res = app.get(f'{url}?filter[name]={license_one.name}')
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == license_one._id
 
@@ -1007,7 +1007,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert license_two._id in [item['id'] for item in res.json['data']]
 
         # test filter on default_license name
-        res = app.get('{}?filter[name]={}'.format(url, license_two.name))
+        res = app.get(f'{url}?filter[name]={license_two.name}')
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == license_two._id
 

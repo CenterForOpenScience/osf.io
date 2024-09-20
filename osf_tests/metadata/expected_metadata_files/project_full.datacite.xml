@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.4/metadata.xsd">
+<resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.5/metadata.xsd">
   <identifier identifierType="DOI">10.70102/FK2osf.io/w2ibb</identifier>
   <creators>
     <creator>
@@ -42,13 +42,23 @@
       <awardNumber awardURI="https://moneypockets.example/millions">10000000</awardNumber>
       <awardTitle>because reasons</awardTitle>
     </fundingReference>
+    <fundingReference>
+      <funderName>Mx. Moneypockets</funderName>
+      <funderIdentifier funderIdentifierType="Crossref Funder ID">https://doi.org/10.$$$$</funderIdentifier>
+      <awardNumber awardURI="https://moneypockets.example/millions-more">2000000</awardNumber>
+      <awardTitle>because reasons!</awardTitle>
+    </fundingReference>
+    <fundingReference>
+      <funderName>Caring Fan</funderName>
+      <funderIdentifier funderIdentifierType="Crossref Funder ID">https://doi.org/10.$</funderIdentifier>
+    </fundingReference>
   </fundingReferences>
   <relatedIdentifiers>
     <relatedIdentifier relatedIdentifierType="URL" relationType="HasVersion">http://localhost:5000/w5ibb</relatedIdentifier>
     <relatedIdentifier relatedIdentifierType="DOI" relationType="IsSupplementTo">11.pp/FK2osf.io/w4ibb</relatedIdentifier>
   </relatedIdentifiers>
   <relatedItems>
-    <relatedItem relationType="HasVersion" relatedItemType="Text">
+    <relatedItem relationType="HasVersion" relatedItemType="StudyRegistration">
       <relatedItemIdentifier relatedItemIdentifierType="URL">http://localhost:5000/w5ibb</relatedItemIdentifier>
       <titles>
         <title>this is a project title!</title>

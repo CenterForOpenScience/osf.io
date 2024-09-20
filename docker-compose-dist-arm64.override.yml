@@ -1,50 +1,11 @@
 ## Reference README-docker-compose.md for instructions.
 
-version: '3.4'
-
 services:
 
   #######
   # OSF #
   #######
 
-  requirements:
-    image: quay.io/centerforopenscience/osf:develop-arm64
+  elasticsearch6:
+    image: quay.io/centerforopenscience/elasticsearch:es6-arm-6.3.1
     platform: linux/arm64
-
-  assets:
-    image: quay.io/centerforopenscience/osf:develop-arm64
-    platform: linux/arm64
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
-
-  admin_assets:
-    image: quay.io/centerforopenscience/osf:develop-arm64
-    platform: linux/arm64
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
-
-  worker:
-    image: quay.io/centerforopenscience/osf:develop-arm64
-    platform: linux/arm64
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
-
-  admin:
-    image: quay.io/centerforopenscience/osf:develop-arm64
-    platform: linux/arm64
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
-
-  api:
-    image: quay.io/centerforopenscience/osf:develop-arm64
-    platform: linux/arm64
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
-
-  web:
-    image: quay.io/centerforopenscience/osf:develop-arm64
-    platform: linux/arm64
-    # Need to allocate tty to be able to call invoke for requirements task
-    tty: true
-

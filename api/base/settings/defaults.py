@@ -90,7 +90,6 @@ INSTALLED_APPS = (
     'django_celery_results',
     'rest_framework',
     'corsheaders',
-    'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
     'storages',
@@ -124,13 +123,6 @@ INSTALLED_APPS = (
 # local development using https
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
-
-# TODO: Are there more granular ways to configure reporting specifically related to the API?
-RAVEN_CONFIG = {
-    'tags': {'App': 'api'},
-    'dsn': osf_settings.SENTRY_DSN,
-    'release': osf_settings.VERSION,
-}
 
 BULK_SETTINGS = {
     'DEFAULT_BULK_LIMIT': 100,
@@ -231,8 +223,7 @@ MIDDLEWARE = (
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
-
-    'api.base.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'api.base.middleware.UnsignCookieSessionMiddleware',
@@ -326,7 +317,7 @@ HASHIDS_SALT = 'pinkhimalayan'
 # django-elasticsearch-metrics
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+        'hosts': osf_settings.ELASTIC6_URI,
         'retry_on_timeout': True,
     },
 }
@@ -369,7 +360,7 @@ EGAP_PROVIDER_NAME = 'EGAP'
 MAX_SIZE_OF_ES_QUERY = 10000
 DEFAULT_ES_NULL_VALUE = 'N/A'
 
-TRAVIS_ENV = False
+CI_ENV = False
 
 CITATION_STYLES_REPO_URL = 'https://github.com/CenterForOpenScience/styles/archive/88e6ed31a91e9f5a480b486029cda97b535935d4.zip'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

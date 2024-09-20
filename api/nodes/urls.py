@@ -1,4 +1,4 @@
-from django.conf.urls import re_path
+from django.urls import re_path
 
 from api.nodes import views
 
@@ -15,6 +15,7 @@ urlpatterns = [
     re_path(r'^(?P<node_id>\w+)/addons/(?P<provider>\w+)/folders/$', views.NodeAddonFolderList.as_view(), name=views.NodeAddonFolderList.view_name),
     re_path(r'^(?P<node_id>\w+)/bibliographic_contributors/$', views.NodeBibliographicContributorsList.as_view(), name=views.NodeBibliographicContributorsList.view_name),
     re_path(r'^(?P<node_id>\w+)/children/$', views.NodeChildrenList.as_view(), name=views.NodeChildrenList.view_name),
+    re_path(r'^(?P<node_id>\w+)/cedar_metadata_records/$', views.NodeCedarMetadataRecordsList.as_view(), name=views.NodeCedarMetadataRecordsList.view_name),
     re_path(r'^(?P<node_id>\w+)/citation/$', views.NodeCitationDetail.as_view(), name=views.NodeCitationDetail.view_name),
     re_path(r'^(?P<node_id>\w+)/citation/(?P<style_id>[-\w]+)/$', views.NodeCitationStyleDetail.as_view(), name=views.NodeCitationStyleDetail.view_name),
     re_path(r'^(?P<node_id>\w+)/comments/$', views.NodeCommentsList.as_view(), name=views.NodeCommentsList.view_name),

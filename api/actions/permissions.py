@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
@@ -38,7 +35,7 @@ class ReviewActionPermission(drf_permissions.BasePermission):
         elif isinstance(obj, CollectionSubmissionAction):
             provider = obj
         else:
-            raise ValueError('Not a reviews-related model: {}'.format(obj))
+            raise ValueError(f'Not a reviews-related model: {obj}')
 
         serializer = view.get_serializer()
 

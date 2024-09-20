@@ -147,10 +147,12 @@ OSFMAP = {
     OSF.Project: {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
+        OSF.hasCedarTemplate: None,
     },
     OSF.ProjectComponent: {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
+        OSF.hasCedarTemplate: None,
     },
     OSF.Registration: {
         **OSF_OBJECT,
@@ -161,6 +163,7 @@ OSFMAP = {
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
         OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
         OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
+        OSF.hasCedarTemplate: None,
     },
     OSF.RegistrationComponent: {
         **OSF_OBJECT,
@@ -171,6 +174,7 @@ OSFMAP = {
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
         OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
         OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
+        OSF.hasCedarTemplate: None,
     },
     OSF.Preprint: {
         **OSF_OBJECT,
@@ -195,6 +199,7 @@ OSFMAP = {
         OSF.filePath: None,
         OSF.funding: None,
         OSF.hasFunding: None,
+        OSF.hasCedarTemplate: None,
         OWL.sameAs: None,
     },
     DCTERMS.Agent: {
@@ -230,6 +235,7 @@ DATACITE_RESOURCE_TYPES_GENERAL = {
     'Dissertation',
     'Event',
     'Image',
+    'Instrument',
     'InteractiveResource',
     'Journal',
     'JournalArticle',
@@ -243,13 +249,14 @@ DATACITE_RESOURCE_TYPES_GENERAL = {
     'Software',
     'Sound',
     'Standard',
+    'StudyRegistration',
     'Text',
     'Workflow',
     'Other',
 }
 DATACITE_RESOURCE_TYPE_BY_OSF_TYPE = {
     OSF.Preprint: 'Preprint',
-    # TODO (datacite 4.5): OSF.Registration: DATACITE.StudyRegistration,
+    OSF.Registration: 'StudyRegistration',
 }
 
 ##### END osfmap #####
@@ -539,7 +546,7 @@ def _subject_triples(dbsubject, *, child_ref=None, related_ref=None):
     _is_bepress = (not dbsubject.bepress_subject)
     _is_distinct_from_bepress = (dbsubject.text != dbsubject.bepress_text)
     if _is_bepress or _is_distinct_from_bepress:
-        _subject_ref = rdflib.URIRef(dbsubject.absolute_api_v2_subject_url)
+        _subject_ref = rdflib.URIRef(dbsubject.get_semantic_iri())
         yield (DCTERMS.subject, _subject_ref)
         yield (_subject_ref, RDF.type, SKOS.Concept)
         yield (_subject_ref, SKOS.prefLabel, dbsubject.text)
@@ -1010,3 +1017,15 @@ def _omitted_metadata(focus, omitted_property_set, description):
     for property_iri in omitted_property_set:
         yield (bnode, OSF.omittedMetadataProperty, property_iri)
     yield (bnode, DCTERMS.description, _language_text(focus, description))
+
+@gather.er(OSF.hasCedarTemplate)
+def gather_cedar_templates(focus):
+    try:
+        _guids = focus.dbmodel.guids.all()
+    except AttributeError:
+        return  # no guids
+    records = osfdb.CedarMetadataRecord.objects.filter(guid__in=_guids, is_published=True)
+    for record in records:
+        template_iri = rdflib.URIRef(record.get_template_semantic_iri())
+        yield (OSF.hasCedarTemplate, template_iri)
+        yield (template_iri, DCTERMS.title, record.get_template_name())

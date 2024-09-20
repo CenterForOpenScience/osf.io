@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import logging
 import sys
@@ -17,7 +15,7 @@ def add_file_logger(logger, script_name, suffix=None):
     _, name = os.path.split(script_name)
     name = name.rstrip('c')
     if suffix is not None:
-        name = '{0}-{1}'.format(name, suffix)
+        name = f'{name}-{suffix}'
     file_handler = logging.FileHandler(
         os.path.join(
             settings.LOG_PATH,
@@ -27,7 +25,7 @@ def add_file_logger(logger, script_name, suffix=None):
     logger.addHandler(file_handler)
 
 
-class Progress(object):
+class Progress:
     def __init__(self, bar_len=50, precision=1):
         self.bar_len = bar_len
         self.precision = precision

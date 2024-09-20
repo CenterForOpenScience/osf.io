@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import responses
 
 import pytest
@@ -15,7 +15,7 @@ from osf.models.spam import SpamStatus
 class TestUserSpamOOPSpam:
 
     @pytest.fixture
-    def user(self):
+    def user(self, mock_spam_head_request):
         test_user = AuthUserFactory()
         test_user.schools = [
             {'insitution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
@@ -42,7 +42,7 @@ class TestUserSpamOOPSpam:
         suspicious_content = 'spam eggs sausage and spam'
         with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                rsps.add(responses.POST, f'https://oopspam.p.rapidapi.com/v1/spamdetection', status=200, json={'Score': 6})
+                rsps.add(responses.POST, 'https://oopspam.p.rapidapi.com/v1/spamdetection', status=200, json={'Score': 6})
                 user.do_check_spam(
                     author=user.fullname,
                     author_email=user.username,

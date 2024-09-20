@@ -633,7 +633,7 @@ class TestSchemaResponseActionListPOSTBehavior:
             schema_response_state=ApprovalStates.IN_PROGRESS
         )
         payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
-        del(payload['data']['attributes']['comment'])
+        del payload['data']['attributes']['comment']
 
         resp = app.post_json_api(make_api_url(schema_response), payload, auth=auth)
         assert resp.json['data']['attributes']['comment'] == ''

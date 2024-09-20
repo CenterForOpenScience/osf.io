@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Factory boy factories for the Dataverse addon."""
 import factory
 from factory.django import DjangoModelFactory
@@ -10,8 +9,8 @@ class DataverseAccountFactory(ExternalAccountFactory):
     provider = 'dataverse'
     provider_name = 'Dataverse'
 
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
+    provider_id = factory.Sequence(lambda n: f'id-{n}')
+    oauth_key = factory.Sequence(lambda n: f'key-{n}')
     display_name = 'foo.bar.baz'
     oauth_secret = 'doremi-abc-123'
 

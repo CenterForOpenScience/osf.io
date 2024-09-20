@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
@@ -78,7 +76,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     required_write_scopes = [CoreScopes.CHRONOS_SUBMISSION_WRITE]
 
     serializer_class = ChronosSubmissionSerializer
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning

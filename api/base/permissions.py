@@ -8,8 +8,10 @@ from api.base.utils import has_admin_scope, has_pigeon_scope
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, Preprint
+from osf.utils import permissions as osf_permissions
 from website.util.sanitize import is_iterable_but_not_string
+from api.base.utils import get_user_auth
 
 
 # Implementation built on django-oauth-toolkit, but  with more granular control over read+write permissions
@@ -48,8 +50,10 @@ class TokenHasScope(permissions.BasePermission):
             normalized_scopes = oauth_scopes.normalize_scopes(allowed_scopes)
         except KeyError:
             # This should never fire: it implies that CAS issued a scope name not in the master list of scopes
-            raise exceptions.APIException('OAuth2 token specifies unrecognized scope. User token specifies '
-                                          'the following scopes: {}'.format(', '.join(allowed_scopes)))
+            raise exceptions.APIException(
+                'OAuth2 token specifies unrecognized scope. User token specifies '
+                'the following scopes: {}'.format(', '.join(allowed_scopes)),
+            )
 
         return required_scopes.issubset(normalized_scopes)
 
@@ -140,7 +144,7 @@ class OwnerOnly(permissions.BasePermission):
     # TODO: Write tests for basic, session, and oauth-based authentication
     def has_object_permission(self, request, view, obj):
         """Not applied to all members of a queryset"""
-        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), 'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}'.format(obj)
+        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), f'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {obj}'
         return (obj.owner.id == request.user.id)
 
 
@@ -156,5 +160,19 @@ def PermissionWithGetter(Base, getter):
 
         def has_object_permission(self, request, view, obj):
             obj = self.get_object(request, view, obj)
-            return super(Perm, self).has_object_permission(request, view, obj)
+            return super().has_object_permission(request, view, obj)
     return Perm
+
+
+class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, dict)
+        auth = get_user_auth(request)
+        resource = obj['self']
+
+        if request.method in permissions.SAFE_METHODS:
+            return resource.is_public or resource.can_view(auth)
+        else:
+            if isinstance(resource, Preprint):
+                return resource.can_edit(auth=auth)
+            return resource.has_permission(auth.user, osf_permissions.WRITE)

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-import furl
+from furl import furl
 import waffle
 import itertools
 from rest_framework import status as http_status
@@ -8,7 +6,7 @@ import logging
 import math
 import os
 import requests
-from future.moves.urllib.parse import unquote
+from urllib.parse import unquote
 
 from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context
@@ -38,7 +36,6 @@ from osf.metadata.tools import pls_gather_metadata_file
 from api.waffle.utils import storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
-preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 
@@ -268,7 +265,7 @@ def _build_guid_url(base, suffix=None):
     ])
     if not isinstance(url, str):
         url = url.decode('utf-8')
-    return u'/{0}/'.format(url)
+    return f'/{url}/'
 
 
 def resolve_guid(guid, suffix=None):
@@ -332,15 +329,21 @@ def resolve_guid(guid, suffix=None):
     if isinstance(resource, Preprint):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
-        return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
+        return use_ember_app()
 
     elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        return use_ember_app()
+
+    elif isinstance(resource, Registration) and clean_suffix and clean_suffix.startswith('metadata') and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         return use_ember_app()
 
     elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return use_ember_app()
 
     elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+        return use_ember_app()
+
+    elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('metadata'):
         return use_ember_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
@@ -387,7 +390,7 @@ def redirect_to_cos_news(**kwargs):
 
 def redirect_to_registration_workflow(**kwargs):
     # Redirect to making new registration
-    return redirect(furl.furl(DOMAIN).add(path='registries/osf/new').url)
+    return redirect(furl(DOMAIN).add(path='registries/osf/new').url)
 
 
 # Return error for legacy SHARE v1 search route
@@ -395,7 +398,7 @@ def legacy_share_v1_search(**kwargs):
     return HTTPError(
         http_status.HTTP_400_BAD_REQUEST,
         data=dict(
-            message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
+            message_long=f'Please use v2 of the SHARE search API available at {settings.SHARE_URL}api/v2/share/search/creativeworks/_search.'
         )
     )
 

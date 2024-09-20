@@ -9,6 +9,7 @@ from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
 from osf.management.commands.daily_reporters_go import daily_reporters_go
 from osf.management.commands.monthly_reporters_go import monthly_reporters_go
+from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_metadata_templates
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -99,7 +100,6 @@ class BanSpamByRegex(ManagementCommandPermissionView):
 class DailyReportersGo(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
-        also_keen = bool(request.POST.get('also_send_to_keen', False))
         report_date = request.POST.get('report_date', None)
         if report_date:
             report_date = isoparse(report_date).date()
@@ -108,7 +108,6 @@ class DailyReportersGo(ManagementCommandPermissionView):
 
         daily_reporters_go.apply_async(kwargs={
             'report_date': report_date,
-            'also_send_to_keen': also_keen
         })
         messages.success(request, 'Daily reporters going!')
         return redirect(reverse('management:commands'))
@@ -133,4 +132,10 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
                 messages.error(request, f'{reporter_name} failed: {error_msg}')
         else:
             messages.success(request, 'Monthly reporters successfully went.')
+        return redirect(reverse('management:commands'))
+
+class IngestCedarMetadataTemplates(ManagementCommandPermissionView):
+    def post(self, request):
+        ingest_cedar_metadata_templates()
+        messages.success(request, 'Cedar templates have been successfully imported from Cedar Workbench.')
         return redirect(reverse('management:commands'))

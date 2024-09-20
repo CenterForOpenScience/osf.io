@@ -123,7 +123,7 @@ class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     required_write_scopes = [CoreScopes.NULL]
 
     pagination_class = MaxSizePagination
-    ordering = ('name', )
+    ordering = ('name',)
 
     def get_default_queryset(self):
         return self.model_class.objects.all()
@@ -172,7 +172,7 @@ class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
         )
 
     def get_renderer_context(self):
-        context = super(PreprintProviderList, self).get_renderer_context()
+        context = super().get_renderer_context()
         context['meta'] = {
             'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name', flat=True),
         }
@@ -191,10 +191,10 @@ class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
             perm_options = [perm[0] for perm in REVIEW_PERMISSIONS]
             if not set(permissions).issubset(set(perm_options)):
                 valid_permissions = ', '.join(perm_options)
-                raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
+                raise InvalidFilterValue(f'Invalid permission! Valid values are: {valid_permissions}')
             return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 
-        return super(PreprintProviderList, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
 
 class GenericProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -241,7 +241,7 @@ class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
     def perform_update(self, serializer):
         if serializer.instance.is_reviewed:
             raise Conflict('Reviews settings may be set only once. Contact support@osf.io if you need to update them.')
-        super(PreprintProviderDetail, self).perform_update(serializer)
+        super().perform_update(serializer)
 
 
 class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
@@ -327,7 +327,7 @@ class PreprintProviderSubjects(BaseProviderSubjects):
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
-    ordering = ('is_other', 'text',)
+    ordering = ('is_other', 'text')
 
 class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
@@ -342,7 +342,7 @@ class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIVi
 
     serializer_class = TaxonomySerializer
 
-    ordering = ('is_other', 'text',)
+    ordering = ('is_other', 'text')
 
     def get_queryset(self):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
@@ -481,7 +481,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
     # overrides APIView
     def get_renderer_context(self):
-        context = super(PreprintProviderPreprintList, self).get_renderer_context()
+        context = super().get_renderer_context()
         show_counts = is_truthy(self.request.query_params.get('meta[reviews_state_counts]', False))
         if show_counts:
             # TODO don't duplicate the above
@@ -530,7 +530,7 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
         provider = self.get_provider()
         if provider and provider.primary_collection:
             return serializer.save(creator=user, collection=provider.primary_collection)
-        raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))
+        raise ValidationError(f'Provider {provider.name} has no primary collection to submit to.')
 
 
 class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, ProviderMixin):
@@ -568,7 +568,7 @@ class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPI
         provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
         if provider and provider.primary_collection:
             return serializer.save(creator=user, collection=provider.primary_collection)
-        raise ValidationError('Provider {} has no primary collection to submit to.'.format(provider.name))
+        raise ValidationError(f'Provider {provider.name} has no primary collection to submit to.')
 
 
 class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
@@ -595,7 +595,7 @@ class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView,
         )
 
     def get_renderer_context(self):
-        context = super(PreprintProviderWithdrawRequestList, self).get_renderer_context()
+        context = super().get_renderer_context()
         if is_truthy(self.request.query_params.get('meta[requests_state_counts]', False)):
             auth = get_user_auth(self.request)
             auth_user = getattr(auth, 'user', None)
@@ -617,7 +617,7 @@ class ModeratorMixin(ProviderMixin):
         return get_object_or_error(self.provider_type, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
     def get_serializer_context(self, *args, **kwargs):
-        ctx = super(ModeratorMixin, self).get_serializer_context(*args, **kwargs)
+        ctx = super().get_serializer_context(*args, **kwargs)
         ctx.update({'provider': self.get_provider()})
         return ctx
 
@@ -638,11 +638,13 @@ class ProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreat
         provider = self.get_provider()
         admin_group = provider.get_group(ADMIN)
         mod_group = provider.get_group('moderator')
-        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
-            When(groups=admin_group, then=Value(ADMIN)),
-            default=Value('moderator'),
-            output_field=CharField(),
-        )).order_by('fullname')
+        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(
+            permission_group=Case(
+                When(groups=admin_group, then=Value(ADMIN)),
+                default=Value('moderator'),
+                output_field=CharField(),
+            ),
+        ).order_by('fullname')
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -740,11 +742,13 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
         schemas = provider.schemas.get_latest_versions(request=self.request, invisible=True).filter(active=True)
         if not default_schema_id:
             return schemas
-        filtered = schemas.annotate(default_schema_ordering=Case(
-            When(id=default_schema_id, then=Value(1)),
-            default=Value(0),
-            output_field=IntegerField(),
-        )).order_by('-default_schema_ordering', 'name')
+        filtered = schemas.annotate(
+            default_schema_ordering=Case(
+                When(id=default_schema_id, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+        ).order_by('-default_schema_ordering', 'name')
         return filtered
 
     def get_queryset(self):

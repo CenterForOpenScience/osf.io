@@ -1,5 +1,5 @@
 from django.utils import timezone
-import mock
+from unittest import mock
 import pytest
 
 from addons.wiki.tests.factories import WikiFactory
@@ -15,7 +15,7 @@ from rest_framework import exceptions
 
 
 @pytest.mark.django_db
-class CommentReportsMixin(object):
+class CommentReportsMixin:
 
     @pytest.fixture()
     def user(self):
@@ -212,7 +212,7 @@ class CommentReportsMixin(object):
             node=private_project,
             user=contributor,
             target=comment.target)
-        url = '/{}comments/{}/reports/'.format(API_BASE, comment_new._id)
+        url = f'/{API_BASE}comments/{comment_new._id}/reports/'
         payload = {
             'data': {
                 'type': 'comment_reports',
@@ -249,7 +249,7 @@ class CommentReportsMixin(object):
             node=private_project,
             user=contributor,
             target=comment.target)
-        url = '/{}comments/{}/reports/'.format(API_BASE, comment_new._id)
+        url = f'/{API_BASE}comments/{comment_new._id}/reports/'
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == user._id
@@ -287,7 +287,7 @@ class CommentReportsMixin(object):
             node=public_project,
             user=contributor,
             target=public_comment.target)
-        url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
+        url = f'/{API_BASE}comments/{comment._id}/reports/'
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == user._id
@@ -333,7 +333,7 @@ class TestCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def private_url(self, user, comment):
-        return '/{}comments/{}/reports/'.format(API_BASE, comment._id)
+        return f'/{API_BASE}comments/{comment._id}/reports/'
 
     # public_project_comment_reports
     @pytest.fixture()
@@ -358,7 +358,7 @@ class TestCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def public_url(self, user, public_comment):
-        return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
+        return f'/{API_BASE}comments/{public_comment._id}/reports/'
 
 
 class TestWikiCommentReportsView(CommentReportsMixin):
@@ -397,7 +397,7 @@ class TestWikiCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def private_url(self, user, comment):
-        return '/{}comments/{}/reports/'.format(API_BASE, comment._id)
+        return f'/{API_BASE}comments/{comment._id}/reports/'
 
     # public_project_comment_reports
     @pytest.fixture()
@@ -434,7 +434,7 @@ class TestWikiCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def public_url(self, user, public_comment):
-        return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
+        return f'/{API_BASE}comments/{public_comment._id}/reports/'
 
 
 class TestFileCommentReportsView(CommentReportsMixin):
@@ -468,7 +468,7 @@ class TestFileCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def private_url(self, user, comment):
-        return '/{}comments/{}/reports/'.format(API_BASE, comment._id)
+        return f'/{API_BASE}comments/{comment._id}/reports/'
 
     # public_project_comment_reports
     @pytest.fixture()
@@ -500,4 +500,4 @@ class TestFileCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def public_url(self, user, public_comment):
-        return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
+        return f'/{API_BASE}comments/{public_comment._id}/reports/'

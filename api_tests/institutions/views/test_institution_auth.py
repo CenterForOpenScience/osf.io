@@ -12,7 +12,7 @@ from api.institutions.authentication import INSTITUTION_SHARED_SSO_MAP
 
 from framework.auth import signals, Auth
 from framework.auth.core import get_user
-from framework.auth.views import send_confirm_email
+from framework.auth.views import send_confirm_email_async
 
 from osf.models import OSFUser, InstitutionAffiliation, InstitutionStorageRegion
 from osf.models.institution import SsoFilterCriteriaAction
@@ -67,7 +67,7 @@ def make_payload(
             },
             settings.JWT_SECRET,
             algorithm='HS256'
-        ),
+        ).encode(),
         settings.JWE_SECRET
     )
 
@@ -167,7 +167,7 @@ def institution_selective_type_2():
 
 @pytest.fixture()
 def url_auth_institution():
-    return '/{0}institutions/auth/'.format(API_BASE)
+    return f'/{API_BASE}institutions/auth/'
 
 
 @pytest.fixture()
@@ -197,13 +197,14 @@ class TestInstitutionAuth:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution, username))
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
         assert institution in user.get_affiliated_institutions()
+        assert f'source:institution|{institution._id}' in user.system_tags
 
     def test_existing_user_found_but_not_affiliated(self, app, institution, url_auth_institution):
 
@@ -219,6 +220,7 @@ class TestInstitutionAuth:
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert institution in user.get_affiliated_institutions()
+        assert f'source:institution|{institution._id}' not in user.system_tags
 
     def test_user_found_and_affiliated(self, app, institution, url_auth_institution):
 
@@ -340,7 +342,7 @@ class TestInstitutionAuth:
                 )
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -380,7 +382,7 @@ class TestInstitutionAuth:
                 )
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -454,7 +456,7 @@ class TestInstitutionAuth:
         assert user.external_identity
 
         # Send confirm email in order to add new email verifications
-        send_confirm_email(
+        send_confirm_email_async(
             user,
             user.username,
             external_id_provider=external_id_provider,
@@ -552,7 +554,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
                 make_payload(institution_primary_type_2, username, user_roles=type_2_ineligible_user_roles)
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -573,7 +575,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
                 make_payload(institution_primary_type_2, username, user_roles=type_2_eligible_user_roles)
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -803,7 +805,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
@@ -811,6 +813,8 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         assert user.accepted_terms_of_service is None
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 not in user.get_affiliated_institutions()
+        assert f'source:institution|{institution_primary_type_1._id}' in user.system_tags
+        assert f'source:institution|{institution_secondary_type_1._id}' not in user.system_tags
 
     def test_new_user_primary_and_secondary(self, app, url_auth_institution,
                                             institution_primary_type_1, institution_secondary_type_1):
@@ -824,12 +828,14 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
                 make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
             )
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
+        assert f'source:institution|{institution_primary_type_1._id}' in user.system_tags
+        assert f'source:institution|{institution_secondary_type_1._id}' in user.system_tags
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 in user.get_affiliated_institutions()
 
@@ -1059,6 +1065,7 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType1:
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
         assert institution_selective_type_1 in user.get_affiliated_institutions()
+        assert f'source:institution|{institution_selective_type_1._id}' in user.system_tags
 
     def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_1):
 
@@ -1147,6 +1154,7 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType2:
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
         assert institution_selective_type_2 in user.get_affiliated_institutions()
+        assert f'source:institution|{institution_selective_type_2._id}' in user.system_tags
 
     def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_2):
 
@@ -1226,7 +1234,7 @@ class TestInstitutionAuthnWithIdentity:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user = OSFUser.objects.get(username=sso_email)
         assert user
@@ -1240,6 +1248,7 @@ class TestInstitutionAuthnWithIdentity:
         assert affiliation.sso_mail == sso_email
         assert affiliation.sso_identity == sso_identity
         assert affiliation.sso_department == department
+        assert f'source:institution|{institution._id}' in user.system_tags
 
     def test_existing_user_by_both_email_and_identity(self, app, url_auth_institution, institution):
 
@@ -1493,7 +1502,7 @@ class TestInstitutionAuthnWithIdentity:
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set([signals.user_confirmed])
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
 
         user.reload()
         assert user.fullname == 'User10 OSF'

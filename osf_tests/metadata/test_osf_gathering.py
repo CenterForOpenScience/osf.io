@@ -42,6 +42,13 @@ class TestOsfGathering(TestCase):
                 'baiduScholar': 'blarg',
             },
         )
+        # cedar metadata template
+        cls.cedar_template = factories.CedarMetadataTemplateFactory(
+            cedar_id='https://repo.metadatacenter.org/templates/this-is-a-cedar-id',
+            schema_name='Hype Boy',
+            active=True,
+            template_version=1,
+        )
         # project (with components):
         cls.project = factories.ProjectFactory(creator=cls.user__admin, is_public=True)
         cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
@@ -49,6 +56,11 @@ class TestOsfGathering(TestCase):
         cls.component = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
         cls.sibcomponent = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
         cls.subcomponent = factories.ProjectFactory(parent=cls.component, creator=cls.user__admin, is_public=True)
+        cls.project_cedar_record = factories.CedarMetadataRecordFactory(
+            template=cls.cedar_template,
+            is_published=True,
+            guid=cls.project.guids.first()
+        )
         # file:
         cls.file_sha256 = '876b99ba1225de6b7f55ef52b068d0da3aa2ec4271875954c3b87b6659ae3823'
         cls.file = create_test_file(
@@ -58,13 +70,18 @@ class TestOsfGathering(TestCase):
             filename='blarg.txt',
             sha256=cls.file_sha256,
         )
+        cls.file_cedar_record = factories.CedarMetadataRecordFactory(
+            template=cls.cedar_template,
+            is_published=True,
+            guid=cls.file.get_guid()
+        )
         # registration:
         cls.registration = factories.RegistrationFactory(
             project=cls.project,
             creator=cls.user__admin,
             is_public=True,
         )
-        cls.registration.registered_date = datetime.datetime(2121, 2, 1, tzinfo=datetime.timezone.utc)
+        cls.registration.registered_date = datetime.datetime(2121, 2, 1, tzinfo=datetime.UTC)
         cls.registration.save()
         # preprint:
         cls.preprint = factories.PreprintFactory(
@@ -73,6 +90,11 @@ class TestOsfGathering(TestCase):
         )
         cls.preprint.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
         cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
+        cls.registration_cedar_record = factories.CedarMetadataRecordFactory(
+            template=cls.cedar_template,
+            is_published=True,
+            guid=cls.registration.guids.first()
+        )
         # "focus" objects:
         cls.projectfocus = osf_gathering.OsfFocus(cls.project)
         cls.componentfocus = osf_gathering.OsfFocus(cls.component)
@@ -130,24 +152,26 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
         })
         self.projectfocus.guid_metadata_record.resource_type_general = 'Book'
-        _datacite_book_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Book')
+        _datacite_book_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#Book')
         assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.type, _datacite_book_ref),
             (_datacite_book_ref, rdflib.RDFS.label, Literal('Book', lang='en')),
         })
         # focus: registration
+        _datacite_studyregistration_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#StudyRegistration')
         assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
+            (self.registrationfocus.iri, DCTERMS.type, _datacite_studyregistration_ref),
+            (_datacite_studyregistration_ref, rdflib.RDFS.label, Literal('StudyRegistration', lang='en')),
         })
-        self.registrationfocus.guid_metadata_record.resource_type_general = 'Preprint'
-        _datacite_preprint_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Preprint')
+        self.registrationfocus.guid_metadata_record.resource_type_general = 'StudyRegistration'
         assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
-            (self.registrationfocus.iri, DCTERMS.type, _datacite_preprint_ref),
-            (_datacite_preprint_ref, rdflib.RDFS.label, Literal('Preprint', lang='en')),
+            (self.registrationfocus.iri, DCTERMS.type, _datacite_studyregistration_ref),
+            (_datacite_studyregistration_ref, rdflib.RDFS.label, Literal('StudyRegistration', lang='en')),
         })
         # focus: file
         assert_triples(osf_gathering.gather_flexible_types(self.filefocus), set())
         self.filefocus.guid_metadata_record.resource_type_general = 'Dataset'
-        _datacite_dataset_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Dataset')
+        _datacite_dataset_ref = URIRef('https://schema.datacite.org/meta/kernel-4/#Dataset')
         assert_triples(osf_gathering.gather_flexible_types(self.filefocus), {
             (self.filefocus.iri, DCTERMS.type, _datacite_dataset_ref),
             (_datacite_dataset_ref, rdflib.RDFS.label, Literal('Dataset', lang='en')),
@@ -175,7 +199,7 @@ class TestOsfGathering(TestCase):
         factories.EmbargoFactory(
             target_item=self.registration,
             user=self.user__admin,
-            end_date=datetime.datetime(1973, 7, 3, tzinfo=datetime.timezone.utc),
+            end_date=datetime.datetime(1973, 7, 3, tzinfo=datetime.UTC),
         )
         assert_triples(osf_gathering.gather_available(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.available, Literal('1973-07-03')),
@@ -348,7 +372,7 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_subjects(self.projectfocus), set())
         _bloo_subject = factories.SubjectFactory(text='Bloomy', provider=_osf_provider)
         self.project.set_subjects([[_bloo_subject._id]], auth=Auth(self.user__admin))
-        _bloo_iri = URIRef(_bloo_subject.absolute_api_v2_subject_url)
+        _bloo_iri = URIRef(_bloo_subject.get_semantic_iri())
         _bepress_iri = rdflib.URIRef('https://bepress.com/reference_guide_dc/disciplines/')
         assert_triples(osf_gathering.gather_subjects(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.subject, _bloo_iri),
@@ -368,10 +392,10 @@ class TestOsfGathering(TestCase):
             [_customchild_subj._id, _customparent_subj._id],
             [_bloo_subject._id],
         ], auth=Auth(self.user__admin))
-        _parent_iri = URIRef(_parent_subj.absolute_api_v2_subject_url)
-        _child_iri = URIRef(_child_subj.absolute_api_v2_subject_url)
-        _customparent_iri = URIRef(_customparent_subj.absolute_api_v2_subject_url)
-        _customchild_iri = URIRef(_customchild_subj.absolute_api_v2_subject_url)
+        _parent_iri = URIRef(_parent_subj.get_semantic_iri())
+        _child_iri = URIRef(_child_subj.get_semantic_iri())
+        _customparent_iri = URIRef(_customparent_subj.get_semantic_iri())
+        _customchild_iri = URIRef(_customchild_subj.get_semantic_iri())
         _customtax_iri = URIRef(f'{self.registration.provider.absolute_api_v2_url}subjects/')
         assert_triples(osf_gathering.gather_subjects(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.subject, _bloo_iri),
@@ -514,6 +538,7 @@ class TestOsfGathering(TestCase):
         institution_iri = URIRef(institution.ror_uri)
         self.user__admin.add_or_update_affiliated_institution(institution)
         self.project.add_affiliated_institution(institution, self.user__admin)
+        self.preprint.add_affiliated_institution(institution, self.user__admin)
         assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), {
             (self.projectfocus.iri, OSF.affiliation, institution_iri),
             (institution_iri, RDF.type, DCTERMS.Agent),
@@ -535,6 +560,15 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_affiliated_institutions(self.registrationfocus), set())
         # focus: file
         assert_triples(osf_gathering.gather_affiliated_institutions(self.filefocus), set())
+        # focus: preprint
+        assert_triples(osf_gathering.gather_affiliated_institutions(self.preprintfocus), {
+            (self.preprintfocus.iri, OSF.affiliation, institution_iri),
+            (institution_iri, RDF.type, DCTERMS.Agent),
+            (institution_iri, RDF.type, FOAF.Organization),
+            (institution_iri, FOAF.name, Literal(institution.name)),
+            (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
+            (institution_iri, DCTERMS.identifier, Literal(institution.ror_uri)),
+        })
 
     def test_gather_funding(self):
         # focus: project
@@ -671,7 +705,7 @@ class TestOsfGathering(TestCase):
         # non-withdrawn
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), set())
         # withdrawn (but not via PreprintRequest)
-        self.preprint.date_withdrawn = datetime.datetime.now(tz=datetime.timezone.utc)
+        self.preprint.date_withdrawn = datetime.datetime.now(tz=datetime.UTC)
         self.preprint.withdrawal_justification = 'postprint unprint'
         _withdrawal_bnode = rdflib.BNode()
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
@@ -689,8 +723,8 @@ class TestOsfGathering(TestCase):
             request_type=workflows.RequestTypes.WITHDRAWAL.value,
             creator=self.user__admin,
             comment='request unprint',
-            created=datetime.datetime(2121, 2, 1, tzinfo=datetime.timezone.utc),
-            date_last_transitioned=datetime.datetime(2121, 2, 2, tzinfo=datetime.timezone.utc),
+            created=datetime.datetime(2121, 2, 1, tzinfo=datetime.UTC),
+            date_last_transitioned=datetime.datetime(2121, 2, 2, tzinfo=datetime.UTC),
         )
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
             (self.preprintfocus.iri, OSF.dateWithdrawn, Literal(str(self.preprint.date_withdrawn.date()))),
@@ -700,4 +734,19 @@ class TestOsfGathering(TestCase):
             (_withdrawal_bnode, DCTERMS.created, Literal(str(_withdrawal_request.created.date()))),
             (_withdrawal_bnode, DCTERMS.dateAccepted, Literal(str(_withdrawal_request.date_last_transitioned.date()))),
             (_withdrawal_bnode, DCTERMS.creator, osf_gathering.OsfFocus(_withdrawal_request.creator)),
+        })
+
+    def test_gather_cedar_templates(self):
+        cedar_template_iri = rdflib.URIRef(self.cedar_template.cedar_id)
+        assert_triples(osf_gathering.gather_cedar_templates(self.projectfocus), {
+            (self.projectfocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
+            (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
+        })
+        assert_triples(osf_gathering.gather_cedar_templates(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
+            (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
+        })
+        assert_triples(osf_gathering.gather_cedar_templates(self.filefocus), {
+            (self.filefocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
+            (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
         })
