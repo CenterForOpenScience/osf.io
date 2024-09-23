@@ -76,6 +76,9 @@ class TestInstitutionSummaryMetrics:
             timestamp=timestamp_early
         ).save()
 
+        import time
+        time.sleep(5)
+
         # Tests authorized user with institution with metrics
         resp = app.get(url, auth=admin.auth)
         assert resp.status_code == 200
@@ -195,6 +198,72 @@ class TestNewInstitutionSummaryMetricsList:
         assert attributes['storage_byte_count'] == 15000000000
         assert attributes['monthly_logged_in_user_count'] == 180
         assert attributes['monthly_active_user_count'] == 160
+
+    def test_get_report_with_multiple_months_and_institutions(
+        self, app, url, institutional_admin, institution
+    ):
+        # Create reports for multiple months and institutions
+        other_institution = InstitutionFactory()
+        _summary_report_factory(
+            '2024-09', institution,
+            user_count=250,
+            public_project_count=200,
+            private_project_count=150,
+            public_registration_count=120,
+            embargoed_registration_count=110,
+            published_preprint_count=130,
+            public_file_count=140,
+            storage_byte_count=20000000000,
+            monthly_logged_in_user_count=220,
+            monthly_active_user_count=200,
+        )
+        _summary_report_factory(
+            '2024-08', institution,
+            user_count=200,
+            public_project_count=150,
+            private_project_count=125,
+            public_registration_count=110,
+            embargoed_registration_count=105,
+            published_preprint_count=115,
+            public_file_count=120,
+            storage_byte_count=15000000000,
+            monthly_logged_in_user_count=180,
+            monthly_active_user_count=160,
+        )
+        _summary_report_factory(
+            '2024-09', other_institution,
+            user_count=300,
+            public_project_count=250,
+            private_project_count=200,
+            public_registration_count=180,
+            embargoed_registration_count=170,
+            published_preprint_count=190,
+            public_file_count=210,
+            storage_byte_count=25000000000,
+            monthly_logged_in_user_count=270,
+            monthly_active_user_count=260,
+        )
+
+        resp = app.get(url, auth=institutional_admin.auth)
+        assert resp.status_code == 200
+
+        data = resp.json['data']
+
+        assert data['id'] == institution._id
+        assert data['type'] == 'institution-summary-metrics'
+
+        attributes = data['attributes']
+
+        assert attributes['user_count'] == 250
+        assert attributes['public_project_count'] == 200
+        assert attributes['private_project_count'] == 150
+        assert attributes['public_registration_count'] == 120
+        assert attributes['embargoed_registration_count'] == 110
+        assert attributes['published_preprint_count'] == 130
+        assert attributes['public_file_count'] == 140
+        assert attributes['storage_byte_count'] == 20000000000
+        assert attributes['monthly_logged_in_user_count'] == 220
+        assert attributes['monthly_active_user_count'] == 200
 
 
 def _summary_report_factory(yearmonth, institution, **kwargs):
