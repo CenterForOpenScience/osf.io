@@ -76,9 +76,6 @@ class TestInstitutionSummaryMetrics:
             timestamp=timestamp_early
         ).save()
 
-        import time
-        time.sleep(5)
-
         # Tests authorized user with institution with metrics
         resp = app.get(url, auth=admin.auth)
         assert resp.status_code == 200
