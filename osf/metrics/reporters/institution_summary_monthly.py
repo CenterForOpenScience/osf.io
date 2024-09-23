@@ -85,9 +85,19 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
         ).count()
 
     def get_monthly_active_user_count(self, institution, yearmonth):
-        return institution.get_institution_users().filter(
-            date_disabled__isnull=True,
-            logs__created__gte=yearmonth.target_month(),
-            logs__created__lt=yearmonth.next_month(),
+        institution_users = institution.get_institution_users().filter(
+            date_disabled__isnull=True
+        )
 
-        ).count()
+        active_users = institution_users.filter(
+            Q(
+                logs__created__gte=yearmonth.target_month(),
+                logs__created__lt=yearmonth.next_month()
+            ) |
+            Q(
+                preprint_logs__created__gte=yearmonth.target_month(),
+                preprint_logs__created__lt=yearmonth.next_month()
+            )
+        ).distinct()
+
+        return active_users.count()
