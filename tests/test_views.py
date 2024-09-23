@@ -1025,7 +1025,7 @@ class TestProjectViews(OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_true(res_data['user']['can_sort'])
-        assert_equal(res_data['user']['permissions'], ["read", "write", "admin"])
+        assert_equal(res_data['user']['permissions'], ['read', 'write', 'admin'])
         assert_equal(len(res_data['nodes']), 2)
 
     def test_get_components_returns_error_for_deleted_project(self):
