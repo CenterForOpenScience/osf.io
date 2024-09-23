@@ -560,6 +560,7 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
         'user_name',
         'department',
         'month_last_login',
+        'month_last_active',
         'account_creation_date',
         'public_projects',
         'private_projects',

@@ -52,6 +52,7 @@ class _InstiUserReportHelper:
                 if self.user.date_last_login is not None
                 else None
             ),
+            month_last_active=self.get_month_last_active(),
             account_creation_date=YearMonth.from_date(self.user.created),
             orcid_id=self.user.get_verified_external_id('ORCID', verified_only=True),
             public_project_count=self._public_project_queryset().count(),
@@ -79,6 +80,23 @@ class _InstiUserReportHelper:
             is_public=True,
             root_id=F('pk'),  # only root nodes
         )
+
+    def get_month_last_active(self):
+        """
+        Calculate the last month the user was active, based on their node and preprint logs,
+        get the most recent
+        """
+        last_node_log_date = self.user.logs.filter(
+            created__lt=self.before_datetime
+        ).order_by('-created').values_list('created', flat=True).first()
+
+        last_preprint_log_date = self.user.preprint_logs.filter(
+            created__lt=self.before_datetime
+        ).order_by('-created').values_list('created', flat=True).first()
+
+        if last_node_log_date and last_preprint_log_date:
+            most_recent_log = max(last_node_log_date, last_preprint_log_date)
+            return YearMonth.from_date(most_recent_log)
 
     def _private_project_queryset(self):
         return self._node_queryset().filter(

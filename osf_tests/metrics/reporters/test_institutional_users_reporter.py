@@ -70,12 +70,14 @@ class TestInstiUsersReporter(TestCase):
         _reports = list(InstitutionalUsersReporter().report(self._yearmonth))
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_nothing)
+        self.assertEqual(_reports[0].month_last_active, None)
 
     def test_one_user_with_ones(self):
         self._user_setup_with_ones.affiliate_user()
         _reports = list(InstitutionalUsersReporter().report(self._yearmonth))
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_ones)
+        self.assertEqual(_reports[0].month_last_active, self._yearmonth)
 
     def test_one_user_with_stuff_and_no_files(self):
         self._user_setup_with_stuff.affiliate_user()

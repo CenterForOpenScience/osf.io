@@ -334,6 +334,7 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
     department = ser.CharField(read_only=True, source='department_name')
     orcid_id = ser.CharField(read_only=True)
     month_last_login = YearmonthField(read_only=True)
+    month_last_active = YearmonthField(read_only=True)
     account_creation_date = YearmonthField(read_only=True)
 
     public_projects = ser.IntegerField(read_only=True, source='public_project_count')
