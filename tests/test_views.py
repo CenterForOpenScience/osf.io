@@ -1006,6 +1006,46 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res_data.get('url'), child_node.parent_node.url)
         mock_update_user_used_quota_method.assert_not_called()
 
+    def test_get_components(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
+                {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': True},
+            ]
+        )
+        linked_node = ProjectFactory(creator=self.user1)
+        project.add_node_link(linked_node, Auth(self.user1), save=True)
+        child_component = NodeFactory(creator=self.user1, parent=project)
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=self.auth)
+        res_data = res.json
+
+        assert_equal(res.status_code, 200)
+        assert_true(res_data['user']['can_sort'])
+        assert_equal(res_data['user']['permissions'], ["read", "write", "admin"])
+        assert_equal(len(res_data['nodes']), 2)
+
+    def test_get_components_returns_error_for_deleted_project(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        project.is_deleted = True
+        project.save()
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        res_data = res.json
+        assert_equal(res.status_code, 410)
+
+    def test_get_components_with_unauthenticated_user(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=Auth(), expect_errors=True)
+        res_data = res.json
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res_data['user']['permissions']), 0)
 
 class TestEditableChildrenViews(OsfTestCase):
 
