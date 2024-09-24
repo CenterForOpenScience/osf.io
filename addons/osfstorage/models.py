@@ -229,10 +229,10 @@ class OsfStorageFileNode(BaseFileNode):
             if save:
                 self.save()
 
-    def save(self):
+    def save(self, *args, **kwargs):
         self._path = ''
         self._materialized_path = ''
-        return super(OsfStorageFileNode, self).save()
+        return super(OsfStorageFileNode, self).save(*args, **kwargs)
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
@@ -408,7 +408,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def save(self, skip_search=False, *args, **kwargs):
         from website.search import search
 
-        ret = super(OsfStorageFile, self).save()
+        ret = super(OsfStorageFile, self).save(*args, **kwargs)
         if not skip_search:
             search.update_file(self)
         return ret
