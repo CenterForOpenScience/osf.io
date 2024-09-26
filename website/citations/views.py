@@ -4,12 +4,9 @@ from flask import request
 
 from framework.auth.decorators import must_be_logged_in
 from osf import features
-from osf.external.gravy_valet.request_helpers import _make_gv_request, get_gv_result, \
-    RESOURCE_LIST_ENDPOINT, get_gv_result_json
-from osf.models import Node
+from osf.external.gravy_valet.request_helpers import citation_list_gv_request
 from osf.models.citation import CitationStyle
 from osf.utils.permissions import WRITE
-from website import settings
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -201,82 +198,14 @@ class GenericCitationViews:
             if not waffle.flag_is_active(request, features.ENABLE_GV):
                 return Provider().citation_list(node_addon, auth.user, list_id, show)
             else:
-                response = dict(contents=[])
-                project_ulr = settings.DOMAIN + request.view_args.get('pid')
-                project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
-                resource_references_response = get_gv_result(
-                    endpoint_url=RESOURCE_LIST_ENDPOINT,
-                    requesting_user=auth.user,
-                    requested_resource=project,
-                    params={'filter[resource_uri]': project_ulr},
+                return citation_list_gv_request(
+                    auth=auth,
+                    request=request,
+                    addon_short_name=addon_short_name,
+                    node_addon=node_addon,
+                    list_id=list_id,
+                    show=show
                 )
-                configured_storage_addons_url = resource_references_response.get_related_link(
-                    'configured_storage_addons')
-                addons_url_list = get_gv_result_json(
-                    endpoint_url=configured_storage_addons_url,
-                    requesting_user=auth.user,
-                    requested_resource=project,
-                    request_method='GET',
-                    params={}
-                )
-                # citation_list = list(
-                #     filter(lambda x: x['attributes']['external_service_name'] == addon_short_name, addons_url_list))
-
-                # resource_references_response = get_gv_result(
-                #     endpoint_url=USER_LIST_ENDPOINT,
-                #     requesting_user=auth.user,
-                #     params={'filter[user_uri]': f'{settings.DOMAIN}/{auth.user._id}'},
-                # )
-                for addon in addons_url_list:
-                    gv_response = _make_gv_request(
-                        endpoint_url=f'{settings.GRAVYVALET_URL}/v1/addon-operation-invocations/',
-                        requesting_user=auth.user,
-                        requested_resource=project,
-                        request_method='POST',
-                        params={},
-                        data={
-                            'data': {
-                                'attributes': {
-                                    'operation_name': 'list_root_items',
-                                    'operation_kwargs': {},
-                                },
-                                'relationships': {
-                                    'thru_addon': {
-                                        'data': {
-                                            'type': addon['type'],
-                                            'id': addon['id']
-                                        }
-                                    }
-                                },
-                                'type': 'addon-operation-invocations'
-                            }
-                        }
-
-                    )
-                    if gv_response.status_code == 201:
-                        attributes_dict = gv_response.json()['data']['attributes']
-                        items = attributes_dict.get('operation_result').get('items')
-                        item_id = items[0].get('item_id', '')
-
-                        change_response = {
-                            'data': {
-                                'addon': addon_short_name,
-                                'kind': items[0].get('item_type', '').lower(),
-                                'id': item_id,
-                                'name': items[0].get('item_name', ''),
-                                'path': items[0].get('item_path', ''),
-                                'parent_list_id': 'ROOT',
-                                'provider_list_id': items[0].get('item_id', ''),
-                            },
-                            'kind': items[0].get('item_type', '').lower(),
-                            'name': items[0].get('item_name', ''),
-                            'id': item_id,
-                            'urls': {
-                                'fetch': f'/api/v1/project/{project._id}/{addon_short_name}/citations/{item_id}/',
-                            }
-                        }
-                        response['contents'].append(change_response)
-                return response
 
         _citation_list.__name__ = f'{addon_short_name}_citation_list'
         return _citation_list
