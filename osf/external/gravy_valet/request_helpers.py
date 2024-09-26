@@ -256,8 +256,7 @@ def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_i
             data['attributes']['operation_kwargs']['collection_id'] = list_id
             data['attributes']['operation_name'] = 'list_collection_items'
         gv_response = _make_gv_request(
-            # endpoint_url = f'{settings.GRAVYVALET_URL}/v1/addon-operation-invocations/'
-            endpoint_url=f'{settings.GRAVYVALET_URL}/v1/citation-operation-invocations/',
+            endpoint_url=f'{settings.GRAVYVALET_URL}/v1/addon-operation-invocations/',
             requesting_user=auth.user,
             requested_resource=project,
             request_method='POST',
