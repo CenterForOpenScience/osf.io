@@ -3,11 +3,8 @@ from flask import request
 
 from api.base.utils import is_truthy
 from osf import features
-from osf.external.gravy_valet.request_helpers import _make_gv_request, get_gv_result_json, RESOURCE_LIST_ENDPOINT, \
-    get_gv_result
-from osf.models import Node
+from osf.external.gravy_valet.request_helpers import get_zotero_library_list
 from osf.utils.permissions import WRITE
-from website import settings
 from website.citations.views import GenericCitationViews
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -73,68 +70,7 @@ class ZoteroViews(GenericCitationViews):
                 return node_addon.get_folders(limit=limit, start=start, return_count=return_count,
                                               append_personal=append_personal)
             else:
-                response = []
-                project_ulr = settings.DOMAIN + request.view_args.get('pid')
-                project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
-                resource_references_response = get_gv_result(
-                    endpoint_url=RESOURCE_LIST_ENDPOINT,
-                    requesting_user=auth.user,
-                    requested_resource=project,
-                    params={'filter[resource_uri]': project_ulr},
-                )
-                configured_citation_addons_url = resource_references_response.get_related_link(
-                    'configured_citation_addons')
-                addons_url_list = get_gv_result_json(
-                    endpoint_url=configured_citation_addons_url,
-                    requesting_user=auth.user,
-                    requested_resource=project,
-                    request_method='GET',
-                    params={}
-                )
-                gv_addon_name = addon_short_name if addon_short_name != 'zotero' else 'zotero_org'
-                citation_url_list = list(
-                    filter(lambda x: x['attributes']['external_service_name'] == gv_addon_name, addons_url_list))
-                for addon in citation_url_list:
-                    gv_response = _make_gv_request(
-                        endpoint_url=f'{settings.GRAVYVALET_URL}/v1/addon-operation-invocations/',
-                        requesting_user=auth.user,
-                        requested_resource=project,
-                        request_method='POST',
-                        params={},
-                        data={
-                            'data': {
-                                'attributes': {
-                                    'operation_name': 'list_root_items',
-                                    'operation_kwargs': {},
-                                },
-                                'relationships': {
-                                    'thru_addon': {
-                                        'data': {
-                                            'type': addon['type'],
-                                            'id': addon['id']
-                                        }
-                                    }
-                                },
-                                'type': 'addon-operation-invocations'
-                            }
-                        }
-
-                    )
-                    if gv_response.status_code == 201:
-                        attributes_dict = gv_response.json()['data']['attributes']
-                        items = attributes_dict.get('operation_result').get('items')
-                        for item in items:
-                            item_id = item.get('item_id', '')
-                            response.append({
-                                'addon': addon_short_name,
-                                'kind': item.get('item_type', '').lower(),
-                                'id': item_id,
-                                'name': item.get('item_name', ''),
-                                'path': item.get('item_path', ''),
-                                'parent_list_id': None,
-                                'provider_list_id': item_id,
-                            })
-                return response
+                return get_zotero_library_list(auth=auth, request=request, addon_short_name=addon_short_name)
 
         _library_list.__name__ = f'{addon_short_name}_library_list'
         return _library_list
