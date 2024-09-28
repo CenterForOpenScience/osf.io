@@ -14,7 +14,7 @@ from website.project.signals import contributor_added, contributor_removed, afte
 from osf.exceptions import NodeStateError
 from osf.utils import permissions
 from website.util import api_url_for, web_url_for
-from api_tests.utils import disconnected_from_listeners
+from api_tests.utils import disconnected_from_listeners, create_test_file
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated
@@ -3276,6 +3276,20 @@ class TestForkNode:
         assert fork_wiki_version.wiki_page.node == fork
         assert fork_wiki_version._id != wiki._id
         assert fork_wiki_version.identifier == 1
+
+    def test_forking_copies_files(self, user, auth):
+        project = ProjectFactory(creator=user, is_public=True)
+        create_test_file(project, user, filename='doughnut')
+        fork = project.fork_node(auth)
+        assert fork.files.filter(name='doughnut').exists()
+
+    def test_forking_copies_files_and_adjusts_storage_usage(self, user, auth):
+        project = ProjectFactory(creator=user, is_public=True)
+        create_test_file(project, user, size=4000, filename='ice cream')
+        fork = project.fork_node(auth)
+        assert fork.files.filter(name='ice cream').exists()
+        assert fork.storage_usage == 4000
+
 
 class TestContributorOrdering:
 
