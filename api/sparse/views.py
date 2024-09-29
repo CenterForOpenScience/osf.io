@@ -63,7 +63,13 @@ class SparseLinkedRegistrationsList(SparseRegistrationMixin, RegistrationLinkedR
 
 
 class SparseUserNodeList(SparseNodeMixin, UserNodes):
-    pass
+    def get_queryset(self):
+        queryset = (
+            self.get_queryset_from_request()
+            .select_related('node_license')
+            .include('creator__guids', 'root__guids', limit_includes=10)
+        )
+        return queryset
 
 
 class SparseNodeDetail(SparseNodeMixin, NodeDetail):
