@@ -15,6 +15,7 @@
     "URIjs": "^1.14.1",
     "agh.sprintf": "^0.0.11",
     "assets-webpack-plugin": "^0.1.0",
+    "uglifyjs-webpack-plugin": "^1.1.1",
     "babel-loader": "^4.1.0",
     "body-parser": "~1.12.0",
     "bootbox": "^4.4.0",
