@@ -17,8 +17,46 @@ from api.base.utils import absolute_reverse
 from osf.models import AbstractNode, Comment, Preprint, Guid, DraftRegistration
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
+"""
+https://github.com/RCOSDP/RDM-osf.io/pull/505
+"""
+class OptimaizedPagination(pagination.PageNumberPagination):
+    """
+    A pagination class that optimizes for the number of queries.
+    """
+    def paginate_queryset(self, queryset, request, view=None):
+        """
+        Paginate a queryset if required, either returning a
+        page object, or `None` if pagination is not configured for this view.
+        """
+        page_size = self.get_page_size(request)
+        if not page_size:
+            return None
 
-class JSONAPIPagination(pagination.PageNumberPagination):
+        paginator = self.django_paginator_class(queryset, page_size)
+        page_number = request.query_params.get(self.page_query_param, 1)
+        if page_number in self.last_page_strings:
+            page_number = paginator.num_pages
+
+        try:
+            self.page = paginator.page(page_number)
+        except InvalidPage as exc:
+            msg = self.invalid_page_message.format(
+                page_number=page_number, message=six.text_type(exc),
+            )
+            raise NotFound(msg)
+
+        if paginator.num_pages > 1 and self.template is not None:
+            # The browsable API should display pagination controls.
+            self.display_page_controls = True
+
+        self.request = request
+        if hasattr(self.page.object_list, 'iterator'):
+            return self.page.object_list.iterator()
+        else:
+            return iter(self.page.object_list)
+
+class JSONAPIPagination(OptimaizedPagination):
     """
     Custom paginator that formats responses in a JSON-API compatible format.
 
