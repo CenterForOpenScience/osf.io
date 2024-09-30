@@ -2431,20 +2431,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
 
     def _get_addon_from_gv(self, gv_pk, requesting_user_id):
-        requesting_user = OSFUser.load(requesting_user_id)
-        all_node_addon_data = [item for item in gv_requests.iterate_addons_for_resource(
-            requested_resource=self,
-            requesting_user=requesting_user)]
-        # gv_addon_data = gv_requests.get_addon(
-        #     gv_addon_pk=gv_pk,
-        #     requested_resource=self,
-        #     requesting_user=requesting_user,
-        # )
-        return gv_translations.make_ephemeral_node_settings(
-            gv_addon_data=all_node_addon_data[0],
-            requested_resource=self,
-            requesting_user=requesting_user
-        )
+        for item in self._get_addons_from_gv(requesting_user_id):
+            if item.short_name == gv_pk:
+                return item
 
     def _get_addons_from_gv(self, requesting_user_id):
         requesting_user = OSFUser.load(requesting_user_id)
