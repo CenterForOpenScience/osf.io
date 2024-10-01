@@ -1,4 +1,4 @@
-from osf.metadata.osf_gathering import osfmap_for_type
+from osf.metadata.osf_gathering import osfmap_for_type, osfmap_supplement_for_type
 from osf.metadata.serializers import _base
 
 
@@ -9,5 +9,11 @@ class TurtleMetadataSerializer(_base.MetadataSerializer):
         return f'{itemid}-metadata.ttl'
 
     def serialize(self) -> str:
-        self.basket.pls_gather(osfmap_for_type(self.basket.focus.rdftype))
+        if self.serializer_config.get('is_supplementary', False):
+            self.basket.pls_gather(
+                osfmap_supplement_for_type(self.basket.focus.rdftype),
+                include_defaults=False,
+            )
+        else:
+            self.basket.pls_gather(osfmap_for_type(self.basket.focus.rdftype))
         return self.basket.gathered_metadata.serialize(format='turtle')

@@ -34,7 +34,7 @@ def test_goodbasket():
     basket = gather.Basket(focus)
     assert basket.focus == focus
     assert isinstance(basket.gathered_metadata, rdflib.Graph)
-    assert len(basket.gathered_metadata) == 1
+    assert len(basket.gathered_metadata) == 0
     assert len(basket._gathertasks_done) == 0
     assert len(basket._known_focus_dict) == 1
     # no repeat gathertasks:
@@ -78,5 +78,6 @@ def test_goodbasket():
 
     # reset
     basket.reset()
-    assert len(basket.gathered_metadata) == 1
+    assert len(basket.gathered_metadata) == 0
     assert len(basket._gathertasks_done) == 0
+    assert len(basket._known_focus_dict) == 1
