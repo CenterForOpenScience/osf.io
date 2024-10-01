@@ -582,8 +582,8 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
         )
 
 
-class _NewInstitutionSummaryMetricsList(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    '''list view for institution-summary metrics
+class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+    '''detail view for institution-summary metrics
 
     used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
     (and should be renamed without "New" when that flag is permanently active)
@@ -621,12 +621,12 @@ class _NewInstitutionSummaryMetricsList(JSONAPIBaseView, generics.RetrieveAPIVie
         )
 
 
-institution_summary_metrics_list_view = toggle_view_by_flag(
+institution_summary_metrics_detail_view = toggle_view_by_flag(
     flag_name=osf.features.INSTITUTIONAL_DASHBOARD_2024,
     old_view=_OldInstitutionSummaryMetrics.as_view(),
-    new_view=_NewInstitutionSummaryMetricsList.as_view(),
+    new_view=_NewInstitutionSummaryMetricsDetail.as_view(),
 )
-institution_summary_metrics_list_view.view_name = 'institution-summary-metrics'
+institution_summary_metrics_detail_view.view_name = 'institution-summary-metrics'
 
 
 institution_user_metrics_list_view = toggle_view_by_flag(
