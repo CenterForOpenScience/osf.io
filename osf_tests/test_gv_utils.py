@@ -539,6 +539,6 @@ class TestEphemeralSettings:
         assert ephemeral_config.gv_id == fake_box_addon.pk
         assert ephemeral_config.config.name == 'addons.box'
         assert ephemeral_config.serialize_waterbutler_settings() == {
-            'folder': fake_box_addon.root_folder,
+            'folder': fake_box_addon.root_folder.split(':')[1],
             'service': 'box'
         }

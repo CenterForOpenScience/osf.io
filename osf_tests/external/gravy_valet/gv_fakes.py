@@ -165,7 +165,7 @@ class _FakeAddon(_FakeGVEntity):
     resource_pk: int
     base_account: _FakeAccount
     display_name: str = ''
-    root_folder: str = '/'
+    root_folder: str = '0:1'
 
     def _serialize_attributes(self):
         return {
