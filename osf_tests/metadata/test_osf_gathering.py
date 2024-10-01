@@ -1,4 +1,5 @@
 import datetime
+from unittest import mock
 
 from django.test import TestCase
 import rdflib
@@ -11,6 +12,7 @@ from osf.metadata.rdfutils import (
     FOAF,
     OSF,
     OSFIO,
+    DCAT,
     DCTERMS,
     DCMITYPE,
     DOI,
@@ -20,6 +22,8 @@ from osf.metadata.rdfutils import (
     checksum_iri,
 )
 from osf import models as osfdb
+from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.utils import YearMonth
 from osf.utils import permissions, workflows
 from osf_tests import factories
 from website import settings as website_settings
@@ -750,3 +754,35 @@ class TestOsfGathering(TestCase):
             (self.filefocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
             (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
         })
+
+    def test_gather_last_month_usage(self):
+        # no usage report:
+        with mock.patch(
+            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
+            return_value=None,
+        ):
+            assert_triples(osf_gathering.gather_last_month_usage(self.projectfocus), set())
+        # yes usage report:
+        _ym = YearMonth.from_date(datetime.datetime.now(tz=datetime.UTC))
+        with mock.patch(
+            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
+            return_value=PublicItemUsageReport(
+                item_osfid=self.project._id,
+                report_yearmonth=_ym,
+                view_count=71,
+                view_session_count=13,
+                download_count=43,
+                download_session_count=11,
+            ),
+        ):
+            _usage_bnode = rdflib.BNode()
+            assert_triples(osf_gathering.gather_last_month_usage(self.projectfocus), {
+                (self.projectfocus.iri, OSF.usage, _usage_bnode),
+                (_usage_bnode, DCTERMS.temporal, Literal(str(_ym), datatype=rdflib.XSD.gYearMonth)),
+                (_usage_bnode, DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN.rstrip('/'))),
+                (_usage_bnode, FOAF.primaryTopic, self.projectfocus.iri),
+                (_usage_bnode, OSF.viewCount, Literal(71)),
+                (_usage_bnode, OSF.viewSessionCount, Literal(13)),
+                (_usage_bnode, OSF.downloadCount, Literal(43)),
+                (_usage_bnode, OSF.downloadSessionCount, Literal(11)),
+            })

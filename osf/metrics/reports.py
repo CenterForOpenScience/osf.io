@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import abc
 import datetime
 
@@ -306,3 +307,19 @@ class PublicItemUsageReport(MonthlyReport):
     # download counts of this item only (not including contained components or files)
     download_count = metrics.Long()                   # counter:Total Requests
     download_session_count = metrics.Long()           # counter:Unique Requests
+
+    @classmethod
+    def for_last_month(cls, item_osfid: str) -> PublicItemUsageReport | None:
+        _search = (
+            PublicItemUsageReport.search()
+            .filter('term', item_osfid=item_osfid)
+            # only last month's report
+            .filter('range', report_yearmonth={
+                'gte': 'now-1M/M',
+                'lt': 'now/M',
+            })
+            .sort('-report_yearmonth')
+            [:1]
+        )
+        _response = _search.execute()
+        return _response[0] if _response else None
