@@ -2611,7 +2611,7 @@ class TestClaimViews(OsfTestCase):
         assert res1.status_code == 302
         res = self.app.resolve_redirect(self.app.get(url))
         service_url = f'http://localhost{url}'
-        expected = cas.get_logout_url(service_url=unquote_plus(cas.get_login_url(service_url=service_url)))
+        expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
         assert res1.location == expected
 
         # user logged in with orcid automatically becomes a contributor
@@ -2631,7 +2631,7 @@ class TestClaimViews(OsfTestCase):
         # And the redirect URL must equal to the originial service URL
         assert res.status_code == 302
         redirect_url = res.headers['Location']
-        assert unquote_plus(redirect_url) == url
+        assert redirect_url == url
         # The response of this request is expected have the `Set-Cookie` header with OSF cookie.
         # And the cookie must belong to the ORCiD user.
         raw_set_cookie = res.headers['Set-Cookie']
