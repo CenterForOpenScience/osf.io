@@ -61,11 +61,16 @@ def add_gatherer(gatherer, predicate_iris, focustype_iris):
         )
 
 
-def get_gatherers(focustype_iri, predicate_iris):
+def get_gatherers(focustype_iri, predicate_iris, *, include_focustype_defaults=True):
     gatherer_set = set()
     for focustype in (None, focustype_iri):
         for_focustype = __gatherer_registry.get(focustype, {})
-        for predicate in (None, *predicate_iris):
+        _predicates = (
+            (None, *predicate_iris)
+            if include_focustype_defaults
+            else predicate_iris
+        )
+        for predicate in _predicates:
             gatherer_set.update(for_focustype.get(predicate, ()))
     return gatherer_set
 
