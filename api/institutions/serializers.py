@@ -364,15 +364,6 @@ class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
 
     used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
     (and should be renamed without "New" when that flag is permanently active)
-
-    Summary contains counts of
-    - Total users in the institution
-    - Total public project count for the institution
-    - Total private project count for the institution
-    - Total public registration count for the institution
-    - Total private registration count for the institution
-    - Total published preprint count for the institution
-
     '''
 
     class Meta:
