@@ -8,7 +8,6 @@ import typing
 from . import auth_helpers
 import requests
 
-from api_tests.users.serializers.test_serializers import project
 from website import settings
 from osf.models import Node
 
@@ -217,8 +216,11 @@ def _make_gv_request(
     return response
 
 
-def _get_citation_url_list(auth, request, addon_short_name, project):
-    project_url = settings.DOMAIN + request.view_args.get('pid')
+def get_citation_url_list(auth, addon_short_name, project, request=None, pid=None):
+    if pid:
+        project_url = settings.DOMAIN + pid
+    else:
+        project_url = settings.DOMAIN + request.view_args.get('pid')
     resource_references_response = get_gv_result(
         endpoint_url=RESOURCE_LIST_ENDPOINT,
         requesting_user=auth.user,
@@ -272,10 +274,20 @@ def _get_gv_response(auth, addon, project, list_id):
 
 def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_id, show):
     response = {'contents': []}
-    project_obj = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
-    citation_url_list = _get_citation_url_list(auth, request, addon_short_name, project_obj)
+    project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
+    citation_url_list = get_citation_url_list(
+        auth=auth,
+        request=request,
+        addon_short_name=addon_short_name,
+        project=project
+    )
     for addon in citation_url_list:
-        gv_response = _get_gv_response(auth, addon, project_obj, list_id)
+        gv_response = _get_gv_response(
+            auth=auth,
+            addon=addon,
+            project=project,
+            list_id=list_id
+        )
         if gv_response.status_code == 201:
             attributes_dict = gv_response.json()['data']['attributes']
             items = attributes_dict.get('operation_result').get('items')
@@ -310,17 +322,17 @@ def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_i
 
 def get_zotero_library_list(auth, request, addon_short_name):
     changed_response = []
-    project_obj = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
-    citation_url_list = _get_citation_url_list(
+    project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
+    citation_url_list = get_citation_url_list(
         auth=auth,
         request=request,
         addon_short_name=addon_short_name,
-        project=project_obj)
+        project=project)
     for addon in citation_url_list:
         gv_response = _get_gv_response(
             auth=auth,
             addon=addon,
-            project=project_obj,
+            project=project,
             list_id='ROOT'
         )
         if gv_response.status_code == 201:

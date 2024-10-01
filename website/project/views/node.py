@@ -3,6 +3,7 @@ import logging
 from rest_framework import status as http_status
 import math
 from collections import defaultdict
+import waffle
 
 from flask import request
 from django.apps import apps
@@ -16,6 +17,7 @@ from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from osf.external.gravy_valet.translations import EphemeralAddonConfig
+from osf.external.gravy_valet.request_helpers import get_citation_url_list
 from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
@@ -67,6 +69,7 @@ from osf.metadata.tools import pls_gather_metadata_file
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
 
+
 @must_be_valid_project
 @must_have_permission(WRITE)
 def edit_node(auth, node, **kwargs):
@@ -111,6 +114,7 @@ def edit_node(auth, node, **kwargs):
 @must_be_logged_in
 def project_new(**kwargs):
     return {}
+
 
 @must_be_logged_in
 def project_new_post(auth, **kwargs):
@@ -202,7 +206,8 @@ def project_new_node(auth, node, **kwargs):
         if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
                 # Using permission property off of Contributor model to get contributor permissions - not group member perms
-                perm = CREATOR_PERMISSIONS if contributor._id == user._id else Contributor.objects.get(user_id=contributor.id, node_id=node.id).permission
+                perm = CREATOR_PERMISSIONS if contributor._id == user._id else Contributor.objects.get(
+                    user_id=contributor.id, node_id=node.id).permission
                 if contributor._id == user._id and not contributor.is_registered:
                     new_component.add_unregistered_contributor(
                         fullname=contributor.fullname, email=contributor.email,
@@ -270,6 +275,7 @@ def node_registrations(auth, node, **kwargs):
         return redirect(f'/{node._id}/registrations/')
     return use_ember_app()
 
+
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_retracted_registration
@@ -277,6 +283,7 @@ def node_forks(auth, node, **kwargs):
     if request.path.startswith('/project/'):
         return redirect('/' + node._id + '/forks/')
     return use_ember_app()
+
 
 @must_be_valid_project
 @must_not_be_retracted_registration
@@ -316,13 +323,13 @@ def node_setting(auth, node, **kwargs):
 
     return ret
 
+
 @must_be_valid_project
 @must_not_be_registration
 @must_be_logged_in
 @must_have_permission(WRITE)
 @ember_flag_is_active(features.ENABLE_GV)
 def node_addons(auth, node, **kwargs):
-
     ret = _view_project(node, auth, primary=True)
 
     addon_settings = serialize_addons(node, auth)
@@ -342,7 +349,6 @@ def node_addons(auth, node, **kwargs):
 
 
 def serialize_addons(node, auth):
-
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
                         if addon not in settings.SYSTEM_ADDED_ADDONS['node']
@@ -369,6 +375,7 @@ def serialize_addons(node, auth):
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
     return addon_settings
+
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -427,6 +434,7 @@ def configure_comments(node, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     node.save()
 
+
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def configure_requests(node, **kwargs):
@@ -439,6 +447,31 @@ def configure_requests(node, **kwargs):
 ##############################################################################
 # View Project
 ##############################################################################
+
+CITATION_WIDGET_DATA = {
+    'mendeley': {
+        'addon_capabilities': '\n\n<h3>Mendeley Add-on Terms</h3>\n\n<table class="table table-bordered table-addon-terms">\n\n    <thead>\n        <tr>\n  ...n allows you to store files using an external service. Files added to this add-on are not stored within the OSF.</li>\n</ul>\n',
+        'capabilities': True,
+        'full_name': 'Mendeley',
+        'has_page': False,
+        'has_widget': True,
+        'icon': '/static/addons/mendeley/comicon.png',
+        'list_id': 'ROOT',
+        'short_name': 'mendeley'
+    },
+    'zotero': {
+        'addon_capabilities': '\n\n<h3>Zotero Add-on Terms</h3>\n\n<table class="table table-bordered table-addon-terms">\n\n    <thead>\n        <tr>\n    ...n allows you to store files using an external service. Files added to this add-on are not stored within the OSF.</li>\n</ul>\n',
+        'capabilities': True,
+        'full_name': 'Zotero',
+        'has_page': False,
+        'has_widget': True,
+        'icon': '/static/addons/zotero/comicon.png',
+        'library_id': 'personal',
+        'list_id': 'ROOT',
+        'short_name': 'zotero'
+    },
+}
+
 
 @process_token_or_pass
 @must_be_valid_project(retractions_valid=True)
@@ -480,17 +513,28 @@ def view_project(auth, node, **kwargs):
 
     if 'forward' in ret['addons']:
         addons_widget_data['forward'] = serialize_forward_widget(node)
+    if not waffle.flag_is_active(request, features.ENABLE_GV):
+        if 'zotero' in ret['addons']:
+            node_addon = node.get_addon('zotero')
+            zotero_widget_data = ZoteroCitationsProvider().widget(node_addon)
+            addons_widget_data['zotero'] = zotero_widget_data
 
-    if 'zotero' in ret['addons']:
-        node_addon = node.get_addon('zotero')
-        zotero_widget_data = ZoteroCitationsProvider().widget(node_addon)
-        addons_widget_data['zotero'] = zotero_widget_data
-
-    if 'mendeley' in ret['addons']:
-        node_addon = node.get_addon('mendeley')
-        mendeley_widget_data = MendeleyCitationsProvider().widget(node_addon)
-        addons_widget_data['mendeley'] = mendeley_widget_data
-
+        if 'mendeley' in ret['addons']:
+            node_addon = node.get_addon('mendeley')
+            mendeley_widget_data = MendeleyCitationsProvider().widget(node_addon)
+            addons_widget_data['mendeley'] = mendeley_widget_data
+    else:
+        project = Node.objects.filter(guids___id__in=[kwargs['pid']]).first()
+        for item in ['zotero', 'mendeley']:
+            citation_list_urls = get_citation_url_list(
+                auth=auth,
+                pid=kwargs.get('pid'),
+                addon_short_name=item,
+                project=project
+            )
+            data = CITATION_WIDGET_DATA[item]
+            data['complete'] = bool(citation_list_urls)
+            addons_widget_data[item] = data
     ret.update({'addons_widget_data': addons_widget_data})
     ret.update({'enable_gv': flag_is_active(request, features.ENABLE_GV)})
     return ret
@@ -515,8 +559,8 @@ def project_reorder_components(node, **kwargs):
     ordered_guids = request.get_json().get('new_list', [])
     node_relations = (
         node.node_relations
-            .select_related('child')
-            .filter(child__is_deleted=False)
+        .select_related('child')
+        .filter(child__is_deleted=False)
     )
     deleted_node_relation_ids = list(
         node.node_relations.select_related('child')
@@ -541,6 +585,7 @@ def project_reorder_components(node, **kwargs):
     logger.error('Got invalid node list in reorder components')
     raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
+
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_retracted_registration
@@ -557,7 +602,6 @@ def project_statistics(auth, node, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def project_set_privacy(auth, node, **kwargs):
-
     permissions = kwargs.get('permissions')
     if permissions is None:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -596,6 +640,7 @@ def update_node(auth, node, **kwargs):
         if key != 'logs' and key != 'modified' and key != 'last_logged'
     }
     return {'updated_fields': updated_fields_dict}
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -660,9 +705,9 @@ def remove_private_link(*args, **kwargs):
             auth=kwargs.get('auth', None)
         )
 
+
 # TODO: Split into separate functions
 def _render_addons(addons):
-
     widgets = {}
     configs = {}
     js = []
@@ -1241,14 +1286,11 @@ def search_node(auth, **kwargs):
     if include_public:
         can_view_query = can_view_query | Q(is_public=True)
 
-    nodes = (AbstractNode.objects
-        .filter(
-            can_view_query,
-            title__icontains=query,
-            is_deleted=False)
-        .exclude(id__in=nin)
-        .exclude(type='osf.collection')
-        .exclude(type='osf.quickfilesnode'))
+    nodes = (AbstractNode.objects.filter(
+        can_view_query,
+        title__icontains=query,
+        is_deleted=False
+    ).exclude(id__in=nin).exclude(type='osf.collection').exclude(type='osf.quickfilesnode'))
 
     count = nodes.count()
     pages = math.ceil(count / size)
