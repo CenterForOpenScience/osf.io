@@ -7,6 +7,8 @@ import rdflib
 from osf import models as osfdb
 from osf.metadata.rdfutils import OSF, DCTERMS
 from osf.metadata.tools import pls_gather_metadata_file
+from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.utils import YearMonth
 from osf.models.licenses import NodeLicense
 from api_tests.utils import create_test_file
 from osf_tests import factories
@@ -72,6 +74,14 @@ FULL_METADATA_SCENARIO = {
     },
 }
 
+EXPECTED_SUPPLEMENTARY_METADATA = {
+    OSF.Project: 'project_supplementary.turtle',
+    OSF.Preprint: 'preprint_supplementary.turtle',
+    OSF.Registration: 'registration_supplementary.turtle',
+    OSF.File: 'file_supplementary.turtle',
+    DCTERMS.Agent: 'agent_supplementary.turtle',
+}
+
 EXPECTED_MEDIATYPE = {
     'turtle': 'text/turtle; charset=utf-8',
     'datacite-xml': 'application/xml',
@@ -124,8 +134,7 @@ class TestSerializers(OsfTestCase):
             mock.patch('django.utils.timezone.now', new=forever_now),
             mock.patch('osf.models.metaschema.RegistrationSchema.absolute_api_v2_url', new='http://fake.example/schema/for/test'),
         ):
-            patcher.start()
-            self.addCleanup(patcher.stop)
+            self.enterContext(patcher)
         # build test objects
         self.user = factories.AuthUserFactory(
             fullname='Person McNamington',
@@ -211,6 +220,16 @@ class TestSerializers(OsfTestCase):
         osfdb.GuidMetadataRecord.objects.for_guid(self.registration._id).update({
             'resource_type_general': 'StudyRegistration',
         }, auth=self.user)
+        self.enterContext(mock.patch(
+            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
+            return_value=PublicItemUsageReport(
+                report_yearmonth=YearMonth.from_date(forever_now()),
+                view_count=7,
+                view_session_count=5,
+                download_count=3,
+                download_session_count=2,
+            ),
+        ))
         self.guid_dict = {
             OSF.Project: self.project._id,
             OSF.Preprint: self.preprint._id,
@@ -259,6 +278,7 @@ class TestSerializers(OsfTestCase):
         self._assert_scenario(BASIC_METADATA_SCENARIO)
         self._setUp_full()
         self._assert_scenario(FULL_METADATA_SCENARIO)
+        self._assert_supplementary_files(EXPECTED_SUPPLEMENTARY_METADATA)
 
     def _assert_scenario(self, scenario_dict):
         for focus_type, expected_files in scenario_dict.items():
@@ -282,6 +302,22 @@ class TestSerializers(OsfTestCase):
                         f'attachment; filename={gathered_file.filename}',
                     )
                     self._assert_expected_file(filename, resp.text)
+
+    def _assert_supplementary_files(self, expected_supplementary_files):
+        _format_key = 'turtle'  # supplementary metadata only in turtle, for now
+        for _focus_type, _filename in expected_supplementary_files.items():
+            with self.subTest(focus_type=_focus_type, is_supplementary=True):
+                _osfguid = self.guid_dict[_focus_type]
+                _gathered_file = pls_gather_metadata_file(
+                    _osfguid,
+                    _format_key,
+                    serializer_config={'is_supplementary': True},
+                )
+                self.assertEqual(_gathered_file.mediatype, EXPECTED_MEDIATYPE[_format_key])
+                # to update expected metadata, uncomment `_write_expected_file` and this
+                # next line (being careful not to leave it uncommented...) and run tests
+                # self._write_expected_file(_filename, _gathered_file.serialized_metadata)
+                self._assert_expected_file(_filename, _gathered_file.serialized_metadata)
 
     def _assert_expected_file(self, filename, actual_metadata):
         _open_mode = ('rb' if isinstance(actual_metadata, bytes) else 'r')
