@@ -10,6 +10,7 @@ from flask import request
 from furl import furl
 import jwe
 import jwt
+from osf.external.gravy_valet.translations import EphemeralNodeSettings
 import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
@@ -837,8 +838,14 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if hasattr(target, 'get_addon'):
 
         node_addon = target.get_addon(provider)
-
-        if not isinstance(node_addon, BaseStorageAddon):
+        if flag_is_active(request, features.ENABLE_GV):
+            if not isinstance(node_addon, EphemeralNodeSettings):
+                object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+                    'message_short': 'Bad Request',
+                    'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer connected to {object_text}.'
+                })
+        elif not isinstance(node_addon, BaseStorageAddon):
             object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
