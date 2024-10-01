@@ -70,14 +70,14 @@ def _enqueue_update_share(osfresource):
 
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
-def task__update_share(self, guid: str, is_backfill=False):
+def task__update_share(self, guid: str, is_backfill=False, is_supplementary=False):
     """
     This function updates share  takes Preprints, Projects and Registrations.
     :param self:
     :param guid:
     :return:
     """
-    resp = _do_update_share(guid, is_backfill=is_backfill)
+    resp = _do_update_share(guid, is_backfill=is_backfill, is_supplementary=is_supplementary)
     try:
         resp.raise_for_status()
     except Exception as e:
@@ -93,22 +93,31 @@ def task__update_share(self, guid: str, is_backfill=False):
                 log_exception(e)
         else:
             log_exception(e)
+    else:  # succeeded -- enqueue followup task for supplementary metadata
+        if not is_supplementary:
+            task__update_share.delay(guid, is_backfill=is_backfill, is_supplementary=True)
 
     return resp
 
 
-def pls_send_trove_indexcard(osf_item, *, is_backfill=False):
+def pls_send_trove_indexcard(osf_item, *, is_backfill=False, is_supplementary=False):
     try:
         _iri = osf_item.get_semantic_iri()
     except (AttributeError, ValueError):
         raise ValueError(f'could not get iri for {osf_item}')
-    _metadata_record = pls_gather_metadata_file(osf_item, 'turtle')
+    _metadata_record = pls_gather_metadata_file(
+        osf_item,
+        format_key='turtle',
+        serializer_config={'is_supplementary': is_supplementary},
+    )
     _queryparams = {
         'focus_iri': _iri,
-        'record_identifier': _shtrove_record_identifier(osf_item),
+        'record_identifier': _shtrove_record_identifier(osf_item, is_supplementary=is_supplementary),
     }
     if is_backfill:
         _queryparams['nonurgent'] = True
+    if is_supplementary:
+        _queryparams['is_supplementary'] = True
     return requests.post(
         shtrove_ingest_url(),
         params=_queryparams,
@@ -120,32 +129,40 @@ def pls_send_trove_indexcard(osf_item, *, is_backfill=False):
     )
 
 
-def pls_delete_trove_indexcard(osf_item):
+def pls_delete_trove_indexcard(osf_item, *, is_supplementary=False):
+    _queryparams = {
+        'record_identifier': _shtrove_record_identifier(osf_item, is_supplementary=is_supplementary),
+    }
+    if is_supplementary:
+        _queryparams['is_supplementary'] = True
     return requests.delete(
         shtrove_ingest_url(),
-        params={
-            'record_identifier': _shtrove_record_identifier(osf_item),
-        },
+        params=_queryparams,
         headers=_shtrove_auth_headers(osf_item),
     )
 
 
-def _do_update_share(osfguid: str, *, is_backfill=False):
+def _do_update_share(osfguid: str, *, is_backfill=False, is_supplementary=False):
     logger.debug('%s._do_update_share("%s", is_backfill=%s)', __name__, osfguid, is_backfill)
     _guid_instance = apps.get_model('osf.Guid').load(osfguid)
     if _guid_instance is None:
         raise ValueError(f'unknown osfguid "{osfguid}"')
     _resource = _guid_instance.referent
     _response = (
-        pls_delete_trove_indexcard(_resource)
+        pls_delete_trove_indexcard(_resource, is_supplementary=is_supplementary)
         if _should_delete_indexcard(_resource)
-        else pls_send_trove_indexcard(_resource, is_backfill=is_backfill)
+        else pls_send_trove_indexcard(
+            _resource,
+            is_backfill=is_backfill,
+            is_supplementary=is_supplementary,
+        )
     )
     return _response
 
 
-def _shtrove_record_identifier(osf_item):
-    return osf_item.guids.values_list('_id', flat=True).first()
+def _shtrove_record_identifier(osf_item, *, is_supplementary=False):
+    _id = osf_item.guids.values_list('_id', flat=True).first()
+    return (f'{_id}/supplement' if is_supplementary else _id)
 
 
 def _shtrove_auth_headers(osf_item):

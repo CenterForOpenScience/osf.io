@@ -54,6 +54,13 @@ def osfmap_for_type(rdftype_iri: str):
         raise ValueError(f'invalid OSFMAP type! expected one of {set(OSFMAP.keys())}, got {rdftype_iri}')
 
 
+def osfmap_supplement_for_type(rdftype_iri: str):
+    try:
+        return OSFMAP_SUPPLEMENT[rdftype_iri]
+    except KeyError:
+        return {}
+
+
 ##### END "public" api #####
 
 
@@ -208,6 +215,21 @@ OSFMAP = {
         FOAF.name: None,
         OSF.affiliation: None,
         OWL.sameAs: None,
+    },
+}
+
+OSFMAP_SUPPLEMENT = {
+    OSF.Project: {
+    },
+    OSF.ProjectComponent: {
+    },
+    OSF.Registration: {
+    },
+    OSF.RegistrationComponent: {
+    },
+    OSF.Preprint: {
+    },
+    OSF.File: {
     },
 }
 
