@@ -10,7 +10,6 @@ from django.dispatch import receiver
 import pytz
 
 from osf.metrics.utils import stable_key
-from osf.models import Guid
 
 
 logger = logging.getLogger(__name__)
@@ -87,6 +86,7 @@ def _autofill_fields(sender, instance, **kwargs):
         _fill_pageview_info(instance)
     item_guid = getattr(instance, 'item_guid', None)
     if item_guid:
+        from osf.models import Guid
         guid_instance = Guid.load(item_guid)
         if guid_instance and guid_instance.referent:
             _fill_osfguid_info(instance, guid_instance.referent)
