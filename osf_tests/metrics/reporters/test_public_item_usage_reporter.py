@@ -152,6 +152,11 @@ class TestPublicItemUsageReporter:
                 action_labels=['download'],
             )
 
+    def test_no_data(self, ym_empty):
+        _reporter = PublicItemUsageReporter()
+        _empty = list(_reporter.report(ym_empty))
+        assert _empty == []
+
     def test_reporter(self, ym_empty, ym_sparse, ym_busy, sparse_month_usage, busy_month_item0, busy_month_item1, busy_month_item2):
         _reporter = PublicItemUsageReporter()
         _empty = list(_reporter.report(ym_empty))
