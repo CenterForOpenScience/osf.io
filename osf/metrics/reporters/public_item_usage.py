@@ -244,7 +244,10 @@ def _iter_composite_buckets(search: edsl.Search, composite_agg_name: str):
     '''
     while True:
         _page_response = search.execute(ignore_cache=True)
-        _agg_result = _page_response.aggregations[composite_agg_name]
+        try:
+            _agg_result = _page_response.aggregations[composite_agg_name]
+        except KeyError:
+            return  # no data; all done
         yield from _agg_result.buckets
         # update the search for the next page
         try:
