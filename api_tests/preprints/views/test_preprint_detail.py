@@ -873,9 +873,8 @@ class TestPreprintUpdate:
         preprint.save()
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['conflict_of_interest_statement'] ==\
-               'Owns shares in Closed Science Corporation.'
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Cannot provide conflict of interest statement when has_coi is set to False.'
 
         preprint.has_coi = True
         preprint.save()
@@ -926,8 +925,8 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['why_no_data'] == 'My dog ate it.'
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability is set to true or is unanswered.'
 
         preprint.has_data_links = 'no'
         preprint.save()
@@ -956,8 +955,8 @@ class TestPreprintUpdate:
         preprint.save()
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['data_links'] == data_links
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Cannot provide data links when has_data_links is set to "no".'
 
         preprint.has_data_links = 'available'
         preprint.save()

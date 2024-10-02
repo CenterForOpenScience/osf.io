@@ -289,6 +289,46 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if not preprint.has_permission(auth.user, osf_permissions.WRITE):
             raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
 
+        save_preprint = False
+        recently_published = False
+
+        if 'has_coi' in validated_data:
+            try:
+                preprint.update_has_coi(auth, validated_data['has_coi'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        conflict_statement = validated_data.get('conflict_of_interest_statement', None)
+        has_coi = preprint.has_coi
+        if has_coi is False and conflict_statement:
+            raise exceptions.ValidationError(
+                detail='Cannot provide conflict of interest statement when has_coi is set to False.',
+            )
+
+        if 'has_data_links' in validated_data:
+            try:
+                preprint.update_has_data_links(auth, validated_data['has_data_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        why_no_data = validated_data.get('why_no_data', None)
+        has_data_links = preprint.has_data_links
+        if has_data_links != 'no' and why_no_data:
+            raise exceptions.ValidationError(
+                detail='You cannot edit this statement while your data links availability is set to true or is unanswered.',
+            )
+
+        if has_data_links == 'no':
+            if 'data_links' in validated_data and validated_data['data_links']:
+                raise exceptions.ValidationError(
+                    detail='Cannot provide data links when has_data_links is set to "no".',
+                )
+            if preprint.data_links:
+                preprint.update_data_links(auth, [])
+                save_preprint = True
+
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
             url = absolute_reverse(
