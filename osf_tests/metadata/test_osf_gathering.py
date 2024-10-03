@@ -55,6 +55,8 @@ class TestOsfGathering(TestCase):
         )
         # project (with components):
         cls.project = factories.ProjectFactory(creator=cls.user__admin, is_public=True)
+        cls.project.add_addon('box', auth=None)
+        cls.project.add_addon('gitlab', auth=None)
         cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
         cls.project.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
         cls.component = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
@@ -786,3 +788,20 @@ class TestOsfGathering(TestCase):
                 (_usage_bnode, OSF.downloadCount, Literal(43)),
                 (_usage_bnode, OSF.downloadSessionCount, Literal(11)),
             })
+
+    def test_gather_addons(self):
+        # registration (without non-default addon)
+        assert_triples(osf_gathering.gather_addons(self.registrationfocus), set())
+        # project (with non-default addons)
+        _box_ref = rdflib.URIRef('urn:osf.io:addons:box')
+        _gitlab_ref = rdflib.URIRef('urn:osf.io:addons:gitlab')
+        assert_triples(osf_gathering.gather_addons(self.projectfocus), {
+            (self.projectfocus.iri, OSF.hasOsfAddon, _box_ref),
+            (_box_ref, RDF.type, OSF.AddonImplementation),
+            (_box_ref, DCTERMS.identifier, Literal('box')),
+            (_box_ref, SKOS.prefLabel, Literal('Box')),
+            (self.projectfocus.iri, OSF.hasOsfAddon, _gitlab_ref),
+            (_gitlab_ref, RDF.type, OSF.AddonImplementation),
+            (_gitlab_ref, DCTERMS.identifier, Literal('gitlab')),
+            (_gitlab_ref, SKOS.prefLabel, Literal('GitLab')),
+        })
