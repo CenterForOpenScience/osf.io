@@ -1063,21 +1063,26 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['why_no_prereg'] == 'My dog ate it.'
-
-        preprint.has_prereg_links = False
+        preprint.has_prereg_links = 'available'
         preprint.save()
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your prereg links availability is set to true or is unanswered.'
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={
+            'why_no_prereg': 'My dog ate it.',
+            'has_prereg_links': 'no'
+        })
         res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['why_no_prereg'] == 'My dog ate it.'
 
         preprint.reload()
-        assert preprint.why_no_prereg
-        log = preprint.logs.first()
+        assert preprint.why_no_prereg == 'My dog ate it.'
+
+        log = preprint.logs.filter(action=PreprintLog.UPDATE_WHY_NO_PREREG).first()
+        assert log is not None, 'Expected log entry for why_no_prereg_updated not found.'
         assert log.action == PreprintLog.UPDATE_WHY_NO_PREREG
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
@@ -1096,8 +1101,8 @@ class TestPreprintUpdate:
         preprint.save()
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['prereg_links'] == prereg_links
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this field while your prereg links availability is set to false or is unanswered.'
 
         preprint.has_prereg_links = 'available'
         preprint.save()
@@ -1128,8 +1133,8 @@ class TestPreprintUpdate:
         preprint.save()
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['prereg_link_info'] == 'prereg_designs'
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this field while your prereg links availability is set to false or is unanswered.'
 
         preprint.has_prereg_links = 'available'
         preprint.save()
@@ -1152,6 +1157,49 @@ class TestPreprintUpdate:
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"maformed payload" is not a valid choice.'
+
+    def test_update_has_coi_false_with_null_conflict_statement(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'has_coi': False,
+                'conflict_of_interest_statement': None
+            }
+        )
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_coi'] is False
+        assert res.json['data']['attributes']['conflict_of_interest_statement'] is None
+
+        preprint.reload()
+        assert preprint.has_coi is False
+        assert preprint.conflict_of_interest_statement is None
+
+    def test_update_has_data_links_no_with_data_links_provided(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'has_data_links': 'no',
+                'data_links': ['http://example.com/data']
+            }
+        )
+
+        initial_has_data_links = preprint.has_data_links
+        initial_data_links = preprint.data_links
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Cannot provide data links when has_data_links is set to "no".'
+
+        preprint.reload()
+
+        assert preprint.has_data_links == initial_has_data_links
+        assert preprint.data_links == initial_data_links
+
+        assert preprint.has_data_links != 'no'
 
     def test_sloan_updates(self, app, user, preprint, url):
         """
