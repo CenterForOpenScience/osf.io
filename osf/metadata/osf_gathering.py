@@ -211,8 +211,10 @@ OSFMAP = {
 # metadata not included in the core record
 OSFMAP_SUPPLEMENT = {
     OSF.Project: {
+        OSF.hasOsfAddon: None,
     },
     OSF.ProjectComponent: {
+        OSF.hasOsfAddon: None,
     },
     OSF.Registration: {
     },
@@ -1116,3 +1118,17 @@ def gather_last_month_usage(focus):
         yield (_usage_report_ref, OSF.viewSessionCount, _usage_report.view_session_count)
         yield (_usage_report_ref, OSF.downloadCount, _usage_report.download_count)
         yield (_usage_report_ref, OSF.downloadSessionCount, _usage_report.download_session_count)
+
+
+@gather.er(OSF.hasOsfAddon)
+def gather_addons(focus):
+    # note: when gravyvalet exists, use `iterate_addons_for_resource`
+    # from osf.external.gravy_valet.request_helpers and get urls like
+    # "https://addons.osf.example/v1/addon-imps/..." instead of a urn
+    for _addon_settings in focus.dbmodel.get_addons():
+        if not _addon_settings.config.added_default:  # skip always-on addons
+            _addon_ref = rdflib.URIRef(f'urn:osf.io:addons:{_addon_settings.short_name}')
+            yield (OSF.hasOsfAddon, _addon_ref)
+            yield (_addon_ref, RDF.type, OSF.AddonImplementation)
+            yield (_addon_ref, DCTERMS.identifier, _addon_settings.short_name)
+            yield (_addon_ref, SKOS.prefLabel, _addon_settings.config.full_name)

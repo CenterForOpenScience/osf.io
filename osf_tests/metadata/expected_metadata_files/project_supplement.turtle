@@ -1,1 +1,9 @@
-# correctly empty (for now)
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix osf: <https://osf.io/vocab/2022/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://localhost:5000/w2ibb> osf:hasOsfAddon <urn:osf.io:addons:gitlab> ;
+
+<urn:osf.io:addons:gitlab> a osf:AddonImplementation ;
+    dcterms:identifier "gitlab" ;
+    skos:prefLabel "GitLab" .

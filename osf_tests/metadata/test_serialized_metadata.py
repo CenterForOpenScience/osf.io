@@ -199,6 +199,7 @@ class TestSerializers(OsfTestCase):
             category='doi',
             value=f'10.70102/FK2osf.io/{self.project._id}',
         )
+        self.project.add_addon('gitlab', auth=None)
         self.file = create_test_file(
             self.project,
             self.user,
