@@ -317,7 +317,7 @@ HASHIDS_SALT = 'pinkhimalayan'
 # django-elasticsearch-metrics
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+        'hosts': osf_settings.ELASTIC6_URI,
         'retry_on_timeout': True,
     },
 }
@@ -360,7 +360,7 @@ EGAP_PROVIDER_NAME = 'EGAP'
 MAX_SIZE_OF_ES_QUERY = 10000
 DEFAULT_ES_NULL_VALUE = 'N/A'
 
-TRAVIS_ENV = False
+CI_ENV = False
 
 CITATION_STYLES_REPO_URL = 'https://github.com/CenterForOpenScience/styles/archive/88e6ed31a91e9f5a480b486029cda97b535935d4.zip'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

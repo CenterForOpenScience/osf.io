@@ -167,23 +167,3 @@ class StorageAddonUsageReporter(DailyReporter):
             report_date=date,
             usage_by_addon=usage_by_addon,
         )]
-
-    def keen_events_from_report(self, report):
-        events = [
-            {
-                'provider': {
-                    'name': addon_usage.addon_shortname,
-                },
-                'users': {
-                    'enabled': addon_usage.enabled_usersettings,
-                    'linked': addon_usage.linked_usersettings,
-                },
-                'nodes': {
-                    'connected': addon_usage.connected_nodesettings,
-                    'deleted': addon_usage.deleted_nodesettings,
-                    'disconnected': addon_usage.disconnected_nodesettings
-                },
-            }
-            for addon_usage in report.usage_by_addon
-        ]
-        return {'addon_snapshot': events}

@@ -7,11 +7,10 @@ from api.base.exceptions import (
 )
 from api.base.serializers import (
     VersionedDateTimeField, HideIfRegistration, IDField,
-    JSONAPIRelationshipSerializer,
     JSONAPISerializer, LinksField,
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
-    WaterbutlerLink, relationship_diff, BaseAPISerializer,
+    WaterbutlerLink, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
     ValuesListField, TargetField,
 )
@@ -21,6 +20,7 @@ from api.base.utils import (
     get_user_auth, is_truthy,
 )
 from api.base.versioning import get_kebab_snake_case_field
+from api.institutions.utils import update_institutions
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
@@ -34,7 +34,7 @@ from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
 from osf.exceptions import NodeStateError
 from osf.models import (
-    Comment, DraftRegistration, ExternalAccount, Institution,
+    Comment, DraftRegistration, ExternalAccount,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
     Registration, Node,
@@ -50,44 +50,6 @@ class RegistrationProviderRelationshipField(RelationshipField):
 
     def to_internal_value(self, data):
         return self.get_object(data)
-
-
-def get_institutions_to_add_remove(institutions, new_institutions):
-    diff = relationship_diff(
-        current_items={inst._id: inst for inst in institutions.all()},
-        new_items={inst['_id']: inst for inst in new_institutions},
-    )
-
-    insts_to_add = []
-    for inst_id in diff['add']:
-        inst = Institution.load(inst_id)
-        if not inst:
-            raise exceptions.NotFound(detail=f'Institution with id "{inst_id}" was not found')
-        insts_to_add.append(inst)
-
-    return insts_to_add, diff['remove'].values()
-
-
-def update_institutions(node, new_institutions, user, post=False):
-    add, remove = get_institutions_to_add_remove(
-        institutions=node.affiliated_institutions,
-        new_institutions=new_institutions,
-    )
-
-    if not post:
-        for inst in remove:
-            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied(
-                    detail=f'User needs to be affiliated with {inst.name}',
-                )
-            node.remove_affiliated_institution(inst, user)
-
-    for inst in add:
-        if not user.is_affiliated_with_institution(inst):
-            raise exceptions.PermissionDenied(
-                detail=f'User needs to be affiliated with {inst.name}',
-            )
-        node.add_affiliated_institution(inst, user)
 
 
 class RegionRelationshipField(RelationshipField):
@@ -1483,13 +1445,10 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
             },
         )
 
-class InstitutionRelated(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='_id', required=False, allow_null=True)
-    class Meta:
-        type_ = 'institutions'
-
 
 class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
+    from api.institutions.serializers import InstitutionRelated  # Avoid circular import
+
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({
         'self': 'get_self_url',
