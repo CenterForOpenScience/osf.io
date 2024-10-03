@@ -18,6 +18,7 @@ from framework.auth.core import Auth
 from osf.models import (
     NodeLicense,
     PreprintContributor,
+    PreprintLog
 )
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
@@ -1200,6 +1201,47 @@ class TestPreprintUpdate:
         assert preprint.data_links == initial_data_links
 
         assert preprint.has_data_links != 'no'
+
+    def test_update_has_data_links_no_with_empty_data_links(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'has_data_links': 'no',
+                'data_links': []
+            }
+        )
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_data_links'] == 'no'
+        assert res.json['data']['attributes']['data_links'] == []
+
+        preprint.reload()
+        assert preprint.has_data_links == 'no'
+        assert preprint.data_links == []
+
+    def test_update_has_prereg_links_no_with_empty_prereg_links(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'has_prereg_links': 'no',
+                'prereg_links': [],
+                'prereg_link_info': ''
+            }
+        )
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_prereg_links'] == 'no'
+        assert res.json['data']['attributes']['prereg_links'] == []
+        assert res.json['data']['attributes']['prereg_link_info'] == ''
+
+        preprint.reload()
+        assert preprint.has_prereg_links == 'no'
+        assert preprint.prereg_links == []
+        assert preprint.prereg_link_info == ''
 
     def test_sloan_updates(self, app, user, preprint, url):
         """
