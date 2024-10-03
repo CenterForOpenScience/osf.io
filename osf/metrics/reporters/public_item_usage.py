@@ -18,6 +18,8 @@ from ._base import MonthlyReporter
 
 _CHUNK_SIZE = 500
 
+_MAX_CARDINALITY_PRECISION = 40000  # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html#_precision_control
+
 
 class _SkipItem(Exception):
     pass
@@ -142,7 +144,7 @@ class PublicItemUsageReporter(MonthlyReporter):
             'agg_session_count',
             'cardinality',
             field='session_id',
-            precision_threshold=40000,  # maximum precision
+            precision_threshold=_MAX_CARDINALITY_PRECISION,
         )
         return _search
 
@@ -185,7 +187,7 @@ class PublicItemUsageReporter(MonthlyReporter):
             'agg_session_count',
             'cardinality',
             field='session_id',
-            precision_threshold=40000,  # maximum precision
+            precision_threshold=_MAX_CARDINALITY_PRECISION,
         )
         _response = _search.execute()
         return _response.aggregations.agg_session_count.value
@@ -243,7 +245,7 @@ def _iter_composite_buckets(search: edsl.Search, composite_agg_name: str):
     updates the search in-place for subsequent pages
     '''
     while True:
-        _page_response = search.execute(ignore_cache=True)
+        _page_response = search.execute(ignore_cache=True)  # reused search object has the previous page cached
         try:
             _agg_result = _page_response.aggregations[composite_agg_name]
         except KeyError:
