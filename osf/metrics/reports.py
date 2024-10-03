@@ -1,12 +1,17 @@
+from __future__ import annotations
 from collections import abc
 import datetime
 
 from django.dispatch import receiver
 from elasticsearch6_dsl import InnerDoc
 from elasticsearch_metrics import metrics
-from elasticsearch_metrics.signals import pre_save as metrics_pre_save
+from elasticsearch_metrics.signals import (
+    pre_save as metrics_pre_save,
+    post_save as metrics_post_save,
+)
 
 from osf.metrics.utils import stable_key, YearMonth
+from website import settings as website_settings
 
 
 class ReportInvalid(Exception):
@@ -285,3 +290,49 @@ class InstitutionMonthlySummaryReport(MonthlyReport):
     public_file_count = metrics.Long()
     monthly_logged_in_user_count = metrics.Long()
     monthly_active_user_count = metrics.Long()
+
+
+class PublicItemUsageReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'item_osfid')
+
+    # where noted, fields correspond to defined terms from COUNTER
+    # https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
+    item_osfid = metrics.Keyword()                    # counter:Item
+    item_type = metrics.Keyword(multi=True)           # counter:Data-Type
+    provider_id = metrics.Keyword(multi=True)         # counter:Database(?)
+    platform_iri = metrics.Keyword(multi=True)        # counter:Platform
+
+    # view counts include views on components or files contained by this item
+    view_count = metrics.Long()                       # counter:Total_Item_Investigations
+    view_session_count = metrics.Long()               # counter:Unique_Item_Investigations
+
+    # download counts of this item only (not including contained components or files)
+    download_count = metrics.Long()                   # counter:Total_Item_Requests
+    download_session_count = metrics.Long()           # counter:Unique_Item_Requests
+
+    @classmethod
+    def for_last_month(cls, item_osfid: str) -> PublicItemUsageReport | None:
+        _search = (
+            PublicItemUsageReport.search()
+            .filter('term', item_osfid=item_osfid)
+            # only last month's report
+            .filter('range', report_yearmonth={
+                'gte': 'now-1M/M',
+                'lt': 'now/M',
+            })
+            .sort('-report_yearmonth')
+            [:1]
+        )
+        _response = _search.execute()
+        return _response[0] if _response else None
+
+
+@receiver(metrics_post_save, sender=PublicItemUsageReport)
+def update_supplementary_metadata(sender, instance, **kwargs):
+    if website_settings.SHARE_ENABLED:
+        from api.share.utils import task__update_share
+        task__update_share.apply_async(
+            args=(instance.item_osfid,),
+            kwargs={'is_supplementary': True, 'is_backfill': True},
+            countdown=30,  # delay 30 seconds; plenty of time for index refresh
+        )

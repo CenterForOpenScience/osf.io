@@ -27,6 +27,7 @@ from osf.metadata.rdfutils import (
     without_namespace,
     smells_like_iri,
 )
+from osf.metrics.reports import PublicItemUsageReport
 from osf.utils import workflows as osfworkflows
 from osf.utils.outcomes import ArtifactTypes
 from website import settings as website_settings
@@ -52,6 +53,13 @@ def osfmap_for_type(rdftype_iri: str):
         return OSFMAP[rdftype_iri]
     except KeyError:
         raise ValueError(f'invalid OSFMAP type! expected one of {set(OSFMAP.keys())}, got {rdftype_iri}')
+
+
+def osfmap_supplement_for_type(rdftype_iri: str):
+    try:
+        return OSFMAP_SUPPLEMENT[rdftype_iri]
+    except KeyError:
+        return {}
 
 
 ##### END "public" api #####
@@ -208,6 +216,27 @@ OSFMAP = {
         FOAF.name: None,
         OSF.affiliation: None,
         OWL.sameAs: None,
+    },
+}
+
+OSFMAP_SUPPLEMENT = {
+    OSF.Project: {
+        OSF.usage: None,
+    },
+    OSF.ProjectComponent: {
+        OSF.usage: None,
+    },
+    OSF.Registration: {
+        OSF.usage: None,
+    },
+    OSF.RegistrationComponent: {
+        OSF.usage: None,
+    },
+    OSF.Preprint: {
+        OSF.usage: None,
+    },
+    OSF.File: {
+        OSF.usage: None,
     },
 }
 
@@ -1029,3 +1058,23 @@ def gather_cedar_templates(focus):
         template_iri = rdflib.URIRef(record.get_template_semantic_iri())
         yield (OSF.hasCedarTemplate, template_iri)
         yield (template_iri, DCTERMS.title, record.get_template_name())
+
+
+@gather.er(OSF.usage)
+def gather_last_month_usage(focus):
+    _usage_report = PublicItemUsageReport.for_last_month(
+        item_osfid=osfguid_from_iri(focus.iri),
+    )
+    if _usage_report is not None:
+        _usage_report_ref = rdflib.BNode()
+        yield (OSF.usage, _usage_report_ref)
+        yield (_usage_report_ref, DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN.rstrip('/')))
+        yield (_usage_report_ref, FOAF.primaryTopic, focus.iri)
+        yield (_usage_report_ref, DCTERMS.temporal, rdflib.Literal(
+            str(_usage_report.report_yearmonth),
+            datatype=rdflib.XSD.gYearMonth,
+        ))
+        yield (_usage_report_ref, OSF.viewCount, _usage_report.view_count)
+        yield (_usage_report_ref, OSF.viewSessionCount, _usage_report.view_session_count)
+        yield (_usage_report_ref, OSF.downloadCount, _usage_report.download_count)
+        yield (_usage_report_ref, OSF.downloadSessionCount, _usage_report.download_session_count)
