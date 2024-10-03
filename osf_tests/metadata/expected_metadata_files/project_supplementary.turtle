@@ -2,13 +2,19 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<http://localhost:5000/w2ibb> osf:usage [ dcterms:temporal "2123-05"^^xsd:gYearMonth ;
+<http://localhost:5000/w2ibb> osf:hasOsfAddon <urn:osf.io/addons/gitlab> ;
+    osf:usage [ dcterms:temporal "2123-05"^^xsd:gYearMonth ;
             dcat:accessService <http://localhost:5000> ;
             foaf:primaryTopic <http://localhost:5000/w2ibb> ;
             osf:downloadCount 3 ;
             osf:downloadSessionCount 2 ;
             osf:viewCount 7 ;
             osf:viewSessionCount 5 ] .
+
+<urn:osf.io/addons/gitlab> a osf:AddonImplementation ;
+    skos:altLabel "gitlab" ;
+    skos:prefLabel "GitLab" .
 
