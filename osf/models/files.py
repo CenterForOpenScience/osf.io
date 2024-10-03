@@ -12,7 +12,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
 
-from api.share.utils import update_share
 from framework.analytics import get_basic_counters
 from framework import sentry
 from .base import BaseModel, OptionalGuidMixin, ObjectIDMixin
@@ -447,6 +446,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return False
 
     def update_search(self):
+        from api.share.utils import update_share
         update_share(self)
         from website import search
         try:

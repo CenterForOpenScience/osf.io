@@ -34,7 +34,6 @@ from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
-from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.util.metrics import provider_source_tag
@@ -54,7 +53,6 @@ from osf.exceptions import (
     TagNotFoundError
 )
 from django.contrib.postgres.fields import ArrayField
-from api.share.utils import update_share
 
 logger = logging.getLogger(__name__)
 
@@ -633,7 +631,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def get_doi_client(self):
         if settings.CROSSREF_URL:
             if self.provider._id == 'ecsarxiv':
+                from website.identifiers.clients import ECSArXivCrossRefClient
                 return ECSArXivCrossRefClient(base_url=settings.CROSSREF_URL)
+            from website.identifiers.clients import CrossRefClient
             return CrossRefClient(base_url=settings.CROSSREF_URL)
         else:
             return None
@@ -911,6 +911,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @classmethod
     def bulk_update_search(cls, preprints, index=None):
+        from api.share.utils import update_share
         for _preprint in preprints:
             update_share(_preprint)
         from website import search
@@ -922,6 +923,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             log_exception(e)
 
     def update_search(self):
+        from api.share.utils import update_share
         update_share(self)
         from website import search
         try:

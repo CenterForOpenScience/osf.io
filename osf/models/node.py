@@ -63,7 +63,6 @@ from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
-from website.identifiers.clients import DataCiteClient
 from osf.utils.permissions import (
     ADMIN,
     ADMIN_NODE,
@@ -2338,6 +2337,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return oauth_scopes.CoreScopes.NODE_FILE_WRITE
 
     def get_doi_client(self):
+        from website.identifiers.clients import DataCiteClient
         try:
             return DataCiteClient(self)
         except ImproperlyConfigured:
