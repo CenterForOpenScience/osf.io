@@ -1189,6 +1189,7 @@ class TestUnregisteredUser:
         assert 'token' in data
         assert data['email'] == email
         assert data == unreg_user.get_unclaimed_record(project._primary_key)
+        assert f'source:unregistered_created|{referrer._id}' in unreg_user.system_tags
 
         # test_unreg_moderator
         data = unreg_moderator.unclaimed_records[provider._id]
@@ -1197,6 +1198,7 @@ class TestUnregisteredUser:
         assert 'token' in data
         assert data['email'] == email
         assert data == unreg_moderator.get_unclaimed_record(provider._id)
+        assert f'source:unregistered_created|{referrer._id}' in unreg_user.system_tags
 
     def test_get_claim_url(self, unreg_user, unreg_moderator, project, provider):
         # test_unreg_contrib

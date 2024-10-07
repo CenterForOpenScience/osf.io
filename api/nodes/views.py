@@ -8,7 +8,7 @@ from django.apps import apps
 from django.db.models import F, Max, Q, Subquery
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import generics, permissions as drf_permissions, exceptions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
@@ -60,6 +60,7 @@ from api.base.views import (
     WaterButlerMixin,
 )
 from api.base.waffle_decorators import require_flag
+from api.base.permissions import WriteOrPublicForRelationshipInstitutions
 from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
 from api.cedar_metadata_records.utils import can_view_record
 from api.citations.utils import render_citation
@@ -69,6 +70,7 @@ from api.comments.serializers import (
     NodeCommentSerializer,
 )
 from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
+from api.draft_registrations.permissions import DraftRegistrationPermission
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.files import annotations as file_annotations
 from api.identifiers.serializers import NodeIdentifierSerializer
@@ -78,7 +80,6 @@ from api.logs.serializers import NodeLogSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
-    IsAdminContributor,
     IsPublic,
     AdminOrPublic,
     WriteAdmin,
@@ -90,7 +91,6 @@ from api.nodes.permissions import (
     NodeGroupDetailPermissions,
     IsContributorOrGroupMember,
     AdminDeletePermissions,
-    WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
@@ -629,7 +629,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     Use DraftRegistrationsList endpoint instead.
     """
     permission_classes = (
-        IsAdminContributor,
+        DraftRegistrationPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -652,8 +652,11 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
     # overrides ListCreateAPIView
     def get_queryset(self):
+        user = self.request.user
         node = self.get_node()
-        return node.draft_registrations_active
+        if user.is_anonymous:
+            raise exceptions.NotAuthenticated()
+        return user.draft_registrations_active.filter(branched_from=node)
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
@@ -663,9 +666,9 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     Use DraftRegistrationDetail endpoint instead.
     """
     permission_classes = (
+        DraftRegistrationPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        IsAdminContributor,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 

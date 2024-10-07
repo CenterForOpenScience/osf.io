@@ -150,6 +150,9 @@ class ApiAppTestCase(unittest.TestCase):
 class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
+        if settings.SEARCH_ENGINE is None:
+            return
+
         settings.ELASTIC_INDEX = uuid.uuid1().hex
         settings.ELASTIC_TIMEOUT = 60
 
@@ -163,7 +166,8 @@ class SearchTestCase(unittest.TestCase):
 
     def tearDown(self):
         super().tearDown()
-
+        if settings.SEARCH_ENGINE is None:
+            return
         from website.search import elastic_search
         elastic_search.delete_index(settings.ELASTIC_INDEX)
 

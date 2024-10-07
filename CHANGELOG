@@ -2,6 +2,25 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+24.07.0 (2024-09-19)
+====================
+
+- Preprints Affiliation Project BE Release
+
+24.06.0 (2024-09-12)
+====================
+
+- Fix duplicate notifications for contributor-add failures
+- Allow Read and Write contributors to view a project's draft registrations
+- Change how files for withdrawn registrations are surfaced in the API
+- Fix date displayed in citation for a registration
+- New API endpoint /users/me/draft_preprints/
+- Add button to admin to move preprint from initial to pending
+- Update language in notifications to indicate preprint resubmission
+- Fix Preprint emails so they are sent as expected
+- Fix ORCiD email by sending them after changes are committed to DB
+- Remove references of TravisCI
+
 24.05.0 (2024-07-22)
 ====================
 - Bump base python version from py3.6 to py3.12.
