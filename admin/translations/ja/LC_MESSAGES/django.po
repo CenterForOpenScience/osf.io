@@ -3625,6 +3625,18 @@ msgstr "削除済みエクスポートデータ一覧"
 msgid "Revert"
 msgstr "復帰"
 
+msgid "User Identification Information"
+msgstr "ユーザー識別情報"
+
+msgid "Extended Storage"
+msgstr "拡張ストレージ"
+
+msgid "Export All Users Statistics (CSV)"
+msgstr "すべてのユーザー統計をエクスポート (CSV)"
+
+msgid "Return"
+msgstr "戻る"
+
 msgid "Delete Permanently"
 msgstr "恒久的に削除"
 

@@ -3685,3 +3685,6 @@ msgstr ""
 #: admin/templates/users/user_details.html:62
 msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr ""
+
+msgid "Return"
+msgstr ""

@@ -167,6 +167,19 @@
                   </div>
               </li>
           {% endif %}
+          {% if user.is_superuser %}
+             <li class="{% if request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
+                 <a href="{% url 'user_identification_information:user_identification_list' %}">
+                     <i class='fa fa-link'></i><span>{% trans "User Identification Information" %}</span>
+                 </a>
+             </li>
+          {% else %}
+             <li class="{% if request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
+                 <a href="{% url 'user_identification_information_admin:user_identification_list' %}">
+                     <i class='fa fa-link'></i><span>{% trans "User Identification Information" %}</span>
+                 </a>
+             </li>
+          {% endif %}
           {% if perms.osf.view_osfuser %}
               <li><a role="button" data-toggle="collapse" href="#collapseUsers">
                   <i class='fa fa-caret-down'></i> {% trans "RDM Users" %}

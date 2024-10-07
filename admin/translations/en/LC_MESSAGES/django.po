@@ -3737,3 +3737,18 @@ msgstr ""
 #: admin/templates/users/user_details.html:62
 msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr ""
+
+msgid "User Identification Information"
+msgstr ""
+
+msgid "Extended Storage"
+msgstr ""
+
+msgid "User Details"
+msgstr ""
+
+msgid "Export All Users Statistics (CSV)"
+msgstr ""
+
+msgid "Return"
+msgstr ""
