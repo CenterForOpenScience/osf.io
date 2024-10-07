@@ -15,7 +15,6 @@ from osf_tests.factories import (
     RegionFactory,
     InstitutionFactory,
 )
-from django.core.exceptions import PermissionDenied
 
 
 class TestInstitutionDefaultStorage(AdminTestCase):
