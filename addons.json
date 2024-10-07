@@ -182,5 +182,32 @@
         "s3",
         "s3compat",
         "owncloud"
-    ]
+    ],
+    "addons_has_max_keys": [
+        "s3",
+        "s3compat"
+    ],
+    "addons_folder_field": {
+        "s3": "folder_name",
+        "s3compat": "folder_name",
+        "s3compatb3": "folder_name",
+        "azureblobstorage": "folder_name",
+        "box": "folder_name",
+        "figshare": "folder_name",
+        "onedrivebusiness": "folder_name",
+        "swift": "folder_name",
+        "bitbucket": "repo",
+        "github": "repo",
+        "gitlab": "repo",
+        "googledrive": "folder_path",
+        "iqbrims": "folder_path",
+        "onedrive": "folder_path",
+        "dropbox": "folder",
+        "weko": "index_title",
+        "mendeley": "list_id",
+        "zotero": "list_id",
+        "owncloud": "folder_id",
+        "nextcloud": "folder_id",
+        "dataverse": "dataverse"
+    }
 }

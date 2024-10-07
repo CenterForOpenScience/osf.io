@@ -225,8 +225,13 @@ msgid ""
 "browser menu."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:47
-#: addons/metadata/static/metadata-fields.js:220
+#: addons/metadata/static/metadata-fields.js:55
+#, python-format
+msgid "One of this field or \"%s\" field must be filled."
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:59
+#: addons/metadata/static/metadata-fields.js:250
 msgid "This field can't be blank."
 msgstr ""
 
@@ -7485,4 +7490,13 @@ msgid "Cannot be restored because export data does not exist"
 msgstr ""
 
 msgid "Institution does not exist"
+msgstr ""
+
+msgid "Download as file for %1$s logs"
+msgstr ""
+
+msgid "Downloading"
+msgstr ""
+
+msgid "Download failed."
 msgstr ""

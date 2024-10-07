@@ -4,6 +4,7 @@ import logging
 
 import requests
 from django.db import models
+from django.db.models import Q
 
 from addons.osfstorage.models import Region
 from api.base.utils import waterbutler_api_url_for
@@ -98,7 +99,10 @@ class ExportDataRestore(base.BaseModel):
         base_file_nodes = BaseFileNode.objects.filter(
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
-            deleted=None)
+        ).exclude(
+            # exclude deleted files
+            Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+        )
 
         total_size = 0
         total_file = 0
@@ -111,8 +115,8 @@ class ExportDataRestore(base.BaseModel):
                 'materialized_path': file.materialized_path,
                 'name': file.name,
                 'provider': file.provider,
-                'created_at': file.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at': file.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': str(file.created),
+                'modified_at': str(file.modified),
                 'project': {},
                 'tags': [],
                 'version': [],
@@ -162,8 +166,8 @@ class ExportDataRestore(base.BaseModel):
                 file_version_thru = version.get_basefilenode_version(file)
                 version_info = {
                     'identifier': version.identifier,
-                    'created_at': version.created.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at': version.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                    'created_at': str(version.created),
+                    'modified_at': str(version.modified),
                     'size': version.size,
                     'version_name': file_version_thru.version_name if file_version_thru else file.name,
                     'contributor': version.creator.username,

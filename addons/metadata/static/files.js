@@ -10,7 +10,7 @@ const logPrefix = '[metadata] ';
 const rdmGettext = require('js/rdmGettext');
 const _ = rdmGettext._;
 
-const metadataFields = require('./metadata-fields.js');
+const QuestionPage = require('./metadata-fields.js').QuestionPage;
 const WaterButlerCache = require('./wbcache.js').WaterButlerCache;
 const registrations = require('./registration.js');
 const RegistrationSchemas = registrations.RegistrationSchemas;
@@ -33,75 +33,12 @@ const osfBlock = {
 
 const METADATA_CACHE_EXPIRATION_MSEC = 1000 * 60 * 5;
 
-
-function ERad() {
-  var self = this;
-
-  self.candidates = null;
-
-  self.load = function(baseUrl, callback) {
-    var url = baseUrl + 'erad/candidates';
-    console.log(logPrefix, 'loading: ', url);
-
-    return $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function (data) {
-      console.log(logPrefix, 'loaded: ', data);
-      self.candidates = ((data.data || {}).attributes || {}).records;
-      callback();
-    }).fail(function(xhr, status, error) {
-      $osf.growl('Error', 'Error while retrieving erad candidates: ' + xhr.status);
-      Raven.captureMessage('Error while retrieving erad candidates', {
-          extra: {
-              url: url,
-              status: status,
-              error: error
-          }
-      });
-      callback();
-    });
-  };
-}
-
-function FileMetadataSuggestion(baseUrl) {
-  var self = this;
-
-  self.suggest = function(filepath, format) {
-    var url = baseUrl + 'file_metadata/suggestions/' + encodeURI(filepath);
-    return $.ajax({
-      url: url,
-      type: 'GET',
-      dataType: 'json',
-      data: {
-        format: format
-      }
-    }).catch(function(xhr, status, error) {
-      $osf.growl('Error', 'Error while retrieving file metadata suggestions: ' + xhr.status);
-      Raven.captureMessage('Error while retrieving file metadata suggestions', {
-        extra: {
-          url: url,
-          status: status,
-          error: error
-        }
-      });
-      return Promise.reject({xhr: xhr, status: status, error: error});
-    }).then(function (data) {
-      console.log(logPrefix, 'suggestion: ', data);
-      return ((data.data || {}).attributes || {}).suggestions || [];
-    });
-  };
-}
-
 function MetadataButtons() {
   var self = this;
   self.baseUrl = contextVars.node.urls.api + 'metadata/';
   self.loading = null;
   self.contexts = null;
   self.loadingMetadatas = {};
-  self.erad = new ERad();
-  self.fileMetadataSuggestion = new FileMetadataSuggestion(self.baseUrl);
   self.currentItem = null;
   self.registrationSchemas = new RegistrationSchemas();
   self.draftRegistrations = new DraftRegistrations();
@@ -124,11 +61,7 @@ function MetadataButtons() {
       callback(path);
     };
     self.registrationSchemas.load(function() {
-      self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function(projectMetadata) {
-        if (projectMetadata && projectMetadata.editable) {
-          self.erad.load(self.baseUrl, loadedCallback);
-          return;
-        }
+      self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function() {
         loadedCallback();
       });
     });
@@ -232,68 +165,16 @@ function MetadataButtons() {
     });
   };
 
+  self.lastQuestionPage = null;
   self.lastMetadata = null;
   self.lastFields = null;
   self.currentSchemaId = null;
 
-  self.createFields = function(schema, item, options, callback) {
-    const fields = [];
-    const itemData = options.multiple ? {} : item.data || {};
-    (schema.pages || []).forEach(function(page) {
-      (page.questions || []).forEach(function(question) {
-        if (!question.qid || !question.qid.match(/^grdm-file:.+/)) {
-          return;
-        }
-        const value = itemData[question.qid];
-        const field = metadataFields.createField(
-          self.erad,
-          self.fileMetadataSuggestion,
-          question,
-          value,
-          options,
-          callback
-        );
-        fields.push({ field: field, question: question });
-      });
-    });
-    return fields;
+  self.createQuestionPage = function(schema, item, options) {
+    const questionPage = new QuestionPage(schema, item, options);
+    questionPage.create();
+    return questionPage;
   };
-
-  self.fieldsChanged = function(event, options) {
-    if (!self.lastFields) {
-      return;
-    }
-    const fieldSetsAndValues = [];
-    self.lastFields.forEach(function(fieldSet) {
-      const value = fieldSet.field.getValue(fieldSet.input);
-      fieldSetsAndValues.push({ fieldSet: fieldSet, value: value });
-    });
-    fieldSetsAndValues.forEach(function(fieldSetAndValue) {
-      const fieldSet = fieldSetAndValue.fieldSet;
-      const value = fieldSetAndValue.value;
-      var error = null;
-      try {
-        metadataFields.validateField(
-          self.erad,
-          fieldSet.question,
-          value,
-          fieldSetsAndValues,
-          options
-        );
-      } catch(e) {
-        error = e.message;
-      }
-      if (fieldSet.lastError == error) {
-        return;
-      }
-      fieldSet.lastError = error;
-      if (error) {
-        fieldSet.errorContainer.text(error).show()
-      } else {
-        fieldSet.errorContainer.hide().text('')
-      }
-    });
-  }
 
   self.prepareFields = function(context, container, schema, filepath, fileitem, options) {
     var lastMetadataItem = {};
@@ -303,8 +184,7 @@ function MetadataButtons() {
         return resolved === schema.id;
       })[0] || {};
     }
-    container.empty();
-    const fields = self.createFields(
+    self.lastQuestionPage = self.createQuestionPage(
       schema.attributes.schema,
       lastMetadataItem,
       {
@@ -314,23 +194,14 @@ function MetadataButtons() {
         filepath: filepath,
         wbcache: context.wbcache,
         fileitem: fileitem
-      },
-      self.fieldsChanged
+      }
     );
-    self.lastFields = [];
-    fields.forEach(function(fieldSet) {
-      const errorContainer = $('<div></div>')
-        .css('color', 'red').hide();
-      const input = fieldSet.field.addElementTo(container, errorContainer);
-      self.lastFields.push({
-        field: fieldSet.field,
-        question: fieldSet.question,
-        input: input,
-        lastError: null,
-        errorContainer: errorContainer
-      });
+    self.lastFields = self.lastQuestionPage.fields;
+    container.empty();
+    self.lastFields.forEach(function(field) {
+      container.append(field.element);
     });
-    self.fieldsChanged(null, options);
+    self.lastQuestionPage.validateAll();
   }
 
   self.findSchemaById = function(schemaId) {
@@ -624,8 +495,8 @@ function MetadataButtons() {
       });
     }
     var jsonObject = {};
-    (self.lastFields || []).forEach(function(fieldSet) {
-      jsonObject[fieldSet.question.qid] = fieldSet.field.getValue(fieldSet.input);
+    (self.lastFields || []).forEach(function(field) {
+      jsonObject[field.question.qid] = field.getValue();
     });
     const text = JSON.stringify(jsonObject);
     navigator.clipboard.writeText(text).then(function() {
@@ -668,10 +539,14 @@ function MetadataButtons() {
   self.setMetadataFromJson = function(jsonText) {
     try {
       const jsonObject = JSON.parse(jsonText);
-      (self.lastFields || []).forEach(function(fieldSet) {
-        fieldSet.field.setValue(fieldSet.input, jsonObject[fieldSet.question.qid] || '');
+      (self.lastFields || []).forEach(function(field) {
+        field.setValue(jsonObject[field.question.qid] || '');
       });
+      if (self.lastQuestionPage) {
+        self.lastQuestionPage.validateAll();
+      }
     } catch(err) {
+      console.error(logPrefix, 'Could not paste text', err);
       $osf.growl('Error', _('Could not paste text'));
       Raven.captureMessage(_('Could not paste text'), {
         extra: {
@@ -1021,65 +896,31 @@ function MetadataButtons() {
   };
 
   self.prepareReviewFields = function(container, draftSelectionContainer, schema, metadataItem) {
-    const fields = self.createFields(
+    self.lastQuestionPage = self.createQuestionPage(
       schema.attributes.schema,
       metadataItem,
       {
         readonly: true,
       }
     );
+    self.lastFields = self.lastQuestionPage.fields;
     container.empty();
-    var errors = 0;
-    self.lastFields = [];
-    const fieldSetsAndValues = [];
-    fields.forEach(function(fieldSet) {
-      const errorContainer = $('<div></div>')
-        .css('color', 'red').hide();
-      const input = fieldSet.field.addElementTo(container, errorContainer);
-      const value = fieldSet.field.getValue(input);
-      fieldSetsAndValues.push({
-        fieldSet: {
-          field: fieldSet.field,
-          question: fieldSet.question,
-          input: input,
-          lastError: null,
-          errorContainer: errorContainer
-        },
-        value: value
-      });
+    self.lastFields.forEach(function(field) {
+      container.append(field.element);
     });
-    fieldSetsAndValues.forEach(function(fieldSetAndValue) {
-      const fieldSet = fieldSetAndValue.fieldSet;
-      const value = fieldSetAndValue.value;
-      var error = null;
-      try {
-        metadataFields.validateField(
-          self.erad,
-          fieldSet.question,
-          value,
-          fieldSetsAndValues
-        );
-      } catch(e) {
-        error = e.message;
-      }
-      if (error) {
-        fieldSet.errorContainer.text(error).show()
-        errors ++;
-      } else {
-        fieldSet.errorContainer.hide().text('')
-      }
-      self.lastFields.push(fieldSet);
-    });
+    self.lastQuestionPage.validateAll();
     const message = $('<div></div>');
-    if (errors) {
+    if (self.lastQuestionPage.hasValidationError) {
       message.text(_('There are errors in some fields.')).css('color', 'red');
     }
     if (self.selectDraftDialog) {
-      self.selectDraftDialog.select.attr('disabled', errors > 0);
+      self.selectDraftDialog.select.attr('disabled', self.lastQuestionPage.hasValidationError);
     }
     draftSelectionContainer.empty();
     draftSelectionContainer.append(message);
-    draftSelectionContainer.append(self.createDraftsSelect(schema, errors > 0).css('margin', '1em 0'));
+    draftSelectionContainer.append(
+      self.createDraftsSelect(schema, self.lastQuestionPage.hasValidationError).css('margin', '1em 0')
+    );
   };
 
   self.openDraftModal = function(currentMetadata) {
@@ -1429,6 +1270,8 @@ function MetadataButtons() {
           .addClass('metadata-indicator')
           .css('margin-left', '1em');
         text.append(indicator);
+      } else {
+        indicator.empty();
       }
       const filepath = item.data.provider + (item.data.materialized || '/');
       const metadata = self.findMetadataByPath(context.nodeId, filepath);
@@ -1445,7 +1288,6 @@ function MetadataButtons() {
         return false;
       }
       if (metadata) {
-        indicator.empty();
         indicator.append($('<span></span>')
           .text('{}')
           .css('font-weight', 'bold')
@@ -1453,7 +1295,6 @@ function MetadataButtons() {
           .attr('title', _('Metadata is defined')));
         self.setValidatedFile(context, filepath, item, metadata);
       } else {
-        indicator.empty();
         indicator.append($('<span></span>')
           .text('{}')
           .css('font-weight', 'bold')
@@ -1542,9 +1383,73 @@ function MetadataButtons() {
     const observer = new MutationObserver(refreshIfToolbarExists);
     const toggleBar = $('#toggleBar').get(0);
     observer.observe(toggleBar, {attributes: false, childList: true, subtree: false});
+
+    function resolveRows(items) {
+      if (items.length === 0) {
+        return;
+      }
+      const remains = items.filter(function(item) {
+        const text = $('.td-title.tb-td[data-id="' + item.id + '"] .title-text');
+        if (text.length === 0) {
+          return true;
+        }
+        const context = self.findContextByNodeId(item.data.nodeId);
+        if (!context) {
+          self.loadMetadata(item.data.nodeId, item.data.nodeApiUrl + 'metadata/');
+          return true;
+        }
+        if (!item.data.materialized) {
+          context.wbcache.setProvider(item);
+        }
+        return false;
+      });
+      if (remains.length === 0) {
+        return;
+      }
+      setTimeout(function() {
+        resolveRows(remains);
+      }, 1000);
+    }
+
     self.initBase(function(p) {
       path = p;
       refreshIfToolbarExists();
+      resolveRows(self.reservedRows);
+    });
+
+    Fangorn.config = new Proxy(Fangorn.config, {
+      get: function(targetprov, name) {
+        var obj = targetprov[name];
+        if (obj === undefined) {
+          obj = {};
+        }
+        return new Proxy(obj, {
+          get: function(target, propname) {
+            if (propname == 'resolveRows') {
+              return function(item) {
+                var base = null;
+                if (target[propname] !== undefined) {
+                  const prop = target[propname];
+                  const baseRows = typeof prop === 'function' ? prop.apply(this, [item]) : prop;
+                  if (baseRows !== undefined) {
+                    base = baseRows;
+                  }
+                }
+                if (self.contexts) {
+                  setTimeout(function() {
+                    resolveRows([item]);
+                  }, 500);
+                } else {
+                  self.reservedRows.push(item);
+                }
+                return base;
+              };
+            } else {
+              return target[propname];
+            }
+          }
+        });
+      }
     });
   }
 
@@ -1633,7 +1538,7 @@ function MetadataButtons() {
                 }
                 const fromFilepath = from.data.provider + (from.data.materialized || '/');
                 const projectMetadata = context.projectMetadata;
-                const fromFilepaths = projectMetadata.files
+                var fromFilepaths = projectMetadata.files
                   .map(function(f) { return f.path; })
                   .filter(function(p) {
                     return p.substring(0, fromFilepath.length) === fromFilepath;
@@ -1642,30 +1547,66 @@ function MetadataButtons() {
                   return;
                 }
                 const toFilepath = item.data.provider + (item.data.materialized || '/');
-                const toFilepaths = fromFilepaths
+                var toFilepaths = fromFilepaths
                   .map(function(p) {
                     return toFilepath + p.replace(fromFilepath, '');
                   });
+                const toNodeId = item.data ? item.data.nodeId : null;
+                const fromNodeId = from.data ? from.data.nodeId : null;
+                if (!toNodeId) {
+                  console.log(logPrefix, 'toNodeId is null');
+                  return;
+                }
+                if (!fromNodeId) {
+                  console.log(logPrefix, 'fromNodeId is null');
+                  return;
+                }
+                var toContext = self.findContextByNodeId(toNodeId);
+                var fromContext = self.findContextByNodeId(fromNodeId);
+                if (!toContext) {
+                  console.log(logPrefix, 'toContext is null');
+                  return;
+                }
+                if (!fromContext) {
+                  console.log(logPrefix, 'fromContext is null');
+                  return;
+                }
                 // try reload project metadata
                 const interval = 250;
                 const maxRetry = 10;
+                const intervalIncrease = 250;
                 var retry = 0;
                 function tryLoadMetadata() {
-                  self.loadMetadata(context.nodeId, context.baseUrl, function() {
-                    const context2 = self.findContextByNodeId(context.nodeId);
+                  // Retrieve metadata for the destination project
+                  self.loadMetadata(toContext.nodeId, toContext.baseUrl, function() {
+                    const toProjectMetadata = self.findProjectMetadataByNodeId(toContext.nodeId);
                     const matches = toFilepaths
                       .map(function(p) {
-                        return context2.projectMetadata.files.find(function(f) { return f.path === p; });
+                        return toProjectMetadata.files.find(function(f) { return f.path === p; });
                       });
                     const unmatchCount = matches.filter(function(m) { return !m; }).length;
                     console.log(logPrefix, 'reloaded metadata: ', {
-                      context: context2,
+                      context: toContext,
                       unmatchCount: unmatchCount,
                       expectedFilepaths: toFilepaths
                     });
                     if (!unmatchCount) {
-                      context2.wbcache.clearCache();
-                      m.redraw();
+                      // Retrieve metadata for the source project
+                      self.loadMetadata(fromContext.nodeId, fromContext.baseUrl, function() {
+                        const fromProjectMetadata = self.findProjectMetadataByNodeId(fromContext.nodeId);
+                        const matches = fromFilepaths
+                          .map(function(p) {
+                            return fromProjectMetadata.files.find(function(f) { return f.path === p; });
+                          });
+                        const matchCount = matches.filter(function(m) { return m; }).length;
+                        console.log(logPrefix, 'reloaded metadata: ', {
+                          context: fromContext,
+                          matchCount: matchCount,
+                          expectedFilepaths: fromFilepaths
+                        });
+                        toContext.wbcache.clearCache();
+                        m.redraw();
+                      });
                       return;
                     }
                     retry += 1;
@@ -1674,7 +1615,7 @@ function MetadataButtons() {
                       return;
                     }
                     console.log(logPrefix, retry + 'th retry reload metadata after ' + interval + 'ms: ');
-                    setTimeout(tryLoadMetadata, interval);
+                    setTimeout(tryLoadMetadata, interval + retry * intervalIncrease);
                   });
                 }
                 setTimeout(tryLoadMetadata, interval);
@@ -1710,10 +1651,10 @@ function MetadataButtons() {
         data: {},
       };
       self.lastFields.forEach(function(field) {
-        metacontent.data[field.field.label] = {
+        metacontent.data[field.question.qid] = {
           extra: [],
           comments: [],
-          value: field.field.getValue(field.input)
+          value: field.getValue()
         };
       });
       metadata.items.unshift(metacontent);
@@ -1797,12 +1738,13 @@ function MetadataButtons() {
           data: Object.assign({}, oldMetacontent.data),
         };
         self.lastFields.forEach(function(field) {
-          const value = field.field.getValue(field.input);
-          const clear = field.field.checkedClear && field.field.checkedClear();
+          const value = field.getValue();
+          const clear = field.checkedClear();
+          const qid = field.question.qid;
           if (clear) {
-            delete metacontent.data[field.field.label];
+            delete metacontent.data[qid];
           } else if (value) {
-            metacontent.data[field.field.label] = {
+            metacontent.data[qid] = {
               extra: [],
               comments: [],
               value: value

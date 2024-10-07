@@ -126,6 +126,7 @@ def no_auto_transact():
     UserFactory()
     return 'error', 500
 
+
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
         original_user_count = OSFUser.objects.count()
@@ -1005,6 +1006,46 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res_data.get('url'), child_node.parent_node.url)
         mock_update_user_used_quota_method.assert_not_called()
 
+    def test_get_components(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
+                {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': True},
+            ]
+        )
+        linked_node = ProjectFactory(creator=self.user1)
+        project.add_node_link(linked_node, Auth(self.user1), save=True)
+        child_component = NodeFactory(creator=self.user1, parent=project)
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=self.auth)
+        res_data = res.json
+
+        assert_equal(res.status_code, 200)
+        assert_true(res_data['user']['can_sort'])
+        assert_equal(res_data['user']['permissions'], ['read', 'write', 'admin'])
+        assert_equal(len(res_data['nodes']), 2)
+
+    def test_get_components_returns_error_for_deleted_project(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        project.is_deleted = True
+        project.save()
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        res_data = res.json
+        assert_equal(res.status_code, 410)
+
+    def test_get_components_with_unauthenticated_user(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=Auth(), expect_errors=True)
+        res_data = res.json
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res_data['user']['permissions']), 0)
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -1843,6 +1884,47 @@ class TestUserProfile(OsfTestCase):
         self.user.erad = payload['erad']
 
         assert_true(self.user.social['researcherId'] is None)
+
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_unserialize_account_info_with_empty_body(self, mock_check_spam):
+        url = api_url_for('serialize_account_info')
+        jobs = [{
+            'institution': 'an institution',
+            'institution_ja': 'Institution',
+            'department': 'department A',
+            'department_ja': 'Department A',
+            'location': 'Anywhere',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }, {
+            'institution': 'another institution',
+            'institution_ja': 'Another Institution',
+            'department': 'department B',
+            'department_ja': 'Department B',
+            'location': 'Nowhere',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }]
+        self.user.jobs = jobs
+        self.user.save()
+
+        payload = None
+
+        res = self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        self.user.reload()
+        assert_equal(res.status_code, 400)
 
     def test_append_idp_attr_common(self):
         ext, created = UserExtendedData.objects.get_or_create(user=self.user)
@@ -2856,6 +2938,35 @@ class TestUserInviteViews(OsfTestCase):
         res = self.app.get(claim_url)
         assert_equal(res.status_code, 200)
 
+    def test_claim_user_activate_not_exist_uid(self):
+        self.referrer = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+        claim_url = '/user/{uid}/{pid}/claim/activate'.format(
+            uid='fake_uid',
+            pid=self.project._id,
+        )
+        res = self.app.get(claim_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_claim_user_activate_not_exist_pid(self):
+        self.referrer = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+
+        given_email = fake_email()
+        unreg_user = self.project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(self.project.creator),
+        )
+        unreg_user.save()
+
+        claim_url = '/user/{uid}/{pid}/claim/activate'.format(
+            uid=unreg_user._id,
+            pid='fake_pid',
+        )
+        res = self.app.get(claim_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_referrer(self, send_mail):
         project = ProjectFactory()
@@ -3373,6 +3484,7 @@ class TestPointerViews(OsfTestCase):
         node = ProjectFactory(creator=user)
         project.add_pointer(node, auth=Auth(user=user), save=save)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_write_contributor_can_remove_private_component_entry(self):
         """Ensure that write contributors see the button to delete a pointer,
             even if they cannot see what it is pointing at"""
@@ -3391,6 +3503,7 @@ class TestPointerViews(OsfTestCase):
         has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_true(has_controls)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
@@ -3406,6 +3519,7 @@ class TestPointerViews(OsfTestCase):
             '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(has_controls), 3)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
         user2 = AuthUserFactory()
@@ -3424,6 +3538,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(pointer_nodes), 1)
         assert_false(has_controls)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_read_contributor_cannot_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
@@ -5291,6 +5406,7 @@ class TestUnconfirmedUserViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
+
 class TestStaticFileViews(OsfTestCase):
 
     def test_robots_dot_txt(self):
@@ -5581,8 +5697,6 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-
-
     def test_preprint_provider_with_osf_domain(self):
         provider = PreprintProviderFactory(_id='osf', domain='https://rdm.nii.ac.jp/')
         preprint = PreprintFactory(provider=provider)
@@ -5608,6 +5722,7 @@ class TestResolveGuid(OsfTestCase):
 
         assert_equal(res.status_code, http_status.HTTP_410_GONE)
         assert_equal(res.request.path, '/{}/'.format(guid))
+
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 

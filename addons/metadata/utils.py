@@ -34,6 +34,30 @@ def _convert_metadata_grdm_files(value, questions):
         r.append(obj)
     return r
 
+def _to_jinja_dict(value):
+    if value is None:
+        return value
+    if not isinstance(value, dict):
+        return value
+    r = {}
+    r.update(value)
+    for key in value.keys():
+        r[key.replace('-', '_')] = value[key]
+    return r
+
+def _to_jinja_list(value):
+    if value is None:
+        return value
+    if not isinstance(value, list):
+        return value
+    r = []
+    for v in value:
+        if isinstance(v, dict):
+            r.append(_to_jinja_dict(v))
+            continue
+        r.append(v)
+    return r
+
 def _convert_metadata_value(key, value, questions):
     if 'value' not in value:
         return [('', value)]
@@ -44,6 +68,12 @@ def _convert_metadata_value(key, value, questions):
             questions[key]['type'] == 'string' and 'format' in questions[key] and \
             questions[key]['format'] == 'file-creators':
         return [('', json.loads(v) if v != '' else [])]
+    if key in questions and 'type' in questions[key] and \
+            questions[key]['type'] == 'object':
+        return [('', _to_jinja_dict(v))]
+    if key in questions and 'type' in questions[key] and \
+            questions[key]['type'] == 'array':
+        return [('', _to_jinja_list(v))]
     if key in questions and 'type' in questions[key] and \
             questions[key]['type'] == 'choose' and 'options' in questions[key]:
         values = [('', v)]

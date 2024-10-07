@@ -398,6 +398,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
         status = result[1]
         if status == http_status.HTTP_200_OK:
+            utils.update_nodes_storage(institution)
             utils.change_allowed_for_institutions(
                 institution, provider_short_name)
         return JsonResponse(result[0], status=status)

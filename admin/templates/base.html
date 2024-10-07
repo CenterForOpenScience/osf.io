@@ -167,6 +167,19 @@
                   </div>
               </li>
           {% endif %}
+          {% if user.is_superuser %}
+             <li class="{% if request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
+                 <a href="{% url 'user_identification_information:user_identification_list' %}">
+                     <i class='fa fa-link'></i><span>{% trans "User Identification Information" %}</span>
+                 </a>
+             </li>
+          {% else %}
+             <li class="{% if request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
+                 <a href="{% url 'user_identification_information_admin:user_identification_list' %}">
+                     <i class='fa fa-link'></i><span>{% trans "User Identification Information" %}</span>
+                 </a>
+             </li>
+          {% endif %}
           {% if perms.osf.view_osfuser %}
               <li><a role="button" data-toggle="collapse" href="#collapseUsers">
                   <i class='fa fa-caret-down'></i> {% trans "RDM Users" %}
@@ -215,14 +228,14 @@
                   </ul>
               </div>
           {% endif %}
-          {% if perms.osf.view_brands %}
+          {% if perms.osf.view_brand %}
               <li><a role="button" data-toggle="collapse" href="#collapseBrands">
                   <i class='fa fa-caret-down'></i> Brands
               </a></li>
               <div class="collapse" id="collapseBrands">
                   <ul class="sidebar-menu sidebar-menu-inner">
                       <li><a href="{% url 'brands:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
-                      {% if perms.osf.change_brands %}
+                      {% if perms.osf.modify_brand %}
                       <li><a href="{% url 'brands:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
                       {% endif %}
                   </ul>
@@ -360,7 +373,7 @@
             </li>
           {% endif %}
           {% if not user.is_superuser and user.is_staff %}
-            <li><a href="{% url 'institutions:statistical_status_default_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Quota for Institutional Storage" %}</span></a></li>
+            <li><a href="{% url 'institutions:statistical_status_default_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Quota for NII Storage" %}</span></a></li>
           {% endif %}
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>

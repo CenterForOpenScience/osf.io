@@ -2,6 +2,7 @@ import json
 import logging
 import mock
 import pytest
+import time
 import unittest
 from celery import states
 from celery.contrib.abortable import AbortableAsyncResult, AbortableTask, ABORTED
@@ -416,6 +417,7 @@ class TestSeparateFailedFiles(unittest.TestCase):
 
 class TestExportDataProcess(unittest.TestCase):
     def setUp(self):
+        super(TestExportDataProcess, self).setUp()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
@@ -489,7 +491,7 @@ class TestExportDataProcess(unittest.TestCase):
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -503,20 +505,23 @@ class TestExportDataProcess(unittest.TestCase):
             nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
 
     @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.delete_export_data_folder')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_export_data_process__raise_exception(
-            self, mock_export_data, mock_extract_json):
+            self, mock_export_data,
+            mock_extract_json,
+            mock_delete_export_data_folder,
+    ):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         mock_extract_json.side_effect = Exception('some error')
+        mock_delete_export_data_folder.side_effect = Exception('some os error')
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -538,10 +543,8 @@ class TestExportDataProcess(unittest.TestCase):
     def test_export_data_process__raise_task_aborted(
             self, mock_export_data, mock_extract_json):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         export_data_json = file_info_json = {}
 
         def do_something():
@@ -553,7 +556,7 @@ class TestExportDataProcess(unittest.TestCase):
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -570,6 +573,7 @@ class TestExportDataProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.delete_export_data_folder')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -577,21 +581,21 @@ class TestExportDataProcess(unittest.TestCase):
             self, mock_export_data,
             mock_extract_json,
             mock_create_export_data_folder,
+            mock_create_export_data_files_folder,
             mock_delete_export_data_folder
     ):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         export_data_json = file_info_json = {}
         mock_extract_json.return_value = export_data_json, file_info_json
-        mock_create_export_data_folder.return_value.status_code = status.HTTP_400_BAD_REQUEST
+        mock_create_export_data_folder.return_value.status_code = status.HTTP_201_CREATED
+        mock_create_export_data_files_folder.return_value.status_code = status.HTTP_400_BAD_REQUEST
         mock_delete_export_data_folder.return_value.status_code = status.HTTP_204_NO_CONTENT
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -601,12 +605,14 @@ class TestExportDataProcess(unittest.TestCase):
         if task_record_set:
             task_record = task_record_set.first()
             _task_result = json.loads(task_record.result)
-            nt.assert_equal(_task_result.get('exc_type'), 'Ignore')
+            nt.assert_equal(_task_result.get('exc_type'), 'ExportDataTaskException')
             nt.assert_equal(_task_result.get('exc_message'), export.MSG_EXPORT_STOPPED)
             nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
             nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
 
     @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_full_data_file')
+    @mock.patch(f'{EXPORT_DATA_PATH}.write_json_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.copy_export_data_file_to_location')
@@ -624,12 +630,13 @@ class TestExportDataProcess(unittest.TestCase):
             mock_copy_export_data_file_to_location,
             mock_upload_file_info_file,
             mock_upload_export_data_file,
+            mock_write_json_file,
+            mock_upload_file_info_full_data_file
     ):
+        mock_write_json_file.return_value = None
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         export_data_json = {
             'institution': {
                 'id': self.institution.id,
@@ -656,9 +663,79 @@ class TestExportDataProcess(unittest.TestCase):
         mock_copy_export_data_file_to_location.return_value.status_code = status.HTTP_201_CREATED
         mock_upload_file_info_file.return_value.status_code = status.HTTP_201_CREATED
         mock_upload_export_data_file.return_value.status_code = status.HTTP_201_CREATED
+        mock_upload_file_info_full_data_file.return_value.status_code = status.HTTP_201_CREATED
 
         _task_result = export.export_data_process(
-            self.task, self.cookies, self.export_data.id,
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
+        )
+        self.task.update_state(state=states.SUCCESS, meta=_task_result)
+
+        task_result = AbortableAsyncResult(self.task.request.id)
+        nt.assert_true(task_result.state in states.READY_STATES)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_COMPLETED)
+        nt.assert_equal(_task_result.get('message'), export.MSG_EXPORT_COMPLETED)
+        nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
+        nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
+        nt.assert_equal(_task_result.get('list_file_info_export_not_found'), [])
+        nt.assert_equal(_task_result.get('file_name_export_fail'), 'failed_files_export_{}_{}.csv'.format(
+            export_data_json.get('institution').get('guid'),
+            self.export_data.process_start_timestamp
+        ))
+
+    @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.write_json_file')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_file')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.copy_export_data_file_to_location')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.get_source_file_versions_min')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
+    def test_export_data_process__connection_timeout(
+            self, mock_export_data,
+            mock_extract_json,
+            mock_create_export_data_folder,
+            mock_create_export_data_files_folder,
+            mock_get_source_file_versions_min,
+            mock_copy_export_data_file_to_location,
+            mock_upload_file_info_file,
+            mock_upload_export_data_file,
+            mock_write_json_file,
+    ):
+        mock_write_json_file.return_value = None
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
+        export_data_json = {
+            'institution': {
+                'id': self.institution.id,
+                'guid': self.institution.guid,
+                'name': self.institution.name,
+            },
+            'process_start': '%Y-%m-%d %H:%M:%S',
+            'process_end': None,
+            'storage': {
+                'name': self.source.name,
+                'type': self.source.provider_full_name,
+            },
+            'projects_numb': 1,
+            'files_numb': 0,
+            'size': 0,
+            'file_path': self.export_data.get_file_info_file_path(),
+        }
+        file_info_json = {}
+        mock_extract_json.return_value = export_data_json, file_info_json
+        mock_create_export_data_folder.return_value.status_code = status.HTTP_201_CREATED
+        mock_create_export_data_files_folder.return_value.status_code = status.HTTP_201_CREATED
+        file_versions = []
+        mock_get_source_file_versions_min.return_value = file_versions
+        mock_copy_export_data_file_to_location.side_effect = Exception('ConnectionError')
+        mock_upload_file_info_file.return_value.status_code = status.HTTP_201_CREATED
+        mock_upload_export_data_file.return_value.status_code = status.HTTP_201_CREATED
+
+        _task_result = export.export_data_process(
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id
         )
         self.task.update_state(state=states.SUCCESS, meta=_task_result)
 
@@ -677,6 +754,7 @@ class TestExportDataProcess(unittest.TestCase):
 
 class TestExportDataRollbackProcess(unittest.TestCase):
     def setUp(self):
+        super(TestExportDataRollbackProcess, self).setUp()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
@@ -750,7 +828,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 export_data_task=self.other_task.request.id,
             )
 
@@ -767,16 +845,17 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
-    def test_export_data_rollback_process__raise_cannot_stop_stopped_process(
+    def test_export_data_rollback_process__raise_cannot_stop_stopping_process(
             self, mock_export_data):
-        self.export_data.status = ExportData.STATUS_STOPPED
+        # for export_data.status not in [STATUS_PENDING, STATUS_RUNNING, ExportData.STATUS_STOPPED]
+        self.export_data.status = ExportData.STATUS_STOPPING
         self.export_data.save()
         mock_export_data.filter.return_value.first.return_value = self.export_data
         mock_export_data.filter.return_value.exists.return_value = True
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 export_data_task=self.other_task.request.id,
             )
 
@@ -795,17 +874,43 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
-    def test_export_data_rollback_process__rollback_raise_exception(
+    def test_export_data_rollback_process__raise_cannot_stop_stopped_process(
             self, mock_export_data):
+        self.export_data.status = ExportData.STATUS_STOPPED
+        self.export_data.save()
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
+                export_data_task=self.other_task.request.id,
+            )
+
+        task_result = AbortableAsyncResult(self.task.request.id)
+        nt.assert_equal(task_result.state, states.FAILURE)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_STOPPED)
+        task_record_set = TaskResult.objects.filter(task_id=self.task.request.id)
+        if task_record_set:
+            task_record = task_record_set.first()
+            _task_result = json.loads(task_record.result)
+            nt.assert_equal(_task_result.get('exc_type'), 'ExportDataTaskException')
+            nt.assert_equal(_task_result.get('exc_message'), export.MSG_EXPORT_UNSTOPPABLE)
+            nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
+            nt.assert_equal(_task_result.get('export_data_task_id'), self.other_task.request.id)
+            nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
+
+    @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
+    def test_export_data_rollback_process__rollback_raise_exception(
+            self, mock_export_data):
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
+
+        with self.assertRaises(Ignore):
+            export.export_data_rollback_process(
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 is_rollback=True,
             )
 
@@ -825,19 +930,47 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
+    def test_export_data_rollback_process__rollback_stopped_process(
+            self, mock_export_data):
+        self.export_data.status = ExportData.STATUS_STOPPED
+        self.export_data.save()
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
+
+        with self.assertRaises(Ignore):
+            export.export_data_rollback_process(
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
+                is_rollback=True,
+            )
+
+        task_result = AbortableAsyncResult(self.task.request.id)
+        nt.assert_equal(task_result.state, states.FAILURE)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_STOPPED)
+        task_record_set = TaskResult.objects.filter(task_id=self.task.request.id)
+        if task_record_set:
+            task_record = task_record_set.first()
+            _task_result = json.loads(task_record.result)
+            nt.assert_equal(_task_result.get('exc_type'), 'ExportDataTaskException')
+            nt.assert_equal(_task_result.get('exc_message'), export.MSG_EXPORT_STOPPED)
+            nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
+            nt.assert_equal(_task_result.get('export_data_task_id'), None)
+            nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
+            nt.assert_equal(_task_result.get('traceback'), None)
+
+    @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_export_data_rollback_process__rollback_raise_stopped(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_204_NO_CONTENT
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 is_rollback=True,
             )
 
@@ -859,16 +992,14 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__rollback_raise_stopped_with_warning(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_400_BAD_REQUEST
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 is_rollback=True,
             )
 
@@ -890,15 +1021,13 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__return_stopped(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_204_NO_CONTENT
 
         _task_result = export.export_data_rollback_process(
-            self.task, self.cookies, self.export_data.id,
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             export_data_task=self.other_task.request.id,
         )
         self.task.update_state(state=states.SUCCESS, meta=_task_result)
@@ -918,15 +1047,13 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__return_stopped_with_warning(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_400_BAD_REQUEST
 
         _task_result = export.export_data_rollback_process(
-            self.task, self.cookies, self.export_data.id,
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             export_data_task=self.other_task.request.id,
         )
         self.task.update_state(state=states.SUCCESS, meta=_task_result)
@@ -937,7 +1064,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
         nt.assert_equal(_task_result.get('message'), export.MSG_EXPORT_FORCE_STOPPED)
         nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
         nt.assert_equal(_task_result.get('export_data_task_id'), self.other_task.request.id)
-        nt.assert_equal(_task_result.get('export_data_status'), ExportData.STATUS_ERROR)
+        nt.assert_equal(_task_result.get('export_data_status'), ExportData.STATUS_STOPPED)
         other_task_result = AbortableAsyncResult(self.other_task.request.id)
         nt.assert_equal(_task_result.get('export_data_task_result'), export.get_task_result(other_task_result.result))
 
@@ -987,7 +1114,7 @@ class TestExportDataBaseActionView(AdminTestCase):
         res = self.view.extract_input(self.request)
 
         nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_MISSING_REQUIRED_INPUT)
 
     def test_extract_input__not_exists_institution_id(self):
         self.request.data = {
@@ -998,8 +1125,8 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
+        nt.assert_equal(res.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_NOT_EXIST_INPUT)
 
     def test_extract_input__not_admin_not_superuser(self):
         self.user.is_staff = False
@@ -1013,7 +1140,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     def test_extract_input__admin_not_affiliated_institution_id(self):
@@ -1025,7 +1152,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     def test_extract_input__no_source_id(self):
@@ -1037,7 +1164,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_STORAGE)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_MISSING_REQUIRED_INPUT)
         nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_extract_input__not_exists_source_id(self):
@@ -1049,8 +1176,8 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_STORAGE)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_NOT_EXIST_INPUT)
+        nt.assert_equal(res.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_extract_input__not_allowed_source_id(self):
         self.request.data = {
@@ -1062,7 +1189,7 @@ class TestExportDataBaseActionView(AdminTestCase):
         res = self.view.extract_input(self.request)
 
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_STORAGE)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_extract_input__no_location_id(self):
         self.request.data = {
@@ -1073,7 +1200,7 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_LOCATION)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_MISSING_REQUIRED_INPUT)
         nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_extract_input__no_exists_location_id(self):
@@ -1085,8 +1212,8 @@ class TestExportDataBaseActionView(AdminTestCase):
 
         res = self.view.extract_input(self.request)
 
-        nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_LOCATION)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.data['message'], export.MSG_EXPORT_NOT_EXIST_INPUT)
+        nt.assert_equal(res.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_extract_input__no_allowed_location_id(self):
         self.request.data = {
@@ -1098,7 +1225,7 @@ class TestExportDataBaseActionView(AdminTestCase):
         res = self.view.extract_input(self.request)
 
         nt.assert_equal(res.data['message'], export.MSG_EXPORT_DENY_PERM_LOCATION)
-        nt.assert_equal(res.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_extract_input__success_as_admin_affiliated_institution(self):
         self.request.data = {
@@ -1176,7 +1303,7 @@ class TestExportDataActionView(AdminTestCase):
         self.view = export.ExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1189,7 +1316,7 @@ class TestExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1288,7 +1415,7 @@ class TestStopExportDataActionView(AdminTestCase):
         self.view = export.StopExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1301,7 +1428,7 @@ class TestStopExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1317,8 +1444,8 @@ class TestStopExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
         nt.assert_equal(response.data.get('task_id'), None)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1334,8 +1461,8 @@ class TestStopExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
         nt.assert_equal(response.data.get('task_id'), self.task.request.id)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1417,7 +1544,7 @@ class TestStopExportDataActionView(AdminTestCase):
         )
         mock_export_data.filter.return_value.exists.return_value = True
         mock_export_data.filter.return_value.first.return_value = export_data
-        mock_export_data.filter.return_value.update.return_value.first.return_value = export_data
+        mock_export_data.get.return_value = export_data
 
         self.request.data = {
             'institution_id': self.institution.id,
@@ -1474,7 +1601,7 @@ class TestCheckStateExportDataActionView(AdminTestCase):
         self.view = export.CheckStateExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1487,7 +1614,7 @@ class TestCheckStateExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1503,8 +1630,8 @@ class TestCheckStateExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_post__400_no_export_data(self, mock_export_data):
@@ -1519,8 +1646,8 @@ class TestCheckStateExportDataActionView(AdminTestCase):
 
         response = self.view.post(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
-        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_DENY_PERM)
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
+        nt.assert_equal(response.data.get('message'), export.MSG_EXPORT_NOT_EXIST_INPUT)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult._get_task_meta')
@@ -1592,7 +1719,7 @@ class TestCheckDataExportDataActionView(AdminTestCase):
         self.view = export.CheckDataExportDataActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1604,7 +1731,7 @@ class TestCheckDataExportDataActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1677,7 +1804,7 @@ class TestCheckRunningExportActionView(AdminTestCase):
         self.view = export.CheckRunningExportActionView()
         self.view.request = self.request
 
-    def test_post__400_not_admin(self):
+    def test_post__403_not_admin(self):
         self.user.is_staff = False
         self.user.save()
 
@@ -1689,7 +1816,7 @@ class TestCheckRunningExportActionView(AdminTestCase):
 
         response = self.view.extract_input(self.request)
 
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.status_code, status.HTTP_403_FORBIDDEN)
         nt.assert_equal(response.data['message'], export.MSG_EXPORT_DENY_PERM_INST)
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -1728,3 +1855,114 @@ class TestCheckRunningExportActionView(AdminTestCase):
 
         nt.assert_equal(response.status_code, status.HTTP_200_OK)
         nt.assert_equal(response.data.get('task_id'), None)
+
+
+class TestCheckExportDataProcessStatus(AdminTestCase):
+    def setUp(self):
+        super(TestCheckExportDataProcessStatus, self).setUp()
+        celery_app.conf.update({
+            'task_always_eager': False,
+            'task_eager_propagates': False,
+        })
+
+        self.institution = InstitutionFactory()
+        self.other_institution = InstitutionFactory()
+
+        self.source = RegionFactory()
+        self.source._id = self.institution._id
+        self.source.save()
+
+        self.location = ExportDataLocationFactory()
+        self.location.institution_guid = self.institution._id
+        self.location.save()
+
+        self.user = AuthUserFactory()
+        self.user.is_active = True
+        self.user.is_registered = True
+        self.user.is_staff = True
+        self.user.is_superuser = False
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+
+        self.task = AbortableTask()
+        self.task.request_stack = LocalStack()
+        self.task.request.id = FAKE_TASK_ID
+        self.other_task = AbortableTask()
+        self.other_task.request_stack = LocalStack()
+        self.other_task.request.id = FAKE_TASK_ID[:-1] + '1'
+
+        self.export_data = ExportDataFactory(
+            creator=self.user,
+            source=self.source,
+            location=self.location,
+            task_id=self.task.request.id,
+            status=ExportData.STATUS_RUNNING
+        )
+
+    def test_check_export_data_process_status__c1_not_pass_interval(self):
+        _start_time = time.time()
+        _prev_time = export.check_export_data_process_status(_start_time, self.task.request.id)
+        self.assertEqual(_prev_time, _start_time)
+
+    def test_check_export_data_process_status__c2_is_forced(self):
+        _start_time = time.time()
+        self.task.update_state(state=states.STARTED, meta={})
+        _prev_time = export.check_export_data_process_status(
+            _start_time, self.task.request.id,
+            is_force=True
+        )
+        self.assertNotEqual(_prev_time, _start_time)
+
+        self.task.update_state(state=states.STARTED, meta={})
+        _prev_time = export.check_export_data_process_status(
+            _start_time, self.task.request.id,
+            location_id=self.location.id,
+            source_id=self.source.id,
+            export_data_id=self.export_data.id,
+            is_force=True
+        )
+        self.assertNotEqual(_prev_time, _start_time)
+
+    def test_check_export_data_process_status__c3_task_is_aborted(self):
+        _start_time = time.time()
+        self.task.update_state(state=ABORTED, meta={})
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id, is_force=True
+            )
+
+    def test_check_export_data_process_status__c4_location_not_exist(self):
+        _start_time = time.time()
+        location_id = self.location.id
+        self.location.delete()
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id,
+                location_id=location_id,
+                is_force=True
+            )
+
+    def test_check_export_data_process_status__c5_source__not_exist(self):
+        _start_time = time.time()
+        source_id = self.source.id
+        self.source.delete()
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id,
+                location_id=self.location.id,
+                source_id=source_id,
+                is_force=True
+            )
+
+    def test_check_export_data_process_status__c6_export_data__not_exist(self):
+        _start_time = time.time()
+        export_data_id = self.export_data.id
+        self.export_data.delete()
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id,
+                location_id=self.location.id,
+                source_id=self.source.id,
+                export_data_id=export_data_id,
+                is_force=True
+            )

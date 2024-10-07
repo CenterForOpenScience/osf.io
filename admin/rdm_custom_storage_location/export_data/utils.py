@@ -30,8 +30,14 @@ from osf.models import (
     ExportDataLocation,
     ExternalAccount,
 )
-from website.settings import WATERBUTLER_URL, INSTITUTIONAL_STORAGE_ADD_ON_METHOD, INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
+from website.settings import (
+    WATERBUTLER_URL,
+    INSTITUTIONAL_STORAGE_ADD_ON_METHOD,
+    INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD,
+    ADDONS_HAS_MAX_KEYS
+)
 from website.util import inspect_info  # noqa
+from admin.base.settings import EACH_FILE_EXPORT_RESTORE_TIME_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +53,7 @@ __all__ = [
     'write_json_file',
     'check_diff_between_version',
     'count_files_ng_ok',
+    'check_for_file_existent_on_export_location',
 ]
 ANY_BACKUP_FOLDER_REGEX = '^\\/backup_\\d{8,13}\\/.*$'
 
@@ -390,12 +397,18 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
     list_file_ng = []
     count_files = 0
     for file_a in exported_file_versions:
-        version_identifier_a = file_a['identifier']
+        # following properties is not change after the Export/Restore process
+        # use them to identify a file version
+        version_identifier_a = file_a.get('identifier')
         materialized_path_a = file_a.get('materialized_path')
+        project_id_a = file_a.get('project', {}).get('id')
 
         file_b = next((
-            file for file in storage_file_versions
-            if file.get('materialized_path') == materialized_path_a and file.get('identifier') == version_identifier_a
+            file for file in storage_file_versions if (
+                file.get('materialized_path') == materialized_path_a
+                and file.get('identifier') == version_identifier_a
+                and file.get('project', {}).get('id') == project_id_a
+            )
         ), None)
         if file_b:
             is_diff, message, file_version = check_diff_between_version([file_a], [file_b], exclude_keys=exclude_keys)
@@ -404,9 +417,10 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
             else:
                 data['ng'] += 1
                 ng_content = {
+                    'project_id': project_id_a,
                     'path': materialized_path_a,
-                    'size': file_a['size'],
-                    'version_id': file_a['identifier'],
+                    'version_id': version_identifier_a,
+                    'size': file_a.get('size', 0),
                     'reason': message,
                 }
                 list_file_ng.append(ng_content)
@@ -414,16 +428,65 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
         else:
             data['ng'] += 1
             ng_content = {
+                'project_id': project_id_a,
                 'path': materialized_path_a,
-                'size': file_a['size'],
-                'version_id': file_a.get('identifier', 0),
+                'version_id': version_identifier_a,
+                'size': file_a.get('size', 0),
                 'reason': 'File is not exist',
             }
             list_file_ng.append(ng_content)
             count_files += 1
     data['total'] = count_files
-    data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
+    data['list_file_ng'] = list_file_ng
     return data
+
+
+def check_for_file_existent_on_export_location(
+        file_info_json, node_id, provider, file_path, location_id,
+        cookies, cookie):
+    # Get list file in export storage location
+    file_list = get_files_in_path(node_id, provider, file_path, cookies,
+                                  location_id=location_id, cookie=cookie)
+
+    if not file_list:
+        return None
+
+    attrs = ['name', 'size']
+    storage_file_list = [{attr: file.get('attributes', {}).get(attr) for attr in attrs} for file in file_list]
+    storage_file_dict = {file.get('name'): file for file in storage_file_list}
+
+    # get file data saved in file info Json
+    file_versions = []
+    for file in file_info_json.get('files', []):
+        versions = file.get('version', [])
+        file_path = file.get('materialized_path')
+        for version in versions:
+            size = version.get('size')
+            metadata = version.get('metadata')
+            # get metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
+            file_name = metadata.get('sha256', metadata.get('md5'))
+            version_name = version.get('version_name')
+            version_id = version.get('identifier')
+            file_versions.append({
+                'path': file_path,
+                'name': file_name,
+                'version_name': version_name,
+                'version_id': version_id,
+                'size': size
+            })
+
+    # compare file_list with file_versions
+    list_file_ng = []
+    for file in file_versions:
+        if not storage_file_dict.get(file['name']):
+            ng_content = {
+                'path': file['path'],
+                'size': file['size'],
+                'version_id': file['version_id'],
+                'reason': 'File does not exist on the Export Storage Location',
+            }
+            list_file_ng.append(ng_content)
+    return list_file_ng
 
 
 def check_for_any_running_restore_process(destination_id):
@@ -444,6 +507,47 @@ def get_file_data(node_id, provider, file_path, cookies, base_url=WATERBUTLER_UR
     return requests.get(file_url,
                         headers={'content-type': 'application/json'},
                         cookies=cookies)
+
+
+def get_files_in_path(node_id, provider, path, cookies, **kwargs):
+    file_list = []
+    next_token = None
+    _retries = 2
+    while next_token or _retries:
+        # Get list file in export storage location
+        if next_token:
+            kwargs['next_token'] = next_token
+        response = get_file_data(
+            node_id, provider, path, cookies,
+            **kwargs)
+
+        # handle response
+        if response.status_code == 200:
+            response_body = response.json()
+            new_file_list = response_body.get('data', [])
+            file_list = file_list + new_file_list
+            # request again if it has next_token
+            next_token = response_body.get('next_token')
+            _retries = 0
+        else:
+            _retries = max(_retries - 1, 0)
+            message = (f'Failed to get info of path "{path}" on destination storage,'
+                       f' create new folder on destination storage')
+            if _retries:
+                message = 'Try to get object list again'
+            logger.warning(message)
+            continue  # request again
+
+        # stop if response new_file_list is empty
+        if not new_file_list:
+            break
+
+        # stop if addon have not a max-keys (-like) option
+        if provider not in ADDONS_HAS_MAX_KEYS:
+            # _retries = 0
+            break
+
+    return file_list
 
 
 def create_folder(node_id, provider, parent_path, folder_name, cookies, callback_log=False, base_url=WATERBUTLER_URL, **kwargs):
@@ -488,15 +592,24 @@ def update_existing_file(node_id, provider, file_path, file_data, cookies, base_
         return None, None
 
 
-def create_folder_path(node_id, provider, folder_path, cookies, base_url=WATERBUTLER_URL, **kwargs):
+def create_folder_path(node_id, destination_region, folder_path, cookies, base_url=WATERBUTLER_URL, **kwargs):
     if not folder_path.startswith('/') and not folder_path.endswith('/'):
         # Invalid folder path, return immediately
         return
+
+    provider = destination_region.provider_name
+    is_destination_addon_storage = is_add_on_storage(provider)
+
     paths = folder_path.split('/')[1:-1]
     created_path = '/'
     created_materialized_path = '/'
     for index, path in enumerate(paths):
         try:
+            if not is_destination_addon_storage:
+                _msg = 'Ignore check folder existence in institution storage bulk-mount method'
+                logger.warning(_msg)
+                raise Exception(_msg)
+
             response = get_file_data(node_id, provider, created_path, cookies, base_url, get_file_info=False, **kwargs)
             if response.status_code != 200:
                 raise Exception('Cannot get folder info')
@@ -600,13 +713,20 @@ def copy_file_to_other_storage(export_data, destination_node_id, destination_pro
         response = requests.post(copy_file_url,
                                  headers={'content-type': 'application/json'},
                                  cookies=cookies,
-                                 json=request_body)
+                                 json=request_body,
+                                 timeout=EACH_FILE_EXPORT_RESTORE_TIME_OUT)
         return response.json() if response.status_code in [200, 201] else None
-    except Exception:
+    except (requests.ConnectionError, requests.Timeout, requests.ReadTimeout) as e:
+        logger.error(f'Timeout exception occurs: {e}')
+        return None
+    except Exception as e:
+        logger.error(f'Exception: {e}')
         return None
 
 
-def copy_file_from_location_to_destination(export_data, destination_node_id, destination_provider, location_file_path, destination_file_path, cookies, base_url=WATERBUTLER_URL, **kwargs):
+def copy_file_from_location_to_destination(
+        export_data, destination_node_id, destination_provider, location_file_path, destination_file_path, cookies,
+        base_url=WATERBUTLER_URL, **kwargs):
     if not destination_file_path.startswith('/') or destination_file_path.endswith('/'):
         # Invalid file path, return immediately
         return None
@@ -620,20 +740,23 @@ def copy_file_from_location_to_destination(export_data, destination_node_id, des
     for path in folder_paths:
         try:
             # Try to get path information
-            response = get_file_data(destination_node_id, destination_provider, created_folder_path,
-                                     cookies, base_url, get_file_info=True, **kwargs)
-            if response.status_code != 200:
-                raise Exception(f'Failed to get info of path "{created_folder_path}" on destination storage, create new folder on destination storage')
+            file_list = get_files_in_path(destination_node_id, destination_provider, created_folder_path, cookies,
+                                          base_url=base_url,
+                                          get_file_info=True,
+                                          **kwargs)
+            if not file_list:
+                raise Exception('Empty folder')
 
-            response_body = response.json()
             new_folder_path = f'{created_folder_materialized_path}{path}/'
-
-            existing_path_info = next((item for item in response_body['data'] if
+            existing_path_info = next((item for item in file_list if
                                        item['attributes']['materialized'] == new_folder_path),
                                       None)
 
             if existing_path_info is None:
-                raise Exception(f'Path "{new_folder_path}" is not found on destination storage, create new folder on destination storage')
+                message = (f'Path "{new_folder_path}" is not found on destination storage,'
+                           f' create new folder on destination storage')
+                logger.warning(message)
+                raise Exception(message)
 
             created_folder_path = existing_path_info['attributes']['path']
             created_folder_materialized_path = existing_path_info['attributes']['materialized']

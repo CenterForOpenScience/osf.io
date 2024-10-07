@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import json
-import requests
+
 
 from django.http import Http404
 from django.core import serializers
@@ -21,7 +21,7 @@ from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm, PreprintProviderRegisterModeratorOrAdminForm
 from osf.models import PreprintProvider, Subject, NodeLicense, OSFUser
 from osf.models.provider import rules_to_subjects, WhitelistedSHAREPreprintProvider
-from website import settings as osf_settings
+from website import settings as website_settings
 
 FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable', 'primary_collection']
 
@@ -390,50 +390,18 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
 
 class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'
-    raise_exception = True
+    view_category = 'preprint_providers'
 
     def get(self, request, *args, **kwargs):
-        preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+        provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+        home_page_url = provider.domain if provider.domain else f'{website_settings.DOMAIN}/preprints/{provider._id}/'
 
-        resp_json = self.share_post(preprint_provider)
-        preprint_provider.share_source = resp_json['data']['attributes']['longTitle']
-        for data in resp_json['included']:
-            if data['type'] == 'ShareUser':
-                preprint_provider.access_token = data['attributes']['token']
-        preprint_provider.save()
-        return redirect(reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': preprint_provider.id}))
+        try:
+            provider.setup_share_source(home_page_url)
+        except ValidationError as e:
+            messages.error(request, e.message)
 
-    def share_post(self, preprint_provider):
-        if preprint_provider.share_source or preprint_provider.access_token:
-            raise ValueError('Cannot update share_source or access_token because one or the other already exists')
-        if not osf_settings.SHARE_API_TOKEN or not osf_settings.SHARE_URL:
-            raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
-        if not preprint_provider.get_asset_url('square_color_no_transparent'):
-            raise ValueError('Unable to find "square_color_no_transparent" icon for provider')
-
-        debug_prepend = ''
-        if osf_settings.DEBUG_MODE or osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND:
-            assert osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND, 'Local SHARE_PREPRINT_PROVIDER_PREPEND (e.g., \'alexschiller\') must be set when in DEBUG_MODE'
-            debug_prepend = '{}_'.format(osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND)
-
-        return requests.post(
-            '{}api/v2/sources/'.format(osf_settings.SHARE_URL),
-            json={
-                'data': {
-                    'type': 'Source',
-                    'attributes': {
-                        'homePage': preprint_provider.domain if preprint_provider.domain else '{}/preprints/{}/'.format(osf_settings.DOMAIN, preprint_provider._id),
-                        'longTitle': debug_prepend + preprint_provider.name,
-                        'iconUrl': preprint_provider.get_asset_url('square_color_no_transparent')
-                    }
-                }
-            },
-            headers={
-                'Authorization': 'Bearer {}'.format(osf_settings.SHARE_API_TOKEN),
-                'Content-Type': 'application/vnd.api+json'
-            }
-        ).json()
-
+        return redirect(reverse_lazy('preprint_providers:share_source', kwargs={'preprint_provider_id': provider.id}))
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'

@@ -40,7 +40,7 @@ class TestSearchViews(OsfTestCase):
     def test_search_views(self):
         #Test search contributor
         url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib.fullname})
+        res = self.app.get(url, {'query': self.contrib.fullname}, auth=factories.AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         result = res.json['users']
         assert_equal(len(result), 1)
@@ -51,7 +51,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(brian['active'], self.contrib.is_active)
 
         #Test search pagination
-        res = self.app.get(url, {'query': 'Serena'})
+        res = self.app.get(url, {'query': 'Serena'}, auth=factories.AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']
@@ -61,7 +61,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(page, 0)
 
         #Test default page 1
-        res = self.app.get(url, {'query': 'Serena', 'page': 1})
+        res = self.app.get(url, {'query': 'Serena', 'page': 1}, auth=factories.AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
@@ -69,7 +69,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(page, 1)
 
         #Test default page 2
-        res = self.app.get(url, {'query': 'Serena', 'page': 2})
+        res = self.app.get(url, {'query': 'Serena', 'page': 2}, auth=factories.AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
@@ -77,7 +77,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(page, 2)
 
         #Test smaller pages
-        res = self.app.get(url, {'query': 'Serena', 'size': 5})
+        res = self.app.get(url, {'query': 'Serena', 'size': 5}, auth=factories.AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']
@@ -87,7 +87,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(pages, 3)
 
         #Test smaller pages page 2
-        res = self.app.get(url, {'query': 'Serena', 'page': 2, 'size': 5, })
+        res = self.app.get(url, {'query': 'Serena', 'page': 2, 'size': 5, }, auth=factories.AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']

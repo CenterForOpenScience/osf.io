@@ -81,6 +81,8 @@ def flatten_registration_metadata(schema, registered_meta):
     registration_responses = {}
     registration_response_keys = schema.schema_blocks.filter(
         registration_response_key__isnull=False
+    ).exclude(
+        block_type__in=('section-heading', 'subsection-heading')
     ).values(
         'registration_response_key',
         'block_type'
@@ -236,11 +238,14 @@ def expand_registration_responses(schema, registration_responses, file_storage_r
     # Pull out all registration_response_keys and their block types
     registration_response_keys = schema.schema_blocks.filter(
         registration_response_key__isnull=False
+    ).exclude(
+        block_type__in=('section-heading', 'subsection-heading')
     ).values(
         'registration_response_key',
         'block_type'
     )
 
+    array_input_keys = []
     metadata = {}
 
     for registration_response_key_dict in registration_response_keys:
@@ -249,6 +254,11 @@ def expand_registration_responses(schema, registration_responses, file_storage_r
         # ['confirmatory-analyses-further', 'value', 'further', 'value', 'question2c']
         nested_keys = response_key.replace('.', '.value.').split('.')
         block_type = registration_response_key_dict['block_type']
+        if any([response_key.startswith('{}.'.format(k)) for k in array_input_keys]):
+            # skip blocks under array-input
+            continue
+        if block_type == 'array-input':
+            array_input_keys.append(response_key)
 
         # Continues to add to metadata with every registration_response_key
         metadata = build_registration_metadata_dict(

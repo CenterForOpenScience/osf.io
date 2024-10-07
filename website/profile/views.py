@@ -710,6 +710,10 @@ def unserialize_account_info(auth, **kwargs):
 
     user = get_target_user(auth)
     json_data = escape_html(request.get_json())
+    if not json_data:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST,
+                        data=dict(message_short='Missing request body',
+                        message_long='The request body data is required'))
 
     # json get can return None, use `or` here to ensure we always strip a string
     user.fullname = (json_data.get('full') or '').strip()
@@ -778,7 +782,7 @@ def serialize_social_addons(user):
     return ret
 
 
-@collect_auth
+@must_be_logged_in
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     ret = target.social
@@ -848,14 +852,14 @@ def serialize_contents(field, func, auth, uid=None):
     return ret
 
 
-@collect_auth
+@must_be_logged_in
 def serialize_jobs(auth, uid=None, **kwargs):
     ret = serialize_contents('jobs', serialize_job, auth, uid)
     append_editable(ret, auth, uid)
     return ret
 
 
-@collect_auth
+@must_be_logged_in
 def serialize_schools(auth, uid=None, **kwargs):
     ret = serialize_contents('schools', serialize_school, auth, uid)
     append_editable(ret, auth, uid)

@@ -4,6 +4,7 @@ from rest_framework import status as http_status
 
 from flask import request
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.utils import timezone
 
 from framework import forms, status
@@ -20,7 +21,7 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import Tag
 from osf.exceptions import NodeStateError
-from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor, NodeLog
+from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor, NodeLog, Contributor
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from osf.utils.requests import get_current_request
@@ -60,17 +61,17 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
 
     contributors = []
 
-    n_contributors = len(users)
+    n_contributors = users.annotate(Count('id')).count()
     others_count = ''
 
     for index, user in enumerate(users[:max_count]):
 
-        if index == max_count - 1 and len(users) > max_count:
+        if index == max_count - 1 and n_contributors > max_count:
             separator = ' &'
             others_count = str(n_contributors - 3)
-        elif index == len(users) - 1:
+        elif index == n_contributors - 1:
             separator = ''
-        elif index == len(users) - 2:
+        elif index == n_contributors - 2:
             separator = ' &'
         else:
             separator = ','
@@ -89,6 +90,15 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
 def get_contributors(auth, node, **kwargs):
+    if request.args.get('offset'):
+        try:
+            offset = int(request.args['offset'])
+        except ValueError:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+                message_long='Invalid value for "offset": {}'.format(request.args['offset'])
+            ))
+    else:
+        offset = 0
 
     # Can set limit to only receive a specified number of contributors in a call to this route
     if request.args.get('limit'):
@@ -109,16 +119,35 @@ def get_contributors(auth, node, **kwargs):
     # Limit is either an int or None:
     # if int, contribs list is sliced to specified length
     # if None, contribs list is not sliced
-    contribs = profile_utils.serialize_contributors(
-        node.visible_contributors[0:limit],
+    visible_contributors = Contributor.objects.filter(
         node=node,
-    )
+        visible=True,
+    ).include('user__ext', 'node', 'user__groups', 'user__guids')
+
+    if offset > len(visible_contributors):
+        contribs = []
+    elif 'slim' in request.args:
+        contribs = [
+            {
+                'id': contrib.user._id,
+                'registered': contrib.user.is_registered,
+                'fullname': contrib.user.fullname,
+                'url': contrib.user.url,
+                'permission': contrib.permission if isinstance(contrib, Contributor) else node.contributor_set.filter(user=contrib, visible=True).get().permission
+            }
+            for contrib in visible_contributors[offset:None if not limit else limit + offset]
+        ]
+    else:
+        contribs = profile_utils.serialize_contributors(
+            visible_contributors[offset:None if not limit else limit + offset],
+            node=node,
+        )
 
     # Will either return just contributor list or contributor list + 'more' element
     if limit:
         return {
             'contributors': contribs,
-            'more': max(0, len(node.visible_contributors) - limit)
+            'more': max(0, len(visible_contributors) - offset - limit)
         }
     else:
         return {'contributors': contribs}
@@ -1035,8 +1064,12 @@ def claim_user_form(auth, **kwargs):
 def claim_user_activate(**kwargs):
     uid, pid = kwargs['uid'], kwargs['pid']
     user = OSFUser.load(uid)
-    url = user.get_claim_url(project_id=pid)
-
+    if not user:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+    try:
+        url = user.get_claim_url(project_id=pid)
+    except ValueError:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return {'url': url}
 
 

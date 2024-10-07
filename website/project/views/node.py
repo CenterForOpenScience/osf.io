@@ -354,16 +354,44 @@ def node_addons(auth, node, **kwargs):
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
 
     try:
-        timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
-        ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
+        institution_id = None
+        user_institution = None
+        if auth.user:
+            user_institution = auth.user.affiliated_institutions.first()
+        for node_institution in node.affiliated_institutions.all():
+            if not user_institution or node_institution.id == user_institution.id:
+                institution_id = node_institution.id
+                break
+        if institution_id:
+            timestamp_pattern = RdmTimestampGrantPattern.objects.get(institution_id=institution_id, node_guid=node._id)
+        else:
+            timestamp_pattern = RdmTimestampGrantPattern.objects.filter(node_guid=node._id).first()
+        if timestamp_pattern:
+            ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
+        else:
+            timestamp_pattern = None
     except ObjectDoesNotExist:
         timestamp_pattern = None
 
     return ret
 def get_timestamp_pattern_division(auth, node, **kwargs):
     try:
-        timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
-        timestamp_pattern_division = timestamp_pattern.timestamp_pattern_division
+        institution_id = None
+        user_institution = None
+        if auth.user:
+            user_institution = auth.user.affiliated_institutions.first()
+        for node_institution in node.affiliated_institutions.all():
+            if not user_institution or node_institution.id == user_institution.id:
+                institution_id = node_institution.id
+                break
+        if institution_id:
+            timestamp_pattern = RdmTimestampGrantPattern.objects.get(institution_id=institution_id, node_guid=node._id)
+        else:
+            timestamp_pattern = RdmTimestampGrantPattern.objects.filter(node_guid=node._id).first()
+        if timestamp_pattern:
+            timestamp_pattern_division = timestamp_pattern.timestamp_pattern_division
+        else:
+            timestamp_pattern_division = None
     except ObjectDoesNotExist:
         timestamp_pattern_division = None
 
@@ -507,8 +535,8 @@ def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
                         primary=primary,
-                        embed_contributors=True,
-                        embed_descendants=True
+                        embed_contributors=False,
+                        embed_descendants=False
                         )
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
@@ -1138,9 +1166,10 @@ def serialize_child_tree(child_list, user, nested):
         if child.has_permission(user, READ) or child.has_permission_on_children(user, READ):
             # is_admin further restricted here to mean user is a traditional admin group contributor -
             # admin group membership not sufficient
+            admin_contributors = list(child.get_admin_contributors(child.contributors))
             contributors = [{
                 'id': contributor.user._id,
-                'is_admin': child.is_admin_contributor(contributor.user),
+                'is_admin': contributor.user in admin_contributors,
                 'is_confirmed': contributor.user.is_confirmed,
                 'visible': contributor.visible
             } for contributor in child.contributor_set.all()]
@@ -1188,9 +1217,10 @@ def node_child_tree(user, node):
     for child in children:
         nested[child.parentnode_id].append(child)
 
+    admin_contributors = list(node.get_admin_contributors(node.contributors))
     contributors = [{
         'id': contributor.user._id,
-        'is_admin': node.is_admin_contributor(contributor.user),
+        'is_admin': contributor.user in admin_contributors,
         'is_confirmed': contributor.user.is_confirmed,
         'visible': contributor.visible
     } for contributor in node.contributor_set.all().include('user__guids')]
@@ -1509,3 +1539,26 @@ def get_pointed(auth, node, **kwargs):
         serialize_pointer(each.parent, auth)
         for each in NodeRelation.objects.filter(child=node, is_node_link=True)
     ]}
+
+@process_token_or_pass
+@must_be_valid_project(retractions_valid=True)
+@must_be_contributor_or_public
+@ember_flag_is_active(features.EMBER_PROJECT_DETAIL)
+def get_components(auth, node, **kwargs):
+    node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    if node.is_deleted:
+        raise HTTPError(http_status.HTTP_410_GONE)
+
+    user = auth.user
+    data = {
+        'user': {
+            'permissions': node.get_permissions(user) if user else [],
+        }
+    }
+    descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
+    data['user']['can_sort'] = all_readable
+    data['nodes'] = [
+        serialize_node_summary(node=each, auth=auth, primary=False, show_path=False)
+        for each in descendants
+    ]
+    return data

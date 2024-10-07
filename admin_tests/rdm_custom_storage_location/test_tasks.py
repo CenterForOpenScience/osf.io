@@ -17,7 +17,7 @@ from admin.rdm_custom_storage_location.tasks import (
 @patch('admin.rdm_custom_storage_location.tasks.export.export_data_process')
 def test_run_export_data_process(mock_export_data_process):
     mock_export_data_process.return_value = None
-    process = run_export_data_process.delay(None, 1)
+    process = run_export_data_process.delay(None, 1, 1, 1)
     nt.assert_is_not_none(process.task_id)
     nt.assert_equal(process.state, SUCCESS)
 
@@ -27,7 +27,7 @@ def test_run_export_data_process(mock_export_data_process):
 @patch('admin.rdm_custom_storage_location.tasks.export.export_data_rollback_process')
 def test_run_export_data_rollback_process(mock_export_data_rollback_process):
     mock_export_data_rollback_process.return_value = None
-    process = run_export_data_rollback_process.delay(None, 1)
+    process = run_export_data_rollback_process.delay(None, 1, 1, 1)
     nt.assert_is_not_none(process.task_id)
     nt.assert_equal(process.state, SUCCESS)
 

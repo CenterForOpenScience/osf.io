@@ -1,5 +1,6 @@
 import re
 
+from datetime import datetime
 from distutils.version import StrictVersion
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, F
@@ -25,7 +26,7 @@ from api.base.exceptions import (
     InvalidQueryStringError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
-from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
+from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination, NodeLogDownloadPagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -66,7 +67,7 @@ from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
-from api.logs.serializers import NodeLogSerializer
+from api.logs.serializers import NodeLogSerializer, NodeLogDownloadSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
@@ -128,7 +129,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 from framework.sentry import log_exception
 from osf.features import OSF_GROUPS
-from osf.models import AbstractNode
+from osf.models import AbstractNode, NodeLog
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
 from osf.models import OSFGroup
@@ -174,19 +175,32 @@ class NodeMixin(object):
             node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
 
         node_id = node_id or self.kwargs[self.node_lookup_url_kwarg]
-        try:
-            timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
-            timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
-            timestamp_pattern.save()
-        except Exception:
-            pass
-
         if node is None:
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
                 request=self.request,
                 display_name='node',
             )
+
+        try:
+            institution_id = None
+            user_institution = None
+            if self.request.user:
+                user_institution = self.request.user.affiliated_institutions.first()
+            for node_institution in node.affiliated_institutions.all():
+                if not user_institution or node_institution.id == user_institution.id:
+                    institution_id = node_institution.id
+                    break
+            if institution_id:
+                timestamp_pattern = RdmTimestampGrantPattern.objects.get(institution_id=institution_id, node_guid=self.kwargs['node_id'])
+            else:
+                timestamp_pattern = RdmTimestampGrantPattern.objects.filter(node_guid=self.kwargs['node_id']).first()
+            if timestamp_pattern:
+                timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
+                timestamp_pattern.save()
+        except Exception:
+            pass
+
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:
@@ -1571,13 +1585,40 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
     )
 
     def get_default_queryset(self):
+        if self.request.query_params.get('action') == 'download':
+            # If there is query param 'action' with value is 'download', query and get only needed fields for download function
+            node = self.get_node()
+            return NodeLog.objects.filter(node_id=node.id, should_hide=False).order_by('-date')
         auth = get_user_auth(self.request)
         return self.get_node().get_logs_queryset(auth)
 
     def get_queryset(self):
+        if self.request.query_params.get('action') == 'download':
+            # If there is query param 'action' with value is 'download', query and get only needed fields for download function
+            self.serializer_class = NodeLogDownloadSerializer
+            self.pagination_class = NodeLogDownloadPagination
+            return self.get_queryset_from_request().prefetch_related('user__guids')
         return self.get_queryset_from_request().include(
             'node__guids', 'user__guids', 'original_node__guids', limit_includes=10,
         )
+
+    def param_queryset(self, query_params, default_queryset):
+        """ Overrides the function to add the last microsecond to param 'filter[date][lte]' """
+        new_query_params = query_params.copy()
+        # Get end time param
+        end_time_param_value = query_params.get('filter[date][lte]')
+        if end_time_param_value:
+            try:
+                # Convert end time param to datetime object
+                end_time = datetime.strptime(end_time_param_value, '%Y-%m-%dT%H:%M')
+                # Insert the last microsecond to datetime object
+                end_time = end_time.replace(second=datetime.max.second, microsecond=datetime.max.microsecond)
+                # Format the datetime object to string
+                new_query_params['filter[date][lte]'] = datetime.strftime(end_time, '%Y-%m-%dT%H:%M:%S.%f')
+            except ValueError:
+                # Cannot add the last microsecond to end time param, do nothing
+                pass
+        return super(NodeLogList, self).param_queryset(new_query_params, default_queryset)
 
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):

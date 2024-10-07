@@ -12,9 +12,10 @@ from osf.models import (
     ProjectStorageType
 )
 from django.utils import timezone
+from osf.utils.requests import check_select_for_update
 
 
-PROVIDERS = ['s3', 's3compat']
+PROVIDERS = ['s3compatinstitutions']
 
 # import inspect
 logger = logging.getLogger(__name__)
@@ -49,14 +50,38 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
     return db_sum['filesize_sum'] if db_sum['filesize_sum'] is not None else 0
 
 
-def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE):
-    used = used_quota(user._id, storage_type)
+def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE, is_recalculating_quota=False):
+    """Update user's used quota
+
+    - If the function is called in recalculate quota process and storage_type parameter is 2 (for NII Storage),
+      update used quota for storage_type = 2 with total file size from projects with storage_type = 1 and 2
+    - Otherwise, update used quota for specified storage_type with total file size from projects with that storage_type
+
+    :param user: user to be updated used quota
+    :param storage_type: storage type
+    :param is_recalculating_quota: a boolean to know whether the function is used in recalculate quota process or not
+    """
+    if is_recalculating_quota and storage_type == UserQuota.CUSTOM_STORAGE:
+        # If the function is called in recalculate quota process and storage_type parameter is 2 (for NII Storage),
+        # get total file size of projects with storage_type 1 and 2
+        used_quota_for_nii_default_storage = used_quota(user._id, UserQuota.NII_STORAGE)
+        used_quota_for_nii_custom_storage = used_quota(user._id, UserQuota.CUSTOM_STORAGE)
+        used = used_quota_for_nii_default_storage + used_quota_for_nii_custom_storage
+    else:
+        # Get total file size of projects with specified storage_type
+        used = used_quota(user._id, storage_type)
 
     try:
-        user_quota = UserQuota.objects.get(
-            user=user,
-            storage_type=storage_type,
-        )
+        if check_select_for_update():
+            user_quota = UserQuota.objects.filter(
+                user=user,
+                storage_type=storage_type,
+            ).select_for_update().get()
+        else:
+            user_quota = UserQuota.objects.get(
+                user=user,
+                storage_type=storage_type,
+            )
         user_quota.used = used
         user_quota.save()
     except UserQuota.DoesNotExist:
@@ -94,49 +119,9 @@ def get_project_storage_type(node):
 
 @file_signals.file_updated.connect
 def update_used_quota(self, target, user, event_type, payload):
-    if event_type == FileLog.FILE_RENAMED:
-        destination = dict(payload).get('destination')
-        source = dict(payload).get('source')
-        if dict(destination).get('provider') in PROVIDERS:
-            nodes_filter = []
-            if dict(destination).get('kind') == 'file':
-
-                nodes_filter = BaseFileNode.objects.filter(
-                    _path=dict(source).get('path'),
-                    provider=dict(destination).get('provider'),
-                    target_object_id=target.id,
-                    deleted=None,
-                    target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-                )
-            elif dict(destination).get('kind') == 'folder':
-
-                nodes_filter = BaseFileNode.objects.filter(
-                    _path__startswith=dict(source).get('path'),
-                    provider=dict(destination).get('provider'),
-                    target_object_id=target.id,
-                    deleted=None,
-                    target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-                )
-            for node in nodes_filter:
-                node._path = node._path.replace(dict(source).get('path'), dict(destination).get('path'))
-                node._materialized_path = node._path.replace(dict(source).get('path'), dict(destination).get('path'))
-                node.save()
-            lastest_node = BaseFileNode.objects.filter(
-                _path=dict(destination).get('path'),
-                provider=dict(destination).get('provider'),
-                target_object_id=target.id,
-                deleted=None,
-                target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-            ).order_by('-id').first()
-            lastest_node.is_deleted = True
-            lastest_node.deleted = timezone.now()
-            lastest_node.deleted_on = lastest_node.deleted
-            lastest_node.type = 'osf.trashedfile' if dict(destination).get('kind') == 'file' else 'osf.trashedfolder'
-            lastest_node.deleted_by_id = user.id
-            lastest_node.save()
     data = dict(payload.get('metadata')) if payload.get('metadata') else None
     metadata_provider = data.get('provider') if payload.get('metadata') else None
-    if metadata_provider in PROVIDERS or metadata_provider == 'osfstorage':
+    if metadata_provider == 'osfstorage' or metadata_provider in PROVIDERS:
         file_node = None
         action_payload = dict(payload).get('action')
         try:
@@ -147,7 +132,6 @@ def update_used_quota(self, target, user, event_type, payload):
                         provider=metadata_provider,
                         _path=data.get('materialized'),
                         _materialized_path=data.get('materialized'),
-                        parent_id=target.id,
                         target_object_id=target.id,
                         target_content_type=ContentType.objects.get_for_model(AbstractNode)
                     )
@@ -155,6 +139,7 @@ def update_used_quota(self, target, user, event_type, payload):
                 else:
                     file_node = BaseFileNode.objects.filter(
                         _path=data.get('materialized'),
+                        name=data.get('name'),
                         provider=metadata_provider,
                         target_object_id=target.id,
                         deleted=None,
@@ -174,34 +159,35 @@ def update_used_quota(self, target, user, event_type, payload):
         if event_type == FileLog.FILE_ADDED:
             file_added(target, payload, file_node, storage_type)
         elif event_type == FileLog.FILE_REMOVED:
-            if metadata_provider in PROVIDERS and data.get('kind') == 'file':
-                file_node.is_deleted = True
-                file_node.deleted = timezone.now()
-                file_node.deleted_on = file_node.deleted
-                file_node.type = 'osf.trashedfile'
-                file_node.deleted_by_id = user.id
-                file_node.save()
-                node_removed(target, user, payload, file_node, storage_type)
-            elif metadata_provider in PROVIDERS and data.get('kind') == 'folder':
-                list_file_node = BaseFileNode.objects.filter(
-                    _path__startswith=data.get('materialized'),
-                    target_object_id=target.id,
-                    provider=metadata_provider,
-                    deleted=None,
-                    target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-                ).all()
-                for file_node_remove in list_file_node:
-                    file_node_remove.is_deleted = True
-                    if file_node_remove.type == 'osf.{}file'.format(metadata_provider):
-                        file_node_remove.type = 'osf.trashedfile'
-                    elif file_node_remove.type == 'osf.{}folder'.format(metadata_provider):
-                        file_node_remove.type = 'osf.trashedfolder'
-                    file_node_remove.deleted = timezone.now()
-                    file_node_remove.deleted_on = file_node_remove.deleted
-                    file_node_remove.deleted_by_id = user.id
-                    file_node_remove.save()
-                    if file_node_remove.type == 'osf.trashedfile':
-                        node_removed(target, user, payload, file_node_remove, storage_type)
+            if metadata_provider in PROVIDERS:
+                if data.get('kind') == 'file':
+                    file_node.is_deleted = True
+                    file_node.deleted = timezone.now()
+                    file_node.deleted_on = file_node.deleted
+                    file_node.type = 'osf.trashedfile'
+                    file_node.deleted_by_id = user.id
+                    file_node.save()
+                    node_removed(target, user, payload, file_node, storage_type)
+                elif data.get('kind') == 'folder':
+                    list_file_node = BaseFileNode.objects.filter(
+                        _materialized_path__startswith=data.get('materialized'),
+                        target_object_id=target.id,
+                        provider=metadata_provider,
+                        deleted=None,
+                        target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+                    ).all()
+                    for file_node_remove in list_file_node:
+                        file_node_remove.is_deleted = True
+                        if file_node_remove.type == 'osf.{}file'.format(metadata_provider):
+                            file_node_remove.type = 'osf.trashedfile'
+                        elif file_node_remove.type == 'osf.{}folder'.format(metadata_provider):
+                            file_node_remove.type = 'osf.trashedfolder'
+                        file_node_remove.deleted = timezone.now()
+                        file_node_remove.deleted_on = file_node_remove.deleted
+                        file_node_remove.deleted_by_id = user.id
+                        file_node_remove.save()
+                        if file_node_remove.type == 'osf.trashedfile':
+                            node_removed(target, user, payload, file_node_remove, storage_type)
             else:
                 node_removed(target, user, payload, file_node, storage_type)
         elif event_type == FileLog.FILE_UPDATED:
@@ -215,10 +201,16 @@ def file_added(target, payload, file_node, storage_type):
     if file_size < 0:
         return
     try:
-        user_quota = UserQuota.objects.get(
-            user=target.creator,
-            storage_type=storage_type
-        )
+        if check_select_for_update():
+            user_quota = UserQuota.objects.filter(
+                user=target.creator,
+                storage_type=storage_type
+            ).select_for_update().get()
+        else:
+            user_quota = UserQuota.objects.get(
+                user=target.creator,
+                storage_type=storage_type
+            )
         user_quota.used += file_size
         user_quota.save()
     except UserQuota.DoesNotExist:
@@ -232,10 +224,16 @@ def file_added(target, payload, file_node, storage_type):
     FileInfo.objects.create(file=file_node, file_size=file_size)
 
 def node_removed(target, user, payload, file_node, storage_type):
-    user_quota = UserQuota.objects.filter(
-        user=target.creator,
-        storage_type=storage_type
-    ).first()
+    if check_select_for_update():
+        user_quota = UserQuota.objects.filter(
+            user=target.creator,
+            storage_type=storage_type
+        ).select_for_update().first()
+    else:
+        user_quota = UserQuota.objects.filter(
+            user=target.creator,
+            storage_type=storage_type
+        ).first()
     if user_quota is not None:
         if 'osf.trashed' not in file_node.type:
             logging.error('FileNode is not trashed, cannot update used quota!')
@@ -243,13 +241,19 @@ def node_removed(target, user, payload, file_node, storage_type):
 
         for removed_file in get_node_file_list(file_node):
             try:
-                file_info = FileInfo.objects.get(file=removed_file)
+                if check_select_for_update():
+                    file_info = FileInfo.objects.filter(file=removed_file).select_for_update().get()
+                else:
+                    file_info = FileInfo.objects.get(file=removed_file)
             except FileInfo.DoesNotExist:
                 logging.error('FileInfo not found, cannot update used quota!')
                 continue
 
-            file_size = min(file_info.file_size, user_quota.used)
-            user_quota.used -= file_size
+            user_quota.used -= file_info.file_size
+            if user_quota.used < 0:
+                user_quota.used = 0
+            file_info.file_size = 0
+            file_info.save()
         user_quota.save()
 
 def file_modified(target, user, payload, file_node, storage_type):
@@ -257,14 +261,24 @@ def file_modified(target, user, payload, file_node, storage_type):
     if file_size < 0:
         return
 
-    user_quota, _ = UserQuota.objects.get_or_create(
-        user=target.creator,
-        storage_type=storage_type,
-        defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
-    )
+    if check_select_for_update():
+        user_quota, _ = UserQuota.objects.select_for_update().get_or_create(
+            user=target.creator,
+            storage_type=storage_type,
+            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+        )
+    else:
+        user_quota, _ = UserQuota.objects.get_or_create(
+            user=target.creator,
+            storage_type=storage_type,
+            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+        )
 
     try:
-        file_info = FileInfo.objects.get(file=file_node)
+        if check_select_for_update():
+            file_info = FileInfo.objects.filter(file=file_node).select_for_update().get()
+        else:
+            file_info = FileInfo.objects.get(file=file_node)
     except FileInfo.DoesNotExist:
         file_info = FileInfo(file=file_node, file_size=0)
 
@@ -295,6 +309,24 @@ def update_default_storage(user):
                 if user_settings.default_region._id != region._id:
                     user_settings.set_region(region._id)
                     logger.info(u'user={}, institution={}, user_settings.set_region({})'.format(user, institution.name, region.name))
+
+def update_node_storage(node):
+    if node is not None:
+        node_settings = node.get_addon('osfstorage')
+        if node_settings is None:
+            node_settings = node.add_addon('osfstorage')
+        institution = node.affiliated_institutions.first()
+        if institution is not None:
+            try:
+                # logger.info(u'Institution: {}'.format(institution.name))
+                region = Region.objects.get(_id=institution._id)
+            except Region.DoesNotExist:
+                # logger.info('Inside update_default_storage: region does not exist.')
+                pass
+            else:
+                if node_settings.region._id != region._id:
+                    node_settings.set_region(region._id)
+                    logger.info(u'node={}, institution={}, node_settings.set_region({})'.format(node, institution.name, region.name))
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:

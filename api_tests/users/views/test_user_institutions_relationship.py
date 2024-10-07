@@ -56,11 +56,9 @@ class TestUserInstititutionRelationship:
 
     #   test_get_institutions_relationship_while_logged_out
         res = app.get(
-            url
+            url, expect_errors=True
         )
-        ids = [val['id'] for val in res.json['data']]
-        assert institution_one._id in ids
-        assert institution_two._id in ids
+        assert res.status_code == 401
 
     def test_delete_one(
             self, app, user, institution_one, institution_two, url):

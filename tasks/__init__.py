@@ -423,6 +423,7 @@ API_TESTS3 = [
     'api_tests/test',
     'api_tests/tokens',
     'api_tests/view_only_links',
+    'api_tests/share',
     'api_tests/wikis',
 ]
 ADDON_TESTS = [

@@ -1,10 +1,6 @@
 {% load i18n %}
 <h2 id="title">{% trans "Institutional Storage Quota Control" %}</h2>
-{% if requested_user.is_superuser %}
-    <h3>{{ institution_storage_name }} &gt; GakuNin RDM IdP</h3>
-{% elif requested_user.is_staff %}
-    <h3>{% trans "Institutional Storage Quota Control" %}<span id="sub-gray-title" style="font-size: 16px;color: gray;">GakuNin RDM idP</span></h3>
-{% endif %}
+<h3>{% trans "Institutional Storage" %} &gt; {{ institution_name }} </h3>
 
 <style type="text/css">
     .nowrap {
@@ -125,9 +121,10 @@
                 <input type="number" name="maxQuota"
                        id="storageLimit" class="form-control flex-item"
                        style="width:70px; max-width: 115px; margin-left: 2px;"
-                       min="1" required="" value="100"
-                       oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
-                       oninput="setCustomValidity('')"
+                       min="0" max="2147483647" required="" value="100"
+                       oninvalid="this.setCustomValidity('{% trans 'Please enter Each user Quota for Institutional Storage (GB) within 0~2147483647.' %}')"
+                       oninput="validateMaxQuotaInput()"
+                       onKeyDown="preventDotInput(event)"
                 />
                 <button type="submit"
                         style="margin-left: 2px; flex-grow: 0;"
@@ -185,10 +182,17 @@
         {% for user in users %}
             <tr>
                 <td>
-                    <a href="{% url 'users:user' user.id %}"
-                       class="btn btn-primary">
-                        {{ user.id }}
-                    </a>
+                    {% if requested_user.is_superuser %}
+                        <a href="{% url 'users:user' user.id %}"
+                           class="btn btn-primary">
+                            {{ user.id }}
+                        </a>
+                    {% elif requested_user.is_staff %}
+                        <a href="{% url 'users:user_details' user.id %}"
+                           class="btn btn-primary">
+                            {{ user.id }}
+                        </a>
+                    {% endif %}
                 </td>
                 {% if requested_user.is_staff and not requested_user.is_superuser %}
                     <td>
@@ -210,3 +214,19 @@
 </div>
 
 <script src="/static/js/carets.js"></script>
+<script>
+    function validateMaxQuotaInput() {
+        let $max_quota = $('#storageLimit');
+        let max_quota = $max_quota.val();
+        if (!(/^[0-9]+$/.test(max_quota))) {
+            $max_quota.get(0).setCustomValidity('{% trans 'Please enter Each user Quota for Institutional Storage (GB) within 0~2147483647.' %}');
+        } else {
+            $max_quota.get(0).setCustomValidity('');
+        }
+    }
+    function preventDotInput(e) {
+        if (e.key !== undefined && e.key === '.') {
+            e.preventDefault();
+        }
+    }
+</script>

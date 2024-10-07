@@ -229,10 +229,10 @@ class OsfStorageFileNode(BaseFileNode):
             if save:
                 self.save()
 
-    def save(self):
+    def save(self, *args, **kwargs):
         self._path = ''
         self._materialized_path = ''
-        return super(OsfStorageFileNode, self).save()
+        return super(OsfStorageFileNode, self).save(*args, **kwargs)
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
@@ -408,7 +408,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def save(self, skip_search=False, *args, **kwargs):
         from website.search import search
 
-        ret = super(OsfStorageFile, self).save()
+        ret = super(OsfStorageFile, self).save(*args, **kwargs)
         if not skip_search:
             search.update_file(self)
         return ret
@@ -492,6 +492,10 @@ class Region(models.Model):
     mfr_url = models.URLField(default=website_settings.MFR_SERVER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
+    # Storage type constants
+    NII_STORAGE = 'NII_STORAGE'
+    INSTITUTIONS = 'INSTITUTIONS'
+
     def __unicode__(self):
         return '{}'.format(self.name)
 
@@ -509,6 +513,11 @@ class Region(models.Model):
     @property
     def guid(self):
         return self._id
+
+    @property
+    def institution(self):
+        from osf.models import Institution
+        return Institution.load(self._id)
 
     @property
     def provider_name(self):
@@ -712,6 +721,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             params=params
         )
 
+    def set_region(self, region_id):
+        try:
+            region = Region.objects.get(_id=region_id)
+        except Region.DoesNotExist:
+            raise ValueError('Region cannot be found.')
+
+        self.region = region
+        self.save()
+        return
 
 @receiver(post_save, sender=OsfStorageFile)
 def create_metadata_records(sender, instance, created, **kwargs):

@@ -31,6 +31,7 @@ class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin)
     INSTITUTION_DEFAULT = Institution.INSTITUTION_DEFAULT
     institution_guid = INSTITUTION_DEFAULT
     institution = None
+    raise_exception = True
 
     def get_default_storage_location(self):
         query_set = ExportDataLocation.objects.filter(institution_guid=self.INSTITUTION_DEFAULT)
@@ -41,6 +42,8 @@ class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin)
 
     def test_func(self):
         """ Check user permissions """
+        if not self.is_authenticated:
+            return False
         user = self.request.user
         if user.is_institutional_admin:
             self.PROVIDERS_AVAILABLE = ['s3', 's3compat',
@@ -208,26 +211,43 @@ class DeleteCredentialsView(ExportStorageLocationViewBaseView, View):
     """ View for deleting the credentials to the provider in the database.
     Called when clicking the 'Delete' Button.
     """
+    raise_exception = True
+    storage_location = None
+    institution_guid = ExportStorageLocationViewBaseView.INSTITUTION_DEFAULT
+
+    def test_func(self):
+        """ Check user permissions """
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        user = self.request.user
+        if user.is_institutional_admin:
+            self.PROVIDERS_AVAILABLE = ['s3', 's3compat',
+                                        'dropboxbusiness', 'nextcloudinstitutions']
+        location_id = self.kwargs.get('location_id')
+        self.storage_location = ExportDataLocation.objects.filter(pk=location_id).first()
+        if self.storage_location:
+            if not self.is_super_admin and user.is_affiliated_institution:
+                institution = user.affiliated_institutions.first()
+                self.institution_guid = institution.guid
+            return user.is_super_admin or (user.is_institutional_admin
+                                           and self.storage_location.institution_guid == self.institution_guid)
+        else:
+            return user.is_super_admin or user.is_institutional_admin
 
     def delete(self, request, location_id, **kwargs):
         message = 'Do nothing'
         status = http_status.HTTP_400_BAD_REQUEST
 
-        institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.request.user.is_affiliated_institution:
-            institution = request.user.affiliated_institutions.first()
-            institution_guid = institution.guid
-
-        try:
-            storage_location = ExportDataLocation.objects.get(pk=location_id)
-        except ExportDataLocation.DoesNotExist:
+        if not self.storage_location:
             return JsonResponse({
                 'message': message
             }, status=status)
 
-        if storage_location.institution_guid == institution_guid:
+        if self.storage_location.institution_guid == self.institution_guid:
             # allow to delete
-            storage_location.delete()
+            self.storage_location.delete()
             message = 'storage_location.delete()'
             status = http_status.HTTP_200_OK
 

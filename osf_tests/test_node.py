@@ -3,18 +3,32 @@ import datetime
 import mock
 import pytest
 import pytz
-from addons.osfstorage.models import NodeSettings
-from addons.wiki.models import WikiPage, WikiVersion
-from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
-from api_tests.utils import disconnected_from_listeners
+import responses
+
 from django.utils import timezone
-from framework.auth.core import Auth
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
-from nose.tools import assert_not_in
+from website.project.model import has_anonymous_link
+from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from osf.exceptions import NodeStateError
-from osf.exceptions import ValidationError, ValidationValueError, UserStateError
+from osf.utils import permissions
+from website.util import api_url_for, web_url_for
+from website.citations.utils import datetime_to_csl
+from website import language, settings
+from website.project.tasks import on_node_updated
+from website.project.views.node import serialize_collections
+from website.views import find_bookmark_collection
+
+from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
+
+# RCOS
+from osf.models.node import set_project_storage_type
+from osf.models.project_storage_type import ProjectStorageType
+from nose.tools import assert_not_in
+from addons.osfstorage.models import NodeSettings
+from api_tests.utils import disconnected_from_listeners
+
 from osf.models import (
     AbstractNode,
     Email,
@@ -30,12 +44,13 @@ from osf.models import (
     DraftRegistrationApproval,
     CollectionSubmission
 )
+
+from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
-from osf.models.node import set_project_storage_type
-from osf.models.project_storage_type import ProjectStorageType
-from osf.utils import permissions
-from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates
+from framework.auth.core import Auth
+
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -59,44 +74,31 @@ from osf_tests.factories import (
     CollectionProviderFactory,
     RegionFactory,
 )
-from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
-from website import language, settings
-from website.citations.utils import datetime_to_csl
-from website.project.model import has_anonymous_link
-from website.project.signals import contributor_added, contributor_removed, after_create_registration
-from website.project.views.node import serialize_collections
-from website.util import api_url_for, web_url_for
-from website.views import find_bookmark_collection
-
 from .factories import get_default_metaschema
+from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
+from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
 
 pytestmark = pytest.mark.django_db
-
 
 @pytest.fixture()
 def user():
     return UserFactory()
 
-
 @pytest.fixture()
 def node(user):
     return NodeFactory(creator=user)
-
 
 @pytest.fixture()
 def project(user):
     return ProjectFactory(creator=user)
 
-
 @pytest.fixture()
 def auth(user):
     return Auth(user)
 
-
 @pytest.fixture()
 def subject():
     return SubjectFactory()
-
 
 @pytest.fixture()
 def preprint(user):
@@ -2642,7 +2644,6 @@ class TestManageContributors:
                 {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
             ]
         )
-        print(node.visible_contributor_ids)
         with pytest.raises(ValueError) as e:
             node.set_visible(user=reg_user1, visible=False, auth=None)
             node.set_visible(user=user, visible=False, auth=None)
@@ -3918,25 +3919,7 @@ class TestOnNodeUpdate:
     def node(self):
         return ProjectFactory(is_public=True)
 
-    @pytest.fixture()
-    def registration(self, node):
-        return RegistrationFactory(is_public=True)
-
-    @pytest.fixture()
-    def component_registration(self, node):
-        NodeFactory(
-            creator=node.creator,
-            parent=node,
-            title='Title1',
-        )
-        registration = RegistrationFactory(project=node)
-        registration.refresh_from_db()
-        return registration.get_nodes()[0]
-
-    def teardown_method(self, method):
-        handlers.celery_before_request()
-
-    def test_on_node_updated_called(self, node, user, request_context):
+    def test_on_node_updated_called(self, node, user):
         node.title = 'A new title'
         node.save()
 
@@ -3980,6 +3963,16 @@ class TestOnNodeUpdate:
                                             predicate=lambda task: task.kwargs['node_id'] == node._id)
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
+
+    @responses.activate
+    @mock.patch('website.search.search.update_collected_metadata')
+    def test_update_collection_elasticsearch_make_private(self, mock_update_collected_metadata, node_in_collection, collection, user):
+        node_in_collection.is_public = False
+        node_in_collection.save()
+
+        on_node_updated(node_in_collection._id, user._id, False, {'is_public'})
+
+        mock_update_collected_metadata.assert_called_with(node_in_collection._id, op='delete')
 
 
 # copied from tests/test_models.py
