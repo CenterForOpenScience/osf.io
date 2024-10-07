@@ -7489,6 +7489,9 @@ msgstr ""
 msgid "Cannot be restored because export data does not exist"
 msgstr ""
 
+msgid "Institution does not exist"
+msgstr ""
+
 msgid "Download as file for %1$s logs"
 msgstr ""
 

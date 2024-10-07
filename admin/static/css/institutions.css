@@ -77,6 +77,10 @@ form p label {
     white-space: nowrap;
 }
 
+.list-institution-column {
+    word-break: break-word;
+}
+
 /* toggle button */
 input.apple-switch {
     position: relative;

@@ -8732,6 +8732,9 @@ msgstr "このエクスポート プロセスをアボートできません。"
 msgid "Cannot be restored because export data does not exist"
 msgstr "エクスポートデータが存在しないため、復元できません。"
 
+msgid "Institution does not exist"
+msgstr "機関が存在しません"
+
 msgid "Download as file for %1$s logs"
 msgstr "%1$s件のファイルをダウンロード"
 

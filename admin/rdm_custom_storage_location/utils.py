@@ -696,9 +696,7 @@ def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_k
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
 
-def save_box_credentials(user, storage_name, folder_id):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_box_credentials(institution_id, user, storage_name, folder_id):
     test_connection_result = test_box_connection(institution_id, folder_id)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -724,9 +722,7 @@ def save_box_credentials(user, storage_name, folder_id):
         'message': 'OAuth was set successfully'
     }, http_status.HTTP_200_OK)
 
-def save_googledrive_credentials(user, storage_name, folder_id):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_googledrive_credentials(institution_id, user, storage_name, folder_id):
     test_connection_result = test_googledrive_connection(institution_id, folder_id)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -871,9 +867,7 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
 
-def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_id_or_path):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_onedrivebusiness_credentials(institution_id, user, storage_name, provider_name, folder_id_or_path):
     test_connection_result, folder_id = validate_onedrivebusiness_connection(institution_id, folder_id_or_path)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result

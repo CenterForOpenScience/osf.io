@@ -25,13 +25,13 @@ class TestFetchToken(AdminTestCase):
         self.user.is_staff = True
         self.user.save()
         self.seed_data = {
-            'provider_name': 'googledrive',
+            'provider_name': 'onedrivebusiness',
             'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
             'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
             'expires_at': timezone.now(),
             'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
             'date_last_refreshed': timezone.now(),
-            'display_name': 'google drive display name is here',
+            'display_name': 'onedrive business display name is here',
             'profile_url': 'example.com',
             '_id': self.institution._id,
             'provider_id': '88080800880',
@@ -49,7 +49,7 @@ class TestFetchToken(AdminTestCase):
 
     def test_provider_missing(self):
         response = self.view_post({
-            'no_pro': 'googledrive',
+            'no_pro': 'onedrivebusiness',
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
@@ -57,7 +57,7 @@ class TestFetchToken(AdminTestCase):
 
     def test_fail_Oauth_procedure_canceled(self):
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
@@ -78,7 +78,7 @@ class TestFetchToken(AdminTestCase):
             provider_id=self.seed_data['provider_id'],
         )
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         data = json.loads(response.content.decode())
@@ -100,13 +100,13 @@ class TestSaveCredentials(AdminTestCase):
         self.user.is_staff = True
         self.user.save()
         self.seed_data = {
-            'provider_name': 'googledrive',
+            'provider_name': 'onedrivebusiness',
             'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
             'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
             'expires_at': timezone.now(),
             'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
             'date_last_refreshed': timezone.now(),
-            'display_name': 'google drive display name is here',
+            'display_name': 'onedrive business display name is here',
             'profile_url': 'example.com',
             '_id': self.institution._id,
             'provider_id': '88080800880',
@@ -122,59 +122,26 @@ class TestSaveCredentials(AdminTestCase):
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
-    def view_post_cancel(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.RemoveTemporaryAuthData.as_view()(request, institution_id=self.institution.id)
-
-    def test_cancel(self):
-        response = self.view_post_cancel({
-            'provider_short_name': 'googledrive',
-        })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-
-    def test_cancel_superuser(self):
-        self.user.affiliated_institutions.clear()
-        self.user.is_superuser = True
-        self.user.save()
-        response = self.view_post_cancel({
-            'provider_short_name': 'googledrive',
-        })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-
     def test_provider_missing(self):
         response = self.view_post({
-            'no_pro': 'googledrive',
+            'no_pro': 'onedrivebusiness',
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Provider is missing.', response.content.decode())
 
-    def test_storage_name_missing(self):
+    def test_onedrivebusiness_folder_missing(self):
         response = self.view_post({
-            'provider_short_name': 'googledrive',
-        })
-
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Storage name is missing.', response.content.decode())
-
-    def test_googledrive_folder_missing(self):
-        response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Folder ID is missing.', response.content.decode())
 
-    @mock.patch('admin.rdm_custom_storage_location.utils.test_googledrive_connection')
-    def test_success(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
+    @mock.patch('admin.rdm_custom_storage_location.utils.validate_onedrivebusiness_connection')
+    def test_success(self, mock_validateconnection):
+        mock_validateconnection.return_value = ({'message': 'Nice'}, http_status.HTTP_200_OK), 'root'
 
         ExternalAccountTemporary.objects.create(
             provider=self.seed_data['provider_name'],
@@ -190,9 +157,9 @@ class TestSaveCredentials(AdminTestCase):
             provider_id=self.seed_data['provider_id'],
         )
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
-            'googledrive_folder': 'root',
+            'onedrivebusiness_folder': 'root',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('OAuth was set successfully', response.content.decode())
@@ -209,17 +176,18 @@ class TestSaveCredentials(AdminTestCase):
         nt.assert_equals(institution_storage.name, 'storage_name')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['token'], self.seed_data['oauth_key'])
+        nt.assert_equals(wb_credentials['storage'], {})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['folder']['id'], 'root')
+        nt.assert_equals(wb_settings['storage']['provider'], 'onedrivebusiness')
+        nt.assert_equals(wb_settings['disabled'], True)
 
-    @mock.patch('admin.rdm_custom_storage_location.utils.test_googledrive_connection')
-    def test_success_superuser(self, mock_testconnection):
+    @mock.patch('admin.rdm_custom_storage_location.utils.validate_onedrivebusiness_connection')
+    def test_success_superuser(self, mock_validateconnection):
         self.user.affiliated_institutions.clear()
         self.user.is_superuser = True
         self.user.save()
-        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
+        mock_validateconnection.return_value = ({'message': 'Nice'}, http_status.HTTP_200_OK), 'root'
 
         ExternalAccountTemporary.objects.create(
             provider=self.seed_data['provider_name'],
@@ -235,9 +203,9 @@ class TestSaveCredentials(AdminTestCase):
             provider_id=self.seed_data['provider_id'],
         )
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
-            'googledrive_folder': 'root',
+            'onedrivebusiness_folder': 'root',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('OAuth was set successfully', response.content.decode())
@@ -254,15 +222,16 @@ class TestSaveCredentials(AdminTestCase):
         nt.assert_equals(institution_storage.name, 'storage_name')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['token'], self.seed_data['oauth_key'])
+        nt.assert_equals(wb_credentials['storage'], {})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['folder']['id'], 'root')
+        nt.assert_equals(wb_settings['storage']['provider'], 'onedrivebusiness')
+        nt.assert_equals(wb_settings['disabled'], True)
 
     # Connection tests
     def test_folder_id_missing(self):
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
         })
 
@@ -271,15 +240,15 @@ class TestSaveCredentials(AdminTestCase):
 
     def test_temporary_external_account_missing(self):
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
-            'googledrive_folder': 'root'
+            'onedrivebusiness_folder': 'root'
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Oauth data was not found. Please reload the page and try again.', response.content.decode())
 
-    @mock.patch('addons.googledrive.client.GoogleDriveClient.folders')
+    @mock.patch('addons.onedrive.client.OneDriveClient.folders')
     def test_invalid_folder_id(self, mock_folders):
         mock_folders.side_effect = HTTPError('NG')
 
@@ -297,15 +266,15 @@ class TestSaveCredentials(AdminTestCase):
             provider_id=self.seed_data['provider_id'],
         )
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
-            'googledrive_folder': 'invalid_folder_id'
+            'onedrivebusiness_folder': 'invalid_folder_id'
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Invalid folder ID.', response.content.decode())
 
-    @mock.patch('addons.googledrive.client.GoogleDriveClient.folders')
+    @mock.patch('addons.onedrive.client.OneDriveClient.folders')
     def test_connection_success(self, mock_folders):
         ExternalAccountTemporary.objects.create(
             provider=self.seed_data['provider_name'],
@@ -321,15 +290,15 @@ class TestSaveCredentials(AdminTestCase):
             provider_id=self.seed_data['provider_id'],
         )
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
-            'googledrive_folder': 'invalid_folder_id'
+            'onedrivebusiness_folder': 'root'
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('OAuth was set successfully', response.content.decode())
 
-    @mock.patch('addons.googledrive.client.GoogleDriveClient.folders')
+    @mock.patch('addons.onedrive.client.OneDriveClient.folders')
     def test_connection_success_superuser(self, mock_folders):
         self.user.affiliated_institutions.clear()
         self.user.is_superuser = True
@@ -348,10 +317,45 @@ class TestSaveCredentials(AdminTestCase):
             provider_id=self.seed_data['provider_id'],
         )
         response = self.view_post({
-            'provider_short_name': 'googledrive',
+            'provider_short_name': 'onedrivebusiness',
             'storage_name': 'storage_name',
-            'googledrive_folder': 'root',
+            'onedrivebusiness_folder': 'root',
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('OAuth was set successfully', response.content.decode())
+
+
+class TestRemoveTemporaryAuthData(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveTemporaryAuthData, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+
+    def view_post_cancel(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.RemoveTemporaryAuthData.as_view()(request, institution_id=self.institution.id)
+
+    def test_cancel(self):
+        response = self.view_post_cancel({
+            'provider_short_name': 'onedrivebusiness',
+        })
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+
+    def test_cancel_superuser(self):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
+        response = self.view_post_cancel({
+            'provider_short_name': 'onedrivebusiness',
+        })
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)

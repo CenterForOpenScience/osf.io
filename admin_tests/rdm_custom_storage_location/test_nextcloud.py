@@ -33,7 +33,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.SaveCredentialsView.as_view()(request)
+        return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_connection_fail(self, mock_testconnection):
@@ -54,6 +54,38 @@ class TestSaveCredentials(AdminTestCase):
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'nextcloud_host': 'valid.nextcloud.net',
+            'nextcloud_username': 'admin',
+            'nextcloud_password': '1234',
+            'nextcloud_folder': 'reserved_for_osf',
+            'provider_short_name': 'nextcloud',
+        })
+
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'My storage')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.nextcloud.net')
+        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
+        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['provider'], 'nextcloud')
+        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
+    def test_success_superuser(self, mock_testconnection):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
         mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
 
         response = self.view_post({
