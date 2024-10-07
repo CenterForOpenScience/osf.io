@@ -1,6 +1,7 @@
-from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Q, F, Sum
-
+from django.db import close_old_connections
+from django.contrib.contenttypes.models import ContentType
 from osf.models import Institution, Preprint, AbstractNode, FileVersion
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
@@ -8,16 +9,17 @@ from osf.metrics.reports import InstitutionMonthlySummaryReport
 from osf.metrics.utils import YearMonth
 from ._base import MonthlyReporter
 
-
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
     """Generate an InstitutionMonthlySummaryReport for each institution."""
 
     def report(self, yearmonth: YearMonth):
         for institution in Institution.objects.all():
-            yield self.generate_report(institution, yearmonth)
+            close_old_connections()
+            with transaction.atomic():
+                yield self.generate_report(institution, yearmonth)
 
     def generate_report(self, institution, yearmonth):
-        node_queryset = institution.nodes.filter(
+        node_queryset = institution.nodes.select_related('type').filter(
             deleted__isnull=True,
             created__lt=yearmonth.next_month()
         ).exclude(
@@ -44,14 +46,12 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
         return node_queryset.filter(type=node_type, is_public=is_public, root_id=F('pk')).count()
 
     def get_published_preprints(self, institution, yearmonth):
-        queryset = Preprint.objects.can_view().filter(
+        return Preprint.objects.can_view().select_related('affiliated_institutions').filter(
             affiliated_institutions=institution,
             created__lte=yearmonth.next_month()
         ).exclude(
             spam_status=SpamStatus.SPAM
         )
-
-        return queryset
 
     def get_files(self, node_queryset, preprint_queryset, is_public=None):
         public_kwargs = {}
