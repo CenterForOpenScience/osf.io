@@ -215,7 +215,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
             try:
                 institution = node.creator.affiliated_institutions.get()
-                return Region.objects.get(_id=institution._id).name
+                storage_name = Region.objects.get(_id=institution._id).name
+                return 'NII Storage' if storage_name == 'United States' else storage_name
             except Institution.DoesNotExist:
                 logging.warning('Unable to retrieve storage name: Institution not found')
                 return 'Institutional Storage'
