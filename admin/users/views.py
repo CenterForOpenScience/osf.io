@@ -16,12 +16,12 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 
 from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.spam import SpamStatus
-from osf.utils.users import get_or_refresh_confirmation_link
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 
@@ -457,10 +457,12 @@ class GetUserLink(UserMixin, TemplateView):
 
 class GetUserConfirmationLink(GetUserLink):
     def get_link(self, user):
-        result = get_or_refresh_confirmation_link(user._id)
-        if 'confirmation_link' in result:
-            return result['confirmation_link']
-        return result['error']
+        try:
+            return user.get_or_create_confirmation_url(user.username, force=True, renew=True)
+        except ValidationError as e:
+            return str(e)
+        except KeyError as e:
+            return str(e)
 
     def get_link_type(self):
         return 'User Confirmation'

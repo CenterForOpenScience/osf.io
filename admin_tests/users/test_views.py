@@ -488,11 +488,13 @@ class TestGetLinkView(AdminTestCase):
 
         link = view.get_link(user)
 
-        link_furl = furl(link)
-        generated_token = link_furl.path.segments[-1]
+        user.refresh_from_db()
 
-        ideal_link_path = f'/confirm/{user._id}/{generated_token}'
-        link_path = str(furl(link).path)
+        user_token = list(user.email_verifications.keys())[0]
+
+        ideal_link_path = f'/confirm/{user._id}/{user_token}/'
+
+        link_path = str(furl(link).path).rstrip('/') + '/'
 
         assert link_path == ideal_link_path
 
@@ -507,14 +509,51 @@ class TestGetLinkView(AdminTestCase):
         user.save()
 
         link = view.get_link(user)
+        new_user_token = list(user.email_verifications.keys())[0]
 
-        link_furl = furl(link)
-        generated_token = link_furl.path.segments[-1]
-
-        ideal_link_path = f'/confirm/{user._id}/{generated_token}'
         link_path = str(furl(link).path)
+        ideal_link_path = f'/confirm/{user._id}/{new_user_token}/'
 
         assert link_path == ideal_link_path
+
+    def test_get_user_confirmation_link_generates_new_token_if_expired(self):
+        user = UnconfirmedUserFactory()
+        request = RequestFactory().get('/fake_path')
+        view = views.GetUserConfirmationLink()
+        view = setup_view(view, request, guid=user._id)
+
+        old_user_token = list(user.email_verifications.keys())[0]
+        user.email_verifications[old_user_token]['expiration'] = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=24)
+        user.save()
+
+        link = view.get_link(user)
+        user.refresh_from_db()
+
+        new_user_token = list(user.email_verifications.keys())[0]
+
+        assert new_user_token != old_user_token
+
+        link_path = str(furl(link).path)
+        ideal_link_path = f'/confirm/{user._id}/{new_user_token}/'
+        assert link_path == ideal_link_path
+
+    def test_get_user_confirmation_link_does_not_change_unexpired_token(self):
+        user = UnconfirmedUserFactory()
+        request = RequestFactory().get('/fake_path')
+        view = views.GetUserConfirmationLink()
+        view = setup_view(view, request, guid=user._id)
+
+        user_token_before = list(user.email_verifications.keys())[0]
+
+        user.email_verifications[user_token_before]['expiration'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=24)
+        user.save()
+
+        with mock.patch('osf.models.user.OSFUser.get_or_create_confirmation_url') as mock_method:
+            mock_method.return_value = user.get_confirmation_url(user.username, force=False, renew=False)
+
+        user_token_after = list(user.email_verifications.keys())[0]
+
+        assert user_token_before == user_token_after
 
     def test_get_password_reset_link(self):
         user = UnconfirmedUserFactory()
