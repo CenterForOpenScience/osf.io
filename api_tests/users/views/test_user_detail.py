@@ -122,6 +122,16 @@ class TestUserDetail:
         href_url = user_json['relationships']['preprints']['links']['related']['href']
         assert preprint_url in href_url
 
+    def test_draft_preprint_relationship(self, app, user_one):
+        preprint_url = f'/{API_BASE}users/{user_one._id}/draft_preprints/'
+        res = app.get(
+            f'/{API_BASE}users/{user_one._id}/',
+            auth=user_one
+        )
+        user_json = res.json['data']
+        href_url = user_json['relationships']['draft_preprints']['links']['related']['href']
+        assert preprint_url in href_url
+
     def test_registrations_relationship(self, app, user_one):
         url = f'/{API_BASE}users/{user_one._id}/'
         registration_url = '/{}users/{}/registrations/'.format(

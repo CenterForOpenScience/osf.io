@@ -190,7 +190,7 @@ class TestPreprintMetrics:
         res = app.get(one_preprint_url, auth=other_non_admin_user.auth, expect_errors=True)
         assert res.status_code == 403
 
-    @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on travis.')
+    @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on ci.')
     @mock.patch('api.metrics.utils.timezone.now')
     def test_preprint_with_metrics_succeeds(self, mock_timezone, app, user, base_url, preprint, other_user,
                                             preprint_no_results, metric_dates):

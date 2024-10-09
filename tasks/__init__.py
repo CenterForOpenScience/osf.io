@@ -470,47 +470,47 @@ def remove_failures_from_testmon(ctx, db_path=None):
 
     conn = sqlite3.connect(db_path)
     tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
-    ctx.run(f'echo {tests_decached} failures purged from travis cache')
+    ctx.run(f'echo {tests_decached} failures purged from ci cache')
 
 @task
-def travis_setup(ctx):
+def ci_setup(ctx):
     with open('package.json') as fobj:
         package_json = json.load(fobj)
         ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
 
 @task
-def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+def test_ci_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """
-    Run half of the tests to help travis go faster.
+    Run half of the tests to help ci go faster.
     """
-    #travis_setup(ctx)
+    #ci_setup(ctx)
     syntax(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
-def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+def test_ci_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """
-    Run other half of the tests to help travis go faster.
+    Run other half of the tests to help ci go faster.
     """
-    #travis_setup(ctx)
+    #ci_setup(ctx)
     test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
-    #travis_setup(ctx)
+def test_ci_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    #ci_setup(ctx)
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
-    #travis_setup(ctx)
+def test_ci_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    #ci_setup(ctx)
     test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
-    #travis_setup(ctx)
+def test_ci_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    #ci_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
@@ -559,13 +559,13 @@ def addon_requirements(ctx):
 
 
 @task
-def travis_addon_settings(ctx):
+def ci_addon_settings(ctx):
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path):
             try:
-                open(os.path.join(path, 'local-travis.py'))
-                ctx.run('cp {path}/local-travis.py {path}/local.py'.format(path=path))
+                open(os.path.join(path, 'local-ci.py'))
+                ctx.run('cp {path}/local-ci.py {path}/local.py'.format(path=path))
             except OSError:
                 pass
 
