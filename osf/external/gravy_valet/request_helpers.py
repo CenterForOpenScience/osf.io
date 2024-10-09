@@ -1,12 +1,13 @@
+import dataclasses
+import logging
+import typing
 from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 
-import logging
-import dataclasses
 import requests
-import typing
 
-from . import auth_helpers
 from website import settings
+from . import auth_helpers
+from osf.models import Node
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,11 @@ RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
 
 ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
 ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
+
+CITATION_ITEM_TYPE_ALIASES = {
+    'COLLECTION': 'folder',
+    'DOCUMENT': 'file',
+}
 
 
 def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
@@ -90,11 +96,11 @@ def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user):  #
 
 
 def get_gv_result(
-    endpoint_url: str,
-    requesting_user,
-    requested_resource=None,
-    request_method='GET',
-    params: dict = None,
+        endpoint_url: str,
+        requesting_user,
+        requested_resource=None,
+        request_method='GET',
+        params: dict = None,
 ):  # -> JSONAPIResultEntry
     '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
     response_json = _make_gv_request(
@@ -114,12 +120,32 @@ def get_gv_result(
     return JSONAPIResultEntry(data, included_entities_lookup)
 
 
+def get_gv_result_json(
+        endpoint_url: str,
+        requesting_user,
+        requested_resource=None,
+        request_method='GET',
+        params: dict = None,
+):
+    '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
+    response_json = _make_gv_request(
+        endpoint_url=endpoint_url,
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        request_method=request_method,
+        params=params,
+    ).json()
+    if not response_json['data']:
+        return dict()
+    return response_json['data']
+
+
 def iterate_gv_results(
-    endpoint_url: str,
-    requesting_user,
-    requested_resource=None,
-    request_method='GET',
-    params: dict = None,
+        endpoint_url: str,
+        requesting_user,
+        requested_resource=None,
+        request_method='GET',
+        params: dict = None,
 ):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
     response_json = _make_gv_request(
@@ -138,11 +164,12 @@ def iterate_gv_results(
 
 
 def _make_gv_request(
-    endpoint_url: str,
-    requesting_user,
-    requested_resource=None,
-    request_method='GET',
-    params: dict = None,
+        endpoint_url: str,
+        requesting_user,
+        requested_resource=None,
+        request_method='GET',
+        params: dict = None,
+        data: dict = None,
 ):
     '''Generates HMAC-Signed auth headers and makes a request to GravyValet, returning the result.'''
     full_url = urlunparse(urlparse(endpoint_url)._replace(query=urlencode(params or {})))
@@ -154,11 +181,151 @@ def _make_gv_request(
             requested_resource=requested_resource,
         )
     )
-    response = requests.get(endpoint_url, headers=auth_headers, params=params)
+    if request_method == 'POST':
+        auth_headers['Content-Type'] = 'application/vnd.api+json'
+        response = requests.post(endpoint_url, headers=auth_headers, json={'data': data})
+    else:
+        response = requests.get(endpoint_url, headers=auth_headers, params=params)
     if not response.ok:
         # log error to Sentry
         pass
     return response
+
+
+def get_citation_url_list(auth, addon_short_name, project, request=None, pid=None):
+    if pid:
+        project_url = settings.DOMAIN + pid
+    else:
+        project_url = settings.DOMAIN + request.view_args.get('pid')
+    resource_references_response = get_gv_result(
+        endpoint_url=RESOURCE_LIST_ENDPOINT,
+        requesting_user=auth.user,
+        requested_resource=project,
+        params={'filter[resource_uri]': project_url},
+    )
+    configured_citation_addons_url = resource_references_response.get_related_link(
+        'configured_citation_addons')
+    addons_url_list = get_gv_result_json(
+        endpoint_url=configured_citation_addons_url,
+        requesting_user=auth.user,
+        requested_resource=project,
+        request_method='GET',
+        params={}
+    )
+    gv_addon_name = addon_short_name if addon_short_name != 'zotero' else 'zotero_org'
+    citation_url_list = list(
+        filter(lambda x: x['attributes']['external_service_name'] == gv_addon_name, addons_url_list))
+    return citation_url_list
+
+
+def _get_gv_response(auth, addon, project, list_id):
+    data = {
+        'attributes': {
+            'operation_name': 'list_root_collections',
+            'operation_kwargs': {},
+        },
+        'relationships': {
+            'thru_addon': {
+                'data': {
+                    'type': addon['type'],
+                    'id': addon['id']
+                }
+            }
+        },
+        'type': 'addon-operation-invocations'
+    }
+    if list_id != 'ROOT':
+        data['attributes']['operation_kwargs']['collection_id'] = list_id
+        data['attributes']['operation_name'] = 'list_collection_items'
+    gv_response = _make_gv_request(
+        endpoint_url=f'{settings.GRAVYVALET_URL}/v1/addon-operation-invocations/',
+        requesting_user=auth.user,
+        requested_resource=project,
+        request_method='POST',
+        params={},
+        data=data
+    )
+    return gv_response
+
+
+def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_id, show):
+    response = {'contents': []}
+    project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
+    citation_url_list = get_citation_url_list(
+        auth=auth,
+        request=request,
+        addon_short_name=addon_short_name,
+        project=project
+    )
+    for addon in citation_url_list:
+        gv_response = _get_gv_response(
+            auth=auth,
+            addon=addon,
+            project=project,
+            list_id=list_id
+        )
+        if gv_response.status_code == 201:
+            attributes_dict = gv_response.json()['data']['attributes']
+            items = attributes_dict.get('operation_result').get('items')
+            for item in items:
+                item_id = item.get('item_id', '')
+                kind = CITATION_ITEM_TYPE_ALIASES.get(item.get('item_type', ''))
+                if 'csl' in item.keys():
+                    change_response = item
+                    change_response['kind'] = kind
+                    change_response['id'] = item_id
+                else:
+                    change_response = {
+                        'data': {
+                            'addon': addon_short_name,
+                            'kind': kind,
+                            'id': item_id,
+                            'name': item.get('item_name', ''),
+                            'path': item.get('item_path', '/'),
+                            'parent_list_id': item.get('parent_list_id', 'ROOT'),
+                            'provider_list_id': item_id,
+                        },
+                        'kind': kind,
+                        'name': item.get('item_name', ''),
+                        'id': item_id,
+                        'urls': {
+                            'fetch': f'/api/v1/project/{project._id}/{addon_short_name}/citations/{item_id}/',
+                        }
+                    }
+                response['contents'].append(change_response)
+    return response
+
+
+def get_zotero_library_list(auth, request, addon_short_name):
+    changed_response = []
+    project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
+    citation_url_list = get_citation_url_list(
+        auth=auth,
+        request=request,
+        addon_short_name=addon_short_name,
+        project=project)
+    for addon in citation_url_list:
+        gv_response = _get_gv_response(
+            auth=auth,
+            addon=addon,
+            project=project,
+            list_id='ROOT'
+        )
+        if gv_response.status_code == 201:
+            attributes_dict = gv_response.json()['data']['attributes']
+            items = attributes_dict.get('operation_result').get('items')
+            for item in items:
+                item_id = item.get('item_id', '')
+                changed_response.append({
+                    'addon': addon_short_name,
+                    'kind': item.get('item_type', '').lower(),
+                    'id': item_id,
+                    'name': item.get('item_name', ''),
+                    'path': item.get('item_path', ''),
+                    'parent_list_id': None,
+                    'provider_list_id': item_id,
+                })
+    return changed_response
 
 
 def _format_included_entities(included_entities_json):
