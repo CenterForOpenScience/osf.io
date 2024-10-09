@@ -20,6 +20,7 @@ from osf.models import (
     PreprintContributor,
     PreprintLog
 )
+from osf.utils import permissions as osf_permissions
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -1242,6 +1243,22 @@ class TestPreprintUpdate:
         assert preprint.has_prereg_links == 'no'
         assert preprint.prereg_links == []
         assert preprint.prereg_link_info == ''
+
+    def test_non_admin_cannot_update_has_coi(self, app, user, preprint, url):
+        write_contrib = AuthUserFactory()
+        preprint.add_contributor(write_contrib, permissions=osf_permissions.WRITE, auth=Auth(user), save=True)
+
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={'has_coi': True}
+        )
+
+        res = app.patch_json_api(url, update_payload, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'Must have admin permissions to update author assertion fields.'
+
+        preprint.reload()
+        assert preprint.has_coi is None
 
     def test_sloan_updates(self, app, user, preprint, url):
         """

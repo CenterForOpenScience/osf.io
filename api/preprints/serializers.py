@@ -337,7 +337,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='You cannot edit this field while your prereg links availability is set to false or is unanswered.',
                 )
 
+        def require_admin_permission():
+            if not preprint.has_permission(auth.user, osf_permissions.ADMIN):
+                raise exceptions.PermissionDenied(detail='Must have admin permissions to update author assertion fields.')
+
         if 'has_coi' in validated_data:
+            require_admin_permission()
             try:
                 preprint.update_has_coi(auth, validated_data['has_coi'])
                 save_preprint = True
@@ -345,6 +350,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 raise exceptions.ValidationError(detail=str(e))
 
         if 'conflict_of_interest_statement' in validated_data:
+            require_admin_permission()
             try:
                 preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
                 save_preprint = True
@@ -352,6 +358,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 raise exceptions.ValidationError(detail=str(e))
 
         if 'has_data_links' in validated_data:
+            require_admin_permission()
             try:
                 preprint.update_has_data_links(auth, validated_data['has_data_links'])
                 save_preprint = True
@@ -366,6 +373,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 raise exceptions.ValidationError(detail=str(e))
 
         if 'data_links' in validated_data:
+            require_admin_permission()
             try:
                 preprint.update_data_links(auth, validated_data['data_links'])
                 save_preprint = True
@@ -377,6 +385,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 save_preprint = True
 
         if 'why_no_prereg' in validated_data:
+            require_admin_permission()
             try:
                 preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
                 save_preprint = True
@@ -384,6 +393,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 raise exceptions.ValidationError(detail=str(e))
 
         if 'prereg_links' in validated_data:
+            require_admin_permission()
             try:
                 preprint.update_prereg_links(auth, validated_data['prereg_links'])
                 save_preprint = True
@@ -391,6 +401,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 raise exceptions.ValidationError(detail=str(e))
 
         if 'prereg_link_info' in validated_data:
+            require_admin_permission()
             try:
                 preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
                 save_preprint = True
