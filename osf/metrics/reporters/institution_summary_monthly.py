@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, F, Sum
+from django.db.models import Q, F, Sum, OuterRef, Exists
 
-from osf.models import Institution, Preprint, AbstractNode, FileVersion
+from osf.models import Institution, Preprint, AbstractNode, FileVersion, NodeLog, PreprintLog
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionMonthlySummaryReport
@@ -85,19 +85,22 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
         ).count()
 
     def get_monthly_active_user_count(self, institution, yearmonth):
-        institution_users = institution.get_institution_users().filter(
-            date_disabled__isnull=True
+        start_date = yearmonth.target_month()
+        end_date = yearmonth.next_month()
+
+        nodelogs = NodeLog.objects.filter(
+            user=OuterRef('pk'),
+            created__gte=start_date,
+            created__lt=end_date
+        )
+        preprintlogs = PreprintLog.objects.filter(
+            user=OuterRef('pk'),
+            created__gte=start_date,
+            created__lt=end_date
         )
 
-        active_users = institution_users.filter(
-            Q(
-                logs__created__gte=yearmonth.target_month(),
-                logs__created__lt=yearmonth.next_month()
-            ) |
-            Q(
-                preprint_logs__created__gte=yearmonth.target_month(),
-                preprint_logs__created__lt=yearmonth.next_month()
-            )
-        ).distinct()
-
-        return active_users.count()
+        return institution.get_institution_users().filter(
+            date_disabled__isnull=True
+        ).annotate(
+            has_logs=Exists(nodelogs) | Exists(preprintlogs)
+        ).filter(has_logs=True).count()
