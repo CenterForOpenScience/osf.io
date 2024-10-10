@@ -254,10 +254,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
-    panels = {'view', 'edit', 'compare', 'menu'}
+    panels = {'view', 'compare', 'menu'}
     if request.args and set(request.args).intersection(panels):
         panels_used = [panel for panel in request.args if panel in panels]
-        num_columns = len(set(panels_used).intersection({'view', 'edit', 'compare'}))
+        num_columns = len(set(panels_used).intersection({'view', 'compare'}))
         if num_columns == 0:
             panels_used.append('view')
             num_columns = 1
@@ -324,6 +324,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     alive_task_id = WikiImportTask.objects.values_list('task_id').filter(status=WikiImportTask.STATUS_RUNNING, node=node)
     sortable_pages_ctn = node.wikis.filter(deleted__isnull=True).exclude(page_name='home').count()
 
+    wiki_page_fullpath = wiki_utils.get_wiki_fullpath(node, wiki_name)
+    breadcrumbs_list = wiki_page_fullpath.split('/')
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
@@ -332,6 +334,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'parent_wiki_name': parent_wiki_page.page_name if parent_wiki_page else '',
         'import_dirs': import_dirs,
         'alive_task_id': alive_task_id,
+        'breadcrumbs_list': breadcrumbs_list,
         'rendered_before_update': rendered_before_update,
         'page': wiki_page,
         'version': version,
@@ -881,6 +884,8 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
     check_running_task(task_id, node)
     ret = []
     wiki_id_list = []
+    replaced_wiki_info = []
+    import_wiki_info = []
     res_child = []
     import_errors = []
     user = auth.user
@@ -918,8 +923,9 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
         logger.info('wiki import process is stopped')
         return {'aborted': True}
     # Import top hierarchy wiki page
-    max_depth = _get_max_depth(replaced_wiki_info)
-    for info in replaced_wiki_info:
+    import_wiki_info = replaced_wiki_info if replaced_wiki_info else wiki_info
+    max_depth = _get_max_depth(import_wiki_info)
+    for info in import_wiki_info:
         if info['parent_wiki_name'] is None:
             try:
                 res_root, wiki_id = _wiki_import_create_or_update(info['path'], info['wiki_content'], auth, node, task)
@@ -936,7 +942,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
     # Import child wiki pages
     for depth in range(1, max_depth + 1):
         try:
-            res_child, child_wiki_id_list = _import_same_level_wiki(replaced_wiki_info, depth, auth, node, task)
+            res_child, child_wiki_id_list = _import_same_level_wiki(import_wiki_info, depth, auth, node, task)
             ret.extend(res_child)
             wiki_id_list.extend(child_wiki_id_list)
         except ImportTaskAbortedError:
