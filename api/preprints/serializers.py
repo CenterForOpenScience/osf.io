@@ -289,6 +289,135 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if not preprint.has_permission(auth.user, osf_permissions.WRITE):
             raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
 
+        save_preprint = False
+        recently_published = False
+
+        for field in ['conflict_of_interest_statement', 'why_no_data', 'why_no_prereg']:
+            if field in validated_data:
+                value = validated_data[field]
+                if isinstance(value, str) and not value.strip():
+                    validated_data[field] = None
+
+        updated_has_coi = validated_data.get('has_coi', preprint.has_coi)
+        updated_conflict_statement = validated_data.get('conflict_of_interest_statement', preprint.conflict_of_interest_statement)
+
+        updated_has_data_links = validated_data.get('has_data_links', preprint.has_data_links)
+        updated_why_no_data = validated_data.get('why_no_data', preprint.why_no_data)
+
+        updated_has_prereg_links = validated_data.get('has_prereg_links', preprint.has_prereg_links)
+        updated_why_no_prereg = validated_data.get('why_no_prereg', preprint.why_no_prereg)
+
+        if updated_has_coi is False and updated_conflict_statement:
+            raise exceptions.ValidationError(
+                detail='Cannot provide conflict of interest statement when has_coi is set to False.',
+            )
+
+        if updated_has_data_links != 'no' and updated_why_no_data:
+            raise exceptions.ValidationError(
+                detail='You cannot edit this statement while your data links availability is set to true or is unanswered.',
+            )
+
+        if updated_has_data_links == 'no' and 'data_links' in validated_data and validated_data['data_links']:
+            raise exceptions.ValidationError(
+                detail='Cannot provide data links when has_data_links is set to "no".',
+            )
+
+        if updated_has_prereg_links != 'no' and updated_why_no_prereg:
+            raise exceptions.ValidationError(
+                detail='You cannot edit this statement while your prereg links availability is set to true or is unanswered.',
+            )
+
+        if updated_has_prereg_links != 'available':
+            if 'prereg_links' in validated_data and validated_data['prereg_links']:
+                raise exceptions.ValidationError(
+                    detail='You cannot edit this field while your prereg links availability is set to false or is unanswered.',
+                )
+            if 'prereg_link_info' in validated_data and validated_data['prereg_link_info']:
+                raise exceptions.ValidationError(
+                    detail='You cannot edit this field while your prereg links availability is set to false or is unanswered.',
+                )
+
+        def require_admin_permission():
+            if not preprint.has_permission(auth.user, osf_permissions.ADMIN):
+                raise exceptions.PermissionDenied(detail='Must have admin permissions to update author assertion fields.')
+
+        if 'has_coi' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_has_coi(auth, validated_data['has_coi'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'conflict_of_interest_statement' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'has_data_links' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_has_data_links(auth, validated_data['has_data_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'why_no_data' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_why_no_data(auth, validated_data['why_no_data'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'data_links' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_data_links(auth, validated_data['data_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+        else:
+            if updated_has_data_links == 'no' and preprint.data_links:
+                preprint.update_data_links(auth, [])
+                save_preprint = True
+
+        if 'has_prereg_links' in validated_data:
+            require_admin_permission()
+
+            try:
+                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'why_no_prereg' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'prereg_links' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_prereg_links(auth, validated_data['prereg_links'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'prereg_link_info' in validated_data:
+            require_admin_permission()
+            try:
+                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+                save_preprint = True
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
             url = absolute_reverse(
@@ -369,8 +498,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
             save_preprint = True
 
-        self.handle_author_assertions(preprint, validated_data, auth)
-
         if published is not None:
             if not preprint.primary_file:
                 raise exceptions.ValidationError(
@@ -395,76 +522,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     )
 
         return preprint
-
-    def handle_author_assertions(self, preprint, validated_data, auth):
-        author_assertions = {
-            'has_coi',
-            'conflict_of_interest_statement',
-            'has_data_links',
-            'why_no_data',
-            'data_links',
-            'why_no_prereg',
-            'prereg_links',
-            'has_prereg_links',
-            'prereg_link_info',
-        }
-        if author_assertions & validated_data.keys():
-            if not preprint.is_admin_contributor(auth.user):
-                raise exceptions.PermissionDenied('User must be admin to add author assertions')
-
-            if 'has_coi' in validated_data:
-                try:
-                    preprint.update_has_coi(auth, validated_data['has_coi'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'conflict_of_interest_statement' in validated_data:
-                try:
-                    preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'has_data_links' in validated_data:
-                try:
-                    preprint.update_has_data_links(auth, validated_data['has_data_links'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'why_no_data' in validated_data:
-                try:
-                    preprint.update_why_no_data(auth, validated_data['why_no_data'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'data_links' in validated_data:
-                try:
-                    preprint.update_data_links(auth, validated_data['data_links'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'has_prereg_links' in validated_data:
-                try:
-                    preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'why_no_prereg' in validated_data:
-                try:
-                    preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'prereg_links' in validated_data:
-                try:
-                    preprint.update_prereg_links(auth, validated_data['prereg_links'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-
-            if 'prereg_link_info' in validated_data:
-                try:
-                    preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
-                except PreprintStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
 
     def set_field(self, func, val, auth, save=False):
         try:
