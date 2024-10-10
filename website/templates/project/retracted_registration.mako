@@ -15,7 +15,7 @@
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>
-                        ${contributor_list.render_contributors_full(contributors=node['contributors'])}
+                        ${contributor_list.render_contributors_full()}
                     </ol>
                 % endif
                 % if node['is_fork']:

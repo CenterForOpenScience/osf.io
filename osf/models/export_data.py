@@ -22,7 +22,7 @@ from osf.models import (
 from admin.base import settings as admin_settings
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedJSONField
-from admin.base.settings import EACH_FILE_EXPORT_TIME_OUT
+from admin.base.settings import EACH_FILE_EXPORT_RESTORE_TIME_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -209,8 +209,8 @@ class ExportData(base.BaseModel):
                 'materialized_path': file.materialized_path,
                 'name': file.name,
                 'provider': file.provider,
-                'created_at': file.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at': file.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': str(file.created),
+                'modified_at': str(file.modified),
                 'project': {},
                 'tags': [],
                 'version': [],
@@ -260,8 +260,8 @@ class ExportData(base.BaseModel):
                 file_version_thru = version.get_basefilenode_version(file)
                 version_info = {
                     'identifier': version.identifier,
-                    'created_at': version.created.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at': version.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                    'created_at': str(version.created),
+                    'modified_at': str(version.modified),
                     'size': version.size,
                     'version_name': file_version_thru.version_name if file_version_thru else file.name,
                     'contributor': version.creator.username,
@@ -534,7 +534,7 @@ class ExportData(base.BaseModel):
                              headers={'content-type': 'application/json'},
                              cookies=cookies,
                              json=request_body,
-                             timeout=EACH_FILE_EXPORT_TIME_OUT)
+                             timeout=EACH_FILE_EXPORT_RESTORE_TIME_OUT)
 
     def get_data_file_file_path(self, file_name):
         """get /export_{source.id}_{process_start_timestamp}/files/{file_name} file path"""

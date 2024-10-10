@@ -35,6 +35,15 @@ class ReadOnlyOrCurrentUserRelationship(permissions.BasePermission):
         else:
             return obj['self']._id == request_user._id
 
+class CurrentUserRelationship(permissions.BasePermission):
+    """ Check to see if the request is coming from the currently logged in user,
+    and allow non-safe actions if so.
+    """
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, dict)
+        request_user = request.user
+        return obj['self']._id == request_user._id
+
 class ClaimUserPermission(permissions.BasePermission):
     """ Allows anyone to attempt to claim an unregistered user.
     Allows no one to attempt to claim a registered user.

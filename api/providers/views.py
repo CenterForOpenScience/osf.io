@@ -20,6 +20,7 @@ from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
 from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
+from api.schemas.serializers import RegistrationSchemaSerializer
 from api.subjects.views import SubjectList
 from api.subjects.serializers import SubjectSerializer
 from api.taxonomies.serializers import TaxonomySerializer
@@ -595,3 +596,26 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
             self.get_provider().remove_from_group(instance, instance.permission_group)
         except ValueError as e:
             raise ValidationError(str(e))
+
+
+class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    view_category = 'registration-providers'
+    view_name = 'registration-schema-list'
+
+    required_read_scopes = [CoreScopes.SCHEMA_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = RegistrationSchemaSerializer
+
+    def get_provider(self):
+        return RegistrationProvider.objects.get(_id=self.kwargs['provider_id'])
+
+    def get_default_queryset(self):
+        return self.get_provider().schemas.get_latest_versions(request=self.request).filter(active=True)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

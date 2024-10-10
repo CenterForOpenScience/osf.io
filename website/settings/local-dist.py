@@ -139,3 +139,5 @@ ENABLE_TIMESTAMP = False
 
 # Show sent emails in console
 logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
+
+SHARE_ENABLED = False

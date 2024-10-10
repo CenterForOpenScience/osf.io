@@ -18,6 +18,7 @@ WATERBUTLER_SETTINGS = {
     'storage': {
         'provider': 'filesystem',
         'folder': os.path.join(settings.BASE_PATH, 'osfstoragecache'),
+        'type': 'NII_STORAGE',
     }
 }
 

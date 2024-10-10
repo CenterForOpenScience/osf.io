@@ -1,0 +1,329 @@
+{% load static %}
+{% load i18n %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
+{% endblock %}
+<style type="text/css">
+    .nowrap {
+        white-space: nowrap;
+    }
+
+    .w-search-input {
+        width: 6em !important;
+        margin-right: 2px;
+    }
+
+    .form-group.flex-item {
+        max-width: 20em !important;
+    }
+
+    .flex-container,
+    .flex-container .form-group.flex-item {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .flex-container {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-container input[type=hiden],
+    .flex-container .form-group.flex-item input[type=hiden] {
+        flex: 0;
+    }
+
+    .row.flex-container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .form-group.flex-item .w-search-input,
+    .flex-container .flex-item {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 0;
+        white-space: nowrap;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .flex-item .flex-container,
+    .flex-item .flex-container .flex-item {
+        margin-bottom: 0;
+    }
+
+    .flex-container .pagination {
+        margin: 0;
+    }
+
+    .flex-container > .flex-item {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-item + .flex-item {
+        margin-left: 2px;
+        margin-right: 0;
+    }
+
+    .search-form .flex-item + .flex-item > label {
+        margin-left: 2px;
+    }
+
+    .search-form .flex-item > label {
+        margin-right: 2px;
+    }
+
+    @media screen and (max-width: 991px) {
+        .flex-container > .flex-item:last-child {
+            margin-bottom: 0;
+        }
+
+        > .flex-item + .flex-item {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .form-group.flex-item {
+            margin-top: 0;
+        }
+    }
+
+    @media screen and (max-width: 767px) {
+        .w-search-input {
+            width: auto !important;
+        }
+
+        .flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .form-group.flex-item {
+            margin-top: 0;
+        }
+
+        .form-inline.flex-container .form-group.flex-item label {
+            min-width: 140px;
+            flex-grow: 1;
+        }
+    }
+</style>
+<h2 id="title">{% trans "User Identification Information" %}</h2>
+{% if user.is_superuser == False %}
+    <h3 id="sub-title">
+        {% blocktrans %}{{ institution_name }}{% endblocktrans %}
+    </h3>
+{% endif %}
+<form
+        class="form-inline flex-container search-form"
+        action="#"
+        method="get"
+        onsubmit="return validateForm()"
+>
+    <div class="form-group flex-item">
+        <label>{% trans "GUID" %}</label>
+        <input
+                name="guid"
+                type="text"
+                class="form-control w-search-input"
+                placeholder="abcde"
+                value="{{ request.GET.guid }}"
+                maxlength="5"
+                minlength="5"
+                pattern="[0-9a-z]{5}"
+                title="{% trans 'Please enter only contain alphanumeric in lowercase' %}"
+                id="id_guid"
+        />
+    </div>
+    <div class="form-group flex-item" style="flex-grow: 3">
+        <label>{% trans "Username" %}</label>
+        <input
+                name="username"
+                type="email"
+                class="form-control w-search-input"
+                placeholder="john@example.com"
+                value="{{ request.GET.username }}"
+                oninvalid="this.setCustomValidity({% trans 'Please enter an valid email' %})"
+                oninput="setCustomValidity('')"
+                maxlength="255"
+                minlength="6"
+                pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
+                title="{% trans 'Please enter an email address' %}"
+                id="id_username"
+        />
+    </div>
+    <div class="form-group flex-item" style="flex-grow: 2">
+        <label>{% trans "Fullname" %}</label>
+        <input
+                name="fullname"
+                type="text"
+                class="form-control w-search-input"
+                placeholder="john"
+                value="{{ request.GET.fullname }}"
+                maxlength="255"
+                id="id_fullname"
+        />
+    </div>
+    <div class="form-group flex-item" style="flex-grow: 0">
+        <button class="btn btn-primary" type="submit">{% trans 'Search' %}</button>
+    </div>
+</form>
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+    {% include "user_identification_information/pagination.html" with items=page status=direction order=order_by guid=guid fullname=fullname username=username %}
+    {% if user.is_superuser %}
+        <a
+                class="btn btn-primary"
+                style="padding-left: 6px; padding-right: 6px"
+                href="{% url 'user_identification_information:user_identification_export_csv' %}"
+        >{% trans "Export All Users Statistics (CSV)" %}</a
+        >
+    {% else %}
+        <a
+                class="btn btn-primary"
+                style="padding-left: 6px; padding-right: 6px"
+                href="{% url 'user_identification_information_admin:user_identification_export_csv' %}"
+        >{% trans "Export All Users Statistics (CSV)" %}</a
+        >
+    {% endif %}
+
+</div>
+
+<div style="overflow-x: auto">
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+        <tr class="row">
+            <th class="col">{% trans "GUID" %}</th>
+            <th class="col nowrap">
+                EPPN
+                <a
+                        href="?order_by=eppn&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a>
+                <span class="dropup"
+                ><a
+                        href="?order_by=eppn&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a
+                ></span>
+            </th>
+            <th class="col nowrap">
+                {% trans "Fullname" %}
+                <a
+                        href="?order_by=fullname&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a>
+                <span class="dropup"
+                ><a
+                        href="?order_by=fullname&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a
+                ></span>
+            </th>
+            <th class="col">
+                {% trans "Email" %}
+                <a
+                        href="?order_by=email&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a>
+                <span class="dropup"
+                ><a
+                        href="?order_by=email&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a
+                ></span>
+            </th>
+            <th class="col">
+                {% trans "Affiliation" %}
+                <a
+                        href="?order_by=affiliation&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a>
+                <span class="dropup"
+                ><a
+                        href="?order_by=affiliation&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a
+                ></span>
+            </th>
+            <th class="col nowrap">
+                {% trans "Last login" %}
+                <a
+                        href="?order_by=last_login&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a>
+                <span class="dropup"
+                ><a
+                        href="?order_by=last_login&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a
+                ></span>
+            </th>
+            <th class="col nowrap">
+                {% trans "Usage" %}
+                <a
+                        href="?order_by=usage&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a>
+                <span class="dropup"
+                ><a
+                        href="?order_by=usage&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a
+                ></span>
+            </th>
+            <th class="col nowrap">
+                {% trans "Extended Storage" %}
+                <a
+                        href="?order_by=extended_storage&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a>
+                <span class="dropup"
+                ><a
+                        href="?order_by=extended_storage&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
+                        class="caret caret-sort tb-sort-inactive"
+                ></a
+                ></span>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for user_data in users %}
+            <tr class="row">
+                <td class="col">
+                    {% if user.is_superuser %}
+                        <a href="{% url 'user_identification_information:user_identification_detail' user_data.id %}" class="btn btn-primary">
+                            {{ user_data.id }}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'user_identification_information_admin:user_identification_detail' user_data.id %}" class="btn btn-primary">
+                            {{ user_data.id }}
+                        </a>
+                    {% endif %}
+                </td>
+                <td class="col">{{ user_data.eppn }}</td>
+                <td class="col">{{ user_data.fullname }}</td>
+                <td class="col">{{ user_data.email }}</td>
+                <td class="col">{{ user_data.affiliation }}</td>
+                <td class="col">{% if user_data.last_login != datetime_min %}{{user_data.last_login}}{% endif %}</td>
+                <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
+                <td class="col">{{ user_data.extended_storage|linebreaks }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

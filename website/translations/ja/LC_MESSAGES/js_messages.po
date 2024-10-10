@@ -227,8 +227,13 @@ msgstr ""
 "[この操作が必要な理由] "
 "このブラウザでは、ボタン操作でのクリップボードの値取得が禁止されています。そのため、ショートカットキーまたはブラウザメニューの貼り付けにより明示的にクリップボード操作を指示する必要があります。"
 
-#: addons/metadata/static/metadata-fields.js:47
-#: addons/metadata/static/metadata-fields.js:220
+#: addons/metadata/static/metadata-fields.js:55
+#, python-format
+msgid "One of this field or \"%s\" field must be filled."
+msgstr "このフィールドか「%s」フィールドのいずれかを入力する必要があります。"
+
+#: addons/metadata/static/metadata-fields.js:59
+#: addons/metadata/static/metadata-fields.js:250
 msgid "This field can't be blank."
 msgstr "このフィールドは必須項目です。"
 
@@ -8726,3 +8731,15 @@ msgstr "このエクスポート プロセスをアボートできません。"
 
 msgid "Cannot be restored because export data does not exist"
 msgstr "エクスポートデータが存在しないため、復元できません。"
+
+msgid "Institution does not exist"
+msgstr "機関が存在しません"
+
+msgid "Download as file for %1$s logs"
+msgstr "%1$s件のファイルをダウンロード"
+
+msgid "Downloading"
+msgstr "ダウンロード中"
+
+msgid "Download failed."
+msgstr "ダウンロードが失敗されました。"

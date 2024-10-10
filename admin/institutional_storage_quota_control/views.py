@@ -1,5 +1,7 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import connection
+from django.db.models import Subquery, OuterRef
+from django.http import Http404
 
 from admin.institutions.views import QuotaUserList
 from osf.models import Institution, OSFUser, UserQuota
@@ -9,12 +11,12 @@ from django.views.generic import ListView, View
 from django.shortcuts import redirect
 from admin.rdm.utils import RdmPermissionMixin
 from django.core.urlresolvers import reverse
-from django.db.models import Q
-from django.http import Http404
-from admin.base.utils import render_bad_request_response
 
 
 class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
+    """List of institutions that are not using NII Storage screen.
+    If currently logged in as an institution administrator and has only one affiliated institution, redirect to user list screen.
+    """
     paginate_by = 25
     template_name = 'institutional_storage_quota_control/' \
                     'list_institution_storage.html'
@@ -26,6 +28,8 @@ class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         """determine whether the user has institution permissions"""
         # login check
         if not self.is_authenticated:
+            # If user is not authenticated then redirect to login page
+            self.raise_exception = False
             return False
         # allowed if superuser
         if self.is_super_admin:
@@ -37,64 +41,34 @@ class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         return False
 
     def get(self, request, *args, **kwargs):
-        count = 0
-        institution_id = 0
+        """ Handle GET request """
         query_set = self.get_queryset()
-        self.object_list = query_set
-
-        for item in query_set:
-            if item.institution_id:
-                institution_id = item.institution_id
-                count += 1
-            else:
-                self.object_list = self.object_list.exclude(id=item.id)
-
-        ctx = self.get_context_data()
-
-        if self.is_super_admin:
-            return self.render_to_response(ctx)
-        elif self.is_admin:
-            if count == 1:
-                return redirect(reverse(
-                    'institutional_storage_quota_control:'
-                    'institution_user_list',
-                    kwargs={'institution_id': institution_id}
-                ))
-            return self.render_to_response(ctx)
+        if self.is_admin and len(query_set) == 1:
+            # If user is administrator and has only one affiliated institution then redirect to user list page
+            return redirect(reverse(
+                'institutional_storage_quota_control:'
+                'institution_user_list',
+                kwargs={'institution_id': query_set.first().id}
+            ))
+        return super(InstitutionStorageList, self).get(request, *args, **kwargs)
 
     def get_queryset(self):
+        """ Get institutions that are not using NII Storage """
         if self.is_super_admin:
-            query = 'select {} ' \
-                    'from osf_institution ' \
-                    'where addons_osfstorage_region._id = osf_institution._id'
-            return Region.objects.filter(
-                ~Q(waterbutler_settings__storage__provider='filesystem'))\
-                .extra(select={'institution_id': query.format('id'),
-                               'institution_name': query.format('name'),
-                               'institution_logo_name': query.format(
-                                   'logo_name'),
-                               }).order_by('institution_name', self.ordering)
-
+            return Institution.objects.annotate(
+                storage_name=Subquery(Region.objects.filter(_id=OuterRef('_id')).values('name'))
+            ).filter(
+                is_deleted=False,
+                _id__in=Region.objects.filter(waterbutler_settings__storage__type=Region.INSTITUTIONS).values('_id')
+            ).order_by(self.ordering)
         elif self.is_admin:
-            user_id = self.request.user.id
-            query = 'select {} ' \
-                    'from osf_institution ' \
-                    'where addons_osfstorage_region._id = _id ' \
-                    'and id in (' \
-                    '    select institution_id ' \
-                    '    from osf_osfuser_affiliated_institutions ' \
-                    '    where osfuser_id = {}' \
-                    ')'
-            return Region.objects.filter(
-                ~Q(waterbutler_settings__storage__provider='filesystem'))\
-                .extra(select={'institution_id': query.format('id', user_id),
-                               'institution_name': query.format(
-                                   'name',
-                                   user_id),
-                               'institution_logo_name': query.format(
-                                   'logo_name',
-                                   user_id),
-                               })
+            return Institution.objects.annotate(
+                storage_name=Subquery(Region.objects.filter(_id=OuterRef('_id')).values('name'))
+            ).filter(
+                is_deleted=False,
+                _id__in=Region.objects.filter(waterbutler_settings__storage__type=Region.INSTITUTIONS).values('_id'),
+                id__in=self.request.user.affiliated_institutions.values('id')
+            ).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -110,6 +84,7 @@ class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
 
 
 class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, QuotaUserList):
+    """ User list quota info screen for an institution that is not using NII Storage. """
     template_name = 'institutional_storage_quota_control/list_institute.html'
     raise_exception = True
     paginate_by = 25
@@ -117,16 +92,18 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
 
     def test_func(self):
         """check user permissions"""
-        # login check
         if not self.is_authenticated:
+            # If user is not authenticated then redirect to login page
+            self.raise_exception = False
             return False
-
         self.institution_id = int(self.kwargs.get('institution_id'))
         if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
-            raise Http404(f'Institution with id "{self.institution_id}" not found. Please double check.')
+            # If institution_id does not exist, redirect to HTTP 404 page
+            raise Http404
         return self.has_auth(self.institution_id)
 
     def get_userlist(self):
+        """ Get user list by institution_id """
         user_list = []
         for user in OSFUser.objects.filter(
                 affiliated_institutions=self.institution_id):
@@ -136,47 +113,63 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
         return user_list
 
     def get_institution(self):
-        query = 'select name '\
-                'from addons_osfstorage_region '\
-                'where addons_osfstorage_region._id = osf_institution._id'
-        institution = Institution.objects.filter(
-            id=self.kwargs['institution_id']
-        ).extra(
-            select={
-                'storage_name': query,
-            }
-        )
-        return institution.first()
+        """ Get institution that is not using NII Storage """
+        # Get institution that is not using NII Storage
+        region__ids = Region.objects.filter(waterbutler_settings__storage__type=Region.INSTITUTIONS).values('_id')
+        institution = Institution.objects.filter(is_deleted=False, _id__in=region__ids, id=self.institution_id).first()
+        if not institution:
+            # If institution is not found, redirect to HTTP 404 page
+            raise Http404
+        return institution
 
 
 class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, View):
+    """ Change max quota for an institution's users if that institution is not using NII Storage. """
     raise_exception = True
     institution_id = None
 
     def test_func(self):
         """check user permissions"""
-        # login check
         if not self.is_authenticated:
+            # If user is not authenticated then redirect to login page
+            self.raise_exception = False
             return False
-
         self.institution_id = int(self.kwargs.get('institution_id'))
-        if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
-            raise Http404(f'Institution with id "{self.institution_id}" not found. Please double check.')
+        if not Institution.objects.filter(id=self.institution_id).exists():
+            # If institution_id does not exist, redirect to HTTP 404 page
+            raise Http404
         return self.has_auth(self.institution_id)
 
     def post(self, request, *args, **kwargs):
-        min_value, max_value = connection.ops.integer_field_range('IntegerField')
+        """ Handle POST request """
+        # Validate maxQuota parameter
         try:
-            max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
-        except ValueError:
-            return render_bad_request_response(request=request, error_msgs='maxQuota must be a integer')
-        for user in OSFUser.objects.filter(
-                affiliated_institutions=self.institution_id):
-            UserQuota.objects.update_or_create(
-                user=user,
-                storage_type=UserQuota.CUSTOM_STORAGE,
-                defaults={'max_quota': max_quota}
+            max_quota = self.request.POST.get('maxQuota')
+            # Try converting maxQuota param to integer
+            max_quota = int(max_quota)
+        except (ValueError, TypeError):
+            # Cannot convert maxQuota param to integer, redirect to the current page
+            return redirect(
+                'institutional_storage_quota_control:institution_user_list',
+                institution_id=self.institution_id
             )
+
+        # Get institution that is not using NII Storage
+        region__ids = Region.objects.filter(waterbutler_settings__storage__type=Region.INSTITUTIONS).values('_id')
+        institution = Institution.objects.filter(is_deleted=False, id=self.institution_id, _id__in=region__ids).first()
+        if not institution:
+            # If institution is not found, redirect to HTTP 404 page
+            raise Http404
+        min_value, max_value = connection.ops.integer_field_range('PositiveIntegerField')
+        if min_value <= max_quota <= max_value:
+            # If max quota value is between 0 and 2147483647, update or create used quota for each user in the institution
+            for user in OSFUser.objects.filter(
+                    affiliated_institutions=self.institution_id):
+                UserQuota.objects.update_or_create(
+                    user=user,
+                    storage_type=UserQuota.CUSTOM_STORAGE,
+                    defaults={'max_quota': max_quota}
+                )
         return redirect(
             'institutional_storage_quota_control:institution_user_list',
             institution_id=self.institution_id

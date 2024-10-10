@@ -34,7 +34,7 @@ class TestConnection(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.TestConnectionView.as_view()(request)
+        return views.TestConnectionView.as_view()(request, institution_id=self.institution.id)
 
     @mock.patch('owncloud.Client')
     def test_success_owncloud(self, mock_client):
@@ -56,6 +56,18 @@ class TestConnection(AdminTestCase):
             'nextcloud_password': 'my-valid-password',
             'nextcloud_folder': 'my-valid-folder',
             'provider_short_name': 'nextcloud',
+        })
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('Credentials are valid', response.content.decode())
+
+    @mock.patch('owncloud.Client')
+    def test_success_nextcloudinstitutions(self, mock_client):
+        response = self.view_post({
+            'nextcloudinstitutions_host': 'my-valid-host',
+            'nextcloudinstitutions_username': 'my-valid-username',
+            'nextcloudinstitutions_password': 'my-valid-password',
+            'nextcloudinstitutions_folder': 'my-valid-folder',
+            'provider_short_name': 'nextcloudinstitutions',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Credentials are valid', response.content.decode())
@@ -122,7 +134,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.SaveCredentialsView.as_view()(request)
+        return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_connection_fail(self, mock_testconnection):
@@ -143,6 +155,38 @@ class TestSaveCredentials(AdminTestCase):
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'owncloud_host': 'valid.owncloud.net',
+            'owncloud_username': 'admin',
+            'owncloud_password': '1234',
+            'owncloud_folder': 'reserved_for_osf',
+            'provider_short_name': 'owncloud',
+        })
+
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'My storage')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.owncloud.net')
+        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
+        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['provider'], 'owncloud')
+        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
+    def test_success_superuser(self, mock_testconnection):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
         mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
 
         response = self.view_post({

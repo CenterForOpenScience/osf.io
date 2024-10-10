@@ -3,7 +3,6 @@ import itsdangerous
 import mock
 import pytest
 import unittest
-from future.moves.urllib.parse import urlparse, parse_qs
 from uuid import UUID
 
 from api.base.settings.defaults import API_BASE
@@ -34,78 +33,97 @@ class TestUsers:
     def user_two(self):
         return AuthUserFactory(fullname='Freddie Mercury II')
 
-    def test_returns_200(self, app):
-        res = app.get('/{}users/'.format(API_BASE))
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
+    def test_returns_403(self, app, user_one):
+        res = app.get('/{}users/'.format(API_BASE), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_returns_401(self, app):
+        res = app.get('/{}users/'.format(API_BASE), expect_errors=True)
+        assert res.status_code == 401
 
     def test_find_user_in_users(self, app, user_one, user_two):
         url = '/{}users/'.format(API_BASE)
 
-        res = app.get(url)
-        user_son = res.json['data']
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
 
-        ids = [each['id'] for each in user_son]
-        assert user_two._id in ids
+    def test_find_user_in_users_not_logged_in(self, app, user_one, user_two):
+        url = '/{}users/'.format(API_BASE)
+
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_all_users_in_users(self, app, user_one, user_two):
         url = '/{}users/'.format(API_BASE)
 
-        res = app.get(url)
-        user_son = res.json['data']
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
 
-        ids = [each['id'] for each in user_son]
-        assert user_one._id in ids
-        assert user_two._id in ids
+    def test_all_users_in_users_not_logged_in(self, app, user_one, user_two):
+        url = '/{}users/'.format(API_BASE)
+
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_merged_user_is_not_in_user_list_after_2point3(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)
-        res = app.get('/{}users/?version=2.3'.format(API_BASE))
-        user_son = res.json['data']
+        res = app.get('/{}users/?version=2.3'.format(API_BASE), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
 
-        ids = [each['id'] for each in user_son]
-        assert res.status_code == 200
-        assert user_two._id in ids
-        assert user_one._id not in ids
+    def test_merged_user_is_not_in_user_list_after_2point3_not_logged_in(
+            self, app, user_one, user_two):
+        user_two.merge_user(user_one)
+        res = app.get('/{}users/?version=2.3'.format(API_BASE), expect_errors=True)
+        assert res.status_code == 401
 
     def test_merged_user_is_returned_before_2point3(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)
-        res = app.get('/{}users/'.format(API_BASE))
-        user_son = res.json['data']
+        res = app.get('/{}users/'.format(API_BASE), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
 
-        ids = [each['id'] for each in user_son]
-        assert res.status_code == 200
-        assert user_two._id in ids
-        assert user_one._id in ids
+    def test_merged_user_is_returned_before_2point3_not_logged_in(
+            self, app, user_one, user_two):
+        user_two.merge_user(user_one)
+        res = app.get('/{}users/'.format(API_BASE), expect_errors=True)
+        assert res.status_code == 401
 
     def test_find_multiple_in_users(self, app, user_one, user_two):
         url = '/{}users/?filter[full_name]=fred'.format(API_BASE)
 
-        res = app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert user_one._id in ids
-        assert user_two._id in ids
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_find_multiple_in_users_not_logged_in(self, app, user_one, user_two):
+        url = '/{}users/?filter[full_name]=fred'.format(API_BASE)
+
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_find_single_user_in_users(self, app, user_one, user_two):
         url = '/{}users/?filter[full_name]=my'.format(API_BASE)
         user_one.fullname = 'My Mom'
         user_one.save()
-        res = app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert user_one._id in ids
-        assert user_two._id not in ids
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_find_single_user_in_users_not_logged_in(self, app, user_one, user_two):
+        url = '/{}users/?filter[full_name]=my'.format(API_BASE)
+        user_one.fullname = 'My Mom'
+        user_one.save()
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_find_no_user_in_users(self, app, user_one, user_two):
         url = '/{}users/?filter[full_name]=NotMyMom'.format(API_BASE)
-        res = app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert user_one._id not in ids
-        assert user_two._id not in ids
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_find_no_user_in_users_not_logged_in(self, app, user_one, user_two):
+        url = '/{}users/?filter[full_name]=NotMyMom'.format(API_BASE)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_more_than_one_projects_in_common(self, app, user_one, user_two):
         group = OSFGroupFactory(creator=user_one)
@@ -140,24 +158,58 @@ class TestUsers:
             is_public=True)
 
         url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
-        res = app.get(url, auth=user_two.auth)
-        user_json = res.json['data']
-        for user in user_json:
-            if user['id'] == user_two._id:
-                meta = user['relationships']['nodes']['links']['related']['meta']
-                assert 'projects_in_common' in meta
-                assert meta['projects_in_common'] == 4
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_more_than_one_projects_in_common_not_logged_in(self, app, user_one, user_two):
+        group = OSFGroupFactory(creator=user_one)
+        group.make_member(user_two)
+
+        project1 = ProjectFactory(creator=user_one)
+        project1.add_contributor(
+            contributor=user_two,
+            permissions=CREATOR_PERMISSIONS,
+            auth=Auth(user=user_one)
+        )
+        project1.save()
+        project2 = ProjectFactory(creator=user_one)
+        project2.add_contributor(
+            contributor=user_two,
+            permissions=CREATOR_PERMISSIONS,
+            auth=Auth(user=user_one)
+        )
+        project2.save()
+
+        project3 = ProjectFactory()
+        project4 = ProjectFactory()
+        project3.add_osf_group(group)
+        project4.add_osf_group(group)
+        project4.is_deleted = True
+        project3.save()
+        project4.save()
+
+        RegistrationFactory(
+            project=project1,
+            creator=user_one,
+            is_public=True)
+
+        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_users_projects_in_common(self, app, user_one, user_two):
         user_one.fullname = 'hello'
         user_one.save()
         url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
-        res = app.get(url, auth=user_two.auth)
-        user_json = res.json['data']
-        for user in user_json:
-            meta = user['relationships']['nodes']['links']['related']['meta']
-            assert 'projects_in_common' in meta
-            assert meta['projects_in_common'] == 0
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_users_projects_in_common_not_logged_in(self, app, user_one, user_two):
+        user_one.fullname = 'hello'
+        user_one.save()
+        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_users_projects_in_common_with_embed_and_right_query(
             self, app, user_one, user_two):
@@ -225,34 +277,47 @@ class TestUsers:
         user_one.save()
         url = '/{}users/?filter[full_name]={}'.format(
             API_BASE, user_one.fullname)
-        res = app.get(url, auth=user_two.auth)
-        user_json = res.json['data']
-        for user in user_json:
-            meta = user['relationships']['nodes']['links']['related']['meta']
-            assert 'projects_in_common' not in meta
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_users_no_projects_in_common_with_wrong_query_not_logged_in(
+            self, app, user_one, user_two):
+        user_one.fullname = 'hello'
+        user_one.save()
+        url = '/{}users/?filter[full_name]={}'.format(
+            API_BASE, user_one.fullname)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_users_no_projects_in_common_without_filter(
             self, app, user_one, user_two):
         user_one.fullname = 'hello'
         user_one.save()
         url = '/{}users/'.format(API_BASE)
-        res = app.get(url, auth=user_two.auth)
-        user_json = res.json['data']
-        for user in user_json:
-            meta = user['relationships']['nodes']['links']['related']['meta']
-            assert 'projects_in_common' not in meta
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_users_no_projects_in_common_without_filter_not_logged_in(
+            self, app, user_one, user_two):
+        user_one.fullname = 'hello'
+        user_one.save()
+        url = '/{}users/'.format(API_BASE)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_users_list_takes_profile_image_size_param(
             self, app, user_one, user_two):
         size = 42
         url = '/{}users/?profile_image_size={}'.format(API_BASE, size)
-        res = app.get(url)
-        user_json = res.json['data']
-        for user in user_json:
-            profile_image_url = user['links']['profile_image']
-            query_dict = parse_qs(
-                urlparse(profile_image_url).query)
-            assert int(query_dict.get('s')[0]) == size
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_users_list_takes_profile_image_size_param_not_logged_in(
+            self, app, user_one, user_two):
+        size = 42
+        url = '/{}users/?profile_image_size={}'.format(API_BASE, size)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_users_list_filter_multiple_field(self, app, user_one, user_two):
         john_doe = UserFactory(fullname='John Doe')
@@ -266,9 +331,23 @@ class TestUsers:
         doe_jane.save()
 
         url = '/{}users/?filter[given_name,family_name]=Doe'.format(API_BASE)
-        res = app.get(url)
-        data = res.json['data']
-        assert len(data) == 2
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_users_list_filter_multiple_field_not_logged_in(self, app, user_one, user_two):
+        john_doe = UserFactory(fullname='John Doe')
+        john_doe.given_name = 'John'
+        john_doe.family_name = 'Doe'
+        john_doe.save()
+
+        doe_jane = UserFactory(fullname='Doe Jane')
+        doe_jane.given_name = 'Doe'
+        doe_jane.family_name = 'Jane'
+        doe_jane.save()
+
+        url = '/{}users/?filter[given_name,family_name]=Doe'.format(API_BASE)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_users_list_filter_multiple_fields_with_additional_filters(
             self, app, user_one, user_two):
@@ -284,15 +363,37 @@ class TestUsers:
 
         url = '/{}users/?filter[given_name,family_name]=Doe&filter[id]={}'.format(
             API_BASE, john_doe._id)
-        res = app.get(url)
-        data = res.json['data']
-        assert len(data) == 1
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_users_list_filter_multiple_fields_with_additional_filters_not_logged_in(
+            self, app, user_one, user_two):
+        john_doe = UserFactory(fullname='John Doe')
+        john_doe.given_name = 'John'
+        john_doe.family_name = 'Doe'
+        john_doe.save()
+
+        doe_jane = UserFactory(fullname='Doe Jane')
+        doe_jane.given_name = 'Doe'
+        doe_jane.family_name = 'Jane'
+        doe_jane.save()
+
+        url = '/{}users/?filter[given_name,family_name]=Doe&filter[id]={}'.format(
+            API_BASE, john_doe._id)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     def test_users_list_filter_multiple_fields_with_bad_filter(
             self, app, user_one, user_two):
         url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_users_list_filter_multiple_fields_with_bad_filter_not_logged_in(
+            self, app, user_one, user_two):
+        url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(API_BASE)
         res = app.get(url, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 401
 
 
 @pytest.mark.django_db

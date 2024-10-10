@@ -37,6 +37,7 @@ from website.settings import (
     ADDONS_HAS_MAX_KEYS
 )
 from website.util import inspect_info  # noqa
+from admin.base.settings import EACH_FILE_EXPORT_RESTORE_TIME_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -712,9 +713,14 @@ def copy_file_to_other_storage(export_data, destination_node_id, destination_pro
         response = requests.post(copy_file_url,
                                  headers={'content-type': 'application/json'},
                                  cookies=cookies,
-                                 json=request_body)
+                                 json=request_body,
+                                 timeout=EACH_FILE_EXPORT_RESTORE_TIME_OUT)
         return response.json() if response.status_code in [200, 201] else None
-    except Exception:
+    except (requests.ConnectionError, requests.Timeout, requests.ReadTimeout) as e:
+        logger.error(f'Timeout exception occurs: {e}')
+        return None
+    except Exception as e:
+        logger.error(f'Exception: {e}')
         return None
 
 

@@ -1341,7 +1341,7 @@ function _uploadFolderEvent(event, item, mode, col) {
                 var next_folder_index = ++index;
                 return next(node_parent, next_folder_index, list_paths, file, file_index, next);
             }, function (data) {
-                if (data && data.code === 409) {
+                if (data && (data.code === 409 || data.code === 406)) {
                     $osf.growl(data.message);
                     m.redraw();
                 } else {
@@ -3453,7 +3453,7 @@ tbOptions = {
                     return false;
                 }
             }
-            if (item.data.provider === 'osfstorage') {
+            if (item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') {
                 quota = $.ajax({
                     async: false,
                     method: 'GET',
@@ -3470,7 +3470,7 @@ tbOptions = {
                     if (quota.used + file.size > quota.max * window.contextVars.threshold) {
                         $osf.growl(
                             gettext('Quota usage alert'),
-                            sprintf(gettext('You have used more than %1$s% of your quota.'),(window.contextVars.threshold * 100)),
+                            sprintf(gettext('You have used more than %1$s%% of your quota.'),(window.contextVars.threshold * 100)),
                             'warning'
                         );
                     }

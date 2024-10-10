@@ -53,13 +53,15 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('e-rad-bunnya', 'string'): 'e-rad-bunnya-input',
     ('file-metadata', 'string'): 'file-metadata-input',
     ('date', 'string'): 'date-input',
-    ('file-capacity', 'string'): 'file-capacity-input',
-    ('file-creators', 'string'): 'file-creators-input',
-    ('file-data-number', 'string'): 'file-data-number-input',
-    ('file-url', 'string'): 'file-url-input',
-    ('file-institution-ja', 'string'): 'file-institution-ja-input',
-    ('file-institution-en', 'string'): 'file-institution-en-input',
-    ('file-institution-identifier', 'string'): 'file-institution-id-input',
+    # deprecated format types are mapped to the simple text type
+    ('file-capacity', 'string'): 'short-text-input',
+    ('file-creators', 'string'): 'long-text-input',
+    ('file-data-number', 'string'): 'short-text-input',
+    ('file-title', 'string'): 'short-text-input',
+    ('file-url', 'string'): 'short-text-input',
+    ('file-institution-ja', 'string'): 'short-text-input',
+    ('file-institution-en', 'string'): 'short-text-input',
+    ('file-institution-identifier', 'string'): 'short-text-input',
 }
 
 def get_osf_models():
@@ -216,7 +218,8 @@ def remove_schemas(*args):
 
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
         registration_response_key=None, schema_block_group_key='', example_text='',
-        default=False, pattern=None, space_normalization=False):
+        default=False, pattern=None, space_normalization=False, required_if=None,
+        message_required_if=None, enabled_if=None, suggestion=None):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
@@ -254,6 +257,10 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         'default': default,
         'pattern': pattern,
         'space_normalization': space_normalization,
+        'required_if': required_if,
+        'message_required_if': message_required_if,
+        'enabled_if': enabled_if,
+        'suggestion': suggestion,
     }
 
     try:
@@ -366,12 +373,45 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
 
         if first_subq_text:
             # the first subquestion has text, so this seems like an actual [sub]section
-            create_schema_block(
-                state,
-                rs.id,
-                block_type='subsection-heading' if sub else 'section-heading',
-                display_text=question.get('title', '') or question.get('description', ''),
-            )
+            if question.get('type') == 'array':
+                schema_block_group_key = generate_object_id()
+                create_schema_block(
+                    state,
+                    rs.id,
+                    block_type='subsection-heading' if sub else 'section-heading',
+                    display_text=question.get('title', '') or question.get('description', ''),
+                    schema_block_group_key=schema_block_group_key,
+                )
+                create_schema_block(
+                    state,
+                    rs.id,
+                    block_type='array-input',
+                    schema_block_group_key=schema_block_group_key,
+                    registration_response_key=get_registration_response_key(question),
+                    required=question.get('required', False),
+                    pattern=question.get('pattern', None),
+                    space_normalization=question.get('space_normalization', False),
+                    required_if=question.get('required_if', None),
+                    message_required_if=question.get('message_required_if', None),
+                    enabled_if=question.get('enabled_if', None),
+                    suggestion=question.get('suggestion', None),
+                )
+            else:
+                create_schema_block(
+                    state,
+                    rs.id,
+                    block_type='subsection-heading' if sub else 'section-heading',
+                    display_text=question.get('title', '') or question.get('description', ''),
+                    schema_block_group_key=generate_object_id(),
+                    registration_response_key=get_registration_response_key(question),
+                    required=question.get('required', False),
+                    pattern=question.get('pattern', None),
+                    space_normalization=question.get('space_normalization', False),
+                    required_if=question.get('required_if', None),
+                    message_required_if=question.get('message_required_if', None),
+                    enabled_if=question.get('enabled_if', None),
+                    suggestion=question.get('suggestion', None),
+                )
         else:
             # the first subquestion has no text, so the "section" heading is better interpreted as a question label
             first_subquestion['title'] = question.get('title', '')
@@ -421,6 +461,10 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
             registration_response_key=get_registration_response_key(question),
             pattern=question.get('pattern', None),
             space_normalization=question.get('space_normalization', False),
+            required_if=question.get('required_if', None),
+            message_required_if=question.get('message_required_if', None),
+            enabled_if=question.get('enabled_if', None),
+            suggestion=question.get('suggestion', None),
         )
 
         # If there are multiple choice answers, create blocks for these as well.

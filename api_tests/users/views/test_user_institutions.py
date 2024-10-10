@@ -21,6 +21,10 @@ class TestUserInstitutions:
         return '/v2/users/{}/institutions/'.format(user._id)
 
     def test_get_success(self, app, user, user_institutions_url):
-        res = app.get(user_institutions_url)
+        res = app.get(user_institutions_url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == user.affiliated_institutions.count()
+
+    def test_get_not_logged_in(self, app, user, user_institutions_url):
+        res = app.get(user_institutions_url, expect_errors=True)
+        assert res.status_code == 401

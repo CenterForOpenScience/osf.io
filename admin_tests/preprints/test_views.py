@@ -1,5 +1,7 @@
 import pytest
 import mock
+import json
+import responses
 
 from django.test import RequestFactory
 from django.urls import reverse
@@ -378,20 +380,25 @@ class TestPreprintFormView:
 @pytest.mark.enable_enqueue_task
 @pytest.mark.enable_implicit_clean
 class TestPreprintReindex:
-    @mock.patch('website.preprints.tasks.send_share_preprint_data')
-    @mock.patch('website.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    def test_reindex_preprint_share(self, mock_reindex_preprint, preprint, req):
+
+    def test_reindex_preprint_share(self, preprint, req):
         preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
         preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
         view = views.PreprintReindexShare()
         view = setup_log_view(view, req, guid=preprint._id)
-        view.delete(req)
 
-        assert mock_reindex_preprint.called
-        assert AdminLogEntry.objects.count() == count + 1
+        with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
+            with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
+                with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                    rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
+
+                    view.delete(req)
+
+                    data = json.loads(rsps.calls[0].request.body.decode())
+                    assert data['data']['type'] == 'NormalizedData'
+                    assert AdminLogEntry.objects.count() == count + 1
 
     @mock.patch('website.search.search.update_preprint')
     def test_reindex_preprint_elastic(self, mock_update_search, preprint, req):

@@ -34,6 +34,9 @@ class ProviderSerializer(JSONAPISerializer):
     assets = ser.SerializerMethodField(read_only=True)
     in_sloan_study = ser.BooleanField(read_only=True)
 
+    share_source = ser.CharField(read_only=True)
+    share_publish_type = ser.CharField(read_only=True)
+
     links = LinksField({
         'self': 'get_absolute_url',
         'external_url': 'get_external_url',
@@ -68,6 +71,11 @@ class ProviderSerializer(JSONAPISerializer):
 
     licenses_acceptable = TypedRelationshipField(
         related_view='providers:license-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
+    schemas = TypedRelationshipField(
+        related_view='providers:registration-providers:registration-schema-list',
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
@@ -150,8 +158,6 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         'views',
     ])
 
-    share_source = ser.CharField(read_only=True)
-    share_publish_type = ser.CharField(read_only=True)
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
     permissions = ser.SerializerMethodField()

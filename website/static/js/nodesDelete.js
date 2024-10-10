@@ -386,5 +386,6 @@ var DeleteManager = function (selector) {
 };
 
 module.exports = {
-    DeleteManager: DeleteManager,
+  DeleteManager: DeleteManager,
+  NodesDeleteManager: NodesDeleteManager,
 };
