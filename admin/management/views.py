@@ -120,7 +120,14 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
         if monthly_report_date:
             report_date = isoparse(monthly_report_date).date()
         else:
-            report_date = datetime.datetime.now().date()
+            messages.error(request, 'Monthly Reporter can\'t be run in future or current month')
+            return redirect(reverse('management:commands'))
+
+        today = datetime.date.today()
+
+        if report_date >= today.replace(day=1):
+            messages.error(request, 'Monthly Reporter can\'t be run for the current or a future month.')
+            return redirect(reverse('management:commands'))
 
         errors = monthly_reporters_go(
             report_month=report_date.month,
