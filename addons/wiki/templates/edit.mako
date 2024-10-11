@@ -394,7 +394,7 @@
         </div>
         <div class="m-b-sm">
           <p class="wikiEditorModalLabel">${_("Link Tooltip:")}</p>
-          <input id="linkTitle" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter link Tooltip')}">
+          <input id="linkTitle" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter link tooltip')}">
         </div>
       </div>
       <div class="modal-footer">
