@@ -36,4 +36,3 @@ def run_update_search_and_bulk_index(self, nid, wiki_id_list):
     wiki_pages = WikiPage.objects.filter(id__in=wiki_id_list)
     bulk_update_wikis(wiki_pages)
     node.update_search()
-

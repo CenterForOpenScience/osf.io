@@ -404,7 +404,7 @@ select.form-control {
     z-index: 15;
     white-space: nowrap;
     position: absolute;
-}  
+}
 
 .table-dropdown-item:hover {
     background-color: #337AB7;
