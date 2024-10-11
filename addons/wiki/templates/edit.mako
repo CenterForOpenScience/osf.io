@@ -158,11 +158,11 @@
                     <button id="undoWiki" class="menuItem" data-bind="click: undoWiki" disabled><span id="msoUndo" class="material-symbols-outlined" style="opacity: 0.3">undo</span></button>
                     <button id="redoWiki" class="menuItem" data-bind="click: redoWiki" disabled><span id="msoRedo" class="material-symbols-outlined" style="opacity: 0.3">redo</span></button>
                     <button id="strongWiki" class="menuItem" data-bind="click: strong"><span class="material-symbols-outlined" >format_bold</span></button>
-                    <button id="italicWiki" class="menuItem" data-bind="click: italic"><span class="material-symbols-outlined">format_italic</span></button> 
+                    <button id="italicWiki" class="menuItem" data-bind="click: italic"><span class="material-symbols-outlined">format_italic</span></button>
                     <button class="menuItem" data-bind="click: strikethrough"><span class="material-symbols-outlined">format_strikethrough</span></button>
                     <button class="menuItem" data-bind="click: underline"><span class="material-symbols-outlined">format_underlined</span></button>
                     <button class="menuItem" style="position: relative; display:inline-block"><span class="material-symbols-outlined">format_color_text</span><input type="color" data-bind="value: color, event: { change: colortext }" style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer"></button>
-                    <button class="menuItem" data-bind="click: mokujimacro"><span class="material-symbols-outlined">sort</span></button>          
+                    <button class="menuItem" data-bind="click: mokujimacro"><span class="material-symbols-outlined">sort</span></button>
                     <button class="menuItem" data-bind="click: getLinkInfo" data-toggle="modal" data-target="#toggleLink"><span class="material-symbols-outlined" >link</span></button>
                     <button class="menuItem" data-bind="click: quote"><span class="material-symbols-outlined">format_quote</span></button>
                     <button class="menuItem" data-bind="click: code"><span class="material-symbols-outlined">code</span></button>
