@@ -1006,6 +1006,46 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res_data.get('url'), child_node.parent_node.url)
         mock_update_user_used_quota_method.assert_not_called()
 
+    def test_get_components(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
+                {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': True},
+            ]
+        )
+        linked_node = ProjectFactory(creator=self.user1)
+        project.add_node_link(linked_node, Auth(self.user1), save=True)
+        child_component = NodeFactory(creator=self.user1, parent=project)
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=self.auth)
+        res_data = res.json
+
+        assert_equal(res.status_code, 200)
+        assert_true(res_data['user']['can_sort'])
+        assert_equal(res_data['user']['permissions'], ['read', 'write', 'admin'])
+        assert_equal(len(res_data['nodes']), 2)
+
+    def test_get_components_returns_error_for_deleted_project(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        project.is_deleted = True
+        project.save()
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        res_data = res.json
+        assert_equal(res.status_code, 410)
+
+    def test_get_components_with_unauthenticated_user(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+
+        url = project.api_url_for('get_components')
+        res = self.app.get(url, auth=Auth(), expect_errors=True)
+        res_data = res.json
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res_data['user']['permissions']), 0)
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -3444,6 +3484,7 @@ class TestPointerViews(OsfTestCase):
         node = ProjectFactory(creator=user)
         project.add_pointer(node, auth=Auth(user=user), save=save)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_write_contributor_can_remove_private_component_entry(self):
         """Ensure that write contributors see the button to delete a pointer,
             even if they cannot see what it is pointing at"""
@@ -3462,6 +3503,7 @@ class TestPointerViews(OsfTestCase):
         has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_true(has_controls)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
@@ -3477,6 +3519,7 @@ class TestPointerViews(OsfTestCase):
             '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(has_controls), 3)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
         user2 = AuthUserFactory()
@@ -3495,6 +3538,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(pointer_nodes), 1)
         assert_false(has_controls)
 
+    @pytest.mark.skip(reason = 'Rendering of certain pages moved from Mako templates to Knockout.js.These rendered elements can now only be tested during browser initialization. :RDM-osf.io/pull/510')
     def test_pointer_list_read_contributor_cannot_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 

@@ -2323,6 +2323,10 @@ msgstr ""
 msgid "Start date"
 msgstr ""
 
+#: website/templates/project/project.mako:614
+msgid "Start time"
+msgstr ""
+
 #: website/templates/include/profile/jobs.mako:74
 #: website/templates/include/profile/jobs.mako:89
 #: website/templates/include/profile/schools.mako:58
@@ -2342,7 +2346,11 @@ msgstr ""
 msgid "End date"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:101
+#: website/templates/project/project.mako:617
+msgid "End time"
+msgstr ""
+
+#: website/templates/include/profile/jobs.mako:85
 #: website/templates/include/profile/schools.mako:85
 msgid "Ongoing"
 msgstr ""
@@ -3691,6 +3699,7 @@ msgstr ""
 msgid "Clear Filters"
 msgstr ""
 
+
 #: website/templates/project/project.mako:609
 msgid "Update"
 msgstr ""
@@ -3707,7 +3716,7 @@ msgstr ""
 msgid "Loading logs..."
 msgstr ""
 
-#: website/templates/project/project.mako:648
+#: website/templates/project/project.mako:645
 msgid "Download as file for 0 logs"
 msgstr ""
 

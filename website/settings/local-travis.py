@@ -104,5 +104,7 @@ logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
 
 DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 
+SHARE_ENABLED = False
+
 ADMIN_URL='http://localhost:8001/'
 ADMIN_INTERNAL_DOCKER_URL='http://localhost:8001/'

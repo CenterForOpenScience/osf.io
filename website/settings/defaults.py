@@ -274,6 +274,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     INSTITUTIONAL_STORAGE_ADD_ON_METHOD = addon_settings['institutional_storage_add_on_method']
     INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD = addon_settings['institutional_storage_bulk_mount_method']
     ADDONS_HAS_MAX_KEYS = addon_settings['addons_has_max_keys']
+    ADDONS_FOLDER_FIELD = addon_settings['addons_folder_field']
 
 SYSTEM_ADDED_ADDONS = {
     'user': [],
@@ -366,8 +367,9 @@ CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
 
+SHARE_ENABLED = True  # This should be False for most local development
 SHARE_REGISTRATION_URL = ''
-SHARE_URL = None
+SHARE_URL = 'https://share.osf.io/'
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 CAS_SERVER_URL = 'http://localhost:8080'

@@ -1594,6 +1594,10 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+        Rule([
+            '/project/<pid>/components/',
+            '/project/<pid>/node/<nid>/components/',
+        ], 'get', project_views.node.get_components, json_renderer),
         Rule(
             [
                 '/project/<pid>/pointer/',

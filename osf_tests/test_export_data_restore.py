@@ -45,7 +45,6 @@ class TestExportDataRestore(TestCase):
         cls.file1 = file1 = OsfStorageFileFactory.create(
             name='file1.txt',
             created=datetime.now(),
-            target_object_id=project.id,
             target=target
         )
         file_version = FileVersionFactory(region=inst_region, size=3,)
@@ -85,8 +84,8 @@ class TestExportDataRestore(TestCase):
                 'materialized_path': file1.materialized_path,
                 'name': file1.name,
                 'provider': file1.provider,
-                'created_at': file1.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at': file1.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': str(file1.created),
+                'modified_at': str(file1.modified),
                 'project': {
                     'id': file1.target._id,
                     'name': file1.target.title,
@@ -94,8 +93,8 @@ class TestExportDataRestore(TestCase):
                 'tags': [],
                 'version': [{
                     'identifier': file_version.identifier,
-                    'created_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'created_at': str(file_version.created),
+                    'modified_at': str(file_version.modified),
                     'size': file_version.size,
                     'version_name': file_versions_through.version_name if file_versions_through else file1.name,
                     'contributor': file_version.creator.username,
@@ -105,6 +104,7 @@ class TestExportDataRestore(TestCase):
                 'size': 0,
                 'location': file_version.location,
                 'timestamp': {},
+                'checkout_id': None,
             }]
         }
 

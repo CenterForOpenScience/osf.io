@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% block title %}
+    <title>{% trans "User Identification Information" %}</title>
+{% endblock title %}
+{% block content %}
+    {% include 'user_identification_information/user_identification_list.html' %}
+    {% if not users|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
+{% endblock content %}

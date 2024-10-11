@@ -229,6 +229,23 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         """
         return self.get_allowed_institutional_storage().filter(pk=storage_id).exists()
 
+    def get_user_quota_type_for_nii_storage(self):
+        """If institution is using NII Storage, return user quota type.
+        Otherwise, return None
+        """
+        from addons.osfstorage.models import Region
+        from osf.models import UserQuota
+        region = Region.objects.filter(_id=self._id).first()
+        if not region:
+            # Institution does not have its own institutional storage, return NII_STORAGE
+            return UserQuota.NII_STORAGE
+        if region.waterbutler_settings.get('storage', {}).get('type') == Region.NII_STORAGE:
+            # Institutional storage is using NII Storage, return CUSTOM_STORAGE
+            return UserQuota.CUSTOM_STORAGE
+        else:
+            # Institutional storage is not using NII Storage, return None
+            return None
+
 
 @receiver(post_save, sender=Institution)
 def create_institution_auth_groups(sender, instance, created, **kwargs):

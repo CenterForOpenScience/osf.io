@@ -659,7 +659,6 @@ def create_waterbutler_log(payload, **kwargs):
             timestamp.file_created_or_updated(node, metadata, user.id,
                                               created_flag)
     elif file_node_moved:
-        prepare_file_node(dest_provider)
         with transaction.atomic():  # long transaction
             timestamp.file_node_moved(auth.user.id, node._id,
                                       src_provider, dest_provider,

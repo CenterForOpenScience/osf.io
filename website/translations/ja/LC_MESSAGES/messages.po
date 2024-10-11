@@ -2379,6 +2379,10 @@ msgstr "職名"
 msgid "Start date"
 msgstr "開始日"
 
+#: website/templates/project/project.mako:614
+msgid "Start time"
+msgstr "開始日時"
+
 #: website/templates/include/profile/jobs.mako:74
 #: website/templates/include/profile/jobs.mako:89
 #: website/templates/include/profile/schools.mako:58
@@ -2398,7 +2402,11 @@ msgstr "年"
 msgid "End date"
 msgstr "終了日"
 
-#: website/templates/include/profile/jobs.mako:101
+#: website/templates/project/project.mako:617
+msgid "End time"
+msgstr "終了日時"
+
+#: website/templates/include/profile/jobs.mako:85
 #: website/templates/include/profile/schools.mako:85
 msgid "Ongoing"
 msgstr "在籍"
@@ -3778,13 +3786,9 @@ msgstr "最近の活動"
 msgid "Clear Filters"
 msgstr "フィルタをクリア"
 
-#: website/templates/project/project.mako:609
+#: website/templates/project/project.mako:607
 msgid "Update"
-msgstr ""
-
-#: website/templates/project/project.mako:616
-msgid "Start time"
-msgstr ""
+msgstr "更新"
 
 #: website/templates/project/project.mako:619
 msgid "End time"
@@ -3794,9 +3798,9 @@ msgstr ""
 msgid "Loading logs..."
 msgstr "ログをロード中..."
 
-#: website/templates/project/project.mako:648
+#: website/templates/project/project.mako:645
 msgid "Download as file for 0 logs"
-msgstr ""
+msgstr "0件のファイルをダウンロード"
 
 #: website/templates/project/project.mako:649
 #: website/templates/project/timestamp.mako:206

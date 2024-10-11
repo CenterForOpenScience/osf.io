@@ -95,6 +95,25 @@ class BrandCreate(PermissionRequiredMixin, CreateView):
     permission_required = 'osf.modify_brand'
     raise_exception = True
     template_name = 'brands/create.html'
-    success_url = reverse_lazy('brands:list')
     model = Brand
     form_class = BrandForm
+
+    def get_success_url(self, *args, **kwargs):
+        brand = Brand.objects.filter(name=self.request.POST['name']).first()
+        return reverse_lazy('brands:detail', kwargs={'brand_id': brand.id})
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['change_form'] = BrandForm()
+        return kwargs
+
+    def post(self, request, *args, **kwargs):
+        primary_color = request.POST.get('primary_color')
+        secondary_color = request.POST.get('secondary_color')
+
+        if not is_a11y(primary_color):
+            messages.warning(request, """The selected primary color is not a11y compliant.
+                For more information, visit https://color.a11y.com/""")
+        if not is_a11y(secondary_color):
+            messages.warning(request, """The selected secondary color is not a11y compliant.
+                For more information, visit https://color.a11y.com/""")
+        return super(BrandCreate, self).post(request, *args, **kwargs)
