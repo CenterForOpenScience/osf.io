@@ -1,4 +1,3 @@
-import datetime
 from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
@@ -119,19 +118,10 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
         monthly_report_date = request.POST.get('monthly_report_date', None)
         if monthly_report_date:
             report_date = isoparse(monthly_report_date).date()
-        else:
-            messages.error(request, 'Monthly Reporter can\'t be run in future or current month')
-            return redirect(reverse('management:commands'))
-
-        today = datetime.date.today()
-
-        if report_date >= today.replace(day=1):
-            messages.error(request, 'Monthly Reporter can\'t be run for the current or a future month.')
-            return redirect(reverse('management:commands'))
 
         errors = monthly_reporters_go(
-            report_month=report_date.month,
-            report_year=report_date.year
+            report_month=getattr(report_date, 'month', None),
+            report_year=getattr(report_date, 'year', None)
         )
 
         if errors:
