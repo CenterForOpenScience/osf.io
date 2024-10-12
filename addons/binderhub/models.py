@@ -106,6 +106,37 @@ class BinderHubToken(BaseModel):
     jupyterhub_token = models.TextField(blank=True, null=True)
 
 
+class ServerAnnotation(BaseModel):
+    user = models.ForeignKey(OSFUser, db_index=True, null=True,
+                             blank=True, on_delete=models.CASCADE)
+
+    node = models.ForeignKey(AbstractNode, db_index=True, null=True,
+                             blank=True, on_delete=models.CASCADE)
+
+    binderhub_url = models.TextField(blank=True, null=True)
+
+    jupyterhub_url = models.TextField(blank=True, null=True)
+
+    server_url = models.TextField(blank=False, null=False)
+
+    name = models.TextField(blank=True, null=False)
+
+    memotext = models.TextField(blank=True, null=False)
+
+    def make_resource_object(self):
+        return {
+            'type': 'server-annotation',
+            'id': self.id,
+            'attributes': {
+                'binderhubUrl': self.binderhub_url,
+                'jupyterhubUrl': self.jupyterhub_url,
+                'serverUrl': self.server_url,
+                'name': self.name,
+                'memotext': self.memotext
+            }
+        }
+
+
 class UserSettings(BaseUserSettings):
     binderhubs = EncryptedTextField(blank=True, null=True)
 
