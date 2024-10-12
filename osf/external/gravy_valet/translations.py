@@ -144,6 +144,9 @@ class EphemeralNodeSettings:
     def save(self):
         pass
 
+    def after_set_privacy(self, *args, **kwargs):
+        pass
+
 
 @dataclasses.dataclass
 class EphemeralUserSettings:
