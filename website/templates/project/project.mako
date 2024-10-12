@@ -582,36 +582,36 @@
             ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
         %endif
 
-        <!-- Files -->
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">Files</h3>
-                <div class="pull-right">
-                   <a href="${node['url']}files/" aria-label="Link to projects files" > <i class="fa fa-external-link"></i> </a>
-                </div>
-            </div>
-            % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
-                <div class="row">
-                    <div class="col-sm-12 m-t-sm m-l-md">
-                        <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
+        %if not enable_gv:
+            <!-- Files -->
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title">Files</h3>
+                    <div class="pull-right">
+                    <a href="${node['url']}files/" aria-label="Link to projects files" > <i class="fa fa-external-link"></i> </a>
                     </div>
                 </div>
-               <div class="panel-body panel-body-with-instructions">
-            %else:
-               <div class="panel-body">
-            %endif
-                    <div id="treeGrid">
-                        <div class="spinner-loading-wrapper">
-                            <div class="ball-scale ball-scale-blue">
-                                <div></div>
-                            </div>
-                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
+                    <div class="row">
+                        <div class="col-sm-12 m-t-sm m-l-md">
+                            <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
                         </div>
                     </div>
-                </div><!-- end .panel-body -->
-
-
-        </div>
+                <div class="panel-body panel-body-with-instructions">
+                %else:
+                <div class="panel-body">
+                %endif
+                        <div id="treeGrid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="ball-scale ball-scale-blue">
+                                    <div></div>
+                                </div>
+                                <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                            </div>
+                        </div>
+                    </div><!-- end .panel-body -->
+            </div>
+        %endif
 
         % if addons:
             <!-- Show widgets in left column if present -->
