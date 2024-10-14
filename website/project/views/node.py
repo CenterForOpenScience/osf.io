@@ -492,6 +492,7 @@ def view_project(auth, node, **kwargs):
         addons_widget_data['mendeley'] = mendeley_widget_data
 
     ret.update({'addons_widget_data': addons_widget_data})
+    ret.update({'enable_gv': flag_is_active(request, features.ENABLE_GV)})
     return ret
 
 
