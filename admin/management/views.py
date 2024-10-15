@@ -118,6 +118,8 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
         monthly_report_date = request.POST.get('monthly_report_date', None)
         if monthly_report_date:
             report_date = isoparse(monthly_report_date).date()
+        else:
+            report_date = None
 
         errors = monthly_reporters_go(
             report_month=getattr(report_date, 'month', None),
