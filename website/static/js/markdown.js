@@ -57,12 +57,12 @@ var resizeImage = function(md) {
         var imageLink = token.attrs[token.attrIndex('src')][1];
         var sizeRegex = /^(.+)\s*(?:%20|\s)=\s*(\d+|(\d+)%25)(?:x(\d+|(\d+)%25))?\s*$/;
         var match = imageLink.match(sizeRegex);
-        
+
         if (match) {
             var url = match[1];
             var width = decodeURIComponent(match[2]);
             var height = match[4] ? decodeURIComponent(match[4]) : '';
-            
+
             token.attrs[token.attrIndex('src')][1] = url;
             if (width) {
                 token.attrs.push(['width', width]);
