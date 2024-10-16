@@ -5,6 +5,7 @@ from unittest import mock
 import rdflib
 
 from osf import models as osfdb
+from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metadata.rdfutils import OSF, DCTERMS
 from osf.metadata.tools import pls_gather_metadata_file
 from osf.metrics.reports import PublicItemUsageReport
@@ -24,62 +25,104 @@ METADATA_SCENARIO_DIR = (
 
 BASIC_METADATA_SCENARIO = {
     OSF.Project: {
-        'turtle': 'project_basic.turtle',
-        'datacite-xml': 'project_basic.datacite.xml',
-        'datacite-json': 'project_basic.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'project_basic.turtle',
+            'datacite-xml': 'project_basic.datacite.xml',
+            'datacite-json': 'project_basic.datacite.json',
+        },
     },
     OSF.Preprint: {
-        'turtle': 'preprint_basic.turtle',
-        'datacite-xml': 'preprint_basic.datacite.xml',
-        'datacite-json': 'preprint_basic.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'preprint_basic.turtle',
+            'datacite-xml': 'preprint_basic.datacite.xml',
+            'datacite-json': 'preprint_basic.datacite.json',
+        },
     },
     OSF.Registration: {
-        'turtle': 'registration_basic.turtle',
-        'datacite-xml': 'registration_basic.datacite.xml',
-        'datacite-json': 'registration_basic.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'registration_basic.turtle',
+            'datacite-xml': 'registration_basic.datacite.xml',
+            'datacite-json': 'registration_basic.datacite.json',
+        },
     },
     OSF.File: {
-        'turtle': 'file_basic.turtle',
-        'datacite-xml': 'file_basic.datacite.xml',
-        'datacite-json': 'file_basic.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'file_basic.turtle',
+            'datacite-xml': 'file_basic.datacite.xml',
+            'datacite-json': 'file_basic.datacite.json',
+        },
     },
     DCTERMS.Agent: {
-        'turtle': 'user_basic.turtle',
+        OsfmapPartition.MAIN: {
+            'turtle': 'user_basic.turtle',
+        },
     },
 }
 
 FULL_METADATA_SCENARIO = {
     OSF.Project: {
-        'turtle': 'project_full.turtle',
-        'datacite-xml': 'project_full.datacite.xml',
-        'datacite-json': 'project_full.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'project_full.turtle',
+            'datacite-xml': 'project_full.datacite.xml',
+            'datacite-json': 'project_full.datacite.json',
+        },
+        OsfmapPartition.SUPPLEMENT: {
+            'turtle': 'project_supplement.turtle',
+        },
+        OsfmapPartition.MONTHLY_SUPPLEMENT: {
+            'turtle': 'project_monthly_supplement.turtle',
+        },
     },
     OSF.Preprint: {
-        'turtle': 'preprint_full.turtle',
-        'datacite-xml': 'preprint_full.datacite.xml',
-        'datacite-json': 'preprint_full.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'preprint_full.turtle',
+            'datacite-xml': 'preprint_full.datacite.xml',
+            'datacite-json': 'preprint_full.datacite.json',
+        },
+        OsfmapPartition.SUPPLEMENT: {
+            'turtle': 'preprint_supplement.turtle',
+        },
+        OsfmapPartition.MONTHLY_SUPPLEMENT: {
+            'turtle': 'preprint_monthly_supplement.turtle',
+        },
     },
     OSF.Registration: {
-        'turtle': 'registration_full.turtle',
-        'datacite-xml': 'registration_full.datacite.xml',
-        'datacite-json': 'registration_full.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'registration_full.turtle',
+            'datacite-xml': 'registration_full.datacite.xml',
+            'datacite-json': 'registration_full.datacite.json',
+        },
+        OsfmapPartition.SUPPLEMENT: {
+            'turtle': 'registration_supplement.turtle',
+        },
+        OsfmapPartition.MONTHLY_SUPPLEMENT: {
+            'turtle': 'registration_monthly_supplement.turtle',
+        },
     },
     OSF.File: {
-        'turtle': 'file_full.turtle',
-        'datacite-xml': 'file_full.datacite.xml',
-        'datacite-json': 'file_full.datacite.json',
+        OsfmapPartition.MAIN: {
+            'turtle': 'file_full.turtle',
+            'datacite-xml': 'file_full.datacite.xml',
+            'datacite-json': 'file_full.datacite.json',
+        },
+        OsfmapPartition.SUPPLEMENT: {
+            'turtle': 'file_supplement.turtle',
+        },
+        OsfmapPartition.MONTHLY_SUPPLEMENT: {
+            'turtle': 'file_monthly_supplement.turtle',
+        },
     },
     DCTERMS.Agent: {
-        'turtle': 'user_full.turtle',
+        OsfmapPartition.MAIN: {
+            'turtle': 'user_full.turtle',
+        },
+        OsfmapPartition.SUPPLEMENT: {
+            'turtle': 'user_supplement.turtle',
+        },
+        OsfmapPartition.MONTHLY_SUPPLEMENT: {
+            'turtle': 'user_monthly_supplement.turtle',
+        },
     },
-}
-
-EXPECTED_SUPPLEMENTARY_METADATA = {
-    OSF.Project: 'project_supplementary.turtle',
-    OSF.Preprint: 'preprint_supplementary.turtle',
-    OSF.Registration: 'registration_supplementary.turtle',
-    OSF.File: 'file_supplementary.turtle',
-    DCTERMS.Agent: 'agent_supplementary.turtle',
 }
 
 EXPECTED_MEDIATYPE = {
@@ -278,46 +321,39 @@ class TestSerializers(OsfTestCase):
         self._assert_scenario(BASIC_METADATA_SCENARIO)
         self._setUp_full()
         self._assert_scenario(FULL_METADATA_SCENARIO)
-        self._assert_supplementary_files(EXPECTED_SUPPLEMENTARY_METADATA)
 
     def _assert_scenario(self, scenario_dict):
-        for focus_type, expected_files in scenario_dict.items():
-            for format_key, filename in expected_files.items():
-                osfguid = self.guid_dict[focus_type]
-                gathered_file = pls_gather_metadata_file(osfguid, format_key)
-                with self.subTest(focus_type=focus_type, format_key=format_key, testpath='pls_gather_metadata_file'):
-                    self.assertEqual(gathered_file.mediatype, EXPECTED_MEDIATYPE[format_key])
-                    # to update expected metadata, uncomment `_write_expected_file` and this
-                    # next line (being careful not to leave it uncommented...) and run tests
-                    # self._write_expected_file(filename, gathered_file.serialized_metadata)
-                    self._assert_expected_file(filename, gathered_file.serialized_metadata)
+        for focus_type, by_partition in scenario_dict.items():
+            for osfmap_partition, expected_files in by_partition.items():
+                for format_key, filename in expected_files.items():
+                    self._assert_scenario_file(focus_type, osfmap_partition, format_key, filename)
 
-                with self.subTest(focus_type=focus_type, format_key=format_key, testpath='metadata download'):
-                    resp = self.app.get(f'/{osfguid}/metadata/?format={format_key}')
-                    assert resp.status_code == 200
-                    self.assertEqual(resp.status_code, 200)
-                    self.assertEqual(resp.headers['Content-Type'], EXPECTED_MEDIATYPE[format_key])
-                    self.assertEqual(
-                        resp.headers['Content-Disposition'],
-                        f'attachment; filename={gathered_file.filename}',
-                    )
-                    self._assert_expected_file(filename, resp.text)
-
-    def _assert_supplementary_files(self, expected_supplementary_files):
-        _format_key = 'turtle'  # supplementary metadata only in turtle, for now
-        for _focus_type, _filename in expected_supplementary_files.items():
-            with self.subTest(focus_type=_focus_type, is_supplementary=True):
-                _osfguid = self.guid_dict[_focus_type]
-                _gathered_file = pls_gather_metadata_file(
-                    _osfguid,
-                    _format_key,
-                    serializer_config={'is_supplementary': True},
+    def _assert_scenario_file(
+        self,
+        focus_type: str,
+        osfmap_partition: OsfmapPartition,
+        format_key: str,
+        filename: str,
+    ):
+        osfguid = self.guid_dict[focus_type]
+        gathered_file = pls_gather_metadata_file(osfguid, format_key, {'osfmap_partition': osfmap_partition})
+        with self.subTest(focus_type=focus_type, format_key=format_key, testpath='pls_gather_metadata_file'):
+            self.assertEqual(gathered_file.mediatype, EXPECTED_MEDIATYPE[format_key])
+            # to update expected metadata, uncomment `_write_expected_file` and this
+            # next line (being careful not to leave it uncommented...) and run tests
+            # self._write_expected_file(filename, gathered_file.serialized_metadata)
+            self._assert_expected_file(filename, gathered_file.serialized_metadata)
+        if not osfmap_partition.is_supplementary:
+            with self.subTest(focus_type=focus_type, format_key=format_key, testpath='metadata download'):
+                resp = self.app.get(f'/{osfguid}/metadata/?format={format_key}')
+                assert resp.status_code == 200
+                self.assertEqual(resp.status_code, 200)
+                self.assertEqual(resp.headers['Content-Type'], EXPECTED_MEDIATYPE[format_key])
+                self.assertEqual(
+                    resp.headers['Content-Disposition'],
+                    f'attachment; filename={gathered_file.filename}',
                 )
-                self.assertEqual(_gathered_file.mediatype, EXPECTED_MEDIATYPE[_format_key])
-                # to update expected metadata, uncomment `_write_expected_file` and this
-                # next line (being careful not to leave it uncommented...) and run tests
-                # self._write_expected_file(_filename, _gathered_file.serialized_metadata)
-                self._assert_expected_file(_filename, _gathered_file.serialized_metadata)
+                self._assert_expected_file(filename, resp.text)
 
     def _assert_expected_file(self, filename, actual_metadata):
         _open_mode = ('rb' if isinstance(actual_metadata, bytes) else 'r')

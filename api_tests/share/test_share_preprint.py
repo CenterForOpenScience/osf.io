@@ -133,7 +133,7 @@ class TestPreprintShare:
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
         mock_share_responses.replace(responses.POST, sharev2_push_url(), status=400)
         preprint.set_published(True, auth=auth, save=True)
-        with expect_preprint_ingest_request(mock_share_responses, preprint, count=1, with_supplementary=False):
+        with expect_preprint_ingest_request(mock_share_responses, preprint, count=1, error_response=True):
             preprint.update_search()
 
     def test_delete_from_share(self, mock_share_responses):
