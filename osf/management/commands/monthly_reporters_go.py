@@ -44,8 +44,8 @@ def monthly_reporters_go(report_year=None, report_month=None):
 )
 def monthly_reporter_go(task, reporter_key: str, yearmonth: str):
     _reporter_class = AllMonthlyReporters[reporter_key].value
-    _parsed_yearmonth = YearMonth.from_str(yearmonth)
-    _reporter_class().run_and_record_for_month(_parsed_yearmonth)
+    _reporter = _reporter_class(YearMonth.from_str(yearmonth))
+    _reporter.run_and_record_for_month()
 
 
 class Command(BaseCommand):
