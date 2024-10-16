@@ -40,7 +40,7 @@ class TestPublicItemUsageReporter:
         #   item0: 3 views, 0 downloads, 2 sessions
         #   item1: 1 views, 1 download, 1 session (plus 1 view from child item2)
         #   item2: 1 views, 0 downloads, 1 session
-        _month_start = ym_sparse.target_month()
+        _month_start = ym_sparse.month_start()
         _save_usage(
             timestamp=_month_start,
             item_guid='item0',
@@ -89,7 +89,7 @@ class TestPublicItemUsageReporter:
     @pytest.fixture
     def busy_month_item0(self, ym_busy):
         # item0: 4 sessions, 4*7 views, 4*5 downloads
-        _month_start = ym_busy.target_month()
+        _month_start = ym_busy.month_start()
         for _sesh in range(0, 4):
             _sesh_start = _month_start + timedelta(days=_sesh)
             for _minute in range(0, 7):
@@ -111,7 +111,7 @@ class TestPublicItemUsageReporter:
     def busy_month_item1(self, ym_busy):
         # item1: 10 sessions, 6*9 views, 5*7 downloads, 2 providers
         # (plus 11 views in 11 sessions from child item2)
-        _month_start = ym_busy.target_month()
+        _month_start = ym_busy.month_start()
         for _sesh in range(0, 6):
             _sesh_start = _month_start + timedelta(days=_sesh)
             for _minute in range(0, 9):
@@ -135,7 +135,7 @@ class TestPublicItemUsageReporter:
     @pytest.fixture
     def busy_month_item2(self, ym_busy):
         # item2: 11 sessions, 11 views, 11 downloads (child of item1)
-        _month_start = ym_busy.target_month()
+        _month_start = ym_busy.month_start()
         for _sesh in range(1, 12):
             _save_usage(
                 timestamp=_month_start + timedelta(days=_sesh),

@@ -107,8 +107,8 @@ class PublicItemUsageReporter(MonthlyReporter):
             CountedAuthUsage.search()
             .filter('term', item_public=True)
             .filter('range', timestamp={
-                'gte': yearmonth.target_month(),
-                'lt': yearmonth.next_month(),
+                'gte': yearmonth.month_start(),
+                'lt': yearmonth.month_end(),
             })
             .update_from_dict({'size': 0})  # only aggregations, no hits
         )
