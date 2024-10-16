@@ -46,6 +46,9 @@ def monthly_reporter_go(task, reporter_key: str, yearmonth: str):
     _reporter_class = AllMonthlyReporters[reporter_key].value
     _reporter = _reporter_class(YearMonth.from_str(yearmonth))
     _reporter.run_and_record_for_month()
+    _followup = _reporter.followup_task()
+    if _followup is not None:
+        _followup.apply_async()
 
 
 class Command(BaseCommand):
