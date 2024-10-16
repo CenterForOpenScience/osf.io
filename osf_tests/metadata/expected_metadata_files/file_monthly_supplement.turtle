@@ -4,11 +4,10 @@
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<http://localhost:5000/w5ibb> osf:usage [ dcterms:temporal "2123-05"^^xsd:gYearMonth ;
+<http://localhost:5000/w3ibb> osf:usage [ dcterms:temporal "2123-05"^^xsd:gYearMonth ;
             dcat:accessService <http://localhost:5000> ;
-            foaf:primaryTopic <http://localhost:5000/w5ibb> ;
+            foaf:primaryTopic <http://localhost:5000/w3ibb> ;
             osf:downloadCount 3 ;
             osf:downloadSessionCount 2 ;
             osf:viewCount 7 ;
             osf:viewSessionCount 5 ] .
-
