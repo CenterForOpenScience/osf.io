@@ -26,6 +26,9 @@ class MonthlyReporter:
             report.report_yearmonth = self.yearmonth
             report.save()
 
+    def followup_task(self) -> celery.Signature | None:
+        return None
+
 
 class DailyReporter:
     def report(self, report_date):
