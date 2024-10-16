@@ -10,7 +10,6 @@ from osf.metrics.counted_usage import (
     get_provider_id,
 )
 from osf.metrics.reports import PublicItemUsageReport
-from osf.metrics.utils import YearMonth
 from osf import models as osfdb
 from website import settings as website_settings
 from ._base import MonthlyReporter
@@ -31,18 +30,18 @@ class PublicItemUsageReporter(MonthlyReporter):
     includes projects, project components, registrations, registration components, and preprints
     '''
 
-    def report(self, yearmonth: YearMonth):
+    def report(self):
         # use two composite aggregations in parallel to page thru every
         # public item viewed or downloaded this month, counting:
         # - views and downloads for each item (using `CountedAuthUsage.item_guid`)
         # - views for each item's components and files (using `CountedAuthUsage.surrounding_guids`)
         for _exact_bucket, _contained_views_bucket in _zip_composite_aggs(
-            self._exact_item_search(yearmonth), 'agg_osfid',
-            self._contained_item_views_search(yearmonth), 'agg_surrounding_osfid',
+            self._exact_item_search(), 'agg_osfid',
+            self._contained_item_views_search(), 'agg_surrounding_osfid',
         ):
             try:
                 _report = self._report_from_buckets(_exact_bucket, _contained_views_bucket)
-                _report.view_session_count = self._get_view_session_count(yearmonth, _report.item_osfid)
+                _report.view_session_count = self._get_view_session_count(_report.item_osfid)
                 yield _report
             except _SkipItem:
                 pass
@@ -102,20 +101,20 @@ class PublicItemUsageReporter(MonthlyReporter):
             download_session_count=0,
         )
 
-    def _base_usage_search(self, yearmonth):
+    def _base_usage_search(self):
         return (
             CountedAuthUsage.search()
             .filter('term', item_public=True)
             .filter('range', timestamp={
-                'gte': yearmonth.month_start(),
-                'lt': yearmonth.month_end(),
+                'gte': self.yearmonth.month_start(),
+                'lt': self.yearmonth.month_end(),
             })
             .update_from_dict({'size': 0})  # only aggregations, no hits
         )
 
-    def _exact_item_search(self, yearmonth) -> edsl.Search:
+    def _exact_item_search(self) -> edsl.Search:
         '''aggregate views and downloads on each osfid (not including components/files)'''
-        _search = self._base_usage_search(yearmonth)
+        _search = self._base_usage_search()
         # the main agg: use a composite aggregation to page thru *every* item
         _agg_osfid = _search.aggs.bucket(
             'agg_osfid',
@@ -148,10 +147,10 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return _search
 
-    def _contained_item_views_search(self, yearmonth) -> edsl.Search:
+    def _contained_item_views_search(self) -> edsl.Search:
         '''aggregate views (but not downloads) on components and files contained within each osfid'''
         _search = (
-            self._base_usage_search(yearmonth)
+            self._base_usage_search()
             .filter('term', action_labels=CountedAuthUsage.ActionLabel.VIEW.value)
         )
         # the main agg: use a composite aggregation to page thru *every* item
@@ -163,14 +162,14 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return _search
 
-    def _get_view_session_count(self, yearmonth, osfid: str):
+    def _get_view_session_count(self, osfid: str):
         '''compute view_session_count separately to avoid double-counting
 
         (the same session may be represented in both the composite agg on `item_guid`
         and that on `surrounding_guids`)
         '''
         _search = (
-            self._base_usage_search(yearmonth)
+            self._base_usage_search()
             .query(
                 'bool',
                 filter=[
