@@ -418,6 +418,14 @@ select.form-control {
     width: 80%;
 }
 
+.milkdown .editor ul li {
+    list-style-type: none;
+}
+
+.milkdown .editor ul li:has(>p >a) {
+    list-style-type: disc;
+}
+
 .sort-item {
     padding: 5px;
 }
