@@ -1,9 +1,11 @@
 from __future__ import annotations
 import typing
 
+import celery
 if typing.TYPE_CHECKING:
     import elasticsearch_dsl as edsl
 
+from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metrics.counted_usage import (
     CountedAuthUsage,
     get_item_type,
@@ -45,6 +47,12 @@ class PublicItemUsageReporter(MonthlyReporter):
                 yield _report
             except _SkipItem:
                 pass
+
+    def followup_task(self):
+        return task__update_monthly_metadatas.signature(
+            args=[str(self.yearmonth)],
+            countdown=30,  # give index time to settle
+        )
 
     def _report_from_buckets(self, exact_bucket, contained_views_bucket):
         # either exact_bucket or contained_views_bucket may be None, but not both
@@ -190,6 +198,24 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         _response = _search.execute()
         return _response.aggregations.agg_session_count.value
+
+
+###
+# followup celery task
+@celery.shared_task
+def task__update_monthly_metadatas(yearmonth: str):
+    from api.share.utils import task__update_share
+    _report_search = (
+        PublicItemUsageReport.search()
+        .filter('term', report_yearmonth=yearmonth)
+        .source(['item_osfid'])  # return only the 'item_osfid' field
+    )
+    for _hit in _report_search.scan():
+        task__update_share.delay(
+            _hit.item_osfid,
+            is_backfill=True,
+            osfmap_partition_name=OsfmapPartition.MONTHLY_SUPPLEMENT.name,
+        )
 
 
 ###
