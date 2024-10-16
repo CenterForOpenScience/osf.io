@@ -23,7 +23,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
     using osf, based on their explicitly-affiliated osf objects
     '''
     def report(self, yearmonth: YearMonth):
-        _before_datetime = yearmonth.next_month()
+        _before_datetime = yearmonth.month_end()
         for _institution in osfdb.Institution.objects.filter(created__lt=_before_datetime):
             _user_qs = _institution.get_institution_users().filter(created__lt=_before_datetime)
             for _user in _user_qs.iterator(chunk_size=_CHUNK_SIZE):
@@ -143,7 +143,7 @@ class _InstiUserReportHelper:
         ).aggregate(storage_bytes=Sum('size', default=0))['storage_bytes']
 
     def _get_last_active(self):
-        end_date = self.yearmonth.next_month()
+        end_date = self.yearmonth.month_end()
 
         node_logs = self.user.logs.filter(created__lt=end_date).order_by('-created')
         preprint_logs = self.user.preprint_logs.filter(created__lt=end_date).order_by('-created')

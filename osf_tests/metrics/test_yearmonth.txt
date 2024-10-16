@@ -1,0 +1,48 @@
+YearMonth tests
+(doctest-style, in a way pytest will run; see https://docs.pytest.org/en/stable/how-to/doctest.html )
+>>> from osf.metrics.utils import YearMonth
+
+basic dataclass behavior:
+>>> YearMonth(2000, 2)
+YearMonth(year=2000, month=2)
+>>> YearMonth(1999, 9)
+YearMonth(year=1999, month=9)
+>>> ym = YearMonth(2050, 2)
+>>> ym.year
+2050
+>>> ym.month
+2
+
+`from_date` constructor, accepts either `datetime.date` or `datetime.datetime`:
+>>> import datetime
+>>> YearMonth.from_date(datetime.date(1973, 1, 1))
+YearMonth(year=1973, month=1)
+>>> YearMonth.from_date(datetime.datetime(1974, 3, 2))
+YearMonth(year=1974, month=3)
+
+`from_str` constructor, accepts "YYYY-MM" format:
+>>> YearMonth.from_str('2000-12')
+YearMonth(year=2000, month=12)
+
+`__str__` method gives "YYYY-MM" format:
+>>> str(YearMonth(1491, 7))
+'1491-07'
+
+`next` method gives the next year-month:
+>>> ym = YearMonth(1491, 11)
+>>> ym.next()
+YearMonth(year=1491, month=12)
+>>> ym.next().next()
+YearMonth(year=1492, month=1)
+
+`month_start` method:
+>>> YearMonth(3333, 3).month_start()
+datetime.datetime(3333, 3, 1, 0, 0, tzinfo=datetime.timezone.utc)
+>>> YearMonth(1999, 12).month_start().isoformat()
+'1999-12-01T00:00:00+00:00'
+
+`month_end` method:
+>>> YearMonth(3333, 3).month_end()
+datetime.datetime(3333, 4, 1, 0, 0, tzinfo=datetime.timezone.utc)
+>>> YearMonth(1999, 12).month_end().isoformat()
+'2000-01-01T00:00:00+00:00'

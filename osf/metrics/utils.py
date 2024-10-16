@@ -1,4 +1,5 @@
 from __future__ import annotations
+import calendar
 import dataclasses
 import re
 import datetime
@@ -22,6 +23,7 @@ def stable_key(*key_parts):
 
 @dataclasses.dataclass(frozen=True)
 class YearMonth:
+    """YearMonth: represents a specific month in a specific year"""
     year: int
     month: int
 
@@ -29,11 +31,12 @@ class YearMonth:
 
     @classmethod
     def from_date(cls, date: datetime.date) -> YearMonth:
-        assert isinstance(date, (datetime.datetime, datetime.date))
+        """construct a YearMonth from a `datetime.date` (or `datetime.datetime`)"""
         return cls(date.year, date.month)
 
     @classmethod
     def from_str(cls, input_str: str) -> YearMonth:
+        """construct a YearMonth from a string in "YYYY-MM" format"""
         match = cls.YEARMONTH_RE.fullmatch(input_str)
         if match:
             return cls(
@@ -44,12 +47,21 @@ class YearMonth:
             raise ValueError(f'expected YYYY-MM format, got "{input_str}"')
 
     def __str__(self):
+        """convert to string of "YYYY-MM" format"""
         return f'{self.year}-{self.month:0>2}'
 
-    def target_month(self):
+    def next(self) -> YearMonth:
+        """get a new YearMonth for the month after this one"""
+        return (
+            YearMonth(self.year + 1, int(calendar.JANUARY))
+            if self.month == calendar.DECEMBER
+            else YearMonth(self.year, self.month + 1)
+        )
+
+    def month_start(self) -> datetime.datetime:
+        """get a datetime (in UTC timezone) when this YearMonth starts"""
         return datetime.datetime(self.year, self.month, 1, tzinfo=datetime.UTC)
 
-    def next_month(self):
-        if self.month == 12:
-            return datetime.datetime(self.year + 1, 1, 1, tzinfo=datetime.UTC)
-        return datetime.datetime(self.year, self.month + 1, 1, tzinfo=datetime.UTC)
+    def month_end(self) -> datetime.datetime:
+        """get a datetime (in UTC timezone) when this YearMonth ends (the start of next month)"""
+        return self.next().month_start()
