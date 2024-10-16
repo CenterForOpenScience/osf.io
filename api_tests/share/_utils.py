@@ -12,6 +12,7 @@ from framework.postcommit_tasks.handlers import (
 )
 from website import settings as website_settings
 from api.share.utils import shtrove_ingest_url, sharev2_push_url
+from osf.metadata.osf_gathering import OsfmapPartition
 
 
 @contextlib.contextmanager
@@ -40,13 +41,20 @@ def mock_update_share():
 
 
 @contextlib.contextmanager
-def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=False, count=1, with_supplementary=True):
+def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=False, count=1, error_response=False):
     mock_share_responses._calls.reset()
     yield
-    _total_count = (
-        count * 3  # (1) legacy (2) trove (3) trove supplementary
-        if with_supplementary
-        else count * 2
+    _legacy_count_per_item = 1
+    _trove_main_count_per_item = 1
+    _trove_supplementary_count_per_item = (
+        0
+        if (error_response or delete)
+        else (len(OsfmapPartition) - 1)
+    )
+    _total_count = count * (
+        _legacy_count_per_item
+        + _trove_main_count_per_item
+        + _trove_supplementary_count_per_item
     )
     assert len(mock_share_responses.calls) == _total_count, (
         f'expected {_total_count} call(s), got {len(mock_share_responses.calls)}: {list(mock_share_responses.calls)}'
@@ -63,7 +71,7 @@ def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=F
         else:
             _legacy_push_calls.append(_call)
     assert len(_trove_ingest_calls) == count
-    assert len(_trove_supp_ingest_calls) == (count if with_supplementary else 0)
+    assert len(_trove_supp_ingest_calls) == count * _trove_supplementary_count_per_item
     assert len(_legacy_push_calls) == count
     for _call in _trove_ingest_calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
@@ -75,9 +83,11 @@ def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=F
 
 def assert_ingest_request(request, expected_osfguid, *, token=None, delete=False, supp=False):
     _querydict = QueryDict(urlsplit(request.path_url).query)
-    assert _querydict['record_identifier'] == (
-        f'{expected_osfguid}/supplement' if supp else expected_osfguid
-    )
+    if supp:
+        assert _querydict['record_identifier'].startswith(expected_osfguid)
+        assert _querydict['record_identifier'] != expected_osfguid
+    else:
+        assert _querydict['record_identifier'] == expected_osfguid
     if delete:
         assert request.method == 'DELETE'
     else:
@@ -91,7 +101,7 @@ def assert_ingest_request(request, expected_osfguid, *, token=None, delete=False
 
 
 @contextlib.contextmanager
-def expect_preprint_ingest_request(mock_share_responses, preprint, *, delete=False, count=1, with_supplementary=True):
+def expect_preprint_ingest_request(mock_share_responses, preprint, *, delete=False, count=1, error_response=False):
     # same as expect_ingest_request, but with convenience for preprint specifics
     # and postcommit-task handling (so on_preprint_updated actually runs)
     with expect_ingest_request(
@@ -100,7 +110,7 @@ def expect_preprint_ingest_request(mock_share_responses, preprint, *, delete=Fal
         token=preprint.provider.access_token,
         delete=delete,
         count=count,
-        with_supplementary=with_supplementary,
+        error_response=error_response,
     ):
         # clear out postcommit tasks from factories
         postcommit_queue().clear()
