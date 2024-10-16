@@ -52,6 +52,7 @@ class _InstiUserReportHelper:
                 if self.user.date_last_login is not None
                 else None
             ),
+            month_last_active=self._get_last_active(),
             account_creation_date=YearMonth.from_date(self.user.created),
             orcid_id=self.user.get_verified_external_id('ORCID', verified_only=True),
             public_project_count=self._public_project_queryset().count(),
@@ -140,3 +141,20 @@ class _InstiUserReportHelper:
             purged__isnull=True,
             basefilenode__in=self._public_osfstorage_file_queryset(),
         ).aggregate(storage_bytes=Sum('size', default=0))['storage_bytes']
+
+    def _get_last_active(self):
+        end_date = self.yearmonth.next_month()
+
+        node_logs = self.user.logs.filter(created__lt=end_date).order_by('-created')
+        preprint_logs = self.user.preprint_logs.filter(created__lt=end_date).order_by('-created')
+
+        latest_node_log_date = node_logs.first().created if node_logs.exists() else None
+        latest_preprint_log_date = preprint_logs.first().created if preprint_logs.exists() else None
+        dates = [date for date in [latest_node_log_date, latest_preprint_log_date] if date is not None]
+
+        latest_activity_date = max(dates, default=None)
+
+        if latest_activity_date:
+            return YearMonth.from_date(latest_activity_date)
+        else:
+            return None
