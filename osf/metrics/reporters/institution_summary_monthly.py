@@ -5,26 +5,25 @@ from osf.models import Institution, Preprint, AbstractNode, FileVersion, NodeLog
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionMonthlySummaryReport
-from osf.metrics.utils import YearMonth
 from ._base import MonthlyReporter
 
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
     """Generate an InstitutionMonthlySummaryReport for each institution."""
 
-    def report(self, yearmonth: YearMonth):
+    def report(self):
         for institution in Institution.objects.all():
-            yield self.generate_report(institution, yearmonth)
+            yield self.generate_report(institution)
 
-    def generate_report(self, institution, yearmonth):
+    def generate_report(self, institution):
         node_queryset = institution.nodes.filter(
             deleted__isnull=True,
-            created__lt=yearmonth.month_end()
+            created__lt=self.yearmonth.month_end()
         ).exclude(
             spam_status=SpamStatus.SPAM,
         )
 
-        preprint_queryset = self.get_published_preprints(institution, yearmonth)
+        preprint_queryset = self.get_published_preprints(institution, self.yearmonth)
 
         return InstitutionMonthlySummaryReport(
             institution_id=institution._id,
@@ -36,8 +35,8 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             published_preprint_count=preprint_queryset.count(),
             storage_byte_count=self.get_storage_size(node_queryset, preprint_queryset),
             public_file_count=self.get_files(node_queryset, preprint_queryset, is_public=True).count(),
-            monthly_logged_in_user_count=self.get_monthly_logged_in_user_count(institution, yearmonth),
-            monthly_active_user_count=self.get_monthly_active_user_count(institution, yearmonth),
+            monthly_logged_in_user_count=self.get_monthly_logged_in_user_count(institution, self.yearmonth),
+            monthly_active_user_count=self.get_monthly_active_user_count(institution, self.yearmonth),
         )
 
     def _get_count(self, node_queryset, node_type, is_public):

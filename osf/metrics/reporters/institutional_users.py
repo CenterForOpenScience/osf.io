@@ -22,12 +22,12 @@ class InstitutionalUsersReporter(MonthlyReporter):
     which offers institutional admins insight into how people at their institution are
     using osf, based on their explicitly-affiliated osf objects
     '''
-    def report(self, yearmonth: YearMonth):
-        _before_datetime = yearmonth.month_end()
+    def report(self):
+        _before_datetime = self.yearmonth.month_end()
         for _institution in osfdb.Institution.objects.filter(created__lt=_before_datetime):
             _user_qs = _institution.get_institution_users().filter(created__lt=_before_datetime)
             for _user in _user_qs.iterator(chunk_size=_CHUNK_SIZE):
-                _helper = _InstiUserReportHelper(_institution, _user, yearmonth, _before_datetime)
+                _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth, _before_datetime)
                 yield _helper.report
 
 
