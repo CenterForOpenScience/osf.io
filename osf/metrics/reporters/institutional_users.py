@@ -23,7 +23,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
     using osf, based on their explicitly-affiliated osf objects
     '''
     def report(self, yearmonth: YearMonth):
-        _before_datetime = yearmonth.next_month()
+        _before_datetime = yearmonth.month_end()
         for _institution in osfdb.Institution.objects.filter(created__lt=_before_datetime):
             _user_qs = _institution.get_institution_users().filter(created__lt=_before_datetime)
             for _user in _user_qs.iterator(chunk_size=_CHUNK_SIZE):

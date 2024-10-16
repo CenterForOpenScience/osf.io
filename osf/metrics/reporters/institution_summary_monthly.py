@@ -19,7 +19,7 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
     def generate_report(self, institution, yearmonth):
         node_queryset = institution.nodes.filter(
             deleted__isnull=True,
-            created__lt=yearmonth.next_month()
+            created__lt=yearmonth.month_end()
         ).exclude(
             spam_status=SpamStatus.SPAM,
         )
@@ -46,7 +46,7 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
     def get_published_preprints(self, institution, yearmonth):
         queryset = Preprint.objects.can_view().filter(
             affiliated_institutions=institution,
-            created__lte=yearmonth.next_month()
+            created__lte=yearmonth.month_end()
         ).exclude(
             spam_status=SpamStatus.SPAM
         )
@@ -80,13 +80,13 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
 
     def get_monthly_logged_in_user_count(self, institution, yearmonth):
         return institution.get_institution_users().filter(
-            date_last_login__gte=yearmonth.target_month(),
-            date_last_login__lt=yearmonth.next_month()
+            date_last_login__gte=yearmonth.month_start(),
+            date_last_login__lt=yearmonth.month_end()
         ).count()
 
     def get_monthly_active_user_count(self, institution, yearmonth):
-        start_date = yearmonth.target_month()
-        end_date = yearmonth.next_month()
+        start_date = yearmonth.month_start()
+        end_date = yearmonth.month_end()
 
         nodelogs = NodeLog.objects.filter(
             user=OuterRef('pk'),
