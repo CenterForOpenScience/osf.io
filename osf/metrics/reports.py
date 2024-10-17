@@ -315,7 +315,7 @@ class PublicItemUsageReport(MonthlyReport):
             .filter('term', item_osfid=item_osfid)
             # only last month's report
             .filter('range', report_yearmonth={
-                'gte': 'now-1M/M',
+                'gte': 'now-2M/M',
                 'lt': 'now/M',
             })
             .sort('-report_yearmonth')

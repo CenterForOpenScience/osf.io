@@ -43,7 +43,6 @@ class PublicItemUsageReporter(MonthlyReporter):
         ):
             try:
                 _report = self._report_from_buckets(_exact_bucket, _contained_views_bucket)
-                _report.view_session_count = self._get_view_session_count(_report.item_osfid)
                 yield _report
             except _SkipItem:
                 pass
@@ -63,8 +62,7 @@ class PublicItemUsageReporter(MonthlyReporter):
             else self._init_report_from_osfid(contained_views_bucket.key.osfid)
         )
         # view counts include views on contained items (components, files)
-        if contained_views_bucket is not None:
-            _report.view_count += contained_views_bucket.doc_count
+        _report.view_count, _report.view_session_count = self._get_view_counts(_report.item_osfid)
         return _report
 
     def _init_report_from_exact_bucket(self, exact_bucket) -> PublicItemUsageReport:
@@ -82,10 +80,8 @@ class PublicItemUsageReporter(MonthlyReporter):
             download_session_count=0,
         )
         for _actionbucket in exact_bucket.agg_action:
-            if _actionbucket.key == CountedAuthUsage.ActionLabel.VIEW.value:
-                _report.view_count = _actionbucket.doc_count
-                # note: view_session_count computed separately to avoid double-counting
-            elif _actionbucket.key == CountedAuthUsage.ActionLabel.DOWNLOAD.value:
+            # note: view counts computed separately to avoid double-counting
+            if _actionbucket.key == CountedAuthUsage.ActionLabel.DOWNLOAD.value:
                 _report.download_count = _actionbucket.doc_count
                 _report.download_session_count = _actionbucket.agg_session_count.value
         return _report
@@ -136,17 +132,16 @@ class PublicItemUsageReporter(MonthlyReporter):
         _agg_osfid.bucket('agg_provider_id', 'terms', field='provider_id')
         # nested agg: for each item, get item_type values
         _agg_osfid.bucket('agg_item_type', 'terms', field='item_type')
-        # nested agg: for each item, get view and download count
+        # nested agg: for each item, get download count
         _agg_action = _agg_osfid.bucket(
             'agg_action',
             'terms',
             field='action_labels',
             include=[
                 CountedAuthUsage.ActionLabel.DOWNLOAD.value,
-                CountedAuthUsage.ActionLabel.VIEW.value,
             ],
         )
-        # nested nested agg: for each item-action pair, get a session count
+        # nested nested agg: get download session count
         _agg_action.metric(
             'agg_session_count',
             'cardinality',
@@ -156,7 +151,7 @@ class PublicItemUsageReporter(MonthlyReporter):
         return _search
 
     def _contained_item_views_search(self) -> edsl.Search:
-        '''aggregate views (but not downloads) on components and files contained within each osfid'''
+        '''iterate osfids with views on contained components and files'''
         _search = (
             self._base_usage_search()
             .filter('term', action_labels=CountedAuthUsage.ActionLabel.VIEW.value)
@@ -170,7 +165,7 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return _search
 
-    def _get_view_session_count(self, osfid: str):
+    def _get_view_counts(self, osfid: str) -> tuple[int, int]:
         '''compute view_session_count separately to avoid double-counting
 
         (the same session may be represented in both the composite agg on `item_guid`
@@ -197,7 +192,9 @@ class PublicItemUsageReporter(MonthlyReporter):
             precision_threshold=_MAX_CARDINALITY_PRECISION,
         )
         _response = _search.execute()
-        return _response.aggregations.agg_session_count.value
+        _view_count = _response.hits.total
+        _view_session_count = _response.aggregations.agg_session_count.value
+        return (_view_count, _view_session_count)
 
 
 ###
