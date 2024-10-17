@@ -83,14 +83,14 @@ class MockWbResponse:
             raise HTTPError('HTTPError')
 
     def json(self):
-        return self._content  # 直接データを返すように変更
+        return self._content
 
 class MockTaskResponse:
     def __init__(self, content):
         self.ready = False
 
     def ready(self):
-        return self.ready  # 直接データを返すように変更
+        return self.ready
 
 class TestCheckFileObjectInNode(OsfTestCase):
 
@@ -107,10 +107,10 @@ class TestCheckFileObjectInNode(OsfTestCase):
         result = check_file_object_in_node(dir_id, self.project1)
         self.assertTrue(result)
 
-    def test_invalid_directory_id(self):        
+    def test_invalid_directory_id(self):
         with self.assertRaises(HTTPError) as context:
             check_file_object_in_node('invalid_directory_id', self.project1)
-        
+
         self.assertEqual(context.exception.data['message_short'], 'directory id does not exist')
         self.assertEqual(context.exception.data['message_long'], 'directory id does not exist')
 
@@ -118,7 +118,7 @@ class TestCheckFileObjectInNode(OsfTestCase):
         dir_id = self.folder1._id
         with self.assertRaises(HTTPError) as context:
             check_file_object_in_node(dir_id, self.project2)
-        
+
         self.assertEqual(context.exception.data['message_short'], 'directory id is invalid')
         self.assertEqual(context.exception.data['message_long'], 'directory id is invalid')
 
@@ -146,7 +146,6 @@ class TestGetWikiFullpath(OsfTestCase):
         self.assertEqual(result, wiki_name)
 
     def test_with_parent(self):
-        # 親ページがある場合のテスト
         wiki = self.child_wiki
         parent_wiki_name = self.parent_wiki.page_name
         wiki_name = wiki.page_name
@@ -155,7 +154,6 @@ class TestGetWikiFullpath(OsfTestCase):
         self.assertEqual(result, expected_path)
 
     def test_with_home_parent(self):
-        # 親ページがhomeの場合のテスト
         wiki = self.home_child_wiki
         parent_wiki_name = self.home_wiki.page_name
         wiki_name = wiki.page_name
@@ -192,31 +190,22 @@ class TestGetNumberedNameForExistingWiki(OsfTestCase):
         self.wiki_numbered = WikiPage.objects.create_for_node(self.project, 'Numbered(1)', 'This is numbered wiki(1)', self.consolidate_auth)
 
     def test_no_matching_wiki(self):
-        base_name = "test"
+        base_name = 'test'
         result = get_numbered_name_for_existing_wiki(self.project, base_name)
-        self.assertEqual(result, "")
+        self.assertEqual(result, '')
 
     def test_matching_wiki_no_number(self):
-        # 準備: ベース名に一致し、番号のない既存のWikiがある
-        # 実行
         base_name = 'Existing Wiki'
         result = get_numbered_name_for_existing_wiki(self.project, base_name)
-        # アサーション
         self.assertEqual(result, 1)
 
     def test_matching_wiki_with_number(self):
-        # 準備: ベース名に一致し、番号のある既存のWikiがある
-        # 実行
         base_name = 'Numbered'
         result = get_numbered_name_for_existing_wiki(self.project, base_name)
-        # アサーション
         self.assertEqual(result, 2)
 
     def test_matching_wiki_home(self):
-        # 準備: ベース名が 'home' で、一致するWikiが存在する
-        # 実行
         result = get_numbered_name_for_existing_wiki(self.project, 'home')
-        # アサーション
         self.assertEqual(result, 1)
 
 class TestGetImportWikiNameList(OsfTestCase):
@@ -254,9 +243,7 @@ class TestGetImportWikiNameList(OsfTestCase):
                 'wiki_content': 'content3'
             }
         ]
-        # 実行
         result = get_import_wiki_name_list(wiki_info)
-        # アサーション
         expected_result = ['page1', 'page2', 'page3']
         self.assertEqual(result, expected_result)
 
@@ -276,15 +263,3 @@ class TestGetNodeFileMapping(OsfTestCase):
         self.pagefolder3 = TestFolder.objects.create(name='page3', target=self.project1, parent=self.pagefolder2)
         self.pagefile3 = TestFile.objects.create(name='page3.md', target=self.project1, parent=self.pagefolder3)
         self.attachment3 = TestFile.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
-
-    #def test_get_all_child_file_ids(self):
-        #expected_mapping = [
-            #{'wiki_file': '{self.pagefolder1.name}^{self.pagefile1.name}', 'file_id': self.pagefile1._id},
-            #{'wiki_file': '{self.pagefolder1.name}^{self.attachment1.name}', 'file_id': self.attachment1._id},
-            #{'wiki_file': '{self.pagefolder2.name}^{self.pagefile2.name}', 'file_id': self.pagefile3._id},
-            #{'wiki_file': '{self.pagefolder2.name}^{self.attachment2.name}', 'file_id': self.attachment2._id},
-            #{'wiki_file': '{self.pagefolder3.name}^{self.pagefile3.name}', 'file_id': self.pagefile3._id},
-            #{'wiki_file': '{self.pagefolder3.name}^{self.attachment3.name}', 'file_id': self.attachment3._id},
-        #]
-        #result = list(_get_all_child_file_ids(self.wiki_import_dir._id))
-        #self.assertEqual(result, expected_mapping)
