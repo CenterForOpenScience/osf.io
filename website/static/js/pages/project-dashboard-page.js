@@ -868,7 +868,7 @@ const observer = new MutationObserver(function(mutations) {
         if (mutation.type === 'childList') {
             document.querySelectorAll('#markdownRender ul li').forEach(function(li) {
                 const a = li.querySelector('a');
-                if (a && li.childElementCount === 1 && a.parentElement === li) {  
+                if (a && li.childElementCount === 1 && a.parentElement === li) {
                     li.style.listStyleType = 'disc';
                 }
             });
