@@ -10,6 +10,7 @@ from .new_user_domain import NewUserDomainReporter
 from .node_count import NodeCountReporter
 from .osfstorage_file_count import OsfstorageFileCountReporter
 from .preprint_count import PreprintCountReporter
+from .public_item_usage import PublicItemUsageReporter
 from .user_count import UserCountReporter
 from .spam_count import SpamCountReporter
 
@@ -30,3 +31,4 @@ class AllMonthlyReporters(enum.Enum):
     SPAM_COUNT = SpamCountReporter
     INSTITUTIONAL_USERS = InstitutionalUsersReporter
     INSTITUTIONAL_SUMMARY = InstitutionalSummaryMonthlyReporter
+    ITEM_USAGE = PublicItemUsageReporter
