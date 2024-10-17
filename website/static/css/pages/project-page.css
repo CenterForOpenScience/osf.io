@@ -280,7 +280,3 @@ li.addon-categories a{
 #markdownRender ul li {
     list-style-type: none;
 }
-
-#markdownRender ul li:has(>a) {
-    list-style-type: disc;
-}
