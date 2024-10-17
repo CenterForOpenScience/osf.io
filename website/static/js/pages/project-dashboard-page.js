@@ -862,3 +862,20 @@ $(document).ready(function () {
     initDatetimepicker('#LogSearchS');
     initDatetimepicker('#LogSearchE');
 });
+
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList') {
+            document.querySelectorAll('#markdownRender ul li').forEach(function(li) {
+                const a = li.querySelector('a');
+                if (a && li.childElementCount === 1 && a.parentElement === li) {  
+                    li.style.listStyleType = 'disc';
+                }
+            });
+        }
+    });
+});
+
+const targetNode = document.getElementById('markdownRender');
+const config = { childList: true, subtree: true };
+observer.observe(targetNode, config);
