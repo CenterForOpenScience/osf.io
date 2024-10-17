@@ -1541,9 +1541,9 @@ class TestWikiMenu(OsfTestCase):
                 'url': f'/{guid}/wiki/child%20page/',
                 'name': 'child page',
                 'id': self.child_wiki_page._primary_key,
-                "sort_order": None
+                'sort_order': None
                 },
-                "children": []
+                'children': []
             }
         ]
         assert_equal(result_parent_kind, 'folder')
@@ -1565,7 +1565,7 @@ class TestWikiMenu(OsfTestCase):
                     'id': self.grandchild_wiki_page._primary_key,
                     'sort_order': None
                 },
-                "children": []
+                'children': []
             }
         ]
         assert_equal(result_child_kind, 'folder')
@@ -1668,9 +1668,9 @@ class TestWikiMenu(OsfTestCase):
                 'url': f'/{guid}/wiki/child%20page/',
                 'name': 'child page',
                 'id': self.child_wiki_page._primary_key,
-                "sort_order": None
+                'sort_order': None
                 },
-                "children": []
+                'children': []
             }
         ]
         assert_equal(result_parent_kind, 'folder')
@@ -1692,7 +1692,7 @@ class TestWikiMenu(OsfTestCase):
                     'id': self.grandchild_wiki_page._primary_key,
                     'sort_order': None
                 },
-                "children": []
+                'children': []
             }
         ]
         assert_equal(result_child_kind, 'folder')
@@ -1769,7 +1769,7 @@ class TestWikiImport(OsfTestCase):
         # existing wiki page in project1
         self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea', 'wiki pagea content', self.consolidate_auth)
         self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'importpageb', 'wiki pageb content', self.consolidate_auth)
-    
+
         # importpagex
         self.root_import_folder_x = TestFolder.objects.create(name='rootimportfolderx', target=self.project, parent=self.root)
         self.import_page_folder_invalid = TestFolder.objects.create(name='importpagex', target=self.project, parent=self.root_import_folder_x)
