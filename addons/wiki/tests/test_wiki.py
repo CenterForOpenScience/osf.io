@@ -184,10 +184,10 @@ class TestWikiViews(OsfTestCase):
 
     def test_project_wiki_edit_post_non_nfc_input(self):
         wname = 'new name'
-        nfd_wname = unicodedata.normalize('NFD', wname) 
-        url = self.project.web_url_for('project_wiki_edit_post', wname=nfd_wname)    
+        nfd_wname = unicodedata.normalize('NFD', wname)
+        url = self.project.web_url_for('project_wiki_edit_post', wname=nfd_wname)
         wcontent = 'new content'
-        nfd_content = unicodedata.normalize('NFD', wcontent) 
+        nfd_content = unicodedata.normalize('NFD', wcontent)
         res = self.app.post_json(url, {'markdown': nfd_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
         self.project.reload()
@@ -313,7 +313,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_wiki_validate_name_nfd(self):
-        wiki_name_nfd = unicodedata.normalize('NFD', 'Capslock') 
+        wiki_name_nfd = unicodedata.normalize('NFD', 'Capslock')
         url = self.project.api_url_for('project_wiki_validate_name', wname=wiki_name_nfd)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1495,9 +1495,9 @@ class TestWikiMenu(OsfTestCase):
         expected_home_child_result = [
             {
                 'page': {
-                    'url': f'/{guid}/wiki/home%20child/', 
-                    'name': 'home child', 
-                    'id': self.home_child_wiki._primary_key, 
+                    'url': f'/{guid}/wiki/home%20child/',
+                    'name': 'home child',
+                    'id': self.home_child_wiki._primary_key,
                     'sort_order': None
                     },
                 'children': []
@@ -1517,9 +1517,9 @@ class TestWikiMenu(OsfTestCase):
         expected_home_grandchild_result = [
             {
                 'page': {
-                    'url': f'/{guid}/wiki/home%20grandchild/', 
-                    'name': 'home grandchild', 
-                    'id': self.home_grandchild_wiki._primary_key, 
+                    'url': f'/{guid}/wiki/home%20grandchild/',
+                    'name': 'home grandchild',
+                    'id': self.home_grandchild_wiki._primary_key,
                     'sort_order': None
                     },
                 'children': []
@@ -1537,10 +1537,10 @@ class TestWikiMenu(OsfTestCase):
         guid = self.project.guids.first()._id
         expected_child_result = [
             {
-                "page": {
-                'url': f'/{guid}/wiki/child%20page/', 
-                'name': 'child page', 
-                'id': self.child_wiki_page._primary_key, 
+                'page': {
+                'url': f'/{guid}/wiki/child%20page/',
+                'name': 'child page',
+                'id': self.child_wiki_page._primary_key,
                 "sort_order": None
                 },
                 "children": []
@@ -1559,10 +1559,10 @@ class TestWikiMenu(OsfTestCase):
         guid = self.project.guids.first()._id
         expected_grandchild_result = [
             {
-                "page": {
-                    'url': f'/{guid}/wiki/grandchild%20page/', 
-                    'name': 'grandchild page', 
-                    'id': self.grandchild_wiki_page._primary_key, 
+                'page': {
+                    'url': f'/{guid}/wiki/grandchild%20page/',
+                    'name': 'grandchild page',
+                    'id': self.grandchild_wiki_page._primary_key,
                     'sort_order': None
                 },
                 "children": []
@@ -1622,9 +1622,9 @@ class TestWikiMenu(OsfTestCase):
         expected_home_child_result = [
             {
                 'page': {
-                    'url': f'/{guid}/wiki/home%20child/', 
-                    'name': 'home child', 
-                    'id': self.home_child_wiki._primary_key, 
+                    'url': f'/{guid}/wiki/home%20child/',
+                    'name': 'home child',
+                    'id': self.home_child_wiki._primary_key,
                     'sort_order': None
                     },
                 'children': []
@@ -1644,9 +1644,9 @@ class TestWikiMenu(OsfTestCase):
         expected_home_grandchild_result = [
             {
                 'page': {
-                    'url': f'/{guid}/wiki/home%20grandchild/', 
-                    'name': 'home grandchild', 
-                    'id': self.home_grandchild_wiki._primary_key, 
+                    'url': f'/{guid}/wiki/home%20grandchild/',
+                    'name': 'home grandchild',
+                    'id': self.home_grandchild_wiki._primary_key,
                     'sort_order': None
                     },
                 'children': []
@@ -1664,10 +1664,10 @@ class TestWikiMenu(OsfTestCase):
         guid = self.component.guids.first()._id
         expected_child_result = [
             {
-                "page": {
-                'url': f'/{guid}/wiki/child%20page/', 
-                'name': 'child page', 
-                'id': self.child_wiki_page._primary_key, 
+                'page': {
+                'url': f'/{guid}/wiki/child%20page/',
+                'name': 'child page',
+                'id': self.child_wiki_page._primary_key,
                 "sort_order": None
                 },
                 "children": []
@@ -1686,10 +1686,10 @@ class TestWikiMenu(OsfTestCase):
         guid = self.component.guids.first()._id
         expected_grandchild_result = [
             {
-                "page": {
-                    'url': f'/{guid}/wiki/grandchild%20page/', 
-                    'name': 'grandchild page', 
-                    'id': self.grandchild_wiki_page._primary_key, 
+                'page': {
+                    'url': f'/{guid}/wiki/grandchild%20page/',
+                    'name': 'grandchild page',
+                    'id': self.grandchild_wiki_page._primary_key,
                     'sort_order': None
                 },
                 "children": []
@@ -1754,7 +1754,7 @@ class TestWikiImport(OsfTestCase):
         self.root_import_folder1 = TestFolder.objects.create(name='rootimportfolder1', target=self.project, parent=self.root)
         self.import_page_folder1 = TestFolder.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
         self.import_page_md_file1 = TestFile.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder1)
-    
+
         # importpagea - importpagec
         # importpageb(pdf)
         self.root_import_folder_a = TestFolder.objects.create(name='rootimportfoldera', target=self.project, parent=self.root)
@@ -2031,7 +2031,7 @@ class TestWikiImport(OsfTestCase):
         mock_task.is_aborted.return_value = False
         path_nfd = unicodedata.normalize('NFD', '/importpagec/importpaged')
         content_nfd = unicodedata.normalize('NFD', 'new wiki paged content')
-        parent_name_nfd = unicodedata.normalize('NFD', 'importpagec') 
+        parent_name_nfd = unicodedata.normalize('NFD', 'importpagec')
         expected_content = 'new wiki paged content'
         result, updated_wiki_id = views._wiki_import_create_or_update(path_nfd, content_nfd, self.consolidate_auth ,self.project2, mock_task, parent_name_nfd)
         self.assertEqual(result, {'status': 'success', 'path': '/importpagec/importpaged'})
@@ -2728,7 +2728,7 @@ class TestWikiImportReplace(OsfTestCase):
         expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id} "tooltip1")'
         result = views._replace_file_name(self.project, wiki_name, wiki_content_link_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
-        
+
     def test_replace_file_name_link_without_tooltip(self):
         wiki_name = self.import_page_folder1.name
         wiki_content_link_tooltip = 'Wiki content with [attachment1.doc](attachment1.doc)'
@@ -2841,7 +2841,7 @@ class TestWikiImportReplace(OsfTestCase):
 
     def test_check_wiki_name_exist_existing_wiki_nfd(self):
         wiki_name = 'wiki%20page1'
-        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name) 
+        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name)
         import_wiki_name_list = ['importpage1', 'importpage2']
         result_content = views._check_wiki_name_exist(self.project, wiki_name_nfd, self.node_file_mapping, import_wiki_name_list)
         self.assertTrue(result_content)
@@ -2870,8 +2870,8 @@ class TestWikiImportReplace(OsfTestCase):
     def test_process_attachment_file_name_exist_nfd(self):
         wiki_name = 'importpage1'
         file_name = 'attachment1.doc'
-        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name) 
-        file_name_nfd = unicodedata.normalize('NFD', file_name) 
+        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name)
+        file_name_nfd = unicodedata.normalize('NFD', file_name)
         import_wiki_name_list = ['importpage1', 'importpage2']
         result_id = views._process_attachment_file_name_exist(wiki_name_nfd, file_name_nfd, self.root_import_folder1._id, self.node_file_mapping)
         self.assertEqual(result_id, self.import_attachment1_doc._id)
@@ -2962,32 +2962,32 @@ class TestExcludeSymbols(OsfTestCase):
 
 class TestReplaceCommonRule(OsfTestCase):
     def test_plus_sign_replacement(self):
-        input_name = "my+example+file.txt"
-        expected_output = "my example file.txt"
+        input_name = 'my+example+file.txt'
+        expected_output = 'my example file.txt'
         actual_output = views._replace_common_rule(input_name)
         self.assertEqual(actual_output, expected_output)
 
     def test_url_decoding(self):
-        input_name = "my%20example%20file.txt"
-        expected_output = "my example file.txt"
+        input_name = 'my%20example%20file.txt'
+        expected_output = 'my example file.txt'
         actual_output = views._replace_common_rule(input_name)
         self.assertEqual(actual_output, expected_output)
 
     def test_mixed_url_decoding(self):
-        input_name = "another%2Bexample%2Bfile.txt"
-        expected_output = "another+example+file.txt"
+        input_name = 'another%2Bexample%2Bfile.txt'
+        expected_output = 'another+example+file.txt'
         actual_output = views._replace_common_rule(input_name)
         self.assertEqual(actual_output, expected_output)
 
     def test_no_special_characters(self):
-        input_name = "no_special_characters.txt"
-        expected_output = "no_special_characters.txt"
+        input_name = 'no_special_characters.txt'
+        expected_output = 'no_special_characters.txt'
         actual_output = views._replace_common_rule(input_name)
         self.assertEqual(actual_output, expected_output)
 
     def test_special_characters_with_spaces(self):
-        input_name = "special%20%2B%20characters.txt"
-        expected_output = "special + characters.txt"
+        input_name = 'special%20%2B%20characters.txt'
+        expected_output = 'special + characters.txt'
         actual_output = views._replace_common_rule(input_name)
         self.assertEqual(actual_output, expected_output)
 
@@ -3133,7 +3133,7 @@ class TestTaskStatus(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         json_string = res._app_iter[0].decode('utf-8')
         result = json.loads(json_string)
-        self.assertEqual(result, {"aborted": True})
+        self.assertEqual(result, {'aborted': True})
 
     def test_get_abort_wiki_import_result_not_yet_aborted(self):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-7777', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 8, 00, tzinfo=pytz.utc), creator=self.user)
@@ -3166,7 +3166,7 @@ class TestTaskStatus(OsfTestCase):
         task_running = WikiImportTask.objects.get(task_id='task-id-aaaa')
         self.assertEqual(task_running.status, 'Error')
 
-    @freeze_time("2024-05-01 12:00:00")
+    @freeze_time('2024-05-01 12:00:00')
     def test_change_task_status(self):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-cccc', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         views.change_task_status('task-id-cccc', WikiImportTask.STATUS_COMPLETED, True)
@@ -3178,14 +3178,14 @@ class TestTaskStatus(OsfTestCase):
         views.set_wiki_import_task_proces_end(self.project)
         self.assertEqual(WikiImportTask.objects.count(), 1)
 
-    @freeze_time("2024-05-01 12:00:00")
+    @freeze_time('2024-05-01 12:00:00')
     def test_one_task_to_update(self):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-dddd', status=WikiImportTask.STATUS_STOPPED, creator=self.user)
         views.set_wiki_import_task_proces_end(self.project)
         task_stopped = WikiImportTask.objects.get(task_id='task-id-dddd')
         self.assertAlmostEqual(task_stopped.process_end, timezone.make_aware(datetime.datetime(2024, 5, 1, 12, 0, 0)))
 
-    @freeze_time("2024-05-01 12:00:00")
+    @freeze_time('2024-05-01 12:00:00')
     def test_one_task_to_update(self):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-eeee', status=WikiImportTask.STATUS_STOPPED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-ffff', status=WikiImportTask.STATUS_STOPPED, creator=self.user)
