@@ -148,9 +148,10 @@ class _InstiUserReportHelper:
         node_logs = self.user.logs.filter(created__lt=end_date).order_by('-created')
         preprint_logs = self.user.preprint_logs.filter(created__lt=end_date).order_by('-created')
 
-        latest_node_log_date = node_logs.first().created if node_logs.exists() else None
-        latest_preprint_log_date = preprint_logs.first().created if preprint_logs.exists() else None
-        dates = [date for date in [latest_node_log_date, latest_preprint_log_date] if date is not None]
+        dates = filter(bool, [
+            node_logs.values_list('created', flat=True).first(),
+            preprint_logs.values_list('created', flat=True).first(),
+        ])
 
         latest_activity_date = max(dates, default=None)
 

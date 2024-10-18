@@ -52,10 +52,10 @@ class TestInstiUsersReporter(TestCase):
         self.assertEqual(report.user_name, setup.user.fullname)
         self.assertEqual(report.department_name, setup.department_name)
         self.assertEqual(report.month_last_login, YearMonth.from_date(setup.user.date_last_login))
-        if setup.user.month_last_active:
-            self.assertEqual(report.month_last_active, YearMonth.from_date(setup.user.month_last_active))
+        if setup.month_last_active:
+            self.assertEqual(report.month_last_active, YearMonth.from_date(setup.month_last_active))
         else:
-            self.assertEqual(report.month_last_active, setup.user.month_last_active)
+            self.assertEqual(report.month_last_active, setup.month_last_active)
 
         self.assertEqual(report.account_creation_date, YearMonth.from_date(setup.user.created))
         self.assertEqual(report.orcid_id, setup.orcid_id)
@@ -153,6 +153,7 @@ class _InstiUserSetup:
     department_name: str | None = None
     orcid_id: str | None = None
     user: osfdb.OSFUser = dataclasses.field(init=False)
+    month_last_active: YearMonth | None = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.user = UserFactory(
@@ -164,19 +165,15 @@ class _InstiUserSetup:
             ),
         )
         self._add_affiliations(self._generate_counted_objects())
-        recent_node_log = self.user.logs.order_by('-created').first()
+        node_logs = self.user.logs.order_by('-created')
+        preprint_logs = self.user.preprint_logs.order_by('-created')
 
-        recent_preprint_log = self.user.preprint_logs.order_by('-created').first()
+        dates = filter(bool, [
+            node_logs.values_list('created', flat=True).first(),
+            preprint_logs.values_list('created', flat=True).first(),
+        ])
 
-        recent_node_log_date = recent_node_log.created if recent_node_log else None
-        recent_preprint_log_date = recent_preprint_log.created if recent_preprint_log else None
-
-        dates = [date for date in [recent_node_log_date, recent_preprint_log_date] if date is not None]
-
-        if dates:
-            self.user.month_last_active = max(dates)
-        else:
-            self.user.month_last_active = None
+        self.month_last_active = max(dates, default=None)
 
     def affiliate_user(self):
         self.user.add_or_update_affiliated_institution(
