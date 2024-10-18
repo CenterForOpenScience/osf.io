@@ -76,7 +76,7 @@ class TestOldInstitutionUserMetricList:
             department='Biology dept',
             public_project_count=6,
             private_project_count=5,
-        ).save()
+        ).save(refresh=True)
 
         UserInstitutionProjectCounts(
             user_id=user2._id,
@@ -101,7 +101,7 @@ class TestOldInstitutionUserMetricList:
                 department='Psychology dept',
                 public_project_count=int(10 * random()),
                 private_project_count=int(10 * random()),
-            ).save()
+            ).save(refresh=True)
 
         UserInstitutionProjectCounts(
             user_id=user3._id,
