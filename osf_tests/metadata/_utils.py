@@ -18,8 +18,8 @@ def assert_graphs_equal(actual_rdflib_graph, expected_rdflib_graph):
     assert not _expected_but_absent and not _unexpected_but_present, '\n\t'.join((
         'unequal triple-sets!',
         f'overlap size: {len(_overlap)}',
-        f'expected (but absent): {_friendly_graph(_expected_but_absent)}',
-        f'unexpected (but present): {_friendly_graph(_unexpected_but_present)}',
+        f'expected (but absent): {_indented_graph(_expected_but_absent)}',
+        f'unexpected (but present): {_indented_graph(_unexpected_but_present)}',
     ))
 
 
@@ -35,10 +35,9 @@ def _get_graph_and_focuses(triples):
     return _graph, _focuses
 
 
-def _friendly_graph(rdfgraph) -> str:
+def _indented_graph(rdfgraph) -> str:
     _graph_to_print = contextualized_graph(rdfgraph)
     _delim = '\n\t\t'
     return _delim + _delim.join(
-        ' '.join(_term.n3() for _term in triple)
-        for triple in _graph_to_print
+        _graph_to_print.serialize(format='turtle').strip().split('\n')
     )
