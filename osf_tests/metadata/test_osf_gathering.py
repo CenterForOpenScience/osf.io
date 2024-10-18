@@ -805,3 +805,18 @@ class TestOsfGathering(TestCase):
             (_gitlab_ref, DCTERMS.identifier, Literal('gitlab')),
             (_gitlab_ref, SKOS.prefLabel, Literal('GitLab')),
         })
+
+    def test_gather_storage_region(self):
+        _default_region_ref = rdflib.URIRef(f'{website_settings.API_DOMAIN}regions/us/')
+        assert_triples(osf_gathering.gather_storage_region(self.projectfocus), {
+            (self.projectfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
+        })
+        assert_triples(osf_gathering.gather_storage_region(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
+        })
+        assert_triples(osf_gathering.gather_storage_region(self.preprintfocus), {
+            (self.preprintfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
+        })

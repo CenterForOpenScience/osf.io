@@ -688,6 +688,8 @@ def _gather_fileversion(fileversion, fileversion_iri):
     version_sha256 = (fileversion.metadata or {}).get('sha256')
     if version_sha256:
         yield (fileversion_iri, DCTERMS.requires, checksum_iri('sha-256', version_sha256))
+    if fileversion.region is not None:
+        yield (fileversion_iri, OSF.storageRegion, rdflib.URIRef(fileversion.region.absolute_api_v2_url))
 
 
 @gather.er(OSF.contains)
@@ -1132,3 +1134,13 @@ def gather_addons(focus):
             yield (_addon_ref, RDF.type, OSF.AddonImplementation)
             yield (_addon_ref, DCTERMS.identifier, _addon_settings.short_name)
             yield (_addon_ref, SKOS.prefLabel, _addon_settings.config.full_name)
+
+
+@gather.er(OSF.storageRegion)
+def gather_storage_region(focus):
+    _region = getattr(focus.dbmodel, 'osfstorage_region', None)
+    if _region is not None:
+        _region_ref = rdflib.URIRef(_region.absolute_api_v2_url)
+        yield (OSF.storageRegion, _region_ref)
+        yield (_region_ref, RDF.type, OSF.Region)
+        yield (_region_ref, SKOS.prefLabel, rdflib.Literal(_region.name, lang='en'))
