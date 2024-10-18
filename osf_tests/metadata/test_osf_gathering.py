@@ -1,4 +1,5 @@
 import datetime
+from unittest import mock
 
 from django.test import TestCase
 import rdflib
@@ -11,6 +12,7 @@ from osf.metadata.rdfutils import (
     FOAF,
     OSF,
     OSFIO,
+    DCAT,
     DCTERMS,
     DCMITYPE,
     DOI,
@@ -20,6 +22,8 @@ from osf.metadata.rdfutils import (
     checksum_iri,
 )
 from osf import models as osfdb
+from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.utils import YearMonth
 from osf.utils import permissions, workflows
 from osf_tests import factories
 from website import settings as website_settings
@@ -51,6 +55,8 @@ class TestOsfGathering(TestCase):
         )
         # project (with components):
         cls.project = factories.ProjectFactory(creator=cls.user__admin, is_public=True)
+        cls.project.add_addon('box', auth=None)
+        cls.project.add_addon('gitlab', auth=None)
         cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
         cls.project.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
         cls.component = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
@@ -749,4 +755,68 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_cedar_templates(self.filefocus), {
             (self.filefocus.iri, OSF.hasCedarTemplate, cedar_template_iri),
             (cedar_template_iri, DCTERMS.title, Literal(self.cedar_template.schema_name))
+        })
+
+    def test_gather_last_month_usage(self):
+        # no usage report:
+        with mock.patch(
+            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
+            return_value=None,
+        ):
+            assert_triples(osf_gathering.gather_last_month_usage(self.projectfocus), set())
+        # yes usage report:
+        _ym = YearMonth.from_date(datetime.datetime.now(tz=datetime.UTC))
+        with mock.patch(
+            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
+            return_value=PublicItemUsageReport(
+                item_osfid=self.project._id,
+                report_yearmonth=_ym,
+                view_count=71,
+                view_session_count=13,
+                download_count=43,
+                download_session_count=11,
+            ),
+        ):
+            _usage_bnode = rdflib.BNode()
+            assert_triples(osf_gathering.gather_last_month_usage(self.projectfocus), {
+                (self.projectfocus.iri, OSF.usage, _usage_bnode),
+                (_usage_bnode, DCTERMS.temporal, Literal(str(_ym), datatype=rdflib.XSD.gYearMonth)),
+                (_usage_bnode, DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN.rstrip('/'))),
+                (_usage_bnode, FOAF.primaryTopic, self.projectfocus.iri),
+                (_usage_bnode, OSF.viewCount, Literal(71)),
+                (_usage_bnode, OSF.viewSessionCount, Literal(13)),
+                (_usage_bnode, OSF.downloadCount, Literal(43)),
+                (_usage_bnode, OSF.downloadSessionCount, Literal(11)),
+            })
+
+    def test_gather_addons(self):
+        # registration (without non-default addon)
+        assert_triples(osf_gathering.gather_addons(self.registrationfocus), set())
+        # project (with non-default addons)
+        _box_ref = rdflib.URIRef('urn:osf.io:addons:box')
+        _gitlab_ref = rdflib.URIRef('urn:osf.io:addons:gitlab')
+        assert_triples(osf_gathering.gather_addons(self.projectfocus), {
+            (self.projectfocus.iri, OSF.hasOsfAddon, _box_ref),
+            (_box_ref, RDF.type, OSF.AddonImplementation),
+            (_box_ref, DCTERMS.identifier, Literal('box')),
+            (_box_ref, SKOS.prefLabel, Literal('Box')),
+            (self.projectfocus.iri, OSF.hasOsfAddon, _gitlab_ref),
+            (_gitlab_ref, RDF.type, OSF.AddonImplementation),
+            (_gitlab_ref, DCTERMS.identifier, Literal('gitlab')),
+            (_gitlab_ref, SKOS.prefLabel, Literal('GitLab')),
+        })
+
+    def test_gather_storage_region(self):
+        _default_region_ref = rdflib.URIRef(f'{website_settings.API_DOMAIN}regions/us/')
+        assert_triples(osf_gathering.gather_storage_region(self.projectfocus), {
+            (self.projectfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
+        })
+        assert_triples(osf_gathering.gather_storage_region(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
+        })
+        assert_triples(osf_gathering.gather_storage_region(self.preprintfocus), {
+            (self.preprintfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
         })

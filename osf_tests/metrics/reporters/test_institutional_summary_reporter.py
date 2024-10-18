@@ -77,8 +77,8 @@ class TestInstiSummaryMonthlyReporter(TestCase):
         return user
 
     def test_report_generation(self):
-        reporter = InstitutionalSummaryMonthlyReporter()
-        reports = list(reporter.report(self._yearmonth))
+        reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
+        reports = list(reporter.report())
         self.assertEqual(len(reports), 1)
 
         report = reports[0]
@@ -113,8 +113,8 @@ class TestInstiSummaryMonthlyReporter(TestCase):
         self._create_active_user(institution3, date_confirmed=last_month)
 
         # Run the reporter for the current month (February 2018)
-        reporter = InstitutionalSummaryMonthlyReporter()
-        reports = list(reporter.report(self._yearmonth))
+        reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
+        reports = list(reporter.report())
         self.assertEqual(len(reports), 3)  # Reports for self._institution, institution2, institution3
 
         # Extract reports by institution
@@ -262,8 +262,8 @@ class TestSummaryMonthlyReporterBenchmarker(TestCase):
         # Run the reporter
         if enable_benchmarking:
             reporter_start_time = time.time()
-        reporter = InstitutionalSummaryMonthlyReporter()
-        reports = list(reporter.report(self._yearmonth))
+        reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
+        reports = list(reporter.report())
         assert len(reports) == additional_institution_count + 1
 
         if enable_benchmarking:

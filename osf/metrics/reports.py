@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import abc
 import datetime
 
@@ -286,3 +287,39 @@ class InstitutionMonthlySummaryReport(MonthlyReport):
     public_file_count = metrics.Long()
     monthly_logged_in_user_count = metrics.Long()
     monthly_active_user_count = metrics.Long()
+
+
+class PublicItemUsageReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'item_osfid')
+
+    # where noted, fields are meant to correspond to defined terms from COUNTER
+    # https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
+    # https://coprd.countermetrics.org/en/1.0.1/appendices/a-glossary.html
+    item_osfid = metrics.Keyword()                    # counter:Item (or Dataset)
+    item_type = metrics.Keyword(multi=True)           # counter:Data-Type
+    provider_id = metrics.Keyword(multi=True)         # counter:Database(?)
+    platform_iri = metrics.Keyword(multi=True)        # counter:Platform
+
+    # view counts include views on components or files contained by this item
+    view_count = metrics.Long()                       # counter:Total Investigations
+    view_session_count = metrics.Long()               # counter:Unique Investigations
+
+    # download counts of this item only (not including contained components or files)
+    download_count = metrics.Long()                   # counter:Total Requests
+    download_session_count = metrics.Long()           # counter:Unique Requests
+
+    @classmethod
+    def for_last_month(cls, item_osfid: str) -> PublicItemUsageReport | None:
+        _search = (
+            PublicItemUsageReport.search()
+            .filter('term', item_osfid=item_osfid)
+            # only last month's report
+            .filter('range', report_yearmonth={
+                'gte': 'now-2M/M',
+                'lt': 'now/M',
+            })
+            .sort('-report_yearmonth')
+            [:1]
+        )
+        _response = _search.execute()
+        return _response[0] if _response else None
