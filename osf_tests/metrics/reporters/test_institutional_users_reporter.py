@@ -52,6 +52,11 @@ class TestInstiUsersReporter(TestCase):
         self.assertEqual(report.user_name, setup.user.fullname)
         self.assertEqual(report.department_name, setup.department_name)
         self.assertEqual(report.month_last_login, YearMonth.from_date(setup.user.date_last_login))
+        if setup.month_last_active:
+            self.assertEqual(report.month_last_active, YearMonth.from_date(setup.month_last_active))
+        else:
+            self.assertEqual(report.month_last_active, setup.month_last_active)
+
         self.assertEqual(report.account_creation_date, YearMonth.from_date(setup.user.created))
         self.assertEqual(report.orcid_id, setup.orcid_id)
         # counts (NOTE: report.public_file_count and report.storage_byte_count tested separately)
@@ -148,6 +153,7 @@ class _InstiUserSetup:
     department_name: str | None = None
     orcid_id: str | None = None
     user: osfdb.OSFUser = dataclasses.field(init=False)
+    month_last_active: datetime.datetime | None = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.user = UserFactory(
@@ -159,6 +165,15 @@ class _InstiUserSetup:
             ),
         )
         self._add_affiliations(self._generate_counted_objects())
+        node_logs = self.user.logs.order_by('-created')
+        preprint_logs = self.user.preprint_logs.order_by('-created')
+
+        dates = filter(bool, [
+            node_logs.values_list('created', flat=True).first(),
+            preprint_logs.values_list('created', flat=True).first(),
+        ])
+
+        self.month_last_active = max(dates, default=None)
 
     def affiliate_user(self):
         self.user.add_or_update_affiliated_institution(
