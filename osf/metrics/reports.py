@@ -29,6 +29,11 @@ class DailyReport(metrics.Metric):
         super().__init_subclass__(**kwargs)
         assert 'report_date' in cls.UNIQUE_TOGETHER_FIELDS, f'DailyReport subclasses must have "report_date" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
 
+    def save(self, *args, **kwargs):
+        if self.timestamp is None:
+            self.timestamp = self.report_date
+        super().save(*args, **kwargs)
+
     class Meta:
         abstract = True
         dynamic = metrics.MetaField('strict')
@@ -100,6 +105,12 @@ class MonthlyReport(metrics.Metric):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         assert 'report_yearmonth' in cls.UNIQUE_TOGETHER_FIELDS, f'MonthlyReport subclasses must have "report_yearmonth" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
+
+    def save(self, *args, **kwargs):
+        if self.timestamp is None:
+            self.timestamp = self.report_yearmonth.target_month()
+        super().save(*args, **kwargs)
+
 
 
 @receiver(metrics_pre_save)
