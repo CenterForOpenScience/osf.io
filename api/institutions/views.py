@@ -34,6 +34,7 @@ from api.base.utils import (
 )
 from api.base.settings import DEFAULT_ES_NULL_VALUE
 from api.metrics.permissions import IsInstitutionalMetricsUser
+from api.metrics.renderers import MetricsReportsCsvRenderer, MetricsReportsTsvRenderer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
@@ -553,6 +554,11 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
 
     view_category = 'institutions'
     view_name = 'institution-user-metrics'
+    renderer_classes = (
+        *api_settings.DEFAULT_RENDERER_CLASSES,
+        MetricsReportsCsvRenderer,
+        MetricsReportsTsvRenderer,
+    )
 
     serializer_class = NewInstitutionUserMetricsSerializer
 

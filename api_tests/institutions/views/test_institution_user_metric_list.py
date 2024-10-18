@@ -404,9 +404,81 @@ class TestNewInstitutionUserMetricList:
             assert _resp.status_code == 200
             assert list(_user_ids(_resp)) == _expected_user_id_list
 
+    def test_get_csv(self, app, url, institutional_admin, rando, institution):
+        _report_factory(
+            '2024-08',
+            institution,
+            user_id='u_orcomma',
+            account_creation_date='2018-02',
+            user_name='Jason Kelce',
+            orcid_id='4444-3333-2222-1111',
+            department_name='Offensive Line',
+            storage_byte_count=736662999298,
+            embargoed_registration_count=1,
+            published_preprint_count=1,
+            public_registration_count=2,
+            public_project_count=3,
+            public_file_count=4,
+            private_project_count=5,
+            month_last_active='2018-02',
+            month_last_login='2018-02',
+        ),
+
+        resp = app.get(
+            url,
+            auth=institutional_admin.auth,
+            headers={
+                'accept': 'text/csv'
+            }
+        )
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+
+        response_body = resp.text
+        expected_response = [
+            [  # Column Headers
+                'account_creation_date',
+                'department',
+                'embargoed_registration_count',
+                'month_last_active',
+                'month_last_login',
+                'orcid_id',
+                'private_projects',
+                'public_file_count',
+                'public_projects',
+                'public_registration_count',
+                'published_preprint_count',
+                'storage_byte_count',
+                'user_name'
+            ],
+            [
+                '2018-02',
+                'Offensive Line',
+                '1',
+                '2018-02',
+                '2018-02',
+                '4444-3333-2222-1111',
+                '5',
+                '4',
+                '3',
+                '2',
+                '1',
+                '736662999298',
+                'Jason Kelce'
+            ]
+        ]
+
+        with StringIO(response_body) as csv_file:
+            csvreader = csv.reader(csv_file, delimiter=',')
+            for index, row in enumerate(csvreader):
+                assert row == expected_response[index]
+
+
 def _user_ids(api_response):
     for _datum in api_response.json['data']:
         yield _datum['relationships']['user']['data']['id']
+
 
 def _report_factory(yearmonth, institution, **kwargs):
     _report = InstitutionalUserReport(
