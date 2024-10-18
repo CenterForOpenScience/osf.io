@@ -3,7 +3,10 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://localhost:5000/w2ibb> osf:hasOsfAddon <urn:osf.io:addons:gitlab> ;
+    osf:storageRegion <http://localhost:8000/v2/regions/us/> .
 
 <urn:osf.io:addons:gitlab> a osf:AddonImplementation ;
     dcterms:identifier "gitlab" ;
     skos:prefLabel "GitLab" .
+
+<http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .

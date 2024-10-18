@@ -205,7 +205,7 @@ class TestSerializers(OsfTestCase):
             self.user,
             filename='my-file.blarg',
             size=7,
-            sha256='6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e',
+            sha256='shashasha',
         )
         osf_preprint_provider = factories.PreprintProviderFactory(_id='osf')
         another_provider = factories.PreprintProviderFactory(
@@ -260,6 +260,13 @@ class TestSerializers(OsfTestCase):
                 name='RegiProvi the Registration Provider',
                 doi_prefix='11.rp',
             ),
+        )
+        self.reg_file = create_test_file(
+            self.registration,
+            self.user,
+            filename='my-reg-file.blarg',
+            size=17,
+            sha256='shashasha',
         )
         osfdb.GuidMetadataRecord.objects.for_guid(self.registration._id).update({
             'resource_type_general': 'StudyRegistration',

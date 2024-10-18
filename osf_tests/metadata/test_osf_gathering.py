@@ -459,6 +459,7 @@ class TestOsfGathering(TestCase):
         # focus: file
         fileversion = self.file.versions.first()
         fileversion_iri = URIRef(f'{self.filefocus.iri}?revision={fileversion.identifier}')
+        storageregion_iri = URIRef(f'{website_settings.API_DOMAIN}v2/regions/us/')
         assert_triples(osf_gathering.gather_versions(self.filefocus), {
             (self.filefocus.iri, OSF.hasFileVersion, fileversion_iri),
             (fileversion_iri, RDF.type, OSF.FileVersion),
@@ -468,7 +469,9 @@ class TestOsfGathering(TestCase):
             (fileversion_iri, DCTERMS['format'], Literal(fileversion.content_type)),
             (fileversion_iri, DCTERMS.extent, Literal('0.118 MB')),
             (fileversion_iri, OSF.versionNumber, Literal(fileversion.identifier)),
-            (fileversion_iri, DCTERMS.requires, checksum_iri('sha-256', self.file_sha256))
+            (fileversion_iri, DCTERMS.requires, checksum_iri('sha-256', self.file_sha256)),
+            (fileversion_iri, OSF.storageRegion, storageregion_iri),
+            (storageregion_iri, SKOS.prefLabel, Literal('United States', lang='en')),
         })
 
     def test_gather_files(self):
@@ -804,4 +807,19 @@ class TestOsfGathering(TestCase):
             (_gitlab_ref, RDF.type, OSF.AddonImplementation),
             (_gitlab_ref, DCTERMS.identifier, Literal('gitlab')),
             (_gitlab_ref, SKOS.prefLabel, Literal('GitLab')),
+        })
+
+    def test_gather_storage_region(self):
+        _default_region_ref = rdflib.URIRef(f'{website_settings.API_DOMAIN}v2/regions/us/')
+        assert_triples(osf_gathering.gather_storage_region(self.projectfocus), {
+            (self.projectfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
+        })
+        assert_triples(osf_gathering.gather_storage_region(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
+        })
+        assert_triples(osf_gathering.gather_storage_region(self.preprintfocus), {
+            (self.preprintfocus.iri, OSF.storageRegion, _default_region_ref),
+            (_default_region_ref, SKOS.prefLabel, Literal('United States', lang='en')),
         })

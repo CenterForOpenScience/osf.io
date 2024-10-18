@@ -85,6 +85,7 @@ OSF_FILE_REFERENCE = {
     OSF.isContainedBy: OSF_OBJECT_REFERENCE,
     OSF.fileName: None,
     OSF.filePath: None,
+    OSF.hasFileVersion: None,
 }
 
 OSF_OBJECT = {
@@ -128,16 +129,6 @@ OSF_OBJECT = {
         DCTERMS.creator: OSF_AGENT_REFERENCE,
     },
     OWL.sameAs: None,
-}
-
-OSF_FILEVERSION = {
-    DCTERMS.created: None,
-    DCTERMS.creator: OSF_AGENT_REFERENCE,
-    DCTERMS.extent: None,
-    DCTERMS.modified: None,
-    DCTERMS.requires: None,
-    DCTERMS['format']: None,
-    OSF.versionNumber: None,
 }
 
 OSFMAP = {
@@ -190,7 +181,7 @@ OSFMAP = {
         DCTERMS.modified: None,
         DCTERMS.title: None,
         DCTERMS.type: None,
-        OSF.hasFileVersion: OSF_FILEVERSION,
+        OSF.hasFileVersion: None,
         OSF.isContainedBy: OSF_OBJECT_REFERENCE,
         OSF.fileName: None,
         OSF.filePath: None,
@@ -212,15 +203,20 @@ OSFMAP = {
 OSFMAP_SUPPLEMENT = {
     OSF.Project: {
         OSF.hasOsfAddon: None,
+        OSF.storageRegion: None,
     },
     OSF.ProjectComponent: {
         OSF.hasOsfAddon: None,
+        OSF.storageRegion: None,
     },
     OSF.Registration: {
+        OSF.storageRegion: None,
     },
     OSF.RegistrationComponent: {
+        OSF.storageRegion: None,
     },
     OSF.Preprint: {
+        OSF.storageRegion: None,
     },
     OSF.File: {
     },
@@ -688,6 +684,8 @@ def _gather_fileversion(fileversion, fileversion_iri):
     version_sha256 = (fileversion.metadata or {}).get('sha256')
     if version_sha256:
         yield (fileversion_iri, DCTERMS.requires, checksum_iri('sha-256', version_sha256))
+    if fileversion.region is not None:
+        yield from _storage_region_triples(fileversion.region, subject_ref=fileversion_iri)
 
 
 @gather.er(OSF.contains)
@@ -1132,3 +1130,19 @@ def gather_addons(focus):
             yield (_addon_ref, RDF.type, OSF.AddonImplementation)
             yield (_addon_ref, DCTERMS.identifier, _addon_settings.short_name)
             yield (_addon_ref, SKOS.prefLabel, _addon_settings.config.full_name)
+
+
+@gather.er(OSF.storageRegion)
+def gather_storage_region(focus):
+    _region = getattr(focus.dbmodel, 'osfstorage_region', None)
+    if _region is not None:
+        yield from _storage_region_triples(_region)
+
+
+def _storage_region_triples(region, *, subject_ref=None):
+    _region_ref = rdflib.URIRef(region.absolute_api_v2_url)
+    if subject_ref is None:
+        yield (OSF.storageRegion, _region_ref)
+    else:
+        yield (subject_ref, OSF.storageRegion, _region_ref)
+    yield (_region_ref, SKOS.prefLabel, rdflib.Literal(region.name, lang='en'))
