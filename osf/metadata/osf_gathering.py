@@ -1,5 +1,7 @@
 '''gatherers of metadata from the osf database, in particular
 '''
+import datetime
+import enum
 import logging
 
 from django.contrib.contenttypes.models import ContentType
@@ -27,6 +29,8 @@ from osf.metadata.rdfutils import (
     without_namespace,
     smells_like_iri,
 )
+from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.utils import YearMonth
 from osf.utils import workflows as osfworkflows
 from osf.utils.outcomes import ArtifactTypes
 from website import settings as website_settings
@@ -45,13 +49,6 @@ def pls_get_magic_metadata_basket(osf_item) -> gather.Basket:
     '''
     focus = OsfFocus(osf_item)
     return gather.Basket(focus)
-
-
-def osfmap_for_type(rdftype_iri: str):
-    try:
-        return OSFMAP[rdftype_iri]
-    except KeyError:
-        raise ValueError(f'invalid OSFMAP type! expected one of {set(OSFMAP.keys())}, got {rdftype_iri}')
 
 
 ##### END "public" api #####
@@ -211,6 +208,45 @@ OSFMAP = {
     },
 }
 
+# metadata not included in the core record
+OSFMAP_SUPPLEMENT = {
+    OSF.Project: {
+    },
+    OSF.ProjectComponent: {
+    },
+    OSF.Registration: {
+    },
+    OSF.RegistrationComponent: {
+    },
+    OSF.Preprint: {
+    },
+    OSF.File: {
+    },
+}
+
+# metadata not included in the core record that expires after a month
+OSFMAP_MONTHLY_SUPPLEMENT = {
+    OSF.Project: {
+        OSF.usage: None,
+    },
+    OSF.ProjectComponent: {
+        OSF.usage: None,
+    },
+    OSF.Registration: {
+        OSF.usage: None,
+    },
+    OSF.RegistrationComponent: {
+        OSF.usage: None,
+    },
+    OSF.Preprint: {
+        OSF.usage: None,
+    },
+    OSF.File: {
+        OSF.usage: None,
+    },
+}
+
+
 OSF_ARTIFACT_PREDICATES = {
     ArtifactTypes.ANALYTIC_CODE: OSF.hasAnalyticCodeResource,
     ArtifactTypes.DATA: OSF.hasDataResource,
@@ -258,6 +294,37 @@ DATACITE_RESOURCE_TYPE_BY_OSF_TYPE = {
     OSF.Preprint: 'Preprint',
     OSF.Registration: 'StudyRegistration',
 }
+
+
+class OsfmapPartition(enum.Enum):
+    MAIN = OSFMAP
+    SUPPLEMENT = OSFMAP_SUPPLEMENT
+    MONTHLY_SUPPLEMENT = OSFMAP_MONTHLY_SUPPLEMENT
+
+    @property
+    def is_supplementary(self) -> bool:
+        return self is not OsfmapPartition.MAIN
+
+    def osfmap_for_type(self, rdftype_iri: str):
+        try:
+            return self.value[rdftype_iri]
+        except KeyError:
+            if self.is_supplementary:
+                return {}  # allow missing types for non-main partitions
+            raise ValueError(f'invalid OSFMAP type! expected one of {set(self.value.keys())}, got {rdftype_iri}')
+
+    def get_expiration_date(self, basket: gather.Basket) -> datetime.date | None:
+        if self is not OsfmapPartition.MONTHLY_SUPPLEMENT:
+            return None
+        # let a monthly report expire two months after its reporting period ends
+        # (this allows the *next* monthly report up to a month to compute, which
+        # aligns with COUNTER https://www.countermetrics.org/code-of-practice/ )
+        # (HACK: entangled with `gather_last_month_usage` implementation, below)
+        _report_yearmonth_str = next(basket[OSF.usage / DCTERMS.temporal], None)
+        if _report_yearmonth_str is None:
+            return None
+        _report_yearmonth = YearMonth.from_str(_report_yearmonth_str)
+        return _report_yearmonth.next().next().month_end().date()
 
 ##### END osfmap #####
 
@@ -1029,3 +1096,23 @@ def gather_cedar_templates(focus):
         template_iri = rdflib.URIRef(record.get_template_semantic_iri())
         yield (OSF.hasCedarTemplate, template_iri)
         yield (template_iri, DCTERMS.title, record.get_template_name())
+
+
+@gather.er(OSF.usage)
+def gather_last_month_usage(focus):
+    _usage_report = PublicItemUsageReport.for_last_month(
+        item_osfid=osfguid_from_iri(focus.iri),
+    )
+    if _usage_report is not None:
+        _usage_report_ref = rdflib.BNode()
+        yield (OSF.usage, _usage_report_ref)
+        yield (_usage_report_ref, DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN.rstrip('/')))
+        yield (_usage_report_ref, FOAF.primaryTopic, focus.iri)
+        yield (_usage_report_ref, DCTERMS.temporal, rdflib.Literal(
+            str(_usage_report.report_yearmonth),
+            datatype=rdflib.XSD.gYearMonth,
+        ))
+        yield (_usage_report_ref, OSF.viewCount, _usage_report.view_count)
+        yield (_usage_report_ref, OSF.viewSessionCount, _usage_report.view_session_count)
+        yield (_usage_report_ref, OSF.downloadCount, _usage_report.download_count)
+        yield (_usage_report_ref, OSF.downloadSessionCount, _usage_report.download_session_count)

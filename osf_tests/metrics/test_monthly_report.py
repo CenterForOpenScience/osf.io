@@ -1,9 +1,10 @@
+import datetime
 from unittest import mock
 
 import pytest
 from elasticsearch_metrics import metrics
 
-from osf.metrics.reports import MonthlyReport, ReportInvalid
+from osf.metrics.reports import MonthlyReport, ReportInvalid, PublicItemUsageReport
 from osf.metrics.utils import YearMonth
 
 
@@ -70,3 +71,76 @@ class TestMonthlyReportKey:
         ):
             with pytest.raises(ReportInvalid):
                 _bad_report.save()
+
+
+@pytest.mark.es_metrics
+class TestLastMonthReport:
+    @pytest.fixture
+    def osfid(self):
+        return 'abced'
+
+    @pytest.fixture
+    def this_month(self):
+        return YearMonth.from_date(datetime.date.today())
+
+    @pytest.fixture
+    def last_month(self, this_month):
+        return _prior_yearmonth(this_month)
+
+    @pytest.fixture
+    def two_months_back(self, last_month):
+        return _prior_yearmonth(last_month)
+
+    @pytest.fixture
+    def three_months_back(self, two_months_back):
+        return _prior_yearmonth(two_months_back)
+
+    @pytest.fixture
+    def this_month_report(self, osfid, this_month):
+        return _item_usage_report(this_month, osfid, view_count=77)
+
+    @pytest.fixture
+    def last_month_report(self, osfid, last_month):
+        return _item_usage_report(last_month, osfid, view_count=57)
+
+    @pytest.fixture
+    def diff_last_month_report(self, last_month):
+        return _item_usage_report(last_month, 'zyxvt', view_count=17)
+
+    @pytest.fixture
+    def two_months_back_report(self, osfid, two_months_back):
+        return _item_usage_report(two_months_back, osfid, view_count=27)
+
+    @pytest.fixture
+    def three_months_back_report(self, osfid, three_months_back):
+        return _item_usage_report(three_months_back, osfid, view_count=37)
+
+    def test_with_none(self, osfid):
+        assert PublicItemUsageReport.for_last_month(osfid) is None
+
+    def test_with_others(self, osfid, this_month_report, three_months_back_report, diff_last_month_report):
+        assert PublicItemUsageReport.for_last_month(osfid) is None
+
+    def test_with_prior_month(self, osfid, this_month_report, two_months_back_report, three_months_back_report, diff_last_month_report):
+        assert PublicItemUsageReport.for_last_month(osfid) == two_months_back_report
+
+    def test_with_last_month(self, osfid, this_month_report, last_month_report, two_months_back_report, three_months_back_report, diff_last_month_report):
+        assert PublicItemUsageReport.for_last_month(osfid) == last_month_report
+
+
+def _prior_yearmonth(ym: YearMonth) -> YearMonth:
+    return (
+        YearMonth(ym.year - 1, 1)
+        if ym.month == 1
+        else YearMonth(ym.year, ym.month - 1)
+    )
+
+
+def _item_usage_report(ym: YearMonth, osfid: str, **kwargs):
+    _report = PublicItemUsageReport(
+        report_yearmonth=ym,
+        item_osfid=osfid,
+        **kwargs
+    )
+    _report.save(refresh=True)
+    return _report
