@@ -153,7 +153,7 @@ class _InstiUserSetup:
     department_name: str | None = None
     orcid_id: str | None = None
     user: osfdb.OSFUser = dataclasses.field(init=False)
-    month_last_active: YearMonth | None = dataclasses.field(init=False)
+    month_last_active: datetime.datetime | None = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.user = UserFactory(
