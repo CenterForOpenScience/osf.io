@@ -362,16 +362,16 @@ class TestSerializers(OsfTestCase):
         if filename.endswith('.turtle'):
             # HACK: because the turtle serializer may output things in different order
             # TODO: stable turtle serializer (or another primitive rdf serialization)
-            self._assert_equivalent_turtle(actual_metadata, _expected_metadata)
+            self._assert_equivalent_turtle(actual_metadata, _expected_metadata, filename)
         else:
             self.assertEqual(actual_metadata, _expected_metadata)
 
-    def _assert_equivalent_turtle(self, actual_turtle, expected_turtle):
+    def _assert_equivalent_turtle(self, actual_turtle, expected_turtle, filename):
         _actual = rdflib.Graph()
         _actual.parse(data=actual_turtle, format='turtle')
         _expected = rdflib.Graph()
         _expected.parse(data=expected_turtle, format='turtle')
-        assert_graphs_equal(_actual, _expected)
+        assert_graphs_equal(_actual, _expected, label=filename)
 
     # def _write_expected_file(self, filename, expected_metadata):
     #     '''for updating expected metadata files from current serializers
