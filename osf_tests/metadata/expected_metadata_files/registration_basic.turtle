@@ -4,6 +4,7 @@
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://localhost:5000/w5ibb> a osf:Registration ;
     dcterms:conformsTo <http://fake.example/schema/for/test> ;
@@ -21,6 +22,7 @@
     dcterms:title "this is a project title!" ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4/#StudyRegistration> ;
     dcat:accessService <http://localhost:5000> ;
+    osf:contains <http://localhost:5000/w6ibb> ;
     osf:hostingInstitution <https://cos.io/> .
 
 <http://localhost:5000/w2ibb> a osf:Project ;
@@ -35,6 +37,25 @@
         "You" ;
     dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
+
+<http://localhost:5000/w6ibb> a osf:File ;
+    dcterms:created "2123-05-04" ;
+    dcterms:identifier "http://localhost:5000/w6ibb" ;
+    dcterms:modified "2123-05-04" ;
+    osf:fileName "my-reg-file.blarg" ;
+    osf:filePath "/my-reg-file.blarg" ;
+    osf:hasFileVersion <http://localhost:5000/w6ibb?revision=1> ;
+    osf:isContainedBy <http://localhost:5000/w5ibb> .
+
+<http://localhost:5000/w6ibb?revision=1> a osf:FileVersion ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:extent "0.000016 MB" ;
+    dcterms:format "img/png" ;
+    dcterms:modified "2123-05-04" ;
+    dcterms:requires <urn:checksum:sha-256::shashasha> ;
+    osf:storageRegion <http://localhost:8000/v2/regions/us/> ;
+    osf:versionNumber "1" .
 
 <https://cos.io/> a dcterms:Agent,
         foaf:Organization ;
@@ -61,3 +82,5 @@
 <http://fake.example/schema/for/test> dcterms:title "Open-Ended Registration" .
 
 <https://schema.datacite.org/meta/kernel-4/#StudyRegistration> rdfs:label "StudyRegistration"@en .
+
+<http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .

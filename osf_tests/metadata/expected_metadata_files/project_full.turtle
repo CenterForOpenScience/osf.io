@@ -4,6 +4,7 @@
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://localhost:5000/w2ibb> a osf:Project ;
     dcterms:created "2123-05-04" ;
@@ -59,7 +60,18 @@
     dcterms:modified "2123-05-04" ;
     osf:fileName "my-file.blarg" ;
     osf:filePath "/my-file.blarg" ;
+    osf:hasFileVersion <http://localhost:5000/w3ibb?revision=1> ;
     osf:isContainedBy <http://localhost:5000/w2ibb> .
+
+<http://localhost:5000/w3ibb?revision=1> a osf:FileVersion ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:extent "0.000007 MB" ;
+    dcterms:format "img/png" ;
+    dcterms:modified "2123-05-04" ;
+    dcterms:requires <urn:checksum:sha-256::shashasha> ;
+    osf:storageRegion <http://localhost:8000/v2/regions/us/> ;
+    osf:versionNumber "1" .
 
 <https://moneypockets.example/millions> a osf:FundingAward ;
     dcterms:contributor <https://doi.org/10.$$$$> ;
@@ -116,3 +128,5 @@
 <https://schema.datacite.org/meta/kernel-4/#Dataset> rdfs:label "Dataset"@en .
 
 <https://schema.datacite.org/meta/kernel-4/#StudyRegistration> rdfs:label "StudyRegistration"@en .
+
+<http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .
