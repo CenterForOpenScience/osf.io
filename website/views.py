@@ -43,19 +43,19 @@ ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APP
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
-    users = [contrib.user for contrib in node.contributor_set.all() if contrib.visible]
+    users = node.visible_contributors
     contributors = []
-    n_contributors = len(users)
+    n_contributors = users.count()
     others_count = ''
 
     for index, user in enumerate(users[:max_count]):
 
-        if index == max_count - 1 and len(users) > max_count:
+        if index == max_count - 1 and n_contributors > max_count:
             separator = ' &'
             others_count = str(n_contributors - 3)
-        elif index == len(users) - 1:
+        elif index == n_contributors - 1:
             separator = ''
-        elif index == len(users) - 2:
+        elif index == n_contributors - 2:
             separator = ' &'
         else:
             separator = ','
@@ -106,8 +106,6 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     parent_node = node.parent_node
     user = auth.user
     if node.can_view(auth):
-        # Re-query node with contributor guids included to prevent N contributor queries
-        node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
         contributor_data = serialize_contributors_for_summary(node)
         summary.update({
             'can_view': True,

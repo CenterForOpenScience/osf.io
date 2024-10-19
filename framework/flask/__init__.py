@@ -5,6 +5,7 @@ from flask import (Flask, request, jsonify, render_template,  # noqa
 )
 import furl
 from flask_babel import Babel
+from flask_compress import Compress
 
 from website import settings
 
@@ -14,6 +15,7 @@ app = Flask(
     static_folder=settings.STATIC_FOLDER,
     static_url_path=settings.STATIC_URL_PATH,
 )
+Compress(app)
 
 # Pull debug mode from settings
 app.debug = settings.DEBUG_MODE

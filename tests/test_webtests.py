@@ -420,7 +420,6 @@ class TestMergingAccounts(OsfTestCase):
         self.dupe.set_password('example')
         self.dupe.save()
 
-    @pytest.mark.skip(reason = 'Disable case due to rendering change to Knockout.js :RDM-osf.io/pull/510')
     def test_merged_user_is_not_shown_as_a_contributor(self):
         project = ProjectFactory(is_public=True)
         # Both the master and dupe are contributors
@@ -506,7 +505,6 @@ class TestClaiming(OsfTestCase):
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
 
-    @pytest.mark.skip(reason = 'Disable case due to rendering change to Knockout.js :RDM-osf.io/pull/510')
     def test_correct_name_shows_in_contributor_list(self):
         name1, email = fake.name(), fake_email()
         UnregUserFactory(fullname=name1, email=email)
@@ -555,7 +553,6 @@ class TestClaiming(OsfTestCase):
         res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
         assert_equal(res.status_code, 302)
 
-    @pytest.mark.skip(reason = 'Disable case due to rendering change to Knockout.js :RDM-osf.io/pull/510')
     def test_unregistered_users_names_are_project_specific(self):
         name1, name2, email = fake.name(), fake.name(), fake_email()
         project2 = ProjectFactory(creator=self.referrer)
