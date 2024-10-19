@@ -1,40 +1,41 @@
-<%def name="render_contributors()">
-  <!-- ko foreach: contributors -->
-    <!-- ko if: user_is_registered -->
-    <a class="overflow"
-        data-bind="attr: { href: user_profile_url, rel: 'tooltip', 'data-original-title': user_fullname }, text: user_display_name"></a>
-    <span data-bind="text: separator"></span>
-    <!-- /ko -->
-
-    <!-- ko ifnot: user_is_registered -->
-    <span class="overflow" data-bind="text: user_display_name"></span>
-    <span data-bind="text: separator"></span>
-    <!-- /ko -->
-
-    <!-- ko if: $parent.others_count() && $index() === $parent.contributors().length - 1 -->
-    <!-- Assuming node_url is a property of the parent context -->
-    <a data-bind="attr: {href: $parent.nodeUrl}, text: $parent.others_count() + ' more'"></a>
-    <!-- /ko -->
-  <!-- /ko -->
+<%def name="render_contributor_dict(contributor)">
+  % if contributor['user_is_registered']:
+      <a class="overflow"
+              rel="tooltip"
+              href="${contributor['user_profile_url']}"
+              data-original-title="${contributor['user_fullname']}"
+              >${contributor['user_display_name']}</a><span>${ contributor['separator'] | n }</span>
+  % else:
+      <span class="overflow">${contributor['user_display_name']}</span><span>${ contributor['separator'] | n }</span>
+  % endif
 </%def>
 
-<%def name="render_contributors_full()">
-  <!-- ko foreach: {data: contributors, afterRender: afterRender} -->
-  <li data-bind="attr: { 'data-pk': id },
-    css: { 'contributor': true,
-        'contributor-registered': registered,
-        'contributor-unregistered': !registered,
-        'contributor-self': $parent.user.id == id }">
-    <!-- ko if: registered -->
-    <a class="overflow"
-      data-bind="attr: { rel: is_condensed ? 'tooltip' : '', href: url, title: fullname },
-          text: condensedFullname"></a>
-    <!-- /ko -->
-    <!-- ko ifnot: registered -->
-    <span class="overflow"
-      data-bind="attr: { rel: is_condensed ? 'tooltip' : '', title: fullname },
-          text: condensedFullname"></span>
-    <!-- /ko -->
-  </li>
-  <!-- /ko -->
+<%def name="render_contributors(contributors, others_count, node_url)">
+  % for i, contributor in enumerate(contributors):
+    ${render_contributor_dict(contributor) if isinstance(contributor, dict) else render_user_obj(contributor)}
+  % endfor
+  % if others_count:
+      <a href="${node_url}">${_("%(othersCount)s more") % dict(othersCount=others_count)}</a>
+  % endif
+</%def>
+
+<%def name="render_contributors_full(contributors)">
+  % for contributor in contributors:
+      <li data-pk="${contributor['id']}"
+              class="contributor
+                  ${'contributor-registered' if contributor['registered'] else 'contributor-unregistered'}
+                  ${'contributor-self' if user['id'] == contributor['id'] else ''}">
+          <%
+              condensed = contributor['fullname']
+              is_condensed = False
+              if len(condensed) >= 50:
+                  condensed = condensed[:23] + "..." + condensed[-23:]
+                  is_condensed = True
+          %>
+          % if contributor['registered']:
+              <a class='user-profile' rel="${'tooltip' if is_condensed else ''}" title="${contributor['fullname']}" href="/${contributor['id']}/">${condensed}</a></li>
+          % else:
+              <span rel="${'tooltip' if is_condensed else ''}" title="${contributor['fullname']}">${condensed}</span></li>
+          %endif
+  % endfor
 </%def>
