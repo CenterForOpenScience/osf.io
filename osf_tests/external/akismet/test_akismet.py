@@ -237,3 +237,46 @@ class TestSpam:
         node.check_spam(user, {'title'}, request_headers)
         node.refresh_from_db()
         assert node.spam_status == SpamStatus.FLAGGED
+
+    @mock.patch('osf.models.NodeLog.objects.filter')
+    def test_get_flagged_count(self, mock_filter, user):
+        from osf.external.askismet.client import AkismetClient
+        from datetime import datetime
+
+        mock_filter.return_value.count.return_value = 7
+
+        client = AkismetClient()
+        start_date = datetime(2024, 10, 1)
+        end_date = datetime(2024, 10, 31)
+
+        flagged_count = client.get_flagged_count(start_date, end_date)
+
+        mock_filter.assert_called_with(
+            action='flag_spam',
+            created__gt=start_date,
+            created__lt=end_date,
+            spam_data__who_flagged='akismet'
+        )
+        assert flagged_count == 7
+
+    @mock.patch('osf.models.NodeLog.objects.filter')
+    def test_get_hammed_count(self, mock_filter, user):
+        from osf.external.askismet.client import AkismetClient
+        from datetime import datetime
+
+        mock_filter.return_value.count.return_value = 4
+
+        client = AkismetClient()
+        start_date = datetime(2024, 10, 1)
+        end_date = datetime(2024, 10, 31)
+
+        hammed_count = client.get_hammed_count(start_date, end_date)
+
+        mock_filter.assert_called_with(
+            action='confirm_ham',
+            created__gt=start_date,
+            created__lt=end_date,
+            spam_data__who_flagged='akismet'
+        )
+        assert hammed_count == 4
+

@@ -4,6 +4,8 @@ from osf.metrics.reports import SpamSummaryReport
 from ._base import MonthlyReporter
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
+from osf.external.oopspam.client import OOPSpamClient
+from osf.external.askismet.client import AkismetClient
 
 
 class SpamCountReporter(MonthlyReporter):
@@ -11,6 +13,15 @@ class SpamCountReporter(MonthlyReporter):
     def report(self, report_yearmonth):
         target_month = report_yearmonth.target_month()
         next_month = report_yearmonth.next_month()
+
+        oopspam_client = OOPSpamClient()
+        akismet_client = AkismetClient()
+
+        oopspam_flagged = oopspam_client.get_flagged_count(target_month, next_month)
+        oopspam_hammed = oopspam_client.get_hammed_count(target_month, next_month)
+
+        akismet_flagged = akismet_client.get_flagged_count(target_month, next_month)
+        akismet_hammed = akismet_client.get_hammed_count(target_month, next_month)
 
         report = SpamSummaryReport(
             report_yearmonth=str(report_yearmonth),
@@ -33,6 +44,10 @@ class SpamCountReporter(MonthlyReporter):
                 created__lt=next_month,
                 node__type='osf.node',
             ).count(),
+            oopspam_flagged=oopspam_flagged,
+            oopspam_hammed=oopspam_hammed,
+            akismet_flagged=akismet_flagged,
+            akismet_hammed=akismet_hammed,
             # Registration Log entries
             registration_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,

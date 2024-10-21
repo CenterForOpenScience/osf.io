@@ -45,3 +45,27 @@ class OOPSpamClient:
 
         #  OOPSpam returns a spam score out of 6. 3 or higher indicates spam
         return spam_score >= settings.OOPSPAM_SPAM_LEVEL, resp_json
+
+    def get_flagged_count(self, start_date, end_date):
+        from osf.models import NodeLog
+
+        flagged_count = NodeLog.objects.filter(
+            action=NodeLog.FLAG_SPAM,
+            created__gt=start_date,
+            created__lt=end_date,
+            spam_data__who_flagged='oopspam'
+        ).count()
+
+        return flagged_count
+
+    def get_hammed_count(self, start_date, end_date):
+        from osf.models import NodeLog
+
+        hammed_count = NodeLog.objects.filter(
+            action=NodeLog.CONFIRM_HAM,
+            created__gt=start_date,
+            created__lt=end_date,
+            spam_data__who_flagged='oopspam'
+        ).count()
+
+        return hammed_count
