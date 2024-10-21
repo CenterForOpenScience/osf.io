@@ -996,6 +996,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         This method brought to you via a grant from the Alfred P Sloan Foundation.
         """
+        if has_coi is None:
+            has_coi = False
+
         if self.has_coi == has_coi:
             return
 
@@ -1028,17 +1031,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.conflict_of_interest_statement == coi_statement:
             return
 
-        if not self.has_coi:
-            raise PreprintStateError('You do not have the ability to edit a conflict of interest while the has_coi field is '
-                                  'set to false or unanswered')
-
-        self.conflict_of_interest_statement = coi_statement
+        self.conflict_of_interest_statement = coi_statement or ''
 
         if log:
             self.add_log(
                 action=PreprintLog.UPDATE_COI_STATEMENT,
                 params={
                     'user': auth.user._id,
+                    'value': self.conflict_of_interest_statement
                 },
                 auth=auth,
             )
@@ -1061,6 +1061,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.has_data_links == has_data_links:
             return
 
+        if has_data_links == 'no':
+            self.data_links = []
+
         self.has_data_links = has_data_links
 
         if log:
@@ -1072,7 +1075,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth
             )
-        if has_data_links != 'available':
+        if not has_data_links:
             self.update_data_links(auth, data_links=[], log=False)
         if save:
             self.save()
@@ -1093,9 +1096,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.data_links == data_links:
             return
 
-        if not self.has_data_links == 'available' and data_links:
-            raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
-                                     ' or is unanswered.')
+        if not self.has_data_links and data_links:
+            self.data_links = []
 
         self.data_links = data_links
 
@@ -1126,11 +1128,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.why_no_data == why_no_data:
             return
 
-        if not self.has_data_links == 'no':
-            raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
-                                  ' is unanswered.')
-        else:
-            self.why_no_data = why_no_data
+        if self.has_data_links:
+            self.why_no_data = ''
+
+        self.why_no_data = why_no_data
 
         if log:
             self.add_log(
@@ -1159,6 +1160,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if has_prereg_links == self.has_prereg_links:
             return
 
+        if has_prereg_links == 'no':
+            self.prereg_links = []
+            self.prereg_link_info = None
+
         self.has_prereg_links = has_prereg_links
 
         if log:
@@ -1170,7 +1175,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth
             )
-        if has_prereg_links != 'available':
+        if not has_prereg_links:
             self.update_prereg_links(auth, prereg_links=[], log=False)
             self.update_prereg_link_info(auth, prereg_link_info=None, log=False)
         if save:
@@ -1192,9 +1197,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if why_no_prereg == self.why_no_prereg:
             return
 
-        if self.has_prereg_links == 'available' or self.has_prereg_links is None:
-            raise PreprintStateError('You cannot edit this statement while your prereg links '
-                                  'availability is set to true or is unanswered.')
+        if self.has_prereg_links or self.has_prereg_links is None:
+            self.why_no_prereg = ''
 
         self.why_no_prereg = why_no_prereg
 
@@ -1225,9 +1229,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if prereg_links == self.prereg_links:
             return
 
-        if not self.has_prereg_links == 'available' and prereg_links:
-            raise PreprintStateError('You cannot edit this field while your prereg links'
-                                  ' availability is set to false or is unanswered.')
+        if not self.has_prereg_links and prereg_links:
+            self.prereg_links = []
 
         self.prereg_links = prereg_links
 
@@ -1259,9 +1262,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.prereg_link_info == prereg_link_info:
             return
 
-        if not self.has_prereg_links == 'available' and prereg_link_info:
-            raise PreprintStateError('You cannot edit this field while your prereg links'
-                                  ' availability is set to false or is unanswered.')
+        if not self.has_prereg_links and prereg_link_info:
+            self.prereg_link_info = None
 
         self.prereg_link_info = prereg_link_info
 
