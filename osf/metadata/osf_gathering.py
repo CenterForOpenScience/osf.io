@@ -21,6 +21,7 @@ from osf.metadata.rdfutils import (
     OSF,
     OSFIO,
     OWL,
+    PROV,
     RDF,
     ROR,
     SKOS,
@@ -31,7 +32,10 @@ from osf.metadata.rdfutils import (
 )
 from osf.metrics.reports import PublicItemUsageReport
 from osf.metrics.utils import YearMonth
-from osf.utils import workflows as osfworkflows
+from osf.utils import (
+    workflows as osfworkflows,
+    permissions as osfpermissions,
+)
 from osf.utils.outcomes import ArtifactTypes
 from website import settings as website_settings
 
@@ -129,6 +133,7 @@ OSF_OBJECT = {
         DCTERMS.creator: OSF_AGENT_REFERENCE,
     },
     OWL.sameAs: None,
+    PROV.qualifiedAttribution: None,
 }
 
 OSFMAP = {
@@ -251,6 +256,11 @@ OSF_ARTIFACT_PREDICATES = {
     ArtifactTypes.MATERIALS: OSF.hasMaterialsResource,
     ArtifactTypes.PAPERS: OSF.hasPapersResource,
     ArtifactTypes.SUPPLEMENTS: OSF.hasSupplementalResource,
+}
+OSF_CONTRIBUTOR_ROLES = {
+    osfpermissions.READ: OSF['readonly-contributor'],
+    osfpermissions.WRITE: OSF['write-contributor'],
+    osfpermissions.ADMIN: OSF['admin-contributor'],
 }
 
 BEPRESS_SUBJECT_SCHEME_URI = 'https://bepress.com/reference_guide_dc/disciplines/'
@@ -884,6 +894,19 @@ def gather_agents(focus):
     for user in getattr(focus.dbmodel, 'visible_contributors', ()):
         yield (DCTERMS.creator, OsfFocus(user))
     # TODO: preserve order via rdflib.Seq
+
+
+@gather.er(PROV.qualifiedAttribution)
+def gather_qualified_attributions(focus):
+    _contributor_set = getattr(focus.dbmodel, 'contributor_set', None)
+    if _contributor_set is not None:
+        for _contributor in _contributor_set.filter(visible=True).select_related('user'):
+            _osfrole_ref = OSF_CONTRIBUTOR_ROLES.get(_contributor.permission)
+            if _osfrole_ref is not None:
+                _attribution_ref = rdflib.BNode()
+                yield (PROV.qualifiedAttribution, _attribution_ref)
+                yield (_attribution_ref, PROV.agent, OsfFocus(_contributor.user))
+                yield (_attribution_ref, DCAT.hadRole, _osfrole_ref)
 
 
 @gather.er(OSF.affiliation)

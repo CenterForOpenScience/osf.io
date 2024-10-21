@@ -3,6 +3,7 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
@@ -24,7 +25,9 @@
     dcat:accessService <http://localhost:5000> ;
     osf:contains <http://localhost:5000/w3ibb> ;
     osf:hostingInstitution <https://cos.io/> ;
-    osf:supplements <http://localhost:5000/w4ibb> .
+    osf:supplements <http://localhost:5000/w4ibb> ;
+    prov:qualifiedAttribution [ dcat:hadRole osf:admin-contributor ;
+            prov:agent <http://localhost:5000/w1ibb> ] .
 
 <http://localhost:5000/w4ibb> a osf:Preprint ;
     dcterms:created "2123-05-04" ;
