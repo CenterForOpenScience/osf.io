@@ -1,6 +1,7 @@
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<http://localhost:5000/w4ibb> osf:storageRegion <http://localhost:8000/v2/regions/us/> .
+<http://localhost:5000/w4ibb> osf:storageByteCount 1337 ;
+    osf:storageRegion <http://localhost:8000/v2/regions/us/> .
 
 <http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .
