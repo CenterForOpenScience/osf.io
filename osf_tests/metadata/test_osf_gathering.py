@@ -873,3 +873,14 @@ class TestOsfGathering(TestCase):
             (_attribution_readonly, PROV.agent, self.userfocus__readonly),
             (_attribution_readonly, DCAT.hadRole, OSF['readonly-contributor']),
         })
+
+    def test_gather_storage_byte_count(self):
+        assert_triples(osf_gathering.gather_storage_byte_count(self.projectfocus), {
+            (self.projectfocus.iri, OSF.storageByteCount, Literal(123456)),
+        })
+        assert_triples(osf_gathering.gather_storage_byte_count(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.storageByteCount, Literal(0)),
+        })
+        assert_triples(osf_gathering.gather_storage_byte_count(self.preprintfocus), {
+            (self.preprintfocus.iri, OSF.storageByteCount, Literal(1337)),
+        })

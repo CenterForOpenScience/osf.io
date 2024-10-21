@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django import db
 import rdflib
 
+from api.caching.tasks import get_storage_usage_total
 from osf import models as osfdb
 from osf.metadata import gather
 from osf.metadata.rdfutils import (
@@ -208,19 +209,24 @@ OSFMAP = {
 OSFMAP_SUPPLEMENT = {
     OSF.Project: {
         OSF.hasOsfAddon: None,
+        OSF.storageByteCount: None,
         OSF.storageRegion: None,
     },
     OSF.ProjectComponent: {
         OSF.hasOsfAddon: None,
+        OSF.storageByteCount: None,
         OSF.storageRegion: None,
     },
     OSF.Registration: {
+        OSF.storageByteCount: None,
         OSF.storageRegion: None,
     },
     OSF.RegistrationComponent: {
+        OSF.storageByteCount: None,
         OSF.storageRegion: None,
     },
     OSF.Preprint: {
+        OSF.storageByteCount: None,
         OSF.storageRegion: None,
     },
     OSF.File: {
@@ -1169,3 +1175,13 @@ def _storage_region_triples(region, *, subject_ref=None):
     else:
         yield (subject_ref, OSF.storageRegion, _region_ref)
     yield (_region_ref, SKOS.prefLabel, rdflib.Literal(region.name, lang='en'))
+
+
+@gather.er(
+    OSF.storageByteCount,
+    focustype_iris=[OSF.Project, OSF.ProjectComponent, OSF.Registration, OSF.RegistrationComponent, OSF.Preprint]
+)
+def gather_storage_byte_count(focus):
+    _storage_usage_total = get_storage_usage_total(focus.dbmodel)
+    if _storage_usage_total is not None:
+        yield (OSF.storageByteCount, _storage_usage_total)
