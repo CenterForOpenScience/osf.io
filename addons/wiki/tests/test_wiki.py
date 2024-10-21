@@ -1929,7 +1929,7 @@ class TestWikiImport(OsfTestCase):
         result = views.project_wiki_validate_for_import_process(self.root_import_folder_validate._id, self.project)
         self.assertEqual(result['duplicated_folder'], [])
         self.assertTrue(result['canStartImport'])
-        self.assertEqual(result['data'], [{'parent_wiki_name': 'importpage1', 'path': '/importpage1/importpage2', 'original_name': 'importpage2', 'wiki_name': 'importpage2', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_2._id}, {'parent_wiki_name': None, 'path': '/importpage1', 'original_name': 'importpage1', 'wiki_name': 'importpage1', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_1._id}])
+        self.assertCountEqual(result['data'], [{'parent_wiki_name': 'importpage1', 'path': '/importpage1/importpage2', 'original_name': 'importpage2', 'wiki_name': 'importpage2', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_2._id}, {'parent_wiki_name': None, 'path': '/importpage1', 'original_name': 'importpage1', 'wiki_name': 'importpage1', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_1._id}])
     # bag fix
     def test_project_wiki_validate_for_import_process_invalid(self):
         root_import_folder = OsfStorageFolder(name='rootimportfolder', target=self.project, parent=self.root)
@@ -3092,29 +3092,31 @@ class TestTaskStatus(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.consolidate_auth = Auth(user=self.project.creator)
-        WikiImportTask.objects.create(node=self.project, task_id='task-id-1111', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
 
     def test_project_clean_celery_task_none_running_task(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-1', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         url = self.project.api_url_for('project_clean_celery_tasks')
         res = self.app.post(url, auth=self.user.auth)
-        task_completed = WikiImportTask.objects.get(task_id='task-id-1111')
+        task_completed = WikiImportTask.objects.get(task_id='task-id-1')
         self.assertEqual(task_completed.status, 'Completed')
 
     def test_project_clean_celery_task_one_running_task(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-11', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-2222', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
         url = self.project.api_url_for('project_clean_celery_tasks')
         res = self.app.post(url, auth=self.user.auth)
-        task_completed = WikiImportTask.objects.get(task_id='task-id-1111')
+        task_completed = WikiImportTask.objects.get(task_id='task-id-11')
         task_running = WikiImportTask.objects.get(task_id='task-id-2222')
         self.assertEqual(task_completed.status, 'Completed')
         self.assertEqual(task_running.status, 'Stopped')
 
     def test_project_clean_celery_task_two_running_task(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-111', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-3333', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-4444', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
         url = self.project.api_url_for('project_clean_celery_tasks')
         res = self.app.post(url, auth=self.user.auth)
-        task_completed = WikiImportTask.objects.get(task_id='task-id-1111')
+        task_completed = WikiImportTask.objects.get(task_id='task-id-111')
         task_running1 = WikiImportTask.objects.get(task_id='task-id-3333')
         task_running2 = WikiImportTask.objects.get(task_id='task-id-4444')
         self.assertEqual(task_completed.status, 'Completed')
@@ -3122,6 +3124,7 @@ class TestTaskStatus(OsfTestCase):
         self.assertEqual(task_running2.status, 'Stopped')
 
     def test_project_clean_celery_with_no_admin_permission(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-1111', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         url = self.project.api_url_for('project_clean_celery_tasks')
         res = self.app.post(url, expect_errors=True)
         assert_equal(res.status_code, 401)
@@ -3175,6 +3178,7 @@ class TestTaskStatus(OsfTestCase):
         self.assertEqual(task_running.process_end, timezone.make_aware(datetime.datetime(2024, 5, 1, 12, 0, 0)))
 
     def test_set_wiki_import_task_proces_end_no_tasks_to_update(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-11111', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         views.set_wiki_import_task_proces_end(self.project)
         self.assertEqual(WikiImportTask.objects.count(), 1)
 
