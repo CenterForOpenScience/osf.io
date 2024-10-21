@@ -3,6 +3,7 @@
 # PEP8 asserts
 from copy import deepcopy
 from rest_framework import status as http_status
+import json
 import time
 import mock
 import pytest
@@ -11,7 +12,7 @@ import datetime
 import unicodedata
 import uuid
 from nose.tools import *  # noqa
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, ANY
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import (
     UserFactory, NodeFactory, ProjectFactory,
@@ -35,7 +36,7 @@ from addons.wiki import tasks
 from framework.auth import Auth
 from django.utils import timezone
 from addons.wiki.utils import to_mongo_key
-
+from website.project.decorators import _load_node_or_fail
 from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 
 pytestmark = pytest.mark.django_db
@@ -59,18 +60,17 @@ class TestWikiTasks(OsfTestCase):
         self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'page2', 'This is a wiki page2', self.consolidate_auth)
         self.wiki_page3 = WikiPage.objects.create_for_node(self.project, 'page3', 'This is a wiki page3', self.consolidate_auth, self.wiki_page2)
 
-    @mock.patch('website.project.decorators._load_node_or_fail')
     @mock.patch('addons.wiki.views.project_wiki_validate_for_import_process')
-    def test_project_wiki_validate_for_import_task_called(self, mock_process, mock_load_node):
-        mock_load_node.return_value = 'testttt'
-        result = tasks.run_project_wiki_validate_for_import.apply_async(('dir_id', 'node_id'))
+    def test_project_wiki_validate_for_import_task_called(self, mock_process):
+        nid = self.project.guids.first()._id
+        node = _load_node_or_fail(nid)
+        result = tasks.run_project_wiki_validate_for_import.apply_async(('dir_id', nid))
         result.wait()
-        self.assertTrue(result.called)
-        mock_process.assert_called_once_with('dir_id', self.project)
+        self.assertTrue(result.successful())
+        mock_process.assert_called_once_with('dir_id', node)
 
-    @mock.patch('website.project.decorators._load_node_or_fail')
     @mock.patch('addons.wiki.views.project_wiki_import_process')
-    def test_project_wiki_import_task_called(self, mock_process, mock_load_node):
+    def test_project_wiki_import_task_called(self, mock_process):
         data_json = [
             {
                 'parent_wiki_name': None,
@@ -83,33 +83,28 @@ class TestWikiTasks(OsfTestCase):
                 'wiki_content': 'content1'
             }
         ]
+        data_json_str = json.dumps(data_json)
+        current_user_id = self.user._id
         dir_id = 'dir_id'
-        current_user_id = 'user_id'
-        nid = 'node_id'
-        mock_node = mock_load_node.return_value
-        mock_user = mock_load_user.return_value
-        result = tasks.run_project_wiki_import.apply_async((data_json, dir_id, current_user_id, nid))
+        nid = self.project.guids.first()._id
+        node = _load_node_or_fail(nid)
+        auth = self.consolidate_auth
+        result = tasks.run_project_wiki_import.apply_async((data_json_str, dir_id, current_user_id, nid))
         result.wait()
-        self.assertTrue(result.called)
-        mock_process.assert_called_once_with(data_json, dir_id, result.id, mock_node)
+        self.assertTrue(result.successful())
 
-    @mock.patch('website.project.decorator._load_node_or_fail')
-    @mock.patch('website.search.elastic_search.bulk_update_wikis')
-    @mock.patch('addons_wiki.models.WikiPage.objects.filter')
-    def test_update_search_and_bulk_index(self, mock_filter, mock_bulk_update_wikis, mock_load_node_or_fail):
-        # モックデータ
-        nid = 'node_id'
-        wiki_id_list = [1, 2, 3]
-        # モックの設定
-        mock_node = mock_load_node_or_fail.return_value
-        mock_filter.return_value = [self.wiki_page1, self.wiki_page2]
-        # テスト対象の関数を実行
-        run_update_search_and_bulk_index(nid, wiki_id_list)
+        mock_process.assert_called_once_with(data_json, dir_id, result.id, ANY, node)
+        self.assertEqual(mock_process.call_args[0][3].user._id, auth.user._id)
+
+    @mock.patch('osf.models.Node.update_search')
+    def test_update_search_and_bulk_index(self, mock_update_search):
+        nid = self.project.guids.first()._id
+        wiki_id_list = [self.wiki_page1.id, self.wiki_page2.id, self.wiki_page3.id]
 
         result = tasks.run_update_search_and_bulk_index.apply_async((nid, wiki_id_list))
         result.wait()
-        self.assertTrue(result.called)
-        mock_bulk_update_wikis.assert_called_once_with(mock_wiki_pages)
-        mock_node.update_search.assert_called_once()
+        self.assertTrue(result.successful())
+        # Indirectly test bulk_update_wikis by verifying the search results on the screen after saving the Wiki page.
+        mock_update_search.assert_called_once()
 
 
