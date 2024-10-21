@@ -182,7 +182,6 @@ def iterate_gv_results(
         request_method=request_method,
         params=params
     ).json()
-
     if not response_json['data']:
         return  # empty iterator
     included_entities_lookup = _format_included_entities(response_json.get('included', []))
@@ -228,7 +227,7 @@ def get_citation_url_list(auth, addon_short_name, project, request=None, pid=Non
         params={'filter[resource_uri]': project_url},
     )
     configured_citation_addons_url = resource_references_response.get_related_link(
-        'configured_citation_addons')
+        'configured_storage_addons')
     addons_url_list = get_gv_result_json(
         endpoint_url=configured_citation_addons_url,
         requesting_user=auth.user,
@@ -273,6 +272,8 @@ def _get_gv_response(auth, addon, project, list_id):
 
 
 def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_id, show):
+    from osf.models import Node
+
     response = {'contents': []}
     project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
     citation_url_list = get_citation_url_list(
@@ -321,6 +322,8 @@ def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_i
 
 
 def get_zotero_library_list(auth, request, addon_short_name):
+    from osf.models import Node
+
     changed_response = []
     project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
     citation_url_list = get_citation_url_list(
