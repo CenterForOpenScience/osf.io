@@ -3092,6 +3092,7 @@ class TestTaskStatus(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.consolidate_auth = Auth(user=self.project.creator)
+        WikiImportTask.objects.all().delete()
 
     def test_project_clean_celery_task_none_running_task(self):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-1', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
@@ -3100,7 +3101,8 @@ class TestTaskStatus(OsfTestCase):
         task_completed = WikiImportTask.objects.get(task_id='task-id-1')
         self.assertEqual(task_completed.status, 'Completed')
 
-    def test_project_clean_celery_task_one_running_task(self):
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult.abort')
+    def test_project_clean_celery_task_one_running_task(self, mock_abort):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-11', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-2222', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
         url = self.project.api_url_for('project_clean_celery_tasks')
@@ -3109,8 +3111,10 @@ class TestTaskStatus(OsfTestCase):
         task_running = WikiImportTask.objects.get(task_id='task-id-2222')
         self.assertEqual(task_completed.status, 'Completed')
         self.assertEqual(task_running.status, 'Stopped')
+        mock_abort.assert_called()
 
-    def test_project_clean_celery_task_two_running_task(self):
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult.abort')
+    def test_project_clean_celery_task_two_running_task(self, mock_abort):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-111', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-3333', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-4444', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
@@ -3122,6 +3126,7 @@ class TestTaskStatus(OsfTestCase):
         self.assertEqual(task_completed.status, 'Completed')
         self.assertEqual(task_running1.status, 'Stopped')
         self.assertEqual(task_running2.status, 'Stopped')
+        mock_abort.assert_called()
 
     def test_project_clean_celery_with_no_admin_permission(self):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-1111', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
