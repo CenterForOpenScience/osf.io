@@ -263,3 +263,19 @@ class TestGetNodeFileMapping(OsfTestCase):
         self.pagefolder3 = TestFolder.objects.create(name='page3', target=self.project1, parent=self.pagefolder2)
         self.pagefile3 = TestFile.objects.create(name='page3.md', target=self.project1, parent=self.pagefolder3)
         self.attachment3 = TestFile.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
+
+    def test_get_node_file_mapping(self):
+        file_mapping = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
+
+        expected_mapping = {
+            'page1^page1.md': self.pagefile1._id,
+            'page1^attachment1.pdf': self.attachment1._id,
+            'page2^page2.md': self.pagefile2._id,
+            'page2^attachment2.docx': self.attachment2._id,
+            'page3^page3.md': self.pagefile3._id,
+            'page3^attachment3.xlsx': self.attachment3._id,
+        }
+
+        self.assertEqual(file_mapping, expected_mapping)
+
+
