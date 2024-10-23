@@ -269,18 +269,20 @@ def serialize_wiki_widget(node):
     return wiki_widget_data
 
 def _get_all_child_file_ids(dir_id):
-    parent_dir_id = BaseFileNode.objects.get(_id=dir_id).id
-    children_files = list(BaseFileNode.objects.filter(parent_id=parent_dir_id, type='osf.osfstoragefile', deleted__isnull=True).values('_id', 'name', 'parent__name'))
-    children_folder_ids = list(BaseFileNode.objects.filter(parent_id=parent_dir_id, type='osf.osfstoragefolder', deleted__isnull=True).values_list('_id', flat=True))
+    parent_dir = BaseFileNode.objects.get(_id=dir_id)
+    children_folder = parent_dir._children.filter(type='osf.osfstoragefolder', deleted__isnull=True)
+    children_file = parent_dir._children.filter(type='osf.osfstoragefile', deleted__isnull=True)
 
-    for child_file in children_files:
-        yield {'wiki_file': f"{child_file['parent__name']}^{child_file['name']}", 'file_id': f"{child_file['_id']}"}
+    for child_file in children_file:
+        yield child_file._id
 
-    for child_folder_id in children_folder_ids:
-        yield from _get_all_child_file_ids(child_folder_id)
+    for child_folder in children_folder:
+        yield from _get_all_child_file_ids(child_folder._id)
 
 def get_node_file_mapping(node, dir_id):
-    mapping = list(_get_all_child_file_ids(dir_id))
+    file_ids = list(_get_all_child_file_ids(dir_id))
+    node_file_infos = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=file_ids).values_list('_id', 'name', 'parent_id__name')
+    mapping = {f'{node_file_info[2]}^{node_file_info[1]}': node_file_info[0] for node_file_info in node_file_infos}
     return mapping
 
 def get_import_wiki_name_list(wiki_info):
