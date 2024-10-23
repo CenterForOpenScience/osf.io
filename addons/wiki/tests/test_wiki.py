@@ -2655,16 +2655,16 @@ class TestWikiImportReplace(OsfTestCase):
         self.import_attachment2_txt = TestFile.objects.create(name='wiki#page.txt', target=self.project, parent=self.import_page_folder1)
         self.import_attachment3_xlsx = TestFile.objects.create(name='attachment3.xlsx', target=self.project, parent=self.import_page_folder2)
         self.wiki_info = {'original_name': 'importpage1'}
-        self.node_file_mapping = [
-            { 'wiki_file': f'{self.import_page_folder1.name}^{self.import_page_md_file1.name}', 'file_id': self.import_page_md_file1._id },
-            { 'wiki_file': f'{self.import_page_folder2.name}^{self.import_page_md_file2.name}', 'file_id': self.import_page_md_file2._id },
-            { 'wiki_file': f'{self.import_page_folder1.name}^{self.import_attachment_image1.name}', 'file_id': self.import_attachment_image1._id },
-            { 'wiki_file': f'{self.import_page_folder1.name}^{self.import_attachment_image2.name}', 'file_id': self.import_attachment_image2._id },
-            { 'wiki_file': f'{self.import_page_folder1.name}^{self.import_attachment_image3.name}', 'file_id': self.import_attachment_image3._id },
-            { 'wiki_file': f'{self.import_page_folder1.name}^{self.import_attachment1_doc.name}', 'file_id': self.import_attachment1_doc._id },
-            { 'wiki_file': f'{self.import_page_folder1.name}^{self.import_attachment2_txt.name}', 'file_id': self.import_attachment2_txt._id },
-            { 'wiki_file': f'{self.import_page_folder2.name}^{self.import_attachment3_xlsx.name}', 'file_id': self.import_attachment3_xlsx._id },
-        ]
+        self.node_file_mapping = {
+            f'{self.import_page_folder1.name}^{self.import_page_md_file1.name}': self.import_page_md_file1._id,
+            f'{self.import_page_folder2.name}^{self.import_page_md_file2.name}': self.import_page_md_file2._id,
+            f'{self.import_page_folder1.name}^{self.import_attachment_image1.name}': self.import_attachment_image1._id,
+            f'{self.import_page_folder1.name}^{self.import_attachment_image2.name}': self.import_attachment_image2._id,
+            f'{self.import_page_folder1.name}^{self.import_attachment_image3.name}': self.import_attachment_image3._id,
+            f'{self.import_page_folder1.name}^{self.import_attachment1_doc.name}': self.import_attachment1_doc._id,
+            f'{self.import_page_folder1.name}^{self.import_attachment2_txt.name}': self.import_attachment2_txt._id,
+            f'{self.import_page_folder2.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id
+        }
         self.rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
         self.rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
         self.guid = self.project.guids.first()._id
