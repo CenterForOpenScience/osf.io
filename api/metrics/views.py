@@ -320,10 +320,40 @@ class RecentReportList(JSONAPIBaseView):
         MetricsReportsTsvRenderer,
     )
 
-    def get(self, request, *args, report_name):
+    def get_default_search(self):
         try:
-            report_class = VIEWABLE_REPORTS[report_name]
+            report_class = VIEWABLE_REPORTS[self.kwargs['report_name']]
         except KeyError:
+            return None
+
+        is_daily = issubclass(report_class, reports.DailyReport)
+        is_monthly = issubclass(report_class, reports.MonthlyReport)
+
+        request = self.get_renderer_context()['request']
+        days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK if is_daily else None)
+
+        if is_daily:
+            range_field_name = 'report_date'
+        elif is_monthly:
+            range_field_name = 'report_yearmonth'
+        else:
+            raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
+
+        range_filter = parse_date_range(request.GET, is_monthly=is_monthly)
+        search_recent = report_class.search().filter(
+            'range',
+            **{range_field_name: range_filter},
+        ).sort(range_field_name)[:self.MAX_COUNT]
+
+        if is_daily and days_back:
+            search_recent = search_recent.filter('range', report_date={'gte': f'now/d-{days_back}d'})
+
+        return search_recent
+
+    def get(self, request, *args, report_name):
+        search_response = self.get_default_search()
+
+        if search_response is None:
             return Response(
                 {
                     'errors': [{
@@ -333,30 +363,13 @@ class RecentReportList(JSONAPIBaseView):
                 },
                 status=404,
             )
-        is_daily = issubclass(report_class, reports.DailyReport)
-        days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK if is_daily else None)
-        is_monthly = issubclass(report_class, reports.MonthlyReport)
 
-        if is_daily:
-            serializer_class = DailyReportSerializer
-            range_field_name = 'report_date'
-        elif is_monthly:
-            serializer_class = MonthlyReportSerializer
-            range_field_name = 'report_yearmonth'
-        else:
-            raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
-        range_filter = parse_date_range(request.GET, is_monthly=is_monthly)
-        search_recent = (
-            report_class.search()
-            .filter('range', **{range_field_name: range_filter})
-            .sort(range_field_name)
-            [:self.MAX_COUNT]
+        report_class = VIEWABLE_REPORTS[report_name]
+        serializer_class = (
+            DailyReportSerializer if issubclass(report_class, reports.DailyReport)
+            else MonthlyReportSerializer
         )
-        if days_back:
-            search_recent.filter('range', report_date={'gte': f'now/d-{days_back}d'})
 
-        report_date_range = parse_date_range(request.GET)
-        search_response = search_recent.execute()
         serializer = serializer_class(
             search_response,
             many=True,
@@ -365,6 +378,7 @@ class RecentReportList(JSONAPIBaseView):
         accepted_format = request.accepted_renderer.format
         response_headers = {}
         if accepted_format in ('tsv', 'csv'):
+            report_date_range = parse_date_range(request.GET)
             from_date = report_date_range['gte']
             until_date = report_date_range['lte']
             filename = (
