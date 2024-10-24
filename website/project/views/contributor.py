@@ -111,7 +111,7 @@ def get_contributors(auth, node, **kwargs):
     # if None, contribs list is not sliced
 
     contribs = profile_utils.serialize_contributors(
-        node.visible_contributors[limit],
+        node.visible_contributors[0:limit],
         node=node,
     )
 
