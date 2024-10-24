@@ -199,6 +199,7 @@ class TestSerializers(OsfTestCase):
             category='doi',
             value=f'10.70102/FK2osf.io/{self.project._id}',
         )
+        self.project.add_addon('gitlab', auth=None)
         self.file = create_test_file(
             self.project,
             self.user,
@@ -259,6 +260,13 @@ class TestSerializers(OsfTestCase):
                 name='RegiProvi the Registration Provider',
                 doi_prefix='11.rp',
             ),
+        )
+        self.reg_file = create_test_file(
+            self.registration,
+            self.user,
+            filename='my-reg-file.blarg',
+            size=17,
+            sha256='6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e',
         )
         osfdb.GuidMetadataRecord.objects.for_guid(self.registration._id).update({
             'resource_type_general': 'StudyRegistration',
@@ -362,16 +370,16 @@ class TestSerializers(OsfTestCase):
         if filename.endswith('.turtle'):
             # HACK: because the turtle serializer may output things in different order
             # TODO: stable turtle serializer (or another primitive rdf serialization)
-            self._assert_equivalent_turtle(actual_metadata, _expected_metadata)
+            self._assert_equivalent_turtle(actual_metadata, _expected_metadata, filename)
         else:
             self.assertEqual(actual_metadata, _expected_metadata)
 
-    def _assert_equivalent_turtle(self, actual_turtle, expected_turtle):
+    def _assert_equivalent_turtle(self, actual_turtle, expected_turtle, filename):
         _actual = rdflib.Graph()
         _actual.parse(data=actual_turtle, format='turtle')
         _expected = rdflib.Graph()
         _expected.parse(data=expected_turtle, format='turtle')
-        assert_graphs_equal(_actual, _expected)
+        assert_graphs_equal(_actual, _expected, label=filename)
 
     # def _write_expected_file(self, filename, expected_metadata):
     #     '''for updating expected metadata files from current serializers

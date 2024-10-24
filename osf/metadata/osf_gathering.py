@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django import db
 import rdflib
 
+from api.caching.tasks import get_storage_usage_total
 from osf import models as osfdb
 from osf.metadata import gather
 from osf.metadata.rdfutils import (
@@ -21,6 +22,7 @@ from osf.metadata.rdfutils import (
     OSF,
     OSFIO,
     OWL,
+    PROV,
     RDF,
     ROR,
     SKOS,
@@ -31,7 +33,10 @@ from osf.metadata.rdfutils import (
 )
 from osf.metrics.reports import PublicItemUsageReport
 from osf.metrics.utils import YearMonth
-from osf.utils import workflows as osfworkflows
+from osf.utils import (
+    workflows as osfworkflows,
+    permissions as osfpermissions,
+)
 from osf.utils.outcomes import ArtifactTypes
 from website import settings as website_settings
 
@@ -77,6 +82,16 @@ OSF_OBJECT_REFERENCE = {  # could reference non-osf objects too
     OSF.hasFunding: None,
 }
 
+OSF_FILEVERSION = {
+    DCTERMS.created: None,
+    DCTERMS.creator: OSF_AGENT_REFERENCE,
+    DCTERMS.extent: None,
+    DCTERMS.modified: None,
+    DCTERMS.requires: None,
+    DCTERMS['format']: None,
+    OSF.versionNumber: None,
+}
+
 OSF_FILE_REFERENCE = {
     DCTERMS.identifier: None,
     DCTERMS.title: None,
@@ -85,6 +100,7 @@ OSF_FILE_REFERENCE = {
     OSF.isContainedBy: OSF_OBJECT_REFERENCE,
     OSF.fileName: None,
     OSF.filePath: None,
+    OSF.hasFileVersion: OSF_FILEVERSION,
 }
 
 OSF_OBJECT = {
@@ -128,16 +144,7 @@ OSF_OBJECT = {
         DCTERMS.creator: OSF_AGENT_REFERENCE,
     },
     OWL.sameAs: None,
-}
-
-OSF_FILEVERSION = {
-    DCTERMS.created: None,
-    DCTERMS.creator: OSF_AGENT_REFERENCE,
-    DCTERMS.extent: None,
-    DCTERMS.modified: None,
-    DCTERMS.requires: None,
-    DCTERMS['format']: None,
-    OSF.versionNumber: None,
+    PROV.qualifiedAttribution: None,
 }
 
 OSFMAP = {
@@ -211,14 +218,26 @@ OSFMAP = {
 # metadata not included in the core record
 OSFMAP_SUPPLEMENT = {
     OSF.Project: {
+        OSF.hasOsfAddon: None,
+        OSF.storageByteCount: None,
+        OSF.storageRegion: None,
     },
     OSF.ProjectComponent: {
+        OSF.hasOsfAddon: None,
+        OSF.storageByteCount: None,
+        OSF.storageRegion: None,
     },
     OSF.Registration: {
+        OSF.storageByteCount: None,
+        OSF.storageRegion: None,
     },
     OSF.RegistrationComponent: {
+        OSF.storageByteCount: None,
+        OSF.storageRegion: None,
     },
     OSF.Preprint: {
+        OSF.storageByteCount: None,
+        OSF.storageRegion: None,
     },
     OSF.File: {
     },
@@ -253,6 +272,11 @@ OSF_ARTIFACT_PREDICATES = {
     ArtifactTypes.MATERIALS: OSF.hasMaterialsResource,
     ArtifactTypes.PAPERS: OSF.hasPapersResource,
     ArtifactTypes.SUPPLEMENTS: OSF.hasSupplementalResource,
+}
+OSF_CONTRIBUTOR_ROLES = {
+    osfpermissions.READ: OSF['readonly-contributor'],
+    osfpermissions.WRITE: OSF['write-contributor'],
+    osfpermissions.ADMIN: OSF['admin-contributor'],
 }
 
 BEPRESS_SUBJECT_SCHEME_URI = 'https://bepress.com/reference_guide_dc/disciplines/'
@@ -686,6 +710,8 @@ def _gather_fileversion(fileversion, fileversion_iri):
     version_sha256 = (fileversion.metadata or {}).get('sha256')
     if version_sha256:
         yield (fileversion_iri, DCTERMS.requires, checksum_iri('sha-256', version_sha256))
+    if fileversion.region is not None:
+        yield (fileversion_iri, OSF.storageRegion, rdflib.URIRef(fileversion.region.absolute_api_v2_url))
 
 
 @gather.er(OSF.contains)
@@ -884,6 +910,19 @@ def gather_agents(focus):
     for user in getattr(focus.dbmodel, 'visible_contributors', ()):
         yield (DCTERMS.creator, OsfFocus(user))
     # TODO: preserve order via rdflib.Seq
+
+
+@gather.er(PROV.qualifiedAttribution)
+def gather_qualified_attributions(focus):
+    _contributor_set = getattr(focus.dbmodel, 'contributor_set', None)
+    if _contributor_set is not None:
+        for _contributor in _contributor_set.filter(visible=True).select_related('user'):
+            _osfrole_ref = OSF_CONTRIBUTOR_ROLES.get(_contributor.permission)
+            if _osfrole_ref is not None:
+                _attribution_ref = rdflib.BNode()
+                yield (PROV.qualifiedAttribution, _attribution_ref)
+                yield (_attribution_ref, PROV.agent, OsfFocus(_contributor.user))
+                yield (_attribution_ref, DCAT.hadRole, _osfrole_ref)
 
 
 @gather.er(OSF.affiliation)
@@ -1116,3 +1155,36 @@ def gather_last_month_usage(focus):
         yield (_usage_report_ref, OSF.viewSessionCount, _usage_report.view_session_count)
         yield (_usage_report_ref, OSF.downloadCount, _usage_report.download_count)
         yield (_usage_report_ref, OSF.downloadSessionCount, _usage_report.download_session_count)
+
+
+@gather.er(OSF.hasOsfAddon)
+def gather_addons(focus):
+    # note: when gravyvalet exists, use `iterate_addons_for_resource`
+    # from osf.external.gravy_valet.request_helpers and get urls like
+    # "https://addons.osf.example/v1/addon-imps/..." instead of a urn
+    for _addon_settings in focus.dbmodel.get_addons():
+        if not _addon_settings.config.added_default:  # skip always-on addons
+            _addon_ref = rdflib.URIRef(f'urn:osf.io:addons:{_addon_settings.short_name}')
+            yield (OSF.hasOsfAddon, _addon_ref)
+            yield (_addon_ref, RDF.type, OSF.AddonImplementation)
+            yield (_addon_ref, DCTERMS.identifier, _addon_settings.short_name)
+            yield (_addon_ref, SKOS.prefLabel, _addon_settings.config.full_name)
+
+
+@gather.er(OSF.storageRegion)
+def gather_storage_region(focus):
+    _region = getattr(focus.dbmodel, 'osfstorage_region', None)
+    if _region is not None:
+        _region_ref = rdflib.URIRef(_region.absolute_api_v2_url)
+        yield (OSF.storageRegion, _region_ref)
+        yield (_region_ref, SKOS.prefLabel, rdflib.Literal(_region.name, lang='en'))
+
+
+@gather.er(
+    OSF.storageByteCount,
+    focustype_iris=[OSF.Project, OSF.ProjectComponent, OSF.Registration, OSF.RegistrationComponent, OSF.Preprint]
+)
+def gather_storage_byte_count(focus):
+    _storage_usage_total = get_storage_usage_total(focus.dbmodel)
+    if _storage_usage_total is not None:
+        yield (OSF.storageByteCount, _storage_usage_total)

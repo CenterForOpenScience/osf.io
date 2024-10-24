@@ -1,11 +1,12 @@
-from urllib.parse import urlparse
-from django.db import connection
-from django.db.models import Sum
-
-import requests
 import logging
+from urllib.parse import urlparse
 
 from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
+from django.db import connection
+from django.db.models import Sum
+import requests
+
 from api.caching.utils import storage_usage_cache
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 
@@ -14,6 +15,9 @@ from framework.celery_tasks import app
 from website import settings
 
 logger = logging.getLogger(__name__)
+
+
+_DEFAULT_FILEVERSION_PAGE_SIZE = 500000
 
 
 def get_varnish_servers():
@@ -111,35 +115,59 @@ def ban_url(instance):
 
 
 @app.task(max_retries=5, default_retry_delay=10)
-def update_storage_usage_cache(target_id, target_guid, per_page=500000):
+def update_storage_usage_cache(target_id, target_guid, per_page=_DEFAULT_FILEVERSION_PAGE_SIZE):
     if not settings.ENABLE_STORAGE_USAGE_CACHE:
         return
+    from osf.models import Guid
+    storage_usage_total = compute_storage_usage_total(Guid.load(target_guid).referent, per_page=per_page)
+    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
+    storage_usage_cache.set(key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+
+
+def compute_storage_usage_total(target_obj, per_page=_DEFAULT_FILEVERSION_PAGE_SIZE):
     sql = """
         SELECT count(size), sum(size) from
         (SELECT size FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-        LEFT JOIN django_content_type type on file.target_content_type_id = type.id
         WHERE file.provider = 'osfstorage'
-        AND type.model = 'abstractnode'
         AND file.deleted_on IS NULL
-        AND file.target_object_id=%s
+        AND file.target_object_id=%(target_pk)s
+        AND file.target_content_type_id=%(target_content_type_pk)s
         ORDER BY version.id
-        LIMIT %s OFFSET %s) file_page
+        LIMIT %(per_page)s OFFSET %(offset)s
+    ) file_page
     """
-    count = per_page
+    last_count = 1  # initialize non-zero
     offset = 0
     storage_usage_total = 0
+    content_type_pk = ContentType.objects.get_for_model(target_obj).pk
     with connection.cursor() as cursor:
-        while count:
-            cursor.execute(sql, [target_id, per_page, offset])
-            result = cursor.fetchall()
-            storage_usage_total += int(result[0][1]) if result[0][1] else 0
-            count = int(result[0][0]) if result[0][0] else 0
-            offset += count
+        while last_count:
+            cursor.execute(
+                sql, {
+                    'target_pk': target_obj.pk,
+                    'target_content_type_pk': content_type_pk,
+                    'per_page': per_page,
+                    'offset': offset,
+                },
+            )
+            this_count, size_sum = cursor.fetchall()[0]
+            storage_usage_total += int(size_sum or 0)
+            last_count = (this_count or 0)
+            offset += last_count
+    return storage_usage_total
 
-    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
-    storage_usage_cache.set(key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+
+def get_storage_usage_total(target_obj):
+    if not settings.ENABLE_STORAGE_USAGE_CACHE:
+        return compute_storage_usage_total(target_obj)
+    _cache_key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_obj._id)
+    _storage_usage_total = storage_usage_cache.get(_cache_key)
+    if _storage_usage_total is None:
+        _storage_usage_total = compute_storage_usage_total(target_obj)
+        storage_usage_cache.set(_cache_key, _storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+    return _storage_usage_total
 
 
 def update_storage_usage(target):

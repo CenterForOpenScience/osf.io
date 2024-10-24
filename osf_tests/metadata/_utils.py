@@ -3,23 +3,23 @@ import rdflib
 from osf.metadata import gather
 from osf.metadata.rdfutils import contextualized_graph
 
-def assert_triples(actual_triples, expected_triples):
+def assert_triples(actual_triples, expected_triples, label=''):
     _expected_graph, _expected_focuses = _get_graph_and_focuses(expected_triples)
     _actual_graph, _actual_focuses = _get_graph_and_focuses(actual_triples)
-    assert_graphs_equal(_actual_graph, _expected_graph)
+    assert_graphs_equal(_actual_graph, _expected_graph, label=label)
     assert _expected_focuses == _actual_focuses
 
 
-def assert_graphs_equal(actual_rdflib_graph, expected_rdflib_graph):
+def assert_graphs_equal(actual_rdflib_graph, expected_rdflib_graph, label=''):
     (_overlap, _expected_but_absent, _unexpected_but_present) = rdflib.compare.graph_diff(
         expected_rdflib_graph,
         actual_rdflib_graph,
     )
     assert not _expected_but_absent and not _unexpected_but_present, '\n\t'.join((
-        'unequal triple-sets!',
+        (f'unequal triplesets for "{label}"!' if label else 'unequal triple-sets!'),
         f'overlap size: {len(_overlap)}',
-        f'expected (but absent): {_friendly_graph(_expected_but_absent)}',
-        f'unexpected (but present): {_friendly_graph(_unexpected_but_present)}',
+        f'expected (but absent): {_indented_graph(_expected_but_absent)}',
+        f'unexpected (but present): {_indented_graph(_unexpected_but_present)}',
     ))
 
 
@@ -35,10 +35,9 @@ def _get_graph_and_focuses(triples):
     return _graph, _focuses
 
 
-def _friendly_graph(rdfgraph) -> str:
+def _indented_graph(rdfgraph) -> str:
     _graph_to_print = contextualized_graph(rdfgraph)
     _delim = '\n\t\t'
     return _delim + _delim.join(
-        ' '.join(_term.n3() for _term in triple)
-        for triple in _graph_to_print
+        _graph_to_print.serialize(format='turtle').strip().split('\n')
     )
