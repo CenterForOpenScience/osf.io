@@ -33,8 +33,8 @@ var currentUserRequestState = ctx.currentUserRequestState;
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
-var datetimepicker = require("js/rdmDatetimepicker");
-var moment = require("moment");
+var datetimepicker = require('js/rdmDatetimepicker');
+var moment = require('moment');
 
 require('js/rdmSelect2');
 
