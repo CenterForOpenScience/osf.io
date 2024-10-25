@@ -1,3 +1,5 @@
+require('./weko.css');
+
 var WEKOUserConfig = require('./wekoUserConfig.js').WEKOUserConfig;
 
 // Endpoint for WEKO settings

@@ -12,6 +12,7 @@ from osf_tests.factories import ProjectFactory, OsfStorageFileFactory
 from framework.auth import Auth
 from ..models import NodeSettings, FileMetadata
 from .factories import NodeSettingsFactory
+from .utils import remove_fields
 
 
 pytestmark = pytest.mark.django_db
@@ -155,7 +156,10 @@ class TestNodeSettings(unittest.TestCase):
             ],
         }
         assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/'),
+            remove_fields(
+                self.node_settings.get_file_metadata_for_path('osfstorage/'),
+                fields=['modified', 'created'],
+            ),
             metadata
         )
         assert_equal(self.node_settings.get_file_metadatas(), [metadata])
@@ -198,7 +202,10 @@ class TestNodeSettings(unittest.TestCase):
             ],
         }
         assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/'),
+            remove_fields(
+                self.node_settings.get_file_metadata_for_path('osfstorage/'),
+                fields=['modified', 'created'],
+            ),
             metadata
         )
         assert_equal(metadatas, [metadata])
@@ -256,9 +263,14 @@ class TestNodeSettings(unittest.TestCase):
             ],
         }
         assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/'),
-            metadata
+            remove_fields(
+                self.node_settings.get_file_metadata_for_path('osfstorage/'),
+                fields=['modified', 'created'],
+            ),
+            metadata,
         )
+        assert_true('modified' in self.node_settings.get_file_metadata_for_path('osfstorage/'))
+        assert_true('created' in self.node_settings.get_file_metadata_for_path('osfstorage/'))
         assert_equal(metadatas, [metadata])
         last_log = self.node.logs.latest()
         assert_equal(last_log.action, 'metadata_file_updated')
@@ -339,8 +351,17 @@ class TestNodeSettings(unittest.TestCase):
             self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
             None,
         )
+        assert_true(
+            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile2')
+        )
+        assert_true(
+            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile2')
+        )
         assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/testfile2'),
+            remove_fields(
+                self.node_settings.get_file_metadata_for_path('osfstorage/testfile2'),
+                fields=['created', 'modified'],
+            ),
             {
                 'generated': False,
                 'path': 'osfstorage/testfile2',
@@ -444,8 +465,17 @@ class TestNodeSettings(unittest.TestCase):
             self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/testfile'),
             None,
         )
+        assert_true(
+            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile')
+        )
+        assert_true(
+            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile')
+        )
         assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
+            remove_fields(
+                self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
+                fields=['created', 'modified'],
+            ),
             {
                 'generated': False,
                 'path': 'osfstorage/testfile',
@@ -488,8 +518,17 @@ class TestNodeSettings(unittest.TestCase):
             self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
             None,
         )
+        assert_true(
+            'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+        )
+        assert_true(
+            'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+        )
         assert_equal(
-            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+            remove_fields(
+                self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+                fields=['created', 'modified'],
+            ),
             {
                 'generated': False,
                 'path': 'osfstorage/test/testfile',
@@ -556,8 +595,17 @@ class TestNodeSettings(unittest.TestCase):
             self.node_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
             None,
         )
+        assert_true(
+            'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
+        )
+        assert_true(
+            'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
+        )
         assert_equal(
-            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+            remove_fields(
+                self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
+                fields=['created', 'modified'],
+            ),
             {
                 'generated': False,
                 'path': 'osfstorage/test/testfile',
@@ -604,8 +652,17 @@ class TestNodeSettings(unittest.TestCase):
             self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
             None,
         )
+        assert_true(
+            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
+        )
+        assert_true(
+            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
+        )
         assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
+            remove_fields(
+                self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
+                fields=['created', 'modified'],
+            ),
             {
                 'generated': False,
                 'path': 'osfstorage/test1/test/testfile',
@@ -676,8 +733,17 @@ class TestNodeSettings(unittest.TestCase):
             self.node_settings.get_file_metadata_for_path('osfstorage/test/'),
             None,
         )
+        assert_true(
+            'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/')
+        )
+        assert_true(
+            'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/')
+        )
         assert_equal(
-            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'),
+            remove_fields(
+                self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'),
+                fields=['created', 'modified'],
+            ),
             {
                 'generated': False,
                 'path': 'osfstorage/test/',
@@ -724,8 +790,17 @@ class TestNodeSettings(unittest.TestCase):
             self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'),
             None,
         )
+        assert_true(
+            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/')
+        )
+        assert_true(
+            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/')
+        )
         assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/'),
+            remove_fields(
+                self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/'),
+                fields=['created', 'modified'],
+            ),
             {
                 'generated': False,
                 'path': 'osfstorage/test1/test/',

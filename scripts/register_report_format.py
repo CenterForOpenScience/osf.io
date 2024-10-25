@@ -24,13 +24,6 @@ from addons.metadata.utils import ensure_registration_report
 logger = logging.getLogger(__name__)
 
 
-def validate_record(record_num, row):
-    for column in ERAD_COLUMNS:
-        if column in row:
-            continue
-        raise ValueError(f'Column "{column}" not exists (record={record_num})')
-
-
 def do_populate(schema_name, report_name, template_file):
     with open(template_file, encoding='utf-8-sig') as f:
         csv_template = f.read()

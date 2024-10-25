@@ -499,6 +499,7 @@ var LogPieces = {
                     'nextcloudinstitutions_file_added', 'nextcloudinstitutions_file_updated',
                     'dropboxbusiness_file_added', 'dropboxbusiness_file_updated',
                     's3compatinstitutions_file_added', 's3compatinstitutions_file_updated',
+                    'weko_file_added', 'weko_item_deposited',
                     'timestamp_added'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
                        return logObject.attributes.params.urls.view;

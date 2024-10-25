@@ -265,6 +265,34 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'repo': self.repo,
         }
 
+    # GRDM-36019 Package Export/Import
+    def set_folder_by_id(self, folder_id, auth):
+        """Configure this addon to point to a Google Drive folder by its ID
+
+        :param str folder_id:
+        :param User auth:
+        """
+        if '/' not in folder_id:
+            raise exceptions.InvalidFolderError('Unexpected folder ID')
+        self.user = folder_id[:folder_id.index('/')]
+        self.repo = folder_id[folder_id.index('/') + 1:]
+        self.hook_id = None
+        self.save()
+        # Log repo select
+        node = self.owner
+        node.add_log(
+            action='bitbucket_repo_linked',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'bitbucket': {
+                    'user': self.user,
+                    'repo': self.repo,
+                }
+            },
+            auth=auth,
+        )
+
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
 
