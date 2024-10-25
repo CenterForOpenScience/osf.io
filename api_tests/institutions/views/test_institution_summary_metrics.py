@@ -265,6 +265,74 @@ class TestNewInstitutionSummaryMetricsList:
         assert attributes['monthly_logged_in_user_count'] == 220
         assert attributes['monthly_active_user_count'] == 200
 
+    def test_get_with_valid_report_dates(self, app, url, institution, institutional_admin):
+        _summary_report_factory(
+            '2024-08',
+            institution,
+            user_count=0,
+        )
+        _summary_report_factory(
+            '2024-09',
+            institution,
+            user_count=999,
+
+        )
+        _summary_report_factory(
+            '2018-02',
+            institution,
+            user_count=4133,
+        )
+
+        resp = app.get(f'{url}?report_date=2024-08', auth=institutional_admin.auth)
+        assert resp.status_code == 200
+
+        attributes = resp.json['data']['attributes']
+        assert attributes['user_count'] == 0
+
+        resp = app.get(f'{url}?report_date=2018-02', auth=institutional_admin.auth)
+        assert resp.status_code == 200
+
+        attributes = resp.json['data']['attributes']
+        assert attributes['user_count'] == 4133
+
+    def test_get_with_invalid_report_date(self, app, url, institution, institutional_admin):
+        _summary_report_factory(
+            '2024-08',
+            institution,
+            user_count=0,
+        )
+        _summary_report_factory(
+            '2024-09',
+            institution,
+            user_count=999,
+        )
+
+        # Request with an invalid report_date format
+        resp = app.get(f'{url}?report_date=invalid-date', auth=institutional_admin.auth)
+        assert resp.status_code == 200
+
+        # Verify it defaults to the most recent report data
+        attributes = resp.json['data']['attributes']
+        assert attributes['user_count'] == 999
+
+    def test_get_without_report_date_uses_most_recent(self, app, url, institution, institutional_admin):
+        _summary_report_factory(
+            '2024-08',
+            institution,
+            user_count=0,
+        )
+        _summary_report_factory(
+            '2024-09',
+            institution,
+            user_count=999,
+        )
+
+        resp = app.get(url, auth=institutional_admin.auth)
+        assert resp.status_code == 200
+
+        attributes = resp.json['data']['attributes']
+        assert attributes['user_count'] == 999
+
 
 def _summary_report_factory(yearmonth, institution, **kwargs):
     report = InstitutionMonthlySummaryReport(
