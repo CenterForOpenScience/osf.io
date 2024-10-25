@@ -283,13 +283,13 @@ class TestNewInstitutionSummaryMetricsList:
             user_count=4133,
         )
 
-        resp = app.get(f'{url}?report_date=2024-08', auth=institutional_admin.auth)
+        resp = app.get(f'{url}?report_yearmonth=2024-08', auth=institutional_admin.auth)
         assert resp.status_code == 200
 
         attributes = resp.json['data']['attributes']
         assert attributes['user_count'] == 0
 
-        resp = app.get(f'{url}?report_date=2018-02', auth=institutional_admin.auth)
+        resp = app.get(f'{url}?report_yearmonth=2018-02', auth=institutional_admin.auth)
         assert resp.status_code == 200
 
         attributes = resp.json['data']['attributes']
@@ -308,7 +308,7 @@ class TestNewInstitutionSummaryMetricsList:
         )
 
         # Request with an invalid report_date format
-        resp = app.get(f'{url}?report_date=invalid-date', auth=institutional_admin.auth)
+        resp = app.get(f'{url}?report_yearmonth=invalid-date', auth=institutional_admin.auth)
         assert resp.status_code == 200
 
         # Verify it defaults to the most recent report data

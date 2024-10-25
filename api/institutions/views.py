@@ -614,7 +614,7 @@ class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIV
 
     def get_default_search(self):
         yearmonth = InstitutionMonthlySummaryReport.most_recent_yearmonth()
-        if report_date_str := self.request.query_params.get('report_date'):
+        if report_date_str := self.request.query_params.get('report_yearmonth'):
             try:
                 yearmonth = YearMonth.from_str(report_date_str)
             except ValueError:
