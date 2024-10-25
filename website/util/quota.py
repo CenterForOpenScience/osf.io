@@ -5,6 +5,7 @@ from addons.base import signals as file_signals
 from addons.osfstorage.models import OsfStorageFileNode, Region
 from api.base import settings as api_settings
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from osf.models import (
@@ -85,12 +86,34 @@ def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE, is_recalcul
         user_quota.used = used
         user_quota.save()
     except UserQuota.DoesNotExist:
-        UserQuota.objects.create(
-            user=user,
-            storage_type=storage_type,
-            max_quota=api_settings.DEFAULT_MAX_QUOTA,
-            used=used,
-        )
+        try:
+            with transaction.atomic():
+                UserQuota.objects.create(
+                    user=user,
+                    storage_type=storage_type,
+                    max_quota=api_settings.DEFAULT_MAX_QUOTA,
+                    used=used,
+                )
+        except IntegrityError:
+            if is_recalculating_quota and storage_type == UserQuota.CUSTOM_STORAGE:
+                used_quota_for_nii_default_storage = used_quota(user._id, UserQuota.NII_STORAGE)
+                used_quota_for_nii_custom_storage = used_quota(user._id, UserQuota.CUSTOM_STORAGE)
+                used = used_quota_for_nii_default_storage + used_quota_for_nii_custom_storage
+            else:
+                used = used_quota(user._id, storage_type)
+
+            if check_select_for_update():
+                user_quota = UserQuota.objects.filter(
+                    user=user,
+                    storage_type=storage_type,
+                ).select_for_update().get()
+            else:
+                user_quota = UserQuota.objects.get(
+                    user=user,
+                    storage_type=storage_type,
+                )
+            user_quota.used = used
+            user_quota.save()
 
 
 def abbreviate_size(size):
@@ -214,12 +237,27 @@ def file_added(target, payload, file_node, storage_type):
         user_quota.used += file_size
         user_quota.save()
     except UserQuota.DoesNotExist:
-        UserQuota.objects.create(
-            user=target.creator,
-            storage_type=storage_type,
-            max_quota=api_settings.DEFAULT_MAX_QUOTA,
-            used=file_size
-        )
+        try:
+            with transaction.atomic():
+                UserQuota.objects.create(
+                    user=target.creator,
+                    storage_type=storage_type,
+                    max_quota=api_settings.DEFAULT_MAX_QUOTA,
+                    used=file_size
+                )
+        except IntegrityError:
+            if check_select_for_update():
+                user_quota = UserQuota.objects.filter(
+                    user=target.creator,
+                    storage_type=storage_type
+                ).select_for_update().get()
+            else:
+                user_quota = UserQuota.objects.get(
+                    user=target.creator,
+                    storage_type=storage_type
+                )
+            user_quota.used += file_size
+            user_quota.save()
 
     FileInfo.objects.create(file=file_node, file_size=file_size)
 
@@ -261,18 +299,25 @@ def file_modified(target, user, payload, file_node, storage_type):
     if file_size < 0:
         return
 
-    if check_select_for_update():
-        user_quota, _ = UserQuota.objects.select_for_update().get_or_create(
-            user=target.creator,
-            storage_type=storage_type,
-            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
-        )
-    else:
-        user_quota, _ = UserQuota.objects.get_or_create(
-            user=target.creator,
-            storage_type=storage_type,
-            defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
-        )
+    try:
+        with transaction.atomic():
+            if check_select_for_update():
+                user_quota, _ = UserQuota.objects.select_for_update().get_or_create(
+                    user=target.creator,
+                    storage_type=storage_type,
+                    defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+                )
+            else:
+                user_quota, _ = UserQuota.objects.get_or_create(
+                    user=target.creator,
+                    storage_type=storage_type,
+                    defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+                )
+    except IntegrityError:
+        if check_select_for_update():
+            user_quota = UserQuota.objects.filter(user=target.creator, storage_type=storage_type).select_for_update().get()
+        else:
+            user_quota = UserQuota.objects.get(user=target.creator, storage_type=storage_type)
 
     try:
         if check_select_for_update():
