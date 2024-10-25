@@ -317,4 +317,7 @@ def add_account(json_request, institution_id, addon_name):
     elif addon_name == 'owncloud':
         from admin.rdm_addons.api_v1.add.owncloud import add_account
         return add_account(json_request, institution_id, addon_name)
+    elif addon_name == 'weko':
+        from admin.rdm_addons.api_v1.add.weko import add_account
+        return add_account(json_request, institution_id, addon_name)
     return {'message': 'unknown addon "{}"'.format(addon_name)}, http_status.HTTP_400_BAD_REQUEST

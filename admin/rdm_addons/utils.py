@@ -24,7 +24,7 @@ def get_institusion_settings_template(config):
     base_path = os.path.join('rdm_addons', 'addons')
 
     if short_name in ['dataverse', 'owncloud', 's3', 'iqbrims',
-                      'dropboxbusiness']:
+                      'dropboxbusiness', 'weko']:
         return os.path.join(base_path, '{}_institution_settings.html'.format(short_name))
     return os.path.join(base_path, 'institution_settings_default.html')
 

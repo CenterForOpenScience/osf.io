@@ -688,11 +688,11 @@ msgstr "WEKOアカウントに接続"
 
 #: weko/templates/weko_credentials_modal.mako:18
 msgid "WEKO Repository"
-msgstr "WEKOレポジトリ"
+msgstr "WEKOリポジトリ"
 
 #: weko/templates/weko_credentials_modal.mako:22
 msgid "Select a WEKO repository"
-msgstr "WEKOレポジトリを選択"
+msgstr "WEKOリポジトリを選択"
 
 #: weko/templates/weko_credentials_modal.mako:33
 msgid "WEKO SWORD URL"

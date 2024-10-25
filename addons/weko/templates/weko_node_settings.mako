@@ -62,9 +62,9 @@
                             <div class="col-md-6">
                                 ${_("Index:")}
                                 <select class="form-control"
-                                        data-bind="options: indices,
+                                        data-bind="options: flattenIndices,
                                                    optionsValue: 'id',
-                                                   optionsText: 'title',
+                                                   optionsText: 'displayTitle',
                                                    value: selectedIndexId">
                                 </select>
                             </div>

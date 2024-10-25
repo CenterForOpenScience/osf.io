@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
+import logging
 import mock
 from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory
+from osf_tests.factories import AuthUserFactory, InstitutionFactory, ExternalAccountFactory
 from framework.exceptions import HTTPError
 
 from addons.base.tests.views import (
@@ -14,40 +15,108 @@ from addons.base.tests.views import (
 )
 from addons.weko.tests.utils import WEKOAddonTestCase
 from website.util import api_url_for
-from addons.weko.tests.utils import ConnectionMock
+from addons.weko.tests import utils
 from admin.rdm_addons.utils import get_rdm_addon_option
+
+
+logger = logging.getLogger(__name__)
+fake_host = 'https://weko3.test.nii.ac.jp/weko/sword/'
+
+
+def mock_requests_get(url, **kwargs):
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/tree?action=browsing':
+        return utils.MockResponse(utils.fake_weko_indices, 200)
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/index/?q=100':
+        return utils.MockResponse(utils.fake_weko_items, 200)
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/records/1000':
+        return utils.MockResponse(utils.fake_weko_item, 200)
+    return utils.mock_response_404
 
 
 class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     def setUp(self):
-        self.mock_connect_or_error = mock.patch('addons.weko.client.connect_or_error')
-        self.mock_connect_or_error.return_value = ConnectionMock()
-        self.mock_connect_or_error.start()
-        self.mock_connect_from_settings = mock.patch('addons.weko.client.connect_from_settings')
-        self.mock_connect_from_settings.return_value = ConnectionMock()
-        self.mock_connect_from_settings.start()
+        self.mock_requests_get = mock.patch('requests.get')
+        self.mock_requests_get.side_effect = mock_requests_get
+        self.mock_requests_get.start()
+        self.mock_find_repository = mock.patch('addons.weko.provider.find_repository')
+        self.mock_find_repository.return_value = {
+            'host': fake_host,
+            'client_id': None,
+            'client_secret': None,
+            'authorize_url': None,
+            'access_token_url': None,
+        }
+        self.mock_find_repository.start()
         super(TestWEKOViews, self).setUp()
 
+        self.institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+
+        rdm_addon_option = get_rdm_addon_option(self.institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = True
+        rdm_addon_option.save()
+
+        self.repository_external_account = ExternalAccountFactory()
+        self.repository_external_account.display_name = 'https://test.nii.ac.jp#WEKO test account'
+        self.repository_external_account.save()
+        rdm_addon_option.external_accounts.add(self.repository_external_account)
+
+        self.user_has_repo = AuthUserFactory()
+        self.user_has_repo.affiliated_institutions.add(self.institution)
+
+        self.no_repo_institution = InstitutionFactory()
+        self.user_has_no_repo = AuthUserFactory()
+        self.user_has_no_repo.affiliated_institutions.add(self.no_repo_institution)
+        self.project.add_contributor(self.user_has_no_repo)
+
     def tearDown(self):
-        self.mock_connect_or_error.stop()
-        self.mock_connect_from_settings.stop()
+        self.mock_requests_get.stop()
+        self.mock_find_repository.stop()
         super(TestWEKOViews, self).tearDown()
 
+    def test_weko_user_config_get(self):
+        url = self.project.api_url_for('weko_user_config_get')
+        res = self.app.get(url, auth=self.user_has_repo.auth)
+        logger.info(res.json)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_in('result', res.json)
+        assert_in('userHasAuth', res.json['result'])
+        assert_false(res.json['result']['userHasAuth'])
+        assert_in('urls', res.json['result'])
+        assert_in('repositories', res.json['result'])
+        assert_equal(res.json['result']['repositories'], [
+            {
+                'id': self.repository_external_account.provider_id,
+                'name': 'WEKO test account'
+            }
+        ])
+
+        res = self.app.get(url, auth=self.user_has_no_repo.auth)
+        logger.info(res.json)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_in('result', res.json)
+        assert_in('userHasAuth', res.json['result'])
+        assert_false(res.json['result']['userHasAuth'])
+        assert_in('urls', res.json['result'])
+        assert_in('repositories', res.json['result'])
+        assert_equal(res.json['result']['repositories'], [])
+
     def test_weko_settings_rdm_addons_denied(self):
-        institution = InstitutionFactory()
-        self.user.affiliated_institutions.add(institution)
-        self.user.save()
-        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option = get_rdm_addon_option(self.institution.id, self.ADDON_SHORT_NAME)
         rdm_addon_option.is_allowed = False
         rdm_addon_option.save()
-        url = self.project.api_url_for('weko_add_user_account')
-        rv = self.app.post_json(url,{
-            'sword_url': 'http://dummy.io',
-            'access_key': 'aldkjf',
-            'secret_key': 'las'
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
-        assert_in(b'You are prohibited from using this add-on.', rv.body)
+        try:
+            url = self.project.api_url_for('weko_oauth_connect', repoid='test')
+            rv = self.app.get(
+                url,
+                auth=self.user.auth,
+                expect_errors=True
+            )
+            assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
+        finally:
+            rdm_addon_option.is_allowed = True
+            rdm_addon_option.save()
 
     def test_weko_set_index_no_settings(self):
         user = AuthUserFactory()
@@ -109,6 +178,26 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
             self.user,
+            self.client
+        )
+        serialized_except_repos = dict(
+            [(key, value) for key, value in serialized.items() if key != 'repositories']
+        )
+        result_except_repos = dict(
+            [(key, value) for key, value in res.json['result'].items() if key != 'repositories']
+        )
+        assert_equal(serialized_except_repos, result_except_repos)
+        assert_equal(len(res.json['result']['repositories']), 1)
+        assert_equal(res.json['result']['repositories'][0]['name'], 'WEKO test account')
+
+    def test_get_config_for_user_has_no_repo(self):
+        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user_has_no_repo.auth)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_in('result', res.json)
+        serialized = self.Serializer().serialize_settings(
+            self.node_settings,
+            self.user_has_no_repo,
             self.client
         )
         assert_equal(serialized, res.json['result'])
