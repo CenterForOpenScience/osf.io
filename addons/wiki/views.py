@@ -851,8 +851,7 @@ def _validate_import_wiki_exists_duplicated(node, info):
             info['wiki_name'] = info['wiki_name'] + '(' + str(info['numbering']) + ')'
             info['path'] = info['path'] + '(' + str(info['numbering']) + ')'
             can_start_import = False
-    else:
-        can_start_import = True
+
     return info, can_start_import
 
 def _validate_import_duplicated_directry(info_list):
