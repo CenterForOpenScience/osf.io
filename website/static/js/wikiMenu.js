@@ -45,6 +45,7 @@ function WikiMenu(data, wikiID, canEdit) {
 
     //  Treebeard version
     var tbOptions = {
+        rowHeight : 35,         // user can override or get from .tb-row height
         divID: 'grid',
         filesData: data,
         paginate : false,       // Whether the applet starts with pagination or not.
@@ -92,7 +93,7 @@ function WikiMenu(data, wikiID, canEdit) {
             }
             return columns;
         },
-        hScroll: 500,
+        hScroll: 1,    // to set auto.
         showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',
