@@ -282,7 +282,7 @@ def _get_all_child_file_ids(dir_id):
 def get_node_file_mapping(node, dir_id):
     file_ids = list(_get_all_child_file_ids(dir_id))
     node_file_infos = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=file_ids).values_list('_id', 'name', 'parent_id__name')
-    mapping = { unicodedata.normalize('NFC', f'{node_file_info[2]}^{node_file_info[1]}'): node_file_info[0] for node_file_info in node_file_infos }
+    mapping = {unicodedata.normalize('NFC', f'{node_file_info[2]}^{node_file_info[1]}'): node_file_info[0] for node_file_info in node_file_infos}
     return mapping
 
 def get_import_wiki_name_list(wiki_info):
