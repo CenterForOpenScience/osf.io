@@ -2520,6 +2520,42 @@ msgstr ""
 msgid "Secret Key"
 msgstr ""
 
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:7
+msgid "Configure a WEKO application"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:18
+msgid "WEKO Display Name"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:22
+msgid "WEKO URL"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:26
+msgid "WEKO OAuth Client ID"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:30
+msgid "WEKO OAuth Client Secret"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:40
+msgid "WEKO URL is invalid. WEKO URL should be start with http(s)://"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_institution_settings.html:17
+msgid "Add"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_institution_settings.html:22
+msgid "Delete Application"
+msgstr ""
+
+#: admin/templates/rdm_addons/addons/weko_institution_settings.html:27
+msgid "OAuth Application "
+msgstr ""
+
 #: admin/templates/rdm_addons/institution_list.html:27
 #: admin/templates/rdm_statistics/institution_list.html:27
 msgid "Institution List"

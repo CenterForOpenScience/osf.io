@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Serializer tests for the Box addon."""
+"""Reporting test for metadata addon"""
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 import pytest

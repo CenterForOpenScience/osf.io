@@ -1,0 +1,59 @@
+{% load i18n %}
+<div id="wekoInputHost" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h3>{% trans "Configure a WEKO application" %}</h3>
+            </div>
+
+            <form>
+                <div class="modal-body">
+
+                    <div class="row">
+                        <div class="col-sm-3"></div>
+
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="wekoAddon">{% trans "WEKO Display Name" %}</label>
+                                <input class="form-control" data-bind="value: wekoName" name="weko_name" />
+                            </div>
+                            <div class="form-group">
+                                <label for="wekoAddon">{% trans "WEKO URL" %}</label>
+                                <input class="form-control" data-bind="value: wekoUrl" name="weko_url" />
+                            </div>
+                            <div class="form-group">
+                                <label for="wekoAddon">{% trans "WEKO OAuth Client ID" %}</label>
+                                <input class="form-control" data-bind="value: wekoOAuthClientId" name="weko_oauth_client_id" />
+                            </div>
+                            <div class="form-group">
+                                <label for="wekoAddon">{% trans "WEKO OAuth Client Secret" %}</label>
+                                <input type="password" class="form-control" data-bind="value: wekoOAuthClientSecret" name="weko_oauth_client_secret" />
+                            </div>
+                        </div>
+                    </div><!-- end row -->
+
+                    <!-- Flashed Messages -->
+                    <div class="help-block">
+                        <!-- ko if: wekoUrlInvalid() -->
+                        <p class='text-danger'>
+                            {% trans "WEKO URL is invalid. WEKO URL should be start with http(s)://" %}
+                        </p>
+                        <!-- /ko -->
+                    </div>
+
+                </div><!-- end modal-body -->
+
+                <div class="modal-footer">
+                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">{% trans "Cancel" %}</a>
+
+                    <!-- Save Button -->
+                    <button data-bind="click: addHost, enable: hostCompleted" class="btn btn-success">{% trans "Save" %}</button>
+
+                </div><!-- end modal-footer -->
+
+            </form>
+
+        </div><!-- end modal-content -->
+    </div>
+</div>

@@ -1,0 +1,16 @@
+#wekoAddonScope .import-account {
+    /* In WEKO, External Account holds OAuth Application information, so import from administrator is disabled. */
+    display: none;
+}
+
+.weko-row + .tb-row .fangorn-toolbar-icon.m-l-sm {
+    /* Hide cancel button in progress bar */
+    display: none !important;
+}
+
+.weko-item-icon {
+    background: url('/static/img/hgrid/fontawesome/file-text-o.png');
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}

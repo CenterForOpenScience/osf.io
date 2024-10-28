@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 from rest_framework import status as http_status
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
@@ -146,6 +147,44 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 },
                 auth=auth,
             )
+
+    # GRDM-36019 Package Export/Import
+    def set_folder_by_id(self, folder_id, auth):
+        """Configure this addon to point to a Google Drive folder by its ID
+
+        :param str folder_id:
+        :param User auth:
+        """
+        dataverse = json.loads(folder_id)
+        self.dataverse_alias = dataverse['dataverse_alias']
+        self.dataverse = dataverse['dataverse']
+        self.dataset_doi = dataverse['dataset_doi']
+        self._dataset_id = dataverse['dataset_id']
+        self.dataset = dataverse['dataset']
+        self.save()
+
+        if auth:
+            self.owner.add_log(
+                action='dataverse_dataset_linked',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                    'dataset': self.dataset,
+                },
+                auth=auth,
+            )
+
+    # GRDM-36019 Package Export/Import
+    @property
+    def folder_id_for_export(self):
+        """Get the folder ID includes in the addon settings for use in an export"""
+        return json.dumps({
+            'dataverse_alias': self.dataverse_alias,
+            'dataverse': self.dataverse,
+            'dataset_doi': self.dataset_doi,
+            'dataset': self.dataset,
+            'dataset_id': self._dataset_id,
+        })
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         try:

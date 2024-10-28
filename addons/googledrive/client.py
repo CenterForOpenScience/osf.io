@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
 from addons.googledrive import settings
 
+logger = logging.getLogger(__name__)
 
 class GoogleAuthClient(BaseClient):
 
@@ -50,3 +52,14 @@ class GoogleDriveClient(BaseClient):
             throws=HTTPError(401)
         )
         return res.json()['items']
+
+    # GRDM-36019 Package Export/Import - Google Drive
+    def folder(self, folder_id):
+        folder = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', folder_id),
+            expects=(200, ),
+            throws=HTTPError(401)
+        ).json()
+        logger.info('folder: {}'.format(folder))
+        return folder

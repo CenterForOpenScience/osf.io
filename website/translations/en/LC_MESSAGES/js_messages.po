@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2023-05-17 11:25+0900\n"
+"POT-Creation-Date: 2023-06-17 00:33+0000\n"
 "PO-Revision-Date: 2020-11-16 20:17+0900\n"
 "Last-Translator: Hiroki Ohashi\n"
 "Language: en\n"
@@ -16,208 +16,209 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.7.0\n"
+"Generated-By: Babel 2.5.1\n"
 
 #: addons/jupyterhub/static/files.js:96
 msgid "Launch"
 msgstr ""
 
-#: addons/metadata/static/files.js:339
+#: addons/metadata/static/files.js:331
 msgid "Metadata Schema:"
 msgstr ""
 
-#: addons/metadata/static/files.js:498
+#: addons/metadata/static/files.js:528
 msgid "Paste from Clipboard"
 msgstr ""
 
-#: addons/metadata/static/files.js:587 addons/metadata/static/files.js:601
-#: website/static/js/fangorn.js:1794
+#: addons/metadata/static/files.js:637 addons/metadata/static/files.js:651
+#: website/static/js/fangorn.js:1853
 msgid "Could not copy text"
 msgstr ""
 
-#: addons/metadata/static/files.js:599 website/static/js/clipboard.js:27
-#: website/static/js/fangorn.js:1788 website/static/js/fangorn.js:1792
+#: addons/metadata/static/files.js:649 website/static/js/clipboard.js:27
+#: website/static/js/fangorn.js:1847 website/static/js/fangorn.js:1851
 msgid "Copied!"
 msgstr ""
 
-#: addons/metadata/static/files.js:625 addons/metadata/static/files.js:640
+#: addons/metadata/static/files.js:675 addons/metadata/static/files.js:690
 msgid "Could not paste text"
 msgstr ""
 
-#: addons/metadata/static/files.js:690 addons/metadata/static/files.js:704
-#: addons/metadata/static/files.js:1054
+#: addons/metadata/static/files.js:740 addons/metadata/static/files.js:754
+#: addons/metadata/static/files.js:1095
 msgid "Loading..."
 msgstr ""
 
-#: addons/metadata/static/files.js:702
+#: addons/metadata/static/files.js:752
 msgid "Select the destination of the file metadata."
 msgstr ""
 
-#: addons/metadata/static/files.js:707
+#: addons/metadata/static/files.js:757
 msgid "Current Metadata:"
 msgstr ""
 
-#: addons/metadata/static/files.js:763
+#: addons/metadata/static/files.js:813
 msgid "Delete metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:766
+#: addons/metadata/static/files.js:816
 msgid "Could not list hashes"
 msgstr ""
 
-#: addons/metadata/static/files.js:774
-#: addons/metadata/static/metadata-fields.js:521
-#: addons/metadata/static/metadata-fields.js:526
+#: addons/metadata/static/files.js:824
+#: addons/metadata/static/metadata-fields.js:1041
 msgid "Could not list files"
 msgstr ""
 
-#: addons/metadata/static/files.js:863 addons/metadata/static/files.js:870
+#: addons/metadata/static/files.js:913 addons/metadata/static/files.js:920
 msgid "No name"
 msgstr ""
 
-#: addons/metadata/static/files.js:930
+#: addons/metadata/static/files.js:1005
 msgid ""
 "There is no draft project metadata compliant with the schema. Create new "
 "draft project metadata from the Metadata tab:"
 msgstr ""
 
-#: addons/metadata/static/files.js:932 addons/metadata/static/files.js:1100
+#: addons/metadata/static/files.js:1007 addons/metadata/static/files.js:1175
+#: addons/metadata/static/files.js:1189
 msgid "Open"
 msgstr ""
 
-#: addons/metadata/static/files.js:1031
+#: addons/metadata/static/files.js:1070
 msgid "There are errors in some fields."
 msgstr ""
 
-#: addons/metadata/static/files.js:1065 addons/metadata/static/files.js:1987
-#: addons/metadata/static/files.js:2013 website/static/js/folderpicker.js:105
+#: addons/metadata/static/files.js:1106 addons/metadata/static/files.js:2149
+#: addons/metadata/static/files.js:2175 website/static/js/folderpicker.js:105
 msgid "Select"
 msgstr ""
 
-#: addons/metadata/static/files.js:1069
+#: addons/metadata/static/files.js:1110
 msgid "Select the destination for the file metadata."
 msgstr ""
 
-#: addons/metadata/static/files.js:1090
+#: addons/metadata/static/files.js:1161
 msgid "Registering..."
 msgstr ""
 
-#: addons/metadata/static/files.js:1090
+#: addons/metadata/static/files.js:1161
 msgid "Deleting..."
 msgstr ""
 
-#: addons/metadata/static/files.js:1133 addons/metadata/static/files.js:1835
-#: addons/metadata/static/files.js:1910 addons/metadata/static/files.js:1957
-#: addons/metadata/static/files.js:1985 addons/metadata/static/files.js:2011
-#: addons/metadata/static/files.js:2067
-#: website/static/js/accountSettings.js:267 website/static/js/fangorn.js:2654
+#: addons/metadata/static/files.js:1255 addons/metadata/static/files.js:1994
+#: addons/metadata/static/files.js:2072 addons/metadata/static/files.js:2119
+#: addons/metadata/static/files.js:2147 addons/metadata/static/files.js:2173
+#: addons/metadata/static/files.js:2229
+#: addons/metadata/static/metadataImportDatasetButton.js:23
+#: website/static/js/accountSettings.js:267 website/static/js/fangorn.js:2777
 #: website/static/js/folderPickerNodeConfig.js:591
 #: website/static/js/pages/profile-settings-addons-page.js:72
 #: website/static/js/pages/project-settings-page.js:118
 msgid "Close"
 msgstr ""
 
-#: addons/metadata/static/files.js:1186
+#: addons/metadata/static/files.js:1321
 msgid "View Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1196
+#: addons/metadata/static/files.js:1332
 msgid "Edit Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1205
+#: addons/metadata/static/files.js:1343
 msgid "Register Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1213
+#: addons/metadata/static/files.js:1353
 msgid "Delete Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1261
+#: addons/metadata/static/files.js:1407
 msgid "Edit Multiple Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1271
+#: addons/metadata/static/files.js:1417
 msgid "Loading Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1407
+#: addons/metadata/static/files.js:1556
 msgid "Metadata is defined"
 msgstr ""
 
-#: addons/metadata/static/files.js:1416
+#: addons/metadata/static/files.js:1565
 msgid "Some of the children have metadata."
 msgstr ""
 
-#: addons/metadata/static/files.js:1426
+#: addons/metadata/static/files.js:1575
 msgid "File not found: "
 msgstr ""
 
-#: addons/metadata/static/files.js:1839 addons/metadata/static/files.js:1912
+#: addons/metadata/static/files.js:1998 addons/metadata/static/files.js:2074
 #: website/static/js/contribManager.js:440
 #: website/static/js/filepage/editor.js:180
 msgid "Save"
 msgstr ""
 
-#: addons/metadata/static/files.js:1851 addons/metadata/static/files.js:2033
+#: addons/metadata/static/files.js:2010 addons/metadata/static/files.js:2195
 msgid "Copy to clipboard"
 msgstr ""
 
-#: addons/metadata/static/files.js:1866
+#: addons/metadata/static/files.js:2026
 msgid ""
 "Renaming, moving the file/directory, or changing the directory hierarchy "
 "can break the association of the metadata you have added."
 msgstr ""
 
-#: addons/metadata/static/files.js:1872
+#: addons/metadata/static/files.js:2032
 msgid "Edit File Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1872
+#: addons/metadata/static/files.js:2032
 msgid "View File Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1892 addons/metadata/static/files.js:1944
+#: addons/metadata/static/files.js:2053 addons/metadata/static/files.js:2106
 #: website/static/js/saveManager.js:24
 msgid "You have unsaved changes."
 msgstr ""
 
-#: addons/metadata/static/files.js:1927
+#: addons/metadata/static/files.js:2089
 msgid "Edit Multiple File Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1959 website/static/js/fangorn.js:1492
-#: website/static/js/fangorn.js:1515 website/static/js/fangorn.js:2377
-#: website/static/js/fangorn.js:2413 website/static/js/filepage/index.js:204
-#: website/static/js/filepage/index.js:517 website/static/js/myProjects.js:1637
+#: addons/metadata/static/files.js:2121 website/static/js/fangorn.js:1551
+#: website/static/js/fangorn.js:1574 website/static/js/fangorn.js:2469
+#: website/static/js/fangorn.js:2505 website/static/js/filepage/index.js:204
+#: website/static/js/filepage/index.js:519 website/static/js/myProjects.js:1637
 msgid "Delete"
 msgstr ""
 
-#: addons/metadata/static/files.js:1972
+#: addons/metadata/static/files.js:2134
 msgid "Delete File Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1977
+#: addons/metadata/static/files.js:2139
 msgid "Do you want to delete metadata? This operation cannot be undone."
 msgstr ""
 
-#: addons/metadata/static/files.js:1994
+#: addons/metadata/static/files.js:2156
 msgid "Select a destination for file metadata registration"
 msgstr ""
 
-#: addons/metadata/static/files.js:2043
+#: addons/metadata/static/files.js:2205
 msgid "Fix file metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:2072
+#: addons/metadata/static/files.js:2234
 msgid "Paste Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:2077
+#: addons/metadata/static/files.js:2239
 msgid "Press Ctrl-V (Command-V) to paste."
 msgstr ""
 
-#: addons/metadata/static/files.js:2079
+#: addons/metadata/static/files.js:2241
 msgid ""
 "[Why is this needed?] In this browser, retrieving clipboard values with "
 "button operations is prohibited. Therefore, you must explicitly indicate "
@@ -225,18 +226,16 @@ msgid ""
 "browser menu."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:55
+#: addons/metadata/static/metadata-fields.js:896
 #, python-format
 msgid "One of this field or \"%s\" field must be filled."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:59
-#: addons/metadata/static/metadata-fields.js:250
+#: addons/metadata/static/metadata-fields.js:911
 msgid "This field can't be blank."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:206
-#: addons/metadata/static/metadata-fields.js:253
+#: addons/metadata/static/metadata-fields.js:875
 msgid "Please enter the correct value. "
 msgstr ""
 
@@ -246,24 +245,24 @@ msgid ""
 "organization name, address and phone number."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:261
+#: addons/metadata/static/metadata-fields.js:577
 msgid "(Not Modified)"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:264
+#: addons/metadata/static/metadata-fields.js:580
 msgid "Choose..."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:350
+#: addons/metadata/static/metadata-fields.js:213
 msgid "Clear"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:408
-#: addons/metadata/static/metadata-fields.js:417
+#: addons/metadata/static/metadata-fields.js:235
+#: addons/metadata/static/metadata-fields.js:244
 msgid "Show example"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:421
+#: addons/metadata/static/metadata-fields.js:248
 msgid "Hide example"
 msgstr ""
 
@@ -295,14 +294,63 @@ msgstr ""
 msgid "Name (English)"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:728
+#: addons/metadata/static/metadata-fields.js:656
+msgid "No data"
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:667
 #: website/static/js/myProjects.js:1565
 msgid "Add"
 msgstr ""
 
+#: addons/metadata/static/metadata-fields.js:1027
+msgid "Overwrite already entered value?"
+msgstr ""
+
+#: addons/metadata/static/metadataImportDatasetButton.js:25
+#: addons/metadata/static/metadataImportDatasetButton.js:56
+#: addons/metadata/static/metadataImportDatasetButton.js:234
+msgid "Import Dataset"
+msgstr ""
+
+#: addons/metadata/static/metadataImportDatasetButton.js:41
+msgid "Enter URL to import dataset"
+msgstr ""
+
+#: addons/metadata/static/metadataImportDatasetButton.js:44
+msgid "Importing..."
+msgstr ""
+
+#: addons/metadata/static/metadataImportDatasetButton.js:48
+#: addons/metadata/static/metadataImportDatasetButton.js:164
+#: addons/metadata/static/metadataImportDatasetButton.js:189
+msgid "Error importing dataset: "
+msgstr ""
+
+#: addons/metadata/static/metadataImportDatasetButton.js:58
+msgid "Enter the URL of the dataset you would like to import."
+msgstr ""
+
+#: addons/metadata/static/metadataImportDatasetButton.js:126
+msgid "Downloaded!"
+msgstr ""
+
+#: addons/metadata/static/metadataNodeConfig.js:112
+msgid "Could not GET metadata settings"
+msgstr ""
+
+#: addons/metadata/static/metadataNodeConfig.js:155
+msgid "Add-on settings configured."
+msgstr ""
+
+#: addons/metadata/static/metadataNodeConfig.js:161
+msgid "Failed to configure add-on settings."
+msgstr ""
+
 #: addons/twofactor/static/twoFactorUserConfig.js:148
 #: addons/twofactor/static/twoFactorUserConfig.js:190
-#: admin/static/js/rdm_addons/rdm-addons-page.js:71
+#: addons/weko/static/wekoFangornConfig.js:611
+#: admin/static/js/rdm_addons/rdm-addons-page.js:80
 #: website/static/js/accountSettings.js:249
 #: website/static/js/accountSettings.js:327
 #: website/static/js/accountSettings.js:392
@@ -359,6 +407,199 @@ msgstr ""
 
 #: addons/twofactor/static/twoFactorUserConfig.js:187
 msgid "Enable"
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:42
+#: addons/weko/static/wekoFangornConfig.js:62 website/static/js/fangorn.js:2367
+#: website/static/js/fangorn.js:2459 website/static/js/filepage/index.js:542
+#: website/static/js/filepage/index.js:544
+msgid "View"
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:86
+#: addons/weko/static/wekoFangornConfig.js:788
+msgid "Deposit"
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:255
+#: addons/weko/static/wekoFangornConfig.js:276
+#: addons/weko/static/wekoFangornConfig.js:316
+msgid "Error occurred: "
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:289
+msgid "Deposit was successful."
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:550
+msgid "Error occurred while "
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:574
+msgid "Schema"
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:577
+msgid "Select a schema for the file."
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:579
+msgid "Project Metadata"
+msgstr ""
+
+msgid "No file metadata is defined for the schema available for depositting to WEKO."
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:583
+msgid "Select a registration for the file. You can also select a draft registration."
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:607
+msgid ""
+"Do you want to deposit the file/folder \"%1$s\" to WEKO? This operation "
+"is irreversible."
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:617
+msgid "OK"
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:631
+msgid "Deposit files"
+msgstr ""
+
+#: addons/weko/static/wekoFangornConfig.js:880
+msgid "Save and Deposit to WEKO"
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:86
+#: addons/weko/static/wekoNodeConfig.js:115
+#: website/static/js/folderPickerNodeConfig.js:116
+msgid ""
+"Could not retrieve %1$s settings at this time. Please refresh the page. "
+"If the problem persists, email %2$s."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:90
+#: website/static/js/folderPickerNodeConfig.js:142
+msgid "Are you sure you want to remove this %1$s account?"
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:93
+#: website/static/js/folderPickerNodeConfig.js:145
+msgid "Are you sure you want to link your %1$s account with this project?"
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:96
+#: website/static/js/folderPickerNodeConfig.js:122
+msgid "Disconnected %1$s."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:99
+#: website/static/js/folderPickerNodeConfig.js:125
+msgid ""
+"Could not disconnect %1$s account because of an error. Please try again "
+"later."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:102
+#: addons/weko/static/wekoNodeConfig.js:112
+#: website/static/js/folderPickerNodeConfig.js:151
+msgid "Error occurred while importing %1$s account."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:105
+msgid ""
+"Sorry, but there was a problem connecting to that instance of %1$s.If you"
+" have any questions, please contact %2$s."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:109
+#: website/static/js/folderPickerNodeConfig.js:148
+msgid "Successfully imported %1$s account from profile."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:120
+msgid ""
+"Successfully linked index \"%1$s\". Go to the <a href=\"%2$s\">Files "
+"page</a> to view your content."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:124
+msgid ""
+"Could not connect to this index. Please refresh the page or contact %1$s "
+"if the problem persists."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:270
+msgid "Please select WEKO repository."
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:373
+#: website/static/js/citationsNodeConfig.js:147
+msgid "Choose %1$s Access Token to Import"
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:392
+#: addons/weko/static/wekoNodeConfig.js:407
+#: website/static/js/citationsNodeConfig.js:166
+#: website/static/js/citationsNodeConfig.js:184
+#: website/static/js/folderPickerNodeConfig.js:507
+#: website/static/js/oauthAddonNodeConfig.js:153
+#: website/static/js/oauthAddonNodeConfig.js:171
+msgid "Import"
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:398
+#: website/static/js/folderPickerNodeConfig.js:497
+#: website/static/js/oauthAddonNodeConfig.js:162
+msgid "Import %1$s Account?"
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:449
+#: website/static/js/folderPickerNodeConfig.js:552
+msgid "Disconnect %1$s Account?"
+msgstr ""
+
+#: addons/weko/static/wekoNodeConfig.js:458
+#: addons/weko/static/wekoUserConfig.js:113
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
+#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
+#: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:116
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:469
+#: website/static/js/addonSettings.js:130
+#: website/static/js/folderPickerNodeConfig.js:562
+msgid "Disconnect"
+msgstr ""
+
+#: addons/weko/static/wekoUserConfig.js:63
+#: website/static/js/addonSettings.js:106
+msgid ""
+"Add-on successfully authorized. To link this add-on to an GakuNin RDM "
+"project, go to the settings page of the project, enable %1$s, and choose "
+"content to connect."
+msgstr ""
+
+#: addons/weko/static/wekoUserConfig.js:65
+#: website/static/js/addonSettings.js:109
+msgid ""
+"Error while authorizing add-on. Please log in to your %1$s account and "
+"grant access to the GakuNin RDM to enable this add-on."
+msgstr ""
+
+#: addons/weko/static/wekoUserConfig.js:101
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:449
+#: website/static/js/addonSettings.js:118
+msgid "Disconnect Account?"
+msgstr ""
+
+#: addons/weko/static/wekoUserConfig.js:103
+#: website/static/js/addonSettings.js:120
+msgid ""
+"Are you sure you want to disconnect the %1$s account "
+"<strong>%2$s</strong>? This will revoke access to %1$s for all projects "
+"you have authorized."
 msgstr ""
 
 #: addons/wiki/static/WikiEditor.js:86
@@ -559,17 +800,9 @@ msgid ""
 "projects associated with this account."
 msgstr ""
 
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
-#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:469
-#: website/static/js/addonSettings.js:130
-#: website/static/js/folderPickerNodeConfig.js:562
-msgid "Disconnect"
-msgstr ""
-
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:173
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:142
+#: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:134
 #: website/static/js/addonSettings.js:150
 msgid "Error while removing addon authorization for %1$s"
 msgstr ""
@@ -717,6 +950,25 @@ msgid ""
 "account."
 msgstr ""
 
+#: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:68
+msgid "Error while retrieving addon account"
+msgstr ""
+
+#: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:89
+msgid "Could not set accounts for WEKO"
+msgstr ""
+
+#: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:105
+msgid "Delete WEKO Application?"
+msgstr ""
+
+#: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:107
+msgid ""
+"Are you sure you want to delete the WEKO application "
+"<strong>%1$s</strong>? WEKO add-on connections already set up for "
+"the projects will be preserved."
+msgstr ""
+
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:84
 msgid "Are you sure you want to change institutional storage?"
 msgstr ""
@@ -746,11 +998,6 @@ msgstr ""
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:369
 msgid "Institutional Storage set successfully"
-msgstr ""
-
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:449
-#: website/static/js/addonSettings.js:118
-msgid "Disconnect Account?"
 msgstr ""
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:451
@@ -1915,13 +2162,8 @@ msgid ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Add / update files</td>\n"
-"                <td>Adding/updating indices/items in the project via "
-"GakuNin RDM will be reflected in WEKO.</td>\n"
-"            </tr>\n"
-"            <tr class=\"warning\">\n"
-"                <td>Delete files</td>\n"
-"                <td>Items deleted via GakuNin RDM will be deleted in "
-"WEKO.</td>\n"
+"                <td>Deposit files to the index in the project via GakuNin"
+" RDM will be reflected in WEKO.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Logs</td>\n"
@@ -2750,26 +2992,6 @@ msgid ""
 "credentials stored in your browser."
 msgstr ""
 
-#: website/static/js/addonSettings.js:106
-msgid ""
-"Add-on successfully authorized. To link this add-on to an GakuNin RDM "
-"project, go to the settings page of the project, enable %1$s, and choose "
-"content to connect."
-msgstr ""
-
-#: website/static/js/addonSettings.js:109
-msgid ""
-"Error while authorizing add-on. Please log in to your %1$s account and "
-"grant access to the GakuNin RDM to enable this add-on."
-msgstr ""
-
-#: website/static/js/addonSettings.js:120
-msgid ""
-"Are you sure you want to disconnect the %1$s account "
-"<strong>%2$s</strong>? This will revoke access to %1$s for all projects "
-"you have authorized."
-msgstr ""
-
 #: website/static/js/alertsManager.js:42
 msgid "Could not dismiss alert. Please refresh page and try again."
 msgstr ""
@@ -2962,18 +3184,6 @@ msgstr ""
 #: website/static/js/citationsNodeConfig.js:81
 #: website/static/js/oauthAddonNodeConfig.js:209
 msgid "Could not GET %1$s accounts for user"
-msgstr ""
-
-#: website/static/js/citationsNodeConfig.js:147
-msgid "Choose %1$s Access Token to Import"
-msgstr ""
-
-#: website/static/js/citationsNodeConfig.js:166
-#: website/static/js/citationsNodeConfig.js:184
-#: website/static/js/folderPickerNodeConfig.js:507
-#: website/static/js/oauthAddonNodeConfig.js:153
-#: website/static/js/oauthAddonNodeConfig.js:171
-msgid "Import"
 msgstr ""
 
 #: website/static/js/citationsNodeConfig.js:175
@@ -3360,7 +3570,6 @@ msgstr ""
 msgid "The folder that wants to upload is empty."
 msgstr ""
 
-# website/static/js/fangorn.js:1199
 #: website/static/js/fangorn.js:1204
 msgid "Not enough quota to upload. The total size of the folder %1$s."
 msgstr ""
@@ -3468,6 +3677,14 @@ msgstr ""
 msgid " by another user."
 msgstr ""
 
+#: website/static/js/fangorn.js:1994
+msgid "%1$s is not configured"
+msgstr ""
+
+#: website/static/js/fangorn.js:1997
+msgid " Restore Add-ons"
+msgstr " Configure"
+
 #: website/static/js/fangorn.js:2008 website/static/js/fileViewTreebeard.js:63
 #: website/static/js/filesWidget.js:34 website/static/js/meetings.js:18
 #: website/static/js/pages/project-dashboard-page.js:549
@@ -3521,10 +3738,6 @@ msgstr ""
 #: website/static/js/fangorn.js:2357 website/static/js/filepage/index.js:520
 #: website/static/js/filepage/revisions.js:111
 msgid "Download"
-msgstr ""
-
-#: website/static/js/fangorn.js:2367 website/static/js/filepage/index.js:542
-msgid "View"
 msgstr ""
 
 #: website/static/js/fangorn.js:2383 website/static/js/filepage/index.js:216
@@ -3744,26 +3957,10 @@ msgstr ""
 msgid " Contact %1$s to verify."
 msgstr ""
 
-#: website/static/js/folderPickerNodeConfig.js:116
-msgid ""
-"Could not retrieve %1$s settings at this time. Please refresh the page. "
-"If the problem persists, email %2$s."
-msgstr ""
-
 #: website/static/js/folderPickerNodeConfig.js:119
 msgid ""
 "Could not retrieve %1$s account list at this time. Please refresh the "
 "page. If the problem persists, email %2$s."
-msgstr ""
-
-#: website/static/js/folderPickerNodeConfig.js:122
-msgid "Disconnected %1$s."
-msgstr ""
-
-#: website/static/js/folderPickerNodeConfig.js:125
-msgid ""
-"Could not disconnect %1$s account because of an error. Please try again "
-"later."
 msgstr ""
 
 #: website/static/js/folderPickerNodeConfig.js:128
@@ -3778,22 +3975,6 @@ msgstr ""
 
 #: website/static/js/folderPickerNodeConfig.js:139
 msgid "Could not change %1$s settings. Please try again later."
-msgstr ""
-
-#: website/static/js/folderPickerNodeConfig.js:142
-msgid "Are you sure you want to remove this %1$s account?"
-msgstr ""
-
-#: website/static/js/folderPickerNodeConfig.js:145
-msgid "Are you sure you want to link your %1$s account with this project?"
-msgstr ""
-
-#: website/static/js/folderPickerNodeConfig.js:148
-msgid "Successfully imported %1$s account from profile."
-msgstr ""
-
-#: website/static/js/folderPickerNodeConfig.js:151
-msgid "Error occurred while importing %1$s account."
 msgstr ""
 
 #: website/static/js/folderPickerNodeConfig.js:154
@@ -3821,17 +4002,8 @@ msgstr ""
 msgid "Failed to import %1$s group libraries."
 msgstr ""
 
-#: website/static/js/folderPickerNodeConfig.js:497
-#: website/static/js/oauthAddonNodeConfig.js:162
-msgid "Import %1$s Account?"
-msgstr ""
-
 #: website/static/js/folderPickerNodeConfig.js:536
 msgid "Could not deauthorize %1$s account from node"
-msgstr ""
-
-#: website/static/js/folderPickerNodeConfig.js:552
-msgid "Disconnect %1$s Account?"
 msgstr ""
 
 #: website/static/js/folderPickerNodeConfig.js:645
@@ -4176,6 +4348,10 @@ msgstr ""
 
 #: website/static/js/js_messages.js:25
 msgid "renamed"
+msgstr ""
+
+#: website/static/js/js_messages.js:25
+msgid "copied"
 msgstr ""
 
 #: website/static/js/js_messages.js:27
@@ -5364,39 +5540,39 @@ msgstr ""
 msgid "Swift addon for ${node} deauthorized"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:251
-msgid "${user} added file ${filename} to WEKO index ${dataset} in ${node}"
+#: website/static/js/logActionsList_extract.js:229
+msgid "${user} added draft file ${filename} to WEKO index ${dataset} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:252
-msgid "${user} removed file ${filename} from WEKO index ${dataset} in ${node}"
+#: website/static/js/logActionsList_extract.js:230
+msgid ""
+"${user} removed draft file ${filename} from WEKO index ${dataset} in "
+"${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:253
+#: website/static/js/logActionsList_extract.js:231
 msgid "${user} linked WEKO index ${dataset} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:254
-msgid "${user} created an index ${filename} on ${node}"
+#: website/static/js/logActionsList_extract.js:232
+msgid ""
+"${user} created draft folder ${filename} in WEKO index ${dataset} in "
+"${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:255
-msgid "${user} created an item ${filename} on ${node}"
+#: website/static/js/logActionsList_extract.js:233
+msgid "${user} deposit item ${path} in WEKO index ${dataset} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:256
-msgid "${user} created folder ${filename} in WEKO index ${dataset} in ${node}"
-msgstr ""
-
-#: website/static/js/logActionsList_extract.js:257
+#: website/static/js/logActionsList_extract.js:234
 msgid "${user} authorized the WEKO addon for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:258
+#: website/static/js/logActionsList_extract.js:235
 msgid "${user} deauthorized the WEKO addon for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:259
+#: website/static/js/logActionsList_extract.js:236
 msgid "WEKO addon for ${node} deauthorized"
 msgstr ""
 

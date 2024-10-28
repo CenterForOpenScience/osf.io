@@ -1,11 +1,9 @@
-
-REQUEST_TIMEOUT = 15
-
-REPOSITORIES = {'no_host.repo.nii.ac.jp':
-                 {'host': 'http://no_host.repo.nii.ac.jp/weko/sword/',
-                  'client_id': None, 'client_secret': None,
-                  'authorize_url': None,
-                  'access_token_url': None}}
+REPOSITORIES = {}
 REPOSITORY_IDS = list(sorted(REPOSITORIES.keys()))
+REFRESH_TIME = 5 * 60  # 5 minutes
 
-DRAFT_DIR = '/tmp/'
+PUBLISH_TASK_EXPIRATION = 60 * 60 * 24  # 24 hours
+
+# Maximum size of files that can be uploaded ... 1GB
+MAX_UPLOAD_SIZE = 1024 * 1024 * 1024
+DEFAULT_TIMEOUT = 30  # seconds
