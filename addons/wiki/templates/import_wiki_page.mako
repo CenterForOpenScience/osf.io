@@ -273,6 +273,9 @@
                 $('#attentionDuplicatedFolder').css('display', '');
                 // show Close Btn
                 $('#closeAlertInfo').css('display', '');
+                // hide Import and perFileDefinition Btn
+                $('#continueWikiImportSubmit').css('display', 'none');
+                $('#perFileDefinition').css('display', 'none');
                 // hide the display of operations for all
                 $alertInfoForm.find('.partOperationAll').css('display', 'none');
                 // show duplicated import folder list
@@ -283,6 +286,8 @@
                 validateWikiImportResultData = validateWikiImportResult.data;
                 // show the Btn of operations for all
                 $('.btnAll').css('display', '');
+                // hide duplicated import directory information
+                $('#attentionDuplicatedFolder').css('display', 'none');
                 // show duplicated wiki page infomation
                 var valid_exists_ctn = 0;
                 validateWikiImportResultData.forEach(function(item) {
