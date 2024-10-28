@@ -2,7 +2,6 @@ import logging
 from urllib.parse import urlparse
 
 from django.apps import apps
-from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.db.models import Sum
 import requests
@@ -125,6 +124,7 @@ def update_storage_usage_cache(target_id, target_guid, per_page=_DEFAULT_FILEVER
 
 
 def compute_storage_usage_total(target_obj, per_page=_DEFAULT_FILEVERSION_PAGE_SIZE):
+    from django.contrib.contenttypes.models import ContentType
     sql = """
         SELECT count(size), sum(size) from
         (SELECT size FROM osf_basefileversionsthrough AS obfnv
