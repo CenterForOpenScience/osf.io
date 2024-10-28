@@ -1149,6 +1149,7 @@ def claim_user_post(node, **kwargs):
     """
 
     request_data = request.json
+
     # The unclaimed user
     unclaimed_user = OSFUser.load(request_data['pk'])
     unclaimed_data = unclaimed_user.get_unclaimed_record(node._primary_key)
