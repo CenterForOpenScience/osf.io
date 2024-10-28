@@ -280,8 +280,10 @@
                 // show the Btn of operations for all
                 $('.btnAll').css('display', '');
                 // show duplicated wiki page infomation
+                var valid_exists_ctn = 0;
                 validateWikiImportResultData.forEach(function(item) {
                     if (item.status === 'valid_exists') {
+                        valid_exists_ctn++;
                         $alertInfoForm.find('.partOperationAll').css('display', '');
                         $('#validateInfo ul').append('<li>' + (item.path).slice(1) + '</li>')
                         $('#perFileDifinitionForm ul').append('<li id="' + (item.path).slice(1) + '" style="display: flex;justify-content: flex-end;">' + '<div style="display: list-item; position: absolute; left: 55px; max-width: 410px;">' +  (item.path).slice(1) + '</div>' + selectOperation + '</li>');
@@ -290,6 +292,9 @@
                         $('#duplicatedInfo ul').append('<li>' + (item.path).slice(1) + '</li>')
                     }
                 });
+                if (valid_exists_ctn === 0) {
+                    document.getElementById("perFileDefinition").style.display = "none";
+                }
             }
         }
 
