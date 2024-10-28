@@ -1,3 +1,7 @@
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/pages/wiki-page.css">
+</%def>
 <!-- New Component Modal -->
 <div class="modal fade" id="wikiImport">
     <div class="modal-dialog">
@@ -41,9 +45,9 @@
                     </p>
                      <p class="text-danger wikiImportErrorMsg"> </p>
                     <div class="partOperationAll" style="display: none">
-                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="skipAll" value="skipAll" checked /><label for="skipAll">${_("Skip All")}</label></div>
-                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="overwriteAll" value="overwriteAll"/><label for="overwriteAll">${_("Overwrite All")}</label></div>
-                      <div style="display: inline-block; margin-right: 10px;"><input name="WikiImportOperation" type="radio" id="createNewAll" value="createNewAll"/><label for="createNewAll">${_("Create New All")}</label></div><br>
+                      <div class="importOperationItem"><input name="WikiImportOperation" type="radio" id="skipAll" value="skipAll" checked /><label for="skipAll">${_("Skip All")}</label></div>
+                      <div class="importOperationItem"><input name="WikiImportOperation" type="radio" id="overwriteAll" value="overwriteAll"/><label for="overwriteAll">${_("Overwrite All")}</label></div>
+                      <div class="importOperationItem"><input name="WikiImportOperation" type="radio" id="createNewAll" value="createNewAll"/><label for="createNewAll">${_("Create New All")}</label></div><br>
                     </div>
                     <div id="validateInfo" class="partOperationAll">
                         <ul></ul>
@@ -100,7 +104,7 @@
         var $alertInfoForm = $('#alertInfo form');
         var $wikiImportResult = $('#wikiImportResult')
         var $wikiImportErrorMsg = $('.wikiImportErrorMsg');
-        var selectOperation = '<div class="form-group" name="WikiImportOperationPer" style="display: inline-block; margin-left: 10px;"><select class="form-control" name="WikiImportOperationPerSelect"><option value="skip">${_("Skip")}</option><option value="overwrite">${_("Overwrite")}</option><option value="createNew">${_("Create New")}</option></select></div>'
+        var selectOperation = '<div class="form-group" name="WikiImportOperationPer"><select class="form-control" name="WikiImportOperationPerSelect"><option value="skip">${_("Skip")}</option><option value="overwrite">${_("Overwrite")}</option><option value="createNew">${_("Create New")}</option></select></div>'
         var validateWikiImportResultData = [];
         var wikiImportErrors = [];
         const VALIDATE_WIKI_IMPORT_INTERVAL = 1000;
@@ -286,7 +290,7 @@
                         valid_exists_ctn++;
                         $alertInfoForm.find('.partOperationAll').css('display', '');
                         $('#validateInfo ul').append('<li>' + (item.path).slice(1) + '</li>')
-                        $('#perFileDifinitionForm ul').append('<li id="' + (item.path).slice(1) + '" style="display: flex;justify-content: flex-end;">' + '<div style="display: list-item; position: absolute; left: 55px; max-width: 410px;">' +  (item.path).slice(1) + '</div>' + selectOperation + '</li>');
+                        $('#perFileDifinitionForm ul').append('<li id="' + (item.path).slice(1) + '" name="WikiImportOperationPerItem">' + '<div name="WikiImportOperationPerName">' +  (item.path).slice(1) + '</div>' + selectOperation + '</li>');
                     } else if (item.status === 'valid_duplicated'){
                         $('#attentionDuplicatedInfo').css('display', '');
                         $('#duplicatedInfo ul').append('<li>' + (item.path).slice(1) + '</li>')
