@@ -14,11 +14,14 @@ var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('js/addonSettings');
 var ChangeMessageMixin = require('js/changeMessage');
 
-
 var ExternalAccount = addonSettings.ExternalAccount;
 
 var $modal = $('#wekoInputCredentials');
 
+var $osf = require('js/osfHelpers');
+
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 function ViewModel(configUrl, accountsUrl) {
     var self = this;
@@ -26,13 +29,8 @@ function ViewModel(configUrl, accountsUrl) {
     self.properName = 'WEKO';
     self.selectedRepo = ko.observable();
     self.repositories = ko.observableArray();
-    self.swordUrl = ko.observable('');
-    self.accessKey = ko.observable('');
-    self.secretKey = ko.observable('');
     self.account_url = '/api/v1/settings/weko/accounts/';
     self.accounts = ko.observableArray();
-
-    self.basicAuth = 'Other Repository (Basic Auth)';
 
     ChangeMessageMixin.call(self);
 
@@ -41,9 +39,6 @@ function ViewModel(configUrl, accountsUrl) {
         self.message('');
         self.messageClass('text-info');
         self.selectedRepo(null);
-        self.swordUrl(null);
-        self.secretKey(null);
-        self.accessKey(null);
     };
 
     self.setMessage = function(msg, cls) {
@@ -60,72 +55,19 @@ function ViewModel(configUrl, accountsUrl) {
             self.changeMessage('Please select WEKO repository.', 'text-danger');
             return;
         }
-        if(self.selectedRepo() == self.basicAuth) {
-            self.connectAccount();
-            return;
-        }
-        console.log('Connect via OAuth: ' + self.selectedRepo());
         window.oauthComplete = function() {
             self.setMessage('');
             var accountCount = self.accounts().length;
             self.updateAccounts().done( function() {
                 if (self.accounts().length > accountCount) {
-                    self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable WEKO, and choose content to connect.', 'text-success');
+                    self.setMessage(sprintf(_('Add-on successfully authorized. To link this add-on to an GakuNin RDM project, go to the settings page of the project, enable %1$s, and choose content to connect.'),self.properName), 'text-success');
                 } else {
-                    self.setMessage('Error while authorizing add-on. Please log in to your WEKO account and grant access to the GakuNin RDM to enable this add-on.', 'text-danger');
+                    self.setMessage(sprintf(_('Error while authorizing add-on. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this add-on.'),self.properName), 'text-danger');
                 }
             });
         };
-        window.open('/oauth/connect/weko/' + self.selectedRepo() + '/');
+        window.open('/oauth/connect/weko/' + self.selectedRepo().id + '/');
         $modal.modal('hide');
-    };
-
-    /** Send POST request to authorize WEKO */
-    self.connectAccount = function() {
-        // Selection should not be empty
-        if(!self.swordUrl() && !self.accessKey() && !self.secretKey()){
-            self.changeMessage('Please enter all a SWORD URL, WEKO username and password.', 'text-danger');
-            return;
-        }
-
-        if (!self.swordUrl() ){
-            self.changeMessage('Please enter your SWORD URL.', 'text-danger');
-            return;
-        }
-
-        if (!self.accessKey() ){
-            self.changeMessage('Please enter a WEKO username.', 'text-danger');
-            return;
-        }
-
-        if (!self.secretKey() ){
-            self.changeMessage('Please enter a WEKO password.', 'text-danger');
-            return;
-        }
-
-        return osfHelpers.postJSON(
-            self.account_url,
-            ko.toJS({
-                sword_url: self.swordUrl,
-                access_key: self.accessKey,
-                secret_key: self.secretKey
-            })
-        ).done(function() {
-            self.clearModal();
-            $modal.modal('hide');
-            self.updateAccounts();
-
-        }).fail(function(xhr, textStatus, error) {
-            var errorMessage = (xhr.status === 400 && xhr.responseJSON.message !== undefined) ? xhr.responseJSON.message : language.authError;
-            self.changeMessage(errorMessage, 'text-danger');
-            Raven.captureMessage('Could not authenticate with WEKO', {
-                extra: {
-                    url: self.account_url,
-                    textStatus: textStatus,
-                    error: error
-                }
-            });
-        });
     };
 
     self.updateAccounts = function() {
@@ -156,10 +98,10 @@ function ViewModel(configUrl, accountsUrl) {
     self.askDisconnect = function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Disconnect WEKO Account?',
+            title: _('Disconnect Account?'),
             message: '<p class="overflow">' +
-                'Are you sure you want to disconnect the WEKO account <strong>' +
-                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to WEKO for all projects associated with this account.' +
+                sprintf(_('Are you sure you want to disconnect the %1$s account <strong>%2$s</strong>? This will revoke access to %1$s for all projects you have authorized.'),
+                $osf.htmlEscape(self.properName),$osf.htmlEscape(account.name)) +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
@@ -168,7 +110,7 @@ function ViewModel(configUrl, accountsUrl) {
             },
             buttons:{
                 confirm:{
-                    label:'Disconnect',
+                    label:_('Disconnect'),
                     className:'btn-danger'
                 }
             }
@@ -208,7 +150,7 @@ function ViewModel(configUrl, accountsUrl) {
             dataType: 'json'
         }).done(function (response) {
             var data = response.result;
-            self.repositories(data.repositories.concat([self.basicAuth]));
+            self.repositories(data.repositories);
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');

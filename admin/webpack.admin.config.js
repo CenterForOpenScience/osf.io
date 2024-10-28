@@ -50,6 +50,7 @@ var config = Object.assign({}, common, {
         'rdm-owncloud-cfg': staticAdminPath('js/rdm_addons/owncloud/rdm-cfg.js'),
         'rdm-figshare-cfg': staticAdminPath('js/rdm_addons/figshare/rdm-cfg.js'),
         'rdm-iqbrims-cfg': staticAdminPath('js/rdm_addons/iqbrims/rdm-cfg.js'),
+        'rdm-weko-cfg': staticAdminPath('js/rdm_addons/weko/rdm-cfg.js'),
         'rdm-timestampsettings-page': staticAdminPath('js/rdm_timestampsettings/rdm-timestampsettings-page.js'),
         'rdm-timestampadd-page': staticAdminPath('js/rdm_timestampadd/rdm-timestampadd-page.js'),
         'rdm-keymanagement-page': staticAdminPath('js/rdm_keymanagement/rdm-keymanagement-page.js'),

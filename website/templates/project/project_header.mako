@@ -1,6 +1,10 @@
 <%
     is_project = node['node_type'] == 'project'
 %>
+<%
+    # GRDM Metadata addon
+    from addons.metadata import settings as addons_metadata_settings
+%>
 
 <div id="projectBanner" >
     <header class="subhead" id="overview">
@@ -65,6 +69,16 @@
                                     ${_("Metadata")}
                                 </a>
                             </li>
+                            % if addons_metadata_settings.USE_EXPORTING:
+                                <li>
+                                    <a href="${node['url']}package">
+                                        % if addons['metadata']['icon'] and addons['metadata']['has_page_icon']:
+                                            <img src="${addons['metadata']['icon']}" class="addon-logo"/>
+                                        % endif
+                                        ${_("Export")}
+                                    </a>
+                                </li>
+                            % endif
                         % endif
 
                         % if 'binderhub' in addons_enabled and addons['binderhub']['has_page']:

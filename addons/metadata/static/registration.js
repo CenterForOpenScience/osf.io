@@ -113,7 +113,58 @@ function DraftRegistrations() {
       if (!callback) {
         return;
       }
+      callback(error);
+    });
+  };
+
+}
+
+
+function Registrations() {
+  var self = this;
+
+  self.registrations = [];
+
+  self.load = function(callback) {
+    const params = new URLSearchParams({
+      'page[size]': 100,
+      'embed[]': 'registration_schema',
+      'embed[]': 'bibliographic_contributors',
+      page: 1
+    });
+    const node = window.contextVars.node;
+    const url = $osf.apiV2Url('nodes/' + node.id + '/registrations/') + '?' + params;
+    $osf.ajaxJSON(
+      'GET',
+      url,
+      {
+        'isCors': true,
+        'fields': {
+          xhrFields: {withCredentials: true}
+        }
+      }
+    ).done(function (data) {
+      self.registrations = [];
+      (data.data || []).forEach(function(reg) {
+        self.registrations.push(reg);
+      });
+      console.log(logPrefix, 'registrations: ', self.registrations);
+      if (!callback) {
+        return;
+      }
       callback();
+    }).fail(function(xhr, status, error) {
+      Raven.captureMessage('Error while retrieving addon info', {
+          extra: {
+              url: url,
+              status: status,
+              error: error
+          }
+      });
+      if (!callback) {
+        return;
+      }
+      callback(error);
     });
   };
 
@@ -123,4 +174,5 @@ function DraftRegistrations() {
 module.exports = {
   RegistrationSchemas: RegistrationSchemas,
   DraftRegistrations: DraftRegistrations,
+  Registrations: Registrations,
 };
