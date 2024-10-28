@@ -426,7 +426,7 @@
           <input id="imageSrc" data-bind="textInput: imageSrcInput" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter image URL')}">
         </div>
         <div class="m-b-sm">
-          <p class="wiki-editor-modal-label">${_("Image ToolTip:")}</p>
+          <p class="wiki-editor-modal-label">${_("Image Tooltip:")}</p>
           <input id="imageTitle" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter image tooltip')}">
         </div>
         <div class="m-b-sm">
