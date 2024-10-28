@@ -13,6 +13,7 @@ from osf.metrics import InstitutionProjectCounts
 from osf.models import OSFUser, Node, Institution, Registration
 from osf.metrics import UserInstitutionProjectCounts
 from osf.metrics.reports import InstitutionalUserReport, InstitutionMonthlySummaryReport
+from osf.metrics.utils import YearMonth
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -612,13 +613,22 @@ class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIV
             return object
 
     def get_default_search(self):
-        _yearmonth = InstitutionMonthlySummaryReport.most_recent_yearmonth()
-        if _yearmonth is None:
+        yearmonth = InstitutionMonthlySummaryReport.most_recent_yearmonth()
+        if report_date_str := self.request.query_params.get('report_yearmonth'):
+            try:
+                yearmonth = YearMonth.from_str(report_date_str)
+            except ValueError:
+                pass
+
+        if yearmonth is None:
             return None
-        return (
-            InstitutionMonthlySummaryReport.search()
-            .filter('term', report_yearmonth=str(_yearmonth))
-            .filter('term', institution_id=self.get_institution()._id)
+
+        return InstitutionMonthlySummaryReport.search().filter(
+            'term',
+            report_yearmonth=str(yearmonth),
+        ).filter(
+            'term',
+            institution_id=self.get_institution()._id,
         )
 
 
