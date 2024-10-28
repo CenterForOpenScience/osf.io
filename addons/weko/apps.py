@@ -1,5 +1,6 @@
 import os
 from addons.base.apps import BaseAddonAppConfig, generic_root_folder
+from addons.weko.settings import MAX_UPLOAD_SIZE
 
 weko_root_folder = generic_root_folder('weko')
 
@@ -24,7 +25,10 @@ class WEKOAddonAppConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
-    max_file_size = 128  # MB
+
+    # MAX_UPLOAD_SIZE is defined in bytes, but max_file_size must be defined in MB
+    max_file_size = MAX_UPLOAD_SIZE // (1024 ** 2)
+
     node_settings_template = os.path.join(TEMPLATE_PATH, 'weko_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'weko_user_settings.mako')
 
