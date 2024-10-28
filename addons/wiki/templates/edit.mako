@@ -154,26 +154,26 @@
                 </div>
 
                 <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
-                  <div id="mMenuBar" style="display: none; border-bottom: 1px solid; border-bottom-color: #d1d5db">
-                    <button id="undoWiki" class="menuItem" data-bind="click: undoWiki" disabled><span id="msoUndo" class="material-symbols-outlined" style="opacity: 0.3">undo</span></button>
-                    <button id="redoWiki" class="menuItem" data-bind="click: redoWiki" disabled><span id="msoRedo" class="material-symbols-outlined" style="opacity: 0.3">redo</span></button>
-                    <button id="strongWiki" class="menuItem" data-bind="click: strong"><span class="material-symbols-outlined" >format_bold</span></button>
-                    <button id="italicWiki" class="menuItem" data-bind="click: italic"><span class="material-symbols-outlined">format_italic</span></button>
-                    <button class="menuItem" data-bind="click: strikethrough"><span class="material-symbols-outlined">format_strikethrough</span></button>
-                    <button class="menuItem" data-bind="click: underline"><span class="material-symbols-outlined">format_underlined</span></button>
-                    <button class="menuItem" style="position: relative; display:inline-block"><span class="material-symbols-outlined">format_color_text</span><input type="color" data-bind="value: color, event: { change: colortext }" style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer"></button>
-                    <button class="menuItem" data-bind="click: mokujimacro"><span class="material-symbols-outlined">sort</span></button>
-                    <button class="menuItem" data-bind="click: getLinkInfo" data-toggle="modal" data-target="#toggleLink"><span class="material-symbols-outlined" >link</span></button>
-                    <button class="menuItem" data-bind="click: quote"><span class="material-symbols-outlined">format_quote</span></button>
-                    <button class="menuItem" data-bind="click: code"><span class="material-symbols-outlined">code</span></button>
-                    <button class="menuItem"  data-bind="click: getImageInfo" data-toggle="modal" data-target="#toggleImage"><span class="material-symbols-outlined">image</span></button>
-                    <button class="menuItem" data-bind="click: listNumbered"><span class="material-symbols-outlined">format_list_numbered</span></button>
-                    <button class="menuItem" data-bind="click: listBulleted"><span class="material-symbols-outlined">format_list_bulleted</span></button>
-                    <button class="menuItem" data-bind="click: head"><span class="material-symbols-outlined">view_headline</span></button>
-                    <button class="menuItem" data-bind="click: horizontal"><span class="material-symbols-outlined">horizontal_rule</span></button>
+                  <div id="mMenuBar" style="display: none;">
+                    <button id="undoWiki" class="menu-item" data-bind="click: undoWiki" disabled><span id="msoUndo" class="material-symbols-outlined" style="opacity: 0.3">undo</span></button>
+                    <button id="redoWiki" class="menu-item" data-bind="click: redoWiki" disabled><span id="msoRedo" class="material-symbols-outlined" style="opacity: 0.3">redo</span></button>
+                    <button id="strongWiki" class="menu-item" data-bind="click: strong"><span class="material-symbols-outlined" >format_bold</span></button>
+                    <button id="italicWiki" class="menu-item" data-bind="click: italic"><span class="material-symbols-outlined">format_italic</span></button>
+                    <button class="menu-item" data-bind="click: strikethrough"><span class="material-symbols-outlined">format_strikethrough</span></button>
+                    <button class="menu-item" data-bind="click: underline"><span class="material-symbols-outlined">format_underlined</span></button>
+                    <button class="menu-item m-menu-color-item"><span class="material-symbols-outlined">format_color_text</span><input class="m-menu-color-input" type="color" data-bind="value: color, event: { change: colortext }"></button>
+                    <button class="menu-item" data-bind="click: mokujimacro"><span class="material-symbols-outlined">sort</span></button>
+                    <button class="menu-item" data-bind="click: getLinkInfo" data-toggle="modal" data-target="#toggleLink"><span class="material-symbols-outlined" >link</span></button>
+                    <button class="menu-item" data-bind="click: quote"><span class="material-symbols-outlined">format_quote</span></button>
+                    <button class="menu-item" data-bind="click: code"><span class="material-symbols-outlined">code</span></button>
+                    <button class="menu-item"  data-bind="click: getImageInfo" data-toggle="modal" data-target="#toggleImage"><span class="material-symbols-outlined">image</span></button>
+                    <button class="menu-item" data-bind="click: listNumbered"><span class="material-symbols-outlined">format_list_numbered</span></button>
+                    <button class="menu-item" data-bind="click: listBulleted"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+                    <button class="menu-item" data-bind="click: head"><span class="material-symbols-outlined">view_headline</span></button>
+                    <button class="menu-item" data-bind="click: horizontal"><span class="material-symbols-outlined">horizontal_rule</span></button>
                     <div style="display: inline-block; position:absolute">
-                    <button id="tableBtn" class="menuItem" data-bind="click: table"><span class="material-symbols-outlined">table</span><span id="arrowDropDown" class="material-symbols-outlined" style="margin-left: -7px; display: none;">arrow_drop_down</span></button>
-                      <div id="tableMenu" class="table-dropdown-menu" style="display: none; border: 1px solid #aaa; padding: 2px; font-size: 90%; background: white; z-index: 15; white-space: nowrap; position: absolute">
+                    <button id="tableBtn" class="menu-item" data-bind="click: table"><span class="material-symbols-outlined">table</span><span id="arrowDropDown" class="material-symbols-outlined" style="display: none;">arrow_drop_down</span></button>
+                      <div id="tableMenu" class="table-dropdown-menu" style="display: none;">
                         <div class="table-dropdown-item" data-bind="click: addColumnBef"><div>${_("Insert column before")}</div></div>
                         <div class="table-dropdown-item" data-bind="click: addColumnAft"><div>${_("Insert column after")}</div></div>
                         <div class="table-dropdown-item" data-bind="click: addRowBef"><div>${_("Insert row before")}</div></div>
@@ -182,7 +182,7 @@
                         <div class="table-dropdown-item" data-bind="click: deleteTable"><div>${_("delete table")}</div></div>
                       </div>
                     </div>
-                    <button class="menuItem" style="margin-left: 40px;" data-toggle="modal" data-target="#wiki-help-modal"><span class="material-symbols-outlined">help</span></button>
+                    <button class="menu-item" style="margin-left: 40px;" data-toggle="modal" data-target="#wiki-help-modal"><span class="material-symbols-outlined">help</span></button>
                   </div>
                   <div id="mEditor" class="mFrame" style="${'' if version_settings['view'] == 'preview' else 'display: none'}"></div>
 
@@ -389,12 +389,12 @@
       </div>
       <div class="modal-body">
         <div class="m-b-sm">
-          <p class="wikiEditorModalLabel">${_("Link URL:")}</p>
-          <input id="linkSrc" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter link URL')}">
+          <p class="wiki-editor-modal-label">${_("Link URL:")}</p>
+          <input id="linkSrc" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter link URL')}">
         </div>
         <div class="m-b-sm">
-          <p class="wikiEditorModalLabel">${_("Link Tooltip:")}</p>
-          <input id="linkTitle" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter link tooltip')}">
+          <p class="wiki-editor-modal-label">${_("Link Tooltip:")}</p>
+          <input id="linkTitle" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter link tooltip')}">
         </div>
       </div>
       <div class="modal-footer">
@@ -422,20 +422,20 @@
       </div>
       <div class="modal-body">
         <div class="m-b-sm">
-          <p class="wikiEditorModalLabel">${_("Image URL:")}</p>
-          <input id="imageSrc" data-bind="textInput: imageSrcInput" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter image URL')}">
+          <p class="wiki-editor-modal-label">${_("Image URL:")}</p>
+          <input id="imageSrc" data-bind="textInput: imageSrcInput" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter image URL')}">
         </div>
         <div class="m-b-sm">
-          <p class="wikiEditorModalLabel">${_("Image ToolTip:")}</p>
-          <input id="imageTitle" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter image tooltip')}">
+          <p class="wiki-editor-modal-label">${_("Image ToolTip:")}</p>
+          <input id="imageTitle" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter image tooltip')}">
         </div>
         <div class="m-b-sm">
-          <p class="wikiEditorModalLabel">${_("Alternative Text:")}</p>
-          <input id="imageAlt" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter Alternative Text')}">
+          <p class="wiki-editor-modal-label">${_("Alternative Text:")}</p>
+          <input id="imageAlt" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter Alternative Text')}">
         </div>
         <div class="m-b-sm">
-          <p class="wikiEditorModalLabel">${_("Image Size:")}</p>
-          <input id="imageWidth"  data-bind="textInput: imageWidthInput" class="form-control wikiEditorModalInput" type="text" placeholder="${_('Enter image size (e.g., 300 for pixels, or 50% for percentage)')}" style="font-size:10px">
+          <p class="wiki-editor-modal-label">${_("Image Size:")}</p>
+          <input id="imageWidth"  data-bind="textInput: imageWidthInput" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter image size (e.g., 300 for pixels, or 50% for percentage)')}" style="font-size:10px">
           <div id="sizeError" class="text-danger" style="display: none;" data-bind="visible: showSizeError">${_("Invalid size format. Use pixels or percentage.")}</div>
         </div>
       </div>

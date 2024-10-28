@@ -346,7 +346,7 @@ select.form-control {
     overflow-y: hidden;
 }
 
-.menuItem {
+.menu-item {
   border: none;
   outline: none;
   background: transparent;
@@ -379,14 +379,14 @@ select.form-control {
     height: 400px;
 }
 
-.wikiEditorModalLabel {
-    argin-bottom: 0;
+.wiki-editor-modal-label {
+    margin-bottom: 0;
     width: 120px;
     display: inline-block;
     text-align: left;
 }
 
-.wikiEditorModalInput {
+.wiki-editor-modal-input{
     width: calc(100% - 136px);
     display: inline-block;
 }
@@ -394,6 +394,25 @@ select.form-control {
 #mMenuBar {
     border-bottom: 1px solid;
     border-bottom-color: #d1d5db;
+}
+
+.m-menu-color-item {
+    position: relative;
+    display: inline-block;
+}
+
+.m-menu-color-input {
+    position: absolute;
+    top:0;
+    left:0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+#arrowDropDown {
+    margin-left: -7px;
 }
 
 #tableMenu {
@@ -437,3 +456,60 @@ select.form-control {
 .sort-children:empty {
     min-height: 7px;
   }
+
+.importOperationItem{
+    display: inline-block;
+    margin-right: 10px;
+}
+
+div[name="WikiImportOperationPer"] {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+div[name="WikiImportOperationPerName"] {
+    display: list-item;
+    position: absolute;
+    left: 55px;
+    max-width: 410px;
+}
+
+li[name="WikiImportOperationPerItem"] {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sort-modal-dialog {
+    width: 70%
+}
+
+.sort-modal-body {
+    height: 550px;
+    overflow: auto;
+}
+
+.sort-modal-footer {
+    border-top: 1px solid #e5e5e5;
+}
+
+.sort-title {
+    padding: 10px;
+    border-bottom: 2px solid #ddd;
+}
+
+.sort-tree {
+    margin-top: 25px;
+}
+
+.sort-item {
+    border-bottom: 1px solid #ddd;
+}
+
+.sort-expand-collapse-icon {
+    margin-right: 2px;
+}
+
+.sort-bars {
+    color: #ddd;
+    margin-right: 1px;
+}
