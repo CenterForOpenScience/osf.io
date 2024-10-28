@@ -141,7 +141,7 @@ class AkismetClient:
             action=NodeLog.FLAG_SPAM,
             created__gt=start_date,
             created__lt=end_date,
-            spam_data__who_flagged='akismet'
+            node__spam_data__who_flagged__in=['akismet', 'both']
         ).count()
 
         return flagged_count
@@ -153,7 +153,7 @@ class AkismetClient:
             action=NodeLog.CONFIRM_HAM,
             created__gt=start_date,
             created__lt=end_date,
-            spam_data__who_flagged='akismet'
+            node__spam_data__who_flagged__in=['akismet', 'both']
         ).count()
 
         return hammed_count

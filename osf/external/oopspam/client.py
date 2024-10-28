@@ -53,7 +53,7 @@ class OOPSpamClient:
             action=NodeLog.FLAG_SPAM,
             created__gt=start_date,
             created__lt=end_date,
-            spam_data__who_flagged='oopspam'
+            node__spam_data__who_flagged__in=['oopspam', 'both']
         ).count()
 
         return flagged_count
@@ -65,7 +65,7 @@ class OOPSpamClient:
             action=NodeLog.CONFIRM_HAM,
             created__gt=start_date,
             created__lt=end_date,
-            spam_data__who_flagged='oopspam'
+            node__spam_data__who_flagged__in=['oopspam', 'both']
         ).count()
 
         return hammed_count

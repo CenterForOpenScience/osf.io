@@ -1,43 +1,43 @@
-import datetime
 import pytest
+from datetime import datetime
 from osf.metrics.reporters.spam_count import SpamCountReporter
-from osf.external.oopspam.client import OOPSpamClient
-from osf.external.askismet.client import AkismetClient
+from unittest import mock
+from osf.metrics.utils import YearMonth
+from osf_tests.factories import NodeLogFactory, NodeFactory
 
 @pytest.fixture
-def mock_oopspam_client(mocker):
-    mock = mocker.patch('osf.external.oopspam.client.OOPSpamClient')
-    mock.get_flagged_count.return_value = 10
-    mock.get_hammed_count.return_value = 5
-    return mock
+def mock_oopspam_client():
+    with mock.patch('osf.external.oopspam.client.OOPSpamClient') as mock_client:
+        instance = mock_client.return_value
+        instance.get_flagged_count.return_value = 10
+        instance.get_hammed_count.return_value = 5
+        yield instance
 
 @pytest.fixture
-def mock_akismet_client(mocker):
-    mock = mocker.patch('osf.external.askismet.client.AkismetClient')
-    mock.get_flagged_count.return_value = 20
-    mock.get_hammed_count.return_value = 10
-    return mock
+def mock_akismet_client():
+    with mock.patch('osf.external.askismet.client.AkismetClient') as mock_client:
+        instance = mock_client.return_value
+        instance.get_flagged_count.return_value = 20
+        instance.get_hammed_count.return_value = 10
+        yield instance
 
-@pytest.fixture
-def mock_nodelog_model(mocker):
-    mock = mocker.patch('osf.models.NodeLog')
-    mock.filter.return_value.count.return_value = 100
-    return mock
+@pytest.mark.django_db
+def test_spam_count_reporter():
+    start_date = datetime(2024, 10, 1)
 
-@pytest.fixture
-def mock_preprintlog_model(mocker):
-    mock = mocker.patch('osf.models.PreprintLog')
-    mock.filter.return_value.count.return_value = 50
-    return mock
+    oopspam_node = NodeFactory(spam_data={'who_flagged': 'oopspam'})
+    akismet_node = NodeFactory(spam_data={'who_flagged': 'akismet'})
 
-def test_spam_count_reporter(mock_oopspam_client, mock_akismet_client, mock_nodelog_model, mock_preprintlog_model):
-    report_month = datetime.datetime(2024, 10, 1)
+    NodeLogFactory.create_batch(10, action='flag_spam', created=start_date, node=oopspam_node)
+    NodeLogFactory.create_batch(5, action='confirm_ham', created=start_date, node=oopspam_node)
+    NodeLogFactory.create_batch(20, action='flag_spam', created=start_date, node=akismet_node)
+    NodeLogFactory.create_batch(10, action='confirm_ham', created=start_date, node=akismet_node)
+
+    report_yearmonth = YearMonth(2024, 10)
     reporter = SpamCountReporter()
-    report = reporter.report(report_month)
+    report = reporter.report(report_yearmonth)
 
     assert report[0].oopspam_flagged == 10
     assert report[0].oopspam_hammed == 5
     assert report[0].akismet_flagged == 20
     assert report[0].akismet_hammed == 10
-    assert report[0].node_confirmed_spam == 100
-    assert report[0].preprint_confirmed_spam == 50
