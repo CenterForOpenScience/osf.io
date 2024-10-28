@@ -32,11 +32,19 @@ const logPrefix = '[metadata] ';
 const QuestionPage = oop.defclass({
   constructor: function(schema, fileItem, options) {
     const self = this;
+    self.questionFilter = function(question) {
+      return question.qid && question.qid.match(/^grdm-file:.+/);
+    };
     self.schema = schema;
     self.fileItem = fileItem;
     self.options = options;
     self.fields = [];
     self.hasValidationError = false;
+  },
+
+  setQuestionFilter: function(filter) {
+    const self = this;
+    self.questionFilter = filter;
   },
 
   create: function() {
@@ -45,7 +53,7 @@ const QuestionPage = oop.defclass({
     const fileItemData = self.options.multiple ? {} : self.fileItem.data || {};
     (self.schema.pages || []).forEach(function(page) {
       (page.questions || []).forEach(function(question) {
-        if (!question.qid || !question.qid.match(/^grdm-file:.+/)) {
+        if (!self.questionFilter(question)) {
           return;
         }
         const value = (fileItemData[question.qid] || {}).value;

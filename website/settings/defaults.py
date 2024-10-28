@@ -424,6 +424,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
+        'scripts.cleanup_task_results',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
@@ -507,6 +508,7 @@ class CeleryConfig:
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
         'scripts.clear_sessions',
+        'scripts.cleanup_task_results',
         'scripts.send_queued_mails',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
@@ -590,6 +592,11 @@ class CeleryConfig:
             },
             'clear_sessions': {
                 'task': 'scripts.clear_sessions',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'cleanup_task_results': {
+                'task': 'scripts.cleanup_task_results',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },

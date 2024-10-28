@@ -9,19 +9,26 @@ import furl
 from addons.base.models import BaseUserSettings, BaseNodeSettings
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base.utils import waterbutler_api_url_for
+from django.core.exceptions import MultipleObjectsReturned
 from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from addons.metadata import SHORT_NAME
-from addons.metadata.settings import METADATA_ASSET_POOL_BASE_PATH, METADATA_ASSET_POOL_MAX_FILESIZE
+from addons.metadata.settings import (
+    METADATA_ASSET_POOL_BASE_PATH,
+    METADATA_ASSET_POOL_MAX_FILESIZE,
+    USE_EXPORTING,
+    USE_DATASET_IMPORTING,
+)
 from framework.celery_tasks import app as celery_app
 from osf.models import DraftRegistration, BaseFileNode, NodeLog, AbstractNode
 from osf.models.user import OSFUser
 from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
+from osf.exceptions import SchemaBlockConversionError
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
@@ -117,6 +124,8 @@ class RegistrationReportFormat(BaseModel):
     default_filename = models.TextField(blank=True, null=True)
     csv_template = models.TextField(blank=True, null=True)
 
+    order = models.IntegerField(blank=True, null=True)
+
 
 class UserSettings(BaseUserSettings):
     pass
@@ -132,6 +141,13 @@ class NodeSettings(BaseNodeSettings):
         # Implementation for enumeration with <node_id>/addons API
         return True
 
+    @property
+    def features(self):
+        return {
+            'exporting': USE_EXPORTING,
+            'dataset_importing': USE_DATASET_IMPORTING,
+        }
+
     def get_file_metadatas(self):
         files = []
         for m in self.file_metadata.filter(deleted__isnull=True):
@@ -146,9 +162,11 @@ class NodeSettings(BaseNodeSettings):
             files.append(r)
         return files
 
-    def get_file_metadata_for_path(self, path):
+    def get_file_metadata_for_path(self, path, resolve_parent=True):
         q = self.file_metadata.filter(deleted__isnull=True, path=path)
         if not q.exists():
+            if not resolve_parent:
+                return None
             parent, _ = os.path.split(path.strip('/'))
             if len(parent) == 0:
                 return None
@@ -166,6 +184,8 @@ class NodeSettings(BaseNodeSettings):
             'folder': m.folder,
             'hash': m.hash,
             'urlpath': m.resolve_urlpath(),
+            'created': m.created.isoformat(),
+            'modified': m.modified.isoformat(),
         }
         r.update(self._get_file_metadata(m))
         return r
@@ -256,18 +276,36 @@ class NodeSettings(BaseNodeSettings):
         r.update({
             'files': self.get_file_metadatas(),
         })
+        r.update({
+            'repositories': self._get_repositories(),
+        })
         return r
 
     def get_report_formats_for(self, schemas):
         formats = []
         for schema in schemas:
-            for format in RegistrationReportFormat.objects.filter(registration_schema_id=schema._id):
+            for format in RegistrationReportFormat.objects \
+                    .filter(registration_schema_id=schema._id) \
+                    .order_by('order'):
                 formats.append({
+                    'id': f'format-{format.id}',
                     'schema_id': schema._id,
                     'name': format.name,
                 })
+        destinations = []
+        for addon in self.owner.get_addons():
+            if not hasattr(addon, 'has_metadata') or not addon.has_metadata:
+                continue
+            try:
+                dests = addon.get_metadata_destinations(schemas)
+                if dests is None:
+                    continue
+                destinations += dests
+            except Exception:
+                logger.exception(f'Failed to get metadata destinations for {addon.config.short_name}')
         return {
-            'formats': formats
+            'formats': formats,
+            'destinations': destinations,
         }
 
     def update_file_metadata_for(self, action, payload, auth):
@@ -288,8 +326,8 @@ class NodeSettings(BaseNodeSettings):
             source_addon = source_node.get_addon(SHORT_NAME)
             if source_addon is None:
                 return
-        src_path = os.path.join(src['provider'], src['materialized'])
-        dest_path = os.path.join(dest['provider'], dest['materialized'])
+        src_path = os.path.join(src['provider'], src['materialized'].lstrip('/'))
+        dest_path = os.path.join(dest['provider'], dest['materialized'].lstrip('/'))
         if src_path.endswith('/'):
             q = source_addon.file_metadata.filter(path__startswith=src_path)
             path_suffixes = [fm.path[len(src_path):] for fm in q.all()]
@@ -338,6 +376,31 @@ class NodeSettings(BaseNodeSettings):
         else:
             self.metadata_asset_pool.filter(path=path).delete()
 
+    def add_imported_addon_settings(self, name, folder_id):
+        settings = ImportedAddonSettings.objects.create(
+            name=name,
+            folder_id=folder_id,
+        )
+        self.imported_addon_settings.add(settings)
+
+    def delete_imported_addon_settings(self, name):
+        self.imported_addon_settings.filter(name=name).delete()
+
+    def apply_imported_addon_settings(self, addon_names, auth, delete_applied=False):
+        addons = self.imported_addon_settings.filter(name__in=addon_names)
+        for addon in addons:
+            if not addon.is_applicable:
+                logger.warning(f'Imported {addon.name} settings are not applicable to {self.owner._id}')
+                continue
+            result = addon.apply(auth)
+            if not result:
+                continue
+            if delete_applied:
+                self.delete_imported_addon_settings(addon.name)
+
+    def has_imported_addon_settings_for(self, addon):
+        return self.imported_addon_settings.filter(name=addon.config.short_name).exists()
+
     def _get_file_metadata(self, file_metadata):
         if file_metadata.metadata is None or file_metadata.metadata == '':
             return {}
@@ -371,10 +434,14 @@ class NodeSettings(BaseNodeSettings):
                 raise ValueError('Schema has no grdm-files field')
             draft_metadata = draft.registration_metadata
             draft_files = get_draft_files(draft_metadata)
+            updated = False
             for draft_file in draft_files:
                 if draft_file['path'] != filepath:
                     continue
                 draft_file['metadata'] = metadata
+                updated = True
+            if not updated:
+                continue
             self._update_draft_grdm_files(draft, draft_files)
 
     def _remove_draft_files(self, schema, filepath):
@@ -392,12 +459,16 @@ class NodeSettings(BaseNodeSettings):
 
     def _update_draft_grdm_files(self, draft, draft_files):
         value = json.dumps(draft_files, indent=2) if len(draft_files) > 0 else ''
-        draft.update_metadata({
-            FIELD_GRDM_FILES: {
-                'value': value,
-            },
-        })
-        draft.save()
+        try:
+            draft.update_metadata({
+                FIELD_GRDM_FILES: {
+                    'value': value,
+                },
+            })
+            draft.save()
+        except SchemaBlockConversionError as e:
+            logger.warning('Failed to update draft metadata due to schema block conversion error. Ignoring.')
+            logger.exception(e)
 
     def _get_related_schemas(self, metadata):
         if metadata is None or len(metadata) == 0:
@@ -418,6 +489,16 @@ class NodeSettings(BaseNodeSettings):
         except RegistrationSchema.DoesNotExist:
             return []
 
+    def _get_repositories(self):
+        r = []
+        for addon in self.owner.get_addons():
+            if not hasattr(addon, 'has_metadata') or not addon.has_metadata:
+                continue
+            repo = addon.get_metadata_repository()
+            if repo is None:
+                continue
+            r.append(repo)
+        return r
 
 class FileMetadata(BaseModel):
     project = models.ForeignKey(NodeSettings, related_name='file_metadata',
@@ -499,16 +580,25 @@ class FileMetadata(BaseModel):
                 logger.warn('No files: ' + self.path)
                 return None
             path = filenode[0].path
-        file_guids = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_file_guids(
-            materialized_path=path,
-            provider=provider,
-            target=node
-        )
-        if len(file_guids) == 0:
-            fileUrl = node.url + 'files/' + provider + path
-            logger.info('No guid: ' + self.path + '(provider=' + provider + ')')
-            return fileUrl
-        return '/' + file_guids[0] + '/'
+        try:
+            file_guids = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_file_guids(
+                materialized_path=path,
+                provider=provider,
+                target=node
+            )
+            if len(file_guids) == 0:
+                fileUrl = node.url + 'files/' + provider + path
+                logger.info('No guid: ' + self.path + '(provider=' + provider + ')')
+                return fileUrl
+            return '/' + file_guids[0] + '/'
+        except AttributeError:
+            # File node inconsistency detected
+            logger.exception('File node inconsistency detected')
+            return None
+        except MultipleObjectsReturned:
+            # Multiple file nodes returned due to the duplicate file node
+            logger.exception(f'Multiple file nodes returned for {path} @ {node._id}')
+            return None
 
     def update_search(self):
         from website import search
@@ -554,6 +644,66 @@ class MetadataAssetPool(BaseModel):
         if self.project is None:
             return None
         return self.project.owner
+
+
+class ImportedAddonSettings(BaseModel):
+    node_settings = models.ForeignKey(NodeSettings, related_name='imported_addon_settings',
+                                      db_index=True, null=True, blank=True,
+                                      on_delete=models.CASCADE)
+
+    name = models.TextField(blank=True, null=True)
+
+    folder_id = models.TextField(blank=True, null=True)
+
+    @property
+    def is_applicable(self):
+        node = self.node_settings.owner
+        addon = node.get_addon(self.name)
+        if addon is None:
+            return False
+        # Storage Addon?
+        if not hasattr(addon, 'set_folder') and not hasattr(addon, 'set_folder_by_id'):
+            return False
+        if not hasattr(addon, 'has_auth') or not addon.has_auth:
+            return False
+        return True
+
+    @property
+    def is_applied(self):
+        node = self.node_settings.owner
+        addon = node.get_addon(self.name)
+        if addon is None:
+            return False
+        return hasattr(addon, 'configured') and addon.configured
+
+    @property
+    def full_name(self):
+        node = self.node_settings.owner
+        addon = node.get_addon(self.name)
+        if addon is None:
+            return None
+        return addon.config.full_name
+
+    def apply(self, auth):
+        node = self.node_settings.owner
+        logger.info(f'Importing {self.name} settings to {node._id}')
+        addon = node.get_addon(self.name)
+        if addon is None:
+            raise ValueError('Addon not found')
+        if not hasattr(addon, 'set_folder') and not hasattr(addon, 'set_folder_by_id'):
+            raise ValueError('Addon has no set_folder or set_folder_by_id')
+        if not hasattr(addon, 'has_auth'):
+            raise ValueError('Addon has no has_auth')
+        if not addon.has_auth:
+            return False
+        if hasattr(addon, 'set_folder_by_id'):
+            # For add-ons with a type set_folder method that accepts a folder "object" (not ID)
+            addon.set_folder_by_id(self.folder_id, auth)
+        else:
+            addon.set_folder(self.folder_id, auth)
+        addon.save()
+        logger.info(f'Imported {self.name} settings to {node._id}')
+        return True
 
 
 class WaterButlerClient(object):

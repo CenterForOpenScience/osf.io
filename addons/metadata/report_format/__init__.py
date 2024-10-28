@@ -6,7 +6,10 @@ def from_csv(fname):
     with open(os.path.join(here, fname), encoding='utf-8-sig') as f:
         return f.read()
 
+# To specify the order, append '0:', '1:', '2:', etc. to the name.
 REPORT_FORMATS = [
-    ('公的資金による研究データのメタデータ登録', 'レポート(日本語)', from_csv('report_ja.csv.j2')),
-    ('公的資金による研究データのメタデータ登録', 'Report(English)', from_csv('report_en.csv.j2')),
+    ('公的資金による研究データのメタデータ登録', 'レポート(日本語)', None),
+    ('公的資金による研究データのメタデータ登録', 'Report(English)', None),
+    ('公的資金による研究データのメタデータ登録', '0: メタデータ共通項目2024版CSV形式 (日本語)', from_csv('report_ja.csv.j2')),
+    ('公的資金による研究データのメタデータ登録', '1: Common Metadata Elements 2024 edition CSV format (English)', from_csv('report_en.csv.j2')),
 ]

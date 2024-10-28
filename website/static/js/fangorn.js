@@ -1815,6 +1815,10 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
     if (item.data.isAddonRoot && item.connected === false) {
         return _connectCheckTemplate.call(this, item);
     }
+    // GRDM-36019 Package Export/Import
+    if (item.data.unavailable && (item.data.name || '').match(/is not configured$/)) {
+        return _connectCheckTemplate.call(this, item);
+    }
     if (item.kind === 'file' && item.data.permissions.view) {
         var attrs = {};
         if (tb.options.links) {
@@ -1898,6 +1902,10 @@ function _fangornModifiedColumn(item, col) {
  * @private
  */
 function _connectCheckTemplate(item){
+    // GRDM-36019 Package Export/Import
+    if (item.data.unavailable && (item.data.name || '').match(/is not configured$/)) {
+        return _addonConfigureTemplate.call(this, item);
+    }
     var tb = this;
     return m('span.text-danger', [
         m('span', item.data.name),
@@ -1911,6 +1919,23 @@ function _connectCheckTemplate(item){
                 }
             }
         }, [m('i.fa.fa-refresh'), ' Retry'])
+    ]);
+}
+
+/**
+ * Returns a reusable template for column titles when there is no connection
+ * GRDM-36019 Package Export/Import
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _addonConfigureTemplate(item){
+    var tb = this;
+    return m('span.text-warning', [
+        m('span', sprintf(gettext('%1$s is not configured'), item.data.addonFullname)),
+        m('a.btn.btn-xs.btn-default.m-l-xs', {
+            href: 'addons/'
+        }, [m('i.fa.fa-cog'), gettext(' Restore Add-ons')])
     ]);
 }
 
@@ -3125,6 +3150,8 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         (item.data.provider === 'dataverse' && item.data.extra.hasPublishedVersion) ||
         // no moving folders into dataverse
         (folder.data.provider === 'dataverse' && item.data.kind === 'folder') ||
+        // no moving items from weko
+        (item.data.provider === 'weko') ||
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
@@ -3140,6 +3167,7 @@ function allowedToMove(folder, item, mustBeIntra) {
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
         !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
+        (folder.data.provider !== 'weko') &&
         (READ_ONLY_ADDONS.indexOf(item.data.provider) === -1) && (READ_ONLY_ADDONS.indexOf(folder.data.provider) === -1)
     );
 }

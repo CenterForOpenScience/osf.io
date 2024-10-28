@@ -9,7 +9,21 @@ from addons.weko.tests.factories import WEKOAccountFactory
 from addons.weko.serializer import WEKOSerializer
 
 from tests.base import OsfTestCase
-from addons.weko.tests.utils import ConnectionMock
+from addons.weko.tests import utils
+
+
+fake_host = 'https://weko3.test.nii.ac.jp/weko/sword/'
+
+
+def mock_requests_get(url, **kwargs):
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/tree?action=browsing':
+        return utils.MockResponse(utils.fake_weko_indices, 200)
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/index/?q=100':
+        return utils.MockResponse(utils.fake_weko_items, 200)
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/records/1000':
+        return utils.MockResponse(utils.fake_weko_item, 200)
+    return utils.mock_response_404
+
 
 class TestWEKOSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
     addon_short_name = 'weko'
@@ -21,17 +35,23 @@ class TestWEKOSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
         self.node_settings.index_id = pid
 
     def setUp(self):
-        self.mock_connect_or_error = mock.patch('addons.weko.client.connect_or_error')
-        self.mock_connect_or_error.return_value = ConnectionMock()
-        self.mock_connect_or_error.start()
-        self.mock_connect_from_settings = mock.patch('addons.weko.client.connect_from_settings')
-        self.mock_connect_from_settings.return_value = ConnectionMock()
-        self.mock_connect_from_settings.start()
+        self.mock_requests_get = mock.patch('requests.get')
+        self.mock_requests_get.side_effect = mock_requests_get
+        self.mock_requests_get.start()
+        self.mock_find_repository = mock.patch('addons.weko.provider.find_repository')
+        self.mock_find_repository.return_value = {
+            'host': fake_host,
+            'client_id': None,
+            'client_secret': None,
+            'authorize_url': None,
+            'access_token_url': None,
+        }
+        self.mock_find_repository.start()
         super(TestWEKOSerializer, self).setUp()
 
     def tearDown(self):
-        self.mock_connect_or_error.stop()
-        self.mock_connect_from_settings.stop()
+        self.mock_requests_get.stop()
+        self.mock_find_repository.stop()
         super(TestWEKOSerializer, self).tearDown()
 
     def test_serialize_acccount(self):
