@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.db import transaction
+from django.db import transaction, IntegrityError
 
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
@@ -32,12 +32,28 @@ def calculate_quota(user):
                 user_quota.used = used
                 user_quota.save()
             except UserQuota.DoesNotExist:
-                UserQuota.objects.create(
-                    user=user,
-                    storage_type=storage_type,
-                    max_quota=api_settings.DEFAULT_MAX_QUOTA,
-                    used=used,
-                )
+                try:
+                    with transaction.atomic():
+                        UserQuota.objects.create(
+                            user=user,
+                            storage_type=storage_type,
+                            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+                            used=used,
+                        )
+                except IntegrityError:
+                    used = used_quota(user._id, storage_type)
+                    if check_select_for_update():
+                        user_quota = UserQuota.objects.filter(
+                            user=user,
+                            storage_type=storage_type,
+                        ).select_for_update().get()
+                    else:
+                        user_quota = UserQuota.objects.get(
+                            user=user,
+                            storage_type=storage_type,
+                        )
+                    user_quota.used = used
+                    user_quota.save()
 
 def all_users(request, **kwargs):
     c = 0

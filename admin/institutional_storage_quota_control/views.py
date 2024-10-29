@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db import connection
+from django.db import connection, transaction, IntegrityError
 from django.db.models import Subquery, OuterRef
 from django.http import Http404
 
@@ -165,11 +165,15 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
             # If max quota value is between 0 and 2147483647, update or create used quota for each user in the institution
             for user in OSFUser.objects.filter(
                     affiliated_institutions=self.institution_id):
-                UserQuota.objects.update_or_create(
-                    user=user,
-                    storage_type=UserQuota.CUSTOM_STORAGE,
-                    defaults={'max_quota': max_quota}
-                )
+                try:
+                    with transaction.atomic():
+                        UserQuota.objects.update_or_create(
+                            user=user,
+                            storage_type=UserQuota.CUSTOM_STORAGE,
+                            defaults={'max_quota': max_quota}
+                        )
+                except IntegrityError:
+                    UserQuota.objects.filter(user=user, storage_type=UserQuota.CUSTOM_STORAGE).update(max_quota=max_quota)
         return redirect(
             'institutional_storage_quota_control:institution_user_list',
             institution_id=self.institution_id
