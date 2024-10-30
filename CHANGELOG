@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+24.08.0 (2024-10-30)
+====================
+
+- Fix admin confirmation link generation and handling
+
 24.07.0 (2024-09-19)
 ====================
 
