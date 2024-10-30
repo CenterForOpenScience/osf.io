@@ -1,7 +1,7 @@
 import pytest
-from osf.management.commands.assign_creator_affiliations_to_preprints import assign_creator_affiliations_to_preprints
-from osf.models import Preprint, Institution, OSFUser
+from osf.management.commands.migrate_preprint_affiliation import assign_creator_affiliations_to_preprints
 from osf_tests.factories import PreprintFactory, InstitutionFactory, AuthUserFactory
+
 
 @pytest.mark.django_db
 class TestAssignCreatorAffiliationsToPreprints:
@@ -29,7 +29,7 @@ class TestAssignCreatorAffiliationsToPreprints:
     def preprint_with_non_affiliated_creator(self, user_without_affiliation):
         return PreprintFactory(creator=user_without_affiliation)
 
-    @pytest.mark.parametrize("dry_run", [True, False])
+    @pytest.mark.parametrize('dry_run', [True, False])
     def test_assign_affiliations_with_affiliated_creator(self, preprint_with_affiliated_creator, institution, dry_run):
         assert preprint_with_affiliated_creator.affiliated_institutions.count() == 0
 
@@ -40,12 +40,12 @@ class TestAssignCreatorAffiliationsToPreprints:
         else:
             assert institution in preprint_with_affiliated_creator.affiliated_institutions.all()
 
-    @pytest.mark.parametrize("dry_run", [True, False])
+    @pytest.mark.parametrize('dry_run', [True, False])
     def test_no_affiliations_for_non_affiliated_creator(self, preprint_with_non_affiliated_creator, dry_run):
         assign_creator_affiliations_to_preprints(dry_run=dry_run)
         assert preprint_with_non_affiliated_creator.affiliated_institutions.count() == 0
 
-    @pytest.mark.parametrize("dry_run", [True, False])
+    @pytest.mark.parametrize('dry_run', [True, False])
     def test_exclude_creator_by_guid(self, preprint_with_affiliated_creator, institution, dry_run):
         exclude_guid = preprint_with_affiliated_creator.creator._id
         assign_creator_affiliations_to_preprints(exclude_guids={exclude_guid}, dry_run=dry_run)
