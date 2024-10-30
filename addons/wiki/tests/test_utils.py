@@ -31,7 +31,7 @@ from addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
     migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget,
     check_file_object_in_node, get_numbered_name_for_existing_wiki, get_import_wiki_name_list,
-    get_wiki_fullpath, _get_wiki_parent, _get_all_child_file_ids
+    get_wiki_fullpath, _get_wiki_parent, _get_all_child_file_ids, get_node_file_mapping
 )
 from addons.wiki import tasks
 from framework.auth import Auth
@@ -264,9 +264,18 @@ class TestGetNodeFileMapping(OsfTestCase):
         self.pagefile3 = TestFile.objects.create(name='page3.md', target=self.project1, parent=self.pagefolder3)
         self.attachment3 = TestFile.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
 
-    def test_get_node_file_mapping(self):
-        file_mapping = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
+    @mock.patch('addons.wiki.views.BaseFileNode.objects.filter')
+    def test_get_node_file_mapping(self, mock_filter):
 
+        mock_filter.return_value.values_list.return_value = [
+            (self.pagefile1._id, 'page1.md', 'page1'),
+            (self.attachment1._id, 'attachment1.pdf', 'page1'),
+            (self.pagefile2._id, 'page2.md', 'page2'),
+            (self.attachment2._id, 'attachment2.docx', 'page2'),
+            (self.pagefile3._id, 'page3.md', 'page3'),
+            (self.attachment3._id, 'attachment3.xlsx', 'page3'),
+        ]
+        file_mapping = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
         expected_mapping = {
             'page1^page1.md': self.pagefile1._id,
             'page1^attachment1.pdf': self.attachment1._id,
@@ -277,5 +286,3 @@ class TestGetNodeFileMapping(OsfTestCase):
         }
 
         self.assertEqual(file_mapping, expected_mapping)
-
-
