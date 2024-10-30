@@ -1750,13 +1750,23 @@ class TestWikiImport(OsfTestCase):
         self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
         self.consolidate_auth = Auth(user=self.project.creator)
 
-        # importpage1
+        # root
+        #  └── rootimportfolder1
+        #      └── importpage1
+        #          └── importpage1.md
         self.root_import_folder1 = TestFolder.objects.create(name='rootimportfolder1', target=self.project, parent=self.root)
         self.import_page_folder1 = TestFolder.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
         self.import_page_md_file1 = TestFile.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder1)
 
-        # importpagea - importpagec
-        # importpageb(pdf)
+        # root
+        # └── rootimportfoldera
+        #     ├── importpagea
+        #     │   └── importpagea.md
+        #     ├── importpageb
+        #     │   ├── importpageb.md
+        #     │   └── pdffile.pdf
+        #     └── importpagec
+        #         └── importpagec.md
         self.root_import_folder_a = TestFolder.objects.create(name='rootimportfoldera', target=self.project, parent=self.root)
         self.import_page_folder_a = TestFolder.objects.create(name='importpagea', target=self.project, parent=self.root_import_folder_a)
         self.import_page_md_file_a = TestFile.objects.create(name='importpagea.md', target=self.project, parent=self.import_page_folder_a)
@@ -1885,6 +1895,12 @@ class TestWikiImport(OsfTestCase):
         result = views._validate_import_duplicated_directry(info_list)
         self.assertEqual(result, ['folder1'])
 
+    def test_validate_import_wiki_exists_duplicated_valid_no_change(self):
+        info = {'wiki_name': 'importpagec', 'path': '/importpagea/importpagec', 'status': 'valid'}
+        result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
+        self.assertEqual(result['status'], 'valid')
+        self.assertTrue(can_start_import)
+
     def test_validate_import_wiki_exists_duplicated_valid_exists_status_change(self):
         info = {'wiki_name': 'importpagea', 'path': '/importpagea', 'status': 'valid'}
         result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
@@ -1896,12 +1912,6 @@ class TestWikiImport(OsfTestCase):
         result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
         self.assertEqual(result['status'], 'valid_duplicated')
         self.assertFalse(can_start_import)
-
-    def test_validate_import_wiki_exists_duplicated_valid_no_change(self):
-        info = {'wiki_name': 'importpagec', 'path': '/importpagea/importpagec', 'status': 'valid'}
-        result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
-        self.assertEqual(result['status'], 'valid')
-        self.assertTrue(can_start_import)
 
     def test_validate_import_folder_invalid(self):
         folder = BaseFileNode.objects.get(name='importpagex')
@@ -2055,6 +2065,18 @@ class TestWikiImport(OsfTestCase):
     @mock.patch('addons.wiki.views._import_same_level_wiki')
     @mock.patch('addons.wiki.tasks.run_update_search_and_bulk_index')
     def test_project_wiki_import_process(self, mock_run_task_elasticsearch, mock_import_same_level_wiki, mock_wiki_import_create_or_update, mock_wiki_content_replace, mock_wiki_copy_import_directory, mock_create_wiki_folder, mock_get_or_create_wiki_folder, mock_get_md_content_from_wb):
+        # root
+        # └── rootimportfolder2
+        #     ├── importpage1
+        #     │   ├── importpage1.md
+        #     │   └── importpage2
+        #     │       ├── importpage2.md
+        #     │       └── importpage3
+        #     │           └── importpage3.md
+        #     └── importpage4
+        #         ├── importpage4.md
+        #         └── importpage5
+        #             └── importpage5.md
         self.root_import_folder = TestFolder.objects.create(name='rootimportfolder', target=self.project, parent=self.root)
         self.import_page_folder_1 = TestFolder.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder)
         self.import_page_md_file_1 = TestFile.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder_1)
