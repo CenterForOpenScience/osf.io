@@ -1342,6 +1342,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
         return f'{base}confirm/{external}{self._primary_key}/{token}/{destination}'
 
+    def get_or_create_confirmation_url(self, email, force=False, renew=False):
+        """
+        Get or create a confirmation URL for the given email.
+
+        :param email: The email to generate a confirmation URL for.
+        :param force: Force generating a new confirmation link.
+        :param renew: Renew an expired token.
+        :raises ValidationError: If email is invalid or domain is banned.
+        :return: Confirmation URL for the email.
+        """
+        try:
+            self.get_confirmation_token(email, force=force, renew=renew)
+        except KeyError:
+            self.add_unconfirmed_email(email)
+            self.save()
+        return self.get_confirmation_url(email)
+
     def register(self, username, password=None, accepted_terms_of_service=None):
         """Registers the user.
         """
