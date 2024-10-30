@@ -3,13 +3,30 @@ import enum
 import dataclasses
 from dataclasses import asdict
 
+from addons.bitbucket.apps import BitbucketAddonConfig
 from addons.box.apps import BoxAddonAppConfig
+from addons.dataverse.apps import DataverseAddonAppConfig
+from addons.dropbox.apps import DropboxAddonAppConfig
+from addons.figshare.apps import FigshareAddonAppConfig
+from addons.github.apps import GitHubAddonConfig
+from addons.gitlab.apps import GitLabAddonConfig
+from addons.googledrive.apps import GoogleDriveAddonConfig
+from addons.s3.apps import S3AddonAppConfig
+from addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
 from . import request_helpers as gv_requests
 
 
 class _LegacyConfigsForWBKey(enum.Enum):
     """Mapping from a GV ExternalStorageService's waterbutler key to the legacy Addon config."""
     box = BoxAddonAppConfig
+    bitbucket = BitbucketAddonConfig
+    dataverse = DataverseAddonAppConfig
+    dropbox = DropboxAddonAppConfig
+    figshare = FigshareAddonAppConfig
+    github = GitHubAddonConfig
+    gitlab = GitLabAddonConfig
+    google_drive = GoogleDriveAddonConfig
+    s3 = S3AddonAppConfig
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
@@ -36,6 +53,7 @@ def make_ephemeral_node_settings(gv_addon_data, requested_resource, requesting_u
         gv_data=gv_addon_data,
         configured_resource=requested_resource,
         active_user=requesting_user,
+        wb_key=service_wb_key,
     )
 
 
@@ -69,6 +87,7 @@ class EphemeralNodeSettings:
     '''Minimalist dataclass for storing/translating the actually used properties of NodeSettings.'''
     config: EphemeralAddonConfig
     gv_data: gv_requests.JSONAPIResultEntry
+    wb_key: str
 
     # These are needed in order to make further requests for credentials
     configured_resource: type  # Node
@@ -113,7 +132,7 @@ class EphemeralNodeSettings:
 
     @property
     def folder_id(self):
-        return self.gv_data.get_attribute('root_folder').split(':')[1]
+        return self.gv_data.get_attribute('root_folder')
 
     def serialize_waterbutler_credentials(self):
         # sufficient for most OAuth services, including Box
@@ -125,8 +144,16 @@ class EphemeralNodeSettings:
     def serialize_waterbutler_settings(self):
         # sufficient for Box
         # TODO: Define per-service translation (and/or common schemes)
+        match self.wb_key:
+            case _LegacyConfigsForWBKey.s3.name:
+                return {
+                    'bucket': self.folder_id.split(':/')[0],
+                    'id': self.folder_id,
+                    'encrypt_uploads': ENCRYPT_UPLOADS_DEFAULT,
+                }
+
         return {
-            'folder': self.folder_id,
+            'folder': self.folder_id.split(':')[1],
             'service': self.short_name,
         }
 
