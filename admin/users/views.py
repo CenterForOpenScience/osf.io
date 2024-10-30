@@ -16,6 +16,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 
 from osf.exceptions import UserStateError
 from osf.models.base import Guid
@@ -456,10 +457,19 @@ class GetUserLink(UserMixin, TemplateView):
 
 class GetUserConfirmationLink(GetUserLink):
     def get_link(self, user):
+        if user.is_confirmed:
+            return f'User {user._id} is already confirmed'
+
+        if user.deleted or user.is_merged:
+            return f'User {user._id} is deleted or merged'
+
         try:
-            return user.get_confirmation_url(user.username, force=True)
-        except KeyError as e:
-            return str(e)
+            confirmation_link = user.get_or_create_confirmation_url(user.username, force=True, renew=True)
+            return confirmation_link
+        except ValidationError:
+            return f'Invalid email for user {user._id}'
+        except KeyError:
+            return 'Could not generate or refresh confirmation link'
 
     def get_link_type(self):
         return 'User Confirmation'
