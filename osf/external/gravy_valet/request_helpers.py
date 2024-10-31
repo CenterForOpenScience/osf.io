@@ -226,8 +226,10 @@ def get_citation_url_list(auth, addon_short_name, project, request=None, pid=Non
         requested_resource=project,
         params={'filter[resource_uri]': project_url},
     )
+    if not resource_references_response:
+        return []
     configured_citation_addons_url = resource_references_response.get_related_link(
-        'configured_storage_addons')
+        'configured_citation_addons')
     addons_url_list = get_gv_result_json(
         endpoint_url=configured_citation_addons_url,
         requesting_user=auth.user,
