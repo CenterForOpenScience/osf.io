@@ -7,6 +7,7 @@ from http import HTTPStatus
 import logging
 import random
 from urllib.parse import urljoin
+import urllib3.exceptions
 import uuid
 
 from celery.exceptions import Retry
@@ -79,6 +80,7 @@ def _enqueue_update_share(osfresource):
     acks_late=True,
     max_retries=4,
     retry_backoff=True,
+    autoretry_for=(urllib3.exceptions.HTTPError,),
 )
 def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN'):
     """
