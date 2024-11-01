@@ -79,6 +79,18 @@ class _FakeUserReference(_FakeGVEntity):
         return {'authorized_storage_accounts': accounts_relationship}
 
 @dataclasses.dataclass(frozen=True)
+class _FakeWBCredentials(_FakeGVEntity):
+
+    RESOURCE_TYPE = 'waterbutler-credentials'
+    config: dict
+
+    def _serialize_attributes(self):
+        return {'config': self.config}
+
+    def _serialize_relationships(self):
+        return {}
+
+@dataclasses.dataclass(frozen=True)
 class _FakeResourceReference(_FakeGVEntity):
 
     RESOURCE_TYPE = 'resource-references'
@@ -209,6 +221,7 @@ class FakeGravyValet:
         r'v1/resource-references(/(?P<pk>\d+)|(\?filter\[resource_uri\]=(?P<resource_uri>[^&]+)))': '_get_resource',
         r'v1/authorized-storage-accounts/(?P<pk>\d+)': '_get_account',
         r'v1/configured-storage-addons/(?P<pk>\d+)': '_get_addon',
+        r'v1/configured-storage-addons/(?P<pk>\d+)/waterbutler-credentials': '_get_wb_settings',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts': '_get_user_accounts',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons': '_get_resource_addons',
     }
@@ -373,6 +386,21 @@ class FakeGravyValet:
             list_view=list_view,
             include_param=include_param,
         )
+
+    def _get_wb_settings(
+        self,
+        headers: dict,
+        pk: str,
+        include_param: str = '',
+    ) -> str:
+        creds = _FakeWBCredentials(
+            pk=10,
+            config={
+                'folder': pk,
+                'service': 'box',
+            }
+        )
+        return _format_response_body(creds)
 
     def _get_resource(
         self,
