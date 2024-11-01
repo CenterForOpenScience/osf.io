@@ -12,7 +12,6 @@ from addons.github.apps import GitHubAddonConfig
 from addons.gitlab.apps import GitLabAddonConfig
 from addons.googledrive.apps import GoogleDriveAddonConfig
 from addons.s3.apps import S3AddonAppConfig
-from addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
 from . import request_helpers as gv_requests
 
 
@@ -95,6 +94,7 @@ class EphemeralNodeSettings:
 
     # retrieved from WB on-demand and cached
     _credentials: dict = None
+    _config: dict = None
 
     @property
     def short_name(self):
@@ -142,20 +142,9 @@ class EphemeralNodeSettings:
         return self._credentials
 
     def serialize_waterbutler_settings(self):
-        # sufficient for Box
-        # TODO: Define per-service translation (and/or common schemes)
-        match self.wb_key:
-            case _LegacyConfigsForWBKey.s3.name:
-                return {
-                    'bucket': self.folder_id.split(':/')[0],
-                    'id': self.folder_id,
-                    'encrypt_uploads': ENCRYPT_UPLOADS_DEFAULT,
-                }
-
-        return {
-            'folder': self.folder_id.split(':')[1],
-            'service': self.short_name,
-        }
+        if self._config is None:
+            self._fetch_wb_config()
+        return self._config
 
     def _fetch_wb_config(self):
         result = gv_requests.get_waterbutler_config(
@@ -164,6 +153,7 @@ class EphemeralNodeSettings:
             requesting_user=self.active_user
         )
         self._credentials = result.get_attribute('credentials')
+        self._config = result.get_attribute('config')
 
     def create_waterbutler_log(self, *args, **kwargs):
         pass
