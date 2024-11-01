@@ -131,3 +131,4 @@ djangorestframework-csv==2.1.0
 Babel==2.5.1
 Flask-Babel==1.0.0
 rsa==3.1.4
+flask-compress==1.15

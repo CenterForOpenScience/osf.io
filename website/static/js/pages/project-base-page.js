@@ -8,7 +8,6 @@ var AccountClaimer = require('js/accountClaimer');
 // pages
 require('js/project');
 require('js/licensePicker');
-require('js/render-nodes');
 require('css/pages/project-page.css');
 
 var node = window.contextVars.node;

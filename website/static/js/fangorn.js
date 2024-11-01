@@ -2136,13 +2136,14 @@ function expandStateLoad(item) {
         }
     }
 
-    if (item.children.length > 0 && item.depth === 2) {
-        for (i = 0; i < item.children.length; i++) {
-            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
-                tb.updateFolder(null, item.children[i]);
-            }
-        }
-    }
+    // Do not load children to save hundreds of requests
+    // if (item.children.length > 0 && item.depth === 2) {
+    //     for (i = 0; i < item.children.length; i++) {
+    //         if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
+    //           tb.updateFolder(null, item.children[i]);
+    //         }
+    //     }
+    // }
 
     if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
         // Displays loading indicator until request below completes

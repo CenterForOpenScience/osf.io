@@ -159,7 +159,6 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                <!-- ko stopBinding: true -->
                 <div id="contributorsList" style="height: 25px; overflow: hidden">
                 % if user['is_contributor_or_group_member']:
                     <a class="link-dashed" href="${node['url']}contributors/">${_("Contributors")}</a>:
@@ -171,11 +170,10 @@
                     <ol>${_("Anonymous Contributors")}</ol>
                 % else:
                     <ol>
-                        ${contributor_list.render_contributors_full()}
+                        ${contributor_list.render_contributors_full(contributors=node['contributors'])}
                     </ol>
                 % endif
                 </div>
-                <!-- /ko -->
                 % if node['groups']:
                     <div>
                         Groups:
@@ -671,10 +669,10 @@
                 % endif
             </div>
         </div><!-- end addon-widget-header -->
-        <div data-bind="stopBinding: true" class="panel-body">
+        <div class="panel-body">
             % if node['children']:
                 <div id="containment">
-                    ${render_nodes.render_nodes(user=user, pluralized_node_type='components', show_path=False, include_js=False)}
+                    ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
                 </div>
             % else:
               <p class="text-muted">${_("Add components to organize your project.")}</p>
