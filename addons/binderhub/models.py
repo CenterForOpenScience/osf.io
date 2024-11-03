@@ -155,6 +155,14 @@ class UserSettings(BaseUserSettings):
         self.binderhubs = json.dumps(binderhubs)
         self.save()
 
+    def remove_binderhub(self, binderhub_url):
+        self.set_binderhubs(
+            [
+                b for b in self.get_binderhubs(True)
+                if b['binderhub_url'] != binderhub_url
+            ]
+        )
+
 
 class NodeSettings(BaseNodeSettings):
     binder_url = models.TextField(blank=True, null=True)
@@ -188,6 +196,14 @@ class NodeSettings(BaseNodeSettings):
         _verify_binderhubs(available_binderhubs)
         self.available_binderhubs = json.dumps(available_binderhubs)
         self.save()
+
+    def remove_binderhub(self, binderhub_url):
+        self.set_available_binderhubs(
+            [
+                b for b in self.get_available_binderhubs(True)
+                if b['binderhub_url'] != binderhub_url
+            ]
+        )
 
     @property
     def complete(self):

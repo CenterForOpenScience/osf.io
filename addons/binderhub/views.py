@@ -62,6 +62,17 @@ def binderhub_set_user_config(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
+def purge_binderhub_from_user(auth, **kwargs):
+    try:
+        auth.user.get_addon(SHORT_NAME).remove_binderhub(
+            request.json['url']
+        )
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    return {}
+
+@must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def binderhub_add_user_config(auth, **kwargs):
     addon = auth.user.get_addon(SHORT_NAME)
     if not addon:
@@ -122,6 +133,20 @@ def binderhub_set_config(**kwargs):
     )
     addon.set_binder_url(binder_url)
     addon.set_available_binderhubs(available_binderhubs)
+    return {}
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_have_addon(SHORT_NAME, 'node')
+def delete_binderhub(**kwargs):
+    try:
+        target_url = request.json['url']
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    (
+        kwargs['node'] or kwargs['project']
+    ).get_addon(SHORT_NAME).remove_binderhub(target_url)
+    ServerAnnotation.objects.filter(binderhub_url=target_url).delete()
     return {}
 
 @must_be_valid_project

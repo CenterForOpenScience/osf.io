@@ -45,6 +45,10 @@ api_routes = {
         Rule([
             '/settings/{}/settings'.format(SHORT_NAME),
         ], 'post', views.binderhub_add_user_config, json_renderer),
+        # API to purge a binderhub entry from an user's BinderHub addon setting.
+        Rule([
+            '/settings/{}/settings/binderhubs'.format(SHORT_NAME),
+        ], 'delete', views.purge_binderhub_from_user, json_renderer),
         # APIs for node's BinderHub addon settings
         Rule([
             '/project/<pid>/{}/settings'.format(SHORT_NAME),
@@ -54,6 +58,11 @@ api_routes = {
             '/project/<pid>/{}/settings'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/settings'.format(SHORT_NAME),
         ], 'put', views.binderhub_set_config, json_renderer),
+        # API to delete binderhub entry from a node.
+        Rule([
+            '/project/<pid>/{}/settings/binderhubs'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/settings/binderhubs'.format(SHORT_NAME),
+        ], 'delete', views.delete_binderhub, json_renderer),
         # API that reads the config used in RDM-ember-osf-web
         Rule([
             '/project/<pid>/{}/config'.format(SHORT_NAME),
