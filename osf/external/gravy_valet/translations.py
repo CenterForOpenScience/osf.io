@@ -12,6 +12,7 @@ from addons.github.apps import GitHubAddonConfig
 from addons.gitlab.apps import GitLabAddonConfig
 from addons.googledrive.apps import GoogleDriveAddonConfig
 from addons.s3.apps import S3AddonAppConfig
+from addons.onedrive.apps import OneDriveAddonAppConfig
 from . import request_helpers as gv_requests
 
 
@@ -24,8 +25,9 @@ class _LegacyConfigsForWBKey(enum.Enum):
     figshare = FigshareAddonAppConfig
     github = GitHubAddonConfig
     gitlab = GitLabAddonConfig
-    google_drive = GoogleDriveAddonConfig
+    googledrive = GoogleDriveAddonConfig
     s3 = S3AddonAppConfig
+    onedrive = OneDriveAddonAppConfig
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
