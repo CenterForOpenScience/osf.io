@@ -134,26 +134,30 @@ class AkismetClient:
         if res.status_code != requests.codes.ok:
             raise AkismetClientError(reason=res.text)
 
-    def get_flagged_count(self, start_date, end_date):
-        from osf.models import NodeLog
+    def get_flagged_count(self, start_date, end_date, category='node'):
+        from osf.models import NodeLog, PreprintLog
 
-        flagged_count = NodeLog.objects.filter(
-            action=NodeLog.FLAG_SPAM,
+        log_model = NodeLog if category == 'node' else PreprintLog
+
+        flagged_count = log_model.objects.filter(
+            action=log_model.FLAG_SPAM,
             created__gt=start_date,
             created__lt=end_date,
-            node__spam_data__who_flagged__in=['akismet', 'both']
+            **{f'{category}__spam_data__who_flagged__in': ['akismet', 'both']}
         ).count()
 
         return flagged_count
 
-    def get_hammed_count(self, start_date, end_date):
-        from osf.models import NodeLog
+    def get_hammed_count(self, start_date, end_date, category='node'):
+        from osf.models import NodeLog, PreprintLog
 
-        hammed_count = NodeLog.objects.filter(
-            action=NodeLog.CONFIRM_HAM,
+        log_model = NodeLog if category == 'node' else PreprintLog
+
+        hammed_count = log_model.objects.filter(
+            action=log_model.CONFIRM_HAM,
             created__gt=start_date,
             created__lt=end_date,
-            node__spam_data__who_flagged__in=['akismet', 'both']
+            **{f'{category}__spam_data__who_flagged__in': ['akismet', 'both']}
         ).count()
 
         return hammed_count
