@@ -1227,12 +1227,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.family_name = parsed['family']
         self.suffix = parsed['suffix']
 
-    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_identity=None, force=False):
         """
         Add an email verification token for a given email.
 
         :param email: the email to confirm
-        :param email: overwrite default expiration time
+        :param expiration: overwrite default expiration time
         :param external_identity: the user's external identity
         :return: a token
         :raises: ValueError if email already confirmed, except for login through external idp.
@@ -1249,7 +1249,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             validate_email(email)
 
         if not external_identity and self.emails.filter(address=email).exists():
-            raise ValueError('Email already confirmed to this user.')
+            if not force or self.is_confirmed:
+                raise ValueError('Email already confirmed to this user.')
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
@@ -1304,14 +1305,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # assume the token is expired
                 expiration = info.get('expiration')
                 if renew:
-                    new_token = self.add_unconfirmed_email(email)
+                    new_token = self.add_unconfirmed_email(email, force=force)
                     self.save()
                     return new_token
                 if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
                         raise ExpiredTokenError(f'Token for email "{email}" is expired')
                     else:
-                        new_token = self.add_unconfirmed_email(email)
+                        new_token = self.add_unconfirmed_email(email, force=force)
                         self.save()
                         return new_token
                 return token
@@ -1355,7 +1356,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             self.get_confirmation_token(email, force=force, renew=renew)
         except KeyError:
-            self.add_unconfirmed_email(email)
+            self.add_unconfirmed_email(email, force=force)
             self.save()
         return self.get_confirmation_url(email)
 
