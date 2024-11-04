@@ -11,6 +11,11 @@ if typing.TYPE_CHECKING:
 
 from api.base.filters import FilterMixin
 from api.base.views import JSONAPIBaseView
+from api.metrics.renderers import (
+    MetricsReportsCsvRenderer,
+    MetricsReportsTsvRenderer,
+)
+from api.base.pagination import ElasticsearchListViewPagination, JSONAPIPagination
 
 
 class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, abc.ABC):
@@ -39,6 +44,10 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     # override FilterMixin to disable all operators besides 'eq' and 'ne'
     MATCHABLE_FIELDS = ()
     COMPARABLE_FIELDS = ()
+    FILE_RENDERER_CLASSES = {
+        MetricsReportsCsvRenderer,
+        MetricsReportsTsvRenderer,
+    }
     DEFAULT_OPERATOR_OVERRIDES = {}
     # (if you want to add fulltext-search or range-filter support, remove the override
     #  and update `__add_search_filter` to handle those operators -- tho note that the
@@ -52,6 +61,13 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     #       it works fine with default pagination
 
     # override rest_framework.generics.GenericAPIView
+    @property
+    def pagination_class(self):
+        if any(self.request.accepted_renderer.format == renderer.format for renderer in self.FILE_RENDERER_CLASSES):
+            return ElasticsearchListViewPagination
+        else:
+            return JSONAPIPagination
+
     def get_queryset(self):
         _search = self.get_default_search()
         if _search is None:

@@ -1,5 +1,5 @@
-import datetime
 import csv
+import datetime
 from io import StringIO
 from random import random
 from urllib.parse import urlencode
@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 import pytest
 from waffle.testutils import override_flag
 
-from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
+from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE, REPORT_FILENAME_FORMAT
 import osf.features
 from osf_tests.factories import (
     InstitutionFactory,
@@ -403,6 +403,172 @@ class TestNewInstitutionUserMetricList:
             _resp = app.get(f'{url}?{urlencode(_query)}', auth=institutional_admin.auth)
             assert _resp.status_code == 200
             assert list(_user_ids(_resp)) == _expected_user_id_list
+
+    @pytest.mark.parametrize('format_type, delimiter, content_type', [
+        ('csv', ',', 'text/csv; charset=utf-8'),
+        ('tsv', '\t', 'text/tab-separated-values; charset=utf-8')
+    ])
+    def test_get_report_formats_csv_tsv(self, app, url, institutional_admin, institution, format_type, delimiter,
+                                        content_type):
+        _report_factory(
+            '2024-08',
+            institution,
+            user_id='u_orcomma',
+            account_creation_date='2018-02',
+            user_name='Jason Kelce',
+            orcid_id='4444-3333-2222-1111',
+            department_name='Center, \t Greatest Ever',
+            storage_byte_count=736662999298,
+            embargoed_registration_count=1,
+            published_preprint_count=1,
+            public_registration_count=2,
+            public_project_count=3,
+            public_file_count=4,
+            private_project_count=5,
+            month_last_active='2018-02',
+            month_last_login='2018-02',
+        )
+
+        resp = app.get(f'{url}?format={format_type}', auth=institutional_admin.auth)
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == content_type
+
+        current_date = datetime.datetime.now().strftime('%Y-%m')
+        expected_filename = REPORT_FILENAME_FORMAT.format(
+            view_name='institution-user-metrics',
+            date_created=current_date,
+            format_type=format_type
+        )
+        assert resp.headers['Content-Disposition'] == f'attachment; filename="{expected_filename}"'
+
+        response_body = resp.text
+        expected_response = [
+            [
+                'account_creation_date',
+                'department',
+                'embargoed_registration_count',
+                'month_last_active',
+                'month_last_login',
+                'orcid_id',
+                'private_projects',
+                'public_file_count',
+                'public_projects',
+                'public_registration_count',
+                'published_preprint_count',
+                'storage_byte_count',
+                'user_name'
+            ],
+            [
+                '2018-02',
+                'Center, \t Greatest Ever',
+                '1',
+                '2018-02',
+                '2018-02',
+                '4444-3333-2222-1111',
+                '5',
+                '4',
+                '3',
+                '2',
+                '1',
+                '736662999298',
+                'Jason Kelce'
+            ]
+        ]
+
+        if delimiter:
+            with StringIO(response_body) as file:
+                reader = csv.reader(file, delimiter=delimiter)
+                response_rows = list(reader)
+                assert response_rows[0] == expected_response[0]
+                assert sorted(response_rows[1:]) == sorted(expected_response[1:])
+
+    @pytest.mark.parametrize('format_type, delimiter, content_type', [
+        ('csv', ',', 'text/csv; charset=utf-8'),
+        ('tsv', '\t', 'text/tab-separated-values; charset=utf-8')
+    ])
+    def test_csv_tsv_ignores_pagination(self, app, url, institutional_admin, institution, format_type, delimiter,
+                                        content_type):
+        # Create 15 records, exceeding the default page size of 10
+        num_records = 15
+        expected_data = []
+        for i in range(num_records):
+            _report_factory(
+                '2024-08',
+                institution,
+                user_id=f'u_orcomma_{i}',
+                account_creation_date='2018-02',
+                user_name=f'Jalen Hurts #{i}',
+                orcid_id=f'4444-3333-2222-111{i}',
+                department_name='QBatman',
+                storage_byte_count=736662999298 + i,
+                embargoed_registration_count=1,
+                published_preprint_count=1,
+                public_registration_count=2,
+                public_project_count=3,
+                public_file_count=4,
+                private_project_count=5,
+                month_last_active='2018-02',
+                month_last_login='2018-02',
+            )
+            expected_data.append([
+                '2018-02',
+                'QBatman',
+                '1',
+                '2018-02',
+                '2018-02',
+                f'4444-3333-2222-111{i}',
+                '5',
+                '4',
+                '3',
+                '2',
+                '1',
+                str(736662999298 + i),
+                f'Jalen Hurts #{i}',
+            ])
+
+        # Make request for CSV format with page[size]=10
+        resp = app.get(f'{url}?format={format_type}', auth=institutional_admin.auth)
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == content_type
+
+        current_date = datetime.datetime.now().strftime('%Y-%m')
+        expected_filename = REPORT_FILENAME_FORMAT.format(
+            view_name='institution-user-metrics',
+            date_created=current_date,
+            format_type=format_type
+        )
+        assert resp.headers['Content-Disposition'] == f'attachment; filename="{expected_filename}"'
+
+        # Validate the CSV content contains all 15 records, ignoring the default pagination of 10
+        response_body = resp.text
+        rows = response_body.splitlines()
+
+        assert len(rows) == num_records + 1 == 16  # 1 header + 15 records
+
+        if delimiter:
+            with StringIO(response_body) as file:
+                reader = csv.reader(file, delimiter=delimiter)
+                response_rows = list(reader)
+                # Validate header row
+                expected_header = [
+                    'account_creation_date',
+                    'department',
+                    'embargoed_registration_count',
+                    'month_last_active',
+                    'month_last_login',
+                    'orcid_id',
+                    'private_projects',
+                    'public_file_count',
+                    'public_projects',
+                    'public_registration_count',
+                    'published_preprint_count',
+                    'storage_byte_count',
+                    'user_name'
+                ]
+                assert response_rows[0] == expected_header
+                # Sort both expected and actual rows (ignoring the header) before comparison
+                assert sorted(response_rows[1:]) == sorted(expected_data)
+
 
 def _user_ids(api_response):
     for _datum in api_response.json['data']:

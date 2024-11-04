@@ -1,5 +1,7 @@
-import csv
 import io
+import csv
+import datetime
+from api.base.settings.defaults import REPORT_FILENAME_FORMAT
 
 from django.http import Http404
 
@@ -42,10 +44,19 @@ def get_csv_row(keys_list, report_attrs):
     ]
 
 
-class MetricsReportsCsvRenderer(renderers.BaseRenderer):
-    media_type = 'text/csv'
-    format = 'csv'
-    CSV_DIALECT = csv.excel
+class MetricsReportsRenderer(renderers.BaseRenderer):
+
+    def get_filename(self, renderer_context: dict, format_type: str) -> str:
+        """Generate the filename for the file based on format_type REPORT_FILENAME_FORMAT and current date."""
+        if renderer_context and 'view' in renderer_context:
+            current_date = datetime.datetime.now().strftime('%Y-%m')
+            return REPORT_FILENAME_FORMAT.format(
+                view_name=renderer_context['view'].view_name,
+                date_created=current_date,
+                format_type=format_type,
+            )
+        else:
+            raise NotImplementedError('Missing format filename')
 
     def render(self, json_response, accepted_media_type=None, renderer_context=None):
         serialized_reports = (
@@ -64,10 +75,23 @@ class MetricsReportsCsvRenderer(renderers.BaseRenderer):
             csv_writer.writerow(
                 get_csv_row(csv_fieldnames, serialized_report),
             )
+
+        response = renderer_context['response']
+        filename = self.get_filename(renderer_context, self.extension)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
         return csv_filecontent.getvalue()
 
 
-class MetricsReportsTsvRenderer(MetricsReportsCsvRenderer):
+class MetricsReportsTsvRenderer(MetricsReportsRenderer):
     format = 'tsv'
+    extension = 'tsv'
     media_type = 'text/tab-separated-values'
     CSV_DIALECT = csv.excel_tab
+
+
+class MetricsReportsCsvRenderer(MetricsReportsRenderer):
+    format = 'csv'
+    extension = 'csv'
+    media_type = 'text/csv'
+    CSV_DIALECT = csv.excel
