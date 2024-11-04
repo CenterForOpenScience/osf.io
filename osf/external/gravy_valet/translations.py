@@ -24,7 +24,7 @@ class _LegacyConfigsForWBKey(enum.Enum):
     figshare = FigshareAddonAppConfig
     github = GitHubAddonConfig
     gitlab = GitLabAddonConfig
-    google_drive = GoogleDriveAddonConfig
+    googledrive = GoogleDriveAddonConfig
     s3 = S3AddonAppConfig
 
 
