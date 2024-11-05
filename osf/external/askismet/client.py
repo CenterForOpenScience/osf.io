@@ -137,6 +137,9 @@ class AkismetClient:
     def get_flagged_count(self, start_date, end_date, category='node'):
         from osf.models import NodeLog, PreprintLog
 
+        if category not in ['node', 'preprint']:
+            raise ValueError(f"Invalid category '{category}'. Expected 'node' or 'preprint'.")
+
         log_model = NodeLog if category == 'node' else PreprintLog
 
         flagged_count = log_model.objects.filter(
@@ -150,6 +153,9 @@ class AkismetClient:
 
     def get_hammed_count(self, start_date, end_date, category='node'):
         from osf.models import NodeLog, PreprintLog
+
+        if category not in ['node', 'preprint']:
+            raise ValueError(f"Invalid category '{category}'. Expected 'node' or 'preprint'.")
 
         log_model = NodeLog if category == 'node' else PreprintLog
 
