@@ -98,6 +98,8 @@ def validate_social(value):
 
 def validate_email(value):
     from osf.models import BlacklistedEmailDomain
+    if value.startswith('tmp_eppn_'):
+        return True
     with reraise_django_validation_errors():
         django_validate_email(value)
     domain = value.split('@')[1].lower()
