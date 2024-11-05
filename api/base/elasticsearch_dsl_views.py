@@ -14,6 +14,8 @@ from api.base.views import JSONAPIBaseView
 from api.metrics.renderers import (
     MetricsReportsCsvRenderer,
     MetricsReportsTsvRenderer,
+    MetricsReportsJsonRenderer,
+    MetricsReportsJsonDirectDownloadRenderer,
 )
 from api.base.pagination import ElasticsearchListViewPagination, JSONAPIPagination
 
@@ -47,6 +49,8 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     FILE_RENDERER_CLASSES = {
         MetricsReportsCsvRenderer,
         MetricsReportsTsvRenderer,
+        MetricsReportsJsonRenderer,
+        MetricsReportsJsonDirectDownloadRenderer,
     }
     DEFAULT_OPERATOR_OVERRIDES = {}
     # (if you want to add fulltext-search or range-filter support, remove the override
@@ -63,10 +67,18 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     # override rest_framework.generics.GenericAPIView
     @property
     def pagination_class(self):
-        if any(self.request.accepted_renderer.format == renderer.format for renderer in self.FILE_RENDERER_CLASSES):
+        """
+        When downloading a file assume no pagination is necessary unless the user specifies
+        """
+        is_file_download = any(
+            self.request.accepted_renderer.format == renderer.format
+            for renderer in self.FILE_RENDERER_CLASSES
+        )
+        page_size_param = getattr(super().pagination_class, 'page_size_query_param', 'page[size]')
+
+        if is_file_download and not self.request.query_params.get(page_size_param):
             return ElasticsearchListViewPagination
-        else:
-            return JSONAPIPagination
+        return JSONAPIPagination
 
     def get_queryset(self):
         _search = self.get_default_search()

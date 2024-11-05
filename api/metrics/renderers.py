@@ -1,5 +1,6 @@
 import io
 import csv
+import json
 import datetime
 from api.base.settings.defaults import REPORT_FILENAME_FORMAT
 
@@ -95,3 +96,33 @@ class MetricsReportsCsvRenderer(MetricsReportsRenderer):
     extension = 'csv'
     media_type = 'text/csv'
     CSV_DIALECT = csv.excel
+
+
+class MetricsReportsJsonRenderer(MetricsReportsRenderer):
+    """
+    Just the the basic report without nested user details.
+    """
+    format = 'json_report'
+    extension = 'json'
+    media_type = 'application/json'
+
+    def render(self, json_response, accepted_media_type=None, renderer_context=None):
+        response = renderer_context['response']
+        filename = self.get_filename(renderer_context, self.extension)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return json.dumps([item['attributes'] for item in json_response['data']])
+
+
+class MetricsReportsJsonDirectDownloadRenderer(MetricsReportsRenderer):
+    """
+    The whole raw report with pagination and filtering/sorts
+    """
+    format = 'direct_download'
+    extension = 'json'
+    media_type = 'application/json'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        response = renderer_context['response']
+        filename = self.get_filename(renderer_context, self.extension)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return json.dumps(data)
