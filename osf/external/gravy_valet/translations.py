@@ -40,7 +40,8 @@ class _LegacyConfigsForWBKey(enum.Enum):
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
     service_wb_key = gv_account_data.get_included_attribute(
-        include_path=('external_storage_service',), attribute_name='wb_key'
+        include_path=('external_storage_service',),
+        attribute_name='wb_key'
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralUserSettings(
@@ -74,6 +75,18 @@ class EphemeralAddonConfig:
     label: str
     short_name: str
     full_name: str
+    include_js: dict = None
+    include_css: dict = None
+
+    def __post_init__(self):
+        self.include_js = {
+            'widget': [],
+            'page': [],
+        }
+        self.include_css = {
+            'widget': [],
+            'page': [],
+        }
 
     @property
     def icon_url(self):

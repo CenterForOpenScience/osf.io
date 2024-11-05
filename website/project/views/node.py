@@ -16,7 +16,6 @@ from framework.forms import push_errors_to_status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from osf.external.gravy_valet.translations import EphemeralAddonConfig
 from osf.external.gravy_valet.request_helpers import get_citation_url_list
 from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
@@ -715,12 +714,12 @@ def _render_addons(addons):
 
     for addon in addons:
         configs[addon.config.short_name] = addon.config.to_json()
-        if not isinstance(addon.config, EphemeralAddonConfig):
-            js.extend(addon.config.include_js.get('widget', []))
-            css.extend(addon.config.include_css.get('widget', []))
+        # if not isinstance(addon.config, EphemeralAddonConfig):
+        js.extend(addon.config.include_js.get('widget', []))
+        css.extend(addon.config.include_css.get('widget', []))
 
-            js.extend(addon.config.include_js.get('files', []))
-            css.extend(addon.config.include_css.get('files', []))
+        js.extend(addon.config.include_js.get('files', []))
+        css.extend(addon.config.include_css.get('files', []))
 
     return widgets, configs, js, css
 
@@ -805,9 +804,12 @@ def _view_project(node, auth, primary=False,
             'is_pending_registration': node.is_pending_registration if is_registration else False,
             'is_retracted': node.is_retracted if is_registration else False,
             'is_pending_retraction': node.is_pending_retraction if is_registration else False,
-            'retracted_justification': getattr(node.root.retraction, 'justification', None) if is_registration else None,
-            'date_retracted': iso8601format(getattr(node.root.retraction, 'date_retracted', None)) if is_registration else '',
-            'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
+            'retracted_justification': getattr(node.root.retraction, 'justification',
+                                               None) if is_registration else None,
+            'date_retracted': iso8601format(
+                getattr(node.root.retraction, 'date_retracted', None)) if is_registration else '',
+            'embargo_end_date': node.embargo_end_date.strftime(
+                '%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
             'is_pending_embargo': node.is_pending_embargo if is_registration else False,
             'is_embargoed': node.is_embargoed if is_registration else False,
             'is_pending_embargo_termination': is_registration and node.is_pending_embargo_termination,
@@ -815,7 +817,8 @@ def _view_project(node, auth, primary=False,
             'registered_date': iso8601format(node.registered_date) if is_registration else '',
             'root_id': node.root._id if node.root else None,
             'registered_meta': strip_registered_meta_comments(node.registered_meta),
-            'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
+            'registered_schemas': serialize_meta_schemas(
+                list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
             'collections': sorted(
                 serialize_collections(node.collection_submissions, auth),
@@ -829,7 +832,8 @@ def _view_project(node, auth, primary=False,
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'templated_count': node.templated_list.count(),
-            'linked_nodes_count': NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection').count(),
+            'linked_nodes_count': NodeRelation.objects.filter(child=node, is_node_link=True).exclude(
+                parent__type='osf.collection').count(),
             'anonymous': anonymous,
             'comment_level': node.comment_level,
             'has_comments': node.comment_set.exists(),
@@ -929,6 +933,7 @@ def _view_project(node, auth, primary=False,
         ]
     return data
 
+
 def get_affiliated_institutions(obj):
     ret = []
     if isinstance(obj, OSFUser):
@@ -943,6 +948,7 @@ def get_affiliated_institutions(obj):
             'id': institution._id,
         })
     return ret
+
 
 def serialize_collections(collection_submissions, auth):
     return [{
@@ -966,8 +972,11 @@ def serialize_collections(collection_submissions, auth):
         'is_public': collection_submission.collection.is_public,
         'logo': collection_submission.collection.provider.get_asset_url('favicon'),
         'comment': getattr(collection_submission.actions.last(), 'comment', 'No Comment'),
-    } for collection_submission in collection_submissions if collection_submission.collection.provider and (collection_submission.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', collection_submission.collection)))]
+    } for collection_submission in collection_submissions if
+        collection_submission.collection.provider and (collection_submission.collection.is_public or
+                                                       (auth.user and auth.user.has_perm('read_collection',
+                                                                                         collection_submission.collection)))]
+
 
 def serialize_preprints(node, user):
     return [
@@ -977,10 +986,13 @@ def serialize_preprints(node, user):
             'is_withdrawn': preprint.date_withdrawn is not None,
             'state': preprint.machine_state,
             'word': preprint.provider.preprint_word,
-            'provider': {'name': 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
+            'provider': {
+                'name': 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name,
+                'workflow': preprint.provider.reviews_workflow},
             'url': preprint.url,
             'absolute_url': preprint.absolute_url
-        } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
+        } for preprint in
+        Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
     ]
 
 
@@ -1003,6 +1015,7 @@ def serialize_children(child_list, nested, indent=0):
         if child._id in nested.keys():
             results.extend(serialize_children(nested.get(child._id), nested, indent + 1))
     return results
+
 
 def _get_children(node, auth):
     """
@@ -1038,7 +1051,6 @@ def private_link_table(node, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def get_editable_children(auth, node, **kwargs):
-
     children = _get_children(node, auth)
 
     return {
@@ -1077,6 +1089,7 @@ def _get_readable_descendants(auth, node, permission=None):
                 descendants.append(descendant)
     return descendants, all_readable
 
+
 def serialize_child_tree(child_list, user, nested):
     """
     Recursively serializes and returns a list of child nodes.
@@ -1107,7 +1120,8 @@ def serialize_child_tree(child_list, user, nested):
                     'is_supplemental_project': child.has_linked_published_preprints,
                 },
                 'user_id': user._id,
-                'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
+                'children': serialize_child_tree(nested.get(child._id), user,
+                                                 nested) if child._id in nested.keys() else [],
                 'nodeType': 'project' if not child.parentnode_id else 'component',
                 'category': child.category,
                 'permissions': {
@@ -1117,6 +1131,7 @@ def serialize_child_tree(child_list, user, nested):
             })
 
     return sorted(serialized_children, key=lambda k: len(k['children']), reverse=True)
+
 
 def node_child_tree(user, node):
     """ Returns the serialized representation (for treebeard) of a given node and its children.
@@ -1174,12 +1189,14 @@ def node_child_tree(user, node):
 
     return serialized_nodes
 
+
 @must_be_logged_in
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     tree = node_child_tree(auth.user, node)
     return tree
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -1425,6 +1442,7 @@ def fork_pointer(auth, node, **kwargs):
             'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
         }
     }, http_status.HTTP_201_CREATED
+
 
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]
