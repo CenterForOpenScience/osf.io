@@ -71,7 +71,7 @@ def assign_affiliations_to_preprints(exclude_guids=None, dry_run=True, batch_siz
     )
 
     contributors_qs = PreprintContributor.objects.filter(
-        preprint__preprintgroupobjectpermission__permission__codename__in=['write_preprint', 'admin_preprint'],
+        preprint__preprintgroupobjectpermission__permission__codename__in=['write_preprint'],
         preprint__preprintgroupobjectpermission__group__user=F('user'),
     ).filter(
         user_has_affiliations
