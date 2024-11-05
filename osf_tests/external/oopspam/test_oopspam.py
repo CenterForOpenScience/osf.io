@@ -125,3 +125,39 @@ class TestSpam:
         )
 
         assert user.spam_status == SpamStatus.UNKNOWN
+
+    @mock.patch('osf.models.NodeLog.objects.filter')
+    def test_get_flagged_count(self, mock_filter, user):
+        from osf.external.oopspam.client import OOPSpamClient
+        from datetime import datetime
+
+        client = OOPSpamClient()
+        start_date = datetime(2024, 10, 1)
+        end_date = datetime(2024, 10, 31)
+
+        client.get_flagged_count(start_date, end_date)
+
+        mock_filter.assert_called_with(
+            action='flag_spam',
+            created__gt=start_date,
+            created__lt=end_date,
+            node__spam_data__who_flagged__in=['oopspam', 'both']
+        )
+
+    @mock.patch('osf.models.NodeLog.objects.filter')
+    def test_get_hammed_count(self, mock_filter, user):
+        from osf.external.oopspam.client import OOPSpamClient
+        from datetime import datetime
+
+        client = OOPSpamClient()
+        start_date = datetime(2024, 10, 1)
+        end_date = datetime(2024, 10, 31)
+
+        client.get_hammed_count(start_date, end_date)
+
+        mock_filter.assert_called_with(
+            action='confirm_ham',
+            created__gt=start_date,
+            created__lt=end_date,
+            node__spam_data__who_flagged__in=['oopspam', 'both']
+        )
