@@ -70,7 +70,7 @@ COPY ./admin/rdm_announcement/requirements.txt ./admin/rdm_announcement/
 COPY ./admin/rdm_statistics/requirements.txt ./admin/rdm_statistics/
 COPY ./addons/metadata/requirements.txt ./addons/metadata/
 
-RUN pip3 install pip==21.0
+RUN pip3 install pip==21.1.3
 
 RUN set -ex \
     && mkdir -p /var/www \
