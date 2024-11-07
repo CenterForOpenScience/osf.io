@@ -42,7 +42,7 @@ from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet, VersionedGuidMixin
 from .identifiers import IdentifierMixin, Identifier
 from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
@@ -107,7 +107,7 @@ class PreprintManager(models.Manager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
+class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
         Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     objects = PreprintManager()
@@ -268,6 +268,42 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     def __unicode__(self):
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
+
+    @classmethod
+    def create(cls, provider, title, creator, description, version=0):
+
+        from osf.models import Guid
+        from osf.models.base import VersionedGuidMixin, GuidVersionsThrough
+
+        if version:
+            raise NotImplementedError
+
+        base_guid = Guid.objects.create()
+        versioned_guid__id = f'{base_guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
+
+        preprint = cls(
+            provider=provider,
+            title=title,
+            creator=creator,
+            description=description,
+        )
+        preprint.save()
+
+        base_guid.referent = preprint
+        base_guid.object_id = preprint.pk
+        base_guid.content_type = ContentType.objects.get_for_model(preprint)
+        base_guid.save()
+
+        guid_version = GuidVersionsThrough(
+            referent=base_guid.referent,
+            object_id=base_guid.object_id,
+            content_type=base_guid.content_type,
+            version=version,
+            guid=base_guid
+        )
+        guid_version.save()
+
+        return preprint
 
     @property
     def is_deleted(self):

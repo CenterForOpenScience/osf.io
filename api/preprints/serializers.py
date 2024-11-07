@@ -559,8 +559,9 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
-        preprint.save()
+        # preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
+        # preprint.save()
+        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description, version=0)
 
         return self.update(preprint, validated_data)
 

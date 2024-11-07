@@ -73,7 +73,9 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True, ignore_404=False):
-        qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
+        base_guid_id = self.kwargs[self.preprint_lookup_url_kwarg].split('_v')[0]
+        print(f'>>>> base_guid_id = {base_guid_id}')
+        qs = Preprint.objects.filter(guids___id=base_guid_id, guids___id__isnull=False)
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
         except Preprint.DoesNotExist:
@@ -84,6 +86,7 @@ class PreprintMixin(NodeMixin):
         if preprint.deleted is not None:
             raise NotFound
 
+        print(f'>>>> preprint = {type(preprint)} : {preprint._id}')
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
@@ -622,7 +625,8 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
         return super().get_queryset()
 
     def get_resource(self):
-        return get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)
+        base_guid__id = self.kwargs['preprint_id'].split('_v')[0]
+        return get_object_or_error(Preprint,base_guid__id, self.request)
 
 
 class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):

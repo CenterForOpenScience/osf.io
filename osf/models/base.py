@@ -202,6 +202,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
+
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
     def __repr__(self):
@@ -222,6 +223,19 @@ class Guid(BaseModel):
         index_together = (
             ('content_type', 'object_id', 'created'),
         )
+
+
+class GuidVersionsThrough(BaseModel):
+    """A version of an GUID object.
+    """
+
+    referent = GenericForeignKey()
+    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+
+    guid = models.ForeignKey('Guid', related_name='versions', on_delete=models.CASCADE)
+
+    version = models.PositiveIntegerField(null=True, blank=True)
 
 
 class BlackListGuid(BaseModel):
@@ -443,9 +457,43 @@ class GuidMixin(BaseIDMixin):
         abstract = True
 
 
+class VersionedGuidMixin(GuidMixin):
+
+    class Meta:
+        abstract = True
+
+    GUID_VERSION_DELIMITER = '_v'
+
+    versioned_guids = GenericRelation('GuidVersionsThrough', related_name='referent', related_query_name='referents')
+
+    @property
+    def _id(self):
+        print('>>>> get _id')
+        try:
+            guid = self.guids.first()
+            version = None
+            if guid and guid.versions.exists():
+                version = guid.versions.get(object_id=self.pk).version
+                print(f'>>> version = {version}')
+        except IndexError:
+            return None
+        if guid:
+            if version is not None:
+                return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
+            return guid._id
+        return None
+
+    @_id.setter
+    def _id(self, value):
+        pass
+
+    _primary_key = _id
+
 @receiver(post_save)
 def ensure_guid(sender, instance, created, **kwargs):
     if not issubclass(sender, GuidMixin):
+        return False
+    if issubclass(sender, VersionedGuidMixin):
         return False
     existing_guids = Guid.objects.filter(object_id=instance.pk,
                                          content_type=ContentType.objects.get_for_model(instance))
