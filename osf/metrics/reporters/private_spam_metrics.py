@@ -1,4 +1,4 @@
-from osf.metrics.reports import SpamSummaryReport
+from osf.metrics.reports import PrivateSpamMetricsReport
 from osf.external.oopspam.client import OOPSpamClient
 from osf.external.askismet.client import AkismetClient
 from ._base import MonthlyReporter
@@ -13,7 +13,7 @@ class PrivateSpamMetricsReporter(MonthlyReporter):
         oopspam_client = OOPSpamClient()
         akismet_client = AkismetClient()
 
-        report = SpamSummaryReport(
+        report = PrivateSpamMetricsReport(
             report_yearmonth=str(report_yearmonth),
             node_oopspam_flagged=oopspam_client.get_flagged_count(target_month, next_month, category='node'),
             node_oopspam_hammed=oopspam_client.get_hammed_count(target_month, next_month, category='node'),

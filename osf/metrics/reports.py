@@ -214,3 +214,14 @@ class SpamSummaryReport(MonthlyReport):
     preprint_flagged = metrics.Integer()
     user_marked_as_spam = metrics.Integer()
     user_marked_as_ham = metrics.Integer()
+
+
+class PrivateSpamMetricsReport(MonthlyReport):
+    node_oopspam_flagged = metrics.Integer()
+    node_oopspam_hammed = metrics.Integer()
+    node_akismet_flagged = metrics.Integer()
+    node_akismet_hammed = metrics.Integer()
+    preprint_oopspam_flagged = metrics.Integer()
+    preprint_oopspam_hammed = metrics.Integer()
+    preprint_akismet_flagged = metrics.Integer()
+    preprint_akismet_hammed = metrics.Integer()
