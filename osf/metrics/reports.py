@@ -323,3 +323,14 @@ class PublicItemUsageReport(MonthlyReport):
         )
         _response = _search.execute()
         return _response[0] if _response else None
+
+
+class PrivateSpamMetricsReport(MonthlyReport):
+    node_oopspam_flagged = metrics.Integer()
+    node_oopspam_hammed = metrics.Integer()
+    node_akismet_flagged = metrics.Integer()
+    node_akismet_hammed = metrics.Integer()
+    preprint_oopspam_flagged = metrics.Integer()
+    preprint_oopspam_hammed = metrics.Integer()
+    preprint_akismet_flagged = metrics.Integer()
+    preprint_akismet_hammed = metrics.Integer()
