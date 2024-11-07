@@ -77,8 +77,8 @@ class TestWEKOSchema(OsfTestCase):
         assert_equal(len(lines), 6)
         assert_equal(lines[0], [
             '#ItemType',
-            'デフォルトアイテムタイプ（フル）(15)',
-            'https://localhost:8443/items/jsonschema/15',
+            'デフォルトアイテムタイプ（フル）(30002)',
+            'https://localhost:8443/items/jsonschema/30002',
         ])
         props = _transpose(lines[1::])[::-1]
 
@@ -108,19 +108,19 @@ class TestWEKOSchema(OsfTestCase):
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].accessrole', '', '', '', 'open_no'],
+            ['.metadata.item_30002_file35[0].accessrole', '', '', '', 'open_no'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].displaytype', '', '', '', 'preview'],
+            ['.metadata.item_30002_file35[0].displaytype', '', '', '', 'preview'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].filename', '', '', '', 'test.jpg'],
+            ['.metadata.item_30002_file35[0].filename', '', '', '', 'test.jpg'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].format', '', '', '', 'image/jpeg'],
+            ['.metadata.item_30002_file35[0].format', '', '', '', 'image/jpeg'],
         )
         pub_date = props.pop()
         assert_equal(
@@ -132,27 +132,27 @@ class TestWEKOSchema(OsfTestCase):
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[0].subitem_description', '', '', '', '日本語説明'],
+            ['.metadata.item_30002_description9[0].subitem_description', '', '', '', '日本語説明'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[0].subitem_description_language', '', '', '', 'ja'],
+            ['.metadata.item_30002_description9[0].subitem_description_language', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[0].subitem_description_type', '', '', '', 'Abstract'],
+            ['.metadata.item_30002_description9[0].subitem_description_type', '', '', '', 'Abstract'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617258105262.resourcetype', '', '', '', 'dataset'],
+            ['.metadata.item_30002_resource_type13.resourcetype', '', '', '', 'dataset'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186331708[0].subitem_title', '', '', '', 'ENGLISH TITLE'],
+            ['.metadata.item_30002_title0[0].subitem_title', '', '', '', 'ENGLISH TITLE'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186331708[0].subitem_title_language', '', '', '', 'en'],
+            ['.metadata.item_30002_title0[0].subitem_title_language', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
@@ -262,8 +262,8 @@ class TestWEKOSchema(OsfTestCase):
         logger.info(repr(lines))
         assert_equal(lines[0], [
             '#ItemType',
-            'デフォルトアイテムタイプ（フル）(15)',
-            'https://localhost:8443/items/jsonschema/15',
+            'デフォルトアイテムタイプ（フル）(30002)',
+            'https://localhost:8443/items/jsonschema/30002',
         ])
         props = _transpose(lines[1::])[::-1]
 
@@ -293,19 +293,19 @@ class TestWEKOSchema(OsfTestCase):
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].accessrole', '', '', '', 'open_login'],
+            ['.metadata.item_30002_file35[0].accessrole', '', '', '', 'open_login'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].displaytype', '', '', '', 'preview'],
+            ['.metadata.item_30002_file35[0].displaytype', '', '', '', 'preview'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].filename', '', '', '', 'test.jpg'],
+            ['.metadata.item_30002_file35[0].filename', '', '', '', 'test.jpg'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617605131499[0].format', '', '', '', 'image/jpeg'],
+            ['.metadata.item_30002_file35[0].format', '', '', '', 'image/jpeg'],
         )
         pub_date = props.pop()
         assert_equal(
@@ -317,156 +317,156 @@ class TestWEKOSchema(OsfTestCase):
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186476635.subitem_access_right', '', '', '', 'restricted access'],
+            ['.metadata.item_30002_access_rights4.subitem_access_right', '', '', '', 'restricted access'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186419668[0].creatorNames[0].creatorName', '', '', '', '情報太郎'],
+            ['.metadata.item_30002_creator2[0].creatorNames[0].creatorName', '', '', '', '情報太郎'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186419668[0].creatorNames[0].creatorNameLang', '', '', '', 'ja'],
+            ['.metadata.item_30002_creator2[0].creatorNames[0].creatorNameLang', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186419668[0].creatorNames[1].creatorName', '', '', '', 'Taro Joho'],
+            ['.metadata.item_30002_creator2[0].creatorNames[1].creatorName', '', '', '', 'Taro Joho'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186419668[0].creatorNames[1].creatorNameLang', '', '', '', 'en'],
+            ['.metadata.item_30002_creator2[0].creatorNames[1].creatorNameLang', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186419668[0].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher'],
+            ['.metadata.item_30002_creator2[0].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186419668[0].nameIdentifiers[0].nameIdentifierURI', '', '', '', '22222'],
+            ['.metadata.item_30002_creator2[0].nameIdentifiers[0].nameIdentifierURI', '', '', '', '22222'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[0].subitem_description', '', '', '', 'TEST DESCRIPTION'],
+            ['.metadata.item_30002_description9[0].subitem_description', '', '', '', 'TEST DESCRIPTION'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[0].subitem_description_language', '', '', '', 'en'],
+            ['.metadata.item_30002_description9[0].subitem_description_language', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[0].subitem_description_type', '', '', '', 'Abstract'],
+            ['.metadata.item_30002_description9[0].subitem_description_type', '', '', '', 'Abstract'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[1].subitem_description', '', '', '', 'テスト説明'],
+            ['.metadata.item_30002_description9[1].subitem_description', '', '', '', 'テスト説明'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[1].subitem_description_language', '', '', '', 'ja'],
+            ['.metadata.item_30002_description9[1].subitem_description_language', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186626617[1].subitem_description_type', '', '', '', 'Abstract'],
+            ['.metadata.item_30002_description9[1].subitem_description_type', '', '', '', 'Abstract'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[0].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics Hitotsubashi TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp'],
+            ['.metadata.item_30002_contributor3[0].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics Hitotsubashi TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[0].contributorNames[0].lang', '', '', '', 'en'],
+            ['.metadata.item_30002_contributor3[0].contributorNames[0].lang', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[0].contributorNames[0].nameType', '', '', '', 'Organizational'],
+            ['.metadata.item_30002_contributor3[0].contributorNames[0].nameType', '', '', '', 'Organizational'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[0].contributorType', '', '', '', 'ContactPerson'],
+            ['.metadata.item_30002_contributor3[0].contributorType', '', '', '', 'ContactPerson'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[0].contributorNames[1].contributorName', '', '', '', '国立情報学研究所 一ツ橋 TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp'],
+            ['.metadata.item_30002_contributor3[0].contributorNames[1].contributorName', '', '', '', '国立情報学研究所 一ツ橋 TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[0].contributorNames[1].lang', '', '', '', 'ja'],
+            ['.metadata.item_30002_contributor3[0].contributorNames[1].lang', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[0].contributorNames[1].nameType', '', '', '', 'Organizational'],
+            ['.metadata.item_30002_contributor3[0].contributorNames[1].nameType', '', '', '', 'Organizational'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[1].contributorNames[0].contributorName', '', '', '', 'Hanako Joho'],
+            ['.metadata.item_30002_contributor3[1].contributorNames[0].contributorName', '', '', '', 'Hanako Joho'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[1].contributorNames[0].lang', '', '', '', 'en'],
+            ['.metadata.item_30002_contributor3[1].contributorNames[0].lang', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[1].contributorType', '', '', '', 'DataManager'],
+            ['.metadata.item_30002_contributor3[1].contributorType', '', '', '', 'DataManager'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[1].contributorNames[1].contributorName', '', '', '', '情報花子'],
+            ['.metadata.item_30002_contributor3[1].contributorNames[1].contributorName', '', '', '', '情報花子'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[1].contributorNames[1].lang', '', '', '', 'ja'],
+            ['.metadata.item_30002_contributor3[1].contributorNames[1].lang', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[1].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher'],
+            ['.metadata.item_30002_contributor3[1].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[1].nameIdentifiers[0].nameIdentifierURI', '', '', '', '11111'],
+            ['.metadata.item_30002_contributor3[1].nameIdentifiers[0].nameIdentifierURI', '', '', '', '11111'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[0].subitem_rights', '', '', '', 'Test for license'],
+            ['.metadata.item_30002_rights6[0].subitem_rights', '', '', '', 'Test for license'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[0].subitem_rights_language', '', '', '', 'en'],
+            ['.metadata.item_30002_rights6[0].subitem_rights_language', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[1].subitem_rights', '', '', '', 'ライセンスのテスト'],
+            ['.metadata.item_30002_rights6[1].subitem_rights', '', '', '', 'ライセンスのテスト'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[1].subitem_rights_language', '', '', '', 'ja'],
+            ['.metadata.item_30002_rights6[1].subitem_rights_language', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[2].subitem_rights', '', '', '', '無償'],
+            ['.metadata.item_30002_rights6[2].subitem_rights', '', '', '', '無償'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[2].subitem_rights_language', '', '', '', 'ja'],
+            ['.metadata.item_30002_rights6[2].subitem_rights_language', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[3].subitem_rights', '', '', '', 'free'],
+            ['.metadata.item_30002_rights6[3].subitem_rights', '', '', '', 'free'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[3].subitem_rights_language', '', '', '', 'en'],
+            ['.metadata.item_30002_rights6[3].subitem_rights_language', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[4].subitem_rights', '', '', '', 'CC0 1.0 Universal'],
+            ['.metadata.item_30002_rights6[4].subitem_rights', '', '', '', 'CC0 1.0 Universal'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186499011[4].subitem_rights_language', '', '', '', 'en'],
+            ['.metadata.item_30002_rights6[4].subitem_rights_language', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
             [
-                '.metadata.item_1617186499011[4].subitem_rights_resource',
+                '.metadata.item_30002_rights6[4].subitem_rights_resource',
                 '',
                 '',
                 '',
@@ -475,75 +475,75 @@ class TestWEKOSchema(OsfTestCase):
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186609386[0].subitem_subject', '', '', '', 'Life Science'],
+            ['.metadata.item_30002_subject8[0].subitem_subject', '', '', '', 'Life Science'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186609386[0].subitem_subject_language', '', '', '', 'en'],
+            ['.metadata.item_30002_subject8[0].subitem_subject_language', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186609386[0].subitem_subject_scheme', '', '', '', 'e-Rad_field'],
+            ['.metadata.item_30002_subject8[0].subitem_subject_scheme', '', '', '', 'e-Rad_field'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186609386[1].subitem_subject', '', '', '', 'ライフサイエンス'],
+            ['.metadata.item_30002_subject8[1].subitem_subject', '', '', '', 'ライフサイエンス'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186609386[1].subitem_subject_language', '', '', '', 'ja'],
+            ['.metadata.item_30002_subject8[1].subitem_subject_language', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186609386[1].subitem_subject_scheme', '', '', '', 'e-Rad_field'],
+            ['.metadata.item_30002_subject8[1].subitem_subject_scheme', '', '', '', 'e-Rad_field'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617258105262.resourcetype', '', '', '', 'experimental data'],
+            ['.metadata.item_30002_resource_type13.resourcetype', '', '', '', 'experimental data'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[2].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics'],
+            ['.metadata.item_30002_contributor3[2].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[2].contributorNames[0].lang', '', '', '', 'en'],
+            ['.metadata.item_30002_contributor3[2].contributorNames[0].lang', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[2].contributorType', '', '', '', 'HostingInstitution'],
+            ['.metadata.item_30002_contributor3[2].contributorType', '', '', '', 'HostingInstitution'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[2].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'ROR'],
+            ['.metadata.item_30002_contributor3[2].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'ROR'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[2].nameIdentifiers[0].nameIdentifierURI', '', '', '', 'https://ror.org/04ksd4g47'],
+            ['.metadata.item_30002_contributor3[2].nameIdentifiers[0].nameIdentifierURI', '', '', '', 'https://ror.org/04ksd4g47'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[2].contributorNames[1].contributorName', '', '', '', '国立情報学研究所'],
+            ['.metadata.item_30002_contributor3[2].contributorNames[1].contributorName', '', '', '', '国立情報学研究所'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617349709064[2].contributorNames[1].lang', '', '', '', 'ja'],
+            ['.metadata.item_30002_contributor3[2].contributorNames[1].lang', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186331708[0].subitem_title', '', '', '', 'TEST DATA'],
+            ['.metadata.item_30002_title0[0].subitem_title', '', '', '', 'TEST DATA'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186331708[0].subitem_title_language', '', '', '', 'en'],
+            ['.metadata.item_30002_title0[0].subitem_title_language', '', '', '', 'en'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186331708[1].subitem_title', '', '', '', 'テストデータ'],
+            ['.metadata.item_30002_title0[1].subitem_title', '', '', '', 'テストデータ'],
         )
         assert_equal(
             props.pop(),
-            ['.metadata.item_1617186331708[1].subitem_title_language', '', '', '', 'ja'],
+            ['.metadata.item_30002_title0[1].subitem_title_language', '', '', '', 'ja'],
         )
         assert_equal(
             props.pop(),
