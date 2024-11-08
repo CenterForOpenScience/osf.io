@@ -39,7 +39,6 @@ from api.metrics.renderers import (
     MetricsReportsCsvRenderer,
     MetricsReportsTsvRenderer,
     MetricsReportsJsonRenderer,
-    MetricsReportsJsonDirectDownloadRenderer,
 )
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
@@ -565,7 +564,6 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
         MetricsReportsCsvRenderer,
         MetricsReportsTsvRenderer,
         MetricsReportsJsonRenderer,
-        MetricsReportsJsonDirectDownloadRenderer,
     )
 
     serializer_class = NewInstitutionUserMetricsSerializer

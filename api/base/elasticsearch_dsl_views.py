@@ -1,11 +1,13 @@
 from __future__ import annotations
 import abc
+import datetime
 import typing
 
 import elasticsearch_dsl as edsl
-from rest_framework import generics
-from rest_framework import exceptions as drf_exceptions
+from rest_framework import generics, exceptions as drf_exceptions
 from rest_framework.settings import api_settings as drf_settings
+from api.base.settings.defaults import REPORT_FILENAME_FORMAT
+
 if typing.TYPE_CHECKING:
     from rest_framework import serializers
 
@@ -15,9 +17,9 @@ from api.metrics.renderers import (
     MetricsReportsCsvRenderer,
     MetricsReportsTsvRenderer,
     MetricsReportsJsonRenderer,
-    MetricsReportsJsonDirectDownloadRenderer,
 )
 from api.base.pagination import ElasticsearchListViewPagination, JSONAPIPagination
+from api.base.renderers import JSONAPIRenderer
 
 
 class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, abc.ABC):
@@ -40,18 +42,36 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
         '''
         ...
 
+
+    FILE_RENDERER_CLASSES = {
+        MetricsReportsCsvRenderer,
+        MetricsReportsTsvRenderer,
+        MetricsReportsJsonRenderer,
+    }
+
+    def set_content_disposition(self, response, renderer: str):
+        """Set Content-Disposition header for file downloads."""
+        current_date = datetime.datetime.now().strftime('%Y-%m')
+        filename = REPORT_FILENAME_FORMAT.format(
+            view_name=self.view_name,
+            date_created=current_date,
+            extension='json' if isinstance(renderer, JSONAPIRenderer) else renderer.extension,
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        if isinstance(request.accepted_renderer, tuple(self.FILE_RENDERER_CLASSES)):
+            self.set_content_disposition(response, request.accepted_renderer)
+
+        return response
+
     ###
     # beware! inheritance shenanigans below
 
     # override FilterMixin to disable all operators besides 'eq' and 'ne'
     MATCHABLE_FIELDS = ()
     COMPARABLE_FIELDS = ()
-    FILE_RENDERER_CLASSES = {
-        MetricsReportsCsvRenderer,
-        MetricsReportsTsvRenderer,
-        MetricsReportsJsonRenderer,
-        MetricsReportsJsonDirectDownloadRenderer,
-    }
     DEFAULT_OPERATOR_OVERRIDES = {}
     # (if you want to add fulltext-search or range-filter support, remove the override
     #  and update `__add_search_filter` to handle those operators -- tho note that the

@@ -438,7 +438,7 @@ class TestNewInstitutionUserMetricList:
         expected_filename = REPORT_FILENAME_FORMAT.format(
             view_name='institution-user-metrics',
             date_created=current_date,
-            format_type=format_type
+            extension=format_type
         )
         assert resp.headers['Content-Disposition'] == f'attachment; filename="{expected_filename}"'
 
@@ -536,7 +536,7 @@ class TestNewInstitutionUserMetricList:
         expected_filename = REPORT_FILENAME_FORMAT.format(
             view_name='institution-user-metrics',
             date_created=current_date,
-            format_type=format_type
+            extension=format_type
         )
         assert resp.headers['Content-Disposition'] == f'attachment; filename="{expected_filename}"'
 
@@ -598,7 +598,7 @@ class TestNewInstitutionUserMetricList:
         expected_filename = REPORT_FILENAME_FORMAT.format(
             view_name='institution-user-metrics',
             date_created=current_date,
-            format_type='json'
+            extension='json'
         )
         assert resp.headers['Content-Disposition'] == f'attachment; filename="{expected_filename}"'
 
@@ -622,102 +622,6 @@ class TestNewInstitutionUserMetricList:
             }
         ]
         assert response_data == expected_data
-
-    def test_get_report_format_direct_json(self, app, url, institutional_admin, institution):
-        # Create multiple reports
-        _report_factory(
-            '2024-08',
-            institution,
-            user_id='u_orcomma',
-            account_creation_date='2018-02',
-            user_name='Brian Dawkins',
-            orcid_id='4444-3333-2222-1111',
-            department_name='Safety "The Wolverine" Weapon X',
-            storage_byte_count=736662999298,
-            embargoed_registration_count=1,
-            published_preprint_count=1,
-            public_registration_count=2,
-            public_project_count=3,
-            public_file_count=4,
-            private_project_count=5,
-            month_last_active='2018-02',
-            month_last_login='2018-02',
-        )
-        _report_factory(
-            '2024-08',
-            institution,
-            user_id='u_second',
-            account_creation_date='2018-03',
-            user_name='Randall Cunningham',
-            orcid_id='3333-2222-1111-0000',
-            department_name='Department of Athletics',
-            storage_byte_count=500000000,
-            embargoed_registration_count=0,
-            published_preprint_count=0,
-            public_registration_count=1,
-            public_project_count=2,
-            public_file_count=1,
-            private_project_count=1,
-            month_last_active='2018-03',
-            month_last_login='2018-03',
-        )
-        _report_factory(
-            '2024-08',
-            institution,
-            user_id='u_third',
-            account_creation_date='2018-04',
-            user_name='Reggie White',
-            orcid_id='2222-1111-0000-5555',
-            department_name='Minister of Defense',
-            storage_byte_count=1000000000,
-            embargoed_registration_count=2,
-            published_preprint_count=2,
-            public_registration_count=3,
-            public_project_count=4,
-            public_file_count=5,
-            private_project_count=6,
-            month_last_active='2018-04',
-            month_last_login='2018-04',
-        )
-
-        # Request with `page[size]=2` to verify pagination
-        resp = app.get(f'{url}?format=direct_download&page[size]=2', auth=institutional_admin.auth)
-        assert resp.status_code == 200
-        assert resp.headers['Content-Type'] == 'application/json; charset=utf-8'
-
-        current_date = datetime.datetime.now().strftime('%Y-%m')
-        expected_filename = REPORT_FILENAME_FORMAT.format(
-            view_name='institution-user-metrics',
-            date_created=current_date,
-            format_type='json'
-        )
-        assert resp.headers['Content-Disposition'] == f'attachment; filename="{expected_filename}"'
-        assert len(resp.json['data']) == 2  # Expect 2 items only
-
-        # Check attributes and relationships for one of the entries
-        entry = resp.json['data'][0]
-        assert 'attributes' in entry
-        assert entry['attributes']['user_name'] in {'Brian Dawkins', 'Randall Cunningham', 'Reggie White'}
-        assert 'relationships' in entry
-        assert 'user' in entry['relationships']
-        assert 'institution' in entry['relationships']
-        assert 'related' in entry['relationships']['user']['links']
-        assert entry['relationships']['user']['links']['related']['href'].startswith('http://localhost:8000/v2/users/')
-        assert entry['relationships']['institution']['data']['id'] == institution._id
-
-        # Request without `page[size]` to verify all reports are returned
-        resp = app.get(f'{url}?format=direct_download', auth=institutional_admin.auth)
-        assert resp.status_code == 200
-        assert resp.headers['Content-Type'] == 'application/json; charset=utf-8'
-        assert resp.headers['Content-Disposition'] == f'attachment; filename="{expected_filename}"'
-
-        # Validate that the response includes all 3 entries since `page[size]` is not set
-        assert len(resp.json['data']) == 3  # Expect all 3 items
-
-        # Further validation on user names
-        assert {entry['attributes']['user_name'] for entry in resp.json['data']} == {
-            'Brian Dawkins', 'Randall Cunningham', 'Reggie White'
-        }
 
 
 def _user_ids(api_response):
