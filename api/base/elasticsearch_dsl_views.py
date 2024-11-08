@@ -18,7 +18,7 @@ from api.metrics.renderers import (
     MetricsReportsTsvRenderer,
     MetricsReportsJsonRenderer,
 )
-from api.base.pagination import ElasticsearchListViewPagination, JSONAPIPagination
+from api.base.pagination import ElasticsearchQuerySizeMaximumPagination, JSONAPIPagination
 from api.base.renderers import JSONAPIRenderer
 
 
@@ -97,7 +97,7 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
         page_size_param = getattr(super().pagination_class, 'page_size_query_param', 'page[size]')
 
         if is_file_download and not self.request.query_params.get(page_size_param):
-            return ElasticsearchListViewPagination
+            return ElasticsearchQuerySizeMaximumPagination
         return JSONAPIPagination
 
     def get_queryset(self):

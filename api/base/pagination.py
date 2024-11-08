@@ -173,7 +173,7 @@ class MaxSizePagination(JSONAPIPagination):
     page_size_query_param = None
 
 
-class ElasticsearchListViewPagination(JSONAPIPagination):
+class ElasticsearchQuerySizeMaximumPagination(JSONAPIPagination):
     page_size = MAX_SIZE_OF_ES_QUERY
     max_page_size = MAX_SIZE_OF_ES_QUERY
     page_size_query_param = None
