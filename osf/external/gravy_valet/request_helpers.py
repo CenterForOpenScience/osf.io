@@ -181,7 +181,7 @@ def get_gv_result_json(
         request_method=request_method,
         params=params,
     ).json()
-    if not response_json['data']:
+    if not response_json.get('data'):
         return dict()
     return response_json['data']
 
