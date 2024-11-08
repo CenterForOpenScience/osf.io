@@ -34,6 +34,7 @@ from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.routing import json_renderer, proxy_url
 from framework.transactions.handlers import no_auto_transaction
+from osf.models.base import VersionedGuidMixin
 from website import mails
 from website import settings
 from addons.base import signals as file_signals
@@ -309,8 +310,12 @@ def decrypt_and_decode_jwt_payload():
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
 
-def get_authenticated_resource(resource_id):
-    resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
+def get_authenticated_resource(resource_id, guid_version=None):
+    if guid_version is not None:
+        # TODO: will it be faster if we query GUIDVersionsThrough?
+        resource = Guid.load(resource_id).versions.get(version=guid_version).referent
+    else:
+        resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
@@ -390,8 +395,15 @@ def get_auth(auth, **kwargs):
     waterbutler_data = decrypt_and_decode_jwt_payload()
 
     # Authenticate the resource based on the node_id and handle potential draft nodes
-    resource = get_authenticated_resource(waterbutler_data['nid'])
-
+    nid = waterbutler_data.get('nid')
+    # TODO: turn this into a class method helper: guid_id, version = checkGuidVersion(...)
+    if not VersionedGuidMixin.GUID_VERSION_DELIMITER in nid:
+        resource = get_authenticated_resource(nid)
+    else:
+        # TODO: needs exception handling
+        base_guid = nid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+        version = nid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]
+        resource = get_authenticated_resource(base_guid, guid_version=version)
     # Authenticate the user using cookie or Oauth if possible
     authenticate_user_if_needed(auth, waterbutler_data, resource)
 
