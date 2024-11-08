@@ -541,10 +541,18 @@ def create_waterbutler_log(payload, **kwargs):
             auth = payload['auth']
             # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
-                guid = Guid.load(payload['metadata'].get('nid'))
-                if guid:
-                    node = guid.referent
-                return {'status': 'success'}
+                guid_id = payload['metadata'].get('nid')
+                if not VersionedGuidMixin.GUID_VERSION_DELIMITER in guid_id:
+                    guid = Guid.load(guid_id)
+                    if guid:
+                        node = guid.referent
+                else:
+                    # TODO: needs exception handling
+                    base_guid_id = guid_id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+                    guid_version = guid_id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]
+                    guid = Guid.load(base_guid_id)
+                    if guid:
+                        node = guid.versions.get(version=guid_version).referent
 
             user = OSFUser.load(auth['id'])
             if user is None:
