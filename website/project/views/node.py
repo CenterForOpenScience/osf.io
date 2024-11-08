@@ -17,6 +17,7 @@ from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from osf.external.gravy_valet.request_helpers import get_citation_url_list
+from osf.external.gravy_valet.translations import EphemeralAddonConfig
 from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
@@ -714,12 +715,12 @@ def _render_addons(addons):
 
     for addon in addons:
         configs[addon.config.short_name] = addon.config.to_json()
-        # if not isinstance(addon.config, EphemeralAddonConfig):
-        js.extend(addon.config.include_js.get('widget', []))
-        css.extend(addon.config.include_css.get('widget', []))
+        if not isinstance(addon.config, EphemeralAddonConfig):
+            js.extend(addon.config.include_js.get('widget', []))
+            css.extend(addon.config.include_css.get('widget', []))
 
-        js.extend(addon.config.include_js.get('files', []))
-        css.extend(addon.config.include_css.get('files', []))
+            js.extend(addon.config.include_js.get('files', []))
+            css.extend(addon.config.include_css.get('files', []))
 
     return widgets, configs, js, css
 
@@ -755,6 +756,8 @@ def _view_project(node, auth, primary=False,
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     addons = list(node.get_addons())
+    for i in addons:
+        print(i.__dict__)
     widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
 

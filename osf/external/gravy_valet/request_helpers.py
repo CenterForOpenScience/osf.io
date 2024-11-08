@@ -31,6 +31,8 @@ RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
 ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
 ACCOUNT_OWNER_PATH = 'base_account.account_owner'
 ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
+# ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH = 'external_citation_service'
+# ADDON_EXTERNAL_CITATIONS_SERVICE_PATH = 'base_account.external_citation_service'
 
 CITATION_ITEM_TYPE_ALIASES = {
     'COLLECTION': 'folder',
@@ -107,11 +109,17 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
     if not resource_result:
         return None
     yield from iterate_gv_results(
-        endpoint_url=resource_result.get_related_link('configured_storage_addons'),
+        endpoint_url=resource_result.get_related_link('configured_citation_addons'),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
+    # yield from iterate_gv_results(
+    #     endpoint_url=resource_result.get_related_link('configured_storage_addons'),
+    #     requesting_user=requesting_user,
+    #     requested_resource=requested_resource,
+    #     params={'include': ADDON_EXTERNAL_SERVICE_PATH}
+    # )
 
 
 def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
@@ -252,7 +260,7 @@ def _get_gv_response(auth, addon, project, list_id):
         'relationships': {
             'thru_addon': {
                 'data': {
-                    'type': addon['type'],
+                    'type': 'configured-addons',
                     'id': addon['id']
                 }
             }
@@ -437,15 +445,16 @@ def _extract_relationships(jsonapi_relationships_data):
     '''Converts  the `relationship entrie from a JSONAPI into a dict of JSONAPIRelationships keyed by name.'''
     relationships_by_name = {}
     for relationship_name, relationship_entry in jsonapi_relationships_data.items():
-        related_data = relationship_entry.get('data', {})
-        related_type = related_data.get('type')
-        related_id = related_data.get('id')
-        related_link = relationship_entry['links']['related']
-        relationships_by_name[relationship_name] = JSONAPIRelationship(
-            relationship_name=relationship_name,
-            related_link=related_link,
-            related_type=related_type,
-            related_id=related_id
-        )
+        if relationship_entry is not None:
+            related_data = relationship_entry.get('data') or {}
+            related_type = related_data.get('type')
+            related_id = related_data.get('id')
+            related_link = relationship_entry['links']['related']
+            relationships_by_name[relationship_name] = JSONAPIRelationship(
+                relationship_name=relationship_name,
+                related_link=related_link,
+                related_type=related_type,
+                related_id=related_id
+            )
 
     return relationships_by_name

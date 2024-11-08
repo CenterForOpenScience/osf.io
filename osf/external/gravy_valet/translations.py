@@ -13,9 +13,11 @@ from addons.figshare.apps import FigshareAddonAppConfig
 from addons.github.apps import GitHubAddonConfig
 from addons.gitlab.apps import GitLabAddonConfig
 from addons.googledrive.apps import GoogleDriveAddonConfig
+from addons.zotero.apps import ZoteroAddonAppConfig
+from addons.mendeley.apps import MendeleyAddonConfig
+from addons.s3.apps import S3AddonAppConfig
 from addons.onedrive.apps import OneDriveAddonAppConfig
 from addons.owncloud.apps import OwnCloudAddonAppConfig
-from addons.s3.apps import S3AddonAppConfig
 from . import request_helpers as gv_requests
 
 if TYPE_CHECKING:
@@ -36,6 +38,8 @@ class _LegacyConfigsForWBKey(enum.Enum):
     onedrive = OneDriveAddonAppConfig
     owncloud = OwnCloudAddonAppConfig
     s3 = S3AddonAppConfig
+    zotero = ZoteroAddonAppConfig
+    mendeley = MendeleyAddonConfig
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
@@ -75,18 +79,11 @@ class EphemeralAddonConfig:
     label: str
     short_name: str
     full_name: str
-    include_js: dict = None
-    include_css: dict = None
+    has_widget: bool = False
 
     def __post_init__(self):
-        self.include_js = {
-            'widget': [],
-            'page': [],
-        }
-        self.include_css = {
-            'widget': [],
-            'page': [],
-        }
+        if self.short_name in ['zotero', 'mendeley']:
+            self.has_widget = True
 
     @property
     def icon_url(self):
