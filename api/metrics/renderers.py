@@ -76,7 +76,7 @@ class MetricsReportsTsvRenderer(MetricsReportsRenderer):
     CSV_DIALECT = csv.excel_tab
 
 
-class MetricsReportsJsonRenderer(MetricsReportsRenderer):
+class MetricsReportsJsonRenderer(renderers.BaseRenderer):
     format = 'json_report'
     extension = 'json'
     media_type = 'application/json'
