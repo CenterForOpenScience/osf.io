@@ -1,13 +1,13 @@
+import csv
 import io
 import json
-import csv
-from rest_framework import renderers
 from django.http import Http404
 
-# Helper functions for nested key extraction
+from rest_framework import renderers
+
+
+# put these fields first, then sort the rest alphabetically
 PRIORITIZED_FIELDNAMES = {'report_date', 'report_yearmonth', 'timestamp'}
-
-
 def csv_fieldname_sortkey(fieldname):
     return (
         (fieldname not in PRIORITIZED_FIELDNAMES),  # False ordered before True
@@ -44,21 +44,22 @@ def get_csv_row(keys_list, report_attrs):
 
 class MetricsReportsRenderer(renderers.BaseRenderer):
     def render(self, json_response, accepted_media_type=None, renderer_context=None):
-        serialized_reports = (jsonapi_resource['attributes'] for jsonapi_resource in json_response['data'])
-
+        serialized_reports = (
+            jsonapi_resource['attributes']
+            for jsonapi_resource in json_response['data']
+        )
         try:
             first_row = next(serialized_reports)
         except StopIteration:
             raise Http404('<h1>none found</h1>')
-
         csv_fieldnames = list(get_nested_keys(first_row))
         csv_filecontent = io.StringIO(newline='')
         csv_writer = csv.writer(csv_filecontent, dialect=self.CSV_DIALECT)
         csv_writer.writerow(csv_fieldnames)
-
         for serialized_report in (first_row, *serialized_reports):
-            csv_writer.writerow(get_csv_row(csv_fieldnames, serialized_report))
-
+            csv_writer.writerow(
+                get_csv_row(csv_fieldnames, serialized_report),
+            )
         return csv_filecontent.getvalue()
 
 

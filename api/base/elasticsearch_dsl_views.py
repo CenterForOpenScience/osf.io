@@ -42,7 +42,6 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
         '''
         ...
 
-
     FILE_RENDERER_CLASSES = {
         MetricsReportsCsvRenderer,
         MetricsReportsTsvRenderer,
@@ -50,18 +49,34 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     }
 
     def set_content_disposition(self, response, renderer: str):
-        """Set Content-Disposition header for file downloads."""
+        """Set the Content-Disposition header to prompt a file download with the appropriate filename.
+
+        Args:
+            response: The HTTP response object to modify.
+            renderer: The renderer instance used for the response, which determines the file extension.
+        """
         current_date = datetime.datetime.now().strftime('%Y-%m')
+
+        if isinstance(renderer, JSONAPIRenderer):
+            extension = 'json'
+        else:
+            extension = getattr(renderer, 'extension', renderer.format)
+
         filename = REPORT_FILENAME_FORMAT.format(
             view_name=self.view_name,
             date_created=current_date,
-            extension='json' if isinstance(renderer, JSONAPIRenderer) else renderer.extension,
+            extension=extension,
         )
+
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     def finalize_response(self, request, response, *args, **kwargs):
+        # Call the parent method to finalize the response first
         response = super().finalize_response(request, response, *args, **kwargs)
-        if isinstance(request.accepted_renderer, tuple(self.FILE_RENDERER_CLASSES)):
+        # Check if this is a direct download request or file renderer classes, set to the Content-Disposition header
+        # so filename and attachment for browser download
+        direct_download = request.query_params.get('direct_download')
+        if isinstance(request.accepted_renderer, tuple(self.FILE_RENDERER_CLASSES)) or direct_download:
             self.set_content_disposition(response, request.accepted_renderer)
 
         return response
@@ -94,9 +109,12 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
             self.request.accepted_renderer.format == renderer.format
             for renderer in self.FILE_RENDERER_CLASSES
         )
-        page_size_param = getattr(super().pagination_class, 'page_size_query_param', 'page[size]')
 
-        if is_file_download and not self.request.query_params.get(page_size_param):
+        direct_download = self.request.query_params.get('direct_download')  # preserve pagination with direct download
+
+        page_size_param = getattr(super().pagination_class, 'page_size_query_param', 'page[size]')
+        # if it's a direct download of the JSON respect default page size
+        if is_file_download and not self.request.query_params.get(page_size_param) and not direct_download:
             return ElasticsearchQuerySizeMaximumPagination
         return JSONAPIPagination
 
