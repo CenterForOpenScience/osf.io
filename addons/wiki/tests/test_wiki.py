@@ -1895,29 +1895,23 @@ class TestWikiImport(OsfTestCase):
         result = views._validate_import_duplicated_directry(info_list)
         self.assertEqual(result, ['folder1'])
 
+    def test_validate_import_wiki_exists_duplicated_valid_no_change(self):
+        info = {'wiki_name': 'importpagec', 'path': '/importpagea/importpagec', 'status': 'valid'}
+        result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
+        self.assertEqual(result['status'], 'valid')
+        self.assertTrue(can_start_import)
+
     def test_validate_import_wiki_exists_duplicated_valid_exists_status_change(self):
-        global can_start_import
-        can_start_import = True
         info = {'wiki_name': 'importpagea', 'path': '/importpagea', 'status': 'valid'}
         result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
         self.assertEqual(result['status'], 'valid_exists')
         self.assertFalse(can_start_import)
 
     def test_validate_import_wiki_exists_duplicated_valid_duplicated_status_change(self):
-        global can_start_import
-        can_start_import = True
         info = {'wiki_name': 'importpageb', 'path': '/importpagea/importpageb', 'status': 'valid'}
         result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
         self.assertEqual(result['status'], 'valid_duplicated')
         self.assertFalse(can_start_import)
-
-    def test_validate_import_wiki_exists_duplicated_valid_no_change(self):
-        global can_start_import
-        can_start_import = True
-        info = {'wiki_name': 'importpagec', 'path': '/importpagea/importpagec', 'status': 'valid'}
-        result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
-        self.assertEqual(result['status'], 'valid')
-        self.assertTrue(can_start_import)
 
     def test_validate_import_folder_invalid(self):
         folder = BaseFileNode.objects.get(name='importpagex')
