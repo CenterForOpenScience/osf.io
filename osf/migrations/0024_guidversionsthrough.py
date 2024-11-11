@@ -12,13 +12,12 @@ def migrate_preprints_single(apps, schema_editor):
 
     content_type_id = ContentType.objects.get_for_model(Preprint).id
 
-    preprints_qs = Preprint.objects.all()
+    GUID = apps.get_model("osf", "GUID")
 
-    for p in preprints_qs:
-        guid = p.guids.first()
-
+    guids = GUID.objects.filter(content_type_id=content_type_id)
+    for guid in guids:
         if not guid.versions.exists():
-            guid.versions.create(object_id=p.id, version=1, content_type_id=content_type_id)
+            guid.versions.create(object_id=guid.object_id, version=1, content_type_id=content_type_id)
 
 
 class Migration(migrations.Migration):
