@@ -1056,16 +1056,19 @@ def _check_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_ma
         another_wiki_name = file_name.split('^')[0]
         file_name = file_name.split('^')[1]
         # check as wikiName/fileName
-        file_id = _process_attachment_file_name_exist(another_wiki_name, file_name, dir_id, node_file_mapping)
+        file_id = _process_attachment_file_name_exist(another_wiki_name, file_name, dir_id, node_file_mapping, True)
     else:
         # check as fileName
         file_id = _process_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_mapping)
 
     return file_id
 
-def _process_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_mapping):
+def _process_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_mapping, is_another_wiki_file=False):
     # check as fileName
-    replaced_wiki_name = _replace_common_rule(wiki_name)
+    if is_another_wiki_file:
+        replaced_wiki_name = _replace_common_rule(wiki_name)
+    else:
+        replaced_wiki_name = wiki_name
     replaced_file_name = _replace_common_rule(file_name)
     wiki_file_name = unicodedata.normalize('NFC', f'{replaced_wiki_name}^{replaced_file_name}')
     try:
