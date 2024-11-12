@@ -295,7 +295,18 @@ def resolve_guid(guid, suffix=None):
 
     # Retrieve guid data if present, error if missing
     try:
-        resource = Guid.objects.get(_id=guid.lower()).referent
+        base_guid = guid.split('_v')[0]
+        base_guid_obj = Guid.objects.get(_id=base_guid.lower())
+
+        # returns the latest version if no version is specified
+        if base_guid_obj.is_versioned:
+            version = guid.split('_v')[1] if len(guid.split('_v')) > 1 else None
+            if version:
+                resource = base_guid_obj.versions.filter(version=version).first().referent
+            else:
+                resource = base_guid_obj.versions.order_by('-version').first().referent
+        else:
+            resource = Guid.objects.get(_id=base_guid.lower()).referent
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
