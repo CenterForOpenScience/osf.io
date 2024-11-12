@@ -90,6 +90,7 @@ var OPERATIONS = {
 };
 
 var isInUploadFolderProcess = false;
+var isOngoingUploadFolder = false;
 
 // Cross browser key codes for the Command key
 var COMMAND_KEYS = [224, 17, 91, 93];
@@ -1088,7 +1089,18 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
     }
-    treebeard.dropzone.options.queuecomplete(file);
+
+    // Do not display dialog when upload folder is on-going
+    if (!isOngoingUploadFolder) {
+        treebeard.dropzone.options.queuecomplete(file);
+    } else {
+        if (msgText !== 'Upload canceled.') {
+            $osf.growl(
+                'Error',
+                msgText
+            );
+        }
+    }
 }
 
 /**
@@ -1193,31 +1205,33 @@ function _uploadFolderEvent(event, item, mode, col) {
         if (!item.data.provider) {
             return;
         }
-
-        // call api get used quota and max quota
-        quota = $.ajax({
-            async: false,
-            method: 'GET',
-            url: item.data.nodeApiUrl + 'get_creator_quota/',
-        });
-
-        if (!quota.responseJSON) {
-            return;
-        }
-
-        quota = quota.responseJSON;
-
         // check upload quota for upload folder
-        if (parseFloat(quota.used) + parseFloat(totalFilesSize) > quota.max) {
-            $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
-            formatProperUnit(totalFilesSize)),
-            'danger', 5000);
-            return;
+        if (item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') {
+            // call api get used quota and max quota
+            quota = $.ajax({
+                async: false,
+                method: 'GET',
+                url: item.data.nodeApiUrl + 'get_creator_quota/',
+            });
+
+            if (!quota.responseJSON) {
+                return;
+            }
+
+            quota = quota.responseJSON;
+
+            if (parseFloat(quota.used) + parseFloat(totalFilesSize) > quota.max) {
+                $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
+                formatProperUnit(totalFilesSize)),
+                'danger', 5000);
+                return;
+            }
         }
 
         var createdFolders = [];
         // Start
         isInUploadFolderProcess = true;
+        isOngoingUploadFolder = true;
         var parentFolderList = [];
         var parentPath = '/';
         for (var index = 0; index < files.length; index++) {
@@ -1337,6 +1351,8 @@ function _uploadFolderEvent(event, item, mode, col) {
                     if (data && (data.code === 409 || data.code === 406)) {
                         $osf.growl(data.message);
                         m.redraw();
+                    } else if (data && (data.code === 401)) {
+                        window.location.href = '/login';
                     } else {
                         $osf.growl(gettext('Folder creation failed.'));
                     }
@@ -2918,7 +2934,7 @@ function _fangornQueueComplete(treebeard) {
             m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
         ]), m('', [m('h3.break-word.modal-title', gettext('Upload Status')), m('p', total - failed + '/' + total + gettext(' files succeeded.'))]));
         $('[data-toggle="tooltip"]').tooltip();
-    } else {
+    } else if (!isOngoingUploadFolder) {
         fileStatuses.map(function(status) {
            if (!status.success) {
                 if (status.message !== 'Upload canceled.') {
@@ -2930,6 +2946,7 @@ function _fangornQueueComplete(treebeard) {
            }
         });
     }
+    isOngoingUploadFolder = false;
 }
 
 /**
@@ -3475,7 +3492,7 @@ tbOptions = {
                     return false;
                 }
             }
-            if (item.data.provider === 'osfstorage' && !isInUploadFolderProcess || item.data.provider === 's3compatinstitutions') {
+            if ((item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') && !isInUploadFolderProcess) {
                 quota = $.ajax({
                     async: false,
                     method: 'GET',
@@ -3611,6 +3628,7 @@ Fangorn.ButtonEvents = {
     _removeEvent : _removeEvent,
     createFolder : _createFolder,
     _gotoFileEvent : gotoFileEvent,
+    _uploadFolderEvent : _uploadFolderEvent,
 };
 
 Fangorn.DefaultColumns = {
