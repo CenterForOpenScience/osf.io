@@ -217,6 +217,10 @@ class Guid(BaseModel):
         except cls.DoesNotExist:
             return None
 
+    @property
+    def is_versioned(self):
+        return hasattr(self, 'versions')
+
     class Meta:
         ordering = ['-created']
         get_latest_by = 'created'
@@ -468,13 +472,11 @@ class VersionedGuidMixin(GuidMixin):
 
     @property
     def _id(self):
-        print('>>>> get _id')
         try:
             guid = self.guids.first()
             version = None
             if guid and guid.versions.exists():
                 version = guid.versions.get(object_id=self.pk).version
-                print(f'>>> version = {version}')
         except IndexError:
             return None
         if guid:
