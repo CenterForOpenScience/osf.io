@@ -51,7 +51,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         return get_object_or_error(
             Guid,
-            self.kwargs['guids'],
+            self.kwargs['guids'].split('_v')[0],  # .split('_v')[0] to support versioned preprints
             self.request,
             display_name='guid',
         )

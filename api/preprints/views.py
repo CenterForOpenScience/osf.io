@@ -73,8 +73,15 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True, ignore_404=False):
-        base_guid_id = self.kwargs[self.preprint_lookup_url_kwarg].split('_v')[0]
-        qs = Preprint.objects.filter(guids___id=base_guid_id, guids___id__isnull=False)
+        preprint_lookup_data = self.kwargs[self.preprint_lookup_url_kwarg].split('_v')
+
+        base_guid_id = preprint_lookup_data[0]
+        preprint_version = preprint_lookup_data[1] if len(preprint_lookup_data) > 1 else None
+
+        qs = Preprint.objects.filter(guids___id=base_guid_id, guids___id__isnull=False).order_by('-guids__versions__version')
+        if preprint_version:
+            qs = qs.filter(guids__versions__version=preprint_version)
+
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
         except Preprint.DoesNotExist:
