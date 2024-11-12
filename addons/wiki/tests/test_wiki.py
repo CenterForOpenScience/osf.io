@@ -2727,7 +2727,7 @@ class TestWikiImportReplace(OsfTestCase):
         match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
         notation = 'image'
         match_path, tooltip_match = views._exclude_tooltip(match['path'])
-        expected_content = f'Wiki content with ![]({website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render "tooltip1")'
+        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render> "tooltip1")'
         result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
 
@@ -2738,6 +2738,46 @@ class TestWikiImportReplace(OsfTestCase):
         notation = 'image'
         match_path, tooltip_match = views._exclude_tooltip(match['path'])
         expected_content = f'Wiki content with ![]({website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render)'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_size_with_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip2" =200)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render =200> "tooltip2")'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_size_without_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png =200)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with ![]({website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render =200)'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_invalid_size_with_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip" =abcde)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = wiki_content_image_tooltip
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_invalid_size_without_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png =abcde)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = wiki_content_image_tooltip
         result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
 
@@ -3052,6 +3092,51 @@ class TestExcludeTooltip(OsfTestCase):
         result_path, result_tooptip = views._exclude_tooltip(match_path)
         self.assertEqual(result_path, expected_path)
         self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_single_quote_tooltip_size(self):
+        match_path = "test.png 'tooltip' =200"
+        expected_path = 'test.png =200'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_double_quote_tooltip_size(self):
+        match_path = 'test.png "tooltip" =200'
+        expected_path = 'test.png =200'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_no_tooltip_with_size(self):
+        match_path = 'test.png =200'
+        expected_path = 'test.png =200'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertIsNone(result_tooptip)
+
+class TestSplitImageAndSize(OsfTestCase):
+    def test_filename(self):
+        match_path = 'test.png'
+        expected_path = 'test.png'
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, '')
+
+    def test_filename_size(self):
+        match_path = 'test.png =200'
+        expected_path = 'test.png'
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, ' =200')
+
+    def test_filename_invalid_size(self):
+        match_path = 'test.png =abcde'
+        expected_path = match_path
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, '')
 
 class TestExtractErrMsg(OsfTestCase):
     def test_err_with_tab(self):

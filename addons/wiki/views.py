@@ -1005,7 +1005,8 @@ def _check_wiki_name_exist(node, checked_name, node_file_mapping, import_wiki_na
 
 def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, match_path, tooltip_match, node_file_mapping):
     # check whether attachment file or not
-    file_id = _check_attachment_file_name_exist(wiki_name, match_path, dir_id, node_file_mapping)
+    file_name, image_size = _split_image_and_size(match_path)
+    file_id = _check_attachment_file_name_exist(wiki_name, file_name, dir_id, node_file_mapping)
     if file_id:
         # replace process of file name
         node_guid = node.guids.first()._id
@@ -1013,9 +1014,9 @@ def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, m
             url = website_settings.WATERBUTLER_URL + '/v1/resources/' + node_guid + '/providers/osfstorage/' + file_id + '?mode=render'
             #wurl = waterbutler_api_url_for(node_guid, 'osfstorage', path='/{}?mode=render'.format(file_id), _internal=True)
             if tooltip_match:
-                wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](' + url + ' "' + tooltip_match['tooltip'] + '")')
+                wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](<' + url + image_size + '> "' + tooltip_match['tooltip'] + '")')
             else:
-                wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](' + url + ')')
+                wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](' + url + image_size + ')')
         elif notation == 'link':
             url = website_settings.DOMAIN + node_guid + '/files/osfstorage/' + file_id
             if tooltip_match:
@@ -1023,6 +1024,19 @@ def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, m
             else:
                 wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](' + url + ')')
     return wiki_content
+
+def _split_image_and_size(file_name):
+    parts = file_name.rsplit(" =", 1)
+    if len(parts) == 1:
+        return file_name, ''
+    d_file_name = parts[0]
+    image_size = ' =' + parts[1]
+    pattern = r'^ =(\d+%?)x?(\d*%?)?$'
+    match = re.match(pattern, image_size)
+    if match:
+        return d_file_name, image_size
+    else:
+        return file_name, ''
 
 def _exclude_symbols(path):
     has_slash = '/' in path
@@ -1040,12 +1054,17 @@ def _exclude_tooltip(match_path):
     # exclude tooltip
     if match_tooltip_single or match_tooltip_double:
         if match_tooltip_single:
-            exclude_tooltop_match = match_tooltip_single[0]
-            exclude_tooltip_path = exclude_tooltop_match['path']
+            exclude_tooltip_match = match_tooltip_single[0]
+            exclude_tooltip_path = exclude_tooltip_match['path']
         elif match_tooltip_double:
-            exclude_tooltop_match = match_tooltip_double[0]
-            exclude_tooltip_path = exclude_tooltop_match['path']
-        return exclude_tooltip_path, exclude_tooltop_match
+            exclude_tooltip_match = match_tooltip_double[0]
+            exclude_tooltip_path = exclude_tooltip_match['path']
+        rest_of_path = match_path[exclude_tooltip_match.end():]
+        size_match = re.search(r' =(.+)$', rest_of_path)
+
+        if size_match:
+            exclude_tooltip_path += size_match.group(0) 
+        return exclude_tooltip_path, exclude_tooltip_match
     else:
         return match_path, None
 
