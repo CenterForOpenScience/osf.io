@@ -83,6 +83,8 @@ def upload_attachments(user, node, attachments):
 
 def is_valid_email(email):
     try:
+        if email.startswith('tmp_eppn_'):
+            return True
         validate_email(email)
         return True
     except ValidationError:

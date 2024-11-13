@@ -120,7 +120,7 @@
                         <label for="primary_email" class="nowrap">{% trans "Email address" %}</label>
                         <input type="email" class="form-control flex-item" name="primary_email"
                                maxlength="255" minlength="6"
-                               pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
+                               pattern="^(tmp_eppn_.*|\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+)$"
                                title="{% trans 'Please enter an email address' %}"
                                id="primary_email" placeholder="{% trans "Email" %}">
                     </div>

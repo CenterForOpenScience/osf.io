@@ -26,6 +26,9 @@ DOMAIN_REGEX = re.compile(
 
 
 def validate_email(email):
+    if email.startswith('tmp_eppn_'):
+        return True
+
     BlacklistedEmailDomain = apps.get_model('osf.BlacklistedEmailDomain')
     if len(email) > 254:
         raise ValidationError('Invalid Email')
