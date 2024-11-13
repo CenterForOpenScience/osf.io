@@ -11,6 +11,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error, is_truthy
 from api.guids.serializers import GuidSerializer
 from osf.models import Guid
+from osf.models.base import VersionedGuidMixin
 
 
 class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -51,7 +52,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         return get_object_or_error(
             Guid,
-            self.kwargs['guids'],
+            self.kwargs['guids'].split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0],  # .split('_v')[0] to support versioned preprints
             self.request,
             display_name='guid',
         )
