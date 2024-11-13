@@ -201,7 +201,7 @@ def iterate_gv_results(
         request_method=request_method,
         params=params
     ).json()
-    if not response_json['data']:
+    if not response_json.get('data'):
         return  # empty iterator
     included_entities_lookup = _format_included_entities(response_json.get('included', []))
     for entry in response_json['data']:

@@ -296,7 +296,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.BAD_REQUEST
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__noncontributor__public_resource(self, fake_gv, noncontributor, resource, configured_addon, subpath):
+    def test_validate_resource__noncontributor__public_resource(self, fake_gv, noncontributor, resource,
+                                                                configured_addon, subpath):
         resource.is_public = True
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -314,7 +315,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__noncontributor__private_resource(self, fake_gv, noncontributor, resource, configured_addon, subpath):
+    def test_validate_resource__noncontributor__private_resource(self, fake_gv, noncontributor, resource,
+                                                                 configured_addon, subpath):
         resource.is_public = False
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -332,7 +334,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__unauthenticated_user__public_resource(self, fake_gv, resource, configured_addon, subpath):
+    def test_validate_resource__unauthenticated_user__public_resource(self, fake_gv, resource, configured_addon,
+                                                                      subpath):
         resource.is_public = True
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -349,7 +352,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__unauthenticated_user__private_resource(self, fake_gv, resource, configured_addon, subpath):
+    def test_validate_resource__unauthenticated_user__private_resource(self, fake_gv, resource, configured_addon,
+                                                                       subpath):
         resource.is_public = False
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -371,7 +375,7 @@ class TestRequestHelpers:
 
     @pytest.fixture
     def fake_gv(self):
-        #validate_headers == True by default
+        # validate_headers == True by default
         return gv_fakes.FakeGravyValet()
 
     @pytest.fixture
@@ -478,7 +482,8 @@ class TestRequestHelpers:
             for retrieved_addon in addons_iterator:
                 configured_addon = expected_addons.pop(retrieved_addon.resource_id)
                 assert retrieved_addon.get_attribute('display_name') == configured_addon.display_name
-                assert retrieved_addon.get_included_member('base_account').resource_id == configured_addon.base_account.pk
+                assert retrieved_addon.get_included_member(
+                    'base_account').resource_id == configured_addon.base_account.pk
                 assert retrieved_addon.get_included_attribute(
                     include_path=('base_account', 'external_storage_service'),
                     attribute_name='display_name'

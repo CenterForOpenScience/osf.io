@@ -7,7 +7,6 @@ import unittest
 from django.utils import timezone
 from django.dispatch import receiver
 
-
 from flask import Flask
 import blinker
 
@@ -47,10 +46,10 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_throttle_period_expired_using_datetime(self):
         timestamp = timezone.now()
-        is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
+        is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)), throttle=30)
         assert not is_expired
 
-        is_expired = throttle_period_expired(timestamp=(timestamp - datetime.timedelta(seconds=31)),  throttle=30)
+        is_expired = throttle_period_expired(timestamp=(timestamp - datetime.timedelta(seconds=31)), throttle=30)
         assert is_expired
 
     def test_throttle_period_expired_using_timestamp_in_seconds(self):
@@ -60,6 +59,7 @@ class TestTimeUtils(unittest.TestCase):
 
         is_expired = throttle_period_expired(timestamp=(timestamp - 31), throttle=30)
         assert is_expired
+
 
 class TestUrlForHelpers(unittest.TestCase):
 
@@ -137,7 +137,7 @@ class TestUrlForHelpers(unittest.TestCase):
             assert '/project/pid123/' == web_url_for('dummy_guid_project_view', pid='pid123')
             # check /project/<pid>/node/<nid>
             assert '/nid321/' == web_url_for('dummy_guid_project_view', pid='pid123',
-                                                                 nid='nid321', _guid=True)
+                                             nid='nid321', _guid=True)
             assert '/project/pid123/node/nid321/' == web_url_for('dummy_guid_project_view', pid='pid123',
                                                                  nid='nid321', _guid=False)
             assert '/project/pid123/node/nid321/' == web_url_for('dummy_guid_project_view',
@@ -184,7 +184,8 @@ class TestUrlForHelpers(unittest.TestCase):
             # check /profile/<pid>
             assert '/ø∆≤µ©/' != web_url_for('dummy_guid_profile_view', pid='ø∆≤µ©', _guid=True)
             assert '/profile/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/' == web_url_for(''
-                                                     'dummy_guid_profile_view', pid='øˆ∆≤µˆ', _guid=True)
+                                                                                         'dummy_guid_profile_view',
+                                                                                         pid='øˆ∆≤µˆ', _guid=True)
 
     def test_api_url_for_with_multiple_urls(self):
         with self.app.test_request_context():
@@ -219,7 +220,8 @@ class TestUrlForHelpers(unittest.TestCase):
     def test_waterbutler_api_url_for_internal(self):
         settings.WATERBUTLER_INTERNAL_URL = 'http://1.2.3.4:7777'
         with self.app.test_request_context():
-            url = waterbutler_api_url_for('fakeid', 'provider', '/path', _internal=True, base_url=settings.WATERBUTLER_INTERNAL_URL)
+            url = waterbutler_api_url_for('fakeid', 'provider', '/path', _internal=True,
+                                          base_url=settings.WATERBUTLER_INTERNAL_URL)
 
         assert settings.WATERBUTLER_URL not in url
         assert settings.WATERBUTLER_INTERNAL_URL in url
@@ -330,11 +332,13 @@ class TestWebsiteUtils(unittest.TestCase):
             if check and checkFn(item):
                 return item
             return 0
+
         inputs = list(range(5))
         outputs = rapply(inputs, zero_if_not_check, True, checkFn=lambda n: n % 2)
         assert outputs == [0, 1, 0, 3, 0]
         outputs = rapply(inputs, zero_if_not_check, False, checkFn=lambda n: n % 2)
         assert outputs == [0, 0, 0, 0, 0]
+
 
 class TestProjectUtils(OsfTestCase):
 

@@ -16,10 +16,10 @@ from osf.models import OSFUser, AbstractNode
 from osf.utils import permissions as osf_permissions
 from website import settings
 
-
 logger = logging.getLogger(__name__)
 
 INCLUDE_REGEX = r'(\?include=(?P<include_param>.+))'
+
 
 class FakeGVError(Exception):
 
@@ -30,7 +30,6 @@ class FakeGVError(Exception):
 
 @dataclasses.dataclass(frozen=True)
 class _FakeGVEntity:
-
     RESOURCE_TYPE: typing.ClassVar[str]
     pk: int
 
@@ -70,9 +69,9 @@ class _FakeGVEntity:
             relationship_entry['data'] = {'type': related_type, 'id': related_pk}
         return relationship_entry
 
+
 @dataclasses.dataclass(frozen=True)
 class _FakeUserReference(_FakeGVEntity):
-
     RESOURCE_TYPE = 'user-references'
     uri: str
 
@@ -80,12 +79,17 @@ class _FakeUserReference(_FakeGVEntity):
         return {'user_uri': self.uri}
 
     def _serialize_relationships(self):
-        accounts_relationship = self._format_relationship_entry(relationship_path='authorized_storage_accounts')
-        return {'authorized_storage_accounts': accounts_relationship}
+        accounts_storage_relationship = self._format_relationship_entry(relationship_path='authorized_storage_accounts')
+        accounts_citation_relationship = self._format_relationship_entry(
+            relationship_path='authorized_citation_accounts')
+        return {
+            'authorized_storage_accounts': accounts_storage_relationship,
+            'authorized_citation_accounts': accounts_citation_relationship
+        }
+
 
 @dataclasses.dataclass(frozen=True)
 class _FakeWBCredentials(_FakeGVEntity):
-
     RESOURCE_TYPE = 'waterbutler-credentials'
     config: dict
 
@@ -95,9 +99,9 @@ class _FakeWBCredentials(_FakeGVEntity):
     def _serialize_relationships(self):
         return {}
 
+
 @dataclasses.dataclass(frozen=True)
 class _FakeResourceReference(_FakeGVEntity):
-
     RESOURCE_TYPE = 'resource-references'
     uri: str
 
@@ -105,15 +109,21 @@ class _FakeResourceReference(_FakeGVEntity):
         return {'resource_uri': self.uri}
 
     def _serialize_relationships(self):
-        configured_addons_relationship = self._format_relationship_entry(relationship_path='configured_storage_addons')
-        return {'configured_storage_addons': configured_addons_relationship}
+        configured_storage_addons_relationship = self._format_relationship_entry(
+            relationship_path='configured_storage_addons')
+        configured_citation_addons_relationship = self._format_relationship_entry(
+            relationship_path='configured_citation_addons')
+        return {
+            'configured_storage_addons': configured_storage_addons_relationship,
+            'configured_citation_addons': configured_citation_addons_relationship
+        }
+
 
 @dataclasses.dataclass(frozen=True)
 class _FakeAddonProvider(_FakeGVEntity):
-
     RESOURCE_TYPE = 'external-storage-services'
     name: str
-    max_upload_mb: int = 2**10
+    max_upload_mb: int = 2 ** 10
     max_concurrent_uploads: int = -5
     icon_url: str = 'vetted-url-for-icon.png'
     wb_key: str = None
@@ -137,11 +147,15 @@ class _FakeAddonProvider(_FakeGVEntity):
         }
 
 
+class _FakeCitationAddonProvider(_FakeAddonProvider):
+    RESOURCE_TYPE = 'external-citation-services'
+
+
 @dataclasses.dataclass(frozen=True)
 class _FakeAccount(_FakeGVEntity):
-
-    RESOURCE_TYPE = 'authorized-storage-accounts'
-    external_storage_service: _FakeAddonProvider
+    RESOURCE_TYPE = 'authorized-accounts'
+    external_storage_service: _FakeAddonProvider | None
+    external_citation_service: _FakeCitationAddonProvider | None
     account_owner_pk: int
     display_name: str = ''
 
@@ -161,29 +175,44 @@ class _FakeAccount(_FakeGVEntity):
         }
 
     def _serialize_relationships(self):
-        return {
+        _serialized_relationships = {
             'account_owner': self._format_relationship_entry(
                 relationship_path='account_owner',
                 related_type=_FakeUserReference.RESOURCE_TYPE,
                 related_pk=self.account_owner_pk
             ),
-            'external_storage_service': self._format_relationship_entry(
-                relationship_path='external_storage_service',
-                related_type=_FakeAddonProvider.RESOURCE_TYPE,
-                related_pk=self.external_storage_service.pk
-            ),
-            'configured_storage_addons': self._format_relationship_entry(
-                relationship_path='configured_storage_addons'
-            ),
             'authorized_operations': self._format_relationship_entry(
                 relationship_path='authorized_operations'
             ),
         }
+        if self.external_citation_service is not None:
+            _serialized_relationships.update({
+                'external_citation_service': self._format_relationship_entry(
+                    relationship_path='external_citation_service',
+                    related_type=_FakeCitationAddonProvider.RESOURCE_TYPE,
+                    related_pk=self.external_storage_service.pk
+                ),
+                'configured_citation_addons': self._format_relationship_entry(
+                    relationship_path='configured_citation_addons'
+                )
+            })
+        if self.external_storage_service is not None:
+            _serialized_relationships.update({
+                'external_storage_service': self._format_relationship_entry(
+                    relationship_path='external_storage_service',
+                    related_type=_FakeAddonProvider.RESOURCE_TYPE,
+                    related_pk=self.external_storage_service.pk
+                ),
+                'configured_storage_addons': self._format_relationship_entry(
+                    relationship_path='configured_storage_addons'
+                ),
+            })
+        return _serialized_relationships
+
 
 @dataclasses.dataclass(frozen=True)
 class _FakeAddon(_FakeGVEntity):
-
-    RESOURCE_TYPE = 'configured-storage-addons'
+    RESOURCE_TYPE = 'configured-addons'
     resource_pk: int
     base_account: _FakeAccount
     display_name: str = ''
@@ -218,6 +247,11 @@ class _FakeAddon(_FakeGVEntity):
                 related_type=_FakeAddonProvider.RESOURCE_TYPE,
                 related_pk=self.base_account.external_storage_service.pk
             ),
+            'external_citation_service': self._format_relationship_entry(
+                relationship_path='external_citation_service',
+                related_type=_FakeCitationAddonProvider.RESOURCE_TYPE,
+                related_pk=self.base_account.external_storage_service.pk
+            ),
             'connected_operations': self._format_relationship_entry(
                 relationship_path='connected_operations'
             ),
@@ -225,15 +259,18 @@ class _FakeAddon(_FakeGVEntity):
 
 
 class FakeGravyValet:
-
     ROUTES = {
         r'v1/user-references(/(?P<pk>\d+)|(\?filter\[user_uri\]=(?P<user_uri>[^&]+)))': '_get_user',
         r'v1/resource-references(/(?P<pk>\d+)|(\?filter\[resource_uri\]=(?P<resource_uri>[^&]+)))': '_get_resource',
         r'v1/authorized-storage-accounts/(?P<pk>\d+)': '_get_account',
+        r'v1/authorized-citation-accounts/(?P<pk>\d+)': '_get_citation_account',
         r'v1/configured-storage-addons/(?P<pk>\d+)': '_get_addon',
+        r'v1/configured-citation-addons/(?P<pk>\d+)': '_get_citation_addon',
         r'v1/configured-storage-addons/(?P<pk>\d+)/waterbutler-credentials': '_get_wb_settings',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts': '_get_user_accounts',
+        r'v1/user-references/(?P<user_pk>\d+)/authorized_citation_accounts': '_get_user_citation_accounts',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons': '_get_resource_addons',
+        r'v1/resource-references/(?P<resource_pk>\d+)/configured_citation_addons': '_get_resource_citation_addons',
     }
 
     def __init__(self):
@@ -285,40 +322,53 @@ class FakeGravyValet:
             self._known_resources[resource_pk] = resource_uri
         return resource_uri, resource_pk
 
-    def configure_fake_provider(self, provider_name: str, **service_attrs) -> _FakeAddonProvider:
+    def configure_fake_provider(self, provider_name: str, is_citation_provider: bool = False,
+                                **service_attrs) -> _FakeAddonProvider:
         known_provider = self._known_providers.get(provider_name)
         provider_pk = known_provider.pk if known_provider else len(self._known_providers) + 1
-        new_provider = _FakeAddonProvider(
-            name=provider_name,
-            pk=provider_pk,
-            **service_attrs
-        )
+        if is_citation_provider:
+            new_provider = _FakeCitationAddonProvider(
+                name=provider_name,
+                pk=provider_pk,
+                **service_attrs
+            )
+        else:
+            new_provider = _FakeAddonProvider(
+                name=provider_name,
+                pk=provider_pk,
+                **service_attrs
+            )
         self._known_providers[provider_name] = new_provider
         return new_provider
 
     def configure_fake_account(
-        self,
-        user: OSFUser,
-        addon_name: str,
-        **account_attrs
+            self,
+            user: OSFUser,
+            addon_name: str,
+            **account_attrs
     ) -> _FakeAccount:
         user_uri, user_pk = self._get_or_create_user_entry(user)
         account_pk = _get_nested_count(self._user_accounts) + 1
         connected_provider = self._known_providers[addon_name]
+        if isinstance(connected_provider, _FakeCitationAddonProvider):
+            account_attrs['external_storage_service'] = None
+            account_attrs['external_citation_service'] = connected_provider
+        else:
+            account_attrs['external_storage_service'] = connected_provider
+            account_attrs['external_citation_service'] = None
         new_account = _FakeAccount(
             pk=account_pk,
             account_owner_pk=user_pk,
-            external_storage_service=connected_provider,
             **account_attrs
         )
         self._user_accounts.setdefault(user_pk, []).append(new_account)
         return new_account
 
     def configure_fake_addon(
-        self,
-        resource: AbstractNode,
-        connected_account: _FakeAccount,
-        **config_attrs
+            self,
+            resource: AbstractNode,
+            connected_account: _FakeAccount,
+            **config_attrs
     ) -> _FakeAddon:
         resource_uri, resource_pk = self._get_or_create_resource_entry(resource)
         addon_pk = _get_nested_count(self._resource_addons) + 1
@@ -370,11 +420,11 @@ class FakeGravyValet:
         return (HTTPStatus.NOT_FOUND, {}, '')
 
     def _get_user(
-        self,
-        headers: dict,
-        pk=None,  # str | None
-        user_uri=None,  # str | None
-        include_param: str = '',
+            self,
+            headers: dict,
+            pk=None,  # str | None
+            user_uri=None,  # str | None
+            include_param: str = '',
     ) -> str:
         if bool(pk) == bool(user_uri):
             raise FakeGVError(HTTPStatus.BAD_REQUEST)
@@ -398,10 +448,10 @@ class FakeGravyValet:
         )
 
     def _get_wb_settings(
-        self,
-        headers: dict,
-        pk: str,
-        include_param: str = '',
+            self,
+            headers: dict,
+            pk: str,
+            include_param: str = '',
     ) -> str:
         creds = _FakeWBCredentials(
             pk=10,
@@ -413,11 +463,11 @@ class FakeGravyValet:
         return _format_response_body(creds)
 
     def _get_resource(
-        self,
-        headers: dict,
-        pk=None,  # str | None
-        resource_uri=None,  # str | None
-        include_param: str = '',
+            self,
+            headers: dict,
+            pk=None,  # str | None
+            resource_uri=None,  # str | None
+            include_param: str = '',
     ) -> str:
         if bool(pk) == bool(resource_uri):
             raise FakeGVError(HTTPStatus.BAD_REQUEST)
@@ -441,10 +491,10 @@ class FakeGravyValet:
         )
 
     def _get_account(
-        self,
-        headers: dict,
-        pk: str,
-        include_param: str = '',
+            self,
+            headers: dict,
+            pk: str,
+            include_param: str = '',
     ) -> str:
         pk = int(pk)
         account = None
@@ -460,17 +510,45 @@ class FakeGravyValet:
         if self.validate_headers:
             user_uri = self._known_users[account.account_owner_pk]
             _validate_user(user_uri, headers)
+        if account.external_storage_service is not None:
+            return _format_response_body(
+                data=account,
+                list_view=False,
+                include_param=include_param,
+            )
 
-        return _format_response_body(
-            data=account,
-            list_view=False,
-            include_param=include_param,
-        )
+    def _get_citation_account(
+            self,
+            headers: dict,
+            pk: str,
+            include_param: str = '',
+    ) -> str:
+        pk = int(pk)
+        account = None
+        for account in itertools.chain.from_iterable(self._user_accounts.values()):
+            if account.pk == pk:
+                account = account
+                break
+
+        if not account:
+            logger.critical('Account not found')
+            raise FakeGVError(HTTPStatus.NOT_FOUND)
+
+        if self.validate_headers:
+            user_uri = self._known_users[account.account_owner_pk]
+            _validate_user(user_uri, headers)
+        if account.external_citation_service is not None:
+            return _format_response_body(
+                data=account,
+                list_view=False,
+                include_param=include_param,
+            )
+        return _format_response_body(data=[], list_view=True)
 
     def _get_addon(
-        self, headers: dict,
-        pk: str,
-        include_param: str = '',
+            self, headers: dict,
+            pk: str,
+            include_param: str = '',
     ) -> str:
         pk = int(pk)
         addon = None
@@ -492,11 +570,37 @@ class FakeGravyValet:
             include_param=include_param,
         )
 
+    def _get_citation_addon(
+            self, headers: dict,
+            pk: str,
+            include_param: str = '',
+    ) -> str:
+        pk = int(pk)
+        addon = None
+        for addon in itertools.chain.from_iterable(self._resource_addons.values()):
+            if addon.pk == pk:
+                addon = addon
+                break
+
+        if not addon:
+            raise FakeGVError(HTTPStatus.NOT_FOUND)
+
+        if self.validate_headers:
+            resource_uri = self._known_resources[addon.resource_pk]
+            _validate_resource_access(resource_uri, headers)
+        if addon.base_account.external_citation_service is not None:
+            return _format_response_body(
+                data=addon,
+                list_view=False,
+                include_param=include_param,
+            )
+        return _format_response_body(data=[], list_view=True)
+
     def _get_user_accounts(
-        self,
-        headers: dict,
-        user_pk: str,
-        include_param: str = '',
+            self,
+            headers: dict,
+            user_pk: str,
+            include_param: str = '',
     ) -> str:
         user_pk = int(user_pk)
         if self.validate_headers:
@@ -509,11 +613,30 @@ class FakeGravyValet:
             include_param=include_param
         )
 
+    def _get_user_citation_accounts(
+            self,
+            headers: dict,
+            user_pk: str,
+            include_param: str = '',
+    ) -> str:
+        user_pk = int(user_pk)
+        if self.validate_headers:
+            user_uri = self._known_users[user_pk]
+            _validate_user(user_uri, headers)
+        if all(map(lambda x: x.external_citation_service is not None,
+                   self._user_accounts.get(user_pk, []))):
+            return _format_response_body(
+                data=self._user_accounts.get(user_pk, []),
+                list_view=True,
+                include_param=include_param
+            )
+        return _format_response_body(data=[], list_view=True)
+
     def _get_resource_addons(
-        self,
-        headers: dict,
-        resource_pk: str,
-        include_param: str = '',
+            self,
+            headers: dict,
+            resource_pk: str,
+            include_param: str = '',
     ) -> str:
         resource_pk = int(resource_pk)
         if self.validate_headers:
@@ -526,13 +649,34 @@ class FakeGravyValet:
             list_view=True,
         )
 
+    def _get_resource_citation_addons(
+            self,
+            headers: dict,
+            resource_pk: str,
+            include_param: str = '',
+    ) -> str:
+        resource_pk = int(resource_pk)
+        if self.validate_headers:
+            resource_uri = self._known_resources[resource_pk]
+            _validate_resource_access(resource_uri, headers)
+        if all(map(lambda x: x.base_account.external_citation_service is not None,
+                   self._resource_addons.get(resource_pk, []))):
+            return _format_response_body(
+                data=self._resource_addons.get(resource_pk, []),
+                include_param=include_param,
+                list_view=True,
+            )
+        return _format_response_body(data=[], list_view=True)
+
 
 def _format_response_body(
-    data,  # _FakeGVEntity | list[_FakeGVEntity]
-    list_view: bool = False,
-    include_param='',
+        data,  # _FakeGVEntity | list[_FakeGVEntity]
+        list_view: bool = False,
+        include_param='',
 ) -> str:
     """Formates the stringified json body for responses."""
+    if not data:
+        return json.dumps({'data': [] if list_view else None})
     if list_view:
         if not isinstance(data, list):
             data = [data]
@@ -560,7 +704,7 @@ def _format_includes(data, includes):
                 included_entry = getattr(source_object, member)
                 included_data.add(included_entry)
                 source_object = included_entry
-    return [included_entity.serialize() for included_entity in included_data]
+    return [included_entity.serialize() for included_entity in included_data if included_entity]
 
 
 def _get_nested_count(d):  # dict[Any, Any] -> int:
