@@ -46,6 +46,7 @@ class TestCampaignInitialization(OsfTestCase):
             'osf-registries',
             'osf-registered-reports',
             'agu_conference_2023',
+            'agu_conference',
         ]
         self.refresh = timezone.now()
         campaigns.CAMPAIGNS = None  # force campaign refresh now that preprint providers are populated
