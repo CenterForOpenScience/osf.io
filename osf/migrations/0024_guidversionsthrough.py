@@ -6,6 +6,20 @@ import django_extensions.db.fields
 import osf.models.base
 
 
+def migrate_preprints_single(apps, schema_editor):
+    ContentType = apps.get_model('contenttypes', "ContentType")
+    Preprint = apps.get_model("osf", "Preprint")
+
+    content_type_id = ContentType.objects.get_for_model(Preprint).id
+
+    GUID = apps.get_model("osf", "GUID")
+
+    guids = GUID.objects.filter(content_type_id=content_type_id)
+    for guid in guids:
+        if not guid.versions.exists():
+            guid.versions.create(object_id=guid.object_id, version=1, content_type_id=content_type_id)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -30,4 +44,5 @@ class Migration(migrations.Migration):
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
+        # migrations.RunPython(migrate_preprints_single),
     ]
