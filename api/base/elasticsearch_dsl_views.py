@@ -75,8 +75,7 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
         response = super().finalize_response(request, response, *args, **kwargs)
         # Check if this is a direct download request or file renderer classes, set to the Content-Disposition header
         # so filename and attachment for browser download
-        direct_download = request.query_params.get('direct_download')
-        if isinstance(request.accepted_renderer, tuple(self.FILE_RENDERER_CLASSES)) or direct_download:
+        if isinstance(request.accepted_renderer, tuple(self.FILE_RENDERER_CLASSES)):
             self.set_content_disposition(response, request.accepted_renderer)
 
         return response
@@ -109,12 +108,8 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
             self.request.accepted_renderer.format == renderer.format
             for renderer in self.FILE_RENDERER_CLASSES
         )
-
-        direct_download = self.request.query_params.get('direct_download')  # preserve pagination with direct download
-
-        page_size_param = getattr(super().pagination_class, 'page_size_query_param', 'page[size]')
-        # if it's a direct download of the JSON respect default page size
-        if is_file_download and not self.request.query_params.get(page_size_param) and not direct_download:
+        # if it's a file download of the JSON respect default page size
+        if is_file_download:
             return ElasticsearchQuerySizeMaximumPagination
         return JSONAPIPagination
 
