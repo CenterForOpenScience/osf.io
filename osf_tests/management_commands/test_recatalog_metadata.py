@@ -2,11 +2,9 @@ import datetime
 import pytest
 from unittest import mock
 from operator import attrgetter
-import random
 
 from django.core.management import call_command
 
-from osf.models.metadata import GuidMetadataRecord
 from osf_tests.factories import (
     PreprintProviderFactory,
     PreprintFactory,
@@ -78,21 +76,6 @@ class TestRecatalogMetadata:
         ])))
 
     @pytest.fixture
-    def items_with_custom_datacite_type(self, preprints, registrations, projects, files):
-        _nonpreprint_sample = [
-            random.choice(_items)
-            for _items in (registrations, projects, files)
-        ]
-        for _item in _nonpreprint_sample:
-            _guid_record = GuidMetadataRecord.objects.for_guid(_item)
-            _guid_record.resource_type_general = 'BookChapter'  # datacite resourceTypeGeneral value
-            _guid_record.save()
-        return {
-            *preprints,  # every preprint has datacite type "Preprint"
-            *_nonpreprint_sample,
-        }
-
-    @pytest.fixture
     def decatalog_items(self, registrations):
         _user = UserFactory(allow_indexing=False)
         _registration = RegistrationFactory(is_public=False, creator=_user)
@@ -119,7 +102,6 @@ class TestRecatalogMetadata:
         projects,
         files,
         users,
-        items_with_custom_datacite_type,
         decatalog_items,
     ):
         def _actual_osfids() -> set[str]:
@@ -203,16 +185,6 @@ class TestRecatalogMetadata:
             '--chunk-count=2',
         )
         assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(registrations[2:6])
-
-        mock_update_share_task.reset_mock()
-
-        # datacite custom types
-        call_command(
-            'recatalog_metadata',
-            '--datacite-custom-types',
-        )
-        _expected_osfids = set(_iter_osfids(items_with_custom_datacite_type))
-        assert _expected_osfids == _actual_osfids()
 
         mock_update_share_task.reset_mock()
 
