@@ -3,6 +3,7 @@
 SHARE/Trove accepts metadata records as "indexcards" in turtle format: https://www.w3.org/TR/turtle/
 """
 from functools import partial
+from http import HTTPStatus
 import logging
 import random
 from urllib.parse import urljoin
@@ -17,7 +18,11 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.encryption import ensure_bytes
 from framework.sentry import log_exception
 from osf import models as osf_db
-from osf.metadata.tools import pls_gather_metadata_file
+from osf.metadata.osf_gathering import (
+    OsfmapPartition,
+    pls_get_magic_metadata_basket,
+)
+from osf.metadata.serializers import get_metadata_serializer
 from website import settings
 
 
@@ -25,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def shtrove_ingest_url():
-    return f'{settings.SHARE_URL}api/v3/ingest'
+    return f'{settings.SHARE_URL}trove/ingest'
 
 
 def sharev2_push_url():
@@ -69,83 +74,100 @@ def _enqueue_update_share(osfresource):
         enqueue_task(async_update_resource_share.s(_osfguid_value))
 
 
-@celery_app.task(bind=True, max_retries=4, acks_late=True)
-def task__update_share(self, guid: str, is_backfill=False):
+@celery_app.task(
+    bind=True,
+    acks_late=True,
+    max_retries=4,
+    retry_backoff=True,
+)
+def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN'):
     """
-    This function updates share  takes Preprints, Projects and Registrations.
-    :param self:
-    :param guid:
-    :return:
+    Send SHARE/trove current metadata record(s) for the osf-guid-identified object
     """
-    resp = _do_update_share(guid, is_backfill=is_backfill)
+    _osfmap_partition = OsfmapPartition[osfmap_partition_name]
+    _osfid_instance = apps.get_model('osf.Guid').load(guid)
+    if _osfid_instance is None:
+        raise ValueError(f'unknown osfguid "{guid}"')
+    _resource = _osfid_instance.referent
+    _is_deletion = _should_delete_indexcard(_resource)
+    _response = (
+        pls_delete_trove_record(_resource, osfmap_partition=_osfmap_partition)
+        if _is_deletion
+        else pls_send_trove_record(
+            _resource,
+            is_backfill=is_backfill,
+            osfmap_partition=_osfmap_partition,
+        )
+    )
     try:
-        resp.raise_for_status()
+        _response.raise_for_status()
     except Exception as e:
-        if self.request.retries == self.max_retries:
-            log_exception(e)
-        elif resp.status_code >= 500:
-            try:
-                self.retry(
-                    exc=e,
-                    countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
+        log_exception(e)
+        if HTTPStatus(_response.status_code).is_server_error:
+            raise self.retry(exc=e)
+    else:  # success response
+        if not _is_deletion:
+            # enqueue followup task for supplementary metadata
+            _next_partition = _next_osfmap_partition(_osfmap_partition)
+            if _next_partition is not None:
+                task__update_share.delay(
+                    guid,
+                    is_backfill=is_backfill,
+                    osfmap_partition_name=_next_partition.name,
                 )
-            except Retry as e:  # Retry is only raise after > 5 retries
-                log_exception(e)
-        else:
-            log_exception(e)
-
-    return resp
 
 
-def pls_send_trove_indexcard(osf_item, *, is_backfill=False):
+def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: OsfmapPartition):
     try:
         _iri = osf_item.get_semantic_iri()
     except (AttributeError, ValueError):
         raise ValueError(f'could not get iri for {osf_item}')
-    _metadata_record = pls_gather_metadata_file(osf_item, 'turtle')
+    _basket = pls_get_magic_metadata_basket(osf_item)
+    _serializer = get_metadata_serializer(
+        format_key='turtle',
+        basket=_basket,
+        serializer_config={'osfmap_partition': osfmap_partition},
+    )
+    _serialized_record = _serializer.serialize()
     _queryparams = {
         'focus_iri': _iri,
-        'record_identifier': _shtrove_record_identifier(osf_item),
+        'record_identifier': _shtrove_record_identifier(osf_item, osfmap_partition),
     }
     if is_backfill:
-        _queryparams['nonurgent'] = True
+        _queryparams['nonurgent'] = ''
+    if osfmap_partition.is_supplementary:
+        _queryparams['is_supplementary'] = ''
+        _expiration_date = osfmap_partition.get_expiration_date(_basket)
+        if _expiration_date is not None:
+            _queryparams['expiration_date'] = str(_expiration_date)
     return requests.post(
         shtrove_ingest_url(),
         params=_queryparams,
         headers={
-            'Content-Type': _metadata_record.mediatype,
+            'Content-Type': _serializer.mediatype,
             **_shtrove_auth_headers(osf_item),
         },
-        data=ensure_bytes(_metadata_record.serialized_metadata),
+        data=ensure_bytes(_serialized_record),
     )
 
 
-def pls_delete_trove_indexcard(osf_item):
+def pls_delete_trove_record(osf_item, osfmap_partition: OsfmapPartition):
     return requests.delete(
         shtrove_ingest_url(),
         params={
-            'record_identifier': _shtrove_record_identifier(osf_item),
+            'record_identifier': _shtrove_record_identifier(osf_item, osfmap_partition),
         },
         headers=_shtrove_auth_headers(osf_item),
     )
 
 
-def _do_update_share(osfguid: str, *, is_backfill=False):
-    logger.debug('%s._do_update_share("%s", is_backfill=%s)', __name__, osfguid, is_backfill)
-    _guid_instance = apps.get_model('osf.Guid').load(osfguid)
-    if _guid_instance is None:
-        raise ValueError(f'unknown osfguid "{osfguid}"')
-    _resource = _guid_instance.referent
-    _response = (
-        pls_delete_trove_indexcard(_resource)
-        if _should_delete_indexcard(_resource)
-        else pls_send_trove_indexcard(_resource, is_backfill=is_backfill)
+def _shtrove_record_identifier(osf_item, osfmap_partition: OsfmapPartition):
+    _id = osf_item.guids.values_list('_id', flat=True).first()
+    return (
+        f'{_id}/{osfmap_partition.name}'
+        if osfmap_partition.is_supplementary
+        else _id
     )
-    return _response
-
-
-def _shtrove_record_identifier(osf_item):
-    return osf_item.guids.values_list('_id', flat=True).first()
 
 
 def _shtrove_auth_headers(osf_item):
@@ -180,6 +202,16 @@ def _is_item_public(guid_referent) -> bool:
     if hasattr(guid_referent, 'verified_publishable'):
         return guid_referent.verified_publishable        # quacks like Preprint
     return getattr(guid_referent, 'is_public', False)    # quacks like AbstractNode
+
+
+def _next_osfmap_partition(partition: OsfmapPartition) -> OsfmapPartition | None:
+    match partition:
+        case OsfmapPartition.MAIN:
+            return OsfmapPartition.SUPPLEMENT
+        case OsfmapPartition.SUPPLEMENT:
+            return OsfmapPartition.MONTHLY_SUPPLEMENT
+        case _:
+            return None
 
 
 ###

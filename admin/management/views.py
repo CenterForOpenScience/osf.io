@@ -1,4 +1,3 @@
-import datetime
 from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
@@ -120,11 +119,11 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
         if monthly_report_date:
             report_date = isoparse(monthly_report_date).date()
         else:
-            report_date = datetime.datetime.now().date()
+            report_date = None
 
         errors = monthly_reporters_go(
-            report_month=report_date.month,
-            report_year=report_date.year
+            report_month=getattr(report_date, 'month', None),
+            report_year=getattr(report_date, 'year', None)
         )
 
         if errors:

@@ -74,6 +74,10 @@ def test_gatherer_registry():
         gather_preprint_or_project_creator,
         gather_special_preprint_creator,
     }
+    assert get_gatherers(BAZ.Preprint, [BAZ.creator], include_focustype_defaults=False) == {
+        gather_preprint_or_project_creator,
+        gather_special_preprint_creator,
+    }
     assert get_gatherers(BAZ.Agent, [FOO.name, FOO.identifier, FOO.unknown]) == {
         gather_agent_name,
         gather_identifiers,

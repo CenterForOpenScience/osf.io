@@ -10,7 +10,7 @@ from rest_framework.utils.urls import (
     replace_query_param, remove_query_param,
 )
 from api.base.serializers import is_anonymized
-from api.base.settings import MAX_PAGE_SIZE
+from api.base.settings import MAX_PAGE_SIZE, MAX_SIZE_OF_ES_QUERY
 from api.base.utils import absolute_reverse
 
 from osf.models import AbstractNode, Comment, Preprint, Guid, DraftRegistration
@@ -171,6 +171,13 @@ class MaxSizePagination(JSONAPIPagination):
     page_size = 1000
     max_page_size = None
     page_size_query_param = None
+
+
+class ElasticsearchQuerySizeMaximumPagination(JSONAPIPagination):
+    page_size = MAX_SIZE_OF_ES_QUERY
+    max_page_size = MAX_SIZE_OF_ES_QUERY
+    page_size_query_param = None
+
 
 class NoMaxPageSizePagination(JSONAPIPagination):
     max_page_size = None

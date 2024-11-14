@@ -1,6 +1,6 @@
 import csv
 import io
-
+import json
 from django.http import Http404
 
 from rest_framework import renderers
@@ -42,11 +42,7 @@ def get_csv_row(keys_list, report_attrs):
     ]
 
 
-class MetricsReportsCsvRenderer(renderers.BaseRenderer):
-    media_type = 'text/csv'
-    format = 'csv'
-    CSV_DIALECT = csv.excel
-
+class MetricsReportsRenderer(renderers.BaseRenderer):
     def render(self, json_response, accepted_media_type=None, renderer_context=None):
         serialized_reports = (
             jsonapi_resource['attributes']
@@ -67,7 +63,24 @@ class MetricsReportsCsvRenderer(renderers.BaseRenderer):
         return csv_filecontent.getvalue()
 
 
-class MetricsReportsTsvRenderer(MetricsReportsCsvRenderer):
+class MetricsReportsCsvRenderer(MetricsReportsRenderer):
+    format = 'csv'
+    extension = 'csv'
+    media_type = 'text/csv'
+    CSV_DIALECT = csv.excel
+
+
+class MetricsReportsTsvRenderer(MetricsReportsRenderer):
     format = 'tsv'
+    extension = 'tsv'
     media_type = 'text/tab-separated-values'
     CSV_DIALECT = csv.excel_tab
+
+
+class MetricsReportsJsonRenderer(renderers.BaseRenderer):
+    format = 'json_report'
+    extension = 'json'
+    media_type = 'application/json'
+
+    def render(self, json_response, accepted_media_type=None, renderer_context=None):
+        return json.dumps([item['attributes'] for item in json_response['data']])
