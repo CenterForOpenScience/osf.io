@@ -55,21 +55,6 @@ def _recatalog_all(queryset, chunk_size):
     recatalog(queryset, start_id=0, chunk_count=int(9e9), chunk_size=chunk_size)
 
 
-def _recatalog_datacite_custom_types(chunk_size):
-    logger.info('recataloguing items with datacite custom type...')
-    # all preprints
-    _recatalog_all(Preprint.objects, chunk_size)
-    # objects with custom resource_type_general
-    for _model in {Registration, Node, OsfStorageFile}:
-        _queryset = (
-            _model.objects
-            .exclude(guids__metadata_record__isnull=True)
-            .exclude(guids__metadata_record__resource_type_general='')
-        )
-        _recatalog_all(_queryset, chunk_size)
-    logger.info('done recataloguing items with datacite custom type!')
-
-
 class Command(BaseCommand):
     def add_arguments(self, parser):
         type_group = parser.add_mutually_exclusive_group(required=True)
@@ -102,14 +87,6 @@ class Command(BaseCommand):
             '--users',
             action='store_true',
             help='recatalog metadata for users',
-        )
-        type_group.add_argument(
-            '--datacite-custom-types',
-            action='store_true',
-            help='''recatalog metadata for items with a specific datacite type,
-            including all preprints and items with custom resource_type_general
-            (may be slow for lack of database indexes)
-            ''',
         )
 
         provider_group = parser.add_mutually_exclusive_group()
@@ -144,6 +121,11 @@ class Command(BaseCommand):
             default=int(9e9),
             help='maximum number of chunks (default all/enough/lots)',
         )
+        parser.add_argument(
+            '--also-decatalog',
+            action='store_true',
+            help='also remove private and deleted items from the catalog',
+        )
 
     def handle(self, *args, **options):
         pls_all_types = options['all_types']
@@ -156,13 +138,7 @@ class Command(BaseCommand):
         start_id = options['start_id']
         chunk_size = options['chunk_size']
         chunk_count = options['chunk_count']
-        datacite_custom_types = options['datacite_custom_types']
-
-        if datacite_custom_types:  # temporary arg for datacite 4.5 migration
-            assert not start_id, 'oh no, cannot resume with `--datacite-custom-types`'
-            assert not provider_ids, 'oh no, cannot filter providers with `--datacite-custom-types`'
-            _recatalog_datacite_custom_types(chunk_size)
-            return  # end
+        also_decatalog = options['also_decatalog']
 
         if pls_all_types:
             assert not start_id, 'choose a specific type to resume with --start-id'
@@ -185,4 +161,16 @@ class Command(BaseCommand):
                 _queryset = _queryset.filter(
                     provider__in=AbstractProvider.objects.filter(_id__in=provider_ids),
                 )
+            if not also_decatalog:
+                if provided_model is OsfStorageFile:
+                    _queryset = _queryset.filter(deleted__isnull=True)
+                elif provided_model is OSFUser:
+                    _queryset = _queryset.filter(
+                        deleted__isnull=True,
+                        is_active=True,
+                    ).exclude(allow_indexing=False)
+                elif provided_model is Preprint:
+                    _queryset = _queryset.filter(is_public=True, is_published=True, deleted__isnull=True)
+                else:
+                    _queryset = _queryset.filter(is_public=True, deleted__isnull=True)
             recatalog(_queryset, start_id, chunk_count, chunk_size)
