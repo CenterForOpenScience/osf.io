@@ -311,7 +311,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
 
     # Default versions for view and compare
     version_settings = {
-        'view': view or 'preview',
+        'view': view or 'current',
         'compare': compare or 'previous',
     }
     import_dirs = _get_import_folder(node)
