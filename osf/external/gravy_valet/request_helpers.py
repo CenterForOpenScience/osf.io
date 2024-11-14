@@ -15,7 +15,8 @@ API_BASE = urljoin(settings.GRAVYVALET_URL, 'v1/')
 
 # {{placeholder}} format allows f-string to return a formatable string
 ACCOUNT_ENDPOINT = f'{API_BASE}authorized-storage-accounts/{{pk}}'
-ADDON_ENDPOINT = f'{API_BASE}configured-storage-addons/{{pk}}'
+ADDONS_ENDPOINT = f'{API_BASE}configured-storage-addons'
+ADDON_ENDPOINT = f'{ADDONS_ENDPOINT}/{{pk}}'
 WB_CONFIG_ENDPOINT = f'{ADDON_ENDPOINT}/waterbutler-credentials'
 
 USER_LIST_ENDPOINT = f'{API_BASE}user-references'
@@ -36,6 +37,21 @@ def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
         params={'include': ACCOUNT_EXTERNAL_SERVICE_PATH},
     )
 
+
+def create_addon(requested_resource, requesting_user, attributes: dict, relationships: dict, addon_type: str):  # -> JSONAPIResultEntry
+    '''Return a JSONAPIResultEntry representing a known ConfiguredStorageAddon.'''
+    json_data = {
+        'attributes': attributes,
+        'relationships': relationships,
+        'type': addon_type,
+    }
+    return _make_gv_request(
+        ADDONS_ENDPOINT,
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        request_method='POST',
+        json_data={'data': json_data},
+    )
 
 def get_addon(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
     '''Return a JSONAPIResultEntry representing a known ConfiguredStorageAddon.'''
@@ -143,6 +159,7 @@ def _make_gv_request(
     requested_resource=None,
     request_method='GET',
     params: dict = None,
+    json_data: dict = None,
 ):
     '''Generates HMAC-Signed auth headers and makes a request to GravyValet, returning the result.'''
     full_url = urlunparse(urlparse(endpoint_url)._replace(query=urlencode(params or {})))
@@ -152,9 +169,10 @@ def _make_gv_request(
         additional_headers=auth_helpers.make_permissions_headers(
             requesting_user=requesting_user,
             requested_resource=requested_resource,
-        )
+        ) | {'content-type': 'application/vnd.api+json'}
     )
-    response = requests.get(endpoint_url, headers=auth_headers, params=params)
+    assert not (request_method == 'GET' and json_data is not None)
+    response = requests.request(url=endpoint_url, headers=auth_headers, params=params, method=request_method, json=json_data)
     if not response.ok:
         # log error to Sentry
         pass
@@ -175,7 +193,6 @@ def _format_included_entities(included_entities_json):
         entity.extract_included_relationships(included_entities_by_type_and_id)
     return included_entities_by_type_and_id
 
-
 class JSONAPIResultEntry:
     resource_type: str
     resource_id: str
@@ -184,8 +201,10 @@ class JSONAPIResultEntry:
     _relationships: dict  # [str, JSONAPIRelationship]
     # Included JSONAPIResultEntries, keyed by relationship name
     _includes: dict  # [str, JSONAPIResultEntry]
+    _result_entry: dict
 
     def __init__(self, result_entry: dict, included_entities_lookup: dict = None):
+        self._result_entry = result_entry
         self.resource_type = result_entry['type']
         self.resource_id = result_entry['id']
         self._attributes = dict(result_entry['attributes'])
@@ -194,6 +213,9 @@ class JSONAPIResultEntry:
         self._includes = {}
         if included_entities_lookup:
             self.extract_included_relationships(included_entities_lookup)
+
+    def json(self):
+        return self._result_entry
 
     def get_attribute(self, attribute_name):
         return self._attributes.get(attribute_name)
