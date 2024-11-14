@@ -44,8 +44,11 @@ def monthly_reporters_go(report_year=None, report_month=None):
 )
 def monthly_reporter_go(task, reporter_key: str, yearmonth: str):
     _reporter_class = AllMonthlyReporters[reporter_key].value
-    _parsed_yearmonth = YearMonth.from_str(yearmonth)
-    _reporter_class().run_and_record_for_month(_parsed_yearmonth)
+    _reporter = _reporter_class(YearMonth.from_str(yearmonth))
+    _reporter.run_and_record_for_month()
+    _followup = _reporter.followup_task()
+    if _followup is not None:
+        _followup.apply_async()
 
 
 class Command(BaseCommand):
@@ -58,10 +61,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        errors = monthly_reporters_go(
+        monthly_reporters_go(
             report_year=getattr(options.get('yearmonth'), 'year', None),
             report_month=getattr(options.get('yearmonth'), 'month', None),
         )
-        for error_key, error_val in errors.items():
-            self.stdout.write(self.style.ERROR(f'error running {error_key}: ') + error_val)
-        self.stdout.write(self.style.SUCCESS('done.'))
+        self.stdout.write(self.style.SUCCESS('reporter tasks scheduled.'))

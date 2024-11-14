@@ -188,7 +188,7 @@ class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
     created = factory.LazyFunction(timezone.now)
-    creator = factory.SubFactory(AuthUserFactory)
+    creator = factory.LazyAttribute(lambda o: AuthUserFactory())
 
     class Meta:
         model = models.Node

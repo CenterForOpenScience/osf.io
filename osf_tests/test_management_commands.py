@@ -265,7 +265,7 @@ class TestDataStorageUsage(DbTestCase):
                 assert (key, expected_summary_data[key]) == (key, actual_summary_data[key])
 
 
-@pytest.mark.es
+@pytest.mark.es_metrics
 @pytest.mark.django_db
 class TestInstitutionMetricsUpdate:
 

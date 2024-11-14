@@ -1,9 +1,10 @@
+from __future__ import annotations
+import calendar
+import dataclasses
 import re
 import datetime
-import typing
 from hashlib import sha256
-
-import pytz
+from typing import ClassVar
 
 
 def stable_key(*key_parts):
@@ -20,19 +21,22 @@ def stable_key(*key_parts):
     return sha256(bytes(plain_key, encoding='utf')).hexdigest()
 
 
-class YearMonth(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class YearMonth:
+    """YearMonth: represents a specific month in a specific year"""
     year: int
     month: int
 
-    YEARMONTH_RE = re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
+    YEARMONTH_RE: ClassVar[re.Pattern] = re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})')
 
     @classmethod
-    def from_date(cls, date):
-        assert isinstance(date, (datetime.datetime, datetime.date))
+    def from_date(cls, date: datetime.date) -> YearMonth:
+        """construct a YearMonth from a `datetime.date` (or `datetime.datetime`)"""
         return cls(date.year, date.month)
 
     @classmethod
-    def from_str(cls, input_str):
+    def from_str(cls, input_str: str) -> YearMonth:
+        """construct a YearMonth from a string in "YYYY-MM" format"""
         match = cls.YEARMONTH_RE.fullmatch(input_str)
         if match:
             return cls(
@@ -43,12 +47,21 @@ class YearMonth(typing.NamedTuple):
             raise ValueError(f'expected YYYY-MM format, got "{input_str}"')
 
     def __str__(self):
+        """convert to string of "YYYY-MM" format"""
         return f'{self.year}-{self.month:0>2}'
 
-    def target_month(self):
-        return datetime.datetime(self.year, self.month, 1, tzinfo=pytz.utc)
+    def next(self) -> YearMonth:
+        """get a new YearMonth for the month after this one"""
+        return (
+            YearMonth(self.year + 1, int(calendar.JANUARY))
+            if self.month == calendar.DECEMBER
+            else YearMonth(self.year, self.month + 1)
+        )
 
-    def next_month(self):
-        if self.month == 12:
-            return datetime.datetime(self.year + 1, 1, 1, tzinfo=pytz.utc)
-        return datetime.datetime(self.year, self.month + 1, 1, tzinfo=pytz.utc)
+    def month_start(self) -> datetime.datetime:
+        """get a datetime (in UTC timezone) when this YearMonth starts"""
+        return datetime.datetime(self.year, self.month, 1, tzinfo=datetime.UTC)
+
+    def month_end(self) -> datetime.datetime:
+        """get a datetime (in UTC timezone) when this YearMonth ends (the start of next month)"""
+        return self.next().month_start()

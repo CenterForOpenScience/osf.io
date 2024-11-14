@@ -74,6 +74,8 @@ class Command(BaseCommand):
                 item_guid=ITEM_GUID,
                 session_id='freshen by key',
                 user_is_authenticated=bool(random.randint(0, 1)),
+                item_public=bool(random.randint(0, 1)),
+                action_labels=[['view', 'download'][random.randint(0, 1)]],
             )
 
     def _run_date_query(self, time_range_filter):
@@ -103,8 +105,8 @@ class Command(BaseCommand):
             },
         })
         return {
-            'min': result.aggs['min-timestamp'].value_as_string,
-            'max': result.aggs['max-timestamp'].value_as_string,
+            'min': result.aggs['min-timestamp'].value,
+            'max': result.aggs['max-timestamp'].value,
             **{
                 str(bucket.key.date()): bucket.doc_count
                 for bucket in result.aggs['by-date']

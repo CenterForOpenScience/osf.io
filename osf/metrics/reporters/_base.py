@@ -1,22 +1,33 @@
+from collections import abc
+import dataclasses
 import logging
 
+import celery
+
+from osf.metrics.reports import MonthlyReport
 from osf.metrics.utils import YearMonth
 
 
 logger = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass
 class MonthlyReporter:
-    def report(self, report_yearmonth: YearMonth):
+    yearmonth: YearMonth
+
+    def report(self) -> abc.Iterable[MonthlyReport] | abc.Iterator[MonthlyReport]:
         """build a report for the given month
         """
         raise NotImplementedError(f'{self.__name__} must implement `report`')
 
-    def run_and_record_for_month(self, report_yearmonth: YearMonth):
-        reports = self.report(report_yearmonth)
+    def run_and_record_for_month(self) -> None:
+        reports = self.report()
         for report in reports:
-            assert report.report_yearmonth == str(report_yearmonth)
+            report.report_yearmonth = self.yearmonth
             report.save()
+
+    def followup_task(self) -> celery.Signature | None:
+        return None
 
 
 class DailyReporter:

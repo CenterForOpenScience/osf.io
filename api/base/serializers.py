@@ -17,6 +17,7 @@ from rest_framework.reverse import reverse as drf_reverse
 
 from api.base import utils
 from api.base.exceptions import EnumFieldMemberError
+from osf.metrics.utils import YearMonth
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
@@ -169,6 +170,18 @@ class ShowIfAdminScopeOrAnonymous(ConditionalField):
         request = self.context.get('request')
         has_admin_scope = instance.has_admin_scope if hasattr(instance, 'has_admin_scope') else utils.has_admin_scope(request)
         return request and (request.user.is_anonymous or has_admin_scope)
+
+
+class ShowIfObjectPermission(ConditionalField):
+    """Show the field only for users with a given object permission
+    """
+    def __init__(self, field, *, permission: str, **kwargs):
+        super().__init__(field, **kwargs)
+        self._required_object_permission = permission
+
+    def should_show(self, instance):
+        _request = self.context.get('request')
+        return _request.user.has_perm(self._required_object_permission, obj=instance)
 
 
 class HideIfRegistration(ConditionalField):
@@ -2012,3 +2025,18 @@ class EnumField(ser.ChoiceField):
             return self._enum_class[data.upper()].value
         except KeyError:
             raise EnumFieldMemberError(self._enum_class, data)
+
+
+class YearmonthField(ser.Field):
+    def to_representation(self, value: YearMonth | None) -> str | None:
+        if value is None:
+            return None
+        return str(value)
+
+    def to_internal_value(self, data: str | None) -> YearMonth | None:
+        if data is None:
+            return None
+        try:
+            return YearMonth.from_str(data)
+        except ValueError as e:
+            raise ser.ValidationError(str(e))
