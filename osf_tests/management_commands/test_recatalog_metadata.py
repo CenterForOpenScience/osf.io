@@ -1,3 +1,4 @@
+import datetime
 import pytest
 from unittest import mock
 from operator import attrgetter
@@ -12,6 +13,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegistrationProviderFactory,
     RegistrationFactory,
+    UserFactory,
 )
 
 
@@ -41,18 +43,15 @@ class TestRecatalogMetadata:
     @pytest.fixture
     def registrations(self, registration_provider):
         return sorted_by_id([
-            RegistrationFactory(provider=registration_provider)
+            RegistrationFactory(provider=registration_provider, is_public=True)
             for _ in range(7)
         ])
 
     @pytest.fixture
     def projects(self, registrations):
         return sorted_by_id([
-            ProjectFactory()
+            ProjectFactory(is_public=True)
             for _ in range(7)
-        ] + [
-            registration.registered_from
-            for registration in registrations
         ])
 
     @pytest.fixture
@@ -93,6 +92,23 @@ class TestRecatalogMetadata:
             *_nonpreprint_sample,
         }
 
+    @pytest.fixture
+    def decatalog_items(self, registrations):
+        _user = UserFactory(allow_indexing=False)
+        _registration = RegistrationFactory(is_public=False, creator=_user)
+        _implicit_projects = [
+            _registration.registered_from,
+            *(_reg.registered_from for _reg in registrations),
+        ]
+        return [
+            _user,
+            _registration,
+            *_implicit_projects,
+            PreprintFactory(is_published=False, creator=_user),
+            ProjectFactory(is_public=False, creator=_user),
+            ProjectFactory(deleted=datetime.datetime.now(), creator=_user),
+        ]
+
     def test_recatalog_metadata(
         self,
         mock_update_share_task,
@@ -104,7 +120,14 @@ class TestRecatalogMetadata:
         files,
         users,
         items_with_custom_datacite_type,
+        decatalog_items,
     ):
+        def _actual_osfids() -> set[str]:
+            return {
+                _call[-1]['kwargs']['guid']
+                for _call in mock_update_share_task.apply_async.mock_calls
+            }
+
         # test preprints
         call_command(
             'recatalog_metadata',
@@ -189,11 +212,28 @@ class TestRecatalogMetadata:
             '--datacite-custom-types',
         )
         _expected_osfids = set(_iter_osfids(items_with_custom_datacite_type))
-        _actual_osfids = {
-            _call[-1]['kwargs']['guid']
-            for _call in mock_update_share_task.apply_async.mock_calls
-        }
-        assert _expected_osfids == _actual_osfids
+        assert _expected_osfids == _actual_osfids()
+
+        mock_update_share_task.reset_mock()
+
+        # all types
+        _all_public_items = [*preprints, *registrations, *projects, *files, *users]
+        call_command(
+            'recatalog_metadata',
+            '--all-types',
+        )
+        _expected_osfids = set(_iter_osfids(_all_public_items))
+        assert _expected_osfids == _actual_osfids()
+
+        # also decatalog private/deleted items
+        _all_items = [*_all_public_items, *decatalog_items]
+        call_command(
+            'recatalog_metadata',
+            '--all-types',
+            '--also-decatalog',
+        )
+        _expected_osfids = set(_iter_osfids(_all_items))
+        assert _expected_osfids == _actual_osfids()
 
 
 ###

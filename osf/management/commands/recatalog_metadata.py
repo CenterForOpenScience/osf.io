@@ -144,6 +144,11 @@ class Command(BaseCommand):
             default=int(9e9),
             help='maximum number of chunks (default all/enough/lots)',
         )
+        parser.add_argument(
+            '--also-decatalog',
+            action='store_true',
+            help='also remove private and deleted items from the catalog',
+        )
 
     def handle(self, *args, **options):
         pls_all_types = options['all_types']
@@ -157,6 +162,7 @@ class Command(BaseCommand):
         chunk_size = options['chunk_size']
         chunk_count = options['chunk_count']
         datacite_custom_types = options['datacite_custom_types']
+        also_decatalog = options['also_decatalog']
 
         if datacite_custom_types:  # temporary arg for datacite 4.5 migration
             assert not start_id, 'oh no, cannot resume with `--datacite-custom-types`'
@@ -185,4 +191,16 @@ class Command(BaseCommand):
                 _queryset = _queryset.filter(
                     provider__in=AbstractProvider.objects.filter(_id__in=provider_ids),
                 )
+            if not also_decatalog:
+                if provided_model is OsfStorageFile:
+                    _queryset = _queryset.filter(deleted__isnull=True)
+                elif provided_model is OSFUser:
+                    _queryset = _queryset.filter(
+                        deleted__isnull=True,
+                        is_active=True,
+                    ).exclude(allow_indexing=False)
+                elif provided_model is Preprint:
+                    _queryset = _queryset.filter(is_public=True, is_published=True, deleted__isnull=True)
+                else:
+                    _queryset = _queryset.filter(is_public=True, deleted__isnull=True)
             recatalog(_queryset, start_id, chunk_count, chunk_size)
