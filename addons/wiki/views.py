@@ -286,13 +286,11 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     if wiki_version:
         version = wiki_version.identifier
         is_current = wiki_version.is_current
-        content = wiki_version.html(node)
         rendered_before_update = wiki_version.rendered_before_update
         markdown = wiki_version.content
     else:
         version = 'NA'
         is_current = False
-        content = ''
         rendered_before_update = False
         markdown = ''
 
@@ -311,13 +309,9 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
         sharejs_uuid = None
 
-    # Opens 'edit' panel when home wiki is empty
-    if not content and can_edit and wiki_name == 'home':
-        panels_used.append('edit')
-
     # Default versions for view and compare
     version_settings = {
-        'view': view or ('preview' if 'edit' in panels_used else 'current'),
+        'view': view or 'preview',
         'compare': compare or 'previous',
     }
     import_dirs = _get_import_folder(node)
@@ -329,7 +323,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
-        'wiki_content': content,
         'wiki_markdown': markdown,
         'parent_wiki_name': parent_wiki_page.page_name if parent_wiki_page else '',
         'import_dirs': import_dirs,
