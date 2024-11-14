@@ -359,6 +359,7 @@ EGAP_PROVIDER_NAME = 'EGAP'
 
 MAX_SIZE_OF_ES_QUERY = 10000
 DEFAULT_ES_NULL_VALUE = 'N/A'
+REPORT_FILENAME_FORMAT = '{view_name}_{date_created}.{extension}'
 
 CI_ENV = False
 

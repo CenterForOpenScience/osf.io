@@ -1,16 +1,25 @@
 from __future__ import annotations
 import abc
+import datetime
 import typing
 
 import elasticsearch_dsl as edsl
-from rest_framework import generics
-from rest_framework import exceptions as drf_exceptions
+from rest_framework import generics, exceptions as drf_exceptions
 from rest_framework.settings import api_settings as drf_settings
+from api.base.settings.defaults import REPORT_FILENAME_FORMAT
+
 if typing.TYPE_CHECKING:
     from rest_framework import serializers
 
 from api.base.filters import FilterMixin
 from api.base.views import JSONAPIBaseView
+from api.metrics.renderers import (
+    MetricsReportsCsvRenderer,
+    MetricsReportsTsvRenderer,
+    MetricsReportsJsonRenderer,
+)
+from api.base.pagination import ElasticsearchQuerySizeMaximumPagination, JSONAPIPagination
+from api.base.renderers import JSONAPIRenderer
 
 
 class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, abc.ABC):
@@ -33,6 +42,44 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
         '''
         ...
 
+    FILE_RENDERER_CLASSES = {
+        MetricsReportsCsvRenderer,
+        MetricsReportsTsvRenderer,
+        MetricsReportsJsonRenderer,
+    }
+
+    def set_content_disposition(self, response, renderer: str):
+        """Set the Content-Disposition header to prompt a file download with the appropriate filename.
+
+        Args:
+            response: The HTTP response object to modify.
+            renderer: The renderer instance used for the response, which determines the file extension.
+        """
+        current_date = datetime.datetime.now().strftime('%Y-%m')
+
+        if isinstance(renderer, JSONAPIRenderer):
+            extension = 'json'
+        else:
+            extension = getattr(renderer, 'extension', renderer.format)
+
+        filename = REPORT_FILENAME_FORMAT.format(
+            view_name=self.view_name,
+            date_created=current_date,
+            extension=extension,
+        )
+
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        # Call the parent method to finalize the response first
+        response = super().finalize_response(request, response, *args, **kwargs)
+        # Check if this is a direct download request or file renderer classes, set to the Content-Disposition header
+        # so filename and attachment for browser download
+        if isinstance(request.accepted_renderer, tuple(self.FILE_RENDERER_CLASSES)):
+            self.set_content_disposition(response, request.accepted_renderer)
+
+        return response
+
     ###
     # beware! inheritance shenanigans below
 
@@ -52,6 +99,20 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     #       it works fine with default pagination
 
     # override rest_framework.generics.GenericAPIView
+    @property
+    def pagination_class(self):
+        """
+        When downloading a file assume no pagination is necessary unless the user specifies
+        """
+        is_file_download = any(
+            self.request.accepted_renderer.format == renderer.format
+            for renderer in self.FILE_RENDERER_CLASSES
+        )
+        # if it's a file download of the JSON respect default page size
+        if is_file_download:
+            return ElasticsearchQuerySizeMaximumPagination
+        return JSONAPIPagination
+
     def get_queryset(self):
         _search = self.get_default_search()
         if _search is None:
