@@ -1,7 +1,7 @@
-import enum
-
 import dataclasses
+import enum
 from dataclasses import asdict
+from typing import TYPE_CHECKING
 
 from addons.bitbucket.apps import BitbucketAddonConfig
 from addons.box.apps import BoxAddonAppConfig
@@ -11,13 +11,18 @@ from addons.figshare.apps import FigshareAddonAppConfig
 from addons.github.apps import GitHubAddonConfig
 from addons.gitlab.apps import GitLabAddonConfig
 from addons.googledrive.apps import GoogleDriveAddonConfig
-from addons.s3.apps import S3AddonAppConfig
 from addons.onedrive.apps import OneDriveAddonAppConfig
+from addons.owncloud.apps import OwnCloudAddonAppConfig
+from addons.s3.apps import S3AddonAppConfig
 from . import request_helpers as gv_requests
+
+if TYPE_CHECKING:
+    from osf.models import OSFUser, Node
 
 
 class _LegacyConfigsForWBKey(enum.Enum):
     """Mapping from a GV ExternalStorageService's waterbutler key to the legacy Addon config."""
+
     box = BoxAddonAppConfig
     bitbucket = BitbucketAddonConfig
     dataverse = DataverseAddonAppConfig
@@ -26,14 +31,14 @@ class _LegacyConfigsForWBKey(enum.Enum):
     github = GitHubAddonConfig
     gitlab = GitLabAddonConfig
     googledrive = GoogleDriveAddonConfig
-    s3 = S3AddonAppConfig
     onedrive = OneDriveAddonAppConfig
+    owncloud = OwnCloudAddonAppConfig
+    s3 = S3AddonAppConfig
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
     service_wb_key = gv_account_data.get_included_attribute(
-        include_path=('external_storage_service', ),
-        attribute_name='wb_key'
+        include_path=('external_storage_service',), attribute_name='wb_key'
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralUserSettings(
@@ -46,7 +51,7 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
 def make_ephemeral_node_settings(gv_addon_data, requested_resource, requesting_user):
     service_wb_key = gv_addon_data.get_included_attribute(
         include_path=('base_account', 'external_storage_service'),
-        attribute_name='wb_key'
+        attribute_name='wb_key',
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralNodeSettings(
@@ -60,11 +65,16 @@ def make_ephemeral_node_settings(gv_addon_data, requested_resource, requesting_u
 
 @dataclasses.dataclass
 class EphemeralAddonConfig:
-    '''Minimalist dataclass for storing the actually used properties of an AddonConfig'''
+    """Minimalist dataclass for storing the actually used properties of an AddonConfig"""
+
     name: str
     label: str
     short_name: str
     full_name: str
+
+    @property
+    def icon_url(self):
+        return ''
 
     @property
     def has_hgrid_files(self):
@@ -85,14 +95,15 @@ class EphemeralAddonConfig:
 
 @dataclasses.dataclass
 class EphemeralNodeSettings:
-    '''Minimalist dataclass for storing/translating the actually used properties of NodeSettings.'''
+    """Minimalist dataclass for storing/translating the actually used properties of NodeSettings."""
+
     config: EphemeralAddonConfig
     gv_data: gv_requests.JSONAPIResultEntry
     wb_key: str
 
     # These are needed in order to make further requests for credentials
-    configured_resource: type  # Node
-    active_user: type  # OSFUser
+    configured_resource: 'Node'
+    active_user: 'OSFUser'
 
     # retrieved from WB on-demand and cached
     _credentials: dict = None
@@ -109,8 +120,7 @@ class EphemeralNodeSettings:
     @property
     def configured(self):
         return self.gv_data.get_included_attribute(
-            include_path=['base_account'],
-            attribute_name='credentials_available'
+            include_path=['base_account'], attribute_name='credentials_available'
         )
 
     @property
@@ -152,7 +162,7 @@ class EphemeralNodeSettings:
         result = gv_requests.get_waterbutler_config(
             gv_addon_pk=self.gv_data.resource_id,
             requested_resource=self.configured_resource,
-            requesting_user=self.active_user
+            requesting_user=self.active_user,
         )
         self._credentials = result.get_attribute('credentials')
         self._config = result.get_attribute('config')
@@ -166,10 +176,33 @@ class EphemeralNodeSettings:
     def after_set_privacy(self, *args, **kwargs):
         pass
 
+    def before_fork(self, node, user):
+        from addons.base.models import BaseNodeSettings
+        return BaseNodeSettings.before_fork(self, node, user)
+
+    def after_fork(self, node: 'Node', fork, user: 'OSFUser', save=True):
+        if user.id != self.active_user.id:
+            # In this case we are not migrating addons to fork
+            return
+        json_data = self.gv_data.json()
+        json_data['attributes']['authorized_resource_uri'] = fork.get_semantic_iri()
+        json_data['relationships'].pop('authorized_resource')
+        for relationship in json_data['relationships']:
+            json_data['relationships'][relationship].pop('links')
+        gv_requests.create_addon(
+            requesting_user=user,
+            requested_resource=fork,
+            attributes=json_data['attributes'],
+            relationships=json_data['relationships'],
+            addon_type=self.gv_data.resource_type
+        )
+        return
+
 
 @dataclasses.dataclass
 class EphemeralUserSettings:
-    '''Minimalist dataclass for storing the actually used properties of UserSettings.'''
+    """Minimalist dataclass for storing the actually used properties of UserSettings."""
+
     config: EphemeralAddonConfig
     gv_data: gv_requests.JSONAPIResultEntry
     # This is needed to support making further requests
