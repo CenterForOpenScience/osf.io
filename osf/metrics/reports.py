@@ -30,6 +30,16 @@ class DailyReport(metrics.Metric):
         super().__init_subclass__(**kwargs)
         assert 'report_date' in cls.UNIQUE_TOGETHER_FIELDS, f'DailyReport subclasses must have "report_date" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
 
+    def save(self, *args, **kwargs):
+        if self.timestamp is None:
+            self.timestamp = datetime.datetime(
+                self.report_date.year,
+                self.report_date.month,
+                self.report_date.day,
+                tzinfo=datetime.UTC,
+            )
+        super().save(*args, **kwargs)
+
     class Meta:
         abstract = True
         dynamic = metrics.MetaField('strict')
@@ -41,19 +51,15 @@ class YearmonthField(metrics.Date):
         super().__init__(*args, **kwargs, format='strict_year_month')
 
     def deserialize(self, data):
-        if isinstance(data, YearMonth):
-            return data
-        elif isinstance(data, str):
-            return YearMonth.from_str(data)
-        elif isinstance(data, (datetime.datetime, datetime.date)):
-            return YearMonth.from_date(data)
-        elif isinstance(data, int):
+        if isinstance(data, int):
             # elasticsearch stores dates in milliseconds since the unix epoch
             _as_datetime = datetime.datetime.fromtimestamp(data // 1000)
             return YearMonth.from_date(_as_datetime)
         elif data is None:
             return None
-        else:
+        try:
+            return YearMonth.from_any(data)
+        except ValueError:
             raise ValueError(f'unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
 
     def serialize(self, data):
@@ -101,6 +107,11 @@ class MonthlyReport(metrics.Metric):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         assert 'report_yearmonth' in cls.UNIQUE_TOGETHER_FIELDS, f'MonthlyReport subclasses must have "report_yearmonth" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
+
+    def save(self, *args, **kwargs):
+        if self.timestamp is None:
+            self.timestamp = YearMonth.from_any(self.report_yearmonth).month_start()
+        super().save(*args, **kwargs)
 
 
 @receiver(metrics_pre_save)

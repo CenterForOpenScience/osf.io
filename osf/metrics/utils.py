@@ -46,6 +46,16 @@ class YearMonth:
         else:
             raise ValueError(f'expected YYYY-MM format, got "{input_str}"')
 
+    @classmethod
+    def from_any(cls, data) -> YearMonth:
+        if isinstance(data, YearMonth):
+            return data
+        elif isinstance(data, str):
+            return YearMonth.from_str(data)
+        elif isinstance(data, (datetime.datetime, datetime.date)):
+            return YearMonth.from_date(data)
+        raise ValueError(f'cannot coerce {data} into YearMonth')
+
     def __str__(self):
         """convert to string of "YYYY-MM" format"""
         return f'{self.year}-{self.month:0>2}'
