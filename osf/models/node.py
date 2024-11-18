@@ -58,7 +58,7 @@ from osf.external.gravy_valet import (
 )
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
-from osf.utils.requests import get_request_and_user_id, string_type_request_headers
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers, get_current_request
 from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
 from website import language, settings
@@ -2434,7 +2434,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
 
     def _get_addon_from_gv(self, gv_pk, requesting_user_id):
-        for item in self._get_addons_from_gv(requesting_user_id):
+        request = get_current_request()
+        # This is to avoid making multiple requests to GV
+        # within the lifespan of one request on the OSF side
+        try:
+            gv_addons = request.gv_addons
+        except AttributeError:
+            request.gv_addons = self._get_addons_from_gv(requesting_user_id)
+            gv_addons = request.gv_addons
+
+        for item in gv_addons:
             if item.short_name == gv_pk:
                 return item
 
@@ -2444,12 +2453,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             requested_resource=self,
             requesting_user=requesting_user
         )
-        for addon_data in all_node_addon_data:
-            yield gv_translations.make_ephemeral_node_settings(
+        return [
+            gv_translations.make_ephemeral_node_settings(
                 gv_addon_data=addon_data,
                 requested_resource=self,
                 requesting_user=requesting_user
             )
+            for addon_data in all_node_addon_data
+        ]
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
