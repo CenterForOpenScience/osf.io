@@ -100,6 +100,15 @@ def get_campaigns():
                 }
             })
 
+            newest_campaigns.update({
+                'agu_conference': {
+                    'system_tag': CampaignSourceTags.AguConference.value,
+                    'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
+                    'confirmation_email_template': mails.CONFIRM_EMAIL_AGU_CONFERENCE,
+                    'login_type': 'native',
+                }
+            })
+
             CAMPAIGNS = newest_campaigns
             CAMPAIGNS_LAST_REFRESHED = timezone.now()
 

@@ -191,6 +191,10 @@ CONFIRM_EMAIL_AGU_CONFERENCE_2023 = Mail(
     'confirm_agu_conference_2023',
     subject='OSF Account Verification, from the American Geophysical Union Conference'
 )
+CONFIRM_EMAIL_AGU_CONFERENCE = Mail(
+    'confirm_agu_conference',
+    subject='OSF Account Verification, from the American Geophysical Union Conference'
+)
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     f'confirm_preprints_{name}',
     subject=f'OSF Account Verification, {provider}'
