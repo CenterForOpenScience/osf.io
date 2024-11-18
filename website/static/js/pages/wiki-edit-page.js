@@ -105,7 +105,7 @@ $(document).ready(function () {
     .fail(function(xhr, status, error) {
         grid.addClass('hidden');
         errorMsg.removeClass('hidden');
-        errorMsg.append(_('<p>Could not retrieve wiki pages. If this issue persists, ') +
+        errorMsg.append(_('<p>Could not retrieve wiki pages. Please reload the page. If this issue persists, ') +
             sprintf(_('please report it to %1$s') , $osf.osfSupportLink()));
         Raven.captureMessage(_('Could not GET wiki menu pages'), {
             extra: { url: ctx.urls.grid, status: status, error: error }
