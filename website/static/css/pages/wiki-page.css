@@ -441,6 +441,10 @@ select.form-control {
     list-style-type: none;
 }
 
+.milkdown .editor ul li:has(>p) {
+    list-style-type: disc;
+}
+
 .milkdown .editor ul li:has(>p >a) {
     list-style-type: disc;
 }
