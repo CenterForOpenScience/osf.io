@@ -57,6 +57,7 @@ class CampaignSourceTags(Enum):
     OsfRegisteredReports = campaign_source_tag('osf_registered_reports')
     Osf4m = campaign_source_tag('osf4m')
     AguConference2023 = campaign_source_tag('agu_conference_2023')
+    AguConference = campaign_source_tag('agu_conference')
 
 
 class OsfClaimedTags(Enum):
