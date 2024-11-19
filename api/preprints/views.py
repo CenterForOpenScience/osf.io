@@ -35,6 +35,7 @@ from api.citations.utils import render_citation
 from api.preprints.serializers import (
     PreprintSerializer,
     PreprintCreateSerializer,
+    PreprintCreateVersionSerializer,
     PreprintCitationSerializer,
     PreprintContributorDetailSerializer,
     PreprintContributorsSerializer,
@@ -77,10 +78,9 @@ class PreprintMixin(NodeMixin):
 
         base_guid_id = preprint_lookup_data[0]
         preprint_version = preprint_lookup_data[1] if len(preprint_lookup_data) > 1 else None
-
-        qs = Preprint.objects.filter(guids___id=base_guid_id, guids___id__isnull=False).order_by('-guids__versions__version')
+        qs = Preprint.objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
         if preprint_version:
-            qs = qs.filter(guids__versions__version=preprint_version)
+            qs = qs.filter(versioned_guids__version=preprint_version)
 
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
@@ -162,6 +162,36 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
             # which is too many for ES to handle
             size=200,
         )
+
+
+class ListCreatePreprintVersion(PreprintList):
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PreprintCreateVersionSerializer
+        else:
+            return PreprintSerializer
+
+    def get_queryset(self):
+        preprint = Preprint.load(self.kwargs.get('preprint_id'))
+        if not preprint:
+            raise NotFound
+        version_ids = preprint.versioned_guids.first().guid.versions.values_list('object_id', flat=True)
+        qs = Preprint.objects.filter(id__in=version_ids)
+
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
+
+        # Permissions on the list objects are handled by the query
+        public_only = self.metrics_requested
+        qs = self.preprints_queryset(qs, auth_user, public_only=public_only)
+
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        request.data['type'] = 'preprints'
+        request.data['dupliate_from_guid'] = kwargs.get('preprint_id')
+        return super().create(request, *args, **kwargs)
 
 
 class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):

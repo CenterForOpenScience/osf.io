@@ -48,7 +48,7 @@ from website import search
 class PreprintMixin(PermissionRequiredMixin):
 
     def get_object(self):
-        preprint = Preprint.objects.get(guids___id=self.kwargs['guid'])
+        preprint = Preprint.load(self.kwargs['guid'])
         # Django template does not like attributes with underscores for some reason
         preprint.guid = preprint._id
         return preprint
