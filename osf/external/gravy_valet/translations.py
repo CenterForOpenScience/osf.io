@@ -87,7 +87,7 @@ class EphemeralAddonConfig:
     label: str
     short_name: str
     full_name: str
-    has_widget: bool = False
+    has_widget: bool = dataclasses.field(init=False, default=False)
 
     def __post_init__(self):
         if self.short_name in ['zotero', 'mendeley']:

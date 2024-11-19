@@ -1202,7 +1202,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
-            return auth.logged_in and self.is_public or (auth.user and self.has_permission(auth.user, READ))
+            return auth.logged_in and (
+                self.is_public or
+                (auth.user and self.has_permission(auth.user, READ))
+            )
         return self.is_contributor_or_group_member(auth.user)
 
     def check_privacy_change_viability(self, auth=None):

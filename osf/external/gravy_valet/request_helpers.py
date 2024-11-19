@@ -166,7 +166,7 @@ def get_gv_result(
     return JSONAPIResultEntry(data, included_entities_lookup)
 
 
-def get_gv_result_json(
+def get_raw_gv_result(
         endpoint_url: str,
         requesting_user,
         requested_resource=None,
@@ -234,7 +234,7 @@ def _make_gv_request(
     return response
 
 
-def get_citation_url_list(auth, addon_short_name, project, request=None, pid=None):
+def get_gv_citation_url_list_for_project(auth, addon_short_name, project, request=None, pid=None) -> list:
     if pid:
         project_url = settings.DOMAIN + pid
     else:
@@ -249,7 +249,7 @@ def get_citation_url_list(auth, addon_short_name, project, request=None, pid=Non
         return []
     configured_citation_addons_url = resource_references_response.get_related_link(
         'configured_citation_addons')
-    addons_url_list = get_gv_result_json(
+    addons_url_list = get_raw_gv_result(
         endpoint_url=configured_citation_addons_url,
         requesting_user=auth.user,
         requested_resource=project,
@@ -262,7 +262,7 @@ def get_citation_url_list(auth, addon_short_name, project, request=None, pid=Non
     return citation_url_list
 
 
-def _get_gv_response(auth, addon, project, list_id):
+def _get_gv_addon_operation_invocations_response(auth, addon, project, list_id):
     data = {
         'attributes': {
             'operation_name': 'list_root_collections',
@@ -297,14 +297,14 @@ def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_i
 
     response = {'contents': []}
     project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
-    citation_url_list = get_citation_url_list(
+    citation_url_list = get_gv_citation_url_list_for_project(
         auth=auth,
         request=request,
         addon_short_name=addon_short_name,
         project=project
     )
     for addon in citation_url_list:
-        gv_response = _get_gv_response(
+        gv_response = _get_gv_addon_operation_invocations_response(
             auth=auth,
             addon=addon,
             project=project,
@@ -340,40 +340,6 @@ def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_i
                     }
                 response['contents'].append(change_response)
     return response
-
-
-def get_zotero_library_list(auth, request, addon_short_name):
-    from osf.models import Node
-
-    changed_response = []
-    project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
-    citation_url_list = get_citation_url_list(
-        auth=auth,
-        request=request,
-        addon_short_name=addon_short_name,
-        project=project)
-    for addon in citation_url_list:
-        gv_response = _get_gv_response(
-            auth=auth,
-            addon=addon,
-            project=project,
-            list_id='ROOT'
-        )
-        if gv_response.status_code == 201:
-            attributes_dict = gv_response.json()['data']['attributes']
-            items = attributes_dict.get('operation_result').get('items')
-            for item in items:
-                item_id = item.get('item_id', '')
-                changed_response.append({
-                    'addon': addon_short_name,
-                    'kind': item.get('item_type', '').lower(),
-                    'id': item_id,
-                    'name': item.get('item_name', ''),
-                    'path': item.get('item_path', ''),
-                    'parent_list_id': None,
-                    'provider_list_id': item_id,
-                })
-    return changed_response
 
 
 def _format_included_entities(included_entities_json):

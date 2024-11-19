@@ -1,9 +1,6 @@
-import waffle
 from flask import request
 
 from api.base.utils import is_truthy
-from osf import features
-from osf.external.gravy_valet.request_helpers import get_zotero_library_list
 from osf.utils.permissions import WRITE
 from website.citations.views import GenericCitationViews
 from website.project.decorators import (
@@ -61,16 +58,12 @@ class ZoteroViews(GenericCitationViews):
         def _library_list(auth, node_addon, **kwargs):
             """ Returns a list of group libraries - for use with Zotero addon
             """
-
             limit = request.args.get('limit')
             start = request.args.get('start')
             return_count = is_truthy(request.args.get('return_count', False))
             append_personal = is_truthy(request.args.get('append_personal', True))
-            if not waffle.flag_is_active(request, features.ENABLE_GV):
-                return node_addon.get_folders(limit=limit, start=start, return_count=return_count,
-                                              append_personal=append_personal)
-            else:
-                return get_zotero_library_list(auth=auth, request=request, addon_short_name=addon_short_name)
+            return node_addon.get_folders(limit=limit, start=start, return_count=return_count,
+                                          append_personal=append_personal)
 
         _library_list.__name__ = f'{addon_short_name}_library_list'
         return _library_list

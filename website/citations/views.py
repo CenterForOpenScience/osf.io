@@ -193,11 +193,8 @@ class GenericCitationViews:
         def _citation_list(auth, node_addon, list_id=None, **kwargs):
             """ Returns a list of citations
             """
-
             show = request.args.get('view', 'all')
-            if not waffle.flag_is_active(request, features.ENABLE_GV):
-                return Provider().citation_list(node_addon, auth.user, list_id, show)
-            else:
+            if waffle.flag_is_active(request, features.ENABLE_GV):
                 return citation_list_gv_request(
                     auth=auth,
                     request=request,
@@ -206,6 +203,7 @@ class GenericCitationViews:
                     list_id=list_id,
                     show=show
                 )
-
+            else:
+                return Provider().citation_list(node_addon, auth.user, list_id, show)
         _citation_list.__name__ = f'{addon_short_name}_citation_list'
         return _citation_list

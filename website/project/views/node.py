@@ -513,17 +513,8 @@ def view_project(auth, node, **kwargs):
 
     if 'forward' in ret['addons']:
         addons_widget_data['forward'] = serialize_forward_widget(node)
-    if not waffle.flag_is_active(request, features.ENABLE_GV):
-        if 'zotero' in ret['addons']:
-            node_addon = node.get_addon('zotero')
-            zotero_widget_data = ZoteroCitationsProvider().widget(node_addon)
-            addons_widget_data['zotero'] = zotero_widget_data
 
-        if 'mendeley' in ret['addons']:
-            node_addon = node.get_addon('mendeley')
-            mendeley_widget_data = MendeleyCitationsProvider().widget(node_addon)
-            addons_widget_data['mendeley'] = mendeley_widget_data
-    else:
+    if waffle.flag_is_active(request, features.ENABLE_GV):
         project = Node.objects.filter(guids___id__in=[kwargs['pid']]).first()
         for item in ['zotero', 'mendeley']:
             citation_list_urls = get_citation_url_list(
@@ -535,6 +526,16 @@ def view_project(auth, node, **kwargs):
             data = CITATION_WIDGET_DATA[item]
             data['complete'] = bool(citation_list_urls)
             addons_widget_data[item] = data
+    else:
+        if 'zotero' in ret['addons']:
+            node_addon = node.get_addon('zotero')
+            zotero_widget_data = ZoteroCitationsProvider().widget(node_addon)
+            addons_widget_data['zotero'] = zotero_widget_data
+
+        if 'mendeley' in ret['addons']:
+            node_addon = node.get_addon('mendeley')
+            mendeley_widget_data = MendeleyCitationsProvider().widget(node_addon)
+            addons_widget_data['mendeley'] = mendeley_widget_data
     ret.update({'addons_widget_data': addons_widget_data})
     ret.update({'enable_gv': flag_is_active(request, features.ENABLE_GV)})
     return ret
