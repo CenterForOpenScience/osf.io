@@ -256,7 +256,7 @@ class TestFileView:
         res = app.get(file_url)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment is None
+        assert can_comment is False
 
     def test_checkout(self, app, user, file, file_url, node):
         assert file.checkout is None
