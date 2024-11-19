@@ -561,9 +561,20 @@ class PreprintCreateSerializer(PreprintSerializer):
         description = validated_data.pop('description', '')
         # preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
         # preprint.save()
-        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description, version=0)
+        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description)
 
         return self.update(preprint, validated_data)
+
+
+class PreprintCreateVersionSerializer(PreprintCreateSerializer):
+    dupliate_from_guid = ser.CharField(required=True, write_only=True)
+    title = ser.CharField(required=False)
+
+    def create(self, validated_data):
+        dupliate_from_guid = validated_data.pop('dupliate_from_guid', None)
+        preprint, update_data = Preprint.create_version(dupliate_from_guid)
+
+        return self.update(preprint, update_data)
 
 
 class PreprintCitationSerializer(NodeCitationSerializer):

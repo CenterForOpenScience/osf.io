@@ -18,6 +18,7 @@ from django.db.models.signals import post_save
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from framework.auth import oauth_scopes
+from rest_framework.exceptions import NotFound
 
 from .subject import Subject
 from .tag import Tag
@@ -42,7 +43,7 @@ from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet, VersionedGuidMixin
+from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin
 from .identifiers import IdentifierMixin, Identifier
 from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
@@ -270,17 +271,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
 
     @classmethod
-    def create(cls, provider, title, creator, description, version=0):
-
-        from osf.models import Guid
-        from osf.models.base import VersionedGuidMixin, GuidVersionsThrough
-
-        if version:
-            raise NotImplementedError
-
+    def create(cls, provider, title, creator, description):
         base_guid = Guid.objects.create()
-        versioned_guid__id = f'{base_guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
-
         preprint = cls(
             provider=provider,
             title=title,
@@ -298,12 +290,59 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             referent=base_guid.referent,
             object_id=base_guid.object_id,
             content_type=base_guid.content_type,
-            version=version,
+            version=1,
             guid=base_guid
         )
         guid_version.save()
 
         return preprint
+
+    @classmethod
+    def create_version(cls, dupliate_from_guid):
+        source_preprint = cls.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
+        if not source_preprint:
+            raise NotFound
+
+        base_guid = Guid.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
+        last_version = base_guid.versions.order_by('-version').first().version
+
+        data_for_update = {}
+        data_for_update['tags'] = source_preprint.tags.all().values_list('name', flat=True)
+        data_for_update['license_type'] = source_preprint.license.node_license
+        data_for_update['subjects'] = [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)]
+
+        data_for_update['original_publication_date'] = source_preprint.original_publication_date
+        data_for_update['custom_publication_citation'] = source_preprint.custom_publication_citation
+        data_for_update['article_doi'] = source_preprint.article_doi
+
+        data_for_update['has_data_links'] = source_preprint.has_data_links
+        data_for_update['data_links'] = source_preprint.data_links
+        data_for_update['has_prereg_links'] = source_preprint.has_prereg_links
+        data_for_update['prereg_links'] = source_preprint.prereg_links
+
+        preprint = cls(
+            provider=source_preprint.provider,
+            title=source_preprint.title,
+            creator=source_preprint.creator,
+            description=source_preprint.description,
+        )
+        preprint.save()
+
+        base_guid.referent = preprint
+        base_guid.object_id = preprint.pk
+        base_guid.content_type = ContentType.objects.get_for_model(preprint)
+        base_guid.save()
+
+        guid_version = GuidVersionsThrough(
+            referent=base_guid.referent,
+            object_id=base_guid.object_id,
+            content_type=base_guid.content_type,
+            version=last_version + 1,
+            guid=base_guid
+        )
+        guid_version.save()
+
+        return preprint, data_for_update
 
     @property
     def is_deleted(self):

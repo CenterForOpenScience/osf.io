@@ -473,21 +473,39 @@ class VersionedGuidMixin(GuidMixin):
     @property
     def _id(self):
         try:
-            guid = self.guids.first()
-            version = None
-            if guid and guid.versions.exists():
-                version = guid.versions.get(object_id=self.pk).version
+            guid = None
+            versioned_guid = self.versioned_guids
+            if versioned_guid.exists():
+                version = versioned_guid.first().version
+                guid = versioned_guid.first().guid
         except IndexError:
             return None
         if guid:
-            if version is not None:
-                return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
-            return guid._id
+            return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
         return None
 
     @_id.setter
     def _id(self, value):
         pass
+
+    @property
+    def version(self):
+        return self.versioned_guids.first().version
+
+    # Override load in order to load by Versioned GUID
+    @classmethod
+    def load(cls, data, select_for_update=False):
+        try:
+            base_guid = data.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+            version = data.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1] if len(data.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)) > 1 else None
+            if version:
+                return cls.objects.get(versioned_guids__guid___id=base_guid, versioned_guids__version=version) if not select_for_update else cls.objects.filter(
+                    versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
+
+            return cls.objects.filter(versioned_guids__guid___id=base_guid).order_by('-versioned_guids__version').first() if not select_for_update else cls.objects.filter(
+                versioned_guids__guid___id=data).order_by('-versioned_guids__version').select_for_update().get()
+        except cls.DoesNotExist:
+            return None
 
     _primary_key = _id
 
