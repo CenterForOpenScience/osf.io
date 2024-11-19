@@ -1019,7 +1019,7 @@ msgid ""
 "The import process may have encountered an unexpected error and been "
 "interrupted. To check the latest status, please reload the page. If the "
 "issue persists, please contact support."
-msgstr "Wikiインポート処理で予期しないエラーが発生し、中断された可能性があります。最新の状況を確認するには、ページを再読み込みしてください。問題が解決しない場合は、サポートにお問い合わせください。"
+msgstr "Wikiインポート処理で予期しないエラーが発生し、中断された可能性があります。最新の状況を確認するには、ページを再度読み込んでください。問題が解決しない場合は、サポートにお問い合わせください。"
 
 #: addons/wiki/templates/abort_wiki_import.mako:93
 msgid "abort error"
