@@ -2,14 +2,12 @@ from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 
 import logging
 import dataclasses
-import requests
 import typing
 
 from . import auth_helpers
 import requests
 
 from website import settings
-from osf.models import Node
 
 logger = logging.getLogger(__name__)
 
@@ -287,12 +285,12 @@ def _get_gv_addon_operation_invocations_response(auth, addon, project, list_id):
         requested_resource=project,
         request_method='POST',
         params={},
-        data=data
+        json_data=data
     )
     return gv_response
 
 
-def citation_list_gv_request(auth, request, addon_short_name, node_addon, list_id, show):
+def citation_list_gv_request(auth, request, addon_short_name, list_id, show):
     from osf.models import Node
 
     response = {'contents': []}

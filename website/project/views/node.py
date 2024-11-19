@@ -16,7 +16,7 @@ from framework.forms import push_errors_to_status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from osf.external.gravy_valet.request_helpers import get_citation_url_list
+from osf.external.gravy_valet.request_helpers import get_gv_citation_url_list_for_project
 from osf.external.gravy_valet.translations import EphemeralAddonConfig
 from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
@@ -517,7 +517,7 @@ def view_project(auth, node, **kwargs):
     if waffle.flag_is_active(request, features.ENABLE_GV):
         project = Node.objects.filter(guids___id__in=[kwargs['pid']]).first()
         for item in ['zotero', 'mendeley']:
-            citation_list_urls = get_citation_url_list(
+            citation_list_urls = get_gv_citation_url_list_for_project(
                 auth=auth,
                 pid=kwargs.get('pid'),
                 addon_short_name=item,

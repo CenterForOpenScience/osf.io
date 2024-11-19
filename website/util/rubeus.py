@@ -270,18 +270,16 @@ class NodeFileCollector:
                         )
                     )
                     sentry.log_exception(e)
-                    from osf.external.gravy_valet.translations import EphemeralAddonConfig
-                    if not isinstance(addon.config, EphemeralAddonConfig):
-                        return_value.append({
-                            KIND: FOLDER,
-                            'unavailable': True,
-                            'iconUrl': addon.config.icon_url,
-                            'provider': addon.config.short_name,
-                            'addonFullname': addon.config.full_name,
-                            'permissions': {'view': False, 'edit': False},
-                            'name': f'{addon.config.full_name} is currently unavailable',
-                        })
-                        continue
+                    return_value.append({
+                        KIND: FOLDER,
+                        'unavailable': True,
+                        'iconUrl': addon.config.icon_url,
+                        'provider': addon.config.short_name,
+                        'addonFullname': addon.config.full_name,
+                        'permissions': {'view': False, 'edit': False},
+                        'name': f'{addon.config.full_name} is currently unavailable',
+                    })
+                    continue
                 return_value.extend(sort_by_name(temp) or [])
         return return_value, active_addons
 
