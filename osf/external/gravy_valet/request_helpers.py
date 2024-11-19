@@ -260,7 +260,7 @@ def get_gv_citation_url_list_for_project(auth, addon_short_name, project, reques
     return citation_url_list
 
 
-def _get_gv_addon_operation_invocations_response(auth, addon, project, list_id):
+def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
     data = {
         'attributes': {
             'operation_name': 'list_root_collections',
@@ -302,7 +302,7 @@ def citation_list_gv_request(auth, request, addon_short_name, list_id, show):
         project=project
     )
     for addon in citation_url_list:
-        gv_response = _get_gv_addon_operation_invocations_response(
+        gv_response = _invoke_gv_citation_operation_invocations(
             auth=auth,
             addon=addon,
             project=project,
