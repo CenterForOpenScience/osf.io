@@ -798,6 +798,7 @@ $(document).ready(function () {
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
+            truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
