@@ -104,10 +104,12 @@ class EphemeralUserSettings:
     # This is needed to support making further requests
     active_user: type  # : OSFUser
     _owner: 'OSFUser' = None
-    owner_guid: str = dataclasses.field(init=False)
+    owner_guid: str = dataclasses.field(init=False, default=None)
 
     def __post_init__(self):
-        self.owner_guid = self.gv_data.get_included_attribute(['account_owner'], 'user_uri').split('/')[-1]
+        owner_url = self.gv_data.get_included_attribute(['account_owner'], 'user_uri')
+        if owner_url:
+            self.owner_guid = owner_url.split('/')[-1]
 
     @property
     def short_name(self):

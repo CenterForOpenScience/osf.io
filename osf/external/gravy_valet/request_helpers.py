@@ -242,7 +242,8 @@ class JSONAPIResultEntry:
         related_object = self
         for relationship_name in include_path:
             related_object = related_object.get_included_member(relationship_name)
-        return related_object.get_attribute(attribute_name)
+        if related_object:
+            return related_object.get_attribute(attribute_name)
 
     def extract_included_relationships(self, included_entities_lookup):
         for relationship_entry in self._relationships.values():
