@@ -27,6 +27,24 @@ def pop_slice(lis, n):
     del lis[:n]
     return tem
 
+def create_dois_locally():
+    """
+    This script is to crate pending DOIs locally
+    """
+    preprints_with_pending_dois = Preprint.objects.filter(
+        preprint_doi_created__isnull=True,
+        is_published=True
+    )
+
+    if not preprints_with_pending_dois.exists():
+        return
+
+    preprints = list(preprints_with_pending_dois)
+
+    for preprint in preprints:
+        client = preprint.get_doi_client()
+        doi = client.build_doi(preprint=preprint) if client else None
+        preprint.set_identifier_values(doi, save=True)
 
 def check_crossref_dois(dry_run=True):
     """
