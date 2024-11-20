@@ -26,6 +26,7 @@ RESOURCE_LIST_ENDPOINT = f'{API_BASE}resource-references'
 RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
 
 ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
+ACCOUNT_OWNER_PATH = 'base_account.account_owner'
 ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
 
 
@@ -51,6 +52,14 @@ def create_addon(requested_resource, requesting_user, attributes: dict, relation
         requested_resource=requested_resource,
         request_method='POST',
         json_data={'data': json_data},
+    )
+
+def delete_addon(pk, requesting_user, requested_resource):
+    return _make_gv_request(
+        ADDON_ENDPOINT.format(pk=pk),
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        request_method='DELETE'
     )
 
 def get_addon(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
@@ -93,7 +102,7 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
         endpoint_url=resource_result.get_related_link('configured_storage_addons'),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': ADDON_EXTERNAL_SERVICE_PATH}
+        params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
 
 
@@ -229,11 +238,12 @@ class JSONAPIResultEntry:
     def get_included_member(self, relationship_name):
         return self._includes.get(relationship_name)
 
-    def get_included_attribute(self, include_path: typing.Iterator, attribute_name: str):
+    def get_included_attribute(self, include_path: typing.Iterable[str], attribute_name: str):
         related_object = self
         for relationship_name in include_path:
             related_object = related_object.get_included_member(relationship_name)
-        return related_object.get_attribute(attribute_name)
+        if related_object:
+            return related_object.get_attribute(attribute_name)
 
     def extract_included_relationships(self, included_entities_lookup):
         for relationship_entry in self._relationships.values():

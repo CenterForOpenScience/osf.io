@@ -5,6 +5,7 @@ import logging
 import re
 import typing
 import urllib.parse
+from functools import cache
 from http import HTTPStatus
 
 import dataclasses  # backport
@@ -43,6 +44,7 @@ class _FakeGVEntity:
             'id': self.pk,
             'attributes': self._serialize_attributes(),
             'links': self._serialize_links(),
+            'includes': self._serialize_includes(),
         }
         relationships = self._serialize_relationships()
         if relationships:
@@ -51,6 +53,9 @@ class _FakeGVEntity:
 
     def _serialize_attributes(self):
         ...
+
+    def _serialize_includes(self):
+        return []
 
     def _serialize_relationships(self):
         ...
@@ -139,6 +144,11 @@ class _FakeAccount(_FakeGVEntity):
     external_storage_service: _FakeAddonProvider
     account_owner_pk: int
     display_name: str = ''
+
+    @property
+    @cache
+    def account_owner(self):
+        return _FakeUserReference(pk=self.account_owner_pk, uri='https://osf.io/12454')
 
     def _serialize_attributes(self):
         return {
