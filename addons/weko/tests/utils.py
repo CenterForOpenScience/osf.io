@@ -10,7 +10,17 @@ fake_weko_indices = [
     {
         'id': 100,
         'name': 'Sample Index',
-        'children': [],
+        'children': [
+            {
+                'id': 'more',
+            },
+            {
+                'id': 'dummy',
+            }
+        ],
+    },
+    {
+        'id': 'more',
     },
 ]
 fake_weko_item = {
@@ -23,6 +33,9 @@ fake_weko_items = {
     'hits': {
         'hits': [
             fake_weko_item,
+            {
+                'id': 'dummy',
+            }
         ]
     },
 }
