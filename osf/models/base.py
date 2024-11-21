@@ -494,17 +494,23 @@ class VersionedGuidMixin(GuidMixin):
 
     # Override load in order to load by Versioned GUID
     @classmethod
-    def load(cls, data, select_for_update=False):
+    def load(cls, guid, select_for_update=False):
         try:
-            base_guid = data.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-            version = data.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1] if len(data.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)) > 1 else None
+            guid_split_list = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+            base_guid = guid_split_list[0]
+            version = guid_split_list[1] if len(guid_split_list) > 1 else None
             if version:
-                return cls.objects.get(versioned_guids__guid___id=base_guid, versioned_guids__version=version) if not select_for_update else cls.objects.filter(
-                    versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
+                if not select_for_update:
+                    return cls.objects.get(versioned_guids__guid___id=base_guid, versioned_guids__version=version)
+                return cls.objects.filter(versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
 
-            return cls.objects.filter(versioned_guids__guid___id=base_guid).order_by('-versioned_guids__version').first() if not select_for_update else cls.objects.filter(
-                versioned_guids__guid___id=data).order_by('-versioned_guids__version').select_for_update().get()
+            if not select_for_update:
+                return cls.objects.filter(versioned_guids__guid___id=base_guid).order_by('-versioned_guids__version').first()
+            return cls.objects.filter(versioned_guids__guid___id=guid).order_by('-versioned_guids__version').select_for_update().get()
+
         except cls.DoesNotExist:
+            return None
+        except cls.MultipleObjectsReturned:
             return None
 
     _primary_key = _id
