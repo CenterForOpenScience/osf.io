@@ -6,7 +6,7 @@ app_name = 'osf'
 
 urlpatterns = [
     re_path(r'^$', views.PreprintList.as_view(), name=views.PreprintList.view_name),
-    re_path(r'^(?P<preprint_id>[A-Za-z0-9_]+)/versions/$', views.ListCreatePreprintVersion.as_view(), name=views.ListCreatePreprintVersion.view_name),
+    re_path(r'^(?P<preprint_id>[A-Za-z0-9_]+)/versions/$', views.PreprintVersionsList.as_view(), name=views.PreprintVersionsList.view_name),
     re_path(r'^(?P<preprint_id>[A-Za-z0-9_]+)/$', views.PreprintDetail.as_view(), name=views.PreprintDetail.view_name),
     re_path(r'^(?P<preprint_id>[A-Za-z0-9_]+)/bibliographic_contributors/$', views.PreprintBibliographicContributorsList.as_view(), name=views.PreprintBibliographicContributorsList.view_name),
     re_path(r'^(?P<preprint_id>[A-Za-z0-9_]+)/citation/$', views.PreprintCitationDetail.as_view(), name=views.PreprintCitationDetail.view_name),
