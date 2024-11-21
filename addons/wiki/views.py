@@ -1019,7 +1019,7 @@ def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, m
     return wiki_content
 
 def _split_image_and_size(file_name):
-    parts = file_name.rsplit(" =", 1)
+    parts = file_name.rsplit(' =', 1)
     if len(parts) == 1:
         return file_name, ''
     d_file_name = parts[0]
@@ -1056,7 +1056,7 @@ def _exclude_tooltip(match_path):
         size_match = re.search(r' =(.+)$', rest_of_path)
 
         if size_match:
-            exclude_tooltip_path += size_match.group(0) 
+            exclude_tooltip_path += size_match.group(0)
         return exclude_tooltip_path, exclude_tooltip_match
     else:
         return match_path, None
