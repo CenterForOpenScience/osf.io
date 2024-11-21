@@ -142,6 +142,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     )
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
+    version = ser.IntegerField(read_only=True)
 
     citation = NoneIfWithdrawal(
         RelationshipField(
@@ -221,6 +222,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
+            'preprint_versions': 'get_preprint_versions',
             'preprint_doi': 'get_preprint_doi_url',
         },
     )
@@ -252,6 +254,14 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
         return 'preprints:preprint-relationships-subjects'
+
+    def get_preprint_versions(self, obj):
+        return absolute_reverse(
+            'preprints:preprint-versions', kwargs={
+                'preprint_id': obj._id, 'version':
+                self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_preprint_url(self, obj):
         return absolute_reverse(
@@ -559,8 +569,6 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        # preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
-        # preprint.save()
         preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description)
 
         return self.update(preprint, validated_data)
