@@ -121,14 +121,8 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
         endpoint_url=resource_result.get_related_link('configured_citation_addons'),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+        params={'include': ADDON_EXTERNAL_CITATIONS_SERVICE_PATH}
     )
-    # yield from iterate_gv_results(
-    #     endpoint_url=resource_result.get_related_link('configured_storage_addons'),
-    #     requesting_user=requesting_user,
-    #     requested_resource=requested_resource,
-    #     params={'include': ADDON_EXTERNAL_SERVICE_PATH}
-    # )
 
 
 def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
