@@ -164,7 +164,9 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         )
 
 
-class ListCreatePreprintVersion(PreprintList):
+class PreprintVersionsList(PreprintList):
+    view_category = 'preprints'
+    view_name = 'preprint-versions'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
