@@ -27,6 +27,19 @@ def pop_slice(lis, n):
     del lis[:n]
     return tem
 
+def create_dois_locally():
+    """
+    This script creates identifiers for preprints which have pending DOI in local environment.
+    """
+    preprints_with_pending_doi = Preprint.objects.filter(
+        preprint_doi_created__isnull=True,
+        is_published=True
+    )
+
+    for preprint in preprints_with_pending_doi:
+        client = preprint.get_doi_client()
+        doi = client.build_doi(preprint=preprint) if client else None
+        preprint.set_identifier_values(doi, save=True)
 
 def check_crossref_dois(dry_run=True):
     """
