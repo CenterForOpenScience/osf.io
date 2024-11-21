@@ -20,6 +20,7 @@ from framework.exceptions import PermissionsError
 from framework.auth import oauth_scopes
 from rest_framework.exceptions import NotFound
 
+from api.base.exceptions import Conflict
 from .subject import Subject
 from .tag import Tag
 from .user import OSFUser
@@ -302,10 +303,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         source_preprint = cls.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         if not source_preprint:
             raise NotFound
+        if not source_preprint.is_published:
+            # TODO: Change error detail
+            raise Conflict(detail='Before creating a new version, you must publish the latest version')
 
         base_guid = Guid.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         last_version = base_guid.versions.order_by('-version').first().version
-
         data_for_update = {}
         data_for_update['tags'] = source_preprint.tags.all().values_list('name', flat=True)
         data_for_update['license_type'] = source_preprint.license.node_license
@@ -315,6 +318,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         data_for_update['custom_publication_citation'] = source_preprint.custom_publication_citation
         data_for_update['article_doi'] = source_preprint.article_doi
 
+        data_for_update['has_coi'] = source_preprint.has_coi
+        data_for_update['conflict_of_interest_statement'] = source_preprint.conflict_of_interest_statement
         data_for_update['has_data_links'] = source_preprint.has_data_links
         data_for_update['data_links'] = source_preprint.data_links
         data_for_update['has_prereg_links'] = source_preprint.has_prereg_links
@@ -327,6 +332,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             description=source_preprint.description,
         )
         preprint.save()
+        # add contributors
+        for contributor_info in source_preprint.contributor_set.exclude(user=source_preprint.creator).values('visible', 'user_id', '_order'):
+            preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
 
         base_guid.referent = preprint
         base_guid.object_id = preprint.pk
