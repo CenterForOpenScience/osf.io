@@ -299,13 +299,15 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return preprint
 
     @classmethod
-    def create_version(cls, dupliate_from_guid):
+    def create_version(cls, dupliate_from_guid, auth):
         source_preprint = cls.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         if not source_preprint:
             raise NotFound
+        if not source_preprint.has_permission(auth.user, ADMIN):
+            raise PermissionsError('You must have admin permissions to create new version.')
         if not source_preprint.is_published:
             # TODO: Change error detail
-            raise Conflict(detail='Before creating a new version, you must publish the latest version')
+            raise Conflict(detail='Before creating a new version, you must publish the latest version.')
 
         base_guid = Guid.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         last_version = base_guid.versions.order_by('-version').first().version
@@ -321,9 +323,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         data_for_update['has_coi'] = source_preprint.has_coi
         data_for_update['conflict_of_interest_statement'] = source_preprint.conflict_of_interest_statement
         data_for_update['has_data_links'] = source_preprint.has_data_links
+        data_for_update['why_no_data'] = source_preprint.why_no_data
         data_for_update['data_links'] = source_preprint.data_links
         data_for_update['has_prereg_links'] = source_preprint.has_prereg_links
+        data_for_update['why_no_prereg'] = source_preprint.why_no_prereg
         data_for_update['prereg_links'] = source_preprint.prereg_links
+
+        data_for_update['node'] = source_preprint.node
 
         preprint = cls(
             provider=source_preprint.provider,

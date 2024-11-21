@@ -580,7 +580,8 @@ class PreprintCreateVersionSerializer(PreprintCreateSerializer):
 
     def create(self, validated_data):
         dupliate_from_guid = validated_data.pop('dupliate_from_guid', None)
-        preprint, update_data = Preprint.create_version(dupliate_from_guid)
+        auth = get_user_auth(self.context['request'])
+        preprint, update_data = Preprint.create_version(dupliate_from_guid, auth)
 
         return self.update(preprint, update_data)
 
