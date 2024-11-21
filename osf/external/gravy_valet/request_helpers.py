@@ -29,8 +29,8 @@ RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
 ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
 ACCOUNT_OWNER_PATH = 'base_account.account_owner'
 ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
-# ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH = 'external_citation_service'
-# ADDON_EXTERNAL_CITATIONS_SERVICE_PATH = 'base_account.external_citation_service'
+ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH = 'external_citation_service'
+ADDON_EXTERNAL_CITATIONS_SERVICE_PATH = 'base_account.external_citation_service'
 
 CITATION_ITEM_TYPE_ALIASES = {
     'COLLECTION': 'folder',
@@ -92,12 +92,12 @@ def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIRes
     yield from iterate_gv_results(
         endpoint_url=user_result.get_related_link('authorized_storage_accounts'),
         requesting_user=requesting_user,
-        params={'include': ACCOUNT_EXTERNAL_SERVICE_PATH},
+        params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
     yield from iterate_gv_results(
         endpoint_url=user_result.get_related_link('authorized_citation_accounts'),
         requesting_user=requesting_user,
-        params={'include': ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH},
+        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
 
 
