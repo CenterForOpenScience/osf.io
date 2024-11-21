@@ -308,7 +308,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if not source_preprint.is_published:
             # TODO: Change error detail
             raise Conflict(detail='Before creating a new version, you must publish the latest version.')
-        breakpoint()
+
         base_guid = Guid.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         last_version = base_guid.versions.order_by('-version').first().version
         data_for_update = {}
@@ -343,6 +343,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         for contributor_info in source_preprint.contributor_set.exclude(user=source_preprint.creator).values('visible', 'user_id', '_order'):
             preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
 
+        # add affiliated institutions
         for institution in source_preprint.affiliated_institutions.all():
             preprint.add_affiliated_institution(institution, auth.user)
 
