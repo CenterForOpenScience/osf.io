@@ -1,5 +1,4 @@
 import dataclasses
-import datetime
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, F, Sum
@@ -22,13 +21,27 @@ class InstitutionalUsersReporter(MonthlyReporter):
     which offers institutional admins insight into how people at their institution are
     using osf, based on their explicitly-affiliated osf objects
     '''
-    def report(self):
+    def iter_report_kwargs(self, continue_after: dict | None = None):
         _before_datetime = self.yearmonth.month_end()
-        for _institution in osfdb.Institution.objects.filter(created__lt=_before_datetime):
+        _inst_qs = (
+            osfdb.Institution.objects
+            .filter(created__lt=_before_datetime)
+            .order_by('pk')
+        )
+        if continue_after:
+            _inst_qs = _inst_qs.filter(pk__gte=continue_after['institution_pk'])
+        for _institution in _inst_qs:
             _user_qs = _institution.get_institution_users().filter(created__lt=_before_datetime)
-            for _user in _user_qs.iterator(chunk_size=_CHUNK_SIZE):
-                _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth, _before_datetime)
-                yield _helper.report
+            if continue_after and (_institution.pk == continue_after['institution_pk']):
+                _user_qs = _user_qs.filter(pk__gt=continue_after['user_pk'])
+            for _user_pk in _user_qs.values_list('pk', flat=True).iterator(chunk_size=_CHUNK_SIZE):
+                yield {'institution_pk': _institution.pk, 'user_pk': _user_pk}
+
+    def report(self, **report_kwargs):
+        _institution = osfdb.Institution.objects.get(pk=report_kwargs['institution_pk'])
+        _user = osfdb.OSFUser.objects.get(pk=report_kwargs['user_pk'])
+        _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth)
+        return _helper.report
 
 
 # helper
@@ -37,7 +50,6 @@ class _InstiUserReportHelper:
     institution: osfdb.Institution
     user: osfdb.OSFUser
     yearmonth: YearMonth
-    before_datetime: datetime.datetime
     report: InstitutionalUserReport = dataclasses.field(init=False)
 
     def __post_init__(self):
@@ -63,6 +75,10 @@ class _InstiUserReportHelper:
             published_preprint_count=self._published_preprint_queryset().count(),
             storage_byte_count=self._storage_byte_count(),
         )
+
+    @property
+    def before_datetime(self):
+        return self.yearmonth.month_end()
 
     def _node_queryset(self):
         _institution_node_qs = self.institution.nodes.filter(
