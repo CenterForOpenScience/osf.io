@@ -104,7 +104,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         monthly_reporters_go(
-            yearmonth=kwargs['yearmonth'].upper(),
+            yearmonth=kwargs['yearmonth'],
             reporter_key=kwargs['reporter'].upper(),
         )
         self.stdout.write(self.style.SUCCESS(
@@ -120,4 +120,4 @@ def _get_reporter(reporter_key: str, yearmonth: str):
 
 
 def _enum_names(enum_cls) -> list[str]:
-    return list(AllMonthlyReporters.__members__.keys())
+    return list(enum_cls.__members__.keys())
