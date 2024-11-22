@@ -92,12 +92,12 @@ def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIRes
     yield from iterate_gv_results(
         endpoint_url=user_result.get_related_link('authorized_storage_accounts'),
         requesting_user=requesting_user,
-        params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+        params={'include': f'{ACCOUNT_EXTERNAL_SERVICE_PATH}'}
     )
     yield from iterate_gv_results(
         endpoint_url=user_result.get_related_link('authorized_citation_accounts'),
         requesting_user=requesting_user,
-        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH}'}
     )
 
 
@@ -115,13 +115,13 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
         endpoint_url=resource_result.get_related_link('configured_storage_addons'),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': ADDON_EXTERNAL_SERVICE_PATH}
+        params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
     yield from iterate_gv_results(
         endpoint_url=resource_result.get_related_link('configured_citation_addons'),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': ADDON_EXTERNAL_CITATIONS_SERVICE_PATH}
+        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
 
 
