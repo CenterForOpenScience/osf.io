@@ -75,13 +75,15 @@ class PublicItemUsageReporter(MonthlyReporter):
             return None
 
     def followup_task(self, report):
-        _is_last_month = report.yearmonth.next() == YearMonth.from_date(datetime.date.today())
+        _is_last_month = report.report_yearmonth.next() == YearMonth.from_date(datetime.date.today())
         if _is_last_month:
             from api.share.utils import task__update_share
-            return task__update_share.s(
-                report.item_osfid,
-                is_backfill=True,
-                osfmap_partition_name=OsfmapPartition.MONTHLY_SUPPLEMENT.name,
+            return task__update_share.signature(
+                args=(report.item_osfid,),
+                kwargs={
+                    'is_backfill': True,
+                    'osfmap_partition_name': OsfmapPartition.MONTHLY_SUPPLEMENT.name,
+                },
                 countdown=30,  # give index time to settle
             )
 
