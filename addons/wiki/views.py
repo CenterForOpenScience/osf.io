@@ -961,16 +961,21 @@ def _replace_wiki_link_notation(node, link_matches, wiki_content, info, node_fil
     match_path = ''
     for match in link_matches:
         match_path, tooltip_match = _exclude_tooltip(match['path'])
-        has_slash, has_sharp, has_dot, is_url = _exclude_symbols(match_path)
+        has_slash, has_sharp, is_url = _exclude_symbols(match_path)
         if bool(is_url):
             continue
         if has_slash:
             continue
         if has_sharp:
-            if has_dot:
-                # relace file name
+            wiki_name_with_anchor, anchor = match_path.rsplit('#', 1)
+            is_wiki = _check_wiki_name_exist(node, wiki_name_with_anchor, node_file_mapping, import_wiki_name_list)
+            if is_wiki:
+                if tooltip_match:
+                    wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + wiki_name_with_anchor + '/#' + anchor + ' "' + tooltip_match['tooltip'] + '")')
+                else:
+                    wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + wiki_name_with_anchor + '/#' + anchor + ')')
+            else:
                 wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'link', dir_id, match_path, tooltip_match, node_file_mapping)
-                continue
             continue
 
         # check whether wiki or not
@@ -1034,10 +1039,9 @@ def _split_image_and_size(file_name):
 def _exclude_symbols(path):
     has_slash = '/' in path
     has_sharp = '#' in path
-    has_dot = '.' in path
     rep_url = r'^https?://[\w/:%#\$&\?\(\)~\.=\+\-]+$'
     is_url = re.match(rep_url, path)
-    return has_slash, has_sharp, has_dot, is_url
+    return has_slash, has_sharp, is_url
 
 def _exclude_tooltip(match_path):
     rep_tooltip_single = r'(?P<path>.+?)[ ]+\'(?P<tooltip>.*?(?<!\\)(?:\\\\)*)\''
