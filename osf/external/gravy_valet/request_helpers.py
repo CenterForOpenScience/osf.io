@@ -263,7 +263,7 @@ def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
         'relationships': {
             'thru_addon': {
                 'data': {
-                    'type': 'configured-addons',
+                    'type': 'configured-citation-addons',
                     'id': addon['id']
                 }
             }
