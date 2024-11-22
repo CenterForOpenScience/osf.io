@@ -2847,13 +2847,22 @@ class TestWikiImportReplace(OsfTestCase):
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_has_slash, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
         self.assertEqual(result_content, expected_content)
 
-    def test_replace_wiki_link_notation_has_sharp(self):
-        wiki_content_link_has_sharp = 'Wiki content with [wiki#page](#wikipage)'
-        link_matches = list(re.finditer(self.rep_link, wiki_content_link_has_sharp))
+    def test_replace_wiki_link_notation_has_sharp_and_is_wiki_with_tooltip(self):
+        wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor "tooltip text")'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
         import_wiki_name_list = ['importpage1', 'importpage2']
-        expected_content = wiki_content_link_has_sharp
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_has_sharp, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor "tooltip text")'
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_has_sharp_and_is_wiki_without_tooltip(self):
+        wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor)'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor)'
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
         self.assertEqual(result_content, expected_content)
 
     def test_replace_wiki_link_notation_is_url(self):
@@ -2863,15 +2872,6 @@ class TestWikiImportReplace(OsfTestCase):
         import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = wiki_content_link_is_url
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_is_url, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
-        self.assertEqual(result_content, expected_content)
-
-    def test_replace_wiki_link_notation_has_sharp_dot(self):
-        wiki_content_link_has_sharp_dot = 'Wiki content with [wiki#page.txt](wiki#page.txt)'
-        link_matches = list(re.finditer(self.rep_link, wiki_content_link_has_sharp_dot))
-        info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
-        expected_content = f'Wiki content with [wiki#page.txt]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment2_txt._id})'
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_has_sharp_dot, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
         self.assertEqual(result_content, expected_content)
 
     def test_replace_wiki_link_notation_no_link(self):
@@ -2988,15 +2988,6 @@ class TestExcludeSymbols(OsfTestCase):
         self.assertTrue(result[0])
         self.assertFalse(result[1])
         self.assertFalse(result[2])
-        self.assertFalse(result[3])
-
-    def test_has_sharp(self):
-        path = '#contents'
-        result = views._exclude_symbols(path)
-        self.assertFalse(result[0])
-        self.assertTrue(result[1])
-        self.assertFalse(result[2])
-        self.assertFalse(result[3])
 
     def test_is_url(self):
         path = 'https://example.com'
@@ -3004,23 +2995,13 @@ class TestExcludeSymbols(OsfTestCase):
         self.assertTrue(result[0])
         self.assertFalse(result[1])
         self.assertTrue(result[2])
-        self.assertTrue(result[3])
 
-    def test_has_dot(self):
-        path = 'file.txt'
-        result = views._exclude_symbols(path)
-        self.assertFalse(result[0])
-        self.assertFalse(result[1])
-        self.assertTrue(result[2])
-        self.assertFalse(result[3])
-
-    def test_has_sharp_and_dot(self):
-        path = 'file#0424.txt'
+    def test_has_sharp(self):
+        path = 'wiki#anchor'
         result = views._exclude_symbols(path)
         self.assertFalse(result[0])
         self.assertTrue(result[1])
-        self.assertTrue(result[2])
-        self.assertFalse(result[3])
+        self.assertFalse(result[2])
 
 class TestReplaceCommonRule(OsfTestCase):
     def test_plus_sign_replacement(self):

@@ -974,8 +974,6 @@ def _replace_wiki_link_notation(node, link_matches, wiki_content, info, node_fil
                     wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + wiki_name_with_anchor + '/#' + anchor + ' "' + tooltip_match['tooltip'] + '")')
                 else:
                     wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + wiki_name_with_anchor + '/#' + anchor + ')')
-            else:
-                wiki_content = _replace_file_name(node, wiki_name, wiki_content, match, 'link', dir_id, match_path, tooltip_match, node_file_mapping)
             continue
 
         # check whether wiki or not
