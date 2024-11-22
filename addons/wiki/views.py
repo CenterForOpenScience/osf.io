@@ -905,7 +905,7 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
     logger.info('created sorting copy import folder')
     copy_to_id = wiki_import_sorting_folder_path.split('/')[1]
     # Copy Import Directory
-    cloned_id = _wiki_copy_import_directory(copy_to_id, dir_id, node)
+    cloned_id = _wiki_copy_import_directory(auth, copy_to_id, dir_id, node)
     logger.info('copied import directory')
     # Replace Wiki Content
     replaced_wiki_info = _wiki_content_replace(wiki_info, cloned_id, node, task)
@@ -1151,10 +1151,10 @@ def _get_md_content_from_wb(data, node, creator_auth, task):
             logger.error('Failed to get {} content from WB'.format(data[i]['wiki_name']))
     return data
 
-def _wiki_copy_import_directory(copy_to_id, copy_from_id, node):
+def _wiki_copy_import_directory(auth, copy_to_id, copy_from_id, node):
     copy_from = BaseFileNode.objects.get(_id=copy_from_id)
     copy_to = BaseFileNode.objects.get(_id=copy_to_id)
-    cloned = files_utils.copy_files(copy_from, node, copy_to)
+    cloned = wiki_utils.copy_files_with_timestamp(auth, copy_from, node, copy_to)
     cloned_id = cloned._id
     return cloned_id
 
