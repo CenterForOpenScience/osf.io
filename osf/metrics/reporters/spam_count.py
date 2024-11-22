@@ -8,11 +8,12 @@ from osf.models.spam import SpamStatus
 
 class SpamCountReporter(MonthlyReporter):
 
-    def report(self):
+    def report(self, **report_kwargs):
+        assert not report_kwargs
         target_month = self.yearmonth.month_start()
         next_month = self.yearmonth.month_end()
 
-        report = SpamSummaryReport(
+        return SpamSummaryReport(
             # Node Log entries
             node_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,
@@ -79,5 +80,3 @@ class SpamCountReporter(MonthlyReporter):
                 created__lt=next_month,
             ).count()
         )
-
-        return [report]
