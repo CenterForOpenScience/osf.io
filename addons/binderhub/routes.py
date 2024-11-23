@@ -68,6 +68,11 @@ api_routes = {
             '/project/<pid>/{}/config'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/config'.format(SHORT_NAME),
         ], 'get', views.binderhub_get_config_ember, json_renderer),
+        # API that reads the list of MATLAB product names
+        Rule([
+            '/project/<pid>/{}/matlab/product_name_list/<release>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/matlab/product_name_list/<release>'.format(SHORT_NAME),
+        ], 'get', views.get_matlab_product_name_list, json_renderer),
         # Server annotations CRUD API.
         Rule([
             '/project/<pid>/{}/server_annotation'.format(SHORT_NAME),
@@ -85,6 +90,7 @@ api_routes = {
             '/project/<pid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
         ], 'delete', views.delete_server_annotation, json_renderer),
+        # Read mpm addon list
         # API to logout from a BinderHub.
         Rule([
             '/project/<pid>/{}/session'.format(SHORT_NAME),

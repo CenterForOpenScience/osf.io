@@ -187,6 +187,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             '/binderhub/session?binderhub_url=https%3A%2F%2Ftesta.my.site',
             default_jupyterhub['logout_url'],
         )
+        assert_not_equal(len(res.json['data']['attributes']['mpm_releases']), 0)
 
         new_binderhub = make_binderhub(
             binderhub_url='https://testa.my.site',
@@ -343,3 +344,27 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         res = self.app.delete(url + '?binderhub_url=https%3A%2F%2Ftesta.my.site', auth=self.user.auth)
         assert_equal(res.json['data']['deleted'], 1)
         assert_equal(res.json['data']['jupyterhub_logout_url'], 'https://testa.jh.my.site/custom/logout')
+
+    def test_matlab_product_name_list(self):
+        binderhub = make_binderhub(
+            binderhub_url='https://testa.my.site',
+            binderhub_oauth_client_secret='MY_CUSTOM_SECRET_A',
+            binderhub_oauth_authorize_url='https://testa.my.site/authorize',
+            jupyterhub_url='https://testa.jh.my.site',
+        )
+        url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
+        res = self.app.put_json(url, {
+            'binder_url': 'https://testa.my.site',
+            'available_binderhubs': [binderhub],
+        }, auth=self.user.auth)
+        url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
+        res = self.app.get(url, auth=self.user.auth)
+        release_names = res.json['data']['attributes']['mpm_releases']
+        assert_not_equal(len(release_names), 0)
+        for release in release_names:
+            url = self.project.api_url_for('get_matlab_product_name_list', release=release)
+            res = self.app.get(url, auth=self.user.auth)
+            assert_equal(res.json['data']['type'], 'matlab-product-name-list')
+            assert_equal(res.json['data']['id'], release)
+            assert_equal(res.json['data']['attributes']['release'], release)
+            assert_not_equal(len(res.json['data']['attributes']['names']), 0)

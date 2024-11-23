@@ -280,7 +280,26 @@ def binderhub_get_config_ember(**kwargs):
                          'deployment': get_deployment(),
                          'node_binderhubs': node_binderhubs,
                          'user_binderhubs': user_binderhubs,
+                         'mpm_releases': settings.MATLAB_RELEASES,
                      }}}
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def get_matlab_product_name_list(**kwargs):
+    try:
+        return {
+            'data': {
+                'type': 'matlab-product-name-list',
+                'id': kwargs['release'],
+                'attributes': {
+                    'release': kwargs['release'],
+                    'names': settings.MATLAB_PRODUCTNAMES_MAP[kwargs['release']],
+                }
+            }
+        }
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 @must_be_valid_project
 @must_have_permission(READ)
