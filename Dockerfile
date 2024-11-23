@@ -98,7 +98,7 @@ RUN set -ex \
         /code/addons/*/requirements.txt \
         /code/admin/rdm*/requirements.txt \
     ; do \
-        pip3 install --no-cache-dir -r "$reqs_file" \
+        pip3 install --no-cache-dir -r "$reqs_file" || exit 1 \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
