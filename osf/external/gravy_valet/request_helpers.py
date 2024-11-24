@@ -2,10 +2,11 @@ from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 
 import logging
 import dataclasses
-import requests
 import typing
 
 from . import auth_helpers
+import requests
+
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,13 @@ RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
 ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
 ACCOUNT_OWNER_PATH = 'base_account.account_owner'
 ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
+ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH = 'external_citation_service'
+ADDON_EXTERNAL_CITATIONS_SERVICE_PATH = 'base_account.external_citation_service'
+
+CITATION_ITEM_TYPE_ALIASES = {
+    'COLLECTION': 'folder',
+    'DOCUMENT': 'file',
+}
 
 
 def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
@@ -84,7 +92,12 @@ def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIRes
     yield from iterate_gv_results(
         endpoint_url=user_result.get_related_link('authorized_storage_accounts'),
         requesting_user=requesting_user,
-        params={'include': ACCOUNT_EXTERNAL_SERVICE_PATH},
+        params={'include': f'{ACCOUNT_EXTERNAL_SERVICE_PATH}'}
+    )
+    yield from iterate_gv_results(
+        endpoint_url=user_result.get_related_link('authorized_citation_accounts'),
+        requesting_user=requesting_user,
+        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH}'}
     )
 
 
@@ -103,6 +116,12 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+    )
+    yield from iterate_gv_results(
+        endpoint_url=resource_result.get_related_link('configured_citation_addons'),
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
 
 
@@ -139,6 +158,26 @@ def get_gv_result(
     return JSONAPIResultEntry(data, included_entities_lookup)
 
 
+def get_raw_gv_result(
+        endpoint_url: str,
+        requesting_user,
+        requested_resource=None,
+        request_method='GET',
+        params: dict = None,
+):
+    '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
+    response_json = _make_gv_request(
+        endpoint_url=endpoint_url,
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        request_method=request_method,
+        params=params,
+    ).json()
+    if not response_json.get('data'):
+        return dict()
+    return response_json['data']
+
+
 def iterate_gv_results(
     endpoint_url: str,
     requesting_user,
@@ -154,8 +193,7 @@ def iterate_gv_results(
         request_method=request_method,
         params=params
     ).json()
-
-    if not response_json['data']:
+    if not response_json.get('data'):
         return  # empty iterator
     included_entities_lookup = _format_included_entities(response_json.get('included', []))
     for entry in response_json['data']:
@@ -185,6 +223,114 @@ def _make_gv_request(
     if not response.ok:
         # log error to Sentry
         pass
+    return response
+
+
+def get_gv_citation_url_list_for_project(auth, addon_short_name, project, request=None, pid=None) -> list:
+    if pid:
+        project_url = settings.DOMAIN + pid
+    else:
+        project_url = settings.DOMAIN + request.view_args.get('pid')
+    resource_references_response = get_gv_result(
+        endpoint_url=RESOURCE_LIST_ENDPOINT,
+        requesting_user=auth.user,
+        requested_resource=project,
+        params={'filter[resource_uri]': project_url},
+    )
+    if not resource_references_response:
+        return []
+    configured_citation_addons_url = resource_references_response.get_related_link(
+        'configured_citation_addons')
+    addons_url_list = get_raw_gv_result(
+        endpoint_url=configured_citation_addons_url,
+        requesting_user=auth.user,
+        requested_resource=project,
+        request_method='GET',
+        params={}
+    )
+    gv_addon_name = addon_short_name if addon_short_name != 'zotero' else 'zotero_org'
+    citation_url_list = list(
+        filter(lambda x: x['attributes']['external_service_name'] == gv_addon_name, addons_url_list))
+    return citation_url_list
+
+
+def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
+    data = {
+        'attributes': {
+            'operation_name': 'list_root_collections',
+            'operation_kwargs': {},
+        },
+        'relationships': {
+            'thru_addon': {
+                'data': {
+                    'type': 'configured-citation-addons',
+                    'id': addon['id']
+                }
+            }
+        },
+        'type': 'addon-operation-invocations'
+    }
+    if list_id != 'ROOT':
+        data['attributes']['operation_kwargs']['collection_id'] = list_id
+        data['attributes']['operation_name'] = 'list_collection_items'
+    gv_response = _make_gv_request(
+        endpoint_url=f'{settings.GRAVYVALET_URL}/v1/addon-operation-invocations/',
+        requesting_user=auth.user,
+        requested_resource=project,
+        request_method='POST',
+        params={},
+        json_data=data
+    )
+    return gv_response
+
+
+def citation_list_gv_request(auth, request, addon_short_name, list_id, show):
+    from osf.models import Node
+
+    response = {'contents': []}
+    project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
+    citation_url_list = get_gv_citation_url_list_for_project(
+        auth=auth,
+        request=request,
+        addon_short_name=addon_short_name,
+        project=project
+    )
+    for addon in citation_url_list:
+        gv_response = _invoke_gv_citation_operation_invocations(
+            auth=auth,
+            addon=addon,
+            project=project,
+            list_id=list_id
+        )
+        if gv_response.status_code == 201:
+            attributes_dict = gv_response.json()['data']['attributes']
+            items = attributes_dict.get('operation_result').get('items')
+            for item in items:
+                item_id = item.get('item_id', '')
+                kind = CITATION_ITEM_TYPE_ALIASES.get(item.get('item_type', ''))
+                if 'csl' in item.keys():
+                    change_response = item
+                    change_response['kind'] = kind
+                    change_response['id'] = item_id
+                else:
+                    change_response = {
+                        'data': {
+                            'addon': addon_short_name,
+                            'kind': kind,
+                            'id': item_id,
+                            'name': item.get('item_name', ''),
+                            'path': item.get('item_path', '/'),
+                            'parent_list_id': item.get('parent_list_id', 'ROOT'),
+                            'provider_list_id': item_id,
+                        },
+                        'kind': kind,
+                        'name': item.get('item_name', ''),
+                        'id': item_id,
+                        'urls': {
+                            'fetch': f'/api/v1/project/{project._id}/{addon_short_name}/citations/{item_id}/',
+                        }
+                    }
+                response['contents'].append(change_response)
     return response
 
 
@@ -268,15 +414,16 @@ def _extract_relationships(jsonapi_relationships_data):
     '''Converts  the `relationship entrie from a JSONAPI into a dict of JSONAPIRelationships keyed by name.'''
     relationships_by_name = {}
     for relationship_name, relationship_entry in jsonapi_relationships_data.items():
-        related_data = relationship_entry.get('data', {})
-        related_type = related_data.get('type')
-        related_id = related_data.get('id')
-        related_link = relationship_entry['links']['related']
-        relationships_by_name[relationship_name] = JSONAPIRelationship(
-            relationship_name=relationship_name,
-            related_link=related_link,
-            related_type=related_type,
-            related_id=related_id
-        )
+        if relationship_entry is not None:
+            related_data = relationship_entry.get('data') or {}
+            related_type = related_data.get('type')
+            related_id = related_data.get('id')
+            related_link = relationship_entry['links']['related']
+            relationships_by_name[relationship_name] = JSONAPIRelationship(
+                relationship_name=relationship_name,
+                related_link=related_link,
+                related_type=related_type,
+                related_id=related_id
+            )
 
     return relationships_by_name

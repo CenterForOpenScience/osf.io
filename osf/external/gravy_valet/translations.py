@@ -13,9 +13,11 @@ from addons.figshare.apps import FigshareAddonAppConfig
 from addons.github.apps import GitHubAddonConfig
 from addons.gitlab.apps import GitLabAddonConfig
 from addons.googledrive.apps import GoogleDriveAddonConfig
+from addons.zotero.apps import ZoteroAddonAppConfig
+from addons.mendeley.apps import MendeleyAddonConfig
+from addons.s3.apps import S3AddonAppConfig
 from addons.onedrive.apps import OneDriveAddonAppConfig
 from addons.owncloud.apps import OwnCloudAddonAppConfig
-from addons.s3.apps import S3AddonAppConfig
 from . import request_helpers as gv_requests
 
 if TYPE_CHECKING:
@@ -36,11 +38,18 @@ class _LegacyConfigsForWBKey(enum.Enum):
     onedrive = OneDriveAddonAppConfig
     owncloud = OwnCloudAddonAppConfig
     s3 = S3AddonAppConfig
+    zotero = ZoteroAddonAppConfig
+    mendeley = MendeleyAddonConfig
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
+    if gv_account_data.resource_type == 'configured-citation-addons':
+        include_path = ('external_citation_service',)
+    else:
+        include_path = ('external_storage_service',)
     service_wb_key = gv_account_data.get_included_attribute(
-        include_path=('external_storage_service',), attribute_name='wb_key'
+        include_path=include_path,
+        attribute_name='wb_key'
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralUserSettings(
@@ -51,9 +60,13 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
 
 
 def make_ephemeral_node_settings(gv_addon_data: gv_requests.JSONAPIResultEntry, requested_resource, requesting_user):
+    if gv_addon_data.resource_type == 'configured-citation-addons':
+        include_path = ('base_account', 'external_citation_service')
+    else:
+        include_path = ('base_account', 'external_storage_service')
     service_wb_key = gv_addon_data.get_included_attribute(
-        include_path=('base_account', 'external_storage_service'),
-        attribute_name='wb_key',
+        include_path=include_path,
+        attribute_name='wb_key'
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralNodeSettings(
@@ -74,6 +87,11 @@ class EphemeralAddonConfig:
     label: str
     short_name: str
     full_name: str
+    has_widget: bool = dataclasses.field(init=False, default=False)
+
+    def __post_init__(self):
+        if self.short_name in ['zotero', 'mendeley']:
+            self.has_widget = True
 
     @property
     def icon_url(self):
