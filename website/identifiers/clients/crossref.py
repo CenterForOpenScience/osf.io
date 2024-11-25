@@ -140,21 +140,22 @@ class CrossRefClient(AbstractIdentifierClient):
 
         preprint_versions = preprint.get_preprint_versions()
         for preprint_version in preprint_versions:
+            if preprint_version == preprint:
+                continue
             preprint_identifier = preprint_version.identifiers.first().value
-            if doi != preprint_identifier:
-                doi_relations = element.doi_relations(
-                    element.doi(doi),
-                    element.program(
-                        element.related_item(
-                            element.description('Updated version'),
-                            element.intra_work_relation(
-                                preprint_identifier,
-                                **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
-                            )
-                        ), xmlns=CROSSREF_RELATIONS
-                    )
+            doi_relations = element.doi_relations(
+                element.doi(doi),
+                element.program(
+                    element.related_item(
+                        element.description('Updated version'),
+                        element.intra_work_relation(
+                            preprint_identifier,
+                            **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
+                        )
+                    ), xmlns=CROSSREF_RELATIONS
                 )
-                posted_content.append(doi_relations)
+            )
+            posted_content.append(doi_relations)
         return posted_content
 
     def _process_crossref_name(self, contributor):
