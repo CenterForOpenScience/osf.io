@@ -16,11 +16,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, PendingVersionExists
 from framework.auth import oauth_scopes
 from rest_framework.exceptions import NotFound
 
-from api.base.exceptions import Conflict
 from .subject import Subject
 from .tag import Tag
 from .user import OSFUser
@@ -298,16 +297,28 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         return preprint
 
+    def has_create_version_permission(self, user):
+        from guardian.shortcuts import get_group_perms
+        object_type = self.guardian_object_type
+
+        if not user or user.is_anonymous:
+            return False
+        perm = f'{ADMIN}_{object_type}'
+        # Using get_group_perms to get permissions that are inferred through
+        # group membership - not inherited from superuser status
+        has_permission = perm in get_group_perms(user, self)
+
+        return has_permission
+
     @classmethod
     def create_version(cls, dupliate_from_guid, auth):
         source_preprint = cls.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         if not source_preprint:
             raise NotFound
-        if not source_preprint.has_permission(auth.user, ADMIN):
+        if not source_preprint.has_create_version_permission(auth.user):
             raise PermissionsError('You must have admin permissions to create new version.')
         if not source_preprint.is_published:
-            # TODO: Change error detail
-            raise Conflict(detail='Before creating a new version, you must publish the latest version.')
+            raise PendingVersionExists
 
         base_guid = Guid.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         last_version = base_guid.versions.order_by('-version').first().version
@@ -335,7 +346,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         preprint = cls(
             provider=source_preprint.provider,
             title=source_preprint.title,
-            creator=source_preprint.creator,
+            creator=auth.user,
             description=source_preprint.description,
         )
         preprint.save()
@@ -345,7 +356,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         # add affiliated institutions
         for institution in source_preprint.affiliated_institutions.all():
-            preprint.add_affiliated_institution(institution, auth.user)
+            preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
         base_guid.referent = preprint
         base_guid.object_id = preprint.pk
