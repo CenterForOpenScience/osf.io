@@ -164,9 +164,29 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         )
 
 
-class PreprintVersionsList(PreprintList):
+class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+    # These permissions are not checked for the list of preprints, permissions handled by the query
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+    )
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
+
+    serializer_class = PreprintSerializer
+
+    ordering = ('-created')
+    ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-versions'
+    metric_map = {
+        'downloads': PreprintDownload,
+        'views': PreprintView,
+    }
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
