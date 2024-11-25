@@ -111,5 +111,5 @@ class TemplateHTTPError(HTTPError):
         self.template = template
         super().__init__(code, message, redirect_url, data)
 
-class ConflictError(HTTPError):
+class PendingVersionExists(FrameworkError):
     pass
