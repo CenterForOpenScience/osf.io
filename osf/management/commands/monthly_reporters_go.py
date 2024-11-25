@@ -7,6 +7,7 @@ from elasticsearch.exceptions import ConnectionError as ElasticConnectionError
 from psycopg2 import OperationalError as PostgresOperationalError
 
 from framework.celery_tasks import app as celery_app
+import framework.sentry
 from osf.metrics.reporters import AllMonthlyReporters
 from osf.metrics.utils import YearMonth
 
@@ -14,7 +15,7 @@ from osf.metrics.utils import YearMonth
 logger = logging.getLogger(__name__)
 
 
-_RETRY_ERRORS = (
+_CONTINUE_AFTER_ERRORS = (
     DjangoOperationalError,
     ElasticConnectionError,
     PostgresOperationalError,
@@ -47,7 +48,6 @@ def schedule_monthly_reporter(
 ):
     _reporter = _get_reporter(reporter_key, yearmonth)
     _last_kwargs = None
-    _done = False
     try:
         for _kwargs in _reporter.iter_report_kwargs(continue_after=continue_after):
             monthly_reporter_do.apply_async(kwargs={
@@ -56,9 +56,11 @@ def schedule_monthly_reporter(
                 'report_kwargs': _kwargs,
             })
             _last_kwargs = _kwargs
-        _done = True
-    except _RETRY_ERRORS:
-        if not _done and (_last_kwargs is not None):
+    except _CONTINUE_AFTER_ERRORS as _error:
+        # let the celery task succeed but log the error
+        framework.sentry.log_exception(_error)
+        # schedule another task to continue scheduling
+        if _last_kwargs is not None:
             schedule_monthly_reporter.apply_async(kwargs={
                 'yearmonth': yearmonth,
                 'reporter_key': reporter_key,
