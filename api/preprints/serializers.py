@@ -38,7 +38,7 @@ from api.nodes.serializers import (
 from api.base.metrics import MetricsSerializerMixin
 from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, PendingVersionExists
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
@@ -257,17 +257,19 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     def get_preprint_versions(self, obj):
         return absolute_reverse(
-            'preprints:preprint-versions', kwargs={
-                'preprint_id': obj._id, 'version':
-                self.context['request'].parser_context['kwargs']['version'],
+            'preprints:preprint-versions',
+            kwargs={
+                'preprint_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
 
     def get_preprint_url(self, obj):
         return absolute_reverse(
-            'preprints:preprint-detail', kwargs={
-                'preprint_id': obj._id, 'version':
-                self.context['request'].parser_context['kwargs']['version'],
+            'preprints:preprint-detail',
+            kwargs={
+                'preprint_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
 
@@ -574,15 +576,21 @@ class PreprintCreateSerializer(PreprintSerializer):
         return self.update(preprint, validated_data)
 
 
-class PreprintCreateVersionSerializer(PreprintCreateSerializer):
-    dupliate_from_guid = ser.CharField(required=True, write_only=True)
+class PreprintCreateVersionSerializer(PreprintSerializer):
+    # Overrides PreprintSerializer to make id and title nullable
+    id = IDField(source='_id', required=False, allow_null=True)
     title = ser.CharField(required=False)
+
+    dupliate_from_guid = ser.CharField(required=True, write_only=True)
 
     def create(self, validated_data):
         dupliate_from_guid = validated_data.pop('dupliate_from_guid', None)
         auth = get_user_auth(self.context['request'])
-        preprint, update_data = Preprint.create_version(dupliate_from_guid, auth)
-
+        try:
+            preprint, update_data = Preprint.create_version(dupliate_from_guid, auth)
+        except PendingVersionExists:
+            raise Conflict(detail='Before creating a new version, you must publish the latest version.')
+        # TODO add more checks
         return self.update(preprint, update_data)
 
 
