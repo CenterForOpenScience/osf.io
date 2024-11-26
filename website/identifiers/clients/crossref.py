@@ -140,7 +140,7 @@ class CrossRefClient(AbstractIdentifierClient):
 
         preprint_versions = preprint.get_preprint_versions()
         for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
-            if preprint_version.id > preprint.id:
+            if preprint_version.version > preprint.version:
                 continue
             doi_relations = element.doi_relations(
                 element.doi(self.build_doi(preprint_version)),
