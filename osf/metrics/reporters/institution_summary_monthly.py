@@ -11,9 +11,16 @@ from ._base import MonthlyReporter
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
     """Generate an InstitutionMonthlySummaryReport for each institution."""
 
-    def report(self):
-        for institution in Institution.objects.all():
-            yield self.generate_report(institution)
+    def iter_report_kwargs(self, continue_after: dict | None = None):
+        _inst_qs = Institution.objects.order_by('pk')
+        if continue_after:
+            _inst_qs = _inst_qs.filter(pk__gt=continue_after['institution_pk'])
+        for _pk in _inst_qs.values_list('pk', flat=True):
+            yield {'institution_pk': _pk}
+
+    def report(self, **report_kwargs):
+        _institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
+        return self.generate_report(_institution)
 
     def generate_report(self, institution):
         node_queryset = institution.nodes.filter(

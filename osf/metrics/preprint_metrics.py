@@ -37,8 +37,8 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_count_for_preprint(cls, preprint, after=None, before=None, index=None):
-        search = cls.search(after=after, before=before, index=index).filter('match', preprint_id=preprint._id)
+    def get_count_for_preprint(cls, preprint, after=None, before=None, index=None) -> int:
+        search = cls.search(index=index).filter('term', preprint_id=preprint._id)
         timestamp = {}
         if after:
             timestamp['gte'] = after

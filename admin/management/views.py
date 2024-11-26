@@ -12,6 +12,7 @@ from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
+from osf.metrics.utils import YearMonth
 from osf.models import Preprint, Node, Registration
 
 
@@ -122,8 +123,11 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
             report_date = None
 
         errors = monthly_reporters_go(
-            report_month=getattr(report_date, 'month', None),
-            report_year=getattr(report_date, 'year', None)
+            yearmonth=(
+                str(YearMonth.from_date(report_date))
+                if report_date is not None
+                else ''
+            ),
         )
 
         if errors:

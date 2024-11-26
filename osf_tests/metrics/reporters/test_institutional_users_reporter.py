@@ -18,6 +18,7 @@ from osf_tests.factories import (
     UserFactory,
     EmbargoFactory,
 )
+from ._testutils import list_monthly_reports
 
 
 def _patch_now(fakenow: datetime.datetime):
@@ -67,24 +68,24 @@ class TestInstiUsersReporter(TestCase):
         self.assertEqual(report.published_preprint_count, setup.published_preprint_count)
 
     def test_no_users(self):
-        _actual_reports = list(InstitutionalUsersReporter(self._yearmonth).report())
+        _actual_reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
         self.assertEqual(_actual_reports, [])
 
     def test_one_user_with_nothing(self):
         self._user_setup_with_nothing.affiliate_user()
-        _reports = list(InstitutionalUsersReporter(self._yearmonth).report())
+        _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_nothing)
 
     def test_one_user_with_ones(self):
         self._user_setup_with_ones.affiliate_user()
-        _reports = list(InstitutionalUsersReporter(self._yearmonth).report())
+        _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_ones)
 
     def test_one_user_with_stuff_and_no_files(self):
         self._user_setup_with_stuff.affiliate_user()
-        _reports = list(InstitutionalUsersReporter(self._yearmonth).report())
+        _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
         self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_stuff)
         self.assertEqual(_reports[0].public_file_count, 2)  # preprint 2 files
@@ -96,7 +97,7 @@ class TestInstiUsersReporter(TestCase):
         _project = _user.nodes.first()
         with _patch_now(self._now):
             create_test_file(target=_project, user=_user, size=37)
-        (_report,) = InstitutionalUsersReporter(self._yearmonth).report()
+        (_report,) = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
         self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
         self.assertEqual(_report.public_file_count, 3)  # 2 preprint files
         self.assertEqual(_report.storage_byte_count, 2711)  # 2 preprint files
@@ -113,7 +114,7 @@ class TestInstiUsersReporter(TestCase):
             create_test_file(target=_component, user=_user, size=53, filename='bla')
             create_test_file(target=_component, user=_user, size=51, filename='blar')
             create_test_file(target=_component, user=_user, size=47, filename='blarg')
-        (_report,) = InstitutionalUsersReporter(self._yearmonth).report()
+        (_report,) = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
         self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
         self.assertEqual(_report.public_file_count, 7)  # 2 preprint files
         self.assertEqual(_report.storage_byte_count, 2935)  # 2 preprint files + 37 + 73 + 53 + 51 + 47
@@ -130,7 +131,7 @@ class TestInstiUsersReporter(TestCase):
             _setup.user._id: _setup
             for _setup in _setups
         }
-        _reports = list(InstitutionalUsersReporter(self._yearmonth).report())
+        _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
         self.assertEqual(len(_reports), len(_setup_by_userid))
         for _actual_report in _reports:
             _setup = _setup_by_userid[_actual_report.user_id]

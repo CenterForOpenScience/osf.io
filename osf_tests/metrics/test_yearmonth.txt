@@ -35,6 +35,13 @@ YearMonth(year=1491, month=12)
 >>> ym.next().next()
 YearMonth(year=1492, month=1)
 
+`prior` method gives the prior year-month:
+>>> ym = YearMonth(1492, 2)
+>>> ym.prior()
+YearMonth(year=1492, month=1)
+>>> ym.prior().prior()
+YearMonth(year=1491, month=12)
+
 `month_start` method:
 >>> YearMonth(3333, 3).month_start()
 datetime.datetime(3333, 3, 1, 0, 0, tzinfo=datetime.timezone.utc)
