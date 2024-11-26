@@ -11,9 +11,6 @@ from osf.metrics.utils import YearMonth
 from ._base import MonthlyReporter
 
 
-_CHUNK_SIZE = 500
-
-
 class InstitutionalUsersReporter(MonthlyReporter):
     '''build an InstitutionalUserReport for each institution-user affiliation
 
@@ -34,7 +31,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
             _user_qs = _institution.get_institution_users().filter(created__lt=_before_datetime)
             if continue_after and (_institution.pk == continue_after['institution_pk']):
                 _user_qs = _user_qs.filter(pk__gt=continue_after['user_pk'])
-            for _user_pk in _user_qs.values_list('pk', flat=True).iterator(chunk_size=_CHUNK_SIZE):
+            for _user_pk in _user_qs.values_list('pk', flat=True):
                 yield {'institution_pk': _institution.pk, 'user_pk': _user_pk}
 
     def report(self, **report_kwargs):
