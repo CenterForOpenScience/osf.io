@@ -212,7 +212,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
 
     def create(self, request, *args, **kwargs):
         request.data['type'] = 'preprints'
-        request.data['dupliate_from_guid'] = kwargs.get('preprint_id')
+        request.data['create_from_guid'] = kwargs.get('preprint_id')
         return super().create(request, *args, **kwargs)
 
 
