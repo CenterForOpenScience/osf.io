@@ -449,6 +449,10 @@ select.form-control {
     list-style-type: disc;
 }
 
+.milkdown .editor li[data-list-type="ordered"] {
+    list-style-type: decimal;
+}
+
 .sort-item {
     padding: 5px;
 }
