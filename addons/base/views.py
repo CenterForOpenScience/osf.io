@@ -397,7 +397,7 @@ def get_auth(auth, **kwargs):
     # Authenticate the resource based on the node_id and handle potential draft nodes
     nid = waterbutler_data.get('nid')
     # TODO: turn this into a class method helper: guid_id, version = checkGuidVersion(...)
-    if not VersionedGuidMixin.GUID_VERSION_DELIMITER in nid:
+    if VersionedGuidMixin.GUID_VERSION_DELIMITER not in nid:
         resource = get_authenticated_resource(nid)
     else:
         # TODO: needs exception handling
@@ -542,7 +542,7 @@ def create_waterbutler_log(payload, **kwargs):
             # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
                 guid_id = payload['metadata'].get('nid')
-                if not VersionedGuidMixin.GUID_VERSION_DELIMITER in guid_id:
+                if VersionedGuidMixin.GUID_VERSION_DELIMITER not in guid_id:
                     guid = Guid.load(guid_id)
                     if guid:
                         node = guid.referent
@@ -553,7 +553,7 @@ def create_waterbutler_log(payload, **kwargs):
                     guid = Guid.load(base_guid_id)
                     if guid:
                         node = guid.versions.get(version=guid_version).referent
-
+                return {'status': 'success'}
             user = OSFUser.load(auth['id'])
             if user is None:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)

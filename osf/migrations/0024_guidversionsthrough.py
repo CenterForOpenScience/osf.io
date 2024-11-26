@@ -7,12 +7,12 @@ import osf.models.base
 
 
 def migrate_preprints_single(apps, schema_editor):
-    ContentType = apps.get_model('contenttypes', "ContentType")
-    Preprint = apps.get_model("osf", "Preprint")
+    ContentType = apps.get_model('contenttypes', 'ContentType')
+    Preprint = apps.get_model('osf', 'Preprint')
 
     content_type_id = ContentType.objects.get_for_model(Preprint).id
 
-    GUID = apps.get_model("osf", "GUID")
+    GUID = apps.get_model('osf', 'GUID')
 
     guids = GUID.objects.filter(content_type_id=content_type_id)
     for guid in guids:

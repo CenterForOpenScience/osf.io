@@ -10,7 +10,7 @@ from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from osf.models import OSFUser, Guid
-from osf.models.base import GuidMixin, VersionedGuidMixin
+from osf.models.base import VersionedGuidMixin
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration,

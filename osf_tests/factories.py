@@ -696,6 +696,20 @@ def sync_set_identifiers(preprint):
     doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
     preprint.set_identifier_values(doi=doi)
 
+class GuidFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Guid
+
+
+class GuidVersionsThroughFactory(DjangoModelFactory):
+    """Factory for the GuidVersionsThrough model."""
+    class Meta:
+        model = models.GuidVersionsThrough
+
+    content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.referent))
+    object_id = factory.Faker('random_int')
+    version = factory.Sequence(lambda n: n + 1)
+    guid = factory.SubFactory(GuidFactory)
 
 class PreprintFactory(DjangoModelFactory):
     class Meta:
@@ -746,6 +760,7 @@ class PreprintFactory(DjangoModelFactory):
         user = kwargs.pop('creator', None) or instance.creator
         instance.save()
 
+        GuidVersionsThroughFactory(referent=instance,)
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),
