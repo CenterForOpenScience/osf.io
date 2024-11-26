@@ -139,17 +139,16 @@ class CrossRefClient(AbstractIdentifierClient):
         posted_content.append(element.doi_data(*doi_data))
 
         preprint_versions = preprint.get_preprint_versions()
-        for preprint_version in preprint_versions:
-            if preprint_version == preprint:
+        for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
+            if preprint_version.id > preprint.id:
                 continue
-            preprint_identifier = preprint_version.identifiers.first().value
             doi_relations = element.doi_relations(
-                element.doi(doi),
+                element.doi(self.build_doi(preprint_version)),
                 element.program(
                     element.related_item(
                         element.description('Updated version'),
                         element.intra_work_relation(
-                            preprint_identifier,
+                            self.build_doi(previous_version),
                             **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                         )
                     ), xmlns=CROSSREF_RELATIONS

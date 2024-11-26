@@ -553,7 +553,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_preprint_versions(self):
         guids = self.versioned_guids.first().guid.versions.all()
-        preprint_versions = Preprint.objects.filter(id__in=[vg.object_id for vg in guids])
+        preprint_versions = Preprint.objects.filter(id__in=[vg.object_id for vg in guids]).order_by('-id')
         return preprint_versions
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
