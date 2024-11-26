@@ -120,7 +120,7 @@ def deposit_metadata(
         zip_path = os.path.join(tmp_dir, 'payload.zip')
         with ZipFile(zip_path, 'w') as zf:
             for download_file_name, _ in download_file_names:
-                with zf.open(os.path.join('data/', download_file_name), 'w') as df:
+                with zf.open(f'data/files/{download_file_name}', 'w') as df:
                     with open(download_file_path, 'rb') as sf:
                         shutil.copyfileobj(sf, df)
             with zf.open('data/index.csv', 'w') as f:
