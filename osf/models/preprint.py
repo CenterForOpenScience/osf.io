@@ -16,7 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
-from framework.exceptions import PermissionsError, PendingVersionExists
+from framework.exceptions import PermissionsError, PendingPreprintVersionExists
 from framework.auth import oauth_scopes
 from rest_framework.exceptions import NotFound
 
@@ -297,30 +297,17 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         return preprint
 
-    def has_create_version_permission(self, user):
-        from guardian.shortcuts import get_group_perms
-        object_type = self.guardian_object_type
-
-        if not user or user.is_anonymous:
-            return False
-        perm = f'{ADMIN}_{object_type}'
-        # Using get_group_perms to get permissions that are inferred through
-        # group membership - not inherited from superuser status
-        has_permission = perm in get_group_perms(user, self)
-
-        return has_permission
-
     @classmethod
-    def create_version(cls, dupliate_from_guid, auth):
-        source_preprint = cls.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
+    def create_version(cls, create_from_guid, auth):
+        source_preprint = cls.load(create_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         if not source_preprint:
             raise NotFound
-        if not source_preprint.has_create_version_permission(auth.user):
-            raise PermissionsError('You must have admin permissions to create new version.')
+        if not source_preprint.has_permission(auth.user, ADMIN):
+            raise PermissionsError
         if not source_preprint.is_published:
-            raise PendingVersionExists
+            raise PendingPreprintVersionExists
 
-        base_guid = Guid.load(dupliate_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
+        base_guid = Guid.load(create_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         last_version = base_guid.versions.order_by('-version').first().version
         data_for_update = {}
         data_for_update['tags'] = source_preprint.tags.all().values_list('name', flat=True)
