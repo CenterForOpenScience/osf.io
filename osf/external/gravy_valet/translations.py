@@ -221,6 +221,9 @@ class EphemeralNodeSettings:
 
     before_remove_contributor = before_remove_contributor_message
 
+    def after_register(self, node, removed, auth):
+        return None, None
+
     def after_remove_contributor(self, node, removed, auth):
         if self.user_settings.owner == removed:
             gv_requests.delete_addon(self.id, requesting_user=auth.user, requested_resource=node)
