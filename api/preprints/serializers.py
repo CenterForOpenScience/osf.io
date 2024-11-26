@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
-from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError as DRFValidationError
 from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
@@ -38,7 +38,7 @@ from api.nodes.serializers import (
 from api.base.metrics import MetricsSerializerMixin
 from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
-from framework.exceptions import PermissionsError, PendingVersionExists
+from framework.exceptions import PermissionsError, PendingPreprintVersionExists
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
@@ -581,14 +581,16 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
     title = ser.CharField(required=False)
 
-    dupliate_from_guid = ser.CharField(required=True, write_only=True)
+    create_from_guid = ser.CharField(required=True, write_only=True)
 
     def create(self, validated_data):
-        dupliate_from_guid = validated_data.pop('dupliate_from_guid', None)
+        create_from_guid = validated_data.pop('create_from_guid', None)
         auth = get_user_auth(self.context['request'])
         try:
-            preprint, update_data = Preprint.create_version(dupliate_from_guid, auth)
-        except PendingVersionExists:
+            preprint, update_data = Preprint.create_version(create_from_guid, auth)
+        except PermissionsError:
+            raise PermissionDenied(detail='You must have admin permissions to create new version.')
+        except PendingPreprintVersionExists:
             raise Conflict(detail='Before creating a new version, you must publish the latest version.')
         # TODO add more checks
         return self.update(preprint, update_data)
