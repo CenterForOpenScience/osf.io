@@ -1172,6 +1172,7 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
     replaced_wiki_info = []
     rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
     rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
+    rep_image_link = r'(?<!\\|\!)\[(?P<title>!\[.*?\]\(.*?\))\]\((?P<path>.+?)(?<!\\)\)'
     node_file_mapping = wiki_utils.get_node_file_mapping(node, dir_id)
     import_wiki_name_list = wiki_utils.get_import_wiki_name_list(wiki_info)
     for info in wiki_info:
@@ -1185,6 +1186,8 @@ def _wiki_content_replace(wiki_info, dir_id, node, task):
         image_matches = list(re.finditer(rep_image, wiki_content))
         info['wiki_content'] = _replace_wiki_image(node, image_matches, wiki_content, info, dir_id, node_file_mapping)
         info['wiki_content'] = _replace_wiki_link_notation(node, link_matches, info['wiki_content'], info, node_file_mapping, import_wiki_name_list, dir_id)
+        image_link_matches = list(re.finditer(rep_image_link, info['wiki_content']))
+        info['wiki_content'] = _replace_wiki_link_notation(node, image_link_matches, info['wiki_content'], info, node_file_mapping, import_wiki_name_list, dir_id)
         replaced_wiki_info.append(info)
     return replaced_wiki_info
 
