@@ -12,7 +12,7 @@ from . import settings
 logger = logging.getLogger(__name__)
 
 
-def get_default_binderhubs(allow_secrets=False):
+def get_default_binderhub(allow_secrets=False):
     binderhub_oauth = settings.BINDERHUB_OAUTH_CLIENT
     jupyterhub_url, jupyterhub_oauth = list(settings.JUPYTERHUB_OAUTH_CLIENTS.items())[0]
     binderhub = {
@@ -32,19 +32,18 @@ def get_default_binderhubs(allow_secrets=False):
         'jupyterhub_logout_url': jupyterhub_oauth['logout_url'] if 'logout_url' in jupyterhub_oauth else None,
     }
     if not allow_secrets:
-        return [binderhub]
+        return binderhub
     binderhub.update({
         'binderhub_oauth_client_secret': binderhub_oauth['client_secret'],
         'jupyterhub_oauth_client_secret': jupyterhub_oauth['client_secret'],
         'jupyterhub_admin_api_token': jupyterhub_oauth['admin_api_token'],
     })
-    return [binderhub]
+    return binderhub
 
-def _fill_binderhub_secret(binderhub, binderhubs_list):
+def _fill_binderhub_secret(binderhub, binderhub_list):
     if 'binderhub_oauth_client_secret' in binderhub and 'jupyterhub_oauth_client_secret' in binderhub and 'jupyterhub_admin_api_token' in binderhub:
         return binderhub.copy()
-    flattened_binderhubs_list = sum(binderhubs_list, [])
-    template_binderhubs = [b for b in flattened_binderhubs_list if b['binderhub_url'] == binderhub['binderhub_url']]
+    template_binderhubs = [b for b in binderhub_list if b['binderhub_url'] == binderhub['binderhub_url']]
     if len(template_binderhubs) == 0:
         raise KeyError('BinderHub not found: ' + binderhub['binderhub_url'])
     template_binderhub = template_binderhubs[0]
@@ -55,11 +54,14 @@ def _fill_binderhub_secret(binderhub, binderhubs_list):
     return r
 
 def fill_binderhub_secrets(target_binderhubs, binderhubs_list):
-    return [_fill_binderhub_secret(binderhub, binderhubs_list) for binderhub in target_binderhubs]
+    binderhub_list = sum(binderhubs_list, [])
+    return [
+        _fill_binderhub_secret(binderhub, binderhub_list)
+        for binderhub in target_binderhubs
+    ]
 
 def _verify_binderhubs(binderhubs):
-    urls = set([b['binderhub_url'] for b in binderhubs])
-    for url in urls:
+    for url in set([b['binderhub_url'] for b in binderhubs]):
         matched = [b for b in binderhubs if b['binderhub_url'] == url]
         assert len(matched) == 1, url
     for binderhub in binderhubs:
@@ -141,10 +143,10 @@ class NodeSettings(BaseNodeSettings):
 
     def get_available_binderhubs(self, allow_secrets=False):
         if self.available_binderhubs is None or self.available_binderhubs == '':
-            return get_default_binderhubs(allow_secrets=allow_secrets)
+            return [get_default_binderhub(allow_secrets=allow_secrets)]
         r = json.loads(self.available_binderhubs)
         if len(r) == 0:
-            return get_default_binderhubs(allow_secrets=allow_secrets)
+            return [get_default_binderhub(allow_secrets=allow_secrets)]
         if allow_secrets:
             return r
         for hub in r:

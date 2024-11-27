@@ -8,6 +8,7 @@ from future.moves.urllib.parse import urljoin, urlencode
 from . import SHORT_NAME
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
+from osf.utils.permissions import READ, ADMIN
 from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
@@ -19,7 +20,7 @@ from website import settings as website_settings
 from website.util import api_url_for
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 
-from .models import BinderHubToken, get_default_binderhubs, fill_binderhub_secrets
+from .models import BinderHubToken, get_default_binderhub, fill_binderhub_secrets
 from . import settings
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,7 @@ def binderhub_add_user_config(auth, **kwargs):
     return {}
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_get_config(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -98,25 +99,21 @@ def binderhub_get_config(**kwargs):
     user_binderhubs = []
     if user_addon:
         user_binderhubs = user_addon.get_binderhubs(allow_secrets=False)
-    system_binderhubs = get_default_binderhubs(allow_secrets=False)
     return {
         'binder_url': addon.get_binder_url(),
         'available_binderhubs': addon.get_available_binderhubs(allow_secrets=False),
         'user_binderhubs': user_binderhubs,
-        'system_binderhubs': system_binderhubs,
+        'system_binderhubs': [get_default_binderhub(allow_secrets=False)],
     }
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_set_config(**kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
     try:
         binder_url = request.json['binder_url']
-    except KeyError:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    try:
         available_binderhubs = request.json['available_binderhubs']
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -128,8 +125,14 @@ def binderhub_set_config(**kwargs):
     user_binderhubs = []
     if user_addon:
         user_binderhubs = user_addon.get_binderhubs(allow_secrets=True)
-    system_binderhubs = get_default_binderhubs(allow_secrets=True)
-    available_binderhubs = fill_binderhub_secrets(available_binderhubs, [old_binderhubs, user_binderhubs, system_binderhubs])
+    available_binderhubs = fill_binderhub_secrets(
+        available_binderhubs,
+        [
+            old_binderhubs,
+            user_binderhubs,
+            [get_default_binderhub(allow_secrets=True)]
+        ]
+    )
     addon.set_binder_url(binder_url)
     addon.set_available_binderhubs(available_binderhubs)
     return {}
@@ -141,7 +144,7 @@ def project_binderhub(**kwargs):
     return use_ember_app()
 
 @must_be_valid_project
-@must_have_permission('read')
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_logout(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -178,7 +181,7 @@ def binderhub_logout(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('read')
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_get_config_ember(**kwargs):
     node = kwargs['node'] or kwargs['project']
