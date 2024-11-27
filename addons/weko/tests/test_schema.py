@@ -96,7 +96,7 @@ class TestWEKOSchema(OsfTestCase):
         )
         assert_equal(
             props.pop(),
-            ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'test.jpg'],
+            ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'files/test.jpg'],
         )
         feedback_mail = props.pop()
         assert_equal(
@@ -281,7 +281,7 @@ class TestWEKOSchema(OsfTestCase):
         )
         assert_equal(
             props.pop(),
-            ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'test.jpg'],
+            ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'files/test.jpg'],
         )
         feedback_mail = props.pop()
         assert_equal(

@@ -25,7 +25,13 @@ columns_default = [
 
 def _generate_file_columns(index, download_file_name, download_file_type):
     columns = []
-    columns.append((f'.file_path[{index}]', f'.ファイルパス[{index}]', '', 'Allow Multiple', download_file_name))
+    columns.append((
+        f'.file_path[{index}]',
+        f'.ファイルパス[{index}]',
+        '',
+        'Allow Multiple',
+        f'files/{download_file_name}'
+    ))
     return columns
 
 def _get_metadata_value(file_metadata_data, item, lang, index):
