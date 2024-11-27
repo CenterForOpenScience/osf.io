@@ -58,6 +58,14 @@ class YearMonth:
             else YearMonth(self.year, self.month + 1)
         )
 
+    def prior(self) -> YearMonth:
+        """get a new YearMonth for the month before this one"""
+        return (
+            YearMonth(self.year - 1, int(calendar.DECEMBER))
+            if self.month == calendar.JANUARY
+            else YearMonth(self.year, self.month - 1)
+        )
+
     def month_start(self) -> datetime.datetime:
         """get a datetime (in UTC timezone) when this YearMonth starts"""
         return datetime.datetime(self.year, self.month, 1, tzinfo=datetime.UTC)
