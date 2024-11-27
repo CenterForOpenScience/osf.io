@@ -959,8 +959,12 @@ def project_wiki_import_process(data, dir_id, task_id, auth, node):
 def _replace_wiki_link_notation(node, link_matches, wiki_content, info, node_file_mapping, import_wiki_name_list, dir_id):
     wiki_name = info['original_name']
     match_path = ''
+    replaced_tooltip = ''
     for match in link_matches:
         match_path, tooltip_match = _exclude_tooltip(match['path'])
+        if tooltip_match:
+            replaced_tooltip = _replace_common_rule(tooltip_match['tooltip'])
+            replaced_tooltip = unicodedata.normalize('NFC', replaced_tooltip)
         has_slash, has_sharp, is_url = _exclude_symbols(match_path)
         if bool(is_url):
             continue
@@ -971,7 +975,7 @@ def _replace_wiki_link_notation(node, link_matches, wiki_content, info, node_fil
             is_wiki = _check_wiki_name_exist(node, wiki_name_with_anchor, node_file_mapping, import_wiki_name_list)
             if is_wiki:
                 if tooltip_match:
-                    wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + wiki_name_with_anchor + '/#' + anchor + ' "' + tooltip_match['tooltip'] + '")')
+                    wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + wiki_name_with_anchor + '/#' + anchor + ' "' + replaced_tooltip + '")')
                 else:
                     wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + wiki_name_with_anchor + '/#' + anchor + ')')
             continue
@@ -980,7 +984,7 @@ def _replace_wiki_link_notation(node, link_matches, wiki_content, info, node_fil
         is_wiki = _check_wiki_name_exist(node, match_path, node_file_mapping, import_wiki_name_list)
         if is_wiki:
             if tooltip_match:
-                wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + tooltip_match['path'] + '/ "' + tooltip_match['tooltip'] + '")')
+                wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + tooltip_match['path'] + '/ "' + replaced_tooltip + '")')
             else:
                 wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](../' + match['path'] + '/)')
         else:
@@ -1006,17 +1010,21 @@ def _replace_file_name(node, wiki_name, wiki_content, match, notation, dir_id, m
     if file_id:
         # replace process of file name
         node_guid = node.guids.first()._id
+        replaced_tooltip = ''
+        if tooltip_match:
+            replaced_tooltip = _replace_common_rule(tooltip_match['tooltip'])
+            replaced_tooltip = unicodedata.normalize('NFC', replaced_tooltip)
+
         if notation == 'image':
             url = website_settings.WATERBUTLER_URL + '/v1/resources/' + node_guid + '/providers/osfstorage/' + file_id + '?mode=render'
-            #wurl = waterbutler_api_url_for(node_guid, 'osfstorage', path='/{}?mode=render'.format(file_id), _internal=True)
             if tooltip_match:
-                wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](<' + url + image_size + '> "' + tooltip_match['tooltip'] + '")')
+                wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](<' + url + image_size + '> "' + replaced_tooltip + '")')
             else:
                 wiki_content = wiki_content.replace('![' + match['title'] + '](' + match['path'] + ')', '![' + match['title'] + '](' + url + image_size + ')')
         elif notation == 'link':
             url = website_settings.DOMAIN + node_guid + '/files/osfstorage/' + file_id
             if tooltip_match:
-                wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](' + url + ' "' + tooltip_match['tooltip'] + '")')
+                wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](' + url + ' "' + replaced_tooltip + '")')
             else:
                 wiki_content = wiki_content.replace('[' + match['title'] + '](' + match['path'] + ')', '[' + match['title'] + '](' + url + ')')
     return wiki_content
