@@ -104,4 +104,4 @@ class NotificationDigest(ObjectIDMixin, BaseModel):
     event = models.CharField(max_length=50)
     message = models.TextField()
     # TODO: Could this be a m2m with or without an order field?
-    node_lineage = ArrayField(models.CharField(max_length=10))
+    node_lineage = ArrayField(models.CharField(max_length=31))

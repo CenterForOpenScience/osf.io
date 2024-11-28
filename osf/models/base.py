@@ -230,8 +230,10 @@ class Guid(BaseModel):
 
 
 class GuidVersionsThrough(BaseModel):
-    """A version of an GUID object.
+    """Stores version of a version-eligible GUID obj w/ ref to both the versioned obj/referent and the base Guid obj.
     """
+
+    created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
@@ -240,6 +242,7 @@ class GuidVersionsThrough(BaseModel):
     guid = models.ForeignKey('Guid', related_name='versions', on_delete=models.CASCADE)
 
     version = models.PositiveIntegerField(null=True, blank=True)
+    is_rejected = models.BooleanField(default=False)
 
 
 class BlackListGuid(BaseModel):
