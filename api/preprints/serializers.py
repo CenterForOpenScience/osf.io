@@ -143,6 +143,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     version = ser.IntegerField(read_only=True)
+    is_latest_version = ser.SerializerMethodField()
 
     citation = NoneIfWithdrawal(
         RelationshipField(
@@ -254,6 +255,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
         return 'preprints:preprint-relationships-subjects'
+
+    def get_is_latest_version(self, obj):
+        versions = [preprint.version for preprint in obj.get_preprint_versions()]
+        return obj.version == max(versions)
 
     def get_preprint_versions(self, obj):
         return absolute_reverse(
