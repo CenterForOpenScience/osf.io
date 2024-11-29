@@ -700,6 +700,14 @@ class GuidFactory(DjangoModelFactory):
     class Meta:
         model = models.Guid
 
+    @factory.post_generation
+    def create_versions(self, create, extracted):
+        if not create:
+            return
+        if extracted:
+            for referent in extracted:
+                GuidVersionsThroughFactory(referent=referent, guid=self)
+        return
 
 class GuidVersionsThroughFactory(DjangoModelFactory):
     """Factory for the GuidVersionsThrough model."""
@@ -710,6 +718,13 @@ class GuidVersionsThroughFactory(DjangoModelFactory):
     object_id = factory.Faker('random_int')
     version = factory.Sequence(lambda n: n + 1)
     guid = factory.SubFactory(GuidFactory)
+    # guid = factory.SelfAttribute('referent.guids.first')
+    # @classmethod
+    # def _create(cls, *args, **kwargs):
+    #     instance = super()._create( *args, **kwargs)
+    #     instance.guid = instance.referent.guids.first()
+    #     instance.save()
+    #     return instance
 
 class PreprintFactory(DjangoModelFactory):
     class Meta:
