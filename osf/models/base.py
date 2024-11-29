@@ -219,7 +219,7 @@ class Guid(BaseModel):
 
     @property
     def is_versioned(self):
-        return hasattr(self, 'versions')
+        return self.versions.exists()
 
     class Meta:
         ordering = ['-created']
