@@ -540,6 +540,7 @@ class TestClaiming(OsfTestCase):
         )
         project2.save()
         # Each project displays a different name in the contributor list
+        pr_url =self.project.url
         res = self.app.get(self.project.url, auth=self.referrer.auth)
         assert_in_html(name1, res.text)
 

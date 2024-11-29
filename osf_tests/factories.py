@@ -696,35 +696,6 @@ def sync_set_identifiers(preprint):
     doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
     preprint.set_identifier_values(doi=doi)
 
-class GuidFactory(DjangoModelFactory):
-    class Meta:
-        model = models.Guid
-
-    @factory.post_generation
-    def create_versions(self, create, extracted):
-        if not create:
-            return
-        if extracted:
-            for referent in extracted:
-                GuidVersionsThroughFactory(referent=referent, guid=self)
-        return
-
-class GuidVersionsThroughFactory(DjangoModelFactory):
-    """Factory for the GuidVersionsThrough model."""
-    class Meta:
-        model = models.GuidVersionsThrough
-
-    content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.referent))
-    object_id = factory.Faker('random_int')
-    version = factory.Sequence(lambda n: n + 1)
-    guid = factory.SubFactory(GuidFactory)
-    # guid = factory.SelfAttribute('referent.guids.first')
-    # @classmethod
-    # def _create(cls, *args, **kwargs):
-    #     instance = super()._create( *args, **kwargs)
-    #     instance.guid = instance.referent.guids.first()
-    #     instance.save()
-    #     return instance
 
 class PreprintFactory(DjangoModelFactory):
     class Meta:
@@ -774,8 +745,18 @@ class PreprintFactory(DjangoModelFactory):
 
         user = kwargs.pop('creator', None) or instance.creator
         instance.save()
-
-        GuidVersionsThroughFactory(referent=instance,)
+        guid = models.Guid.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+        )
+        models.GuidVersionsThrough.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+            version=1,
+            guid=guid
+        )
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),
