@@ -68,7 +68,7 @@ class _InstiUserReportHelper:
             private_project_count=self._private_project_queryset().count(),
             public_registration_count=self._public_registration_queryset().count(),
             embargoed_registration_count=self._embargoed_registration_queryset().count(),
-            public_file_count=self._public_osfstorage_file_queryset().count(),
+            public_file_count=self._public_osfstorage_file_count(),
             published_preprint_count=self._published_preprint_queryset().count(),
             storage_byte_count=self._storage_byte_count(),
         )
@@ -127,7 +127,7 @@ class _InstiUserReportHelper:
             .exclude(spam_status=SpamStatus.SPAM)
         )
 
-    def _public_osfstorage_file_queryset(self):
+    def _public_osfstorage_file_querysets(self):
         _target_node_q = Q(
             # any public project, registration, project component, or registration component
             target_object_id__in=self._node_queryset().filter(is_public=True).values('pk'),
@@ -137,23 +137,40 @@ class _InstiUserReportHelper:
             target_object_id__in=self._published_preprint_queryset().values('pk'),
             target_content_type=ContentType.objects.get_for_model(osfdb.Preprint),
         )
-        return (
+        return (  # split into two queries to avoid a parallel sequence scan on BFN
             OsfStorageFile.objects
             .filter(
                 created__lt=self.before_datetime,
                 deleted__isnull=True,
                 purged__isnull=True,
             )
-            .filter(_target_node_q | _target_preprint_q)
+            .filter(_target_node_q),
+            OsfStorageFile.objects
+            .filter(
+                created__lt=self.before_datetime,
+                deleted__isnull=True,
+                purged__isnull=True,
+            )
+            .filter(_target_preprint_q)
+        )
+
+    def _public_osfstorage_file_count(self):
+        return sum(
+            _target_queryset.count() for _target_queryset
+            in self._public_osfstorage_file_querysets()
         )
 
     def _storage_byte_count(self):
-        return osfdb.FileVersion.objects.filter(
-            size__gt=0,
-            created__lt=self.before_datetime,
-            purged__isnull=True,
-            basefilenode__in=self._public_osfstorage_file_queryset(),
-        ).aggregate(storage_bytes=Sum('size', default=0))['storage_bytes']
+        return sum(
+            osfdb.FileVersion.objects.filter(
+                size__gt=0,
+                created__lt=self.before_datetime,
+                purged__isnull=True,
+                basefilenode__in=_target_queryset,
+            ).aggregate(storage_bytes=Sum('size', default=0))['storage_bytes']
+            for _target_queryset
+            in self._public_osfstorage_file_querysets()
+        )
 
     def _get_last_active(self):
         end_date = self.yearmonth.month_end()
