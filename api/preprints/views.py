@@ -83,7 +83,7 @@ class PreprintMixin(NodeMixin):
             qs = qs.filter(versioned_guids__version=preprint_version)
 
         try:
-            preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
+            preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
         except Preprint.DoesNotExist:
             if ignore_404:
                 return
