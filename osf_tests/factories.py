@@ -745,7 +745,18 @@ class PreprintFactory(DjangoModelFactory):
 
         user = kwargs.pop('creator', None) or instance.creator
         instance.save()
-
+        guid = models.Guid.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+        )
+        models.GuidVersionsThrough.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+            version=1,
+            guid=guid
+        )
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),

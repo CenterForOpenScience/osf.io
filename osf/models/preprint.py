@@ -315,7 +315,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         last_version = base_guid.versions.order_by('-version').first().version
         data_for_update = {}
         data_for_update['tags'] = source_preprint.tags.all().values_list('name', flat=True)
-        data_for_update['license_type'] = source_preprint.license.node_license
+        if source_preprint.license:
+            data_for_update['license_type'] = source_preprint.license.node_license
+            data_for_update['license'] = {
+                'copyright_holders': source_preprint.license.copyright_holders,
+                'year': source_preprint.license.year
+            }
+
         data_for_update['subjects'] = [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)]
 
         data_for_update['original_publication_date'] = source_preprint.original_publication_date
