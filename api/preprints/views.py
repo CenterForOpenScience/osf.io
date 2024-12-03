@@ -78,12 +78,13 @@ class PreprintMixin(NodeMixin):
 
         base_guid_id = preprint_lookup_data[0]
         preprint_version = preprint_lookup_data[1] if len(preprint_lookup_data) > 1 else None
-        qs = Preprint.objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
         if preprint_version:
-            qs = qs.filter(versioned_guids__version=preprint_version)
+            qs = Preprint.objects.filter(versioned_guids__guid___id=base_guid_id, versioned_guids__version=preprint_version)
+        else:
+            qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
 
         try:
-            preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
+            preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
         except Preprint.DoesNotExist:
             if ignore_404:
                 return
