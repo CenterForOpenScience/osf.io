@@ -107,11 +107,15 @@ class PreprintManager(models.Manager):
         # TODO: Remove need for .distinct using correct subqueries
         return ret.distinct('id', 'created') if include_non_public else ret
 
+class PublishedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_published=True)
 
 class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
         Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     objects = PreprintManager()
+    published_objects = PublishedPreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
