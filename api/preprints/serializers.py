@@ -143,6 +143,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     version = ser.IntegerField(read_only=True)
+    is_latest_version = ser.BooleanField(read_only=True)
 
     citation = NoneIfWithdrawal(
         RelationshipField(
