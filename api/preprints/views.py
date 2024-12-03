@@ -70,11 +70,25 @@ from osf.metrics import PreprintDownload, PreprintView
 
 
 class RejectPreprintEditMixin:
-    '''Override update method to reject modify requests for old preprint versions (except for withdrawal)'''
+    '''Override method to reject modify requests for old preprint versions (except for withdrawal)'''
     def update(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
         if preprint.is_latest_version or preprint.is_retracted:
             return super().update(request, *args, **kwargs)
+
+        raise Conflict(detail='Edit availiabe only for the last preprint version or withdrawn preprints')
+
+    def create(self, request, *args, **kwargs):
+        preprint = self.get_preprint(check_object_permissions=False)
+        if preprint.is_latest_version or preprint.is_retracted:
+            return super().create(request, *args, **kwargs)
+
+        raise Conflict(detail='Edit availiabe only for the last preprint version or withdrawn preprints')
+
+    def delete(self, request, *args, **kwargs):
+        preprint = self.get_preprint(check_object_permissions=False)
+        if preprint.is_latest_version or preprint.is_retracted:
+            return super().delete(request, *args, **kwargs)
 
         raise Conflict(detail='Edit availiabe only for the last preprint version or withdrawn preprints')
 
@@ -413,7 +427,7 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
         return self.get_preprint(check_object_permissions=check_object_permissions)
 
 
-class PreprintContributorsList(NodeContributorsList, PreprintMixin):
+class PreprintContributorsList(RejectPreprintEditMixin, NodeContributorsList, PreprintMixin):
     permission_classes = (
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -457,7 +471,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         return context
 
 
-class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
+class PreprintContributorDetail(RejectPreprintEditMixin, NodeContributorDetail, PreprintMixin):
 
     permission_classes = (
         ContributorDetailPermissions,
