@@ -1021,6 +1021,13 @@ class PreprintRequestFactory(DjangoModelFactory):
 
     comment = factory.Faker('text')
 
+
+class UserMessageFactory(DjangoModelFactory):
+    class Meta:
+        model = models.UserMessage
+
+    comment = factory.Faker('text')
+
 osfstorage_settings = apps.get_app_config('addons_osfstorage')
 
 

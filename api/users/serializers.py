@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from django.utils import timezone
 from jsonschema import validate, Draft7Validator, ValidationError as JsonSchemaValidationError
 from rest_framework import exceptions
@@ -19,16 +21,26 @@ from api.base.serializers import (
     JSONAPIListField,
     ShowIfCurrentUser,
 )
-from api.base.utils import absolute_reverse, default_node_list_queryset, get_user_auth, is_deprecated, hashids
+from api.base.utils import (
+    absolute_reverse,
+    default_node_list_queryset,
+    get_user_auth,
+    is_deprecated,
+    hashids,
+    get_object_or_error,
+)
+
 from api.base.versioning import get_kebab_snake_case_field
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from framework.auth.views import send_confirm_email_async
 from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
-from osf.models import Email, Node, OSFUser, Preprint, Registration
+from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage, Institution
+from osf.models.user_message import MessageTypes
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from osf.utils.requests import string_type_request_headers
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
+from website.util import api_v2_url
 
 
 class SocialField(ser.DictField):
@@ -657,3 +669,104 @@ class UserEmailsSerializer(JSONAPISerializer):
 
 class UserNodeSerializer(NodeSerializer):
     filterable_fields = NodeSerializer.filterable_fields | {'current_user_permissions'}
+
+
+class UserMessageSerializer(JSONAPISerializer):
+    """
+    Serializer for creating and managing `UserMessage` instances.
+
+    Attributes:
+        message_text (CharField): The text content of the message.
+        message_type (ChoiceField): The type of message being sent, restricted to `MessageTypes`.
+        institution (RelationshipField): The institution related to the message. Required.
+        user (RelationshipField): The recipient of the message.
+    """
+    id = IDField(read_only=True, source='_id')
+    message_text = ser.CharField(
+        required=True,
+        help_text='The content of the message to be sent.',
+    )
+    message_type = ser.ChoiceField(
+        choices=MessageTypes.choices,
+        required=True,
+        help_text='The type of message being sent. Must match one of the defined `MessageTypes`.',
+    )
+    institution = RelationshipField(
+        related_view='institutions:institution-detail',
+        related_view_kwargs={'institution_id': '<institution._id>'},
+        help_text='The institution associated with this message. This field is required.',
+    )
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<recipient._id>'},
+        help_text='The recipient of the message.',
+    )
+
+    def get_absolute_url(self, obj: UserMessage) -> str:
+        return api_v2_url(
+            'users:user-messages',
+            params={
+                'user_id': self.context['request'].parser_context['kwargs']['user_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def to_internal_value(self, data):
+        instituion_id = data.pop('institution')
+        data = super().to_internal_value(data)
+        data['institution'] = instituion_id
+        return data
+
+    class Meta:
+        type_ = 'user-message'
+
+    def create(self, validated_data: Dict[str, Any]) -> UserMessage:
+        """
+        Creates a `UserMessage` instance based on validated data.
+
+        Args:
+            validated_data (Dict[str, Any]): The data validated by the serializer.
+
+        Raises:
+            ValidationError: If required validations fail (e.g., sender not an institutional admin,
+                             or recipient not affiliated with the institution).
+
+        Returns:
+            UserMessage: The created `UserMessage` instance.
+        """
+        request = self.context['request']
+        sender = request.user
+
+        recipient = get_object_or_error(
+            OSFUser,
+            self.context['view'].kwargs['user_id'],
+            request,
+            'user',
+        )
+
+        institution_id = validated_data.get('institution')
+        if not institution_id:
+            raise exceptions.ValidationError({'institution': 'Institution is required.'})
+
+        institution = get_object_or_error(
+            Institution,
+            institution_id,
+            request,
+            'institution',
+        )
+
+        if not sender.is_institutional_admin(institution):
+            raise exceptions.ValidationError({'sender': 'Only institutional adminstraters can create messages.'})
+
+        if not recipient.is_affiliated_with_institution(institution):
+            raise exceptions.ValidationError(
+                {'user': 'Can not send to recipient that is not affiliated with the provided institution.'},
+            )
+
+        return UserMessage.objects.create(
+            sender=sender,
+            recipient=recipient,
+            institution=institution,
+            message_type=MessageTypes.INSTITUTIONAL_REQUEST,
+            message_text=validated_data['message_text'],
+        )
