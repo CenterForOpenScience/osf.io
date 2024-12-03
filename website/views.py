@@ -303,6 +303,7 @@ def resolve_guid(guid, suffix=None):
             if version:
                 resource = base_guid_obj.versions.filter(version=version).first().referent
             else:
+                # redirection to the same route, but with the specified version
                 version = base_guid_obj.versions.order_by('-version').first().version
                 new_guid = f'{base_guid}_v{version}'
                 return redirect(f'/{new_guid}/{suffix}' if suffix else f'/{new_guid}/', code=302)
