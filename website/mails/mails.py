@@ -595,3 +595,8 @@ ADDONS_BOA_JOB_FAILURE = Mail(
     'addons_boa_job_failure',
     subject='Your Boa job has failed'
 )
+
+NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST = Mail(
+    'node_request_institutional_access_request',
+    subject='Institutional Access Project Request'
+)
