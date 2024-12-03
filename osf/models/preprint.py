@@ -570,17 +570,18 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     @property
     def is_latest_version(self):
-        versioned_guid = self.versioned_guids.first()
-        guid = versioned_guid.guid
-        last_version = guid.referent
-        if not last_version.is_published:
-            last_version = Preprint.objects.filter(
-                is_published=True,
-                id__in=guid.versions.values_list('object_id', flat=True)
-            ).order_by('-versioned_guids__version').first()
-        if not last_version:
+        if not self.is_published:
             return False
-        return last_version.version == self.version and self.is_published
+        versioned_guid = self.versioned_guids.first()
+        base_guid = versioned_guid.guid
+        latest_version = base_guid.referent
+        if latest_version.is_published:
+            return latest_version.version == self.version
+        latest_version = Preprint.objects.filter(
+            is_published=True,
+            id__in=base_guid.versions.values_list('object_id', flat=True)
+        ).order_by('-versioned_guids__version').first()
+        return latest_version.version == self.version if latest_version else False
 
     def get_preprint_versions(self):
         guids = self.versioned_guids.first().guid.versions.all()
