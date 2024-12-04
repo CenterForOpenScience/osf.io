@@ -6,15 +6,15 @@ from ._base import MonthlyReporter
 class PrivateSpamMetricsReporter(MonthlyReporter):
     report_name = 'Private Spam Metrics'
 
-    def report(self, report_yearmonth):
-        target_month = report_yearmonth.target_month()
-        next_month = report_yearmonth.next_month()
+    def report(self):
+        target_month = self.yearmonth.target_month()
+        next_month = self.yearmonth.next_month()
 
         oopspam_client = OOPSpamClient()
         akismet_client = AkismetClient()
 
         report = PrivateSpamMetricsReport(
-            report_yearmonth=str(report_yearmonth),
+            report_yearmonth=str(self.yearmonth),
             node_oopspam_flagged=oopspam_client.get_flagged_count(target_month, next_month, category='node'),
             node_oopspam_hammed=oopspam_client.get_hammed_count(target_month, next_month, category='node'),
             node_akismet_flagged=akismet_client.get_flagged_count(target_month, next_month, category='node'),
