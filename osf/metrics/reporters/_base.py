@@ -15,18 +15,17 @@ logger = logging.getLogger(__name__)
 class MonthlyReporter:
     yearmonth: YearMonth
 
-    def report(self) -> abc.Iterable[MonthlyReport] | abc.Iterator[MonthlyReport]:
+    def iter_report_kwargs(self, continue_after: dict | None = None) -> abc.Iterator[dict]:
+        # override for multiple reports per month
+        if continue_after is None:
+            yield {}  # by default, calls `.report()` once with no kwargs
+
+    def report(self, **report_kwargs) -> MonthlyReport | None:
         """build a report for the given month
         """
-        raise NotImplementedError(f'{self.__name__} must implement `report`')
+        raise NotImplementedError(f'{self.__class__.__name__} must implement `report`')
 
-    def run_and_record_for_month(self) -> None:
-        reports = self.report()
-        for report in reports:
-            report.report_yearmonth = self.yearmonth
-            report.save()
-
-    def followup_task(self) -> celery.Signature | None:
+    def followup_task(self, report) -> celery.Signature | None:
         return None
 
 
@@ -36,7 +35,7 @@ class DailyReporter:
 
         return an iterable of DailyReport (unsaved)
         """
-        raise NotImplementedError(f'{self.__name__} must implement `report`')
+        raise NotImplementedError(f'{self.__class__.__name__} must implement `report`')
 
     def run_and_record_for_date(self, report_date):
         reports = self.report(report_date)

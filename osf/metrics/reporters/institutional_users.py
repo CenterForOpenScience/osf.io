@@ -1,5 +1,4 @@
 import dataclasses
-import datetime
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, F, Sum
@@ -12,9 +11,6 @@ from osf.metrics.utils import YearMonth
 from ._base import MonthlyReporter
 
 
-_CHUNK_SIZE = 500
-
-
 class InstitutionalUsersReporter(MonthlyReporter):
     '''build an InstitutionalUserReport for each institution-user affiliation
 
@@ -22,13 +18,27 @@ class InstitutionalUsersReporter(MonthlyReporter):
     which offers institutional admins insight into how people at their institution are
     using osf, based on their explicitly-affiliated osf objects
     '''
-    def report(self):
+    def iter_report_kwargs(self, continue_after: dict | None = None):
         _before_datetime = self.yearmonth.month_end()
-        for _institution in osfdb.Institution.objects.filter(created__lt=_before_datetime):
+        _inst_qs = (
+            osfdb.Institution.objects
+            .filter(created__lt=_before_datetime)
+            .order_by('pk')
+        )
+        if continue_after:
+            _inst_qs = _inst_qs.filter(pk__gte=continue_after['institution_pk'])
+        for _institution in _inst_qs:
             _user_qs = _institution.get_institution_users().filter(created__lt=_before_datetime)
-            for _user in _user_qs.iterator(chunk_size=_CHUNK_SIZE):
-                _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth, _before_datetime)
-                yield _helper.report
+            if continue_after and (_institution.pk == continue_after['institution_pk']):
+                _user_qs = _user_qs.filter(pk__gt=continue_after['user_pk'])
+            for _user_pk in _user_qs.values_list('pk', flat=True):
+                yield {'institution_pk': _institution.pk, 'user_pk': _user_pk}
+
+    def report(self, **report_kwargs):
+        _institution = osfdb.Institution.objects.get(pk=report_kwargs['institution_pk'])
+        _user = osfdb.OSFUser.objects.get(pk=report_kwargs['user_pk'])
+        _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth)
+        return _helper.report
 
 
 # helper
@@ -37,7 +47,6 @@ class _InstiUserReportHelper:
     institution: osfdb.Institution
     user: osfdb.OSFUser
     yearmonth: YearMonth
-    before_datetime: datetime.datetime
     report: InstitutionalUserReport = dataclasses.field(init=False)
 
     def __post_init__(self):
@@ -59,10 +68,14 @@ class _InstiUserReportHelper:
             private_project_count=self._private_project_queryset().count(),
             public_registration_count=self._public_registration_queryset().count(),
             embargoed_registration_count=self._embargoed_registration_queryset().count(),
-            public_file_count=self._public_osfstorage_file_queryset().count(),
+            public_file_count=self._public_osfstorage_file_count(),
             published_preprint_count=self._published_preprint_queryset().count(),
             storage_byte_count=self._storage_byte_count(),
         )
+
+    @property
+    def before_datetime(self):
+        return self.yearmonth.month_end()
 
     def _node_queryset(self):
         _institution_node_qs = self.institution.nodes.filter(
@@ -114,7 +127,7 @@ class _InstiUserReportHelper:
             .exclude(spam_status=SpamStatus.SPAM)
         )
 
-    def _public_osfstorage_file_queryset(self):
+    def _public_osfstorage_file_querysets(self):
         _target_node_q = Q(
             # any public project, registration, project component, or registration component
             target_object_id__in=self._node_queryset().filter(is_public=True).values('pk'),
@@ -124,23 +137,40 @@ class _InstiUserReportHelper:
             target_object_id__in=self._published_preprint_queryset().values('pk'),
             target_content_type=ContentType.objects.get_for_model(osfdb.Preprint),
         )
-        return (
+        return (  # split into two queries to avoid a parallel sequence scan on BFN
             OsfStorageFile.objects
             .filter(
                 created__lt=self.before_datetime,
                 deleted__isnull=True,
                 purged__isnull=True,
             )
-            .filter(_target_node_q | _target_preprint_q)
+            .filter(_target_node_q),
+            OsfStorageFile.objects
+            .filter(
+                created__lt=self.before_datetime,
+                deleted__isnull=True,
+                purged__isnull=True,
+            )
+            .filter(_target_preprint_q)
+        )
+
+    def _public_osfstorage_file_count(self):
+        return sum(
+            _target_queryset.count() for _target_queryset
+            in self._public_osfstorage_file_querysets()
         )
 
     def _storage_byte_count(self):
-        return osfdb.FileVersion.objects.filter(
-            size__gt=0,
-            created__lt=self.before_datetime,
-            purged__isnull=True,
-            basefilenode__in=self._public_osfstorage_file_queryset(),
-        ).aggregate(storage_bytes=Sum('size', default=0))['storage_bytes']
+        return sum(
+            osfdb.FileVersion.objects.filter(
+                size__gt=0,
+                created__lt=self.before_datetime,
+                purged__isnull=True,
+                basefilenode__in=_target_queryset,
+            ).aggregate(storage_bytes=Sum('size', default=0))['storage_bytes']
+            for _target_queryset
+            in self._public_osfstorage_file_querysets()
+        )
 
     def _get_last_active(self):
         end_date = self.yearmonth.month_end()

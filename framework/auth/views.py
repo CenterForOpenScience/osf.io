@@ -944,7 +944,7 @@ def register_user(**kwargs):
         )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-        send_confirm_email_async(user, email=user.username)
+        send_confirm_email(user, email=user.username)
         message = language.REGISTRATION_SUCCESS.format(email=user.username)
         return {'message': message}
     else:
