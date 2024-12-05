@@ -445,6 +445,7 @@ class TestNewInstitutionUserMetricList:
         response_body = resp.text
         expected_response = [
             [
+                'report_yearmonth',
                 'account_creation_date',
                 'department',
                 'embargoed_registration_count',
@@ -460,6 +461,7 @@ class TestNewInstitutionUserMetricList:
                 'user_name'
             ],
             [
+                '2024-08',
                 '2018-02',
                 'Center, \t Greatest Ever',
                 '1',
@@ -512,6 +514,7 @@ class TestNewInstitutionUserMetricList:
                 month_last_login='2018-02',
             )
             expected_data.append([
+                '2024-08',
                 '2018-02',
                 'QBatman',
                 '1',
@@ -552,6 +555,7 @@ class TestNewInstitutionUserMetricList:
                 response_rows = list(reader)
                 # Validate header row
                 expected_header = [
+                    'report_yearmonth',
                     'account_creation_date',
                     'department',
                     'embargoed_registration_count',
@@ -606,6 +610,7 @@ class TestNewInstitutionUserMetricList:
         response_data = json.loads(resp.body)
         expected_data = [
             {
+                'report_yearmonth': '2024-08',
                 'account_creation_date': '2018-02',
                 'department': 'Safety "The Wolverine" Weapon X',
                 'embargoed_registration_count': 1,
