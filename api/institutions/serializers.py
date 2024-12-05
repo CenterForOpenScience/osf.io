@@ -330,6 +330,7 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
     })
 
     id = IDField(source='meta.id', read_only=True)
+    report_yearmonth = YearmonthField(read_only=True)
     user_name = ser.CharField(read_only=True)
     department = ser.CharField(read_only=True, source='department_name')
     orcid_id = ser.CharField(read_only=True)
@@ -372,6 +373,7 @@ class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
 
     id = IDField(read_only=True)
 
+    report_yearmonth = YearmonthField(read_only=True)
     user_count = ser.IntegerField(read_only=True)
     public_project_count = ser.IntegerField(read_only=True)
     private_project_count = ser.IntegerField(read_only=True)
