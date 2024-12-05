@@ -76,10 +76,9 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     download_request.add_header('Cookie', f'{osf_settings.COOKIE_NAME}={cookie_value}')
     try:
         boa_query = ensure_str(request.urlopen(download_request).read())
-    except (ValueError, HTTPError, URLError, HTTPException) as exc:
+    except (ValueError, HTTPError, URLError, HTTPException):
         message = f'Failed to download Boa query file: user=[{user_guid}], project=[{project_guid}], ' \
                   f'file_name=[{query_file_name}], full_path=[{file_full_path}], url=[{query_download_url}] ...'
-        logger.info('%%%% b-b-boa error is: ({})'.format(exc))
         await sync_to_async(handle_boa_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname,
                                               project_url, file_full_path, query_file_name=query_file_name)
         return BoaErrorCode.UNKNOWN

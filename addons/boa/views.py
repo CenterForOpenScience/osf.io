@@ -14,7 +14,6 @@ from api.base.utils import waterbutler_api_url_for
 from api.waffle.utils import flag_is_active
 from framework.auth.decorators import must_be_logged_in
 from framework.celery_tasks.handlers import enqueue_task
-# from framework.exceptions import HTTPError
 from osf import features
 from osf.models import ExternalAccount, AbstractNode
 from osf.utils import permissions
@@ -76,53 +75,28 @@ def boa_add_user_account(auth, **kwargs):
 @must_have_permission(permissions.WRITE)
 def boa_submit_job(node_addon, **kwargs):
 
-    logger.info('@@@@ beef bouef')
+    req_params = request.json
+
     if flag_is_active(request, features.ENABLE_GV):
-        logger.info('@@@@ pjorkroute')
-        logger.info('alpha')
-        auth = kwargs['auth']
-        action = 'upload'
-        req_params = request.json
-
-        logger.info('@@@@ beta')
-
         project_guid = req_params['data']['nodeId']
         resource = _get_authenticated_resource(project_guid)
 
-        logger.info('@@@@ gamma resource({}) guid:({}) auth:({})'.format(resource, project_guid, auth))
-
+        auth = kwargs['auth']
+        action = 'upload'
         _check_resource_permissions(resource, auth, action)
 
-        logger.info('@@@@ delta')
-
-        # try:
-        #     addon_settings = resource.serialize_waterbutler_settings('boa')
-        # except AttributeError:  # No addon configured on resource for provider
-        #     raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested Provider unavailable')
-
-        logger.info('@@@@ epsilon')
-
         addon_credentials = resource.serialize_waterbutler_credentials('boa')
-        logger.info('@@@@ zeta')
 
         host = addon_credentials['host']
         username = addon_credentials['username']
         password = addon_credentials['password']
-
-        logger.info('@@@@ eta')
-
     else:
-        logger.info('@@@@ chickumbits')
-        # Boa addon configuration
+        # Boa addon configuration from OSF addons
         provider = node_addon.external_account.provider_id
         parts = provider.rsplit(':', 1)
         host, username = parts[0], parts[1]
         password = node_addon.external_account.oauth_key
-        req_params = request.json
         project_guid = req_params['data']['nodeId']
-
-    logger.info('@@@ done did it all with the meatman')
-    logger.info('@@@   partners ib -- host:({}) username:({})'.format(host, username))
 
     # User
     user = kwargs['auth'].user
