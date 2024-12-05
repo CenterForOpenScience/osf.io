@@ -73,21 +73,21 @@ class RejectPreprintEditMixin:
     '''Override method to reject modify requests for old preprint versions (except for withdrawal)'''
     def update(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
-        if preprint.is_latest_version or preprint.is_retracted:
+        if preprint.is_latest_version:
             return super().update(request, *args, **kwargs)
 
         raise Conflict(detail='Edit availiabe only for the last preprint version or withdrawn preprints')
 
     def create(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
-        if preprint.is_latest_version or preprint.is_retracted:
+        if preprint.is_latest_version:
             return super().create(request, *args, **kwargs)
 
         raise Conflict(detail='Edit availiabe only for the last preprint version or withdrawn preprints')
 
     def delete(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
-        if preprint.is_latest_version or preprint.is_retracted:
+        if preprint.is_latest_version:
             return super().delete(request, *args, **kwargs)
 
         raise Conflict(detail='Edit availiabe only for the last preprint version or withdrawn preprints')
