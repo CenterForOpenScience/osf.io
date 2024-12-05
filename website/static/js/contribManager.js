@@ -59,6 +59,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.permission = ko.observable(contributor.permission);
 
+    self.is_curator = ko.observable(contributor.is_curator || false);
+
     self.permissionText = ko.observable(self.options.permissionMap[self.permission()]);
 
     self.visible = ko.observable(contributor.visible);
