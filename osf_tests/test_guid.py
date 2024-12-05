@@ -1,16 +1,22 @@
 from unittest import mock
 import pytest
 from urllib.parse import quote
+
 from django.utils import timezone
 from django.core.exceptions import MultipleObjectsReturned
+from framework.auth import Auth
 
-from osf.models import Guid, NodeLicenseRecord, OSFUser
+
+from osf.models import Guid, NodeLicenseRecord, OSFUser, GuidVersionsThrough
+from osf.models.base import VersionedGuidMixin
 from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeLicenseRecordFactory, \
     RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from osf.utils.permissions import ADMIN
+from osf.models import Preprint
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
 from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
+
 
 @pytest.mark.django_db
 class TestGuid:
@@ -433,7 +439,6 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 404
 
         pp = PreprintFactory(is_published=False)
-
         res = self.app.get(pp.url + 'download')
         assert res.status_code == 404
 
@@ -452,3 +457,77 @@ class TestResolveGuid(OsfTestCase):
 
         res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 410
+
+@pytest.fixture()
+def creator():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def auth(creator):
+    return Auth(user=creator)
+
+@pytest.fixture()
+def preprint_provider():
+    return PreprintProviderFactory()
+
+@pytest.mark.django_db
+class TestGuidVersionsThrough:
+    def test_creation_versioned_guid(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
+        )
+
+        version_entry = preprint.versioned_guids.first()
+        assert preprint.creator == creator
+        assert preprint.provider == preprint_provider
+        assert preprint.title == 'Preprint'
+        assert preprint.description == 'Abstract'
+
+        assert version_entry.guid == preprint.guids.first()
+        assert version_entry.referent == preprint
+        assert version_entry.content_type.model == 'preprint'
+        assert version_entry.object_id == preprint.pk
+        assert version_entry.version == 1
+
+    def test_create_version(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
+        )
+        first_preprint_guid = preprint.guids.first()
+        preprint.is_published = True
+        preprint.save()
+        auth = Auth(user=creator)
+        new_preprint, data_for_update = Preprint.create_version(
+            create_from_guid=preprint._id,
+            auth=auth
+        )
+        new_version = new_preprint.versioned_guids.first()
+
+        assert new_version.referent == new_preprint
+        assert new_version.object_id == new_preprint.pk
+        assert new_version.content_type.model == 'preprint'
+        assert new_preprint.guids.first() == first_preprint_guid
+        assert new_version.version == 2
+        assert GuidVersionsThrough.objects.count() == 2
+
+    def test_versioned_preprint_id_property(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
+        )
+        preprint_guid = preprint.guids.first()
+        expected_guid = f'{preprint_guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}1'
+
+        assert preprint._id == expected_guid
+
+        GuidVersionsThrough.objects.filter(guid=preprint_guid).delete()
+
+        assert preprint._id is None
