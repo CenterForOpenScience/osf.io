@@ -7,8 +7,8 @@ class PrivateSpamMetricsReporter(MonthlyReporter):
     report_name = 'Private Spam Metrics'
 
     def report(self):
-        target_month = self.yearmonth.target_month()
-        next_month = self.yearmonth.next_month()
+        target_month = self.yearmonth.month_start()
+        next_month = self.yearmonth.month_end()
 
         oopspam_client = OOPSpamClient()
         akismet_client = AkismetClient()
