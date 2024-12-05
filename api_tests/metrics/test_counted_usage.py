@@ -99,8 +99,8 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|http://example.foo/blahblah/blee|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
-            expected_doc_id='55fffffdc0d674d15a5e8763d14e4ae90f658fbfb6fbf94f88a5d24978f02e72',
+            # doc_id: sha256(b'http://example.foo/|http://example.foo/blahblah/blee|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3|api,view').hexdigest()
+            expected_doc_id='3239044c7462dd318edd0522a0ed7d84b9c6502ef16cb40dfcae6c1f456d57a2',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_guid': 'zyxwv',
@@ -132,8 +132,8 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|http://example.foo/bliz/|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
-            expected_doc_id='e559ffbc4bd3e3e69252d34c273f0e771ec89ee455ec9b60fbbadf3944e4af4e',
+            # doc_id: sha256(b'http://example.foo/|http://example.foo/bliz/|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3|view,web').hexdigest()
+            expected_doc_id='d01759e963893f9dc9b2ccf016a5ef29135673779802b5578f31449543677e82',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_guid': 'zyxwv',
@@ -166,8 +166,8 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|http://osf.io/mst3k|ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a|1981-01-01|3').hexdigest()
-            expected_doc_id='743494d8a55079b91e202da1dbdfce5aea72e310c57a34b36df2c2af5ed4d362',
+            # doc_id: sha256(b'http://example.foo/|http://osf.io/mst3k|ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a|1981-01-01|3|view,web').hexdigest()
+            expected_doc_id='7b8bc27c6d90fb45aa5bbd02deceba9f7384ed61b9a6e7253317c262020b94c2',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_guid': 'yxwvu',
@@ -196,8 +196,8 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|yxwvu|97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a|1981-01-01|3').hexdigest()
-            expected_doc_id='a50ac1b2dc1c918cdea7be50b005117fdb6ee00ea069ca3aa4aaf03c0f905fa0',
+            # doc_id: sha256(b'http://example.foo/|yxwvu|97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a|1981-01-01|3|api,view').hexdigest()
+            expected_doc_id='d669528b30f443ffe506e183537af9624ef290090e90a200ecce7b7ca19c77f7',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_guid': 'yxwvu',

@@ -13,6 +13,7 @@ from .preprint_count import PreprintCountReporter
 from .public_item_usage import PublicItemUsageReporter
 from .user_count import UserCountReporter
 from .spam_count import SpamCountReporter
+from .private_spam_metrics import PrivateSpamMetricsReporter
 
 
 class AllDailyReporters(enum.Enum):
@@ -32,3 +33,4 @@ class AllMonthlyReporters(enum.Enum):
     INSTITUTIONAL_USERS = InstitutionalUsersReporter
     INSTITUTIONAL_SUMMARY = InstitutionalSummaryMonthlyReporter
     ITEM_USAGE = PublicItemUsageReporter
+    PRIVATE_SPAM_METRICS = PrivateSpamMetricsReporter

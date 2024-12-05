@@ -5,7 +5,6 @@ from ._base import MonthlyReporter
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
 
-
 class SpamCountReporter(MonthlyReporter):
 
     def report(self, **report_kwargs):

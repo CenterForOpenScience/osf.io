@@ -142,6 +142,7 @@ def _fill_document_id(counted_usage):
         counted_usage.session_id,
         counted_usage.timestamp.date(),
         time_window,
+        ','.join(sorted(counted_usage.action_labels)),
     )
 
 
