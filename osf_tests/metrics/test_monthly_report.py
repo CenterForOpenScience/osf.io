@@ -23,6 +23,7 @@ class TestMonthlyReportKey:
                 app_label = 'osf'
 
         yearmonth = YearMonth(2022, 5)
+        expected_timestamp = datetime.datetime(yearmonth.year, yearmonth.month, 1, tzinfo=datetime.UTC)
 
         reports = [
             UniqueByMonth(report_yearmonth=yearmonth),
@@ -36,6 +37,7 @@ class TestMonthlyReportKey:
             assert mock_save.call_count == 1
             assert mock_save.call_args[0][0] is report
             assert report.meta.id == expected_key
+            assert report.timestamp == expected_timestamp
             mock_save.reset_mock()
 
     def test_with_unique_together(self, mock_save):
@@ -48,6 +50,7 @@ class TestMonthlyReportKey:
                 app_label = 'osf'
 
         yearmonth = YearMonth(2022, 5)
+        expected_timestamp = datetime.datetime(yearmonth.year, yearmonth.month, 1, tzinfo=datetime.UTC)
 
         expected_blah = '62ebf38317cd8402e27a50ce99f836d1734b3f545adf7d144d0e1cf37a0d9d08'
         blah_report = UniqueByMonthAndField(report_yearmonth=yearmonth, uniquefield='blah')
@@ -55,6 +58,7 @@ class TestMonthlyReportKey:
         assert mock_save.call_count == 1
         assert mock_save.call_args[0][0] is blah_report
         assert blah_report.meta.id == expected_blah
+        assert blah_report.timestamp == expected_timestamp
         mock_save.reset_mock()
 
         expected_fleh = '385700db282f6d6089a0d21836db5ee8423f548615e515b6e034bcc90a14500f'
@@ -63,6 +67,7 @@ class TestMonthlyReportKey:
         assert mock_save.call_count == 1
         assert mock_save.call_args[0][0] is fleh_report
         assert fleh_report.meta.id == expected_fleh
+        assert fleh_report.timestamp == expected_timestamp
         mock_save.reset_mock()
 
         for _bad_report in (

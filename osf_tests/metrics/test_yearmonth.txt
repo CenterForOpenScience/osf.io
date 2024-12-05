@@ -24,6 +24,24 @@ YearMonth(year=1974, month=3)
 >>> YearMonth.from_str('2000-12')
 YearMonth(year=2000, month=12)
 
+`from_any` constructor, accepts YearMonth, "YYYY-MM", or date/datetime
+>>> YearMonth.from_any('2000-12')
+YearMonth(year=2000, month=12)
+>>> YearMonth.from_any(_) is _
+True
+>>> YearMonth.from_any(datetime.date(1973, 1, 1))
+YearMonth(year=1973, month=1)
+>>> YearMonth.from_any(datetime.datetime(1974, 3, 2))
+YearMonth(year=1974, month=3)
+>>> YearMonth.from_any(None)
+Traceback (most recent call last):
+    ...
+ValueError: cannot coerce None into YearMonth
+>>> YearMonth.from_any(7)
+Traceback (most recent call last):
+    ...
+ValueError: cannot coerce 7 into YearMonth
+
 `__str__` method gives "YYYY-MM" format:
 >>> str(YearMonth(1491, 7))
 '1491-07'
