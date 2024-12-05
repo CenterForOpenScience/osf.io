@@ -1,15 +1,18 @@
 from unittest import mock
 import pytest
 from urllib.parse import quote
+
 from django.utils import timezone
 from django.core.exceptions import MultipleObjectsReturned
-from django.contrib.contenttypes.models import ContentType
+from framework.auth import Auth
 
 
 from osf.models import Guid, NodeLicenseRecord, OSFUser, GuidVersionsThrough
+from osf.models.base import VersionedGuidMixin
 from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeLicenseRecordFactory, \
     RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from osf.utils.permissions import ADMIN
+from osf.models import Preprint
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
 from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
@@ -455,146 +458,76 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 410
 
+@pytest.fixture()
+def creator():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def auth(creator):
+    return Auth(user=creator)
+
+@pytest.fixture()
+def preprint_provider():
+    return PreprintProviderFactory()
 
 @pytest.mark.django_db
 class TestGuidVersionsThrough:
-    def test_creation_with_guid_and_referent(self):
-        preprint = PreprintFactory()
-        guid = Guid.objects.create(referent=preprint)
-
-        version_entry = GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=1
+    def test_creation_versioned_guid(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
         )
 
-        assert version_entry.guid == guid
+        version_entry = preprint.versioned_guids.first()
+        assert preprint.creator == creator
+        assert preprint.provider == preprint_provider
+        assert preprint.title == 'Preprint'
+        assert preprint.description == 'Abstract'
+
+        assert version_entry.guid == preprint.guids.first()
         assert version_entry.referent == preprint
         assert version_entry.content_type.model == 'preprint'
         assert version_entry.object_id == preprint.pk
         assert version_entry.version == 1
-        assert version_entry.is_rejected is False
 
-    def test_auto_increment_version(self):
-        preprint = PreprintFactory()
-        guid = Guid.objects.create(referent=preprint)
-
-        GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=1
+    def test_create_version(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
         )
-        version_entry_2 = GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=2
+        first_preprint_guid = preprint.guids.first()
+        preprint.is_published = True
+        preprint.save()
+        auth = Auth(user=creator)
+        new_preprint, data_for_update = Preprint.create_version(
+            create_from_guid=preprint._id,
+            auth=auth
         )
+        new_version = new_preprint.versioned_guids.first()
 
-        assert version_entry_2.version == 2
+        assert new_version.referent == new_preprint
+        assert new_version.object_id == new_preprint.pk
+        assert new_version.content_type.model == 'preprint'
+        assert new_preprint.guids.first() == first_preprint_guid
+        assert new_version.version == 2
+        assert GuidVersionsThrough.objects.count() == 2
 
-    def test_creation_without_version(self):
-        preprint = PreprintFactory()
-        guid = Guid.objects.create(referent=preprint)
-
-        version_entry = GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk
+    def test_versioned_preprint_id_property(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
         )
+        preprint_guid = preprint.guids.first()
+        expected_guid = f'{preprint_guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}1'
 
-        assert version_entry.version is None
+        assert preprint._id == expected_guid
 
-    def test_referent_can_be_changed(self):
-        preprint1 = PreprintFactory()
-        preprint2 = PreprintFactory()
-        guid = Guid.objects.create(referent=preprint1)
+        GuidVersionsThrough.objects.filter(guid=preprint_guid).delete()
 
-        version_entry = GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint1,
-            content_type=ContentType.objects.get_for_model(preprint1),
-            object_id=preprint1.id,
-            version=1
-        )
-
-        version_entry.referent = preprint2
-        version_entry.content_type = ContentType.objects.get_for_model(preprint2)
-        version_entry.object_id = preprint2.id
-        version_entry.save()
-
-        assert version_entry.referent == preprint2
-        assert version_entry.content_type.model == 'preprint'
-        assert version_entry.object_id == preprint2.id
-
-    def test_is_rejected_flag(self):
-        preprint = PreprintFactory()
-        guid = Guid.objects.create(referent=preprint)
-
-        version_entry = GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=1
-        )
-
-        assert not version_entry.is_rejected
-        version_entry.is_rejected = True
-        version_entry.save()
-
-        assert version_entry.is_rejected
-
-    def test_multiple_versions_for_same_referent(self):
-        preprint = PreprintFactory()
-        guid = Guid.objects.create(referent=preprint)
-
-        version_entry_1 = GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=1
-        )
-
-        version_entry_2 = GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=2
-        )
-
-        assert version_entry_1.version == 1
-        assert version_entry_2.version == 2
-
-    def test_querying_versions_for_guid(self):
-        preprint = PreprintFactory()
-        guid = Guid.objects.create(referent=preprint)
-
-        GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=1
-        )
-        GuidVersionsThrough.objects.create(
-            guid=guid,
-            referent=preprint,
-            content_type=ContentType.objects.get_for_model(preprint),
-            object_id=preprint.pk,
-            version=2
-        )
-
-        versions = GuidVersionsThrough.objects.filter(guid=guid)
-
-        assert versions.count() == 2
-        assert versions[0].version == 1
-        assert versions[1].version == 2
+        assert preprint._id is None

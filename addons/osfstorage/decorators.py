@@ -10,7 +10,7 @@ from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from osf.models import OSFUser, Guid
-from osf.models.base import VersionedGuidMixin
+from osf.models.base import VersionedGuidMixin, GuidVersionsThrough
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration,
@@ -97,8 +97,11 @@ def waterbutler_opt_hook(func):
             # Waterbutler is sending back ['node'] under the destination payload - WB should change to target
             target = payload['destination'].get('target') or payload['destination'].get('node')
             if VersionedGuidMixin.GUID_VERSION_DELIMITER in target:
-                target = target.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-            dest_target = Guid.load(target).referent
+                dest_target = GuidVersionsThrough.objects.filter(
+                    guid___id=target.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+                ).first().referent
+            else:
+                dest_target = Guid.load(target).referent
             source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_target)
 
