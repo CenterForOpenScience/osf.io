@@ -29,8 +29,8 @@ def test_private_spam_metrics_reporter():
         mock_akismet_get_flagged_count.return_value = 20
         mock_akismet_get_hammed_count.return_value = 10
 
-        reporter = PrivateSpamMetricsReporter()
-        report = reporter.report(report_yearmonth)[0]
+        reporter = PrivateSpamMetricsReporter(report_yearmonth)
+        report = reporter.report()[0]
 
         assert report.node_oopspam_flagged == 10, f"Expected 10, got {report.node_oopspam_flagged}"
         assert report.node_oopspam_hammed == 5, f"Expected 5, got {report.node_oopspam_hammed}"
