@@ -56,6 +56,7 @@ from osf.exceptions import (
 )
 from django.contrib.postgres.fields import ArrayField
 from api.share.utils import update_share
+from api.providers.workflows import Workflows
 
 logger = logging.getLogger(__name__)
 
@@ -111,11 +112,16 @@ class PublishedPreprintManager(PreprintManager):
     def get_queryset(self):
         return super().get_queryset().filter(is_published=True)
 
+class RejectedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(actions__to_state='rejected')
+
 class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
         Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     objects = PreprintManager()
     published_objects = PublishedPreprintManager()
+    rejected_objects = RejectedPreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
@@ -355,10 +361,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         for institution in source_preprint.affiliated_institutions.all():
             preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
-        base_guid.referent = preprint
-        base_guid.object_id = preprint.pk
-        base_guid.content_type = ContentType.objects.get_for_model(preprint)
-        base_guid.save()
+        if not preprint.provider.reviews_workflow:
+            base_guid.referent = preprint
+            base_guid.object_id = preprint.pk
+            base_guid.content_type = ContentType.objects.get_for_model(preprint)
+            base_guid.save()
 
         guid_version = GuidVersionsThrough(
             referent=base_guid.referent,
@@ -1399,6 +1406,69 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             )
         if save:
             self.save()
+
+    # Override ReviewableMixin
+    def run_submit(self, user):
+        """Run the 'reject' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_submit(user=user)
+        provider = self.provider
+        reviews_workflow = provider.reviews_workflow
+        need_guid_update = any(
+            [
+                reviews_workflow == Workflows.POST_MODERATION.value,
+                reviews_workflow == Workflows.HYBRID_MODERATION.value and
+                any([
+                    provider.get_group('moderator') in user.groups.all(),
+                    provider.get_group('admin') in user.groups.all()
+                ])
+            ]
+        )
+        if need_guid_update:
+            base_guid_obj = self.versioned_guids.first().guid
+            base_guid_obj.referent = self
+            base_guid_obj.object_id = self.pk
+            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
+            base_guid_obj.save()
+
+        return ret
+
+    # Override ReviewableMixin
+    def run_accept(self, user, comment, **kwargs):
+        """Run the 'accept' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_accept(user=user, comment=comment, **kwargs)
+        reviews_workflow = self.provider.reviews_workflow
+        if reviews_workflow == Workflows.PRE_MODERATION.value or reviews_workflow == Workflows.HYBRID_MODERATION.value:
+            base_guid_obj = self.versioned_guids.first().guid
+            base_guid_obj.referent = self
+            base_guid_obj.object_id = self.pk
+            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
+            base_guid_obj.save()
+
+        return ret
+
+    # Override ReviewableMixin
+    def run_reject(self, user, comment):
+        """Run the 'reject' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_reject(user=user, comment=comment)
+        versioned_guid = self.versioned_guids.first()
+        versioned_guid.is_rejected = True
+        versioned_guid.save()
+        return ret
 
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):
