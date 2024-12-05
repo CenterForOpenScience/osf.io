@@ -18,6 +18,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
+from osf.models.base import VersionedGuidMixin
 from website import settings
 
 from addons.osfstorage.models import Region, OsfStorageFile
@@ -207,11 +208,15 @@ def forgot_password_form():
 
 def resolve_guid_download(guid, provider=None):
     try:
-        guid = Guid.objects.get(_id=guid.lower())
+        if VersionedGuidMixin.GUID_VERSION_DELIMITER in guid:
+            base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+            base_guid_obj = Guid.objects.get(_id=base_guid.lower())
+        else:
+            base_guid_obj = Guid.objects.get(_id=guid.lower())
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-    resource = guid.referent
+    resource = base_guid_obj.referent
 
     suffix = request.view_args.get('suffix')
     if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
