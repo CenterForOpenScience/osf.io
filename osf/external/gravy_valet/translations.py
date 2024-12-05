@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import markupsafe
 
 from addons.bitbucket.apps import BitbucketAddonConfig
+from addons.boa.apps import BoaAddonAppConfig
 from addons.box.apps import BoxAddonAppConfig
 from addons.dataverse.apps import DataverseAddonAppConfig
 from addons.dropbox.apps import DropboxAddonAppConfig
@@ -40,11 +41,14 @@ class _LegacyConfigsForWBKey(enum.Enum):
     s3 = S3AddonAppConfig
     zotero = ZoteroAddonAppConfig
     mendeley = MendeleyAddonConfig
+    boa = BoaAddonAppConfig
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
     if gv_account_data.resource_type == 'configured-citation-addons':
         include_path = ('external_citation_service',)
+    elif gv_account_data.resource_type == 'configured-remotecomputing-addons':
+        include_path = ('external_remotecomputing_service',)
     else:
         include_path = ('external_storage_service',)
     service_wb_key = gv_account_data.get_included_attribute(
@@ -62,6 +66,8 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
 def make_ephemeral_node_settings(gv_addon_data: gv_requests.JSONAPIResultEntry, requested_resource, requesting_user):
     if gv_addon_data.resource_type == 'configured-citation-addons':
         include_path = ('base_account', 'external_citation_service')
+    elif gv_addon_data.resource_type == 'configured-remotecomputing-addons':
+        include_path = ('base_account', 'external_remotecomputing_service')
     else:
         include_path = ('base_account', 'external_storage_service')
     service_wb_key = gv_addon_data.get_included_attribute(
