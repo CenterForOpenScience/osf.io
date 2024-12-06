@@ -25,4 +25,4 @@ class PrivateSpamMetricsReporter(MonthlyReporter):
             preprint_akismet_hammed=akismet_client.get_hammed_count(target_month, next_month, category='preprint')
         )
 
-        return [report]
+        return report
