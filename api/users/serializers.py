@@ -751,7 +751,7 @@ class UserMessageSerializer(JSONAPISerializer):
         )
 
         if not sender.is_institutional_admin(institution):
-            raise exceptions.ValidationError({'sender': 'Only institutional adminstraters can create messages.'})
+            raise exceptions.ValidationError({'sender': 'Only institutional administrators can create messages.'})
 
         if not recipient.is_affiliated_with_institution(institution):
             raise exceptions.ValidationError(

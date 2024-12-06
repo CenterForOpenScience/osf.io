@@ -100,7 +100,7 @@ class TestUserMessageInstitutionalAccess:
         Ensure a non-institutional admin cannot create a `UserMessage`, even with valid data.
         """
         res = app.post_json_api(url_with_affiliation, payload, auth=noncontrib.auth, expect_errors=True)
-        assert res.status_code == 401
+        assert res.status_code == 403
 
     def test_request_without_institution(self, app, institutional_admin, user, url_with_affiliation, payload):
         """
@@ -110,6 +110,15 @@ class TestUserMessageInstitutionalAccess:
 
         res = app.post_json_api(url_with_affiliation, payload, auth=institutional_admin.auth, expect_errors=True)
         assert res.status_code == 400
+        error = res.json['errors']
+        assert error == [
+            {
+                'source': {
+                    'pointer': '/data/relationships/institution'
+                },
+                'detail': 'Institution ID is required.'
+            }
+        ]
 
     def test_missing_message_fails(self, app, institutional_admin, user, url_with_affiliation, payload):
         """
@@ -119,6 +128,15 @@ class TestUserMessageInstitutionalAccess:
 
         res = app.post_json_api(url_with_affiliation, payload, auth=institutional_admin.auth, expect_errors=True)
         assert res.status_code == 400
+        error = res.json['errors']
+        assert error == [
+            {
+                'source': {
+                    'pointer': '/data/attributes/message_text'
+                },
+                'detail': 'This field is required.',
+            }
+        ]
 
     def test_admin_cannot_message_user_outside_institution(
             self,

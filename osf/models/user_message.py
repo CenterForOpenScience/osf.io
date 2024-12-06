@@ -55,7 +55,7 @@ class UserMessage(BaseModel, ObjectIDMixin):
         'OSFUser',
         on_delete=models.CASCADE,
         related_name='received_user_messages',
-        help_text='The user who received this message.'
+        help_text='The recipient of this message.'
     )
     message_text = models.TextField(
         help_text='The content of the message. The custom text of a formatted email.'

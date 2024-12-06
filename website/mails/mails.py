@@ -598,5 +598,5 @@ ADDONS_BOA_JOB_FAILURE = Mail(
 
 USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST = Mail(
     'user_message_institutional_access_request',
-    subject='Institutional Access Request'
+    subject='Message from Institutional Admin'
 )
