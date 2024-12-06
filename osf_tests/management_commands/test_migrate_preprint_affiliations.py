@@ -1,5 +1,6 @@
 import pytest
-from osf.management.commands.migrate_preprint_affiliation import assign_affiliations_to_preprints
+from datetime import timedelta
+from osf.management.commands.migrate_preprint_affiliation import AFFILIATION_TARGET_DATE, assign_affiliations_to_preprints
 from osf_tests.factories import (
     PreprintFactory,
     InstitutionFactory,
@@ -33,6 +34,8 @@ class TestAssignAffiliationsToPreprints:
             permissions='admin',
             visible=True
         )
+        preprint.created = AFFILIATION_TARGET_DATE - timedelta(days=1)
+        preprint.save()
         return preprint
 
     @pytest.fixture()
@@ -43,6 +46,20 @@ class TestAssignAffiliationsToPreprints:
             permissions='admin',
             visible=True
         )
+        preprint.created = AFFILIATION_TARGET_DATE - timedelta(days=1)
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def preprint_past_target_date_with_affiliated_contributor(self, user_with_affiliation):
+        preprint = PreprintFactory()
+        preprint.add_contributor(
+            user_with_affiliation,
+            permissions='admin',
+            visible=True
+        )
+        preprint.created = AFFILIATION_TARGET_DATE + timedelta(days=1)
+        preprint.save()
         return preprint
 
     @pytest.mark.parametrize('dry_run', [True, False])
@@ -100,6 +117,7 @@ class TestAssignAffiliationsToPreprints:
 
         preprint = PreprintFactory()
         preprint.affiliated_institutions.clear()
+        preprint.created = AFFILIATION_TARGET_DATE - timedelta(days=1)
         preprint.add_contributor(read_contrib, permissions='read', visible=True)
         preprint.add_contributor(write_contrib, permissions='write', visible=True)
         preprint.add_contributor(admin_contrib, permissions='admin', visible=True)
@@ -113,3 +131,21 @@ class TestAssignAffiliationsToPreprints:
             affiliations = set(preprint.affiliated_institutions.all())
             assert affiliations == {institution, institution2}
             assert institution_not_include not in affiliations
+
+    @pytest.mark.parametrize('dry_run', [True, False])
+    def test_exclude_recent_preprints(self, preprint_past_target_date_with_affiliated_contributor, preprint_with_affiliated_contributor, institution, dry_run):
+        new_preprint = preprint_past_target_date_with_affiliated_contributor
+        new_preprint.affiliated_institutions.clear()
+        new_preprint.save()
+
+        old_preprint = preprint_with_affiliated_contributor
+        old_preprint.affiliated_institutions.clear()
+        old_preprint.save()
+
+        assign_affiliations_to_preprints(dry_run=dry_run)
+
+        assert not new_preprint.affiliated_institutions.exists()
+        if dry_run:
+            assert not old_preprint.affiliated_institutions.exists()
+        else:
+            assert institution in old_preprint.affiliated_institutions.all()
