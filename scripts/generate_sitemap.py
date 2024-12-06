@@ -9,14 +9,16 @@ from urllib.parse import urlparse, urljoin
 import xml
 
 import django
+from django.db.models.functions import Coalesce
+
 django.setup()
 import logging
 import tempfile
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from django.db.models import Q
-from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
+from django.db.models import Q, F, OuterRef, Subquery, Max
+from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider, Guid, GuidVersionsThrough
 from osf.utils.workflows import DefaultStates
 from scripts import utils as script_utils
 from website import settings
@@ -197,11 +199,34 @@ class Sitemap:
             progress.increment()
         progress.stop()
 
-        # Preprint urls
+        latest_preprints = Preprint.objects.filter(
+            Q(is_published=True, date_withdrawn__isnull=True) | Q(date_withdrawn__isnull=False)
+        ).annotate(
+            most_recent_non_withdrawn=Subquery(
+                Preprint.objects.filter(
+                    guids=OuterRef('guids')
+                ).filter(
+                    Q(is_published=True, date_withdrawn__isnull=True)  # Non-withdrawn and published
+                ).order_by('-versioned_guids__version').values('versioned_guids__version')[:1]
+            )
+        ).annotate(
+            most_recent_withdrawn=Subquery(
+                Preprint.objects.filter(
+                    guids=OuterRef('guids')
+                ).filter(
+                    date_withdrawn__isnull=False  # Withdrawn versions
+                ).order_by('-versioned_guids__version').values('versioned_guids__version')[:1]
+            )
+        ).order_by(
+            'versioned_guids__guid_id',
+            '-versioned_guids__version'
+        ).distinct('versioned_guids__guid_id')
 
-        objs = (Preprint.objects.can_view()
-                    .select_related('node', 'provider', 'primary_file'))
-        progress.start(objs.count() * 2, 'PREP: ')
+        objs_original = (Preprint.objects.can_view()
+                .select_related('node', 'provider', 'primary_file'))
+        objs = [obj for obj in latest_preprints if obj in objs_original]
+
+        progress.start(len(objs) * 2, 'PREP: ')
         for obj in objs:
             try:
                 preprint_date = obj.modified.strftime('%Y-%m-%d')
