@@ -9,7 +9,6 @@ from urllib.parse import urlparse, urljoin
 import xml
 
 import django
-from django.db.models.functions import Coalesce
 
 django.setup()
 import logging
@@ -17,8 +16,8 @@ import tempfile
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from django.db.models import Q, F, OuterRef, Subquery, Max
-from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider, Guid, GuidVersionsThrough
+from django.db.models import Q, F, OuterRef, Subquery
+from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
 from osf.utils.workflows import DefaultStates
 from scripts import utils as script_utils
 from website import settings
