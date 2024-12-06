@@ -203,7 +203,7 @@ class SpamMixin(models.Model):
             'referer': request_headers.get('Referer'),
         }
         if isinstance(self, Preprint):
-            guid__id = self.get_guid()._id
+            guid__id = self._id
         else:
             guid__id = self.guids.first()._id
         check_resource_for_domains_postcommit(
