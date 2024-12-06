@@ -1,6 +1,7 @@
 from unittest import mock
 import pytest
 
+from osf.models.base import VersionedGuidMixin
 from osf.utils import workflows
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestMixin
@@ -125,7 +126,10 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
 @pytest.mark.django_db
 class TestPreprintRequestListCreate(PreprintRequestTestMixin):
     def url(self, preprint):
-        return f'/{API_BASE}preprints/{preprint._id}/requests/'
+        preprint_id = preprint._id
+        if VersionedGuidMixin.GUID_VERSION_DELIMITER in preprint._id:
+            preprint_id = preprint._id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+        return f'/{API_BASE}preprints/{preprint_id}/requests/'
 
     @pytest.fixture()
     def create_payload(self):
