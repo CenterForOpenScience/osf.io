@@ -9,6 +9,8 @@ from osf.models import PreprintContributor, InstitutionAffiliation
 
 logger = logging.getLogger(__name__)
 
+AFFILIATION_TARGET_DATE = datetime.datetime(2024, 9, 19, 14, 37, 48, tzinfo=datetime.timezone.utc)
+
 
 class Command(BaseCommand):
     """Assign affiliations from users to preprints where they have write or admin permissions, with optional exclusion by user GUIDs."""
@@ -96,6 +98,9 @@ def assign_affiliations_to_preprints(exclude_guids=None, dry_run=True, batch_siz
             for contributor in batch_contributors:
                 user = contributor.user
                 preprint = contributor.preprint
+
+                if preprint.created > AFFILIATION_TARGET_DATE:
+                    continue
 
                 user_institutions = user.get_affiliated_institutions()
                 processed_count += 1
