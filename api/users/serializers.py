@@ -694,12 +694,7 @@ class UserMessageSerializer(JSONAPISerializer):
     institution = RelationshipField(
         related_view='institutions:institution-detail',
         related_view_kwargs={'institution_id': '<institution._id>'},
-        help_text='The institution associated with this message. This field is required.',
-    )
-    user = RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<recipient._id>'},
-        help_text='The recipient of the message.',
+        help_text='The institution associated with this message.',
     )
 
     def get_absolute_url(self, obj: UserMessage) -> str:
@@ -718,7 +713,7 @@ class UserMessageSerializer(JSONAPISerializer):
         return data
 
     class Meta:
-        type_ = 'user-message'
+        type_ = 'user-messages'
 
     def create(self, validated_data: Dict[str, Any]) -> UserMessage:
         """

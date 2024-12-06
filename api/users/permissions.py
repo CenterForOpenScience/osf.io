@@ -64,9 +64,6 @@ class UserMessagePermissions(permissions.BasePermission):
         Returns:
             bool: True if the user has the required permission, False otherwise.
         """
-        if request.method != 'POST':
-            return False
-
         user = request.user
         if not user or user.is_anonymous:
             return False
@@ -93,7 +90,7 @@ class UserMessagePermissions(permissions.BasePermission):
         institution = self._get_institution(institution_id)
 
         if not user.is_institutional_admin(institution):
-            raise exceptions.NotAuthenticated('You are not an admin of the specified institution.')
+            raise exceptions.PermissionDenied('You are not an admin of the specified institution.')
 
         return True
 
