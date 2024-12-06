@@ -68,41 +68,17 @@ class UserMessagePermissions(permissions.BasePermission):
         if not user or user.is_anonymous:
             return False
 
-        message_type = request.data.get('message_type')
-        if message_type == MessageTypes.INSTITUTIONAL_REQUEST:
-            return self._validate_institutional_request(request, user)
-
-        return False
-
-    def _validate_institutional_request(self, request, user: OSFUser) -> bool:
-        """
-        Validate the user's permissions for creating an `INSTITUTIONAL_REQUEST` message.
-        Args:
-            request: The HTTP request containing the institution ID.
-            user: The user making the request.
-        Returns:
-            bool: True if the user has the required permission.
-        """
         institution_id = request.data.get('institution')
         if not institution_id:
-            raise exceptions.ValidationError({'institution': 'Institution ID is required.'})
+            raise exceptions.ValidationError({'institution': 'Institution is required.'})
 
-        institution = self._get_institution(institution_id)
-
-        if not user.is_institutional_admin(institution):
-            raise exceptions.PermissionDenied('You are not an admin of the specified institution.')
-
-        return True
-
-    def _get_institution(self, institution_id: str) -> Institution:
-        """
-        Retrieve the institution by its ID.
-        Args:
-            institution_id (str): The ID of the institution.
-        Returns:
-            Institution: The retrieved institution.
-        """
         try:
-            return Institution.objects.get(_id=institution_id)
+            institution = Institution.objects.get(_id=institution_id)
         except Institution.DoesNotExist:
             raise exceptions.ValidationError({'institution': 'Specified institution does not exist.'})
+
+        message_type = request.data.get('message_type')
+        if message_type == MessageTypes.INSTITUTIONAL_REQUEST:
+            return user.is_institutional_admin(institution)
+        else:
+            raise exceptions.ValidationError('Not valid message type.')

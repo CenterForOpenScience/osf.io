@@ -116,7 +116,7 @@ class TestUserMessageInstitutionalAccess:
                 'source': {
                     'pointer': '/data/relationships/institution'
                 },
-                'detail': 'Institution ID is required.'
+                'detail': 'Institution is required.'
             }
         ]
 
@@ -150,6 +150,6 @@ class TestUserMessageInstitutionalAccess:
         Ensure that an institutional admin cannot create a `UserMessage` for a user who is not affiliated with their institution.
         """
         res = app.post_json_api(url_without_affiliation, payload, auth=institutional_admin.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 409
         assert 'Can not send to recipient that is not affiliated with the provided institution.'\
-               in res.json['errors'][0]['detail']
+               in res.json['errors'][0]['detail']['user']

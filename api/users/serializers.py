@@ -707,9 +707,10 @@ class UserMessageSerializer(JSONAPISerializer):
         )
 
     def to_internal_value(self, data):
-        instituion_id = data.pop('institution')
+        instituion_id = data.pop('institution', None)
         data = super().to_internal_value(data)
-        data['institution'] = instituion_id
+        if instituion_id:
+            data['institution'] = instituion_id
         return data
 
     class Meta:
@@ -751,10 +752,10 @@ class UserMessageSerializer(JSONAPISerializer):
         )
 
         if not sender.is_institutional_admin(institution):
-            raise exceptions.ValidationError({'sender': 'Only institutional administrators can create messages.'})
+            raise Conflict({'sender': 'Only institutional administrators can create messages.'})
 
         if not recipient.is_affiliated_with_institution(institution):
-            raise exceptions.ValidationError(
+            raise Conflict(
                 {'user': 'Can not send to recipient that is not affiliated with the provided institution.'},
             )
 
