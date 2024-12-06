@@ -644,6 +644,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         OSFGroup = apps.get_model('osf.OSFGroup')
         return get_objects_for_user(self, 'member_group', OSFGroup, with_superuser=False)
 
+    def is_institutional_admin(self, institution):
+        group_name = institution.format_group('institutional_admins')
+        return self.groups.filter(name=group_name).exists()
+
     def group_role(self, group):
         """
         For the given OSFGroup, return the user's role - either member or manager
