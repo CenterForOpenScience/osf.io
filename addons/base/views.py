@@ -547,13 +547,8 @@ def create_waterbutler_log(payload, **kwargs):
                     if guid:
                         node = guid.referent
                 else:
-                    # TODO: needs exception handling
-                    base_guid_id = guid_id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-                    guid_version = guid_id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]
-                    guid = Guid.load(base_guid_id)
-                    if guid:
-                        node = guid.versions.get(version=guid_version).referent
-                return {'status': 'success'}
+                    node = Preprint.load(guid_id)
+
             user = OSFUser.load(auth['id'])
             if user is None:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
