@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load static %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+    <style type="text/css">
+        .btn-danger.disabled{
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .container {
+            max-height: 290px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans 'Project Limit Number Setting Template' %}</title>
+{% endblock title %}
+
+{% block content %}
+
+    <!-- Authentication attribute input block -->
+    <h2>{% trans 'Project Limit Number Setting Template' %}</h2>
+    <form id="authenticationAttributesForm" class="form-horizontal">
+        {% csrf_token %}
+        <div class="row col-md-12" style="margin-top: 20px;">
+            <label for="template_name" class="col-sm-2" style="width: 10%;">{% trans 'Rule Name' %}</label>
+            <div class="col-md-10">
+                <input type="text" name="template_name" class="form-control" id="template_name"
+                    style="border-radius: 5px; width: 101%;"
+                    minlength="1" maxlength="255" value="{{ template_name }}" placeholder="{% trans 'Rule Name' %}" required>
+            </div>
+        </div>
+
+        <div class="col-md-12 container" style="padding-right: 0px; margin-top: 10px; width: 100%; margin-bottom: 0px; padding-left: 0px;">
+            <div class="form-inline" id="attributes_block">
+                <div class="clearfix flex-container">
+                    <div class="row col-md-12" style="margin-bottom: 0px;">
+                        <div class="col-md-3">
+                            <div>
+                                <label for="inputText">{% trans "Using Attribute" %}</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div>
+                                <label for="inputText">{% trans "Setting Type" %}</label>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div>
+                                <label for="inputText">{% trans "Value" %}</label>
+                            </div>
+                        </div>
+                    </div>
+                    {% for data_template in data_template_list %}
+                    <div class="attribute-item">
+                        <div class="row col-md-12">
+                            <div class="col-md-3">
+                                <input type="hidden" class="form-control attribute-id" value="{{ data_template.attribute_id }}">
+                                <select id="attribute_id_{{ forloop.counter0 }}" name="attribute_name" class="form-control attribute-name" style="width: 100% !important; border-radius: 5px;"
+                                    required onchange="setCustomValidity('')">
+                                    <option selected disabled hidden value=""></option>
+                                    {% for attribute_name in attribute_name_list %}
+                                    <option value="{{ attribute_name }}" {% if attribute_name == data_template.attribute_name %}selected="selected"{% endif %}>{{ attribute_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="setting_id_{{ forloop.counter0 }}" name="attribute_name" class="form-control setting-type" style="width: 100% !important; border-radius: 5px;"
+                                    required onchange="onChangeSettingOption('{{ forloop.counter0 }}')">
+                                    <option selected disabled hidden value=""></option>
+                                    {% for index, setting_type in setting_type_list %}
+                                        <option value="{{ index }}" {% if index == data_template.setting_type.0 %}selected="selected"{% endif %}>{% trans setting_type %}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <input id="setting_name_{{ forloop.counter0 }}" type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px;"
+                                   minlength="1" maxlength="255" oninput="setCustomValidity('')" placeholder="{% trans 'Value' %}" value="{{ data_template.attribute_value|default:'' }}" required
+                                    {% if data_template.setting_type.0 == 1 or data_template.setting_type.0 == 2 %}disabled{% endif %}
+                                >
+                            </div>
+                            <div class="col-md-1">
+                                <button name="remove_authentication_attribute_button" type="button" class="btn btn-danger" {% if data_template_list|length == 1 %}disabled{% endif %}
+                                onclick="removeAuthenticationAttributeRow(this)">{% trans 'Delete' %}</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group col-md-12">
+            <div class="col-md-6">
+                <button type="button" class="btn btn-primary" onclick="addNewAuthenticationAttributeElement()">{% trans 'Add Input Field' %}</button>
+            </div>
+            <div class="col-md-6" style="text-align: right; padding-right: 8%;">
+                <button type="button" class="btn btn-default" style="width: 90px; margin-right: 5px;" onclick="navigateToPreviousPage()">{% trans 'Cancel' %}</button>
+                <button type="button" class="btn btn-primary" style="width: 90px;" onclick="updateTemplatesSetting()">{% trans 'Save' %}</button>
+            </div>
+        </div>
+    </form>
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'project-limit-number-setting-page' %}
+    <script type="text/javascript">
+        const csrftoken = $('[name=csrfmiddlewaretoken]').val();
+        var inputRowId = {{ data_template_list|length }};
+
+        function addNewAuthenticationAttributeElement() {
+            let attributesHtml = `
+                <div class="attribute-item clearfix flex-container">
+                    <div class="row col-md-12">
+                        <div class="col-md-3">
+                            <select id="attribute_id_`+ inputRowId +`" name="attribute_name" class="form-control attribute-name" style="width: 100% !important; border-radius: 5px;"
+                                required onchange="setCustomValidity('')">
+                                <option selected disabled hidden value=""></option>
+                                {% for attribute_name in attribute_name_list %}
+                                    <option value="{{ attribute_name }}">{{ attribute_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="setting_id_`+ inputRowId +`" name="attribute_name" class="form-control setting-type" style="width: 100% !important; border-radius: 5px;"
+                                    required onchange="onChangeSettingOption('`+ inputRowId +`')">
+                                    <option selected disabled hidden value=""></option>
+                                    {% for index, setting_type in setting_type_list %}
+                                        <option value="{{ index }}">{% trans setting_type %}</option>
+                                    {% endfor %}
+                                </select>
+                        </div>
+                        <div class="col-md-5">
+                            <input id="setting_name_`+ inputRowId +`" type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px;"
+                                minlength="1" maxlength="255" oninput="setCustomValidity('')" placeholder="{% trans 'Value' %}" required
+                            >
+                        </div>
+                        <div class="col-md-1">
+                            <button name="remove_authentication_attribute_button" type="button" class="btn btn-danger"
+                            onclick="removeAuthenticationAttributeRow(this)">{% trans 'Delete' %}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('attributes_block').append(new DOMParser().parseFromString(attributesHtml, 'text/html').body.childNodes[0]);
+            let elements = document.getElementsByName('remove_authentication_attribute_button');
+            if (elements.length > 1) {
+                elements[0].removeAttribute('disabled');
+                elements[0].classList.remove('disabled');
+            }
+            let newEvent = new Event('attribute_created', {bubbles: true});
+            document.getElementById('attributes_block').dispatchEvent(newEvent);
+            inputRowId++;
+        }
+
+        function removeAuthenticationAttributeRow(element) {
+            let attributeGroupElement = element.parentElement.parentElement.parentElement;
+            attributeGroupElement.remove();
+            let elements = document.getElementsByName('remove_authentication_attribute_button');
+            if (elements.length <= 1) {
+                elements[0].setAttribute('disabled', 'disabled');
+                elements[0].classList.add('disabled');
+            }
+        }
+
+        function onChangeSettingOption(id) {
+            var element = $('#setting_id_'+ id).val();
+            if (element === "1" || element === "2") {
+                $('#setting_name_'+ id).prop('disabled', true);
+            } else {
+                $('#setting_name_'+ id).prop('disabled', false);
+            }
+        }
+
+        function navigateToPreviousPage() {
+            // Check if there's a previous page in history
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Fallback to list page if no previous page exists
+                window.location.href = "{% url 'project_limit_number:templates:list-template' %}";
+            }
+        }
+
+        function csrfSafeMethod(method) {
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        function updateTemplatesSetting() {
+            const templateName = $('#template_name').val();
+
+            var attributeList = [];
+            $('.attribute-item').each(function (index, element) {
+                var attribute_value;
+                const attribute_name = element.querySelector('.attribute-name').value;
+                var setting_type = Number(element.querySelector('.setting-type').value, 10);
+                if (setting_type == 0) {
+                    setting_type = null;
+                }
+                attribute_value = element.querySelector('.attribute-value').value;
+                if (element.querySelector('.attribute-id') != null) {
+                    id = parseInt(element.querySelector('.attribute-id').value);
+                    attributeList.push({
+                        id,
+                        attribute_name,
+                        setting_type,
+                        attribute_value
+                    });
+                } else {
+                    attributeList.push({
+                        attribute_name,
+                        setting_type,
+                        attribute_value
+                    });
+                }
+            });
+
+            data = {
+                template_name: templateName,
+                attribute_list: attributeList
+            }
+            $.ajax({
+                url: "{% url 'project_limit_number:templates:update-template' template_id=template_id%}",
+                type: "PUT",
+                data: JSON.stringify(data),
+                dataType: "json",
+                contentType: "application/json",
+                success: function (response) {
+                    window.location.href = "{% url 'project_limit_number:templates:list-template' %}";
+                }
+            }).fail(function (jqXHR, textStatus, error) {
+                handleAjaxRequestFailure(jqXHR);
+            });
+        }
+    </script>
+{% endblock %}

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
+
+from api.base.utils import CREATED_ERROR, check_user_can_create_project, LIMITED_ERROR
 from rest_framework import status as http_status
 import math
 from collections import defaultdict
@@ -136,6 +138,14 @@ def project_new_post(auth, **kwargs):
     campaign = data.get('campaign', None)
     new_project = {}
 
+    # Check project limit number permission
+    can_create_project = check_user_can_create_project(user)
+    if not can_create_project:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
+            'message_short': CREATED_ERROR,
+            'message_long': LIMITED_ERROR
+        })
+
     if template:
         original_node = AbstractNode.load(template)
         changes = {
@@ -172,6 +182,15 @@ def project_new_post(auth, **kwargs):
 @must_be_logged_in
 @must_be_valid_project
 def project_new_from_template(auth, node, **kwargs):
+
+    # Check project limit number permission
+    can_create_project = check_user_can_create_project(auth.user)
+    if not can_create_project:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
+            'message_short': CREATED_ERROR,
+            'message_long': LIMITED_ERROR
+        })
+
     new_node = node.use_as_template(
         auth=auth,
         changes=dict(),
@@ -193,6 +212,15 @@ def project_new_node(auth, node, **kwargs):
     """
     form = NewNodeForm(request.form)
     user = auth.user
+
+    # Check project limit number permission
+    can_create_project = check_user_can_create_project(user)
+    if not can_create_project:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
+            'message_short': CREATED_ERROR,
+            'message_long': LIMITED_ERROR
+        })
+
     if form.validate():
         try:
             new_component = new_node(
@@ -593,6 +621,7 @@ def view_project(auth, node, **kwargs):
         logger.critical(err)
         ret['isCustomStorageLocation'] = False
 
+    ret['user']['can_create_project'] = check_user_can_create_project(auth.user)
     return ret
 
 
@@ -1496,6 +1525,14 @@ def fork_pointer(auth, node, **kwargs):
     if pointer is None:
         # TODO: Change this to 404?
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+    # Check project limit number permission
+    can_create_project = check_user_can_create_project(auth.user)
+    if not can_create_project:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
+            'message_short': CREATED_ERROR,
+            'message_long': LIMITED_ERROR
+        })
 
     try:
         fork = node.fork_pointer(pointer, auth=auth, save=True)

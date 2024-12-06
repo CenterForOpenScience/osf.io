@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% block title %}
+    <title>{% trans "Project Limit Number Setting Template List" %}</title>
+{% endblock title %}
+{% block content %}
+    <h2>{% trans "Project Limit Number Setting Template List" %}</h2>
+    <form>
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                {% include "project_limit_number_templates/pagination.html" with items=page pagin=10 %}
+            </div>
+        </div>
+        <div class="row col-md-12">
+            <button type="button" class="btn btn-primary" onclick="saveSettings()" disabled id="save_availability">{% trans "Save Availability" %}</button>
+            <button type="reset" class="btn btn-default" style="margin-left: 5px;" disabled id="clear_availability" onclick="resetSettingsTemplate()">{% trans "Clear Availability" %}</button>
+        </div>
+    </form>
+    <table id="setting-template-table" class="table table-striped table-hover table-responsive">
+        <thead>
+            <tr>
+                <th class="col-md-1">{% trans "Availability" %}</th>
+                <th class="col-md-3">{% trans "Rule Name" %}</th>
+                <th class="col-md-4">{% trans "Using Attribute" %}</th>
+                <th class="col-md-1">{% trans "Created Time" %}</th>
+                <th class="col-md-1">{% trans "Updated Time" %}</th>
+                <th class="col-md-2">{% trans "Operation" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project_limit_number_template in project_limit_number_template_list %}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="is_availability" value="on" style="height: 28px;"
+                                   onchange="{this.classList.toggle('checked'); changeAvailability('{{ project_limit_number_template.id }}');
+                                   this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}"
+                                   data-toggle="toggle" data-onstyle="success" class="btn apple-switch {% if project_limit_number_template.is_availability %} checked {% endif %}"
+                                   id="template_id_{{ project_limit_number_template.id }}"
+                                   {% if project_limit_number_template.used_setting_number > 0 %} disabled {% endif %}>
+                    </td>
+                    <td>
+                        {{ project_limit_number_template.template_name|default_if_none:'' }}
+                    </td>
+                    <td>
+                        {{ project_limit_number_template.attribute_names }}
+                    </td>
+                    <td>
+                        {{ project_limit_number_template.created|date:'Y-m-d H:i:s' }}
+                    </td>
+                    <td>
+                        {{ project_limit_number_template.modified|date:'Y-m-d H:i:s' }}
+                    </td>
+                    <td class="col-md-12" style="
+                            text-align: left;
+                            padding-left: 0px;
+                        ">
+                            <a class="btn btn-primary" style="margin-left: 10px"
+                                id="edit_authentication_attribute_1" name="editAuthenticationAttribute"
+                                {% if project_limit_number_template.used_setting_number > 0 %} disabled {% endif %}
+                                href="{% url 'project_limit_number:templates:detail-template' template_id=project_limit_number_template.id %}">
+                                {% trans "Edit" %}
+                            </a>
+                            <button type="button" class="btn btn-danger"
+                                data-target="#deleteSettingTemplate" data-toggle="modal"
+                                data-setting-template-id="{{ project_limit_number_template.id }}"
+                                style="margin-left: 10px" id="delete_template_setting_{{ project_limit_number_template.id }}"
+                                {% if project_limit_number_template.used_setting_number > 0 %} disabled {% endif %}>
+                                {% trans "Delete" %}
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="row col-md-12">
+        <a href="{% url 'project_limit_number:templates:create-template' %}" class="btn btn-primary">{% trans "Create New" %}</a>
+    </div>
+    <div class="modal middle fade" id="deleteSettingTemplate" tabindex="-1" aria-labelledby="deleteSettingTemplateLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>{% trans "Are you sure you want to delete this template?" %}</h3>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="submitDeleteButton"
+                            class="btn btn-danger"
+                            data-dismiss="modal"
+                            onclick="deleteSettingTemplate()">{% trans "Delete" %}</button>
+                    <button type="button"
+                            class="btn btn-secondary cancel_modal"
+                            data-dismiss="modal">{% trans "Cancel" %}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'project-limit-number-setting-page' %}
+    <script type="text/javascript">
+        var csrftoken = $('[name=csrfmiddlewaretoken]').val();
+        var originalTableSettingTemplateHtml = $('#setting-template-table').html();
+        var list_id_availability = [];
+        var deleteSettingTemplateId;
+
+        function changeAvailability(id) {
+            const index = list_id_availability.indexOf(id);
+
+            if (index !== -1) {
+                list_id_availability.splice(index, 1);
+            } else {
+                list_id_availability.push(id);
+            }
+
+            if (!list_id_availability.length) {
+                $('#save_availability').prop('disabled', true);
+                $('#clear_availability').prop('disabled', true);
+            } else {
+                $('#save_availability').prop('disabled', false);
+                $('#clear_availability').prop('disabled', false);
+            }
+        }
+
+        $('#deleteSettingTemplate').on('show.bs.modal', function (event) {
+            console.log('on show');
+            const button = $(event.relatedTarget); // Button that triggered the modal
+            deleteSettingTemplateId = Number(button.data('setting-template-id'), 10) || undefined;
+        });
+
+        function csrfSafeMethod(method) {
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        function saveSettings() {
+            var datas = [];
+            list_id_availability.forEach(function(id) {
+                var checkbox_id = "template_id_" + id
+                var checkbox = document.getElementById(checkbox_id);
+                var is_availability = checkbox.classList.contains('checked');
+                id = parseInt(id);
+                datas.push({
+                    id,
+                    is_availability
+                })
+
+            });
+            const data = {
+                'data': datas
+            }
+            $.ajax({
+                url: "{% url 'project_limit_number:templates:save-templates-availability' %}",
+                type: "PUT",
+                data: JSON.stringify(data),
+                dataType: "json",
+                contentType: "application/json",
+                success: function (response) {
+                    window.location.reload();
+                }
+            }).fail(function (jqXHR, textStatus, error) {
+                handleAjaxRequestFailure(jqXHR);
+            });
+
+        }
+
+        function deleteSettingTemplate() {
+            $.ajax({
+                url: "delete/" + deleteSettingTemplateId,
+                type: "delete",
+                dataType: "json",
+                contentType: "application/json",
+                success: function (response) {
+                    window.location.reload();
+                }
+            }).fail(function (jqXHR, textStatus, error) {
+                handleAjaxRequestFailure(jqXHR);
+            });
+        }
+
+        function resetSettingsTemplate() {
+            $('#setting-template-table').html(originalTableSettingTemplateHtml);
+            $('#save_availability').prop('disabled', true);
+            $('#clear_availability').prop('disabled', true);
+        }
+    </script>
+{% endblock %}

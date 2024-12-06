@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "name":{
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "memo": {
+      "type": ["string", "null"],
+      "maxLength": 255
+    },
+    "project_limit_number": {
+      "type": ["integer", "null"],
+      "minimum": -1,
+      "maximum": 2147483647
+    },
+    "attribute_list": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "attribute_value": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "attribute_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "name",
+    "attribute_list"
+  ],
+  "additionalProperties": false
+}

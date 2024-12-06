@@ -1,0 +1,52 @@
+{
+  "type": "object",
+  "properties": {
+    "page": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["last"]
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        }
+      ]
+    },
+    "institution_id": {
+      "type": "integer"
+    },
+    "attribute_list": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "properties": {
+          "attribute_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "setting_type": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "attribute_value": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "attribute_name",
+          "setting_type",
+          "attribute_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "institution_id",
+    "attribute_list"
+  ],
+  "additionalProperties": false
+}

@@ -52,3 +52,17 @@ class GuidView(DetailView):
                     )
                 )
             )
+
+
+class ForbiddenView(DetailView):
+    template_name = '403.html'
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+
+
+class NotFoundView(DetailView):
+    template_name = '404.html'
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)

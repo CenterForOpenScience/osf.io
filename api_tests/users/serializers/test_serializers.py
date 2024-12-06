@@ -241,3 +241,10 @@ class TestUserSerializer:
         related_count = self.get_related_count(user, field_name, auth=None)
 
         assert related_count == view_count == expected_count['no_auth']
+
+    def test_user_serializer_get_can_create_project(self, user):
+        req = make_drf_request_with_version(version='2.0')
+        req.query_params['related_counts'] = True
+        req.user = user
+        result = UserSerializer(user, context={'request': req})
+        assert result.get_can_create_new_project(user) is True

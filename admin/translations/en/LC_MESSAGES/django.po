@@ -3627,10 +3627,25 @@ msgstr ""
 msgid "Revert"
 msgstr ""
 
+msgid "User Identification Information"
+msgstr ""
+
+msgid "Extended Storage"
+msgstr "
+
+msgid "Export All Users Statistics (CSV)"
+msgstr ""
+
+msgid "Return"
+msgstr ""
+
 msgid "Delete Permanently"
 msgstr ""
 
 msgid "Are you sure you want to revert these export data?"
+msgstr ""
+
+msgid "OK"
 msgstr ""
 
 # export_data_information.html
@@ -3774,17 +3789,152 @@ msgstr ""
 msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr ""
 
-msgid "User Identification Information"
+msgid "Project Limit Number Setting Template List"
 msgstr ""
 
-msgid "Extended Storage"
+msgid "Project Limit Number Setting Template"
 msgstr ""
 
-msgid "User Details"
+msgid "Save Availability"
 msgstr ""
 
-msgid "Export All Users Statistics (CSV)"
+msgid "Clear Availability"
 msgstr ""
 
-msgid "Return"
+msgid "Availability"
+msgstr ""
+
+msgid "Setting Name"
+msgstr ""
+
+msgid "Rule Name"
+msgstr ""
+
+msgid "Using Attribute"
+msgstr ""
+
+msgid "Created Time"
+msgstr ""
+
+msgid "Updated Time"
+msgstr ""
+
+msgid "Template Setting"
+msgstr ""
+
+msgid "Setting Type"
+msgstr ""
+
+msgid "Project Limit Number Setting List"
+msgstr ""
+
+msgid "Priority"
+msgstr ""
+
+msgid "Memo"
+msgstr ""
+
+msgid "Project Limit Number Setting"
+msgstr ""
+
+msgid "Set the project limit number for users who are meet the above attributes"
+msgstr ""
+
+msgid "Created Project Number"
+msgstr ""
+
+msgid "Setting"
+msgstr ""
+
+msgid "User List"
+msgstr ""
+
+msgid "Project Limit Number Setting Template"
+msgstr ""
+
+msgid "Operation"
+msgstr ""
+
+msgid "Create New"
+msgstr ""
+
+msgid "Show User List"
+msgstr ""
+
+msgid "Project Limit Number Default"
+msgstr ""
+
+msgid "Save Default"
+msgstr ""
+
+msgid "Are you sure you want to delete this setting?"
+msgstr ""
+
+msgid "Are you sure you want to delete this template?"
+msgstr ""
+
+msgid "No Limit"
+msgstr ""
+
+msgid "Add Input Field"
+msgstr ""
+
+msgid "free_value_all_match"
+msgstr "Free Value (all match)"
+
+msgid "free_value_left_suffix_match"
+msgstr "Free Value (left suffix match)"
+
+msgid "fixed_value_all_match"
+msgstr "Fixed Value (all match)"
+
+msgid "fixed_value_left_suffix_match"
+msgstr "Fixed Value (left suffix match)"
+
+msgid "list_value_all_match"
+msgstr "List Value (all match)"
+
+msgid "list_value_left_suffix_match"
+msgstr "List Value (left suffix match)"
+
+msgid "{template_name} is being used."
+msgstr ""
+
+msgid "The template not exist."
+msgstr ""
+
+msgid "The template name is required."
+msgstr ""
+
+msgid "The template name already exists."
+msgstr ""
+
+msgid "The attribute name is required."
+msgstr ""
+
+msgid "The setting type is required."
+msgstr ""
+
+msgid "The attribute value is required."
+msgstr ""
+
+msgid "The setting not exist."
+msgstr ""
+
+msgid "The setting name is required."
+msgstr ""
+
+msgid "The setting name is invalid."
+msgstr ""
+
+msgid "The setting name already exists."
+msgstr ""
+
+msgid "The project limit number is invalid."
+msgstr ""
+
+msgid "The new project cannot be created due to the created project number is greater than or equal the project number can create."
+msgstr ""
+
+msgid "attribute_value is required."
 msgstr ""

@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load static %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
+    <style type="text/css">
+        .select2-container.select2-container--default {
+            width: 100% !important;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 32px !important;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        .select2-selection__choice {
+            color: #333 !important;
+        }
+
+        .flex-container {
+            display: flex;
+        }
+
+        .flex-container .flex-item {
+            flex: 1;
+        }
+
+        p {
+            margin-bottom: 0;
+        }
+
+        .remove-button {
+            float: left;
+            margin-left: 8px;
+            margin-top: 4px;
+            color: red;
+            opacity: 0.5;
+        }
+
+        .remove-button:hover {
+            color: red;
+            opacity: 1;
+        }
+
+        .remove-button.disabled{
+            color: gray;
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .container {
+            max-height: 290px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        @media (min-width: 992px) {
+            .col-md-3 {
+                width: 20%;
+            }
+
+            .col-md-10 {
+                width: 90%;
+            }
+        }
+
+        .disabled {
+            pointer-events: none;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans 'Project Limit Number Setting' %}</title>
+{% endblock title %}
+
+{% block content %}
+    <!-- Authentication attribute input block -->
+    <h2>{% trans 'Project Limit Number Setting' %}<small>({{ institution.name }})</small></h2>
+    <form id="createProjectLimitNumberSettingForm" class="form-horizontal">
+        {% csrf_token %}
+        <div class="clearfix" style="padding-top: 10px;">
+            <label for="setting_name_id" class="col-md-2" style="width: 10%; padding-top: 6px;">{% trans 'Setting Name' %}</label>
+            <div class="col-md-10">
+                <input id="setting_name_id" type="text" name="setting_name" class="form-control"
+                    style="border-radius: 5px;" oninput="setCustomValidity('')"
+                    minlength="1" maxlength="255" placeholder="{% trans 'Setting Name' %}" required>
+            </div>
+        </div>
+
+        <div class="clearfix" style="padding-top: 10px;">
+            <label for="template_id" class="col-md-2" style="width: 10%; padding-top: 6px;">{% trans 'Rule Name' %}</label>
+            <div class="col-md-10">
+                <select id="template_id" name="attribute_name" class="form-control select-container" style="border-radius: 5px;"
+                    required onchange="changeTemplate()">
+                    <option selected disabled hidden value=""></option>
+                    {% for template in template_list %}
+                        <option value="{{ template.id }}" {% if template.id == template_id %}selected="selected"{% endif %}>{{ template.template_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="clearfix" style="padding-top: 10px;">
+            <label for="memo_id" class="col-md-2" style="width: 10%; padding-top: 6px;">{% trans 'Memo' %}</label>
+            <div class="col-md-10">
+                <input id="memo_id" type="text" name="memo" class="form-control"
+                    style="border-radius: 5px;" oninput="setCustomValidity('')"
+                    minlength="1" maxlength="255" placeholder="{% trans 'Memo' %}">
+            </div>
+        </div>
+
+        <div class="col-md-12 container" style="padding-right: 0px; margin-top: 10px; width: 100%; margin-bottom: 0px; padding-left: 0px;">
+            <div class="form-inline" id="attributes_block">
+                {% if template_attribute_list %}
+                <div>
+                    <div class="col-md-4">
+                        <div>
+                            <label>{% trans "Using Attribute" %}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <label>{% trans "Setting Type" %}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <label>{% trans "Value" %}</label>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% for template_attribute in template_attribute_list %}
+                    <div class="attribute-item clearfix" style="margin-bottom: 15px;">
+                        <div class="col-md-4">
+                            <div>
+                                <input type="text" name="attribute_name" class="form-control attribute-name" style="width: 100%; border-radius: 5px;"
+                                    value="{{ template_attribute.attribute_name }}" disabled="disabled">
+                                <input class="attribute-id" type="hidden" value="{{ template_attribute.id }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                <input type="text" name="setting_name" class="form-control" style="width: 100%; border-radius: 5px;"
+                                    value="{% trans template_attribute.setting_name %}" disabled="disabled">
+                                <input class="setting-type" type="hidden" value="{{ template_attribute.setting_type }}">
+                            </div>
+                        </div>
+                        {% if template_attribute.setting_type == 5 or template_attribute.setting_type == 6 %}
+                            <div class="col-md-4">
+                                <select name="attribute_value_select" class="form-control attribute-value" style="width: 100%; border-radius: 5px;">
+                                    {% for value in template_attribute.attribute_value %}
+                                        <option value="{{ value }}">{{ value|default_if_none:'' }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% else %}
+                            <div class="col-md-4">
+                                <input type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px;"
+                                   minlength="1" required placeholder="{% trans 'Value' %}" value="{{ template_attribute.attribute_value|default_if_none:'' }}"
+                                   {% if template_attribute.setting_type == 3 or template_attribute.setting_type == 4 %}disabled="disabled"{% endif %}>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-12" style="padding-left: 0px;">
+            <div class="row col-md-12" style="font-weight: bold;">
+                <label>{% trans 'Set the project limit number for users who are meet the above attributes' %}</label>
+            </div>
+            <div class="row col-md-6">
+                <label for="project_limit_number_id" class="col-md-4" style="padding-top: 6px;">{% trans 'Project Limit Number' %}</label>
+                <div class="col-md-8">
+                    <select id="project_limit_number_id" name="project_limit_number_name" class="form-control">
+                        <option selected value="-1">{% trans 'No Limit' %}</option>
+                        {% for number in project_limit_number_select_list %}
+                            <option value="{{ number }}">{{ number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12" style="text-align: right; padding-right: 5%; padding-top: 2%;">
+            <button type="button" class="btn btn-default" style="width: 90px; margin-right: 5px;" onclick="navigateToPreviousPage()">{% trans 'Cancel' %}</button>
+            <button type="submit" class="btn btn-primary" style="width: 90px;" >{% trans 'Save' %}</button>
+            <button type="button" class="btn btn-primary" style="margin-left: 5px;" onclick="getUserList()">{% trans 'Show User List' %}</button>
+        </div>
+    </form>
+
+    <!-- View User List -->
+    <div class="col-md-12" id="id_user_list" hidden>
+        <h2>{% trans 'User List' %}</h2>
+        <div id="user-table"></div>
+    </div>
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'project-limit-number-setting-page' %}
+    <script type="text/javascript">
+        $('#template_id').select2();
+        $('#project_limit_number_id').select2();
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'institution_id': {{ institution.id }},
+        });
+        const templates_length = {{ template_attribute_list|length }};
+        const csrftoken = $('[name=csrfmiddlewaretoken]').val();
+        for (var i=0;i<templates_length;i++) {
+            $('#attribute_name_'+i).select2();
+        }
+
+        function csrfSafeMethod(method) {
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        function navigateToPreviousPage() {
+            // Check if there's a previous page in history
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Fallback to list page if no previous page exists
+                window.location.href = '{% url 'project_limit_number:settings:list-setting' %}';
+            }
+        }
+
+        function getUserList(page) {
+            let attributeList = [];
+            // Extract data from attribute section
+            $('.attribute-item').each(function (index, element) {
+                const attribute_name = element.querySelector('.attribute-name').value;
+                const setting_type = Number(element.querySelector('.setting-type').value, 10);
+                let attribute_value;
+                if (setting_type === 5 || setting_type === 6) {
+                    attribute_value = element.querySelector('.attribute-value').value;
+                } else {
+                    attribute_value = element.querySelector('.attribute-value').value;
+                }
+                attributeList.push({
+                    attribute_name,
+                    setting_type,
+                    attribute_value
+                });
+            });
+            const data = {
+                'page': page,
+                'institution_id': {{ institution.id }},
+                'attribute_list': attributeList
+            };
+            $.ajax({
+                url: '{% url "project_limit_number:settings:user_list" %}',
+                type: 'post',
+                data: JSON.stringify(data),
+                dataType: "json",
+                contentType: "application/json",
+                success: function (response) {
+                    $('#id_user_list').show();
+                    const responseData = response.user_list;
+                    if (!responseData) {
+                        return;
+                    }
+                    let tableDiv = '';
+                    for (item of responseData) {
+                        tableDiv += `
+                            <tr>
+                                <td>`+ item.guid +`</td>
+                                <td>`+ item.eppn +`</td>
+                                <td>`+ item.username +`</td>
+                                <td>`+ item.fullname +`</td>
+                                <td>`+ item.created_project_number +`</td>
+                                <td>`+ item.project_limit_number +` </td>
+                            </tr>
+                        `;
+                    }
+                    const maxPageNumber = Math.max(1, Math.ceil(response.total / 10));
+                    const pageNumber = (page === undefined) ? 1 : (page === 'last') ? maxPageNumber : page;
+                    const previousPageClass = pageNumber === 1 ? 'disabled' : '';
+                    const nextPageClass = pageNumber >= maxPageNumber ? 'disabled' : '';
+                    const translatedPageString = '{% blocktrans with itemsNumber='{pageNumber}' paginatorNumPage='{maxPageNumber}' %}Page {{ itemsNumber }} of {{ paginatorNumPage }}{% endblocktrans %}';
+                    const translatedPageNumberString = translatedPageString.replace('{pageNumber}', pageNumber).replace('{maxPageNumber}', maxPageNumber);
+                    const div = `
+                        <div class="pagination pagination-lg">
+                            <span>
+                                <div class="btn btn-primary `+ previousPageClass +`" onclick="getUserList('1')">
+                                    |
+                                </div>
+                                <div class="btn btn-primary `+ previousPageClass +`" onclick="getUserList('`+ (pageNumber - 1) +`')">
+                                    <i class="fa fa-angle-left"></i>
+                                </div>
+                                <span class="current">`+ translatedPageNumberString +`</span>
+                                <div class="btn btn-primary `+ nextPageClass +`" onclick="getUserList('`+ (pageNumber + 1) +`')">
+                                    <i class="fa fa-angle-right"></i>
+                                </div>
+                                <div class="btn btn-primary `+ nextPageClass +`" onclick="getUserList('last')">
+                                    |
+                                </div>
+                            </span>
+                        </div>
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th class="col-md-1">{% trans "GUID" %}</th>
+                                    <th class="nowrap col-md-3">
+                                        {% trans "EPPN" %}
+                                    </th>
+                                    <th class="nowrap col-md-3">
+                                        {% trans "Username" %}
+                                    </th>
+                                    <th class="nowrap col-md-3">
+                                        {% trans "Fullname" %}
+                                    </th>
+                                    <th class="nowrap col-md-2">
+                                        {% trans "Created Project Number" %}
+                                    </th>
+                                    <th class="nowrap col-md-2">
+                                        {% trans "Project Limit Number" %}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>`+tableDiv+`</tbody>
+                        </table>`;
+                    $('#user-table').html(div);
+                }
+            }).fail(function (jqXHR, textStatus, error) {
+                handleAjaxRequestFailure(jqXHR);
+            });
+        }
+
+        function changeTemplate() {
+            var template_id = $('#template_id').val();
+            window.location.href = "{% url 'project_limit_number:settings:create-setting' %}?institution_id={{ institution.id }}&template_id=" + template_id;
+        }
+
+        $('#createProjectLimitNumberSettingForm').on('submit', function(event) {
+            event.preventDefault();
+            const settingName = $('#setting_name_id').val();
+            const templateId = $('#template_id').val();
+            const memo = $('#memo_id').val();
+            const projectLimitNumberInput = $('#project_limit_number_id').val();
+            const projectLimitNumber = Number(projectLimitNumberInput, 10);
+            let attributeList = [];
+            // Extract data from attribute section
+            $('.attribute-item').each(function (index, element) {
+                const attribute_id = Number(element.querySelector('.attribute-id').value, 10);
+                const attribute_value = element.querySelector('.attribute-value').value;
+                attributeList.push({
+                    attribute_id,
+                    attribute_value: attribute_value.trim()
+                });
+            });
+
+            data = {
+                template_id: Number(templateId, 10) || undefined,
+                institution_id: {{ institution.id }},
+                name: settingName,
+                memo: memo,
+                project_limit_number: projectLimitNumber,
+                attribute_list: attributeList
+            }
+            $.ajax({
+                url: '{% url "project_limit_number:settings:create-setting" %}',
+                type: 'post',
+                data: JSON.stringify(data),
+                dataType: "json",
+                contentType: "application/json",
+                success: function (response) {
+                    window.location.href = '{% url 'project_limit_number:settings:list-setting' %}';
+                }
+            }).fail(function (jqXHR, textStatus, error) {
+                handleAjaxRequestFailure(jqXHR);
+            });
+        });
+    </script>
+{% endblock %}

@@ -8923,3 +8923,42 @@ msgstr "ダウンロード中"
 
 msgid "Download failed."
 msgstr "ダウンロードが失敗されました。"
+
+msgid "{template_name} is being used."
+msgstr "{template_name}が使用されています。"
+
+msgid "The template not exist."
+msgstr "ルール名称が存在しません。"
+
+msgid "The template name is required."
+msgstr "ルール名称は必須です。"
+
+msgid "The template name already exists."
+msgstr "同じルール名称は存在しす。"
+
+msgid "The attribute name is required."
+msgstr "使用する属性は必須です。"
+
+msgid "The setting type is required."
+msgstr "値の設定方法は必須です。"
+
+msgid "The attribute value is required."
+msgstr "値は必須です。"
+
+msgid "The setting not exist."
+msgstr "設定が存在しません。"
+
+msgid "The setting name is required."
+msgstr "設定名は必須です。"
+
+msgid "The setting name is invalid."
+msgstr "設定名が不正です。"
+
+msgid "The setting name already exists."
+msgstr "同じ設定名は存在しす。"
+
+msgid "The project limit number is invalid."
+msgstr "プロジェクト制限数が不正です。"
+
+msgid "The new project cannot be created due to the created project number is greater than or equal the project number can create."
+msgstr "作成したプロジェクト数が作成可能なプロジェクトの数の上限に達しているため、新規プロジェクトを作成できません。"

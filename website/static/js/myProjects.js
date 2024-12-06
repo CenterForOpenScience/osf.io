@@ -1103,6 +1103,13 @@ var MyProjects = {
             ctrl.projectOrganizerOptions
         );
         ctrl.onLoadReset();
+
+        // If can not create project disable button
+        var buttonState = '.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]"]';
+        if (!window.contextVars.canCreateProject) {
+            buttonState = '.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][disabled]';
+        }
+
         return [
             !ctrl.institutionId ? m('.dashboard-header', m('.row', [
                 m('.col-xs-8', m('h3', [
@@ -1110,7 +1117,7 @@ var MyProjects = {
                     m('small.hidden-xs', _('Browse and organize all your projects'))
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
-                    buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                    buttonTemplate: m(buttonState, {onclick: function() {
                         $osf.trackClick('myProjects', 'add-project', 'open-add-project-modal');
                     }}, _('Create Project')),
                     parentID: null,

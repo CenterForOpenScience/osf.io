@@ -260,6 +260,12 @@ class TestNodeForkCreate:
             }
         }
 
+    @pytest.fixture
+    def mock_user_can_not_create_project(self):
+        with mock.patch('api.nodes.views.check_user_can_create_project') as mock_user:
+            mock_user.return_value = False
+            yield mock_user
+
     def test_create_fork_from_public_project_with_new_title(
             self, app, user, public_project, fork_data_with_title, public_project_url):
         res = app.post_json_api(
@@ -479,3 +485,14 @@ class TestNodeForkCreate:
                         guid=public_project._id,
                         mimetype='html',
                         can_change_preferences=False)
+
+    def test_create_fork_limit_project_number_error(self, app, user, fork_data_with_title,
+                                                 public_project_url, mock_user_can_not_create_project):
+        res = app.post_json_api(
+            public_project_url,
+            fork_data_with_title,
+            auth=user.auth,
+            expect_errors=True)
+        mock_user_can_not_create_project.assert_called_once()
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'The new project cannot be created due to the created project number is greater than or equal the project number can create.'
