@@ -198,8 +198,8 @@ class Sitemap:
                 self.log_errors('NODE', obj['guids___id'], e)
             progress.increment()
         progress.stop()
-
-        latest_preprints = Preprint.objects.filter(
+        #Removed previous logic as it blocked withdrawn preprints to get in sitemap generator
+        objs = Preprint.objects.filter(
             Q(is_published=True, date_withdrawn__isnull=True) | Q(date_withdrawn__isnull=False)
         ).annotate(
             most_recent_non_withdrawn=Subquery(
@@ -219,12 +219,9 @@ class Sitemap:
             )
         ).order_by(
             'versioned_guids__guid_id',
+            '-is_published',
             '-versioned_guids__version'
         ).distinct('versioned_guids__guid_id')
-
-        objs_original = (Preprint.objects.can_view()
-                .select_related('node', 'provider', 'primary_file'))
-        objs = [obj for obj in latest_preprints if obj in objs_original]
 
         progress.start(len(objs) * 2, 'PREP: ')
         for obj in objs:
