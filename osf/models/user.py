@@ -668,6 +668,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def get_short_name(self):
         return self.username
 
+    @property
+    def is_institutional_admin(self):
+        return self.groups.filter(name__startswith='institution_', name__endswith='_institutional_admins').exists()
+
     def __unicode__(self):
         return self.get_short_name()
 

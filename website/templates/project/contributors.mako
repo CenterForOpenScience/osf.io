@@ -196,6 +196,16 @@
                     data-html="true"
                 ></i>
             </th>
+            <th class="curator-contrib">
+                Curator
+                <i class="fa fa-question-circle visibility-info"
+                    data-toggle="popover"
+                    data-title="Curator Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
             <th class="remove"></th>
         </tr>
     </thead>
@@ -307,12 +317,27 @@
             </div>
         </td>
         <td>
-            <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
+            <div data-bind="ifnot: contributor.is_curator()">
+                <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
+                <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
+                    <input
+                        type="checkbox" aria-label="Bibliographic User Checkbox" class="biblio visible-filter"
+                        data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
+                    />
+                </div>
+            </div>
+            <div data-bind="if: contributor.is_curator()">
                 <input
-                    type="checkbox" aria-label="Bibliographic User Checkbox" class="biblio visible-filter"
-                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
-                />
+                    type='checkbox'
+                    aria-label='Curator Disabled Bibliographic User Checkbox'
+                    style='background-color: lightgray;'
+                    disabled
+                >
+            </div>
+        </td>
+        <td>
+            <div data-bind="if: contributor.is_curator()">
+                <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled  checked>
             </div>
         </td>
         <td data-bind="css: {'add-remove': !$root.collapsed()}">
