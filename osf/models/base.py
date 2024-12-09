@@ -516,6 +516,9 @@ class VersionedGuidMixin(GuidMixin):
         except cls.MultipleObjectsReturned:
             return None
 
+    def get_guid(self):
+        return self.versioned_guids.first().guid
+
     _primary_key = _id
 
 @receiver(post_save)
