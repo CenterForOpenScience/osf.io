@@ -324,9 +324,15 @@ class WithdrawalRequestMixin(PermissionRequiredMixin):
     permission_required = 'osf.change_preprintrequest'
 
     def get_object(self):
+        preprint = Preprint.load(self.kwargs['guid'])
+        if preprint is None:
+            return None
+
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
-            target__guids___id=self.kwargs['guid'],
+            target=preprint
+        ).exclude(
+            machine_state='initial'
         ).first()
 
     def get_success_url(self):
