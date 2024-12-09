@@ -238,8 +238,7 @@ class NodeContributorPagination(JSONAPIPagination):
 class PreprintContributorPagination(NodeContributorPagination):
 
     def get_resource(self, kwargs):
-        resource_id = kwargs.get('preprint_id').split(Preprint.GUID_VERSION_DELIMITER)[0]
-        return Preprint.load(resource_id)
+        return Preprint.load(kwargs.get('preprint_id'))
 
 
 class DraftRegistrationContributorPagination(NodeContributorPagination):

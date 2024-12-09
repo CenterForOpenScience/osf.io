@@ -34,7 +34,6 @@ from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.routing import json_renderer, proxy_url
 from framework.transactions.handlers import no_auto_transaction
-from osf.models.base import VersionedGuidMixin
 from website import mails
 from website import settings
 from addons.base import signals as file_signals
@@ -310,12 +309,9 @@ def decrypt_and_decode_jwt_payload():
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
 
-def get_authenticated_resource(resource_id, guid_version=None):
-    if guid_version is not None:
-        # TODO: will it be faster if we query GUIDVersionsThrough?
-        resource = Guid.load(resource_id).versions.get(version=guid_version).referent
-    else:
-        resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
+def get_authenticated_resource(resource_id):
+    resource = Guid.load_referent(resource_id)
+
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
@@ -396,14 +392,8 @@ def get_auth(auth, **kwargs):
 
     # Authenticate the resource based on the node_id and handle potential draft nodes
     nid = waterbutler_data.get('nid')
-    # TODO: turn this into a class method helper: guid_id, version = checkGuidVersion(...)
-    if VersionedGuidMixin.GUID_VERSION_DELIMITER not in nid:
-        resource = get_authenticated_resource(nid)
-    else:
-        # TODO: needs exception handling
-        base_guid = nid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-        version = nid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]
-        resource = get_authenticated_resource(base_guid, guid_version=version)
+
+    resource = get_authenticated_resource(nid)
     # Authenticate the user using cookie or Oauth if possible
     authenticate_user_if_needed(auth, waterbutler_data, resource)
 
@@ -542,18 +532,9 @@ def create_waterbutler_log(payload, **kwargs):
             # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
                 guid_id = payload['metadata'].get('nid')
-                if VersionedGuidMixin.GUID_VERSION_DELIMITER not in guid_id:
-                    guid = Guid.load(guid_id)
-                    if guid:
-                        node = guid.referent
-                else:
-                    # TODO: needs exception handling
-                    base_guid_id = guid_id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-                    guid_version = guid_id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]
-                    guid = Guid.load(base_guid_id)
-                    if guid:
-                        node = guid.versions.get(version=guid_version).referent
-                return {'status': 'success'}
+
+                node = Guid.load_referent(guid_id)
+
             user = OSFUser.load(auth['id'])
             if user is None:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
