@@ -9,7 +9,7 @@ from framework.auth.decorators import must_be_signed
 from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from osf.models import OSFUser, Guid, Preprint
+from osf.models import OSFUser, Guid
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration,
@@ -34,10 +34,9 @@ def load_guid_as_target(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         guid = kwargs.get('guid')
-        if Preprint.GUID_VERSION_DELIMITER not in guid:
-            target = getattr(Guid.load(guid), 'referent', None)
-        else:
-            target = Preprint.load(guid)
+
+        target = Guid.load_referent(guid)
+
         if not target:
             raise HTTPError(
                 http_status.HTTP_404_NOT_FOUND,

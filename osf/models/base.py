@@ -208,14 +208,36 @@ class Guid(BaseModel):
     def __repr__(self):
         return f'<id:{self._id}, referent:({self.referent.__repr__()})>'
 
+    @classmethod
+    def split_guid(cls, guid):
+        guid_parts = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+        base_guid = guid_parts[0]
+        version = guid_parts[1] if len(guid_parts) > 1 else None
+        return base_guid, version
+
     # Override load in order to load by GUID
     @classmethod
     def load(cls, data, select_for_update=False):
+        base_guid, version = cls.split_guid(data)
         try:
-            return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(
-                _id=data).select_for_update().get()
+            return cls.objects.get(_id=base_guid) if not select_for_update else cls.objects.filter(
+                _id=base_guid).select_for_update().get()
         except cls.DoesNotExist:
             return None
+
+    @classmethod
+    def load_referent(cls, guid):
+        base_guid, version = cls.split_guid(guid)
+
+        base_guid_obj = cls.load(base_guid)
+        if version and base_guid_obj.is_versioned:
+            versioned_obj_qs = base_guid_obj.versions.filter(version=version)
+            if not versioned_obj_qs.exists():
+                return None
+
+            return versioned_obj_qs.first().referent
+
+        return base_guid_obj.referent
 
     @property
     def is_versioned(self):
@@ -508,8 +530,8 @@ class VersionedGuidMixin(GuidMixin):
                 return cls.objects.filter(versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
 
             if not select_for_update:
-                return cls.objects.filter(versioned_guids__guid___id=base_guid).order_by('-versioned_guids__version').first()
-            return cls.objects.filter(versioned_guids__guid___id=guid).order_by('-versioned_guids__version').select_for_update().get()
+                return cls.objects.filter(guid___id=base_guid).first()
+            return cls.objects.filter(guid___id=guid).select_for_update().get()
 
         except cls.DoesNotExist:
             return None
