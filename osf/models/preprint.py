@@ -111,11 +111,16 @@ class PublishedPreprintManager(PreprintManager):
     def get_queryset(self):
         return super().get_queryset().filter(is_published=True)
 
+class EverPublishedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(date_published__isnull=False)
+
 class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
         Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     objects = PreprintManager()
     published_objects = PublishedPreprintManager()
+    ever_published_objects = EverPublishedPreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
@@ -303,15 +308,15 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     @classmethod
     def create_version(cls, create_from_guid, auth):
-        source_preprint = cls.load(create_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
+        base_guid = Guid.load(create_from_guid)
+        source_preprint = cls.load(base_guid._id)
         if not source_preprint:
             raise NotFound
         if not source_preprint.has_permission(auth.user, ADMIN):
             raise PermissionsError
-        if not source_preprint.is_published:
+        if not source_preprint.date_published:
             raise PendingPreprintVersionExists
 
-        base_guid = Guid.load(create_from_guid.split(cls.GUID_VERSION_DELIMITER)[0])
         last_version = base_guid.versions.order_by('-version').first().version
         data_for_update = {}
         data_for_update['tags'] = source_preprint.tags.all().values_list('name', flat=True)
@@ -580,15 +585,14 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     @property
     def is_latest_version(self):
-        if not self.is_published:
+        if not self.date_published:
             return False
         versioned_guid = self.versioned_guids.first()
         base_guid = versioned_guid.guid
         latest_version = base_guid.referent
-        if latest_version.is_published:
+        if latest_version.date_published:
             return latest_version.version == self.version
-        latest_version = Preprint.objects.filter(
-            is_published=True,
+        latest_version = Preprint.ever_published_objects.filter(
             id__in=base_guid.versions.values_list('object_id', flat=True)
         ).order_by('-versioned_guids__version').first()
         return latest_version.version == self.version if latest_version else False
