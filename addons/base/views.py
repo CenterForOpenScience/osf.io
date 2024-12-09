@@ -309,7 +309,7 @@ def decrypt_and_decode_jwt_payload():
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
 
-def get_authenticated_resource(resource_id, guid_version=None):
+def get_authenticated_resource(resource_id):
     resource = Guid.load_referent(resource_id)
 
     if not resource:
