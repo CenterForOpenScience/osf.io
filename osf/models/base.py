@@ -210,6 +210,8 @@ class Guid(BaseModel):
 
     @classmethod
     def split_guid(cls, guid):
+        if not guid:
+            return None, None
         guid_parts = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
         base_guid = guid_parts[0]
         version = guid_parts[1] if len(guid_parts) > 1 else None
@@ -530,8 +532,8 @@ class VersionedGuidMixin(GuidMixin):
                 return cls.objects.filter(versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
 
             if not select_for_update:
-                return cls.objects.filter(guid___id=base_guid).first()
-            return cls.objects.filter(guid___id=guid).select_for_update().get()
+                return cls.objects.filter(guids___id=base_guid).first()
+            return cls.objects.filter(guids___id=guid).select_for_update().get()
 
         except cls.DoesNotExist:
             return None
