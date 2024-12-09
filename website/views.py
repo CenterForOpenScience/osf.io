@@ -296,6 +296,10 @@ def resolve_guid(guid, suffix=None):
     # Retrieve guid data if present, error if missing
     try:
         resource = Guid.load_referent(guid)
+        if not resource:
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+        if not hasattr(resource, 'versioned_guids') and guid != resource._id:
+            return HTTPError(http_status.HTTP_404_NOT_FOUND)
         if not guid == resource._id:
             return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
     except Guid.DoesNotExist:

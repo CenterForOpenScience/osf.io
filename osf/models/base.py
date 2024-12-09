@@ -232,13 +232,11 @@ class Guid(BaseModel):
         base_guid, version = cls.split_guid(guid)
 
         base_guid_obj = cls.load(base_guid)
+        if not base_guid_obj:
+            return None
         if version and base_guid_obj.is_versioned:
-            versioned_obj_qs = base_guid_obj.versions.filter(version=version)
-            if not versioned_obj_qs.exists():
-                return None
-
-            return versioned_obj_qs.first().referent
-
+            versioned_obj_qs = base_guid_obj.versions.filter(version=version).first()
+            return versioned_obj_qs.referent if versioned_obj_qs else None
         return base_guid_obj.referent
 
     @property
