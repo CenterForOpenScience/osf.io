@@ -696,6 +696,15 @@ class UserMessageSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<institution._id>'},
         help_text='The institution associated with this message.',
     )
+    cc = ser.BooleanField(
+        required=False,
+        default=False,
+        help_text='If true, CCs the sender.',
+    )
+    reply_to = ser.BooleanField(
+        default=False,
+        help_text='Whether to set the sender\'s username as the `Reply-To` header in the email.',
+    )
 
     def get_absolute_url(self, obj: UserMessage) -> str:
         return api_v2_url(
@@ -756,13 +765,17 @@ class UserMessageSerializer(JSONAPISerializer):
 
         if not recipient.is_affiliated_with_institution(institution):
             raise Conflict(
-                {'user': 'Can not send to recipient that is not affiliated with the provided institution.'},
+                {'user': 'Cannot send to a recipient that is not affiliated with the provided institution.'},
             )
 
-        return UserMessage.objects.create(
+        user_message = UserMessage.objects.create(
             sender=sender,
             recipient=recipient,
             institution=institution,
             message_type=MessageTypes.INSTITUTIONAL_REQUEST,
             message_text=validated_data['message_text'],
+            is_sender_CCed=validated_data['cc'],
+            reply_to=validated_data['reply_to'],
         )
+        user_message.save()
+        return user_message
