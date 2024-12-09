@@ -18,12 +18,13 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
+from osf.models.base import VersionedGuidMixin
 from website import settings
 
 from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import features, exceptions
-from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
+from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode, GuidVersionsThrough
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -207,11 +208,18 @@ def forgot_password_form():
 
 def resolve_guid_download(guid, provider=None):
     try:
-        guid = Guid.objects.get(_id=guid.lower())
+        if VersionedGuidMixin.GUID_VERSION_DELIMITER in guid:
+            base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+            base_guid_obj = GuidVersionsThrough.objects.get(
+                guid___id=base_guid.lower(),
+                version=version
+            )
+        else:
+            base_guid_obj = Guid.objects.get(_id=guid.lower())
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-    resource = guid.referent
+    resource = base_guid_obj.referent
 
     suffix = request.view_args.get('suffix')
     if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
@@ -295,7 +303,20 @@ def resolve_guid(guid, suffix=None):
 
     # Retrieve guid data if present, error if missing
     try:
-        resource = Guid.objects.get(_id=guid.lower()).referent
+        base_guid = guid.split('_v')[0]
+        base_guid_obj = Guid.objects.get(_id=base_guid.lower())
+
+        if base_guid_obj.is_versioned:
+            version = guid.split('_v')[1] if len(guid.split('_v')) > 1 else None
+            if version:
+                resource = base_guid_obj.versions.filter(version=version).first().referent
+            else:
+                # redirection to the same route, but with the specified version
+                version = base_guid_obj.versions.order_by('-version').first().version
+                new_guid = f'{base_guid}_v{version}'
+                return redirect(f'/{new_guid}/{suffix}' if suffix else f'/{new_guid}/', code=302)
+        else:
+            resource = Guid.objects.get(_id=base_guid.lower()).referent
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 

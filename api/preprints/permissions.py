@@ -101,7 +101,8 @@ class PreprintFilesPermissions(PreprintPublishedOrAdmin):
     acceptable_models = (Preprint,)
 
     def load_resource(self, context, view):
-        return Preprint.load(context[view.preprint_lookup_url_kwarg])
+        base_guid_id = context[view.preprint_lookup_url_kwarg].split('_v')[0]
+        return Preprint.load(base_guid_id)
 
     def has_object_permission(self, request, view, obj):
         context = request.parser_context['kwargs']

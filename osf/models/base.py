@@ -202,6 +202,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
+
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
     def __repr__(self):
@@ -216,12 +217,32 @@ class Guid(BaseModel):
         except cls.DoesNotExist:
             return None
 
+    @property
+    def is_versioned(self):
+        return self.versions.exists()
+
     class Meta:
         ordering = ['-created']
         get_latest_by = 'created'
         index_together = (
             ('content_type', 'object_id', 'created'),
         )
+
+
+class GuidVersionsThrough(BaseModel):
+    """Stores version of a version-eligible GUID obj w/ ref to both the versioned obj/referent and the base Guid obj.
+    """
+
+    created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
+
+    referent = GenericForeignKey()
+    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+
+    guid = models.ForeignKey('Guid', related_name='versions', on_delete=models.CASCADE)
+
+    version = models.PositiveIntegerField(null=True, blank=True)
+    is_rejected = models.BooleanField(default=False)
 
 
 class BlackListGuid(BaseModel):
@@ -443,9 +464,68 @@ class GuidMixin(BaseIDMixin):
         abstract = True
 
 
+class VersionedGuidMixin(GuidMixin):
+
+    class Meta:
+        abstract = True
+
+    GUID_VERSION_DELIMITER = '_v'
+
+    versioned_guids = GenericRelation('GuidVersionsThrough', related_name='referent', related_query_name='referents')
+
+    @property
+    def _id(self):
+        try:
+            guid = None
+            versioned_guid = self.versioned_guids
+            if versioned_guid.exists():
+                version = versioned_guid.first().version
+                guid = versioned_guid.first().guid
+        except IndexError:
+            return None
+        if guid:
+            return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
+        return None
+
+    @_id.setter
+    def _id(self, value):
+        pass
+
+    @property
+    def version(self):
+        return self.versioned_guids.first().version
+
+    # Override load in order to load by Versioned GUID
+    @classmethod
+    def load(cls, guid, select_for_update=False):
+        try:
+            guid_split_list = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+            base_guid = guid_split_list[0]
+            version = guid_split_list[1] if len(guid_split_list) > 1 else None
+            if version:
+                if not select_for_update:
+                    return cls.objects.get(versioned_guids__guid___id=base_guid, versioned_guids__version=version)
+                return cls.objects.filter(versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
+
+            if not select_for_update:
+                return cls.objects.filter(versioned_guids__guid___id=base_guid).order_by('-versioned_guids__version').first()
+            return cls.objects.filter(versioned_guids__guid___id=guid).order_by('-versioned_guids__version').select_for_update().get()
+
+        except cls.DoesNotExist:
+            return None
+        except cls.MultipleObjectsReturned:
+            return None
+
+    def get_guid(self):
+        return self.versioned_guids.first().guid
+
+    _primary_key = _id
+
 @receiver(post_save)
 def ensure_guid(sender, instance, created, **kwargs):
     if not issubclass(sender, GuidMixin):
+        return False
+    if issubclass(sender, VersionedGuidMixin):
         return False
     existing_guids = Guid.objects.filter(object_id=instance.pk,
                                          content_type=ContentType.objects.get_for_model(instance))
