@@ -530,8 +530,8 @@ class VersionedGuidMixin(GuidMixin):
                 return cls.objects.filter(versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
 
             if not select_for_update:
-                return cls.objects.filter(guid___id=base_guid).first()
-            return cls.objects.filter(guid___id=guid).select_for_update().get()
+                return cls.objects.filter(guids___id=base_guid).first()
+            return cls.objects.filter(guids___id=guid).select_for_update().get()
 
         except cls.DoesNotExist:
             return None
