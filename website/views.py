@@ -298,7 +298,7 @@ def resolve_guid(guid, suffix=None):
         base_guid = guid.split('_v')[0]
         base_guid_obj = Guid.objects.get(_id=base_guid.lower())
 
-        if base_guid_obj.is_versioned:
+        if base_guid_obj.is_versioned and base_guid_obj.content_type_id == 129:
             version = guid.split('_v')[1] if len(guid.split('_v')) > 1 else None
             if version:
                 resource = base_guid_obj.versions.filter(version=version).first().referent
@@ -308,7 +308,7 @@ def resolve_guid(guid, suffix=None):
                 new_guid = f'{base_guid}_v{version}'
                 return redirect(f'/{new_guid}/{suffix}' if suffix else f'/{new_guid}/', code=302)
         else:
-            resource = Guid.objects.get(_id=base_guid.lower()).referent
+            resource = Guid.objects.get(_id=guid.lower()).referent
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
