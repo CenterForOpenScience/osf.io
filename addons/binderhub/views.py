@@ -333,7 +333,11 @@ def create_server_annotation(**kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def patch_server_annotation(**kwargs):
     try:
-        annot = ServerAnnotation.objects.get(id=kwargs['aid'])
+        annot = ServerAnnotation.objects.get(
+            id=kwargs['aid'],
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+        )
         annot.memotext = request.json['data']['attributes']['memotext']
         annot.save()
         return {'data': annot.make_resource_object()}
@@ -355,7 +359,11 @@ def patch_server_annotation(**kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def delete_server_annotation(**kwargs):
     try:
-        ServerAnnotation.objects.get(id=kwargs['aid']).delete()
+        ServerAnnotation.objects.get(
+            id=kwargs['aid'],
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+        ).delete()
     except ObjectDoesNotExist:
         raise HTTPError(
             http_status.HTTP_404_NOT_FOUND,
