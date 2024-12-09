@@ -52,6 +52,10 @@ RUN set -ex \
         libffi-dev
 
 WORKDIR /code
+
+# Policies
+ADD https://github.com/CenterForOpenScience/cos.io.git#master ./COS_POLICIES/
+
 COPY pyproject.toml .
 COPY poetry.lock .
 # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783

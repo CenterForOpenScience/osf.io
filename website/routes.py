@@ -53,6 +53,7 @@ from website.project import views as project_views
 from addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.policies import views as policy_views
 from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.reviews import views as reviews_views
@@ -1142,6 +1143,18 @@ def make_url_map(app):
 
         Rule('/goodbye/', 'get', goodbye, notemplate),
 
+        Rule(
+            '/privacy_policy/',
+            'get',
+            policy_views.privacy_policy,
+            OsfWebRenderer('policies/generic_policy.mako', trust=True)
+        ),
+        Rule(
+            '/terms_of_use/',
+            'get',
+            policy_views.terms_policy,
+            OsfWebRenderer('policies/generic_policy.mako', trust=True)
+        ),
         Rule(
             [
                 '/project/<pid>/',
