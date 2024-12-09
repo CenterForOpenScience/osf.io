@@ -41,6 +41,7 @@ from osf.models.admin_log_entry import (
     REJECT_WITHDRAWAL,
     UNFLAG_SPAM,
 )
+from osf.models.base import VersionedGuidMixin
 
 from website import search
 
@@ -324,9 +325,12 @@ class WithdrawalRequestMixin(PermissionRequiredMixin):
     permission_required = 'osf.change_preprintrequest'
 
     def get_object(self):
+        guid = self.kwargs['guid']
+        if VersionedGuidMixin.GUID_VERSION_DELIMITER in guid:
+            guid = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
-            target__guids___id=self.kwargs['guid'],
+            target__guids___id=guid,
         ).first()
 
     def get_success_url(self):
