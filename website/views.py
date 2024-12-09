@@ -24,7 +24,7 @@ from website import settings
 from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import features, exceptions
-from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
+from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode, GuidVersionsThrough
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -210,7 +210,10 @@ def resolve_guid_download(guid, provider=None):
     try:
         if VersionedGuidMixin.GUID_VERSION_DELIMITER in guid:
             base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
-            base_guid_obj = Guid.objects.get(_id=base_guid.lower())
+            base_guid_obj = GuidVersionsThrough.objects.get(
+                guid___id=base_guid.lower(),
+                version=version
+            )
         else:
             base_guid_obj = Guid.objects.get(_id=guid.lower())
     except Guid.DoesNotExist:

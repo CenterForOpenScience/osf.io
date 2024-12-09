@@ -479,42 +479,78 @@ class TestGuidVersionsThrough:
             title='Preprint',
             description='Abstract'
         )
-
+        assert preprint.guids.count() == 1
+        preprint_guid = preprint.guids.first()
         version_entry = preprint.versioned_guids.first()
         assert preprint.creator == creator
         assert preprint.provider == preprint_provider
         assert preprint.title == 'Preprint'
         assert preprint.description == 'Abstract'
 
-        assert version_entry.guid == preprint.guids.first()
+        assert preprint_guid._id == version_entry.guid._id
+        assert preprint_guid.referent == preprint
+        assert preprint_guid.content_type.model == 'preprint'
+        assert preprint_guid.object_id == preprint.pk
+        assert preprint_guid.is_versioned is True
+
+        assert version_entry.guid == preprint_guid
         assert version_entry.referent == preprint
         assert version_entry.content_type.model == 'preprint'
         assert version_entry.object_id == preprint.pk
         assert version_entry.version == 1
 
     def test_create_version(self, creator, preprint_provider):
-        preprint = Preprint.create(
-            creator=creator,
-            provider=preprint_provider,
-            title='Preprint',
-            description='Abstract'
-        )
-        first_preprint_guid = preprint.guids.first()
-        preprint.is_published = True
-        preprint.save()
+        preprint = PreprintFactory(creator=creator)
+        assert preprint.guids.count() == 1
+        preprint_guid = preprint.guids.first()
+
+        preprint_metadata = {
+            'subjects': [[el] for el in preprint.subjects.all().values_list('_id', flat=True)],
+            'original_publication_date': preprint.original_publication_date,
+            'custom_publication_citation': preprint.custom_publication_citation,
+            'article_doi': preprint.article_doi,
+            'has_coi': preprint.has_coi,
+            'conflict_of_interest_statement': preprint.conflict_of_interest_statement,
+            'has_data_links': preprint.has_data_links,
+            'why_no_data': preprint.why_no_data,
+            'data_links': preprint.data_links,
+            'has_prereg_links': preprint.has_prereg_links,
+            'why_no_prereg': preprint.why_no_prereg,
+            'prereg_links': preprint.prereg_links,
+        }
+        if preprint.node:
+            preprint_metadata['node'] = preprint.node
+        if preprint.license:
+            preprint_metadata['license_type'] = preprint.license.node_license
+            preprint_metadata['license'] = {
+                'copyright_holders': preprint.license.copyright_holders,
+                'year': preprint.license.year
+            }
+
         auth = Auth(user=creator)
         new_preprint, data_for_update = Preprint.create_version(
             create_from_guid=preprint._id,
             auth=auth
         )
+        tags = data_for_update.pop('tags')
+        assert list(tags) == list(preprint.tags.all().values_list('name', flat=True))
+        assert preprint_metadata == data_for_update
+
         new_version = new_preprint.versioned_guids.first()
+
+        assert preprint.guids.count() == 0
+        assert preprint.versioned_guids.count() == 1
+        assert preprint.files.count() == 1
+        assert new_preprint.guids.count() == 1
+        assert new_preprint.versioned_guids.count() == 1
+        assert new_preprint.files.count() == 0
 
         assert new_version.referent == new_preprint
         assert new_version.object_id == new_preprint.pk
         assert new_version.content_type.model == 'preprint'
-        assert new_preprint.guids.first() == first_preprint_guid
+        assert new_version.guid == preprint_guid
         assert new_version.version == 2
-        assert GuidVersionsThrough.objects.count() == 2
+        assert preprint_guid.versions.count() == 2
 
     def test_versioned_preprint_id_property(self, creator, preprint_provider):
         preprint = Preprint.create(

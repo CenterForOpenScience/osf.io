@@ -97,9 +97,11 @@ def waterbutler_opt_hook(func):
             # Waterbutler is sending back ['node'] under the destination payload - WB should change to target
             target = payload['destination'].get('target') or payload['destination'].get('node')
             if VersionedGuidMixin.GUID_VERSION_DELIMITER in target:
-                dest_target = GuidVersionsThrough.objects.filter(
-                    guid___id=target.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-                ).first().referent
+                guid, version = target.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+                dest_target = GuidVersionsThrough.objects.get(
+                    guid___id=guid,
+                    version=version
+                ).referent
             else:
                 dest_target = Guid.load(target).referent
             source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
