@@ -210,6 +210,8 @@ class Guid(BaseModel):
 
     @classmethod
     def split_guid(cls, guid):
+        if not guid:
+            return None, None
         guid_parts = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
         base_guid = guid_parts[0]
         version = guid_parts[1] if len(guid_parts) > 1 else None
