@@ -298,7 +298,7 @@ def get_server_annotation(**kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 @must_be_valid_project
-@must_have_permission(WRITE)
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def create_server_annotation(**kwargs):
     try:
@@ -329,7 +329,7 @@ def create_server_annotation(**kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 @must_be_valid_project
-@must_have_permission(WRITE)
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def patch_server_annotation(**kwargs):
     try:
@@ -355,7 +355,7 @@ def patch_server_annotation(**kwargs):
         )
 
 @must_be_valid_project
-@must_have_permission(WRITE)
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def delete_server_annotation(**kwargs):
     try:
