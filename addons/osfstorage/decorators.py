@@ -10,7 +10,6 @@ from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from osf.models import OSFUser, Guid
-from osf.models.base import VersionedGuidMixin, GuidVersionsThrough
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration,
@@ -34,15 +33,8 @@ def load_guid_as_target(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        guid = kwargs.get('guid')
-        # TODO: turn this into a class method helper: guid_id, version = checkGuidVersion(...)
-        if VersionedGuidMixin.GUID_VERSION_DELIMITER not in guid:
-            target = getattr(Guid.load(guid), 'referent', None)
-        else:
-            # TODO: needs exception handling
-            base_guid = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-            version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]
-            target = Guid.load(base_guid).versions.get(version=version).referent
+        target, _ = Guid.load_referent(kwargs.get('guid'))
+
         if not target:
             raise HTTPError(
                 http_status.HTTP_404_NOT_FOUND,
@@ -96,14 +88,9 @@ def waterbutler_opt_hook(func):
             user = OSFUser.load(payload['user'])
             # Waterbutler is sending back ['node'] under the destination payload - WB should change to target
             target = payload['destination'].get('target') or payload['destination'].get('node')
-            if VersionedGuidMixin.GUID_VERSION_DELIMITER in target:
-                guid, version = target.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
-                dest_target = GuidVersionsThrough.objects.get(
-                    guid___id=guid,
-                    version=version
-                ).referent
-            else:
-                dest_target = Guid.load(target).referent
+            dest_target, _ = Guid.load_referent(target)
+            if not dest_target:
+                raise HTTPError(http_status.HTTP_404_NOT_FOUND)
             source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_target)
 

@@ -39,16 +39,11 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
 
 
 def _check_resource_for_domains(guid, content):
-    from osf.models import Guid, NotableDomain, DomainReference, VersionedGuidMixin, Preprint
-    if VersionedGuidMixin.GUID_VERSION_DELIMITER in guid:
-        resource = Preprint.load(guid)
-        if not resource:
-            return f'{guid} not found'
-    else:
-        guid = Guid.load(guid)
-        if not guid:
-            return f'{guid} not found'
-        resource = guid.referent
+    from osf.models import Guid, NotableDomain, DomainReference
+    resource, _ = Guid.load_referent(guid)
+    if not resource:
+        return f'{guid} not found'
+
     spammy_domains = []
     referrer_content_type = ContentType.objects.get_for_model(resource)
     for domain, note in _extract_domains(content):
