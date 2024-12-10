@@ -29,6 +29,8 @@ class CoreScopes:
 
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
+    USERS_MESSAGE_READ_EMAIL = 'users_message_read_email'
+    USERS_MESSAGE_WRITE_EMAIL = 'users_message_write_email'
     USERS_CREATE = 'users_create'
 
     USER_SETTINGS_READ = 'user.settings_read'
