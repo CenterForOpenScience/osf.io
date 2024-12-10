@@ -1172,7 +1172,7 @@ def serialize_child_tree(child_list, user, nested):
             contribs = list(
                 child.contributor_set.prefetch_related(
                     Prefetch(
-                        "user", queryset=OSFUser.objects.only("date_confirmed")
+                        'user', queryset=OSFUser.objects.only('date_confirmed')
                     )
                 )
                 .annotate(
@@ -1183,16 +1183,16 @@ def serialize_child_tree(child_list, user, nested):
                     )
                 )
                 .values(
-                    "user__guids___id", "is_admin", "user__date_confirmed", "visible"
+                    'user__guids___id', 'is_admin', 'user__date_confirmed', 'visible'
                 )
             )
 
             contributors = [
                 {
-                    "id": contrib["user__guids___id"],
-                    "is_admin": contrib["is_admin"],
-                    "is_confirmed": bool(contrib["user__date_confirmed"]),
-                    "visible": contrib["visible"],
+                    'id': contrib['user__guids___id'],
+                    'is_admin': contrib['is_admin'],
+                    'is_confirmed': bool(contrib['user__date_confirmed']),
+                    'visible': contrib['visible'],
                 }
                 for contrib in contribs
             ]

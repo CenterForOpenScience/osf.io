@@ -488,9 +488,9 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
         // controller
 
         var treeDataPromise = $.ajax({
-            url: window.contextVars.node.urls.api + "tree/",
-            type: "GET",
-            dataType: "json",
+            url: window.contextVars.node.urls.api + 'tree/',
+            type: 'GET',
+            dataType: 'json',
         });
         if (data.user.can_edit) {
             new ContribAdder(

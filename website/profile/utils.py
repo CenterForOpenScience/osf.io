@@ -161,7 +161,7 @@ def serialize_contributors(contribs, node, **kwargs):
 def serialize_visible_contributors(node):
     # This is optimized when node has .include('contributor__user__guids')
     contribs = node.contributor_set.include(
-        "user__groups", "user__guids", "user__ext"
+        'user__groups', 'user__guids', 'user__ext'
     )
 
     return [
