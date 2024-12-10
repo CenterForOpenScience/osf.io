@@ -104,8 +104,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
 
     elif isinstance(query_or_pk, str):
         if issubclass(model_cls, VersionedGuidMixin):
-            from osf.models.preprint import Preprint
-            obj = Preprint.load(query_or_pk, select_for_update=select_for_update)
+            obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name

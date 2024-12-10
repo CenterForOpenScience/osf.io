@@ -24,7 +24,7 @@ def checkin_files_task(node_id, user_id):
         Guid = apps.get_model('osf.Guid')
         OSFUser = apps.get_model('osf.OSFUser')
 
-        node = Guid.load(node_id).referent
+        node = Guid.load_referent(node_id)
         assert isinstance(node, (AbstractNode, Preprint))
         user = OSFUser.load(user_id)
 
