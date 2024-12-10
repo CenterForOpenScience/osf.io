@@ -198,22 +198,10 @@ class Sitemap:
             progress.increment()
         progress.stop()
         #Removed previous logic as it blocked withdrawn preprints to get in sitemap generator
-        objs = Preprint.objects.filter(
-            Q(is_published=True, date_withdrawn__isnull=True) | Q(date_withdrawn__isnull=False)
-        ).annotate(
+        objs = Preprint.objects.filter(date_published__isnull=False).annotate(
             most_recent_non_withdrawn=Subquery(
                 Preprint.objects.filter(
                     guids=OuterRef('guids')
-                ).filter(
-                    Q(is_published=True, date_withdrawn__isnull=True)  # Non-withdrawn and published
-                ).order_by('-versioned_guids__version').values('versioned_guids__version')[:1]
-            )
-        ).annotate(
-            most_recent_withdrawn=Subquery(
-                Preprint.objects.filter(
-                    guids=OuterRef('guids')
-                ).filter(
-                    date_withdrawn__isnull=False  # Withdrawn versions
                 ).order_by('-versioned_guids__version').values('versioned_guids__version')[:1]
             )
         ).order_by(
