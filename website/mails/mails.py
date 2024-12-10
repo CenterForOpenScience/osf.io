@@ -76,17 +76,29 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(
-        to_addr, mail, from_addr=None, mailer=None, celery=True,
-        username=None, password=None, callback=None, attachment_name=None,
-        attachment_content=None, **context):
-    """Send an email from the OSF.
-    Example: ::
-
+        to_addr,
+        mail,
+        from_addr=None,
+        cc_addr=None,
+        reply_to=None,
+        mailer=None,
+        celery=True,
+        username=None,
+        password=None,
+        callback=None,
+        attachment_name=None,
+        attachment_content=None,
+        **context):
+    """
+    Send an email from the OSF.
+    Example:
         from website import mails
 
         mails.send_email('foo@bar.com', mails.TEST, name="Foo")
 
     :param str to_addr: The recipient's email address
+    :param str cc_addr: The CC senders's email address (or list of addresses)
+    :param str reply_to: The sender's email address will appear in the reply-to header
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
     :param function callback: celery task to execute after send_mail completes
@@ -119,6 +131,8 @@ def send_mail(
         categories=mail.categories,
         attachment_name=attachment_name,
         attachment_content=attachment_content,
+        cc_addr=cc_addr,
+        reply_to=reply_to,
     )
 
     logger.debug('Preparing to send...')
