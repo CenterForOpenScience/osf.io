@@ -43,15 +43,20 @@ class _LegacyConfigsForWBKey(enum.Enum):
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
-    if gv_account_data.resource_type == 'configured-citation-addons':
+    if gv_account_data.resource_type == 'authorized-citation-accounts':
         include_path = ('external_citation_service',)
+        service_key = gv_account_data.get_included_attribute(
+            include_path=include_path,
+            attribute_name='external_service_name'
+        )
+
     else:
         include_path = ('external_storage_service',)
-    service_wb_key = gv_account_data.get_included_attribute(
-        include_path=include_path,
-        attribute_name='wb_key'
-    )
-    legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
+        service_key = gv_account_data.get_included_attribute(
+            include_path=include_path,
+            attribute_name='wb_key'
+        )
+    legacy_config = _LegacyConfigsForWBKey[service_key].value
     return EphemeralUserSettings(
         config=EphemeralAddonConfig.from_legacy_config(legacy_config),
         gv_data=gv_account_data,
@@ -62,20 +67,24 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
 def make_ephemeral_node_settings(gv_addon_data: gv_requests.JSONAPIResultEntry, requested_resource, requesting_user):
     if gv_addon_data.resource_type == 'configured-citation-addons':
         include_path = ('base_account', 'external_citation_service')
+        service_key = gv_addon_data.get_included_attribute(
+            include_path=include_path,
+            attribute_name='external_service_name'
+        )
     else:
         include_path = ('base_account', 'external_storage_service')
-    service_wb_key = gv_addon_data.get_included_attribute(
-        include_path=include_path,
-        attribute_name='wb_key'
-    )
-    legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
+        service_key = gv_addon_data.get_included_attribute(
+            include_path=include_path,
+            attribute_name='wb_key'
+        )
+    legacy_config = _LegacyConfigsForWBKey[service_key].value
     return EphemeralNodeSettings(
         config=EphemeralAddonConfig.from_legacy_config(legacy_config),
         gv_data=gv_addon_data,
         user_settings=make_ephemeral_user_settings(gv_addon_data.get_included_member('base_account'), requesting_user),
         configured_resource=requested_resource,
         active_user=requesting_user,
-        wb_key=service_wb_key,
+        wb_key=service_key,
     )
 
 
