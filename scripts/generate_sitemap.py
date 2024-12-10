@@ -9,6 +9,7 @@ from urllib.parse import urlparse, urljoin
 import xml
 
 import django
+from django.contrib.sitemaps.views import sitemap
 
 django.setup()
 import logging

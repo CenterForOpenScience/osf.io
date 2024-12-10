@@ -3,8 +3,6 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
 from rest_framework.exceptions import PermissionDenied, ValidationError as DRFValidationError
-
-from scripts.generate_sitemap import Sitemap
 from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
