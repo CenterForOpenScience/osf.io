@@ -486,13 +486,20 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
     $('body').on('nodeLoad', function(event, data) {
         // If user is a contributor, initialize the contributor modal
         // controller
+
+        var treeDataPromise = $.ajax({
+            url: window.contextVars.node.urls.api + "tree/",
+            type: "GET",
+            dataType: "json",
+        });
         if (data.user.can_edit) {
             new ContribAdder(
                 '#addContributors',
                 data.node.title,
                 data.node.id,
                 data.parent_node.id,
-                data.parent_node.title
+                data.parent_node.title,
+                treeDataPromise
             );
         }
         if (data.user.can_edit || data.user.is_contributor) {
@@ -503,7 +510,8 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
                 data.user.username,
                 data.user.id,
                 contribShouter,
-                pageChangedShouter
+                pageChangedShouter,
+                treeDataPromise
             );
         }
     });
