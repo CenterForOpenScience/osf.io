@@ -325,7 +325,8 @@ class ComposedScopes:
                     CoreScopes.MEETINGS_READ,
                     CoreScopes.INSTITUTION_READ,
                     CoreScopes.SEARCH,
-                    CoreScopes.SCOPES_READ
+                    CoreScopes.SCOPES_READ,
+                    CoreScopes.USERS_MESSAGE_READ_EMAIL
                 )\
                 + (
                     CoreScopes.READ_COLLECTION_SUBMISSION,
@@ -344,7 +345,8 @@ class ComposedScopes:
                  + (
                      CoreScopes.CEDAR_METADATA_RECORD_WRITE,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
-                     CoreScopes.WRITE_COLLECTION_SUBMISSION
+                     CoreScopes.WRITE_COLLECTION_SUBMISSION,
+                     CoreScopes.USERS_MESSAGE_WRITE_EMAIL
                  )
 
     # Admin permissions- includes functionality not intended for third-party use
