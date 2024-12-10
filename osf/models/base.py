@@ -528,7 +528,7 @@ class VersionedGuidMixin(GuidMixin):
     @classmethod
     def load(cls, guid, select_for_update=False):
         try:
-            base_guid, version = Guid.split_guid(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+            base_guid, version = Guid.split_guid(guid)
 
             if version:
                 if not select_for_update:
