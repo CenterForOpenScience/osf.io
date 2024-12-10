@@ -9,7 +9,7 @@ from future.moves.urllib.parse import urljoin, urlencode
 from . import SHORT_NAME
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
-from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.utils.permissions import READ, ADMIN
 from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
