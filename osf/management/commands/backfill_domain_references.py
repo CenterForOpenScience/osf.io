@@ -11,7 +11,6 @@ from django.db.models import Exists, OuterRef, Q, Value
 from addons.wiki.models import WikiVersion
 from osf.external.spam import tasks as spam_tasks
 from osf.models import AbstractNode, DomainReference
-from osf.models.base import VersionedGuidMixin
 from website.settings import DO_NOT_INDEX_LIST
 
 
@@ -66,11 +65,8 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None, ignor
         logger.info(f'{item}, queued')
         spam_content = item._get_spam_content(include_tags=False)
         if not dry_run:
-            item_id = item._id
-            if VersionedGuidMixin.GUID_VERSION_DELIMITER in item_id:
-                item_id = item_id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
             spam_tasks.check_resource_for_domains_async.apply_async(
-                kwargs={'guid': item_id, 'content': spam_content}
+                kwargs={'guid': item._id, 'content': spam_content}
             )
     return spam_check_count
 

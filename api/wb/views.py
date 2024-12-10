@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 
-from osf.models import Guid
+from osf.models import Guid, VersionedGuidMixin
 from rest_framework.views import APIView
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from api.base.parsers import HMACSignedParser
@@ -24,10 +24,14 @@ class FileMetadataView(APIView):
         return self.get_target(self.kwargs[self.target_lookup_url_kwarg])
 
     def get_target(self, target_id):
-        guid = Guid.load(target_id)
-        if not guid:
-            raise NotFound
-        target = guid.referent
+        #TODO use Guid.load_referent when pr will merge
+        if VersionedGuidMixin.GUID_VERSION_DELIMITER in target_id:
+            target, version = Guid.load_referent(target_id)
+        else:
+            guid = Guid.load(target_id)
+            if not guid:
+                raise NotFound
+            target = guid.referent
         if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise ValidationError('Registrations cannot be changed.')
         return target

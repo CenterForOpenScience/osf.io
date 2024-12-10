@@ -4,7 +4,6 @@ import pytest
 from datetime import timedelta
 from django.utils import timezone
 
-from osf.models.base import VersionedGuidMixin
 from osf_tests.factories import AuthUserFactory, ChronosJournalFactory, ChronosSubmissionFactory, PreprintFactory
 from osf.utils.migrations import disable_auto_now_fields
 from osf.models.chronos import ChronosSubmission
@@ -74,10 +73,7 @@ class TestChronosSubmissionList:
 
     @pytest.fixture()
     def url(self, preprint):
-        preprint_id = preprint._id
-        if VersionedGuidMixin.GUID_VERSION_DELIMITER in preprint._id:
-            preprint_id = preprint._id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-        return f'/_/chronos/{preprint_id}/submissions/'
+        return f'/_/chronos/{preprint._id}/submissions/'
 
     def create_payload(self, journal):
         return {
@@ -219,10 +215,7 @@ class TestChronosSubmissionAutomaticUpdate:
 
     @pytest.fixture()
     def url(self, preprint):
-        preprint_id = preprint._id
-        if VersionedGuidMixin.GUID_VERSION_DELIMITER in preprint._id:
-            preprint_id = preprint._id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-        return f'/_/chronos/{preprint_id}/submissions/'
+        return f'/_/chronos/{preprint._id}/submissions/'
 
     @mock.patch('api.chronos.views.enqueue_task')
     def test_enqueue_is_called_with_submission_is_stale(self, mock_enqueue, app, url, submission_stale, submitter):

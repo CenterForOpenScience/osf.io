@@ -2,7 +2,6 @@ import pytest
 
 from addons.osfstorage.models import OsfStorageFolder
 from framework.auth import signing
-from osf.models.base import VersionedGuidMixin
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -771,10 +770,7 @@ class TestCopyPreprint():
 
     @pytest.fixture()
     def copy_url(self, preprint):
-        preprint_id = preprint._id
-        if VersionedGuidMixin.GUID_VERSION_DELIMITER in preprint._id:
-            preprint_id = preprint._id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-        return f'/_/wb/hooks/{preprint_id}/copy/'
+        return f'/_/wb/hooks/{preprint._id}/copy/'
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
