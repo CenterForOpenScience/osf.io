@@ -147,6 +147,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                 'number_projects': projects.count(),
                 'number_public_projects': projects.filter(is_public=True).count(),
             })
+
     return ret
 
 
