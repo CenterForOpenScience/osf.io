@@ -310,7 +310,7 @@ def decrypt_and_decode_jwt_payload():
 
 
 def get_authenticated_resource(resource_id):
-    resource = Guid.load_referent(resource_id)
+    resource, _ = Guid.load_referent(resource_id)
 
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
@@ -533,7 +533,8 @@ def create_waterbutler_log(payload, **kwargs):
             if payload['action'] in DOWNLOAD_ACTIONS:
                 guid_id = payload['metadata'].get('nid')
 
-                node = Guid.load_referent(guid_id)
+                node, _ = Guid.load_referent(guid_id)
+                return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
             if user is None:

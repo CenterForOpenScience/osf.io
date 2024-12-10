@@ -18,13 +18,12 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from osf.models.base import VersionedGuidMixin
 from website import settings
 
 from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import features, exceptions
-from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode, GuidVersionsThrough
+from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -207,19 +206,9 @@ def forgot_password_form():
 
 
 def resolve_guid_download(guid, provider=None):
-    try:
-        if VersionedGuidMixin.GUID_VERSION_DELIMITER in guid:
-            base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
-            base_guid_obj = GuidVersionsThrough.objects.get(
-                guid___id=base_guid.lower(),
-                version=version
-            )
-        else:
-            base_guid_obj = Guid.objects.get(_id=guid.lower())
-    except Guid.DoesNotExist:
+    resource, _ = Guid.load_referent(guid)
+    if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    resource = base_guid_obj.referent
 
     suffix = request.view_args.get('suffix')
     if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
@@ -302,12 +291,12 @@ def resolve_guid(guid, suffix=None):
         return resolve_guid_download(guid)
 
     # Retrieve guid data if present, error if missing
-    try:
-        resource = Guid.load_referent(guid)
-        if not guid == resource._id:
-            return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
-    except Guid.DoesNotExist:
+    resource, _ = Guid.load_referent(guid)
+    if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+    if not guid == resource._id:
+        return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
 
     if not resource or not resource.deep_url:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)

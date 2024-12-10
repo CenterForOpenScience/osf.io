@@ -312,6 +312,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         return preprint
 
+    def has_pending_version(self):
+        guid = self.guids.first()
+        last_version = guid.versions.order_by('-version').first().referent
+        return last_version.machine_state == 'pending'
+
     @classmethod
     def create_version(cls, create_from_guid, auth):
         base_guid = Guid.load(create_from_guid)
@@ -320,7 +325,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             raise NotFound
         if not source_preprint.has_permission(auth.user, ADMIN):
             raise PermissionsError
-        if not source_preprint.date_published:
+        if source_preprint.has_pending_version():
             raise PendingPreprintVersionExists
 
         last_version = base_guid.versions.order_by('-version').first().version
@@ -594,15 +599,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def is_latest_version(self):
         if not self.date_published:
             return False
-        versioned_guid = self.versioned_guids.first()
-        base_guid = versioned_guid.guid
-        latest_version = base_guid.referent
-        if latest_version.date_published:
-            return latest_version.version == self.version
-        latest_version = Preprint.ever_published_objects.filter(
-            id__in=base_guid.versions.values_list('object_id', flat=True)
-        ).order_by('-versioned_guids__version').first()
-        return latest_version.version == self.version if latest_version else False
+        return self.versioned_guids.first().guid.referent.version == self.version
 
     def get_preprint_versions(self):
         guids = self.versioned_guids.first().guid.versions.all()

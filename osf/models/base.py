@@ -212,7 +212,7 @@ class Guid(BaseModel):
     def split_guid(cls, guid):
         if not guid:
             return None, None
-        guid_parts = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+        guid_parts = guid.lower().split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
         base_guid = guid_parts[0]
         version = guid_parts[1] if len(guid_parts) > 1 else None
         return base_guid, version
@@ -232,14 +232,19 @@ class Guid(BaseModel):
         base_guid, version = cls.split_guid(guid)
 
         base_guid_obj = cls.load(base_guid)
-        if version and base_guid_obj.is_versioned:
-            versioned_obj_qs = base_guid_obj.versions.filter(version=version)
-            if not versioned_obj_qs.exists():
-                return None
+        if version:
+            if base_guid_obj.is_versioned:
+                versioned_obj_qs = base_guid_obj.versions.filter(version=version)
+                if not versioned_obj_qs.exists():
+                    return None, None
+            else:
+                return None, None
+            referent = versioned_obj_qs.first().referent
+            return referent, referent.version
 
-            return versioned_obj_qs.first().referent
-
-        return base_guid_obj.referent
+        referent = base_guid_obj.referent
+        version = referent.version if hasattr(referent, 'version') else None
+        return referent, version
 
     @property
     def is_versioned(self):
@@ -523,9 +528,8 @@ class VersionedGuidMixin(GuidMixin):
     @classmethod
     def load(cls, guid, select_for_update=False):
         try:
-            guid_split_list = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
-            base_guid = guid_split_list[0]
-            version = guid_split_list[1] if len(guid_split_list) > 1 else None
+            base_guid, version = Guid.split_guid(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+
             if version:
                 if not select_for_update:
                     return cls.objects.get(versioned_guids__guid___id=base_guid, versioned_guids__version=version)

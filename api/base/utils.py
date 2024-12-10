@@ -16,7 +16,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models.base import GuidMixin
+from osf.models.base import GuidMixin, VersionedGuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
@@ -103,6 +103,9 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
             raise NotFound
 
     elif isinstance(query_or_pk, str):
+        if issubclass(model_cls, VersionedGuidMixin):
+            from osf.models.preprint import Preprint
+            obj = Preprint.load(query_or_pk, select_for_update=select_for_update)
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name

@@ -40,7 +40,7 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
 
 def _check_resource_for_domains(guid, content):
     from osf.models import Guid, NotableDomain, DomainReference
-    resource = Guid.load_referent(guid)
+    resource, _ = Guid.load_referent(guid)
     if not resource:
         return f'{guid} not found'
 
