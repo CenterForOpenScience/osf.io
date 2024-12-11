@@ -16,7 +16,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
 )
-from osf.models import Collection
+from osf.models import Collection, VersionedGuidMixin
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, WRITE, READ
 from website.project.signals import contributor_removed
@@ -3906,7 +3906,7 @@ class TestCollectionLinkedPreprints:
         res = app.get(url_collection_linked_preprints, auth=user_one.auth)
 
         assert res.status_code == 200
-        preprints_returned = [linked_preprint['id']
+        preprints_returned = [linked_preprint['id'].split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
                           for linked_preprint in res.json['data']]
         assert len(preprints_returned) == len(id_linked_preprints)
 
@@ -3933,7 +3933,7 @@ class TestCollectionLinkedPreprints:
                                                                collection._id), auth=user.auth)
 
         assert res.status_code == 200
-        preprints_returned = [linked_preprint['id']
+        preprints_returned = [linked_preprint['id'].split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
                           for linked_preprint in res.json['data']]
         assert len(preprints_returned) == len(id_linked_preprints)
 
