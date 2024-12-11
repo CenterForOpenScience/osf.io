@@ -696,10 +696,10 @@ class UserMessageSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<institution._id>'},
         help_text='The institution associated with this message.',
     )
-    cc = ser.BooleanField(
+    bcc_sender = ser.BooleanField(
         required=False,
         default=False,
-        help_text='If true, CCs the sender.',
+        help_text='If true, BCCs the sender, giving them a copy of the email message they sent.',
     )
     reply_to = ser.BooleanField(
         default=False,
@@ -774,6 +774,6 @@ class UserMessageSerializer(JSONAPISerializer):
             institution=institution,
             message_type=MessageTypes.INSTITUTIONAL_REQUEST,
             message_text=validated_data['message_text'],
-            is_sender_CCed=validated_data['cc'],
+            is_sender_BCCed=validated_data['bcc_sender'],
             reply_to=validated_data['reply_to'],
         )

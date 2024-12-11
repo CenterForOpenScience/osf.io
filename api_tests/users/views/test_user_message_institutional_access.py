@@ -173,7 +173,7 @@ class TestUserMessageInstitutionalAccess:
         mock_send_mail.return_value = mock.MagicMock()
 
         # Enable CC in the payload
-        payload['data']['attributes']['cc'] = True
+        payload['data']['attributes']['bcc_sender'] = True
 
         # Perform the API request
         res = app.post_json_api(
@@ -184,11 +184,11 @@ class TestUserMessageInstitutionalAccess:
         assert res.status_code == 201
         user_message = UserMessage.objects.get()
 
-        assert user_message.is_sender_CCed
+        assert user_message.is_sender_BCCed
         # Two emails are sent during the CC but this is how the mock works `send_email` is called once.
         mock_send_mail.assert_called_once_with(
             to_addr=user_with_affiliation.username,
-            cc_addr=[institutional_admin.username],
+            bcc_addr=[institutional_admin.username],
             reply_to=None,
             message_text='Requesting user access for collaboration',
             mail=USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST,
@@ -210,7 +210,7 @@ class TestUserMessageInstitutionalAccess:
         assert user_message.message_text == payload['data']['attributes']['message_text']
         mock_send_mail.assert_called_once_with(
             to_addr=user_with_affiliation.username,
-            cc_addr=None,
+            bcc_addr=None,
             reply_to=None,
             message_text='Requesting user access for collaboration',
             mail=USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST,
@@ -236,7 +236,7 @@ class TestUserMessageInstitutionalAccess:
 
         mock_send_mail.assert_called_once_with(
             to_addr=user_with_affiliation.username,
-            cc_addr=None,
+            bcc_addr=None,
             reply_to=institutional_admin.username,
             message_text='Requesting user access for collaboration',
             mail=USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST,

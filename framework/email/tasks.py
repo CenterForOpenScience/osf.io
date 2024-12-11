@@ -23,7 +23,7 @@ def send_email(
     reply_to: bool = False,
     ttls: bool = True,
     login: bool = True,
-    cc_addr: [] = None,
+    bcc_addr: [] = None,
     username: str = None,
     password: str = None,
     categories=None,
@@ -60,7 +60,7 @@ def send_email(
             attachment_name=attachment_name,
             attachment_content=attachment_content,
             reply_to=reply_to,
-            cc_addr=cc_addr,
+            bcc_addr=bcc_addr,
         )
     else:
         return _send_with_smtp(
@@ -73,7 +73,7 @@ def send_email(
             username=username,
             password=password,
             reply_to=reply_to,
-            cc_addr=cc_addr,
+            bcc_addr=bcc_addr,
         )
 
 
@@ -86,7 +86,7 @@ def _send_with_smtp(
         login=True,
         username=None,
         password=None,
-        cc_addr=None,
+        bcc_addr=None,
         reply_to=None,
 ):
     username = username or settings.MAIL_USERNAME
@@ -105,14 +105,11 @@ def _send_with_smtp(
     msg['From'] = from_addr
     msg['To'] = to_addr
 
-    if cc_addr:
-        msg['Cc'] = ', '.join(cc_addr)
-
     if reply_to:
         msg['Reply-To'] = reply_to
 
     # Combine recipients for SMTP
-    recipients = [to_addr] + (cc_addr or [])
+    recipients = [to_addr] + (bcc_addr or [])
 
     # Establish SMTP connection and send the email
     with smtplib.SMTP(settings.MAIL_SERVER) as server:
@@ -138,7 +135,7 @@ def _send_with_sendgrid(
     categories=None,
     attachment_name: str = None,
     attachment_content=None,
-    cc_addr=None,
+    bcc_addr=None,
     reply_to=None,
     client=None,
 ):
@@ -157,11 +154,11 @@ def _send_with_sendgrid(
         subject=subject
     )
 
-    if reply_to:  # Add Reply-To header if provided
+    if reply_to:
         mail.reply_to = [{'email': reply_to}]
 
-    if cc_addr:  # Add CC header if CC addresses exist
-        mail.add_cc([{'email': email} for email in cc_addr])
+    if bcc_addr:
+        mail.add_bcc([{'email': email} for email in bcc_addr])
 
     if categories:
         mail.category = [Category(x) for x in categories]

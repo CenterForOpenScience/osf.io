@@ -79,7 +79,7 @@ def send_mail(
         to_addr,
         mail,
         from_addr=None,
-        cc_addr=None,
+        bcc_addr=None,
         reply_to=None,
         mailer=None,
         celery=True,
@@ -97,7 +97,7 @@ def send_mail(
         mails.send_email('foo@bar.com', mails.TEST, name="Foo")
 
     :param str to_addr: The recipient's email address
-    :param str cc_addr: The CC senders's email address (or list of addresses)
+    :param str bcc_addr: The BCC senders's email address (or list of addresses)
     :param str reply_to: The sender's email address will appear in the reply-to header
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
@@ -131,7 +131,7 @@ def send_mail(
         categories=mail.categories,
         attachment_name=attachment_name,
         attachment_content=attachment_content,
-        cc_addr=cc_addr,
+        bcc_addr=bcc_addr,
         reply_to=reply_to,
     )
 
