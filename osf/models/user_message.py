@@ -2,6 +2,7 @@ from typing import Type
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 from .base import BaseModel, ObjectIDMixin
 from website.mails import send_mail, USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST
 
@@ -70,14 +71,24 @@ class UserMessage(BaseModel, ObjectIDMixin):
         on_delete=models.CASCADE,
         help_text='The institution associated with this message.'
     )
+    is_sender_BCCed = models.BooleanField(
+        default=False,
+        help_text='The boolean value that indicates whether other institutional admins were BCCed',
+    )
+    reply_to = models.BooleanField(
+        default=False,
+        help_text='Whether to set the sender\'s username as the `Reply-To` header in the email.'
+    )
 
     def send_institution_request(self) -> None:
         """
         Sends an institutional access request email to the recipient of the message.
         """
         send_mail(
+            mail=MessageTypes.get_template(self.message_type),
             to_addr=self.recipient.username,
-            mail=MessageTypes.get_template(MessageTypes.INSTITUTIONAL_REQUEST),
+            bcc_addr=[self.sender.username] if self.is_sender_BCCed else None,
+            reply_to=self.sender.username if self.reply_to else None,
             user=self.recipient,
             **{
                 'sender': self.sender,
