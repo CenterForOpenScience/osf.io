@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand
 import django
 django.setup()
 
-from osf.models import Preprint
+from osf.models import Preprint, VersionedGuidMixin
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -67,7 +67,10 @@ def check_crossref_dois(dry_run=True):
         pending_dois = []
         for preprint in preprint_batch:
             prefix = preprint.provider.doi_prefix
-            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)}')
+            guid = preprint._id
+            if VersionedGuidMixin.GUID_VERSION_DELIMITER in preprint._id:
+                guid = preprint._id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=prefix, guid=guid)}')
 
         url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
 
