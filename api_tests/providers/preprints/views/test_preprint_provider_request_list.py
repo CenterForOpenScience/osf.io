@@ -44,12 +44,14 @@ class TestPreprintProviderWithdrawalRequstList(PreprintRequestTestMixin):
         assert res.json['data'][0]['embeds']['target']['data']['id'] == post_mod_preprint._id
 
         # test_filter
-        res = app.get(f'{self.url(pre_mod_provider)}?filter[target]={pre_mod_preprint._id}', auth=moderator.auth)
+        pre_mod_preprint_id = pre_mod_preprint._id.split('_v')[0] if '_v' in pre_mod_preprint._id else pre_mod_preprint._id
+        res = app.get(f'{self.url(pre_mod_provider)}?filter[target]={pre_mod_preprint_id}', auth=moderator.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == pre_request._id
 
-        res = app.get(f'{self.url(post_mod_provider)}?filter[target]={post_mod_preprint._id}', auth=moderator.auth)
+        post_mod_preprint_id = post_mod_preprint._id.split('_v')[0] if '_v' in post_mod_preprint._id else post_mod_preprint._id
+        res = app.get(f'{self.url(post_mod_provider)}?filter[target]={post_mod_preprint_id}', auth=moderator.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == post_request._id

@@ -146,9 +146,10 @@ class TestClaimUser:
         assert mock_mail.call_count == 2
 
     def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user, mock_mail):
+        unversioned_id = preprint._id.split('_v')[0]
         res = app.post_json_api(
             url.format(unreg_user._id),
-            self.payload(email='david@david.son', id=preprint._id),
+            self.payload(email='david@david.son', id=unversioned_id),
         )
         assert res.status_code == 204
         assert mock_mail.call_count == 1
