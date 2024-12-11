@@ -750,6 +750,7 @@ class PreprintFactory(DjangoModelFactory):
             content_type=ContentType.objects.get_for_model(instance),
             object_id=instance.pk,
         )
+
         models.GuidVersionsThrough.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),

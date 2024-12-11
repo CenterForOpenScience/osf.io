@@ -91,8 +91,9 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
     def get_default_queryset(self):
         user = get_user_auth(self.request).user
-        preprint_contributors = Preprint.load(self.kwargs['preprint_id'])._contributors
-        queryset = ChronosSubmission.objects.filter(preprint__guids___id=self.kwargs['preprint_id'])
+        preprint = Preprint.load(self.kwargs['preprint_id'])
+        preprint_contributors = preprint._contributors
+        queryset = ChronosSubmission.objects.filter(preprint=preprint)
 
         # Get the list of stale submissions and queue a task to update them
         update_list_id = queryset.filter(
