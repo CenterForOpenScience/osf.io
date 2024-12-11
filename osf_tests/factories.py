@@ -20,7 +20,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory, Faker
 from waffle.models import Flag, Sample, Switch
-
 from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
@@ -778,6 +777,89 @@ class PreprintFactory(DjangoModelFactory):
             'contentType': 'img/png'
         }).save()
         update_task_patcher.stop()
+        if finish:
+            auth = Auth(user)
+
+            instance.set_primary_file(preprint_file, auth=auth, save=True)
+            instance.set_subjects(subjects, auth=auth)
+            if license_details:
+                instance.set_preprint_license(license_details, auth=auth)
+            instance.set_published(is_published, auth=auth)
+            create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
+            mock_create_identifier = create_task_patcher.start()
+            if is_published and set_doi:
+                mock_create_identifier.side_effect = sync_set_identifiers(instance)
+            create_task_patcher.stop()
+
+        instance.save()
+        return instance
+
+    @classmethod
+    def create_version(cls, *args, **kwargs):
+        source_preprint = kwargs.pop('preprint')
+        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
+        update_task_patcher.start()
+
+        filename = kwargs.pop('filename', None) or 'preprint_file.txt'
+        file_size = kwargs.pop('file_size', 1337)
+
+        finish = kwargs.pop('finish', True)
+        set_doi = kwargs.pop('set_doi', True)
+        is_published = True
+        target_class = cls._meta.model
+        instance = cls._build(target_class, *args, **kwargs)
+        license_details = None
+        if source_preprint.license:
+            license_details = {
+                'id': source_preprint.license.node_license.license_id,
+                'copyrightHolders': source_preprint.license.copyright_holders,
+                'year': source_preprint.license.year
+            }
+
+        subjects = [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)]
+        instance.article_doi = source_preprint.article_doi
+        instance.date_published = timezone.now()
+        user = kwargs.pop('creator', None) or instance.creator
+        instance.machine_state = 'initial'
+        instance.save()
+
+        initial_guid = source_preprint.guids.first()
+        initial_guid.referent = instance
+        initial_guid.object_id = instance.pk
+        initial_guid.save()
+
+        last_version = initial_guid.versions.order_by('-version').first().version
+
+        models.GuidVersionsThrough.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+            guid=initial_guid,
+            version=last_version + 1
+        )
+
+        preprint_file = OsfStorageFile.create(
+            target_object_id=instance.id,
+            target_content_type=ContentType.objects.get_for_model(instance),
+            path=f'/{filename}',
+            name=filename,
+            materialized_path=f'/{filename}'
+        )
+
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
+        preprint_file.save()
+        from addons.osfstorage import settings as osfstorage_settings
+
+        preprint_file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': file_size,
+            'contentType': 'img/png'
+        }).save()
+        update_task_patcher.stop()
+
         if finish:
             auth = Auth(user)
 

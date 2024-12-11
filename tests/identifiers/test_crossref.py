@@ -41,6 +41,12 @@ def preprint():
     return preprint
 
 @pytest.fixture()
+def preprint_version(preprint):
+    versioned_preprint = PreprintFactory.create_version(preprint=preprint)
+    versioned_preprint.license.node_license.url = 'https://creativecommons.org/licenses/by/4.0/legalcode'
+    return versioned_preprint
+
+@pytest.fixture()
 def crossref_success_response():
     return b"""
         \n\n\n\n<html>\n<head><title>SUCCESS</title>\n</head>\n<body>\n<h2>SUCCESS</h2>\n<p>
@@ -88,6 +94,11 @@ class TestCrossRefClient:
 
         assert crossref_client.build_doi(preprint) == settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint._id)
 
+    def test_crossref_build_doi_versioned(self, crossref_client, preprint_version):
+        doi_prefix = preprint_version.provider.doi_prefix
+
+        assert crossref_client.build_doi(preprint_version) == settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint_version._id)
+
     def test_crossref_build_metadata(self, crossref_client, preprint):
         test_email = 'test-email@osf.io'
         with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
@@ -113,10 +124,56 @@ class TestCrossRefClient:
         assert root.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS).text == preprint.article_doi
         assert root.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE).text == settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
         assert root.find('.//{%s}resource' % crossref.CROSSREF_NAMESPACE).text == settings.DOMAIN + preprint._id
+        assert root.find('.//{%s}doi_relations' % crossref.CROSSREF_NAMESPACE) is None
 
         metadata_date_parts = [elem.text for elem in root.find('.//{%s}posted_date' % crossref.CROSSREF_NAMESPACE)]
         preprint_date_parts = preprint.date_published.strftime('%Y-%m-%d').split('-')
         assert set(metadata_date_parts) == set(preprint_date_parts)
+
+    def test_crossref_build_metadata_versioned(self, crossref_client, preprint_version, preprint):
+        test_email = 'test-email@osf.io'
+        with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
+            crossref_xml = crossref_client.build_metadata(preprint_version)
+        root = lxml.etree.fromstring(crossref_xml)
+        print(lxml.etree.tostring(root, pretty_print=True).decode("utf-8"))
+
+        # header
+        assert root.find('.//{%s}doi_batch_id' % crossref.CROSSREF_NAMESPACE).text == preprint_version._id
+        assert root.find('.//{%s}depositor_name' % crossref.CROSSREF_NAMESPACE).text == crossref.CROSSREF_DEPOSITOR_NAME
+        assert root.find('.//{%s}email_address' % crossref.CROSSREF_NAMESPACE).text == test_email
+
+        # body
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
+        assert len(contributors.getchildren()) == len(preprint_version.visible_contributors)
+
+        assert root.find('.//{%s}group_title' % crossref.CROSSREF_NAMESPACE).text == preprint_version.provider.name
+        assert root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text == preprint_version.title
+        assert root.find('.//{%s}item_number' % crossref.CROSSREF_NAMESPACE).text == f'osf.io/{preprint_version._id}'
+        assert root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE).text == preprint_version.description
+        assert root.find(
+            './/{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).text == 'https://creativecommons.org/licenses/by/4.0/legalcode'
+        assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).get(
+            'start_date') == preprint_version.date_published.strftime('%Y-%m-%d')
+
+        doi_relations = root.find('.//{%s}doi_relations' % crossref.CROSSREF_NAMESPACE)
+        assert doi_relations is not None
+
+        doi = doi_relations.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE)
+        assert doi is not None
+        assert doi.text == f'None/FK2osf.io/{preprint_version._id}'
+
+        related_item = doi_relations.find('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
+        assert related_item is not None
+
+        description = related_item.find('.//{%s}description' % crossref.CROSSREF_RELATIONS)
+        assert description is not None
+        assert description.text == "Updated version"
+
+        intra_work_relation = related_item.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS)
+        assert intra_work_relation is not None
+        assert intra_work_relation.get('relationship-type') == "isVersionOf"
+        assert intra_work_relation.get('identifier-type') == "doi"
+        assert intra_work_relation.text == settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
 
     @responses.activate
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
