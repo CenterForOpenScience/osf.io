@@ -595,3 +595,8 @@ ADDONS_BOA_JOB_FAILURE = Mail(
     'addons_boa_job_failure',
     subject='Your Boa job has failed'
 )
+
+USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST = Mail(
+    'user_message_institutional_access_request',
+    subject='Message from Institutional Admin'
+)

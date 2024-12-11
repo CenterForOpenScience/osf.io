@@ -108,3 +108,5 @@ from .user import (
     Email,
     OSFUser,
 )
+from .user_message import UserMessage
+
