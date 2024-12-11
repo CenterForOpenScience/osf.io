@@ -24,10 +24,9 @@ class FileMetadataView(APIView):
         return self.get_target(self.kwargs[self.target_lookup_url_kwarg])
 
     def get_target(self, target_id):
-        guid = Guid.load(target_id)
-        if not guid:
+        target, _ = Guid.load_referent(target_id)
+        if not target:
             raise NotFound
-        target = guid.referent
         if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise ValidationError('Registrations cannot be changed.')
         return target
