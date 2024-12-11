@@ -971,10 +971,10 @@ class UserMessageView(JSONAPIBaseView, generics.CreateAPIView):
         UserMessagePermissions,
     )
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_read_scopes = [CoreScopes.USERS_MESSAGE_READ_EMAIL]
+    required_write_scopes = [CoreScopes.USERS_MESSAGE_WRITE_EMAIL]
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
-
+    throttle_classes = [BurstRateThrottle, SendEmailThrottle]
     serializer_class = UserMessageSerializer
 
     view_category = 'users'
