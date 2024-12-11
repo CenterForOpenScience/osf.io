@@ -232,6 +232,8 @@ class Guid(BaseModel):
         base_guid, version = cls.split_guid(guid)
 
         base_guid_obj = cls.load(base_guid)
+        if not base_guid_obj:
+            return None, None
         if version:
             if base_guid_obj.is_versioned:
                 versioned_obj_qs = base_guid_obj.versions.filter(version=version)
