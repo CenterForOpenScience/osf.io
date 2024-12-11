@@ -585,7 +585,7 @@ class BaseStorageAddon:
             **kwargs
         )
 
-        res = requests.get(metadata_url)
+        res = requests.get(metadata_url, cookies={settings.COOKIE_NAME: kwargs.get('cookie')})
 
         if res.status_code != 200:
             raise HTTPError(res.status_code, data={'error': res.json()})
