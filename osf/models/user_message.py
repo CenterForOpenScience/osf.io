@@ -71,9 +71,9 @@ class UserMessage(BaseModel, ObjectIDMixin):
         on_delete=models.CASCADE,
         help_text='The institution associated with this message.'
     )
-    is_sender_CCed = models.BooleanField(
+    is_sender_BCCed = models.BooleanField(
         default=False,
-        help_text='The boolean value that indicates whether other institutional admins were CCed',
+        help_text='The boolean value that indicates whether other institutional admins were BCCed',
     )
     reply_to = models.BooleanField(
         default=False,
@@ -87,7 +87,7 @@ class UserMessage(BaseModel, ObjectIDMixin):
         send_mail(
             mail=MessageTypes.get_template(self.message_type),
             to_addr=self.recipient.username,
-            cc_addr=[self.sender.username] if self.is_sender_CCed else None,
+            bcc_addr=[self.sender.username] if self.is_sender_BCCed else None,
             reply_to=self.sender.username if self.reply_to else None,
             user=self.recipient,
             **{

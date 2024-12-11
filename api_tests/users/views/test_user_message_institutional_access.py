@@ -173,7 +173,7 @@ class TestUserMessageInstitutionalAccess:
         mock_send_mail.return_value = mock.MagicMock()
 
         # Enable CC in the payload
-        payload['data']['attributes']['cc'] = True
+        payload['data']['attributes']['bcc_sender'] = True
 
         # Perform the API request
         res = app.post_json_api(
