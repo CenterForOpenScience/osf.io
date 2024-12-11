@@ -80,12 +80,15 @@ class UserMessage(BaseModel, ObjectIDMixin):
         help_text='Whether to set the sender\'s username as the `Reply-To` header in the email.'
     )
 
-    def send_institution_request(self):
+    def send_institution_request(self) -> None:
+        """
+        Sends an institutional access request email to the recipient of the message.
+        """
         send_mail(
+            mail=MessageTypes.get_template(self.message_type),
             to_addr=self.recipient.username,
             cc_addr=[self.sender.username] if self.is_sender_CCed else None,
             reply_to=self.sender.username if self.reply_to else None,
-            mail=MessageTypes.get_template(self.message_type),
             user=self.recipient,
             **{
                 'sender': self.sender,
