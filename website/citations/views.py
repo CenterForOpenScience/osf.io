@@ -199,7 +199,6 @@ class GenericCitationViews:
                     auth=auth,
                     request=request,
                     addon_short_name=addon_short_name,
-                    node_addon=node_addon,
                     list_id=list_id,
                     show=show
                 )

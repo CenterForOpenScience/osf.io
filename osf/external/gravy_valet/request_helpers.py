@@ -270,7 +270,7 @@ def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
         },
         'type': 'addon-operation-invocations'
     }
-    if list_id != 'ROOT':
+    if list_id:
         data['attributes']['operation_kwargs']['collection_id'] = list_id
         data['attributes']['operation_name'] = 'list_collection_items'
     gv_response = _make_gv_request(
@@ -279,7 +279,7 @@ def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
         requested_resource=project,
         request_method='POST',
         params={},
-        json_data=data
+        json_data={'data': data}
     )
     return gv_response
 
