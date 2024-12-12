@@ -11,6 +11,7 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
+from website.mails import NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 
 
 @pytest.mark.django_db
@@ -246,8 +247,17 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert not mock_mail.called
 
     @mock.patch('api.requests.serializers.send_mail')
-    def test_email_sent_on_creation(self, mock_mail, app, project, institutional_admin, url,
-                                              user_with_affiliation, create_payload, institution):
+    def test_email_sent_on_creation(
+            self,
+            mock_mail,
+            app,
+            project,
+            institutional_admin,
+            url,
+            user_with_affiliation,
+            create_payload,
+            institution
+    ):
         """
         Test that an email is sent to the appropriate recipients when an institutional access request is made.
         """
@@ -255,12 +265,89 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 201
 
         assert mock_mail.call_count == 1
-        from website.mails import NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 
         mock_mail.assert_called_with(
             to_addr=user_with_affiliation.username,
             mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
             user=user_with_affiliation,
+            bcc_addr=None,
+            reply_to=None,
+            **{
+                'sender': institutional_admin,
+                'recipient': user_with_affiliation,
+                'comment': create_payload['data']['attributes']['comment'],
+                'institution': institution,
+                'osf_url': mock.ANY,
+                'node': project,
+            }
+        )
+
+    @mock.patch('api.requests.serializers.send_mail')
+    def test_bcc_institutional_admin(
+            self,
+            mock_mail,
+            app,
+            project,
+            institutional_admin,
+            url,
+            user_with_affiliation,
+            create_payload,
+            institution
+    ):
+        """
+        Ensure BCC option works as expected, sending messages to all institutional admins except the sender.
+        """
+        create_payload['data']['attributes']['bcc_sender'] = True
+
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+
+        assert mock_mail.call_count == 1
+
+        mock_mail.assert_called_with(
+            to_addr=user_with_affiliation.username,
+            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+            user=user_with_affiliation,
+            bcc_addr=[institutional_admin.username],
+            reply_to=None,
+            **{
+                'sender': institutional_admin,
+                'recipient': user_with_affiliation,
+                'comment': create_payload['data']['attributes']['comment'],
+                'institution': institution,
+                'osf_url': mock.ANY,
+                'node': project,
+            }
+        )
+
+    @mock.patch('api.requests.serializers.send_mail')
+    def test_reply_to_institutional_admin(
+            self,
+            mock_mail,
+            app,
+            project,
+            institutional_admin,
+            url,
+            user_with_affiliation,
+            create_payload,
+            institution
+    ):
+        """
+        Ensure reply-to option works as expected, sending messages to all institutional admins except the sender.
+        """
+        create_payload['data']['attributes']['reply_to'] = True
+
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+
+        assert mock_mail.call_count == 1
+
+        mock_mail.assert_called_with(
+            to_addr=user_with_affiliation.username,
+            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+            user=user_with_affiliation,
+            bcc_addr=None,
+            reply_to=institutional_admin.username,
             **{
                 'sender': institutional_admin,
                 'recipient': user_with_affiliation,

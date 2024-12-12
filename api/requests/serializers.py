@@ -132,6 +132,9 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
     )
 
     def to_internal_value(self, data):
+        """
+        Retrieves the id value from `RelationshipField` fields
+        """
         instituion_id = data.pop('institution', None)
         message_recipient_id = data.pop('message_recipient', None)
         data = super().to_internal_value(data)
@@ -172,17 +175,10 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 raise ValidationError('You must specify a valid request_type.')
 
     def make_node_institutional_access_request(self, node, validated_data) -> NodeRequest:
-        node_request = self._create_node_request(node, validated_data)
-
         sender = self.context['request'].user
-        message_recipient_id = validated_data.get('message_recipient')
-        institution_id = validated_data.get('institution')
-        try:
-            recipient = OSFUser.objects.get(guids___id=message_recipient_id)
-        except OSFUser.DoesNotExist:
-            recipient = None
-
-        institution = Institution.objects.get(_id=institution_id)
+        node_request = self._create_node_request(node, validated_data)
+        institution = Institution.objects.get(_id=validated_data['institution'])
+        recipient = OSFUser.load(validated_data.get('message_recipient'))
 
         if recipient:
             if not recipient.is_affiliated_with_institution(institution):
@@ -194,8 +190,8 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                     mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
                     user=recipient,
                     sender=sender,
-                    bcc_addr=validated_data.get('bcc_sender', []),
-                    reply_to=validated_data.get('reply_to', None),
+                    bcc_addr=[sender.username] if validated_data['bcc_sender'] else None,
+                    reply_to=sender.username if validated_data['reply_to'] else None,
                     recipient=recipient,
                     comment=validated_data['comment'],
                     institution=institution,
