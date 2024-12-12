@@ -4,7 +4,7 @@ import datetime
 from api.base.settings.defaults import API_BASE
 
 from api.providers.workflows import Workflows
-from osf.utils.workflows import RequestTypes, RegistrationModerationTriggers, RegistrationModerationStates
+from osf.utils.workflows import NodeRequestTypes, RegistrationModerationTriggers, RegistrationModerationStates
 
 
 from osf_tests.factories import (
@@ -66,7 +66,7 @@ class TestRegistriesModerationSubmissions:
         registration = RegistrationFactory(provider=provider)
 
         NodeRequest.objects.create(
-            request_type=RequestTypes.WITHDRAWAL.value,
+            request_type=NodeRequestTypes.WITHDRAWAL.value,
             target=registration,
             creator=registration.creator
         )
@@ -75,7 +75,7 @@ class TestRegistriesModerationSubmissions:
 
     @pytest.fixture()
     def access_request(self, provider):
-        request = NodeRequestFactory(request_type=RequestTypes.ACCESS.value)
+        request = NodeRequestFactory(request_type=NodeRequestTypes.ACCESS.value)
         request.target.provider = provider
         request.target.save()
 

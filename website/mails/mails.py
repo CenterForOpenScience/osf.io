@@ -596,6 +596,11 @@ ADDONS_BOA_JOB_FAILURE = Mail(
     subject='Your Boa job has failed'
 )
 
+NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST = Mail(
+    'node_request_institutional_access_request',
+    subject='Institutional Access Project Request'
+)
+
 USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST = Mail(
     'user_message_institutional_access_request',
     subject='Message from Institutional Admin'

@@ -1,11 +1,15 @@
 from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
-from osf.models.action import NodeRequestAction, PreprintRequestAction
+from osf.models import (
+    Node,
+    NodeRequestAction,
+    PreprintRequestAction,
+    Preprint,
+    Institution,
+)
 from osf.models.mixins import NodeRequestableMixin, PreprintRequestableMixin
-from osf.models.node import Node
-from osf.models.preprint import Preprint
-from osf.utils.workflows import DefaultTriggers
+from osf.utils.workflows import DefaultTriggers, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
 
 
@@ -52,7 +56,33 @@ class NodeRequestPermission(drf_permissions.BasePermission):
                 # Requesters may not be contributors
                 # Requesters may edit their comment or submit their request
                 return is_requester and auth.user not in node.contributors
+
+
+class InstitutionalAdminRequestTypePermission(drf_permissions.BasePermission):
+    """
+    Permission class for handling object permissions related to Node requests and actions.
+    """
+
+    def has_permission(self, request, view):
+        # Skip if not institutional_request request_type
+        request_type = request.data.get('request_type')
+        if request_type != NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
+            return True
+
+        auth = get_user_auth(request)
+        if not auth.user:
             return False
+
+        institution_id = request.data.get('institution')
+        if not institution_id:
+            return False
+
+        try:
+            institution = Institution.objects.get(_id=institution_id)
+        except Institution.DoesNotExist:
+            return False
+
+        return auth.user.is_institutional_admin(institution)
 
 
 class PreprintRequestPermission(drf_permissions.BasePermission):
