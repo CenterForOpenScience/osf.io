@@ -206,6 +206,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'url': provider.sword_url,
             'index_id': self.index_id,
             'index_title': self.index_title,
+            'default_storage_provider': default_provider.short_name,
             'default_storage': default_provider.serialize_waterbutler_settings(),
         }
 

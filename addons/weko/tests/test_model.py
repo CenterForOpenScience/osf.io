@@ -4,9 +4,10 @@ import pytest
 import unittest
 
 from tests.base import get_default_metaschema
-from osf_tests.factories import ProjectFactory, DraftRegistrationFactory
+from osf_tests.factories import InstitutionFactory, RegionFactory, DraftRegistrationFactory
 
 from framework.auth import Auth
+from osf.models import RdmAddonOption
 from addons.base.tests.models import (
     OAuthAddonNodeSettingsTestSuiteMixin,
     OAuthAddonUserSettingTestSuiteMixin
@@ -63,6 +64,8 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         }
         self.mock_find_repository.start()
         super(TestNodeSettings, self).setUp()
+        self.institution = InstitutionFactory()
+        self.node.affiliated_institutions.add(self.institution)
 
     def tearDown(self):
         self.mock_requests_get.stop()
@@ -153,4 +156,42 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_equal(last_log.action, '{0}_index_linked'.format(self.short_name))
 
     def test_serialize_settings(self):
-        pass
+        settings = self.node_settings.serialize_waterbutler_settings()
+        assert_equal(settings['nid'], self.node._id)
+        assert_equal(settings['index_id'], self.node_settings.index_id)
+        assert_equal(settings['index_title'], self.node_settings.index_title)
+        assert_true('url' in settings and settings['url'])
+        assert_equal(settings['default_storage_provider'], 'osfstorage')
+        assert_true('default_storage' in settings and settings['default_storage'])
+
+    def test_serialize_settings_with_institutional_storage(self):
+        osfstorage = self.node.get_addon('osfstorage')
+        new_region = RegionFactory(
+            _id=self.institution._id,
+            name='Test Region',
+            waterbutler_settings={
+                'storage': {
+                    'provider': 's3compatinstitutions',
+                },
+                'disabled': True,
+            }
+        )
+        osfstorage.region = new_region
+        osfstorage.save()
+        assert_false(osfstorage.has_auth)
+
+        storage = self.node.add_addon('s3compatinstitutions', auth=Auth(self.node.creator))
+        self.node.save()
+        addon_option = RdmAddonOption(
+            provider=storage.config.short_name,
+            institution=self.node.affiliated_institutions.first(),
+        )
+        addon_option.save()
+        storage.addon_option = addon_option
+        storage.folder_id = '1234567890'
+        storage.save()
+        assert_true(storage.complete)
+
+        settings = self.node_settings.serialize_waterbutler_settings()
+        assert_equal(settings['default_storage_provider'], 's3compatinstitutions')
+        assert_true('default_storage' in settings and settings['default_storage'])
