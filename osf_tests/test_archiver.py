@@ -387,7 +387,7 @@ class TestStorageAddonBase(ArchiverTestCase):
 
     @responses.activate
     def _test__get_file_tree(self, addon_short_name):
-        cookie = self.user.get_or_create_cookie()
+        cookie = self.user.get_or_create_cookie().decode()
         for path in self.URLS:
             url = waterbutler_api_url_for(
                 self.src._id,
