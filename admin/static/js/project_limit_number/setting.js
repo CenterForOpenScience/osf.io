@@ -61,6 +61,14 @@ function setInvalidMessageForSettingName(event) {
     }
 }
 
+function setInvalidMessageForTemplateName(event) {
+    var element = event.target;
+    element.setCustomValidity('');
+    if (!!element.validity.valueMissing) {
+        element.setCustomValidity(_('The template name is required.'));
+    }
+}
+
 function setInvalidMessageForAttributeValue(event) {
     var element = event.target;
     element.setCustomValidity('');
@@ -71,6 +79,7 @@ function setInvalidMessageForAttributeValue(event) {
 
 $(document).ready(function() {
     $('#setting_name_id').on('invalid', setInvalidMessageForSettingName);
+    $('#template_id').on('invalid', setInvalidMessageForTemplateName);
     $('input[name="attribute_value_input"]').on('invalid', setInvalidMessageForAttributeValue);
 })
 

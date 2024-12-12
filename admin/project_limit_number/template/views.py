@@ -5,6 +5,8 @@ import logging
 from django.utils import timezone
 import json
 from django.http import Http404, JsonResponse
+
+from admin.base import settings
 from admin.base.utils import render_bad_request_response
 from admin.base.views import GuidFormView
 from django.views.generic import UpdateView, ListView, DeleteView
@@ -21,8 +23,9 @@ from admin.project_limit_number import utils
 from django.db.models import Aggregate
 
 logger = logging.getLogger(__name__)
-SETTING_TYPE_FREE_VALUE_LIST = [1, 2]
+SETTING_TYPE_FREE_VALUE_LIST = [item[0] for item in settings.SETTING_TYPE if item[1].startswith('free_value')]
 SETTING_TYPE_REQUIRED_VALUE_LIST = [3, 4, 5, 6]
+SETTING_TYPE_LIST_VALUE_LIST = [item[0] for item in settings.SETTING_TYPE if item[1].startswith('list_value')]
 PAGE_SIZE_LIST = [10, 25, 50]
 
 
@@ -116,6 +119,16 @@ class ProjectLimitNumberTemplatesViewCreate(RdmPermissionMixin, UserPassesTestMi
             return False
         return self.is_super_admin
 
+    def handle_no_permission(self):
+        """ Handle user has no permission """
+        if not self.raise_exception and self.request.method == 'POST':
+            # If request is POST and user is not authenticated then return HTTP 401
+            return JsonResponse(
+                {'error_message': 'Authentication credentials were not provided.'},
+                status=HTTPStatus.UNAUTHORIZED
+            )
+        return super(ProjectLimitNumberTemplatesViewCreate, self).handle_no_permission()
+
     def get_context_data(self, **kwargs):
         # Return data
         return {
@@ -129,15 +142,26 @@ class ProjectLimitNumberTemplatesViewCreate(RdmPermissionMixin, UserPassesTestMi
         if not is_request_valid:
             return JsonResponse({'error_message': message}, status=HTTPStatus.BAD_REQUEST)
 
+        # Validate template_name
+        template_name = request_data.get('template_name')
+        if template_name is None or not template_name.strip():
+            return JsonResponse({'error_message': 'template_name is required.'}, status=HTTPStatus.BAD_REQUEST)
+
         # Validate attribute_value
         attribute_list = request_data.get('attribute_list')
         for attribute in attribute_list:
-            if attribute.get('setting_type') in SETTING_TYPE_REQUIRED_VALUE_LIST and not attribute.get('attribute_value').strip():
+            attribute_value = attribute.get('attribute_value') or ''
+            if attribute.get('setting_type') in SETTING_TYPE_REQUIRED_VALUE_LIST and not attribute_value.strip():
                 return JsonResponse({'error_message': 'attribute_value is required.'}, status=HTTPStatus.BAD_REQUEST)
             if attribute.get('attribute_name') not in ATTRIBUTE_NAME_LIST:
                 return JsonResponse({'error_message': 'attribute_name is invalid.'}, status=HTTPStatus.BAD_REQUEST)
+            if attribute.get('setting_type') in SETTING_TYPE_LIST_VALUE_LIST:
+                attribute_value_list = [item.strip() for item in attribute_value.split(',')]
+                if '' in attribute_value_list:
+                    return JsonResponse({'error_message': 'attribute_value is invalid.'}, status=HTTPStatus.BAD_REQUEST)
 
-        template_name = request_data.get('template_name')
+        # Trim template name before query
+        template_name = template_name.strip()
         # Check template name is exist
         is_exist = ProjectLimitNumberTemplate.objects.filter(
             template_name=template_name,
@@ -151,11 +175,11 @@ class ProjectLimitNumberTemplatesViewCreate(RdmPermissionMixin, UserPassesTestMi
         try:
             request_body = json.loads(request.body)
             template_name = request_body.get('template_name')
-            if template_name:
-                request_body['template_name'] = template_name.strip()
             result_validate = self.validate_data(request_body)
             if result_validate is not None:
                 return result_validate
+            # Trim template name
+            template_name = template_name.strip()
             # Insert data into osf_project_limit_number_template table
             with transaction.atomic():
                 # Insert new template
@@ -168,9 +192,11 @@ class ProjectLimitNumberTemplatesViewCreate(RdmPermissionMixin, UserPassesTestMi
                 new_attribute_list = []
                 for attribute in attribute_list:
                     setting_type = attribute.get('setting_type')
-                    attribute_value = attribute.get('attribute_value')
                     if setting_type in SETTING_TYPE_FREE_VALUE_LIST:
                         attribute_value = None
+                    else:
+                        attribute_value = attribute.get('attribute_value').strip()
+
                     # Insert new template attributes
                     new_attribute = ProjectLimitNumberTemplateAttribute(
                         template=template,
@@ -183,7 +209,7 @@ class ProjectLimitNumberTemplatesViewCreate(RdmPermissionMixin, UserPassesTestMi
                     ProjectLimitNumberTemplateAttribute.objects.bulk_create(new_attribute_list)
         except json.JSONDecodeError:
             return JsonResponse(
-                {'error_message': 'Invalid JSON format'},
+                {'error_message': 'The request body is invalid.'},
                 status=HTTPStatus.BAD_REQUEST
             )
         except Exception as e:
@@ -321,7 +347,7 @@ class ProjectLimitNumberTemplatesSettingSaveAvailabilityView(RdmPermissionMixin,
                     )
         except json.JSONDecodeError:
             return JsonResponse(
-                {'error_message': 'Invalid JSON format'},
+                {'error_message': 'The request body is invalid.'},
                 status=HTTPStatus.BAD_REQUEST
             )
         except Exception as e:
@@ -356,12 +382,17 @@ class UpdateProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
     def put(self, request, *args, **kwargs):
         try:
             request_body = json.loads(request.body)
-            template_name = request_body.get('template_name')
-            request_body['template_name'] = template_name.strip()
             # Validate request data
             is_request_valid, message = utils.validate_file_json(request_body, 'update-template-project-limit-number-setting-schema.json')
             if not is_request_valid:
                 return JsonResponse({'error_message': message}, status=HTTPStatus.BAD_REQUEST)
+
+            template_name = request_body.get('template_name')
+            if template_name is None or not template_name.strip():
+                return JsonResponse({'error_message': 'template_name is required.'}, status=HTTPStatus.BAD_REQUEST)
+
+            # Trim template name
+            template_name = template_name.strip()
 
             # Check duplicate
             attribute_list = request_body.get('attribute_list')
@@ -406,12 +437,17 @@ class UpdateProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
             template_attribute_id_db_list = [template_attribute.get('id') for template_attribute in template_attribute_db_list]
             for attribute in attribute_list:
                 attribute_id = attribute.get('id')
+                attribute_value = attribute.get('attribute_value') or ''
                 if attribute_id is not None and attribute_id not in template_attribute_id_db_list:
                     return JsonResponse({'error_message': 'The attribute not exist.'}, status=HTTPStatus.BAD_REQUEST)
-                if attribute.get('setting_type') in SETTING_TYPE_REQUIRED_VALUE_LIST and not attribute.get('attribute_value').strip():
+                if attribute.get('setting_type') in SETTING_TYPE_REQUIRED_VALUE_LIST and not attribute_value.strip():
                     return JsonResponse({'error_message': 'attribute_value is required.'}, status=HTTPStatus.BAD_REQUEST)
                 if attribute.get('attribute_name') not in ATTRIBUTE_NAME_LIST:
                     return JsonResponse({'error_message': 'attribute_name is invalid.'}, status=HTTPStatus.BAD_REQUEST)
+                if attribute.get('setting_type') in SETTING_TYPE_LIST_VALUE_LIST:
+                    attribute_value_list = [item.strip() for item in attribute_value.split(',')]
+                    if '' in attribute_value_list:
+                        return JsonResponse({'error_message': 'attribute_value is invalid.'}, status=HTTPStatus.BAD_REQUEST)
 
             attributes_to_update_list = []
             attributes_to_create_list = []
@@ -424,9 +460,10 @@ class UpdateProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
                 attribute_id = attribute.get('id')
                 attribute_name = attribute.get('attribute_name')
                 setting_type = attribute.get('setting_type')
-                attribute_value = attribute.get('attribute_value')
                 if setting_type in SETTING_TYPE_FREE_VALUE_LIST:
                     attribute_value = None
+                else:
+                    attribute_value = attribute.get('attribute_value', '').strip()
 
                 if attribute_id is None:
                     # Prepare to create project_limit_number_template_attribute
@@ -468,7 +505,7 @@ class UpdateProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
 
         except json.JSONDecodeError:
             return JsonResponse(
-                {'error_message': 'Invalid JSON format'},
+                {'error_message': 'The request body is invalid.'},
                 status=HTTPStatus.BAD_REQUEST
             )
         except Exception as e:

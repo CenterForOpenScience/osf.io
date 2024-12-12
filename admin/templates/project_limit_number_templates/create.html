@@ -64,16 +64,19 @@
                         <div class="col-md-3">
                             <select id="attribute_id_0" name="attribute_name" class="form-control attribute-name" style="width: 100% !important; border-radius: 5px;"
                                 required>
-                                <option selected disabled hidden value=""></option>
+                                <option selected disabled hidden value="">{% trans 'Select attribute name' %}</option>
                                 {% for attribute_name in attribute_name_list %}
                                     <option value="{{ attribute_name }}">{{ attribute_name }}</option>
+                                    {% if forloop.first %}
+                                        <option disabled>{% trans '=== Authentication Attribute ===' %}</option>
+                                    {% endif %}
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-3">
                             <select id="setting_id_0" name="setting_type" class="form-control setting-type" style="width: 100% !important; border-radius: 5px;"
                                 required onchange="onChangeSettingOption('0')">
-                                <option selected disabled hidden value=""></option>
+                                <option selected disabled hidden value="">{% trans 'Select setting type' %}</option>
                                 {% for index, setting in setting_type_list %}
                                     <option value="{{ index }}">{% trans setting %}</option>
                                 {% endfor %}
@@ -117,16 +120,19 @@
                         <div class="col-md-3">
                             <select id="attribute_id_`+ inputRowId +`" name="attribute_name" class="form-control attribute-name" style="width: 100% !important; border-radius: 5px;"
                                 required>
-                                <option selected disabled hidden value=""></option>
+                                <option selected disabled hidden value="">{% trans 'Select attribute name' %}</option>
                                 {% for attribute_name in attribute_name_list %}
                                     <option value="{{ attribute_name }}">{{ attribute_name }}</option>
+                                    {% if forloop.first %}
+                                        <option disabled>{% trans '=== Authentication Attribute ===' %}</option>
+                                    {% endif %}
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-3">
                             <select id="setting_id_`+ inputRowId +`" name="setting_type" class="form-control setting-type" style="width: 100% !important; border-radius: 5px;"
                                     required onchange="onChangeSettingOption('`+ inputRowId +`')">
-                                    <option selected disabled hidden value=""></option>
+                                    <option selected disabled hidden value="">{% trans 'Select setting type' %}</option>
                                     {% for index, setting_type in setting_type_list %}
                                         <option value="{{ index }}">{% trans setting_type %}</option>
                                     {% endfor %}

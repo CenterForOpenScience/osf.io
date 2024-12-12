@@ -17,7 +17,7 @@
       "maxLength": 255
     },
     "project_limit_number": {
-      "type": ["integer", "null"],
+      "type": "integer",
       "minimum": -1,
       "maximum": 2147483647
     },
@@ -46,6 +46,7 @@
     "template_id",
     "institution_id",
     "name",
+    "project_limit_number",
     "attribute_list"
   ],
   "additionalProperties": false

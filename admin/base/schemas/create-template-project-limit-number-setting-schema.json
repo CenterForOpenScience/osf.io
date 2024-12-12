@@ -8,7 +8,7 @@
     },
     "attribute_list": {
       "type": "array",
-      "minLength": 1,
+      "minItems": 1,
       "items": {
         "properties": {
           "attribute_name": {

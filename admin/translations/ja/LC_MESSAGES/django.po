@@ -3916,26 +3916,23 @@ msgstr "このテンプレートを削除してもよろしいですか?"
 msgid "No Limit"
 msgstr "無制限"
 
-msgid "Free Value (all match)"
-msgstr "単一の値(自由入力)(完全一致)"
-
-msgid "Free Value (left suffix match)"
-msgstr "単一の値(自由入力)(後方一致)"
-
-msgid "Fixed Value (all match)"
-msgstr "固定値(完全一致)"
-
-msgid "Fixed Value (left suffix match)"
-msgstr "固定値(後方一致)"
-
-msgid "List Value (all match)"
-msgstr "リスト(完全一致)"
-
-msgid "List Value (left suffix match)"
-msgstr "リスト(後方一致)"
-
 msgid "Add Input Field"
 msgstr "入力欄を追加"
+
+msgid "Select institution"
+msgstr "機関を選択する"
+
+msgid "Select rule name"
+msgstr "ルール名称を選択する"
+
+msgid "Select attribute name"
+msgstr "値の設定方法を選択する"
+
+msgid "Select setting type"
+msgstr "使用する属性を選択する"
+
+msgid "=== Authentication Attribute ==="
+msgstr "=== 認証属性 ==="
 
 msgid "free_value_all_match"
 msgstr "単一の値(自由入力)(完全一致)"
@@ -3958,6 +3955,12 @@ msgstr "リスト(後方一致)"
 msgid "{template_name} is being used."
 msgstr "{template_name}が使用されています。"
 
+msgid "The attribute list is invalid."
+msgstr "属性一覧が不正です。"
+
+msgid "The attribute list is required."
+msgstr "属性一覧は必須です。"
+
 msgid "The template not exist."
 msgstr "ルール名称が存在しません。"
 
@@ -3965,7 +3968,7 @@ msgid "The template name is required."
 msgstr "ルール名称は必須です。"
 
 msgid "The template name already exists."
-msgstr "同じルール名称は存在しす。"
+msgstr "同じルール名称は存在します。"
 
 msgid "The attribute name is required."
 msgstr "使用する属性は必須です。"
@@ -3986,7 +3989,7 @@ msgid "The setting name is invalid."
 msgstr "設定名が不正です。"
 
 msgid "The setting name already exists."
-msgstr "同じ設定名は存在しす。"
+msgstr "同じ設定名は存在します。"
 
 msgid "The project limit number is invalid."
 msgstr "プロジェクト制限数が不正です。"

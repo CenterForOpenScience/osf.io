@@ -221,7 +221,7 @@ msgstr ""
 #: admin/templates/users/remove_user.html:12
 #: admin/templates/users/restore_ham_user.html:12
 msgid "Confirm"
-msgstr "確認"
+msgstr ""
 
 #: admin/templates/banners/create.html:5
 msgid "GakuNin RDM Admin | Schedule banner"
@@ -3879,6 +3879,21 @@ msgstr ""
 msgid "Add Input Field"
 msgstr ""
 
+msgid "Select institution"
+msgstr ""
+
+msgid "Select rule name"
+msgstr ""
+
+msgid "Select attribute name"
+msgstr ""
+
+msgid "Select setting type"
+msgstr ""
+
+msgid "=== Authentication Attribute ==="
+msgstr ""
+
 msgid "free_value_all_match"
 msgstr "Free Value (all match)"
 
@@ -3898,6 +3913,12 @@ msgid "list_value_left_suffix_match"
 msgstr "List Value (left suffix match)"
 
 msgid "{template_name} is being used."
+msgstr ""
+
+msgid "The attribute list is invalid."
+msgstr ""
+
+msgid "The attribute list is required."
 msgstr ""
 
 msgid "The template not exist."

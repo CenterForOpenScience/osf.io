@@ -173,9 +173,9 @@ class TestProjectLimitNumberSettingListView(AdminTestCase):
                 is_deleted=False
             )
 
-        request = self.request_factory.get(f'{self.base_url}?page_size=10')
+        request = self.request_factory.get(f'{self.base_url}?institution_id={self.institution.id}&page_size=10')
         request.user = self.super_admin
-        self.view.kwargs = {'page_size': 10}
+        self.view.kwargs = {'institution_id': self.institution.id, 'page_size': 10}
         self.view = setup_view(self.view, request)
         self.view.object_list = self.view.get_queryset()
 
@@ -189,8 +189,9 @@ class TestProjectLimitNumberSettingListView(AdminTestCase):
             project_limit_number=5
         )
 
-        request = self.request_factory.get(self.base_url)
+        request = self.request_factory.get(f'{self.base_url}?institution_id={self.institution.id}')
         request.user = self.super_admin
+        self.view.kwargs = {'institution_id': self.institution.id}
         self.view = setup_view(self.view, request)
         self.view.object_list = self.view.get_queryset()
 
@@ -1203,6 +1204,7 @@ class TestProjectLimitNumberSettingCreateView(AdminTestCase):
 
         context = response.context_data
         self.assertEqual(context['institution'], self.institution)
+        self.assertIsNotNone(context['template_id'])
         self.assertIn('template_list', context)
         self.assertIn('template_attribute_list', context)
 
@@ -1225,7 +1227,7 @@ class TestProjectLimitNumberSettingCreateView(AdminTestCase):
         context = response.context_data
         self.assertEqual(context['institution'], self.institution)
         self.assertIn('template_list', context)
-        self.assertIsNotNone(context['template_id'])
+        self.assertIsNone(context['template_id'])
 
     def test_get_with_no_available_template(self):
         """Test successful GET request in case there are no available template in DB """
@@ -1427,6 +1429,26 @@ class TestCreateProjectLimitNumberSettingView(AdminTestCase):
         self.assertEqual(
             json.loads(response.content),
             {'error_message': 'The request body is invalid.'}
+        )
+
+    def test_post_name_having_only_space(self):
+        """Test with name having only spaces"""
+        data = self.valid_data.copy()
+        data['name'] = '   '
+
+        request = self.request_factory.post(
+            self.base_url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        request.user = self.super_admin
+        self.view = setup_view(self.view, request)
+
+        response = self.view.post(request)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(
+            json.loads(response.content),
+            {'error_message': 'name is required.'}
         )
 
     def test_post_project_limit_number_exceeds_maximum(self):
@@ -1675,7 +1697,7 @@ class TestCreateProjectLimitNumberSettingView(AdminTestCase):
         self.view = setup_view(self.view, request)
 
         response = self.view.post(request)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
 
         # Verify setting was created
         setting = ProjectLimitNumberSetting.objects.filter(
@@ -2006,6 +2028,26 @@ class TestUpdateProjectLimitNumberSettingView(AdminTestCase):
 
         response = self.view.put(request, setting_id=self.setting.id)
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_put_name_having_only_space(self):
+        """Test with name having only spaces in request data"""
+        data = self.valid_data.copy()
+        data['name'] = '  '
+
+        request = self.request_factory.put(
+            self.base_url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        request.user = self.super_admin
+        self.view = setup_view(self.view, request)
+
+        response = self.view.put(request, setting_id=self.setting.id)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(
+            json.loads(response.content),
+            {'error_message': 'name is required.'}
+        )
 
     def test_put_project_limit_number_exceeds_maximum(self):
         """Test with project limit number exceeding maximum allowed"""
@@ -2638,7 +2680,6 @@ class TestUserListView(AdminTestCase):
                 user=user,
                 data=data
             )
-            self.projects.append(ProjectFactory(creator=user, is_deleted=False))
 
         # Create project limit number settings with different conditions
         self.setting1 = ProjectLimitNumberSetting.objects.create(
@@ -3079,6 +3120,8 @@ class TestUserListView(AdminTestCase):
 
     def test_post_project_count_calculation(self):
         """Test correct calculation of created project numbers"""
+        for i, user in enumerate(self.users):
+            self.projects.append(ProjectFactory(creator=user, is_deleted=False))
         request = self.request_factory.post(
             self.base_url,
             data=json.dumps(self.valid_data),

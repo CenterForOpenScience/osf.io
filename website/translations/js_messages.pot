@@ -7626,6 +7626,12 @@ msgstr ""
 msgid "{template_name} is being used."
 msgstr ""
 
+msgid "The attribute list is invalid."
+msgstr ""
+
+msgid "The attribute list is required."
+msgstr ""
+
 msgid "The template not exist."
 msgstr ""
 

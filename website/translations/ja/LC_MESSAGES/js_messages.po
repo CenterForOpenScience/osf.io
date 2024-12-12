@@ -8927,6 +8927,12 @@ msgstr "ダウンロードが失敗されました。"
 msgid "{template_name} is being used."
 msgstr "{template_name}が使用されています。"
 
+msgid "The attribute list is invalid."
+msgstr "属性一覧が不正です。"
+
+msgid "The attribute list is required."
+msgstr "属性一覧は必須です。"
+
 msgid "The template not exist."
 msgstr "ルール名称が存在しません。"
 
@@ -8934,7 +8940,7 @@ msgid "The template name is required."
 msgstr "ルール名称は必須です。"
 
 msgid "The template name already exists."
-msgstr "同じルール名称は存在しす。"
+msgstr "同じルール名称は存在します。"
 
 msgid "The attribute name is required."
 msgstr "使用する属性は必須です。"
@@ -8955,7 +8961,7 @@ msgid "The setting name is invalid."
 msgstr "設定名が不正です。"
 
 msgid "The setting name already exists."
-msgstr "同じ設定名は存在しす。"
+msgstr "同じ設定名は存在します。"
 
 msgid "The project limit number is invalid."
 msgstr "プロジェクト制限数が不正です。"

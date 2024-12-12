@@ -57,7 +57,11 @@ class ProjectLimitNumberSettingListView(RdmPermissionMixin, UserPassesTestMixin,
 
         if self.is_super_admin:
             institution_list = Institution.objects.filter(is_deleted=False).order_by('id')
-            selected_institution = institution_list.filter(id=institution_id).first() if institution_id is not None else institution_list.first()
+            selected_institution = institution_list.filter(id=institution_id).first()
+            if not selected_institution:
+                # If user is super admin and institution_id is None then return page with only institution list
+                kwargs['institutions'] = institution_list
+                return super(ProjectLimitNumberSettingListView, self).get_context_data(**kwargs)
         else:
             selected_institution = self.request.user.affiliated_institutions.filter(is_deleted=False).first()
             selected_institution_id = selected_institution.id if selected_institution is not None else None
@@ -415,18 +419,27 @@ class ProjectLimitNumberSettingCreateView(RdmPermissionMixin, UserPassesTestMixi
         # Get template data
         template_list = ProjectLimitNumberTemplate.objects.filter(is_availability=True, is_deleted=False).order_by('-id')
 
+        if not template_id:
+            # If template_id is None, return response data
+            response_data = {
+                'template_list': template_list,
+                'template_attribute_list': [],
+                'institution': institution,
+                'project_limit_number_select_list': PROJECT_LIMIT_NUMBER_SELECT_LIST,
+                'template_id': None
+            }
+            return self.render_to_response(response_data)
+
         # Get selected template
-        selected_template = (
-            template_list.filter(id=template_id).first() if template_id
-            else template_list.first()
-        )
+        selected_template = template_list.filter(id=template_id).first()
 
         if template_id and not selected_template:
             return render_bad_request_response(request=request, error_msgs='The template not exist.')
 
         template_attribute_list = []
         if selected_template:
-            template_attribute_list = selected_template.attributes.order_by('id').values('id', 'attribute_name', 'setting_type', 'attribute_value')
+            template_attribute_list = selected_template.attributes.filter(is_deleted=False).order_by('id').values(
+                'id', 'attribute_name', 'setting_type', 'attribute_value')
             for data in template_attribute_list:
                 attribute_value = data.get('attribute_value')
                 setting_type = data.get('setting_type')
@@ -459,10 +472,16 @@ class ProjectLimitNumberSettingCreateView(RdmPermissionMixin, UserPassesTestMixi
 
             template_id = request_body.get('template_id')
             institution_id = request_body.get('institution_id')
-            name = request_body.get('name')
+            name = request_body.get('name').strip()
             memo = request_body.get('memo')
+            # Trim memo
+            memo = memo.strip() if memo is not None else None
             project_limit_number = request_body.get('project_limit_number', utils.NO_LIMIT)
             attribute_list = request_body.get('attribute_list')
+
+            # If trimmed name is empty then return HTTP 400
+            if not name:
+                return JsonResponse({'error_message': 'name is required.'}, status=HTTPStatus.BAD_REQUEST)
 
             # If project_limit_number is more than PROJECT_LIMIT_NUMBER then return HTTP 400
             if project_limit_number > settings.PROJECT_LIMIT_NUMBER:
@@ -471,7 +490,7 @@ class ProjectLimitNumberSettingCreateView(RdmPermissionMixin, UserPassesTestMixi
             # If attribute_list has duplicated attribute_id then return HTTP 400
             attribute_id_set = set([item.get('attribute_id') for item in attribute_list])
             if len(attribute_list) != len(attribute_id_set):
-                return JsonResponse({'error_message': 'attribute_list is invalid.'}, status=HTTPStatus.BAD_REQUEST)
+                return JsonResponse({'error_message': 'attribute_id is invalid.'}, status=HTTPStatus.BAD_REQUEST)
 
             if not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
                 return JsonResponse({'error_message': 'The institution not exist.'}, status=HTTPStatus.BAD_REQUEST)
@@ -547,7 +566,7 @@ class ProjectLimitNumberSettingCreateView(RdmPermissionMixin, UserPassesTestMixi
                 status=HTTPStatus.BAD_REQUEST
             )
 
-        return JsonResponse({}, status=HTTPStatus.OK)
+        return JsonResponse({}, status=HTTPStatus.CREATED)
 
 
 class ProjectLimitNumberSettingDetailView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
@@ -666,21 +685,29 @@ class UpdateProjectLimitNumberSettingView(RdmPermissionMixin, UserPassesTestMixi
                 return JsonResponse({'error_message': error_message}, status=HTTPStatus.BAD_REQUEST)
 
             setting_id = kwargs.get('setting_id')
-            name = request_body.get('name')
+            name = request_body.get('name').strip()
             memo = request_body.get('memo')
+            # Trim memo
+            memo = memo.strip() if memo is not None else None
             project_limit_number = request_body.get('project_limit_number', utils.NO_LIMIT)
             attribute_list = request_body.get('attribute_list')
 
+            # If setting_id is None then return HTTP 400
             if setting_id is None:
                 return JsonResponse({'error_message': 'setting_id is required.'}, status=HTTPStatus.BAD_REQUEST)
 
+            # If trimmed name is empty then return HTTP 400
+            if not name:
+                return JsonResponse({'error_message': 'name is required.'}, status=HTTPStatus.BAD_REQUEST)
+
+            # If project_limit_number is more than PROJECT_LIMIT_NUMBER then return HTTP 400
             if project_limit_number > settings.PROJECT_LIMIT_NUMBER:
                 return JsonResponse({'error_message': 'project_limit_number is invalid.'}, status=HTTPStatus.BAD_REQUEST)
 
             # If attribute_list has duplicated attribute_id then return HTTP 400
             attribute_id_set = set([item.get('id') for item in attribute_list])
             if len(attribute_list) != len(attribute_id_set):
-                return JsonResponse({'error_message': 'attribute_list is invalid.'}, status=HTTPStatus.BAD_REQUEST)
+                return JsonResponse({'error_message': 'id is invalid.'}, status=HTTPStatus.BAD_REQUEST)
 
             setting = ProjectLimitNumberSetting.objects.filter(id=setting_id, is_deleted=False).first()
             if setting is None:

@@ -14,13 +14,26 @@
         }
 
         .select2-container--default .select2-selection--single {
-            height: 32px !important;
+            height: 34px !important;
             padding-left: 6px;
             padding-right: 6px;
+
+            .select2-selection__placeholder {
+                color: #333 !important;
+            }
+
+            .select2-selection__arrow {
+                height: 34px !important;
+            }
         }
 
         .select2-selection__choice {
             color: #333 !important;
+        }
+
+        .select2-hidden-accessible {
+            height: 34px !important;
+            width: 100% !important;
         }
 
         .flex-container {
@@ -99,7 +112,7 @@
             <div class="col-md-10">
                 <select id="template_id" name="attribute_name" class="form-control select-container" style="border-radius: 5px;"
                     required onchange="changeTemplate()">
-                    <option selected disabled hidden value=""></option>
+                    <option selected disabled hidden value="">{% trans 'Select rule name' %}</option>
                     {% for template in template_list %}
                         <option value="{{ template.id }}" {% if template.id == template_id %}selected="selected"{% endif %}>{{ template.template_name }}</option>
                     {% endfor %}
@@ -207,7 +220,9 @@
 {% block bottom_js %}
     {% render_bundle 'project-limit-number-setting-page' %}
     <script type="text/javascript">
-        $('#template_id').select2();
+        $('#template_id').select2({
+            placeholder: "{% trans 'Select rule name' %}"
+        });
         $('#project_limit_number_id').select2();
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution.id }},

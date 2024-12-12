@@ -17,7 +17,6 @@ from django.test import RequestFactory
 from admin.project_limit_number.template import views
 from django.contrib.auth.models import AnonymousUser
 from admin_tests.utilities import setup_user_view, setup_view
-from nose import tools as nt
 from tests.base import AdminTestCase
 
 
@@ -189,8 +188,28 @@ class TestProjectLimitNumberTemplatesViewCreate(AdminTestCase):
         self.request = RequestFactory().get(self.request)
         view = setup_user_view(views.ProjectLimitNumberTemplatesViewCreate(), self.request, user=AnonymousUser())
         permission_result = view.test_func()
-        nt.assert_equal(permission_result, False)
-        nt.assert_equal(view.raise_exception, False)
+        self.assertFalse(permission_result)
+        self.assertFalse(view.raise_exception)
+
+        # Assert handle_no_permission
+        with self.assertRaises(PermissionDenied):
+            self.view.handle_no_permission()
+
+    def test_permission_unauthenticated_post(self):
+        request = RequestFactory().post(self.request)
+        request.user = AnonymousUser()
+        view = setup_view(self.view, request)
+        permission_result = view.test_func()
+        self.assertFalse(permission_result)
+        self.assertFalse(view.raise_exception)
+
+        # Assert handle_no_permission
+        response = self.view.handle_no_permission()
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(
+            json.loads(response.content),
+            {'error_message': 'Authentication credentials were not provided.'}
+        )
 
     def test_permission_super_admin(self):
         """Test access with super admin"""
@@ -202,11 +221,15 @@ class TestProjectLimitNumberTemplatesViewCreate(AdminTestCase):
 
     def test_permission_user(self):
         """Test access with user"""
-        request = RequestFactory().delete(self.request)
+        request = RequestFactory().get(self.request)
         request.user = AuthUserFactory()
         self.view = setup_view(self.view, request)
         self.assertFalse(self.view.test_func())
         self.assertTrue(self.view.raise_exception)
+
+        # Assert handle_no_permission
+        with self.assertRaises(PermissionDenied):
+            self.view.handle_no_permission()
 
     def test_get_context_data(self):
         context = self.view.get_context_data()
@@ -231,7 +254,7 @@ class TestProjectLimitNumberTemplatesViewCreate(AdminTestCase):
                 },
                 {
                     'attribute_name': ATTRIBUTE_NAME_LIST[1],
-                    'setting_type': 2,
+                    'setting_type': 3,
                     'attribute_value': 'o'
                 }
             ]
@@ -242,6 +265,25 @@ class TestProjectLimitNumberTemplatesViewCreate(AdminTestCase):
         response = self.view.post(request)
 
         self.assertEqual(response.status_code, HTTPStatus.CREATED)
+
+    def test_post_template_name_only_spaces(self):
+        invalid_data = {
+            'template_name': '   ',
+            'attribute_list': [
+                {
+                    'attribute_name': ATTRIBUTE_NAME_LIST[0],
+                    'setting_type': 1,
+                    'attribute_value': 'os'
+                }
+            ]
+        }
+        request = RequestFactory().post('/project_limit_number/templates/create/',
+                                        json.dumps(invalid_data),
+                                        content_type='application/json')
+        response = self.view.post(request)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error_message'], 'template_name is required.')
 
     def test_post_invalid_attribute_name(self):
         invalid_data = {
@@ -294,6 +336,23 @@ class TestProjectLimitNumberTemplatesViewCreate(AdminTestCase):
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error_message'], 'setting_type is invalid.')
 
+    def test_post_invalid_attribute_value_list(self):
+        invalid_data = {
+            'template_name': 'New Template',
+            'attribute_list': [
+                {
+                    'attribute_name': ATTRIBUTE_NAME_LIST[0],
+                    'setting_type': 5,
+                    'attribute_value': ','
+                }
+            ]
+        }
+        request = RequestFactory().post('/project_limit_number/templates/create/', json.dumps(invalid_data), content_type='application/json')
+        response = self.view.post(request)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error_message'], 'attribute_value is invalid.')
+
     @mock.patch('osf.models.ProjectLimitNumberTemplate.objects.filter')
     def test_post_existing_template_name(self, mock_filter):
         mock_filter.return_value.exists.return_value = True
@@ -319,7 +378,7 @@ class TestProjectLimitNumberTemplatesViewCreate(AdminTestCase):
         response = self.view.post(request)
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error_message'], 'Invalid JSON format')
+        self.assertEqual(response_data['error_message'], 'The request body is invalid.')
 
     @mock.patch('osf.models.ProjectLimitNumberTemplate.save')
     def test_post_exception(self, mock_save):
@@ -364,8 +423,8 @@ class TestProjectLimitNumberTemplatesViewUpdate(AdminTestCase):
         self.request = RequestFactory().get(self.request)
         view = setup_user_view(views.ProjectLimitNumberTemplatesViewUpdate(), self.request, user=AnonymousUser())
         permission_result = view.test_func()
-        nt.assert_equal(permission_result, False)
-        nt.assert_equal(view.raise_exception, False)
+        self.assertEqual(permission_result, False)
+        self.assertEqual(view.raise_exception, False)
 
     def test_permission_user(self):
         """Test access with user"""
@@ -689,7 +748,7 @@ class TestProjectLimitNumberTemplatesSettingSaveAvailabilityView(AdminTestCase):
         response = self.view.put(request)
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error_message'], 'Invalid JSON format')
+        self.assertEqual(response_data['error_message'], 'The request body is invalid.')
 
     @mock.patch('osf.models.ProjectLimitNumberTemplate.objects.filter')
     def test_put_data_request_invalid(self, mock_filter):
@@ -831,11 +890,32 @@ class TestUpdateProjectLimitNumberTemplatesSettingView(AdminTestCase):
         response = self.view.put(request)
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error_message'], 'Invalid JSON format')
+        self.assertEqual(response_data['error_message'], 'The request body is invalid.')
 
     def test_put_data_request_invalid(self):
         data = {
             'template_name': '',
+            'attribute_list': [
+                {
+                    'id': 1,
+                    'attribute_name': ATTRIBUTE_NAME_LIST[0],
+                    'setting_type': 1,
+                    'attribute_value': 'attribute_value'
+                }
+            ]
+        }
+
+        request = RequestFactory().put(self.request,
+                                       json.dumps(data),
+                                       content_type='application/json')
+        response = self.view.put(request, template_id=self.template.id)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error_message'], 'template_name is required.')
+
+    def test_put_template_name_only_spaces(self):
+        data = {
+            'template_name': '   ',
             'attribute_list': [
                 {
                     'id': 1,
@@ -1159,6 +1239,33 @@ class TestUpdateProjectLimitNumberTemplatesSettingView(AdminTestCase):
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error_message'], 'attribute_name is invalid.')
 
+    def test_put_attribute_value_list_is_invalid(self):
+        """Test put attribute value list is invalid"""
+        data = {
+            'template_name': 'Template',
+            'attribute_list': [
+                {
+                    'id': self.template_attribute1.id,
+                    'attribute_name': ATTRIBUTE_NAME_LIST[0],
+                    'setting_type': 5,
+                    'attribute_value': ','
+                }
+            ]
+        }
+
+        request = RequestFactory().put(
+            self.request,
+            json.dumps(data),
+            content_type='application/json'
+        )
+        request.user = self.super_admin
+        self.view = setup_view(self.view, request, template_id=self.template.id)
+
+        response = self.view.put(request, template_id=self.template.id)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error_message'], 'attribute_value is invalid.')
+
     def test_put_successful_update_with_multiple_attributes(self):
         """Test successful update with multiple attributes"""
         valid_data = {
@@ -1254,8 +1361,8 @@ class TestDeleteProjectLimitNumberTemplatesSettingView(AdminTestCase):
     def test_permission_user(self):
         view = setup_user_view(views.DeleteProjectLimitNumberTemplatesSettingView(), self.request, user=self.user)
         permission_result = view.test_func()
-        nt.assert_equal(permission_result, False)
-        nt.assert_equal(view.raise_exception, True)
+        self.assertEqual(permission_result, False)
+        self.assertEqual(view.raise_exception, True)
 
         # Assert handle_no_permission
         with self.assertRaises(PermissionDenied):
