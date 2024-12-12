@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import connections, models
-from django.db.models import ForeignKey
+from django.db.models import ForeignKey, UniqueConstraint
 from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -275,6 +275,10 @@ class GuidVersionsThrough(BaseModel):
     version = models.PositiveIntegerField(null=True, blank=True)
     is_rejected = models.BooleanField(default=False)
 
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['guid', 'version'], name='unique_guid_version')
+        ]
 
 class BlackListGuid(BaseModel):
     id = models.AutoField(primary_key=True)
