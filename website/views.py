@@ -23,7 +23,7 @@ from website import settings
 from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import features, exceptions
-from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
+from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode, VersionedGuidMixin
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -295,7 +295,7 @@ def resolve_guid(guid, suffix=None):
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-    if not guid == resource._id:
+    if issubclass(resource.__class__, VersionedGuidMixin) and guid != resource._id:
         return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
 
     if not resource or not resource.deep_url:
