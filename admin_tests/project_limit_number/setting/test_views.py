@@ -1497,7 +1497,7 @@ class TestCreateProjectLimitNumberSettingView(AdminTestCase):
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(
             json.loads(response.content),
-            {'error_message': 'attribute_list is invalid.'}
+            {'error_message': 'attribute_id is invalid.'}
         )
 
     def test_post_nonexistent_institution(self):
@@ -2095,7 +2095,7 @@ class TestUpdateProjectLimitNumberSettingView(AdminTestCase):
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(
             json.loads(response.content),
-            {'error_message': 'attribute_list is invalid.'}
+            {'error_message': 'id is invalid.'}
         )
 
     def test_put_nonexistent_setting(self):

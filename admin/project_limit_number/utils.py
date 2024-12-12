@@ -144,11 +144,13 @@ def check_logic_condition(user, setting_attribute_list):
                 if use_left_suffix_match
                 else user.get('username') == attribute_value
             )
-
-        if not user_extended_data_attribute:
+        elif user_extended_data_attribute is None:
+            # Only get user_extended_data_attribute if attribute name is not MAIL_GRDM
             user_extended_data_attribute = UserExtendedData.objects.filter(user_id=user.get('id')).first()
             if user_extended_data_attribute:
                 user_extended_data_attribute = getattr(user_extended_data_attribute, 'data', {}).get('idp_attr', {})
+            else:
+                user_extended_data_attribute = {}
 
         if attribute_name == EDU_PERSON_PRINCIPAL_NAME:
             if use_left_suffix_match:

@@ -544,3 +544,16 @@ class TestCheckLogicCondition(TestCase):
 
         result = check_logic_condition(self.user_dict, setting_attribute_list)
         self.assertFalse(result)
+
+    def test_user_has_no_extended_data(self):
+        """Test user with no extended data"""
+        self.user_extended_data.delete()
+
+        setting_attribute_list = [{
+            'attribute_name': 'sn',
+            'setting_type': 3,
+            'attribute_value': 'Test'
+        }]
+
+        result = check_logic_condition(self.user_dict, setting_attribute_list)
+        self.assertFalse(result)
