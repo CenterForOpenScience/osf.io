@@ -290,16 +290,13 @@ def resolve_guid(guid, suffix=None):
     if 'revision' in request.args:
         return resolve_guid_download(guid)
 
-    # Retrieve guid data if present, error if missing
-    resource, _ = Guid.load_referent(guid)
-    if not resource:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    if issubclass(resource.__class__, VersionedGuidMixin) and guid != resource._id:
-        return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
-
+    # Retrieve resource and version from a guid str
+    resource, version = Guid.load_referent(guid)
     if not resource or not resource.deep_url:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+    if version and guid != resource._id:
+        return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
 
     if isinstance(resource, DraftNode):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
