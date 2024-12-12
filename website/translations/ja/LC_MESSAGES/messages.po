@@ -644,6 +644,7 @@ msgid "Service Base URL"
 msgstr "サービスベースURL"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:102
+#: addons/wiki/templates/import_wiki_page.mako:91
 #: addons/metadata/templates/metadata_node_settings.mako:92
 msgid "OK"
 msgstr "OK"
@@ -2448,8 +2449,8 @@ msgstr "開始日"
 msgid "Start time"
 msgstr "開始日時"
 
-#: website/templates/include/profile/jobs.mako:58
-#: website/templates/include/profile/jobs.mako:73
+#: website/templates/include/profile/jobs.mako:74
+#: website/templates/include/profile/jobs.mako:89
 #: website/templates/include/profile/schools.mako:58
 #: website/templates/include/profile/schools.mako:73
 msgid "-- Month --"
