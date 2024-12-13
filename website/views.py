@@ -23,7 +23,7 @@ from website import settings
 from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import features, exceptions
-from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode, VersionedGuidMixin
+from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
