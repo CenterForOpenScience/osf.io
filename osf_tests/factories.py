@@ -796,56 +796,49 @@ class PreprintFactory(DjangoModelFactory):
 
     @classmethod
     def create_version(cls, *args, **kwargs):
-        source_preprint = kwargs.pop('preprint')
+
         update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
         update_task_patcher.start()
 
-        if not source_preprint.date_published:
-            raise Exception(f'Unable to create a new version as source preprint is still unpublished')
-        if source_preprint.versioned_guids.first().guid.referent.machine_state == 'pending':
-            raise Exception(f'Unable to create a new version as source preprint is still in `pending` state')
-        if not source_preprint.is_latest_version:
-            raise Exception(f'Unable to create a new version as source preprint must be a latest version')
-
-        initial_guid = source_preprint.guids.first()
-        latest_version = initial_guid.versions.order_by('-version').first().version
-
-        filename = kwargs.pop('filename', None) or f'preprint_file_{latest_version + 1}_file.txt'
-        file_size = kwargs.pop('file_size', 1337)
+        source_preprint = kwargs.pop('preprint')
+        # TODO: assert not source_preprint.has_unpublished_pending_version()
+        guid_obj = source_preprint.guids.first()
+        latest_version = guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
+        assert latest_version.is_latest_version
+        last_version_number = guid_obj.versions.order_by('-version').first().version
 
         finish = kwargs.pop('finish', True)
         set_doi = kwargs.pop('set_doi', True)
-        is_published = True
+        is_published = kwargs.pop('is_published', True)
+        # TODO: machine_state = kwargs.pop('machine_state', 'initial')
+        license_details = None
+        if latest_version.license:
+            license_details = {
+                'id': latest_version.license.node_license.license_id,
+                'copyrightHolders': latest_version.license.copyright_holders,
+                'year': latest_version.license.year
+            }
+        subjects = [[el] for el in latest_version.subjects.all().values_list('_id', flat=True)]
+
         target_class = cls._meta.model
         instance = cls._build(target_class, *args, **kwargs)
-        license_details = None
-        if source_preprint.license:
-            license_details = {
-                'id': source_preprint.license.node_license.license_id,
-                'copyrightHolders': source_preprint.license.copyright_holders,
-                'year': source_preprint.license.year
-            }
-
-        subjects = [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)]
-        instance.article_doi = source_preprint.article_doi
+        instance.article_doi = latest_version.article_doi
         instance.date_published = timezone.now()
         user = kwargs.pop('creator', None) or instance.creator
         instance.machine_state = 'initial'
-        instance.provider = source_preprint.provider
+        instance.provider = latest_version.provider
         instance.save()
-
-        initial_guid.referent = instance
-        initial_guid.object_id = instance.pk
-        initial_guid.save()
 
         models.GuidVersionsThrough.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),
             object_id=instance.pk,
-            guid=initial_guid,
-            version=latest_version + 1
+            guid=guid_obj,
+            version=last_version_number + 1
         )
 
+        filename = kwargs.pop('filename', None) or f'preprint_file_{last_version_number + 1}_file.txt'
+        file_size = kwargs.pop('file_size', 1337)
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),
@@ -853,11 +846,10 @@ class PreprintFactory(DjangoModelFactory):
             name=filename,
             materialized_path=f'/{filename}'
         )
-
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
         preprint_file.save()
+        # TODO: why setting machine state here? it should happen in `if finish`
+        # TODO: instance.machine_state = machine_state
         from addons.osfstorage import settings as osfstorage_settings
-
         preprint_file.create_version(user, {
             'object': '06d80e',
             'service': 'cloud',
@@ -870,7 +862,7 @@ class PreprintFactory(DjangoModelFactory):
 
         if finish:
             auth = Auth(user)
-
+            # TODO: make sure user is an admin contributor
             instance.set_primary_file(preprint_file, auth=auth, save=True)
             instance.set_subjects(subjects, auth=auth)
             if license_details:
@@ -880,6 +872,10 @@ class PreprintFactory(DjangoModelFactory):
             mock_create_identifier = create_task_patcher.start()
             if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
+                guid_obj.referent = instance
+                guid_obj.object_id = instance.pk
+                guid_obj.save()
+            # TODO: instance.machine_state = machine_state
             create_task_patcher.stop()
 
         instance.save()
