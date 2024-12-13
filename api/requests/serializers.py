@@ -83,7 +83,7 @@ class NodeRequestSerializer(RequestSerializer):
     )
 
     requested_permissions = ser.ChoiceField(
-        help_text='These are supposed to represent the default permission suggested when the Node admin sees users '
+        help_text='These are the default permission suggested when the Node admin sees users '
                   'listed in an `Request Access` list.',
         choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS,
         required=False,

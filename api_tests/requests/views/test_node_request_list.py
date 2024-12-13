@@ -233,7 +233,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert not mock_mail.called
 
     @mock.patch('api.requests.serializers.send_mail')
-    def test_email_not_sent_outside_institutiona(self, mock_mail, app, project, institutional_admin, url,
+    def test_email_not_sent_outside_institution(self, mock_mail, app, project, institutional_admin, url,
                                                  create_payload, user_without_affiliation, institution):
         """
         Test that you are prevented from requesting a user with the correct institutional affiliation.
@@ -295,7 +295,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
             institution
     ):
         """
-        Ensure BCC option works as expected, sending messages to all institutional admins except the sender.
+        Ensure BCC option works as expected, sending messages to sender giving them a copy for themselves.
         """
         create_payload['data']['attributes']['bcc_sender'] = True
 
@@ -333,7 +333,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
             institution
     ):
         """
-        Ensure reply-to option works as expected, sending messages to all institutional admins except the sender.
+        Ensure reply-to option works as expected, allowing a reply to header be added to the email.
         """
         create_payload['data']['attributes']['reply_to'] = True
 

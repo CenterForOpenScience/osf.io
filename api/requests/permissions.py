@@ -69,10 +69,6 @@ class InstitutionalAdminRequestTypePermission(drf_permissions.BasePermission):
         if request_type != NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             return True
 
-        auth = get_user_auth(request)
-        if not auth.user:
-            return False
-
         institution_id = request.data.get('institution')
         if not institution_id:
             return False
@@ -82,7 +78,7 @@ class InstitutionalAdminRequestTypePermission(drf_permissions.BasePermission):
         except Institution.DoesNotExist:
             return False
 
-        return auth.user.is_institutional_admin(institution)
+        return get_user_auth(request).user.is_institutional_admin(institution)
 
 
 class PreprintRequestPermission(drf_permissions.BasePermission):
