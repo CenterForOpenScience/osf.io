@@ -1,4 +1,4 @@
-from rest_framework import permissions as drf_permissions
+from rest_framework import exceptions, permissions as drf_permissions
 
 from api.base.utils import get_user_auth
 from osf.models import (
@@ -71,14 +71,17 @@ class InstitutionalAdminRequestTypePermission(drf_permissions.BasePermission):
 
         institution_id = request.data.get('institution')
         if not institution_id:
-            return False
+            raise exceptions.ValidationError({'institution': 'Institution is required.'})
 
         try:
             institution = Institution.objects.get(_id=institution_id)
         except Institution.DoesNotExist:
-            return False
+            raise exceptions.ValidationError({'institution': 'Institution is does not exist.'})
 
-        return get_user_auth(request).user.is_institutional_admin(institution)
+        if get_user_auth(request).user.is_institutional_admin(institution):
+            return True
+        else:
+            raise exceptions.PermissionDenied({'institution': 'You do not have permission to perform this action for this institution.'})
 
 
 class PreprintRequestPermission(drf_permissions.BasePermission):

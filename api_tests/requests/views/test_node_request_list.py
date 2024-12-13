@@ -142,6 +142,10 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         return InstitutionFactory()
 
     @pytest.fixture()
+    def institution2(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
     def user_with_affiliation(self, institution):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution)
@@ -202,7 +206,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth, expect_errors=True)
         assert res.status_code == 403
-        assert 'You do not have permission to perform this action' in res.json['errors'][0]['detail']
+        assert 'You do not have permission to perform this action for this institution.' in res.json['errors'][0]['detail']
 
     def test_institutional_admin_can_add_requested_permission(self, app, project, institutional_admin, url, create_payload):
         """
@@ -217,6 +221,38 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         node_request = project.requests.get(creator=institutional_admin)
         assert node_request.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
         assert node_request.requested_permissions == 'admin'
+
+    def test_institutional_admin_needs_institution(self, app, project, institutional_admin, url, create_payload):
+        """
+        Test that the payload needs the institution relationship and gives the correct error message.
+        """
+        del create_payload['data']['relationships']['institution']
+
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert 'Institution is required.' in res.json['errors'][0]['detail']
+
+    def test_institutional_admin_invalid_institution(self, app, project, institutional_admin, url, create_payload):
+        """
+        Test that the payload validates the institution relationship and gives the correct error message when it's
+        invalid.
+        """
+        create_payload['data']['relationships']['institution']['data']['id'] = 'invalid_id'
+
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert 'Institution is does not exist.' in res.json['errors'][0]['detail']
+
+    def test_institutional_admin_unauth_institution(self, app, project, institution2, institutional_admin, url, create_payload):
+        """
+        Test that the view authenticates the relationship between the institution and the user and gives the correct
+        error message when it's unauthorized.'
+        """
+        create_payload['data']['relationships']['institution']['data']['id'] = institution2._id
+
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'You do not have permission to perform this action for this institution.' in res.json['errors'][0]['detail']
 
     @mock.patch('api.requests.serializers.send_mail')
     def test_email_not_sent_without_recipient(self, mock_mail, app, project, institutional_admin, url,
