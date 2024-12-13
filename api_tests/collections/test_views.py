@@ -3894,10 +3894,14 @@ class TestCollectionLinkedPreprints:
 
     @pytest.fixture()
     def id_linked_preprints(self, collection):
-        return list(
-            collection.guid_links.values_list(
-                '_id', flat=True)
-        )
+        res = []
+        for guid in collection.guid_links.all():
+            if guid.is_versioned:
+                for through_item in guid.versions.all():
+                    res.append(f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{through_item.version}')
+            else:
+                res.append(guid._id)
+        return res
 
     def test_linked_preprints_returns_everything(
             self, app, url_collection_linked_preprints,
@@ -3906,7 +3910,7 @@ class TestCollectionLinkedPreprints:
         res = app.get(url_collection_linked_preprints, auth=user_one.auth)
 
         assert res.status_code == 200
-        preprints_returned = [linked_preprint['id'].split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+        preprints_returned = [linked_preprint['id']
                           for linked_preprint in res.json['data']]
         assert len(preprints_returned) == len(id_linked_preprints)
 
@@ -3933,7 +3937,7 @@ class TestCollectionLinkedPreprints:
                                                                collection._id), auth=user.auth)
 
         assert res.status_code == 200
-        preprints_returned = [linked_preprint['id'].split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
+        preprints_returned = [linked_preprint['id']
                           for linked_preprint in res.json['data']]
         assert len(preprints_returned) == len(id_linked_preprints)
 
