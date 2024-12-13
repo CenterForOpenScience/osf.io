@@ -800,7 +800,17 @@ class PreprintFactory(DjangoModelFactory):
         update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
         update_task_patcher.start()
 
-        filename = kwargs.pop('filename', None) or 'preprint_file.txt'
+        if not source_preprint.date_published:
+            raise Exception(f'Unable to create a new version as source preprint is still unpublished')
+        if source_preprint.versioned_guids.first().guid.referent.machine_state == 'pending':
+            raise Exception(f'Unable to create a new version as source preprint is still in `pending` state')
+        if not source_preprint.is_latest_version:
+            raise Exception(f'Unable to create a new version as source preprint must be a latest version')
+
+        initial_guid = source_preprint.guids.first()
+        latest_version = initial_guid.versions.order_by('-version').first().version
+
+        filename = kwargs.pop('filename', None) or f'preprint_file_{latest_version + 1}_file.txt'
         file_size = kwargs.pop('file_size', 1337)
 
         finish = kwargs.pop('finish', True)
@@ -821,21 +831,19 @@ class PreprintFactory(DjangoModelFactory):
         instance.date_published = timezone.now()
         user = kwargs.pop('creator', None) or instance.creator
         instance.machine_state = 'initial'
+        instance.provider = source_preprint.provider
         instance.save()
 
-        initial_guid = source_preprint.guids.first()
         initial_guid.referent = instance
         initial_guid.object_id = instance.pk
         initial_guid.save()
-
-        last_version = initial_guid.versions.order_by('-version').first().version
 
         models.GuidVersionsThrough.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),
             object_id=instance.pk,
             guid=initial_guid,
-            version=last_version + 1
+            version=latest_version + 1
         )
 
         preprint_file = OsfStorageFile.create(

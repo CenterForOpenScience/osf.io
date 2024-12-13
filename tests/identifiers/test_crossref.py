@@ -43,7 +43,6 @@ def preprint():
 @pytest.fixture()
 def preprint_version(preprint):
     versioned_preprint = PreprintFactory.create_version(preprint=preprint)
-    versioned_preprint.license.node_license.url = 'https://creativecommons.org/licenses/by/4.0/legalcode'
     return versioned_preprint
 
 @pytest.fixture()
@@ -135,7 +134,6 @@ class TestCrossRefClient:
         with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
             crossref_xml = crossref_client.build_metadata(preprint_version)
         root = lxml.etree.fromstring(crossref_xml)
-        print(lxml.etree.tostring(root, pretty_print=True).decode("utf-8"))
 
         # header
         assert root.find('.//{%s}doi_batch_id' % crossref.CROSSREF_NAMESPACE).text == preprint_version._id
@@ -160,7 +158,7 @@ class TestCrossRefClient:
 
         doi = doi_relations.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE)
         assert doi is not None
-        assert doi.text == f'None/FK2osf.io/{preprint_version._id}'
+        assert doi.text == settings.DOI_FORMAT.format(prefix=preprint_version.provider.doi_prefix, guid=preprint_version._id)
 
         related_item = doi_relations.find('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
         assert related_item is not None
