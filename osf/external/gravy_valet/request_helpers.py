@@ -121,7 +121,7 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
         endpoint_url=resource_result.get_related_link('configured_citation_addons'),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+        params={'include': f'{ADDON_EXTERNAL_CITATIONS_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
 
 
@@ -257,8 +257,10 @@ def get_gv_citation_url_list_for_project(auth, addon_short_name, project, reques
 def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
     data = {
         'attributes': {
-            'operation_name': 'list_root_collections',
-            'operation_kwargs': {},
+            'operation_name': 'list_collection_items',
+            'operation_kwargs': {
+                'collection_id': addon['attributes']['root_folder'] if list_id == 'ROOT' else list_id
+            },
         },
         'relationships': {
             'thru_addon': {
@@ -270,9 +272,6 @@ def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
         },
         'type': 'addon-operation-invocations'
     }
-    if list_id:
-        data['attributes']['operation_kwargs']['collection_id'] = list_id
-        data['attributes']['operation_name'] = 'list_collection_items'
     gv_response = _make_gv_request(
         endpoint_url=f'{settings.GRAVYVALET_URL}/v1/addon-operation-invocations/',
         requesting_user=auth.user,
