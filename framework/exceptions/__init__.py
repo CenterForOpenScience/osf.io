@@ -111,7 +111,7 @@ class TemplateHTTPError(HTTPError):
         self.template = template
         super().__init__(code, message, redirect_url, data)
 
-class PendingPreprintVersionExists(FrameworkError):
-    """Raised if an pending preprint version exists
+class UnpublishedPendingPreprintVersionExists(FrameworkError):
+    """Raised if an unpublished pending preprint version exists
     """
     pass

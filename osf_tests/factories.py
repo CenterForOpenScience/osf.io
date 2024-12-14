@@ -4,11 +4,12 @@ from importlib import import_module
 import datetime
 from random import randint
 from unittest import mock
+
+from datacite.schema42 import contributors
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from unittest.mock import patch, Mock
 
-import factory
 import pytz
 import factory.django
 from factory.django import DjangoModelFactory
@@ -794,41 +795,36 @@ class PreprintFactory(DjangoModelFactory):
         instance.save()
         return instance
 
+    # TODO: maybe we should use model's `create_version` and use api's update_data
     @classmethod
-    def create_version(cls, *args, **kwargs):
+    def create_version(cls, create_from, creator=None, final_machine_state='accepted', is_published=True, set_doi=True):
+
+        # Run a few checks
+        assert final_machine_state in ['pending', 'accepted']
+        assert create_from and not create_from.has_unpublished_pending_version()
+        guid_obj = create_from.guids.first()
+        latest_version = guid_obj.referent
+        assert latest_version.is_latest_version
+        last_version_number = guid_obj.versions.order_by('-version').first().version
+        if not creator:
+            creator = latest_version.creator
 
         update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
         update_task_patcher.start()
 
-        source_preprint = kwargs.pop('preprint')
-        # TODO: assert not source_preprint.has_unpublished_pending_version()
-        guid_obj = source_preprint.guids.first()
-        latest_version = guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
-        assert latest_version.is_latest_version
-        last_version_number = guid_obj.versions.order_by('-version').first().version
-
-        finish = kwargs.pop('finish', True)
-        set_doi = kwargs.pop('set_doi', True)
-        is_published = kwargs.pop('is_published', True)
-        # TODO: machine_state = kwargs.pop('machine_state', 'initial')
-        license_details = None
-        if latest_version.license:
-            license_details = {
-                'id': latest_version.license.node_license.license_id,
-                'copyrightHolders': latest_version.license.copyright_holders,
-                'year': latest_version.license.year
-            }
-        subjects = [[el] for el in latest_version.subjects.all().values_list('_id', flat=True)]
-
+        # Create new version from the latest version
         target_class = cls._meta.model
-        instance = cls._build(target_class, *args, **kwargs)
-        instance.article_doi = latest_version.article_doi
-        instance.date_published = timezone.now()
-        user = kwargs.pop('creator', None) or instance.creator
+        instance = cls._build(
+            target_class,
+            provider=latest_version.provider,
+            title=latest_version.title,
+            description=latest_version.description,
+            creator=creator,
+            node=latest_version.mode,
+        )
         instance.machine_state = 'initial'
         instance.provider = latest_version.provider
         instance.save()
-
         models.GuidVersionsThrough.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),
@@ -837,8 +833,8 @@ class PreprintFactory(DjangoModelFactory):
             version=last_version_number + 1
         )
 
-        filename = kwargs.pop('filename', None) or f'preprint_file_{last_version_number + 1}_file.txt'
-        file_size = kwargs.pop('file_size', 1337)
+        # Prepare and add file
+        filename = f'preprint_file_{last_version_number + 1}.txt'
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),
@@ -847,36 +843,59 @@ class PreprintFactory(DjangoModelFactory):
             materialized_path=f'/{filename}'
         )
         preprint_file.save()
-        # TODO: why setting machine state here? it should happen in `if finish`
-        # TODO: instance.machine_state = machine_state
+        auth = Auth(instance.creator)
+        instance.set_primary_file(preprint_file, auth=auth, save=True)
         from addons.osfstorage import settings as osfstorage_settings
-        preprint_file.create_version(user, {
+        location =  {
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': file_size,
+        }
+        metadata = {
+            'size': 1357,
             'contentType': 'img/png'
-        }).save()
+        }
+        preprint_file.create_version(creator, location, metadata=metadata).save()
+
+        # Set relationships
+        contributor_list = latest_version.contributor_set.exclude(
+            user=latest_version.creator
+        ).values('visible', 'user_id', '_order')
+        for contributor in contributor_list:
+            instance.contributor_set.create(**{**contributor, 'preprint_id': instance.id})
+        for institution in latest_version.affiliated_institutions.all():
+            instance.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
+
+        # Set other fields
+        # TODO: we should copy all fields
+        if latest_version.license:
+            license_details = {
+                'id': latest_version.license.node_license.license_id,
+                'copyrightHolders': latest_version.license.copyright_holders,
+                'year': latest_version.license.year
+            }
+            instance.set_preprint_license(license_details, auth=auth)
+        subjects = [[el] for el in latest_version.subjects.all().values_list('_id', flat=True)]
+        instance.set_subjects(subjects, auth=auth)
+        instance.article_doi = latest_version.article_doi
+        instance.set_published(is_published, auth=auth)
+        # Note: machine_state needs to be adjusted after `set_published` is called.
+        instance.machine_state = final_machine_state
+        instance.save()
         update_task_patcher.stop()
 
-        if finish:
-            auth = Auth(user)
-            # TODO: make sure user is an admin contributor
-            instance.set_primary_file(preprint_file, auth=auth, save=True)
-            instance.set_subjects(subjects, auth=auth)
-            if license_details:
-                instance.set_preprint_license(license_details, auth=auth)
-            instance.set_published(is_published, auth=auth)
-            create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
-            mock_create_identifier = create_task_patcher.start()
-            if is_published and set_doi:
+        if not is_published:
+            assert not set_doi and final_machine_state != 'accepted'
+        else:
+            if set_doi:
+                create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
+                mock_create_identifier = create_task_patcher.start()
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
-                guid_obj.referent = instance
-                guid_obj.object_id = instance.pk
-                guid_obj.save()
-            # TODO: instance.machine_state = machine_state
-            create_task_patcher.stop()
+                create_task_patcher.stop()
+            instance.is_published = True
+            guid_obj.referent = instance
+            guid_obj.object_id = instance.pk
+            guid_obj.save()
 
         instance.save()
         return instance
