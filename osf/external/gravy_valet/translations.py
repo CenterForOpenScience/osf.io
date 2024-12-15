@@ -38,7 +38,7 @@ class _LegacyConfigsForWBKey(enum.Enum):
     onedrive = OneDriveAddonAppConfig
     owncloud = OwnCloudAddonAppConfig
     s3 = S3AddonAppConfig
-    zotero = ZoteroAddonAppConfig
+    zotero_org = ZoteroAddonAppConfig
     mendeley = MendeleyAddonConfig
 
 

@@ -73,9 +73,14 @@ def oauth_callback(service_name, auth):
 def _forward_to_addon_service(oauth_version):
     code = request.args.get('code')
     state = request.args.get('state')
+    oauth_token = request.args.get('oauth_token')
+    oauth_verifier = request.args.get('oauth_verifier')
     query_params = {
         'code': code,
         'state': state,
+        'oauth_token': oauth_token,
+        'oauth_verifier': oauth_verifier,
     }
+
     gv_url = urlunparse(urlparse(GRAVYVALET_URL)._replace(path=f'/v1/{oauth_version}/callback', query=urlencode(query_params)))
-    requests.get(gv_url)
+    requests.get(gv_url, cookies=request.cookies)
