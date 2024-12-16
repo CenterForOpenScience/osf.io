@@ -116,7 +116,7 @@ class RegistrationRequestSerializer(RequestSerializer):
 class NodeRequestCreateSerializer(NodeRequestSerializer):
     request_type = ser.ChoiceField(read_only=False, required=False, choices=NodeRequestTypes.choices())
     message_recipient = RelationshipField(
-        help_text='An optional user who will receive a an email explaining the nature of the request.',
+        help_text='An optional user who will receive an email explaining the nature of the request.',
         required=False,
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
