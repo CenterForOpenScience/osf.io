@@ -36,7 +36,7 @@ class NodeRequestPermission(drf_permissions.BasePermission):
             raise ValueError(f'Not a request-related model: {obj}')
 
         if not node.access_requests_enabled:
-            return False
+            raise exceptions.PermissionDenied(f'{node._id} does not have Access Requests enabled')
 
         is_requester = target is not None and target.creator == auth.user or trigger == DefaultTriggers.SUBMIT.value
         is_node_admin = node.has_permission(auth.user, osf_permissions.ADMIN)
