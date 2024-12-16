@@ -400,4 +400,3 @@ def copy_files_with_timestamp(auth, src, target_node, parent=None, name=None):
             copy_files_with_timestamp(auth, child, target_node, parent=cloned)
 
     return cloned
-

@@ -40,7 +40,6 @@ from framework.celery_tasks import app as celery_app
 from osf import features
 from website import settings as website_settings
 from website.util import waterbutler
-from website.files import utils as files_utils
 from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
