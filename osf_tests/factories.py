@@ -5,7 +5,6 @@ import datetime
 from random import randint
 from unittest import mock
 
-from datacite.schema42 import contributors
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from unittest.mock import patch, Mock
