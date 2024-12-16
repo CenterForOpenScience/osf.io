@@ -820,7 +820,7 @@ class PreprintFactory(DjangoModelFactory):
             title=latest_version.title,
             description=latest_version.description,
             creator=creator,
-            node=latest_version.mode,
+            node=latest_version.node,
         )
         instance.machine_state = 'initial'
         instance.provider = latest_version.provider
