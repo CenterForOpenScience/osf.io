@@ -89,6 +89,9 @@ var OPERATIONS = {
     }
 };
 
+var isInUploadFolderProcess = false;
+var isOngoingUploadFolder = false;
+
 // Cross browser key codes for the Command key
 var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
@@ -1086,7 +1089,18 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
     }
-    treebeard.dropzone.options.queuecomplete(file);
+
+    // Do not display dialog when upload folder is on-going
+    if (!isOngoingUploadFolder) {
+        treebeard.dropzone.options.queuecomplete(file);
+    } else {
+        if (msgText !== 'Upload canceled.') {
+            $osf.growl(
+                'Error',
+                msgText
+            );
+        }
+    }
 }
 
 /**
@@ -1108,6 +1122,17 @@ function _uploadEvent(event, item, col) {
     self.dropzone.hiddenFileInput.click();
     if (!item.open) {
         self.updateFolder(null, item);
+    }
+    // Add event listener only for this event to avoid handling conflict with Upload folder event
+    self.dropzone.hiddenFileInput.addEventListener('change', _onchange, { once: true });
+
+    function _onchange() {
+        var files = self.dropzone.hiddenFileInput.files || [];
+
+        // Add files to Treebeard
+        for (var i = 0; i < files.length; i++) {
+            self.dropzone.addFile(files[i]);
+        }
     }
 }
 
@@ -1155,18 +1180,13 @@ function _uploadFolderEvent(event, item, mode, col) {
     if (!item.open) {
         tb.updateFolder(null, item);
     }
-    tb.dropzone.hiddenFileInput.addEventListener('change', _onchange);
+    // Add event listener only for this event to avoid handling conflict with Upload event
+    tb.dropzone.hiddenFileInput.addEventListener('change', _onchange, { once: true });
 
     function _onchange() {
-        var node_parent = tb.multiselected()[0];
-        var root_parent = tb.multiselected()[0];
-        var files = [];
-        var total_files_size = 0;
-
-        // get all files in folder
-        files = tb.dropzone.hiddenFileInput.files;
-        total_files_size = 0;
-
+        var nodeParent = tb.multiselected()[0];
+        var files = tb.dropzone.hiddenFileInput.files || [];
+        var totalFilesSize = 0;
         // check folder is empty
         if (files.length === 0) {
             $osf.growl('Error', gettext('The folder that wants to upload is empty.'), 'danger', 5000);
@@ -1175,179 +1195,169 @@ function _uploadFolderEvent(event, item, mode, col) {
 
         // calculate total files size in folder
         for (var i = 0; i < files.length; i++) {
-            total_files_size += files[i].size;
+            totalFilesSize += files[i].size;
         }
 
-        node_parent.open = true;
-        total_files_size = parseFloat(total_files_size).toFixed(2);
+        nodeParent.open = true;
+        totalFilesSize = parseFloat(totalFilesSize).toFixed(2);
         var quota = null;
 
         if (!item.data.provider) {
             return;
         }
+        // check upload quota for upload folder
+        if (item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') {
+            // call api get used quota and max quota
+            quota = $.ajax({
+                async: false,
+                method: 'GET',
+                url: item.data.nodeApiUrl + 'get_creator_quota/',
+            });
 
-        // call api get used quota and max quota
-        quota = $.ajax({
-            async: false,
-            method: 'GET',
-            url: item.data.nodeApiUrl + 'get_creator_quota/',
+            if (!quota.responseJSON) {
+                return;
+            }
+
+            quota = quota.responseJSON;
+
+            if (parseFloat(quota.used) + parseFloat(totalFilesSize) > quota.max) {
+                $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
+                formatProperUnit(totalFilesSize)),
+                'danger', 5000);
+                return;
+            }
+        }
+
+        var createdFolders = [];
+        // Start
+        isInUploadFolderProcess = true;
+        isOngoingUploadFolder = true;
+        var parentFolderList = [];
+        var parentPath = '/';
+        for (var index = 0; index < files.length; index++) {
+            var file = files[index];
+            if (file && file.webkitRelativePath) {
+                var fileParentPath = file.webkitRelativePath.substring(0, file.webkitRelativePath.lastIndexOf('/'));
+                if (!parentFolderList.includes(fileParentPath)) {
+                    parentFolderList.push(fileParentPath);
+                }
+            }
+        }
+
+        // Add parent folders
+        processDataSequentially(_addFolders, parentFolderList).then(function () {
+            // After add parent folders, start upload files process
+            for (var index = 0; index < files.length; index++) {
+                var file = files[index];
+                var parentPath = file.webkitRelativePath.substring(0, file.webkitRelativePath.lastIndexOf('/'));
+                var createdParentFolder = createdFolders.find(function (item) {
+                    return item.path === '/' + parentPath + '/';
+                });
+
+                if (!createdParentFolder) {
+                    // If parent folder path is not fully created, rerun create folder
+                    processDataSequentially(_addFolders, [parentPath]).then(function () {
+                        createdParentFolder = createdFolders.find(function (item) {
+                            return item.path === '/' + parentPath + '/';
+                        });
+                        _addFile(file, createdParentFolder.node_parent);
+                    });
+                } else {
+                    _addFile(file, createdParentFolder.node_parent);
+                }
+            }
+            isInUploadFolderProcess = false;
         });
 
-        if (!quota.responseJSON) {
-            return;
-        }
-
-        quota = quota.responseJSON;
-
-        // check upload quota for upload folder
-        if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max) {
-            $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
-            formatProperUnit(total_files_size)),
-            'danger', 5000);
-            return;
-        }
-
-        var created_folders = [];
-        var created_path = [];
-
-        // Start
-        node_parent = _pushObject(node_parent, 0, files, files[0], 0, _pushObject);
-
-        function _pushObject(node_parent, index, list_paths, file, file_index, next) {
-            var _obj, folder_name;
-            // Stop
-            if (!file) {
-                // console.log('Stop');
-                return node_parent;
-            }
-            // get item object
-            if (index >=0 && index < list_paths.length) {
-                _obj = list_paths[index];
-            }
-            // check type of File
-            if (typeof _obj === typeof file) {
-                // console.log(file);
-                if (file.webkitRelativePath.length === 0) {
-                    tb.dropzoneItemCache = tb.multiselected()[0];
-                    tb.dropzone.addFile(file);
-                    // next file
-                    var next_file_index = ++file_index;
-                    return _pushObject(node_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
+        function processDataSequentially(asyncFunction, remainingData) {
+            // Call function sequentially by promise then chaining
+            return new Promise(function(resolve, reject) {
+                function iterateFunctionCall(remainingData) {
+                    if (remainingData.length === 0) {
+                        return resolve();
+                    }
+                    asyncFunction(remainingData).then(function (item) {
+                        iterateFunctionCall(remainingData.slice(1));
+                    }).catch(reject);
                 }
-
-                // change list_paths of File obj
-                var new_list_paths = file.webkitRelativePath.split('/');
-                return _pushObject(node_parent, 0, new_list_paths, file, file_index, _pushObject);
-            }
-
-            // else, it is folder and file
-            folder_name = _obj;
-            if (file.name === folder_name) {
-                // next file
-                // console.log(folder_name, parent && parent.data.name);
-                return _pushFile(node_parent, file, file_index);
-            }
-            // Create each folder detected from file path
-            // console.log(folder_name, parent && parent.data.name);
-            return _pushFolder(node_parent, index, list_paths, file, file_index, next);
+                iterateFunctionCall(remainingData);
+            });
         }
 
-        function _pushFile(node_parent, file, file_index) {
-            node_parent.open = true;
-            tb.dropzoneItemCache = node_parent;
+        function _addFile(file, nodeParent) {
+            // Add file to Dropzone
+            nodeParent.open = true;
+            tb.dropzoneItemCache = nodeParent;
             tb.dropzone.addFile(file);
-            // console.log('Pushed');
-            // next file
-            var next_file_index = ++file_index;
-            return _pushObject(root_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
         }
 
-        function _pushFolder(node_parent, index, list_paths, file, file_index, next) {
-            var folder_name;
-            if (index >=0 && index < list_paths.length) {
-                folder_name = list_paths[index];
-            }
-            // var currentFolder = created_folders.find(x => x.name === folder_name);
-            var currentFolder = null;
-            for(var i = 0; i < created_folders.length; i++){
-                if(created_folders[i].name === folder_name){
-                    currentFolder = created_folders[i];
-                    break;
-                }
-            }
-            var currentFolderPath = '/' + folder_name + '/';
+        function _addFolders(parentFolderList) {
+            // Add multiple folder parts in folder path
+            // Get only first item, the list will slice the iterated item after promise
+            var fileParentPath = parentFolderList[0];
+            var newFolderParts = fileParentPath.split('/');
+            parentPath = '/';
+            nodeParent = tb.multiselected()[0];
+            return processDataSequentially(_addFolder, newFolderParts);
+        }
 
-            node_parent.open = true;
-
-            if (node_parent.data.materialized) {
-                currentFolderPath = node_parent.data.materialized + folder_name + '/';
-            }
-
-            // check folder is created
-            // var child = node_parent.children.find((e) => {
-            //     return e.data.materialized === currentFolderPath;
-            // });
-            var child = null;
-            for(var j = 0; j < node_parent.children.length; j++){
-                if(encodeURI(node_parent.children[j].data.materialized) === encodeURI(currentFolderPath)){
-                    child = node_parent.children[j];
-                    break;
-                }
-            }
-            if (!!child) {
-                // console.log('child', child);
-                var next_folder_index = ++index;
-                return next(child, next_folder_index, list_paths, file, file_index, next);
-            }
-
-            if (currentFolder && created_path.includes(currentFolderPath)) {
-                // console.log('currentFolder.parent', currentFolder.parent);
-                var new_next_folder_index = ++index;
-                return next(currentFolder.node_parent, new_next_folder_index, list_paths, file, file_index, next);
-            }
-
-            created_path.push(currentFolderPath);
-            // console.log('Creating');
-
-            // prepare data for request new folder
-            var extra = {};
-            var path = node_parent.data.path || '/';
-            var options = {name: folder_name, kind: 'folder', waterbutlerURL: node_parent.data.waterbutlerURL};
-            if ((node_parent.data.provider === 'github') || (node_parent.data.provider === 'gitlab')) {
-                extra.branch = node_parent.data.branch;
-                options.branch = node_parent.data.branch;
-            }
-
-            // call api for create folder
-            m.request({
-                method: 'PUT',
-                background: true,
-                config: $osf.setXHRAuthorization,
-                url: waterbutler.buildCreateFolderUrl(path, node_parent.data.provider, node_parent.data.nodeId, options, extra)
-            }).then(function (item) {
-                item = tb.options.lazyLoadPreprocess.call(this, item).data;
-                inheritFromParent({data: item}, node_parent, ['branch']);
-                item = tb.createItem(item, node_parent.id);
-                node_parent = item;
-                orderFolder.call(tb, node_parent);
-
-                // store folder is created
-                created_folders.push({
-                    'name': folder_name,
-                    'node_parent': node_parent,
+        function _addFolder(folderParts) {
+            // Add a folder part
+            return new Promise(function(resolve, reject) {
+                // Get only first item, the list will slice the iterated item after promise
+                var folderName = folderParts[0];
+                var newFolderPath = parentPath + folderName + '/';
+                var createdFolderItem = createdFolders.find(function (item) {
+                    return item.path === newFolderPath;
                 });
-                // console.log('Created');
-                // nest folder
-                var next_folder_index = ++index;
-                return next(node_parent, next_folder_index, list_paths, file, file_index, next);
-            }, function (data) {
-                if (data && (data.code === 409 || data.code === 406)) {
-                    $osf.growl(data.message);
-                    m.redraw();
-                } else {
-                    $osf.growl(gettext('Folder creation failed.'));
+                if (createdFolderItem) {
+                    parentPath = createdFolderItem.path;
+                    nodeParent = createdFolderItem.node_parent;
+                    return resolve();
                 }
-                return root_parent;
+                // Prepare data for request new folder
+                var extra = {};
+                var path = nodeParent.data.path || '/';
+                var options = {name: folderName, kind: 'folder', waterbutlerURL: nodeParent.data.waterbutlerURL};
+                if ((nodeParent.data.provider === 'github') || (nodeParent.data.provider === 'gitlab')) {
+                    extra.branch = nodeParent.data.branch;
+                    options.branch = nodeParent.data.branch;
+                }
+                // Call api for create folder
+                nodeParent.open = true;
+                return m.request({
+                    method: 'PUT',
+                    background: true,
+                    config: $osf.setXHRAuthorization,
+                    url: waterbutler.buildCreateFolderUrl(path, nodeParent.data.provider, nodeParent.data.nodeId, options, extra)
+                }).then(function (item) {
+                    // Add folder item to Treebeard and process after API call
+                    item = tb.options.lazyLoadPreprocess.call(this, item).data;
+                    inheritFromParent({data: item}, nodeParent, ['branch']);
+                    item = tb.createItem(item, nodeParent.id);
+                    nodeParent = item;
+                    nodeParent.open = true;
+                    orderFolder.call(tb, nodeParent);
+
+                    // store folder is created
+                    createdFolders.push({
+                        'path': newFolderPath,
+                        'node_parent': nodeParent,
+                    });
+                    parentPath = newFolderPath;
+                    return resolve();
+                }, function (data) {
+                    // Handle API error
+                    if (data && (data.code === 409 || data.code === 406)) {
+                        $osf.growl(data.message);
+                        m.redraw();
+                    } else if (data && (data.code === 401)) {
+                        window.location.href = '/login';
+                    } else {
+                        $osf.growl(gettext('Folder creation failed.'));
+                    }
+                    return reject();
+                });
             });
         }
     }
@@ -2925,7 +2935,7 @@ function _fangornQueueComplete(treebeard) {
             m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
         ]), m('', [m('h3.break-word.modal-title', gettext('Upload Status')), m('p', total - failed + '/' + total + gettext(' files succeeded.'))]));
         $('[data-toggle="tooltip"]').tooltip();
-    } else {
+    } else if (!isOngoingUploadFolder) {
         fileStatuses.map(function(status) {
            if (!status.success) {
                 if (status.message !== 'Upload canceled.') {
@@ -2937,6 +2947,7 @@ function _fangornQueueComplete(treebeard) {
            }
         });
     }
+    isOngoingUploadFolder = false;
 }
 
 /**
@@ -3482,7 +3493,7 @@ tbOptions = {
                     return false;
                 }
             }
-            if (item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') {
+            if ((item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') && !isInUploadFolderProcess) {
                 quota = $.ajax({
                     async: false,
                     method: 'GET',
@@ -3618,6 +3629,7 @@ Fangorn.ButtonEvents = {
     _removeEvent : _removeEvent,
     createFolder : _createFolder,
     _gotoFileEvent : gotoFileEvent,
+    _uploadFolderEvent : _uploadFolderEvent,
 };
 
 Fangorn.DefaultColumns = {

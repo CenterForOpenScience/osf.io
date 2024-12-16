@@ -4854,7 +4854,7 @@ msgstr "問題が解決しない場合は、%1$sにお問い合わせくださ�
 
 #: website/static/js/fangorn.js:1172
 msgid "The folder that wants to upload is empty."
-msgstr ""
+msgstr "空のフォルダはアップロードできません。"
 
 #: website/static/js/fangorn.js:1204
 msgid "Not enough quota to upload. The total size of the folder %1$s."
