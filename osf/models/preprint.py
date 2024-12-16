@@ -16,7 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
-from framework.exceptions import PermissionsError, PendingPreprintVersionExists
+from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
 from rest_framework.exceptions import NotFound
 
@@ -312,50 +312,49 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         return preprint
 
-    def has_pending_version(self):
-        guid = self.guids.first()
-        last_version = guid.versions.order_by('-version').first().referent
-        return last_version.machine_state == 'pending'
+    def has_unpublished_pending_version(self):
+        guid_obj = self.guids.first()
+        last_not_rejected_version = guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
+        return last_not_rejected_version.machine_state == 'pending' and not last_not_rejected_version.is_published
 
     @classmethod
     def create_version(cls, create_from_guid, auth):
-        base_guid = Guid.load(create_from_guid)
-        source_preprint = cls.load(base_guid._id)
+
+        guid_obj = Guid.load(create_from_guid)
+        # Guid object always points to the latest ever-published (i.e. either published or withdrawn) version
+        source_preprint = cls.load(guid_obj._id)
         if not source_preprint:
             raise NotFound
         if not source_preprint.has_permission(auth.user, ADMIN):
             raise PermissionsError
-        if source_preprint.has_pending_version():
-            raise PendingPreprintVersionExists
+        if source_preprint.has_unpublished_pending_version():
+            raise UnpublishedPendingPreprintVersionExists
+        # Note: last version may not be the latest version
+        last_version_number = guid_obj.versions.order_by('-version').first().version
 
-        last_version = base_guid.versions.order_by('-version').first().version
-        data_for_update = {}
-        data_for_update['tags'] = source_preprint.tags.all().values_list('name', flat=True)
+        # Prepare data to clone/update
+        data_for_update = {
+            'subjects': [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)],
+            'tags': source_preprint.tags.all().values_list('name', flat=True),
+            'original_publication_date': source_preprint.original_publication_date,
+            'custom_publication_citation': source_preprint.custom_publication_citation,
+            'article_doi': source_preprint.article_doi, 'has_coi': source_preprint.has_coi,
+            'conflict_of_interest_statement': source_preprint.conflict_of_interest_statement,
+            'has_data_links': source_preprint.has_data_links, 'why_no_data': source_preprint.why_no_data,
+            'data_links': source_preprint.data_links,
+            'has_prereg_links': source_preprint.has_prereg_links,
+            'why_no_prereg': source_preprint.why_no_prereg, 'prereg_links': source_preprint.prereg_links,
+        }
         if source_preprint.license:
             data_for_update['license_type'] = source_preprint.license.node_license
             data_for_update['license'] = {
                 'copyright_holders': source_preprint.license.copyright_holders,
                 'year': source_preprint.license.year
             }
-
-        data_for_update['subjects'] = [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)]
-
-        data_for_update['original_publication_date'] = source_preprint.original_publication_date
-        data_for_update['custom_publication_citation'] = source_preprint.custom_publication_citation
-        data_for_update['article_doi'] = source_preprint.article_doi
-
-        data_for_update['has_coi'] = source_preprint.has_coi
-        data_for_update['conflict_of_interest_statement'] = source_preprint.conflict_of_interest_statement
-        data_for_update['has_data_links'] = source_preprint.has_data_links
-        data_for_update['why_no_data'] = source_preprint.why_no_data
-        data_for_update['data_links'] = source_preprint.data_links
-        data_for_update['has_prereg_links'] = source_preprint.has_prereg_links
-        data_for_update['why_no_prereg'] = source_preprint.why_no_prereg
-        data_for_update['prereg_links'] = source_preprint.prereg_links
-
         if source_preprint.node:
             data_for_update['node'] = source_preprint.node
 
+        # Create a preprint obj for the new version
         preprint = cls(
             provider=source_preprint.provider,
             title=source_preprint.title,
@@ -363,26 +362,29 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             description=source_preprint.description,
         )
         preprint.save()
-        # add contributors
+
+        # Add contributors
         for contributor_info in source_preprint.contributor_set.exclude(user=source_preprint.creator).values('visible', 'user_id', '_order'):
             preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
 
-        # add affiliated institutions
+        # Add affiliated institutions
         for institution in source_preprint.affiliated_institutions.all():
             preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
+        # Update Guid obj to point to the new version if there is no moderation
         if not preprint.provider.reviews_workflow:
-            base_guid.referent = preprint
-            base_guid.object_id = preprint.pk
-            base_guid.content_type = ContentType.objects.get_for_model(preprint)
-            base_guid.save()
+            guid_obj.referent = preprint
+            guid_obj.object_id = preprint.pk
+            guid_obj.content_type = ContentType.objects.get_for_model(preprint)
+            guid_obj.save()
 
+        # Create an entry in the `GuidVersionsThrough` table
         guid_version = GuidVersionsThrough(
-            referent=base_guid.referent,
-            object_id=base_guid.object_id,
-            content_type=base_guid.content_type,
-            version=last_version + 1,
-            guid=base_guid
+            referent=guid_obj.referent,
+            object_id=guid_obj.object_id,
+            content_type=guid_obj.content_type,
+            version=last_version_number + 1,
+            guid=guid_obj
         )
         guid_version.save()
 

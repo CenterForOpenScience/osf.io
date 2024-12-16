@@ -42,7 +42,7 @@ def preprint():
 
 @pytest.fixture()
 def preprint_version(preprint):
-    versioned_preprint = PreprintFactory.create_version(preprint=preprint)
+    versioned_preprint = PreprintFactory.create_version(preprint)
     return versioned_preprint
 
 @pytest.fixture()

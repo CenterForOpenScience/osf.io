@@ -38,7 +38,7 @@ from api.nodes.serializers import (
 from api.base.metrics import MetricsSerializerMixin
 from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
-from framework.exceptions import PermissionsError, PendingPreprintVersionExists
+from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
@@ -591,7 +591,7 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
             preprint, update_data = Preprint.create_version(create_from_guid, auth)
         except PermissionsError:
             raise PermissionDenied(detail='You must have admin permissions to create new version.')
-        except PendingPreprintVersionExists:
+        except UnpublishedPendingPreprintVersionExists:
             raise Conflict(detail='Before creating a new version, you must publish the latest version.')
         # TODO add more checks
         return self.update(preprint, update_data)
