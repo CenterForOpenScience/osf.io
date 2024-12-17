@@ -82,6 +82,8 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         query_params = {
             'code': 'somecode',
             'state': 'somestatetoken',
+            'oauth_token': 'someoauthtoken',
+            'oauth_verifier': 'someverifier',
         }
         with override_flag(ENABLE_GV, active=True):
             request_url = urlunparse(urlparse(url)._replace(query=urlencode(query_params)))
