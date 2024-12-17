@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from io import BytesIO
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Attachment, Mail, FileContent, Category
+from sendgrid.helpers.mail import Mail, Bcc, ReplyTo, Category, Attachment, FileContent
 
 from framework import sentry
 from framework.celery_tasks import app
@@ -155,10 +155,12 @@ def _send_with_sendgrid(
     )
 
     if reply_to:
-        mail.reply_to = [{'email': reply_to}]
+        mail.reply_to = ReplyTo(reply_to)
 
     if bcc_addr:
-        mail.add_bcc([{'email': email} for email in bcc_addr])
+        if isinstance(bcc_addr, str):
+            bcc_addr = [bcc_addr]
+        mail.bcc = [Bcc(email) for email in bcc_addr]
 
     if categories:
         mail.category = [Category(x) for x in categories]
