@@ -5,7 +5,21 @@ from email.mime.text import MIMEText
 from io import BytesIO
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Bcc, ReplyTo, Category, Attachment, FileContent
+from sendgrid.helpers.mail import (
+    Mail,
+    Bcc,
+    ReplyTo,
+    Category,
+    Attachment,
+    FileContent,
+    Email,
+    To,
+    Personalization,
+    Cc,
+    FileName,
+    Disposition,
+)
+
 
 from framework import sentry
 from framework.celery_tasks import app
@@ -135,6 +149,7 @@ def _send_with_sendgrid(
     categories=None,
     attachment_name: str = None,
     attachment_content=None,
+    cc_addr=None,
     bcc_addr=None,
     reply_to=None,
     client=None,
@@ -148,36 +163,46 @@ def _send_with_sendgrid(
 
     client = client or SendGridAPIClient(settings.SENDGRID_API_KEY)
     mail = Mail(
-        from_email=from_addr,
+        from_email=Email(from_addr),
         html_content=message,
-        to_emails=to_addr,
-        subject=subject
+        subject=subject,
     )
 
-    if reply_to:
-        mail.reply_to = ReplyTo(reply_to)
+    # Personalization to handle To, CC, and BCC sendgrid client concept
+    personalization = Personalization()
+
+    personalization.add_to(To(to_addr))
+
+    if cc_addr:
+        if isinstance(cc_addr, str):
+            cc_addr = [cc_addr]
+        for email in cc_addr:
+            personalization.add_cc(Cc(email))
 
     if bcc_addr:
         if isinstance(bcc_addr, str):
             bcc_addr = [bcc_addr]
-        mail.bcc = [Bcc(email) for email in bcc_addr]
+        for email in bcc_addr:
+            personalization.add_bcc(Bcc(email))
+
+    if reply_to:
+        mail.reply_to = ReplyTo(reply_to)
+
+    mail.add_personalization(personalization)
 
     if categories:
-        mail.category = [Category(x) for x in categories]
+        mail.add_category([Category(x) for x in categories])
 
     if attachment_name and attachment_content:
         attachment = Attachment(
-            file_content=_content_to_bytes(
-                FileContent(
-                    b64encode(attachment_content).decode()
-                )
-            ),
-            file_name=attachment_name
+            file_content=FileContent(b64encode(attachment_content).decode()),
+            file_name=FileName(attachment_name),
+            disposition=Disposition('attachment')
         )
         mail.add_attachment(attachment)
 
     response = client.send(mail)
-    if response.status_code not in (200, 201):
+    if response.status_code not in (200, 201, 202):
         sentry.log_message(
             f'{response.status_code} error response from sendgrid.'
             f'from_addr:  {from_addr}\n'
