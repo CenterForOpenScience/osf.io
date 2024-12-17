@@ -47,11 +47,10 @@ class _LegacyConfigsForWBKey(enum.Enum):
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
-    addon_type = gv_account_data.resource_type.split('-')[1]
     include_path = f'external_{gv_account_data.resource_type.split('-')[1]}_service',
     service_wb_key = gv_account_data.get_included_attribute(
         include_path=include_path,
-        attribute_name='external_service_name' if addon_type == AddonType.CITATION else 'wb_key'
+        attribute_name='wb_key'
 
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
@@ -67,7 +66,7 @@ def make_ephemeral_node_settings(gv_addon_data: gv_requests.JSONAPIResultEntry, 
     include_path = ('base_account', f'external_{addon_type}_service')
     service_wb_key = gv_addon_data.get_included_attribute(
         include_path=include_path,
-        attribute_name='external_service_name' if addon_type == AddonType.CITATION else 'wb_key'
+        attribute_name='wb_key'
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     settings_class = get_settings_class(addon_type)
