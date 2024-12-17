@@ -26,8 +26,7 @@ if TYPE_CHECKING:
 class AddonType(enum.StrEnum):
     STORAGE = enum.auto()
     CITATION = enum.auto()
-    # TODO: fully support compute addons
-    #REMOTE_COMPUTE = enum.auto()
+    COMPUTING = enum.auto()
 
 class _LegacyConfigsForWBKey(enum.Enum):
     """Mapping from a GV ExternalStorageService's waterbutler key to the legacy Addon config."""

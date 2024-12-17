@@ -162,7 +162,7 @@ class _FakeStorageAccount(_FakeGVEntity):
     display_name: str = ''
     external_storage_service: _FakeAddonProvider | None = None
     external_citation_service: _FakeCitationAddonProvider | None = None
-    external_remote_compute_service: _FakeRemoteComputeAddonProvider | None = None
+    external_computing_service: _FakeRemoteComputeAddonProvider | None = None
 
     @property
     @cache
@@ -220,7 +220,7 @@ class _FakeCitationAccount(_FakeStorageAccount):
 
 @dataclasses.dataclass(frozen=True)
 class _FakeRemoteComputeAccount(_FakeStorageAccount):
-    RESOURCE_TYPE = 'authorized-remote_compute-accounts'
+    RESOURCE_TYPE = 'authorized-computing-accounts'
 
 
 @dataclasses.dataclass(frozen=True)
@@ -276,7 +276,7 @@ class _FakeCitationAddon(_FakeStorageAddon):
 
 @dataclasses.dataclass(frozen=True)
 class _FakeRemoteComputeAddon(_FakeStorageAddon):
-    RESOURCE_TYPE = 'configured-remote_compute-addons'
+    RESOURCE_TYPE = 'configured-computing-addons'
 
 class FakeGravyValet:
     ROUTES = {
@@ -376,7 +376,7 @@ class FakeGravyValet:
         elif isinstance(connected_provider, _FakeAddonProvider):
             account_type = 'storage'
         elif isinstance(connected_provider, _FakeRemoteComputeAddonProvider):
-            account_type = 'remote_compute'
+            account_type = 'computing'
         else:
             raise Exception('unknown addon provider type')
 
@@ -774,4 +774,4 @@ def _validate_resource_access(requested_resource_uri, headers):
 class _AccountTypes(Enum):
     storage = _FakeStorageAccount
     citation = _FakeCitationAccount
-    remote_compute = _FakeRemoteComputeAccount
+    computing = _FakeRemoteComputeAccount
