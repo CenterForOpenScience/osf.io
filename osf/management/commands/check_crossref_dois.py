@@ -67,10 +67,7 @@ def check_crossref_dois(dry_run=True):
         pending_dois = []
         for preprint in preprint_batch:
             prefix = preprint.provider.doi_prefix
-            guid = preprint._id
-            if VersionedGuidMixin.GUID_VERSION_DELIMITER in preprint._id:
-                guid = preprint._id.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[0]
-            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=prefix, guid=guid)}')
+            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)}')
 
         url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
 
@@ -85,7 +82,11 @@ def check_crossref_dois(dry_run=True):
 
         for preprint in preprints_response:
             guid = preprint['DOI'].split('/')[-1]
-            pending_preprint = preprints_with_pending_dois.get(guids___id=guid)
+            base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+            pending_preprint = preprints_with_pending_dois.get(
+                versioned_guids__guid___id=base_guid,
+                versioned_guids__version=version,
+            )
             if not dry_run:
                 pending_preprint.set_identifier_values(preprint['DOI'], save=True)
             else:

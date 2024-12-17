@@ -845,7 +845,7 @@ class PreprintFactory(DjangoModelFactory):
         auth = Auth(instance.creator)
         instance.set_primary_file(preprint_file, auth=auth, save=True)
         from addons.osfstorage import settings as osfstorage_settings
-        location =  {
+        location = {
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
