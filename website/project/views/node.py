@@ -525,6 +525,8 @@ def view_project(auth, node, **kwargs):
             )
             data = CITATION_WIDGET_DATA[item]
             data['complete'] = bool(citation_list_urls)
+            if data['complete']:
+                data['list_id'] = citation_list_urls[0]['attributes']['root_folder']
             addons_widget_data[item] = data
     else:
         if 'zotero' in ret['addons']:
