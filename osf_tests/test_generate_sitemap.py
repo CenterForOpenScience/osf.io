@@ -98,6 +98,15 @@ class TestGenerateSitemap:
         return PreprintFactory(project=project_preprint_osf,
                                              creator=user_admin_project_public,
                                              provider=provider_osf)
+    @pytest.fixture(autouse=True)
+    def preprint_osf_blank(self, project_preprint_osf, user_admin_project_public, provider_osf):
+        return PreprintFactory(project=project_preprint_osf,
+                                             creator=user_admin_project_public,
+                                             provider=provider_osf)
+
+    @pytest.fixture(autouse=True)
+    def preprint_osf_version(self, preprint_osf_blank):
+        return PreprintFactory.create_version(preprint=preprint_osf_blank)
 
     @pytest.fixture(autouse=True)
     def preprint_withdrawn(self, project_preprint_osf, user_admin_project_public, provider_osf):
@@ -118,7 +127,7 @@ class TestGenerateSitemap:
     def all_included_links(self, user_admin_project_public, user_admin_project_private, project_registration_public,
                              project_preprint_osf, project_preprint_other,
                              registration_active, provider_other, provider_osf,
-                             preprint_osf, preprint_other, preprint_withdrawn):
+                             preprint_osf, preprint_osf_version, preprint_other, preprint_withdrawn):
         # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
@@ -129,9 +138,11 @@ class TestGenerateSitemap:
             project_preprint_other.url,
             registration_active.url,
             f'/preprints/{provider_osf._id}/{preprint_osf._id}',
+            f'/preprints/{provider_osf._id}/{preprint_osf_version._id}',
             f'/preprints/{provider_other._id}/{preprint_other._id}',
             f'/preprints/{provider_osf._id}/{preprint_withdrawn._id}',
             f'/{preprint_osf._id}/download/?format=pdf',
+            f'/{preprint_osf_version._id}/download/?format=pdf',
             f'/{preprint_other._id}/download/?format=pdf'
         ])
         urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
