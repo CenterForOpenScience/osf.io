@@ -89,3 +89,77 @@ class TestPreprintFactory:
         assert guid_version.referent == preprint
         assert guid_version.guid == guid
         assert guid_version.version == 1
+
+    def test_create_version_increments_version_number(self):
+        original_preprint = PreprintFactory()
+        original_guid = original_preprint.guids.first()
+        assert original_guid is not None
+        assert original_guid.versions.count() == 1
+
+        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+        assert new_preprint is not None
+        assert original_guid.versions.count() == 2
+
+        versions = original_guid.versions.order_by('version')
+        assert versions[0].version == 1  # Original version
+        assert versions[1].version == 2  # New version
+
+    def test_create_version_copies_fields(self):
+        title = 'Original Preprint Title'
+        description = 'Original description.'
+        original_preprint = PreprintFactory(title=title, description=description)
+
+        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+
+        assert new_preprint.title == title
+        assert new_preprint.description == description
+        assert new_preprint.provider == original_preprint.provider
+        assert new_preprint.creator == original_preprint.creator
+
+    def test_create_version_copies_subjects(self):
+        original_preprint = PreprintFactory()
+        original_subjects = [[subject._id] for subject in original_preprint.subjects.all()]
+
+        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+
+        new_subjects = [[subject._id] for subject in new_preprint.subjects.all()]
+        assert original_subjects == new_subjects
+
+    def test_create_version_copies_contributors(self):
+        original_preprint = PreprintFactory()
+        contributors_before = list(
+            original_preprint.contributor_set.exclude(user=original_preprint.creator).values_list('user_id', flat=True)
+        )
+
+        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+
+        contributors_after = list(
+            new_preprint.contributor_set.exclude(user=new_preprint.creator).values_list('user_id', flat=True)
+        )
+        assert contributors_before == contributors_after
+
+    def test_create_version_with_machine_state(self):
+        original_preprint = PreprintFactory()
+        new_preprint = PreprintFactory.create_version(
+            create_from=original_preprint, final_machine_state='accepted'
+        )
+
+        assert new_preprint.machine_state == 'accepted'
+
+    def test_create_version_published_flag(self):
+        original_preprint = PreprintFactory(is_published=True)
+        original_guid = original_preprint.guids.first()
+        new_preprint = PreprintFactory.create_version(
+            create_from=original_preprint, is_published=True
+        )
+        original_guid.refresh_from_db()
+        assert new_preprint.is_published is True
+        assert original_guid.referent == new_preprint
+
+    def test_create_version_unpublished(self):
+        original_preprint = PreprintFactory(is_published=True)
+        new_preprint = PreprintFactory.create_version(
+            create_from=original_preprint, is_published=False, set_doi=False, final_machine_state='pending'
+        )
+        assert new_preprint.is_published is False
+        assert new_preprint.machine_state == 'pending'
