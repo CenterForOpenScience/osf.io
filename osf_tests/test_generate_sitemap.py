@@ -106,7 +106,7 @@ class TestGenerateSitemap:
 
     @pytest.fixture(autouse=True)
     def preprint_osf_version(self, preprint_osf_blank):
-        return PreprintFactory.create_version(preprint=preprint_osf_blank)
+        return PreprintFactory.create_version(create_from=preprint_osf_blank, creator=preprint_osf_blank.creator)
 
     @pytest.fixture(autouse=True)
     def preprint_withdrawn(self, project_preprint_osf, user_admin_project_public, provider_osf):
