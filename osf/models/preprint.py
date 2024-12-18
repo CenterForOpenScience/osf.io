@@ -16,8 +16,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
+from rest_framework.exceptions import NotFound
 
 from .subject import Subject
 from .tag import Tag
@@ -42,7 +43,7 @@ from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin
 from .identifiers import IdentifierMixin, Identifier
 from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
@@ -55,6 +56,7 @@ from osf.exceptions import (
 )
 from django.contrib.postgres.fields import ArrayField
 from api.share.utils import update_share
+from api.providers.workflows import Workflows
 
 logger = logging.getLogger(__name__)
 
@@ -106,11 +108,25 @@ class PreprintManager(models.Manager):
         # TODO: Remove need for .distinct using correct subqueries
         return ret.distinct('id', 'created') if include_non_public else ret
 
+class PublishedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_published=True)
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
+class RejectedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(actions__to_state='rejected')
+
+class EverPublishedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(date_published__isnull=False)
+
+class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
         Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     objects = PreprintManager()
+    published_objects = PublishedPreprintManager()
+    ever_published_objects = EverPublishedPreprintManager()
+    rejected_objects = RejectedPreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
@@ -268,6 +284,111 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     def __unicode__(self):
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
+
+    @classmethod
+    def create(cls, provider, title, creator, description):
+        base_guid = Guid.objects.create()
+        preprint = cls(
+            provider=provider,
+            title=title,
+            creator=creator,
+            description=description,
+        )
+        preprint.save()
+
+        base_guid.referent = preprint
+        base_guid.object_id = preprint.pk
+        base_guid.content_type = ContentType.objects.get_for_model(preprint)
+        base_guid.save()
+
+        guid_version = GuidVersionsThrough(
+            referent=base_guid.referent,
+            object_id=base_guid.object_id,
+            content_type=base_guid.content_type,
+            version=1,
+            guid=base_guid
+        )
+        guid_version.save()
+
+        return preprint
+
+    def has_unpublished_pending_version(self):
+        guid_obj = self.guids.first()
+        last_not_rejected_version = guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
+        return last_not_rejected_version.machine_state == 'pending' and not last_not_rejected_version.is_published
+
+    @classmethod
+    def create_version(cls, create_from_guid, auth):
+
+        guid_obj = Guid.load(create_from_guid)
+        # Guid object always points to the latest ever-published (i.e. either published or withdrawn) version
+        source_preprint = cls.load(guid_obj._id)
+        if not source_preprint:
+            raise NotFound
+        if not source_preprint.has_permission(auth.user, ADMIN):
+            raise PermissionsError
+        if source_preprint.has_unpublished_pending_version():
+            raise UnpublishedPendingPreprintVersionExists
+        # Note: last version may not be the latest version
+        last_version_number = guid_obj.versions.order_by('-version').first().version
+
+        # Prepare data to clone/update
+        data_for_update = {
+            'subjects': [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)],
+            'tags': source_preprint.tags.all().values_list('name', flat=True),
+            'original_publication_date': source_preprint.original_publication_date,
+            'custom_publication_citation': source_preprint.custom_publication_citation,
+            'article_doi': source_preprint.article_doi, 'has_coi': source_preprint.has_coi,
+            'conflict_of_interest_statement': source_preprint.conflict_of_interest_statement,
+            'has_data_links': source_preprint.has_data_links, 'why_no_data': source_preprint.why_no_data,
+            'data_links': source_preprint.data_links,
+            'has_prereg_links': source_preprint.has_prereg_links,
+            'why_no_prereg': source_preprint.why_no_prereg, 'prereg_links': source_preprint.prereg_links,
+        }
+        if source_preprint.license:
+            data_for_update['license_type'] = source_preprint.license.node_license
+            data_for_update['license'] = {
+                'copyright_holders': source_preprint.license.copyright_holders,
+                'year': source_preprint.license.year
+            }
+        if source_preprint.node:
+            data_for_update['node'] = source_preprint.node
+
+        # Create a preprint obj for the new version
+        preprint = cls(
+            provider=source_preprint.provider,
+            title=source_preprint.title,
+            creator=auth.user,
+            description=source_preprint.description,
+        )
+        preprint.save()
+
+        # Add contributors
+        for contributor_info in source_preprint.contributor_set.exclude(user=source_preprint.creator).values('visible', 'user_id', '_order'):
+            preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
+
+        # Add affiliated institutions
+        for institution in source_preprint.affiliated_institutions.all():
+            preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
+
+        # Update Guid obj to point to the new version if there is no moderation
+        if not preprint.provider.reviews_workflow:
+            guid_obj.referent = preprint
+            guid_obj.object_id = preprint.pk
+            guid_obj.content_type = ContentType.objects.get_for_model(preprint)
+            guid_obj.save()
+
+        # Create an entry in the `GuidVersionsThrough` table
+        guid_version = GuidVersionsThrough(
+            referent=preprint,
+            object_id=guid_obj.object_id,
+            content_type=guid_obj.content_type,
+            version=last_version_number + 1,
+            guid=guid_obj
+        )
+        guid_version.save()
+
+        return preprint, data_for_update
 
     @property
     def is_deleted(self):
@@ -475,6 +596,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             csl['issued'] = datetime_to_csl(self.date_published)
 
         return csl
+
+    @property
+    def is_latest_version(self):
+        if not self.date_published:
+            return False
+        return self.versioned_guids.first().guid.referent.version == self.version
+
+    def get_preprint_versions(self):
+        guids = self.versioned_guids.first().guid.versions.all()
+        preprint_versions = Preprint.objects.filter(id__in=[vg.object_id for vg in guids]).order_by('-id')
+        return preprint_versions
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         return web_url_for(view_name, pid=self._id,
@@ -1277,6 +1409,69 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             )
         if save:
             self.save()
+
+    # Override ReviewableMixin
+    def run_submit(self, user):
+        """Run the 'reject' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_submit(user=user)
+        provider = self.provider
+        reviews_workflow = provider.reviews_workflow
+        need_guid_update = any(
+            [
+                reviews_workflow == Workflows.POST_MODERATION.value,
+                reviews_workflow == Workflows.HYBRID_MODERATION.value and
+                any([
+                    provider.get_group('moderator') in user.groups.all(),
+                    provider.get_group('admin') in user.groups.all()
+                ])
+            ]
+        )
+        if need_guid_update:
+            base_guid_obj = self.versioned_guids.first().guid
+            base_guid_obj.referent = self
+            base_guid_obj.object_id = self.pk
+            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
+            base_guid_obj.save()
+
+        return ret
+
+    # Override ReviewableMixin
+    def run_accept(self, user, comment, **kwargs):
+        """Run the 'accept' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_accept(user=user, comment=comment, **kwargs)
+        reviews_workflow = self.provider.reviews_workflow
+        if reviews_workflow == Workflows.PRE_MODERATION.value or reviews_workflow == Workflows.HYBRID_MODERATION.value:
+            base_guid_obj = self.versioned_guids.first().guid
+            base_guid_obj.referent = self
+            base_guid_obj.object_id = self.pk
+            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
+            base_guid_obj.save()
+
+        return ret
+
+    # Override ReviewableMixin
+    def run_reject(self, user, comment):
+        """Run the 'reject' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_reject(user=user, comment=comment)
+        versioned_guid = self.versioned_guids.first()
+        versioned_guid.is_rejected = True
+        versioned_guid.save()
+        return ret
 
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):

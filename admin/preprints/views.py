@@ -48,7 +48,7 @@ from website import search
 class PreprintMixin(PermissionRequiredMixin):
 
     def get_object(self):
-        preprint = Preprint.objects.get(guids___id=self.kwargs['guid'])
+        preprint = Preprint.load(self.kwargs['guid'])
         # Django template does not like attributes with underscores for some reason
         preprint.guid = preprint._id
         return preprint
@@ -324,9 +324,10 @@ class WithdrawalRequestMixin(PermissionRequiredMixin):
     permission_required = 'osf.change_preprintrequest'
 
     def get_object(self):
+        target = Preprint.load(self.kwargs['guid'])
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
-            target__guids___id=self.kwargs['guid'],
+            target=target,
         ).first()
 
     def get_success_url(self):

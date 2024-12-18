@@ -310,7 +310,8 @@ def decrypt_and_decode_jwt_payload():
 
 
 def get_authenticated_resource(resource_id):
-    resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
+    resource, _ = Guid.load_referent(resource_id)
+
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
@@ -390,8 +391,9 @@ def get_auth(auth, **kwargs):
     waterbutler_data = decrypt_and_decode_jwt_payload()
 
     # Authenticate the resource based on the node_id and handle potential draft nodes
-    resource = get_authenticated_resource(waterbutler_data['nid'])
+    nid = waterbutler_data.get('nid')
 
+    resource = get_authenticated_resource(nid)
     # Authenticate the user using cookie or Oauth if possible
     authenticate_user_if_needed(auth, waterbutler_data, resource)
 
@@ -529,9 +531,9 @@ def create_waterbutler_log(payload, **kwargs):
             auth = payload['auth']
             # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
-                guid = Guid.load(payload['metadata'].get('nid'))
-                if guid:
-                    node = guid.referent
+                guid_id = payload['metadata'].get('nid')
+
+                node, _ = Guid.load_referent(guid_id)
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])

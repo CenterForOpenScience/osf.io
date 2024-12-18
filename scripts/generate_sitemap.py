@@ -9,13 +9,15 @@ from urllib.parse import urlparse, urljoin
 import xml
 
 import django
+from django.contrib.sitemaps.views import sitemap
+
 django.setup()
 import logging
 import tempfile
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from django.db.models import Q
+from django.db.models import Q, F, OuterRef, Subquery
 from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
 from osf.utils.workflows import DefaultStates
 from scripts import utils as script_utils
@@ -196,12 +198,20 @@ class Sitemap:
                 self.log_errors('NODE', obj['guids___id'], e)
             progress.increment()
         progress.stop()
+        #Removed previous logic as it blocked withdrawn preprints to get in sitemap generator
+        objs = Preprint.objects.filter(date_published__isnull=False).annotate(
+            most_recent_non_withdrawn=Subquery(
+                Preprint.objects.filter(
+                    guids=OuterRef('guids')
+                ).order_by('-versioned_guids__version').values('versioned_guids__version')[:1]
+            )
+        ).order_by(
+            'versioned_guids__guid_id',
+            '-is_published',
+            '-versioned_guids__version'
+        ).distinct('versioned_guids__guid_id')
 
-        # Preprint urls
-
-        objs = (Preprint.objects.can_view()
-                    .select_related('node', 'provider', 'primary_file'))
-        progress.start(objs.count() * 2, 'PREP: ')
+        progress.start(len(objs) * 2, 'PREP: ')
         for obj in objs:
             try:
                 preprint_date = obj.modified.strftime('%Y-%m-%d')

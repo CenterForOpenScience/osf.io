@@ -4,11 +4,11 @@ from importlib import import_module
 import datetime
 from random import randint
 from unittest import mock
+
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from unittest.mock import patch, Mock
 
-import factory
 import pytz
 import factory.django
 from factory.django import DjangoModelFactory
@@ -20,7 +20,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory, Faker
 from waffle.models import Flag, Sample, Switch
-
 from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
@@ -745,7 +744,19 @@ class PreprintFactory(DjangoModelFactory):
 
         user = kwargs.pop('creator', None) or instance.creator
         instance.save()
+        guid = models.Guid.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+        )
 
+        models.GuidVersionsThrough.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+            version=1,
+            guid=guid
+        )
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),
@@ -779,6 +790,111 @@ class PreprintFactory(DjangoModelFactory):
             if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
             create_task_patcher.stop()
+
+        instance.save()
+        return instance
+
+    # TODO: maybe we should use model's `create_version` and use api's update_data
+    @classmethod
+    def create_version(cls, create_from, creator=None, final_machine_state='accepted', is_published=True, set_doi=True):
+
+        # Run a few checks
+        assert final_machine_state in ['pending', 'accepted']
+        assert create_from and not create_from.has_unpublished_pending_version()
+        guid_obj = create_from.guids.first()
+        latest_version = guid_obj.referent
+        assert latest_version.is_latest_version
+        last_version_number = guid_obj.versions.order_by('-version').first().version
+        if not creator:
+            creator = latest_version.creator
+
+        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
+        update_task_patcher.start()
+
+        # Create new version from the latest version
+        target_class = cls._meta.model
+        instance = cls._build(
+            target_class,
+            provider=latest_version.provider,
+            title=latest_version.title,
+            description=latest_version.description,
+            creator=creator,
+            node=latest_version.node,
+        )
+        instance.machine_state = 'initial'
+        instance.provider = latest_version.provider
+        instance.save()
+        models.GuidVersionsThrough.objects.create(
+            referent=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+            guid=guid_obj,
+            version=last_version_number + 1
+        )
+
+        # Prepare and add file
+        filename = f'preprint_file_{last_version_number + 1}.txt'
+        preprint_file = OsfStorageFile.create(
+            target_object_id=instance.id,
+            target_content_type=ContentType.objects.get_for_model(instance),
+            path=f'/{filename}',
+            name=filename,
+            materialized_path=f'/{filename}'
+        )
+        preprint_file.save()
+        auth = Auth(instance.creator)
+        instance.set_primary_file(preprint_file, auth=auth, save=True)
+        from addons.osfstorage import settings as osfstorage_settings
+        location = {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }
+        metadata = {
+            'size': 1357,
+            'contentType': 'img/png'
+        }
+        preprint_file.create_version(creator, location, metadata=metadata).save()
+
+        # Set relationships
+        contributor_list = latest_version.contributor_set.exclude(
+            user=latest_version.creator
+        ).values('visible', 'user_id', '_order')
+        for contributor in contributor_list:
+            instance.contributor_set.create(**{**contributor, 'preprint_id': instance.id})
+        for institution in latest_version.affiliated_institutions.all():
+            instance.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
+
+        # Set other fields
+        # TODO: we should copy all fields
+        if latest_version.license:
+            license_details = {
+                'id': latest_version.license.node_license.license_id,
+                'copyrightHolders': latest_version.license.copyright_holders,
+                'year': latest_version.license.year
+            }
+            instance.set_preprint_license(license_details, auth=auth)
+        subjects = [[el] for el in latest_version.subjects.all().values_list('_id', flat=True)]
+        instance.set_subjects(subjects, auth=auth)
+        instance.article_doi = latest_version.article_doi
+        instance.set_published(is_published, auth=auth)
+        # Note: machine_state needs to be adjusted after `set_published` is called.
+        instance.machine_state = final_machine_state
+        instance.save()
+        update_task_patcher.stop()
+
+        if not is_published:
+            assert not set_doi and final_machine_state != 'accepted'
+        else:
+            if set_doi:
+                create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
+                mock_create_identifier = create_task_patcher.start()
+                mock_create_identifier.side_effect = sync_set_identifiers(instance)
+                create_task_patcher.stop()
+            instance.is_published = True
+            guid_obj.referent = instance
+            guid_obj.object_id = instance.pk
+            guid_obj.save()
 
         instance.save()
         return instance
