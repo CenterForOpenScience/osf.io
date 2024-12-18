@@ -92,7 +92,7 @@
                     <button type="button" id="submitDeleteButton"
                             class="btn btn-danger"
                             data-dismiss="modal"
-                            onclick="deleteSettingTemplate()">{% trans "Delete" %}</button>
+                            onclick="deleteSettingTemplate()">{% trans "Confirm" %}</button>
                     <button type="button"
                             class="btn btn-secondary cancel_modal"
                             data-dismiss="modal">{% trans "Cancel" %}</button>
@@ -147,6 +147,8 @@
         });
 
         function saveSettings() {
+            // Disable clear button
+            $('#clear_availability').prop('disabled', true);
             var datas = [];
             list_id_availability.forEach(function(id) {
                 var checkbox_id = "template_id_" + id
@@ -172,6 +174,8 @@
                     window.location.reload();
                 }
             }).fail(function (jqXHR, textStatus, error) {
+                // Enable clear button
+                $('#clear_availability').prop('disabled', false);
                 handleAjaxRequestFailure(jqXHR);
             });
 
@@ -184,7 +188,15 @@
                 dataType: "json",
                 contentType: "application/json",
                 success: function (response) {
-                    window.location.reload();
+                    const url = new URL(window.location.href);
+                    const tableRows = $('#setting-template-table tbody tr').length;
+                    const currentPage = url.searchParams.get('page');
+                    if (tableRows <= 1 && currentPage !== 'last' && currentPage > 1) {
+                        url.searchParams.set('page', currentPage - 1);
+                        window.location.href = url.toString();
+                    } else {
+                        window.location.reload();
+                    }
                 }
             }).fail(function (jqXHR, textStatus, error) {
                 handleAjaxRequestFailure(jqXHR);

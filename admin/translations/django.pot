@@ -3785,7 +3785,7 @@ msgstr ""
 msgid "Project Limit Number Setting"
 msgstr ""
 
-msgid "Set the project limit number for users who are meet the above attributes"
+msgid "Set the project limit number for users who are meet the above attributes."
 msgstr ""
 
 msgid "Created Project Number"

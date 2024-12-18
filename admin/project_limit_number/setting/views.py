@@ -53,7 +53,10 @@ class ProjectLimitNumberSettingListView(RdmPermissionMixin, UserPassesTestMixin,
 
     def get_context_data(self, **kwargs):
         institution_id = self.request.GET.get('institution_id')
-        page_size = self.request.GET.get('page_size', 10)
+        page_size = self.request.GET.get('page_size')
+        # Trim query params
+        institution_id = institution_id.strip() if institution_id and len(institution_id.strip()) > 0 else None
+        page_size = page_size.strip() if page_size and len(page_size.strip()) > 0 else 10
 
         if self.is_super_admin:
             institution_list = Institution.objects.filter(is_deleted=False).order_by('id')
@@ -65,7 +68,7 @@ class ProjectLimitNumberSettingListView(RdmPermissionMixin, UserPassesTestMixin,
         else:
             selected_institution = self.request.user.affiliated_institutions.filter(is_deleted=False).first()
             selected_institution_id = selected_institution.id if selected_institution is not None else None
-            if institution_id is not None and selected_institution_id != institution_id:
+            if institution_id and selected_institution_id != int(institution_id):
                 raise PermissionDenied('You don\'t have permission to access this page')
             institution_list = [selected_institution]
 
@@ -73,7 +76,7 @@ class ProjectLimitNumberSettingListView(RdmPermissionMixin, UserPassesTestMixin,
 
         # Get project_limit_number_default
         project_limit_number_default = selected_institution.project_limit_number_default.first()
-        project_limit_number_default_value = project_limit_number_default.project_limit_number if project_limit_number_default is not None else None
+        project_limit_number_default_value = project_limit_number_default.project_limit_number if project_limit_number_default is not None else utils.NO_LIMIT
         # Get page_size from request
         _, page, query_set, _ = self.paginate_queryset(query_set, page_size)
         data = []
@@ -97,22 +100,27 @@ class ProjectLimitNumberSettingListView(RdmPermissionMixin, UserPassesTestMixin,
         kwargs['selected_institution'] = selected_institution
         kwargs['is_admin'] = self.is_institutional_admin
         kwargs['project_limit_number_default_list'] = PROJECT_LIMIT_NUMBER_SELECT_LIST
-        kwargs['project_limit_number_default_value'] = project_limit_number_default_value or utils.NO_LIMIT
+        kwargs['project_limit_number_default_value'] = project_limit_number_default_value
         return super(ProjectLimitNumberSettingListView, self).get_context_data(**kwargs)
 
     def get(self, request, *args, **kwargs):
         institution_id = self.request.GET.get('institution_id')
-        page_size = self.request.GET.get('page_size', 10)
+        page_size = self.request.GET.get('page_size')
+        # Trim query params
+        institution_id = institution_id.strip() if institution_id else None
+        page_size = page_size.strip() if page_size else None
+
         # Check if institution_id is not None
-        if institution_id is not None:
+        if institution_id:
             # Try casting institution_id to integer
             try:
                 institution_id = int(institution_id)
             except ValueError:
+                # If institution id is not a number then return HTTP 400
                 return render_bad_request_response(request=request, error_msgs='The institution id is invalid.')
 
         # Check if page_size is not None
-        if page_size is not None:
+        if page_size:
             # Try casting page_size to integer
             try:
                 page_size = int(page_size)
@@ -120,10 +128,11 @@ class ProjectLimitNumberSettingListView(RdmPermissionMixin, UserPassesTestMixin,
                     # If page size is not in PAGE_SIZE_LIST then return HTTP 400
                     return render_bad_request_response(request=request, error_msgs='The page size is invalid.')
             except ValueError:
+                # If page size is not a number then return HTTP 400
                 return render_bad_request_response(request=request, error_msgs='The page size is invalid.')
 
         # Check if institution with institution_id exists
-        if institution_id is not None and not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
+        if institution_id and not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
             return render_bad_request_response(request=request, error_msgs='The institution not exist.')
 
         return super(ProjectLimitNumberSettingListView, self).get(request, *args, **kwargs)
@@ -382,6 +391,9 @@ class ProjectLimitNumberSettingCreateView(RdmPermissionMixin, UserPassesTestMixi
         """ Get data for create view """
         institution_id = self.request.GET.get('institution_id')
         template_id = self.request.GET.get('template_id')
+        # Trim query params
+        institution_id = institution_id.strip() if institution_id and len(institution_id.strip()) > 0 else None
+        template_id = template_id.strip() if template_id and len(template_id.strip()) > 0 else None
 
         # Early validation for super admin
         if institution_id is None and self.is_super_admin:
@@ -389,7 +401,7 @@ class ProjectLimitNumberSettingCreateView(RdmPermissionMixin, UserPassesTestMixi
 
         # Validate and process institution_id
         institution = None
-        if institution_id is not None:
+        if institution_id:
             # Try casting institution_id to integer
             try:
                 institution_id = int(institution_id)
@@ -524,7 +536,7 @@ class ProjectLimitNumberSettingCreateView(RdmPermissionMixin, UserPassesTestMixi
                 db_attribute_value_list = []
                 if template_attribute.attribute_value:
                     # Split template attribute value by comma
-                    db_attribute_value_list = [item.strip() for item in template_attribute.attribute_value.split(', ')]
+                    db_attribute_value_list = [item.strip() for item in template_attribute.attribute_value.split(',')]
                 if template_attribute.setting_type in LIST_VALUE_SETTING_TYPE_LIST and attribute.get('attribute_value') not in db_attribute_value_list:
                     # If template_attributes[i].setting_type is list value and attribute_value not exist in template_attributes[i].attribute_value then return 400
                     return JsonResponse({'error_message': 'The attribute value is invalid.'}, status=HTTPStatus.BAD_REQUEST)
@@ -602,6 +614,7 @@ class ProjectLimitNumberSettingDetailView(RdmPermissionMixin, UserPassesTestMixi
                     ON s.institution_id = i.id
                 WHERE s.id = %s
                    AND s.is_deleted IS FALSE
+                ORDER BY attribute_id ASC
             """, [setting_id])
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -745,7 +758,7 @@ class UpdateProjectLimitNumberSettingView(RdmPermissionMixin, UserPassesTestMixi
                 db_attribute_value_list = []
                 if template_attribute.attribute_value:
                     # Split template attribute value by comma
-                    db_attribute_value_list = [item.strip() for item in template_attribute.attribute_value.split(', ')]
+                    db_attribute_value_list = [item.strip() for item in template_attribute.attribute_value.split(',')]
                 if template_attribute.setting_type in LIST_VALUE_SETTING_TYPE_LIST and attribute.get('attribute_value') not in db_attribute_value_list:
                     # If template_attributes[i].setting_type is list value and attribute_value not exist in template_attributes[i].attribute_value then return 400
                     return JsonResponse({'error_message': 'The attribute value is invalid.'}, status=HTTPStatus.BAD_REQUEST)
@@ -807,13 +820,15 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
             if not is_request_valid:
                 return JsonResponse({'error_message': error_message}, status=HTTPStatus.BAD_REQUEST)
 
-            page = request_body.get('page', '1')
+            page = request_body.get('page')
+            if page is None:
+                page = '1'
             institution_id = request_body.get('institution_id')
             attribute_list = request_body.get('attribute_list', [])
 
             # If institution_id is not exist then return HTTP 400
             if not Institution.objects.filter(id=institution_id, is_deleted=False).exists():
-                return JsonResponse({'error_message': 'The institution not exist.'}, status=HTTPStatus.NOT_FOUND)
+                return JsonResponse({'error_message': 'The institution not exist.'}, status=HTTPStatus.BAD_REQUEST)
 
             # Handle admin permissions
             if self.is_admin:
@@ -828,7 +843,7 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
             include_osf_user_params = []
             for attribute in attribute_list:
                 if attribute.get('attribute_name') not in settings.ATTRIBUTE_NAME_LIST:
-                    return JsonResponse({'error_message': 'The attribute name is invalid.'}, status=HTTPStatus.BAD_REQUEST)
+                    return JsonResponse({'error_message': 'attribute_name is invalid.'}, status=HTTPStatus.BAD_REQUEST)
                 if attribute.get('attribute_name') == utils.MAIL_GRDM:
                     # Get query from osf_user table instead
                     if len(include_osf_user_query_string) > 0:
@@ -982,6 +997,7 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
             WHERE ui.institution_id = %s
                 {}
                 {}
+                ORDER BY guid ASC
                 LIMIT 10
                 OFFSET (%s - 1) * 10
             """

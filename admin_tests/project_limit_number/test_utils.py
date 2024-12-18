@@ -83,7 +83,7 @@ class TestValidateFileJson(TestCase):
 
         is_valid, error_message = validate_file_json(file_data, 'test_schema.json')
         self.assertFalse(is_valid)
-        self.assertEqual(error_message, 'setting_type is required.')
+        self.assertEqual(error_message, 'setting_type is invalid.')
 
     @patch('admin.project_limit_number.utils.from_json')
     def test_invalid_field_type(self, mock_from_json):
@@ -304,14 +304,14 @@ class TestCheckLogicCondition(TestCase):
                 'idp_attr': {
                     'email': 'test.user@mail.com',
                     'family_name': 'Test',
-                    'organization_unit': 'Research',
+                    'organizational_unit': 'Research',
                     'given_name': 'User',
                     'fullname': 'Test User',
-                    'unique_id': 'TU123',
+                    'edu_person_unique_id': 'TU123',
                     'family_name_ja': 'テスト',
                     'given_name_ja': 'ユーザー',
                     'fullname_ja': 'テスト ユーザー',
-                    'organization_unit_ja': '研究部',
+                    'organizational_unit_ja': '研究部',
                     'gakunin_identity_assurance_organization': 'Test Org',
                     'gakunin_identity_assurance_method_reference': 'Method1',
                     'organization_name': 'Org1;Org2',
@@ -320,7 +320,7 @@ class TestCheckLogicCondition(TestCase):
                     'edu_person_scoped_affiliation': 'member@test.edu',
                     'edu_person_targeted_id': 'target1;target2',
                     'edu_person_assurance': 'assurance1;assurance2',
-                    'edu_person_orc_id': 'orcid1;orcid2',
+                    'edu_person_orcid': 'orcid1;orcid2',
                     'groups': 'group1;group2',
                     'organization_name_ja': 'オーグ1;オーグ2',
                     'gakunin_scoped_personal_unique_code': 'code1;code2',
@@ -440,7 +440,7 @@ class TestCheckLogicCondition(TestCase):
             'jasn': 'family_name_ja',
             'jaGivenName': 'given_name_ja',
             'jaDisplayName': 'fullname_ja',
-            'jaou': 'organization_unit_ja',
+            'jaou': 'organizational_unit_ja',
             'jao': 'organization_name_ja'
         }
 

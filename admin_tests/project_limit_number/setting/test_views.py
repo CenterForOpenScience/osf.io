@@ -1411,7 +1411,7 @@ class TestCreateProjectLimitNumberSettingView(AdminTestCase):
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(
             json.loads(response.content),
-            {'error_message': 'attribute_list is invalid.'}
+            {'error_message': 'attribute_list is required.'}
         )
 
     def test_post_invalid_json_body(self):
@@ -2179,7 +2179,7 @@ class TestUpdateProjectLimitNumberSettingView(AdminTestCase):
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(
             json.loads(response.content),
-            {'error_message': 'attribute_list is invalid.'}
+            {'error_message': 'attribute_list is required.'}
         )
 
     @patch('admin.project_limit_number.utils.validate_file_json')
@@ -2851,7 +2851,7 @@ class TestUserListView(AdminTestCase):
         self.view = setup_view(self.view, request)
 
         response = self.view.post(request)
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(
             json.loads(response.content),
             {'error_message': 'The institution not exist.'}
@@ -2897,7 +2897,7 @@ class TestUserListView(AdminTestCase):
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(
             json.loads(response.content),
-            {'error_message': 'The attribute name is invalid.'}
+            {'error_message': 'attribute_name is invalid.'}
         )
 
     def test_post_mail_grdm_attribute(self):
@@ -2968,6 +2968,29 @@ class TestUserListView(AdminTestCase):
             json.loads(response.content),
             {'user_list': [], 'total': 0}
         )
+
+    def test_post_page_none(self):
+        """Test requesting page is None"""
+        data = self.valid_data.copy()
+        data['page'] = None
+        data['attribute_list'] = [{
+            'attribute_name': 'sn',
+            'setting_type': 1,
+            'attribute_value': 'fixed_value'
+        }]
+
+        request = self.request_factory.post(
+            self.base_url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        request.user = self.super_admin
+        self.view = setup_view(self.view, request)
+        response = self.view.post(request)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        response_data = json.loads(response.content)
+        self.assertEqual(len(response_data['user_list']), 10)
+        self.assertEqual(response_data['total'], 15)
 
     def test_post_last_page(self):
         """Test requesting last page"""

@@ -75,10 +75,20 @@ class ProjectLimitNumberTemplateListView(RdmPermissionMixin, UserPassesTestMixin
 
     def get_context_data(self, **kwargs):
         query_set = self.get_queryset()
-        self.paginate_by = self.request.GET.get('page_size', 10)
+        self.paginate_by = self.request.GET.get('page_size')
         # Validate page_size
-        if int(self.paginate_by) not in PAGE_SIZE_LIST:
-            raise BadRequestException('Page size invalid.')
+        if self.paginate_by and len(self.paginate_by.strip()) > 0:
+            # Try casting page_size to integer
+            try:
+                self.paginate_by = int(self.paginate_by)
+                if self.paginate_by not in PAGE_SIZE_LIST:
+                    # If page size is not in PAGE_SIZE_LIST then return HTTP 400
+                    raise BadRequestException('The page size is invalid.')
+            except ValueError:
+                # If page size is not a number then return HTTP 400
+                raise BadRequestException('The page size is invalid.')
+        else:
+            self.paginate_by = 10
         page_size = self.get_paginate_by(query_set)
         _, page, query_set, _ = self.paginate_queryset(query_set, page_size)
         data = []
@@ -103,8 +113,6 @@ class ProjectLimitNumberTemplateListView(RdmPermissionMixin, UserPassesTestMixin
             return super().get(request, *args, **kwargs)
         except BadRequestException as e:
             return render_bad_request_response(request=request, error_msgs=e.args[0])
-        except Exception as e:
-            raise e
 
 
 class ProjectLimitNumberTemplatesViewCreate(RdmPermissionMixin, UserPassesTestMixin, GuidFormView):
@@ -248,7 +256,7 @@ class ProjectLimitNumberTemplatesViewUpdate(RdmPermissionMixin, UserPassesTestMi
             'attributes__attribute_name',
             'attributes__setting_type',
             'attributes__attribute_value'
-        ).all()
+        ).order_by('id').all()
 
         # Check template is NULL
         if len(template) == 0:

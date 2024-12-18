@@ -138,7 +138,7 @@ class TestProjectLimitNumberTemplateListView(AdminTestCase):
         self.view.request.GET = {'page_size': '20'}
         with self.assertRaises(views.BadRequestException):
             context = self.view.get_context_data(**self.view.kwargs)
-            self.assertEqual(context['error_message'], 'Page size invalid.')
+            self.assertEqual(context['error_message'], 'The page size is invalid.')
 
     def test_get_successful(self):
         """Test successful GET request"""
@@ -446,7 +446,7 @@ class TestProjectLimitNumberTemplatesViewUpdate(AdminTestCase):
     def test_get_context_data(self, mock_filter):
         mock_queryset = mock.MagicMock()
         mock_queryset.values.return_value = mock_queryset
-        mock_queryset.all.return_value = [
+        mock_queryset.order_by.return_value.all.return_value = [
             {
                 'id': 1,
                 'template_name': 'Test Template',
@@ -473,7 +473,7 @@ class TestProjectLimitNumberTemplatesViewUpdate(AdminTestCase):
     def test_get_context_data_template_is_used(self, mock_filter):
         mock_queryset = mock.MagicMock()
         mock_queryset.values.return_value = mock_queryset
-        mock_queryset.all.return_value = [
+        mock_queryset.order_by.return_value.all.return_value = [
             {
                 'id': 1,
                 'template_name': 'Test Template',
@@ -495,7 +495,7 @@ class TestProjectLimitNumberTemplatesViewUpdate(AdminTestCase):
         """Test successful GET request"""
         mock_queryset = mock.MagicMock()
         mock_queryset.values.return_value = mock_queryset
-        mock_queryset.all.return_value = [
+        mock_queryset.order_by.return_value.all.return_value = [
             {
                 'id': 1,
                 'template_name': 'Test Template',
@@ -520,7 +520,7 @@ class TestProjectLimitNumberTemplatesViewUpdate(AdminTestCase):
         """Test successful GET request"""
         mock_queryset = mock.MagicMock()
         mock_queryset.values.return_value = mock_queryset
-        mock_queryset.all.return_value = [
+        mock_queryset.order_by.return_value.all.return_value = [
             {
                 'id': 1,
                 'template_name': 'Test Template',

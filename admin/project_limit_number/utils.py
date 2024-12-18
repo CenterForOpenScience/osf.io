@@ -13,14 +13,14 @@ logger = logging.getLogger(__name__)
 ATTRIBUTE_STRING_QUERY_MAP = {
     'mail': 'email',
     'sn': 'family_name',
-    'ou': 'organization_unit',
+    'ou': 'organizational_unit',
     'givenName': 'given_name',
     'displayName': 'fullname',
-    'eduPersonUniqueId': 'unique_id',
+    'eduPersonUniqueId': 'edu_person_unique_id',
     'jasn': 'family_name_ja',
     'jaGivenName': 'given_name_ja',
     'jaDisplayName': 'fullname_ja',
-    'jaou': 'organization_unit_ja',
+    'jaou': 'organizational_unit_ja',
     'gakuninIdentityAssuranceOrganization': 'gakunin_identity_assurance_organization',
     'gakuninIdentityAssuranceMethodReference': 'gakunin_identity_assurance_method_reference',
 }
@@ -33,7 +33,7 @@ ATTRIBUTE_ARRAY_QUERY_MAP = {
     'eduPersonScopedAffiliation': 'edu_person_scoped_affiliation',
     'eduPersonTargetedID': 'edu_person_targeted_id',
     'eduPersonAssurance': 'edu_person_assurance',
-    'eduPersonOrcid': 'edu_person_orc_id',
+    'eduPersonOrcid': 'edu_person_orcid',
     'isMemberOf': 'groups',
     'jao': 'organization_name_ja',
     'gakuninScopedPersonalUniqueCode': 'gakunin_scoped_personal_unique_code',
@@ -60,11 +60,11 @@ def validate_file_json(file_data, json_schema_file_name):
         else:
             # Otherwise, get from last item in path
             field_name = e.path[-1] if e.path else 'Unknown field'
-        if field_name == 'setting_type':
-            setting_type = e.instance
-            if not setting_type:
-                return False, 'setting_type is required.'
-        if e.validator == 'minLength' or e.validator == 'required':
+        is_error_type_required = (
+            e.validator == 'minLength' or e.validator == 'minItems' or
+            e.validator == 'required' or (e.validator == 'type' and e.instance is None)
+        )
+        if is_error_type_required:
             return False, f'{field_name} is required.'
         else:
             return False, f'{field_name} is invalid.'

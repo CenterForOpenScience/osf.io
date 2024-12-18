@@ -14,12 +14,19 @@ function handleAjaxRequestFailure(jqXHR) {
             window.location.href = '/account/login';
             break;
         case 403:
-            // Redirect to 403 page
-            window.location.href = '/403';
-            break;
         case 404:
-            // Redirect to 404 page
-            window.location.href = '/404';
+            // Display error page
+            var data = jqXHR.responseJSON;
+            var error_message = '';
+            if (data && data['error_message']) {
+                error_message = data['error_message'];
+            }
+            var body = `
+                <h1><strong>`+ jqXHR.status +`</strong></h1>
+
+                <h2>`+ error_message +`</h2>
+            `;
+            $('section.content').html(body);
             break;
         case 500:
             // If jqXHR response is text/plain, replace html body with error message
@@ -42,6 +49,8 @@ function handleAjaxRequestFailure(jqXHR) {
                 // Convert message from snake_case to camelCase
                 if (data['error_message'].includes('_')) {
                     data['error_message'] = "The " + data['error_message'].replace('_', ' ');
+                } else if (data['error_message'].startsWith('name is')) {
+                    data['error_message'] = data['error_message'].replace('name is', 'The setting name is');
                 }
                 $osf.growl(_('Error'), _(data['error_message']), 'danger', 5000);
             } else {

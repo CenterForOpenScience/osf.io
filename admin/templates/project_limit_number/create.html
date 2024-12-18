@@ -124,8 +124,7 @@
             <label for="memo_id" class="col-md-2" style="width: 10%; padding-top: 6px;">{% trans 'Memo' %}</label>
             <div class="col-md-10">
                 <input id="memo_id" type="text" name="memo" class="form-control"
-                    style="border-radius: 5px;" oninput="setCustomValidity('')"
-                    minlength="1" maxlength="255" placeholder="{% trans 'Memo' %}">
+                    style="border-radius: 5px;" maxlength="255" placeholder="{% trans 'Memo' %}">
             </div>
         </div>
 
@@ -188,7 +187,7 @@
 
         <div class="col-md-12" style="padding-left: 0px;">
             <div class="row col-md-12" style="font-weight: bold;">
-                <label>{% trans 'Set the project limit number for users who are meet the above attributes' %}</label>
+                <label>{% trans 'Set the project limit number for users who are meet the above attributes.' %}</label>
             </div>
             <div class="row col-md-6">
                 <label for="project_limit_number_id" class="col-md-4" style="padding-top: 6px;">{% trans 'Project Limit Number' %}</label>
@@ -292,19 +291,20 @@
                     }
                     let tableDiv = '';
                     for (item of responseData) {
+                        let project_limit_number = (!!item.project_limit_number && item.project_limit_number !== -1) ? item.project_limit_number : '{% trans "No Limit" %}';
                         tableDiv += `
                             <tr>
-                                <td>`+ item.guid +`</td>
-                                <td>`+ item.eppn +`</td>
-                                <td>`+ item.username +`</td>
-                                <td>`+ item.fullname +`</td>
+                                <td>`+ (item.guid || '') +`</td>
+                                <td>`+ (item.eppn || '') +`</td>
+                                <td>`+ (item.username || '') +`</td>
+                                <td>`+ (item.fullname || '') +`</td>
                                 <td>`+ item.created_project_number +`</td>
-                                <td>`+ item.project_limit_number +` </td>
+                                <td>`+ project_limit_number +` </td>
                             </tr>
                         `;
                     }
                     const maxPageNumber = Math.max(1, Math.ceil(response.total / 10));
-                    const pageNumber = (page === undefined) ? 1 : (page === 'last') ? maxPageNumber : page;
+                    const pageNumber = (page === undefined) ? 1 : (page === 'last') ? maxPageNumber : Number(page, 10);
                     const previousPageClass = pageNumber === 1 ? 'disabled' : '';
                     const nextPageClass = pageNumber >= maxPageNumber ? 'disabled' : '';
                     const translatedPageString = '{% blocktrans with itemsNumber='{pageNumber}' paginatorNumPage='{maxPageNumber}' %}Page {{ itemsNumber }} of {{ paginatorNumPage }}{% endblocktrans %}';
@@ -395,7 +395,7 @@
                 dataType: "json",
                 contentType: "application/json",
                 success: function (response) {
-                    window.location.href = '{% url 'project_limit_number:settings:list-setting' %}';
+                    window.location.href = '{% url 'project_limit_number:settings:list-setting' %}?institution_id={{ institution.id }}';
                 }
             }).fail(function (jqXHR, textStatus, error) {
                 handleAjaxRequestFailure(jqXHR);

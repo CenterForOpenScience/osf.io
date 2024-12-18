@@ -3877,7 +3877,7 @@ msgstr "メモ"
 msgid "Project Limit Number Setting"
 msgstr "プロジェクト作成数設定"
 
-msgid "Set the project limit number for users who are meet the above attributes"
+msgid "Set the project limit number for users who are meet the above attributes."
 msgstr "以上の属性に合致した場合のプロジェクト作成上限を設定します。"
 
 msgid "Created Project Number"
@@ -3926,10 +3926,10 @@ msgid "Select rule name"
 msgstr "ルール名称を選択する"
 
 msgid "Select attribute name"
-msgstr "値の設定方法を選択する"
+msgstr "使用する属性を選択する"
 
 msgid "Select setting type"
-msgstr "使用する属性を選択する"
+msgstr "値の設定方法を選択する"
 
 msgid "=== Authentication Attribute ==="
 msgstr "=== 認証属性 ==="

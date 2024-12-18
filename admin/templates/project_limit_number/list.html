@@ -16,6 +16,10 @@
             padding-left: 6px;
             padding-right: 6px;
 
+            .select2-selection__placeholder {
+                color: #333 !important;
+            }
+
             .select2-selection__arrow {
                 height: 34px !important;
             }
@@ -93,13 +97,13 @@
     <form class="form-horizontal">
         {% csrf_token %}
         <div class="clearfix" style="margin-top: 20px;">
-            <label for="institution_id" class="col-md-3" style="width: 22%; padding-right: 0px; padding-top: 6px;">{% trans 'Institutions' %}</label>
+            <label for="institution_id" class="col-md-3" style="width: 22%; padding-right: 0px; padding-top: 6px;">{% trans 'Institution' %}</label>
             <div class="col-md-4" style="padding-left: 0px;">
                 <select id="institution_id" name="institution_id" class="form-control" {% if is_admin %}disabled="disabled"{% endif %} onchange="changeInstitution()">
                     <option selected disabled hidden value="">{% trans 'Select institution' %}</option>
                     {% for institution in institutions %}
                         <option value="{{ institution.id }}"
-                                {% if institution == selected_institution %}selected="selected"{% endif %}"
+                                {% if institution == selected_institution %}selected="selected"{% endif %}
                         >{{ institution.name }}</option>
                     {% endfor %}
                 </select>
@@ -233,6 +237,9 @@
         var changeSettingIdList = [];
         const csrftoken = $('[name=csrfmiddlewaretoken]').val();
         const originalTableHtml = $('#setting-table').html();
+        $('#institution_id').select2({
+            placeholder: "{% trans 'Select institution' %}"
+        });
         $('#project_limit_number_default_id').select2();
 
         // When the modal is about to be shown, get the data from the button
@@ -418,7 +425,15 @@
                 dataType: "json",
                 contentType: "application/json",
                 success: function (response) {
-                    window.location.reload();
+                    const url = new URL(window.location.href);
+                    const tableRows = $('#setting-table tbody tr').length;
+                    const currentPage = url.searchParams.get('page');
+                    if (tableRows <= 1 && currentPage !== 'last' && currentPage > 1) {
+                        url.searchParams.set('page', currentPage - 1);
+                        window.location.href = url.toString();
+                    } else {
+                        window.location.reload();
+                    }
                 }
             }).fail(function (jqXHR, textStatus, error) {
                 handleAjaxRequestFailure(jqXHR);

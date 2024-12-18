@@ -311,9 +311,13 @@ def check_user_can_create_project(user):
 
     # If no setting found, get default or use no limit (-1)
     if project_limit_number is None:
-        project_limit_number = ProjectLimitNumberDefault.objects.filter(
+        default_limit = ProjectLimitNumberDefault.objects.filter(
             institution_id=institution.id,
-        ).values_list('project_limit_number', flat=True).first() or NO_LIMIT
+        ).values_list('project_limit_number', flat=True).first()
+        if default_limit is not None:
+            project_limit_number = default_limit
+        else:
+            project_limit_number = NO_LIMIT
 
     # Return if no limit
     if project_limit_number == NO_LIMIT:
