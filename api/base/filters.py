@@ -18,7 +18,7 @@ from django.db.models import QuerySet as DjangoQuerySet
 from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, Preprint
+from osf.models import Subject, Preprint, VersionedGuidMixin
 from osf.models.base import GuidMixin
 from functools import cmp_to_key
 
@@ -292,13 +292,28 @@ class FilterMixin:
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
                     elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id', 'moderation_state']:
-                        query.get(key).update({
-                            field_name: {
-                                'op': 'in',
-                                'value': self.bulk_get_values(value, field),
-                                'source_field_name': source_field_name,
-                            },
-                        })
+                        if VersionedGuidMixin.GUID_VERSION_DELIMITER in value:
+                            base_guid, version = value.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+                            query.get(key).update({
+                                'id': {
+                                    'op': 'eq',
+                                    'value': base_guid,
+                                    'source_field_name': 'versioned_guids___id',
+                                },
+                                'versioned_guids__version': {
+                                    'op': 'eq',
+                                    'value': version,
+                                    'source_field_name': 'versioned_guids__version',
+                                },
+                            })
+                        else:
+                            query.get(key).update({
+                                field_name: {
+                                    'op': 'in',
+                                    'value': self.bulk_get_values(value, field),
+                                    'source_field_name': source_field_name,
+                                },
+                            })
                     elif not isinstance(value, int) and source_field_name == 'root':
                         query.get(key).update({
                             field_name: {
