@@ -15,6 +15,7 @@ from guardian.shortcuts import get_objects_for_user
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
+from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
@@ -324,10 +325,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         # Guid object always points to the latest ever-published (i.e. either published or withdrawn) version
         source_preprint = cls.load(guid_obj._id)
         if not source_preprint:
+            sentry.log_message(f'Source preprint with GUID {guid_obj._id} not found')
             raise NotFound
         if not source_preprint.has_permission(auth.user, ADMIN):
+            sentry.log_message(f'PermissionsError, only admin can create version of preprint')
             raise PermissionsError
         if source_preprint.has_unpublished_pending_version():
+            sentry.log_message(f'Unpublished pending version of preprint exists')
             raise UnpublishedPendingPreprintVersionExists
         # Note: last version may not be the latest version
         last_version_number = guid_obj.versions.order_by('-version').first().version
