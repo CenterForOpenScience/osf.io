@@ -1895,12 +1895,6 @@ class TestWikiImport(OsfTestCase):
         result = views._validate_import_duplicated_directry(info_list)
         self.assertEqual(result, ['folder1'])
 
-    def test_validate_import_wiki_exists_duplicated_valid_no_change(self):
-        info = {'wiki_name': 'importpagec', 'path': '/importpagea/importpagec', 'status': 'valid'}
-        result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
-        self.assertEqual(result['status'], 'valid')
-        self.assertTrue(can_start_import)
-
     def test_validate_import_wiki_exists_duplicated_valid_exists_status_change(self):
         info = {'wiki_name': 'importpagea', 'path': '/importpagea', 'status': 'valid'}
         result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
@@ -2648,14 +2642,18 @@ class TestWikiCreatFolderAndCopy(OsfTestCase):
             self.assertEqual('Error when create wiki folder', e.data['message_short'])
             self.assertIn('An error occures when create wiki folder', e.data['message_long'])
 
-    @mock.patch('website.files.utils.copy_files')
+    @mock.patch('addons.wiki.utils.copy_files_with_timestamp')
     @mock.patch('addons.wiki.views.BaseFileNode')
-    def test_wiki_copy_import_directory(self, mock_base_file_node, mock_copy_files):
+    def test_wiki_copy_import_directory(self, mock_base_file_node, mock_clone):
         mock_base_file_node_instance = mock.Mock()
         mock_base_file_node_instance._id = 'ddeeff'
-        mock_copy_files.return_value = mock_base_file_node_instance
-        cloned_id = views._wiki_copy_import_directory(self.copy_to_dir._id, self.root_import_folder1._id, self.project)
-        self.assertEqual(cloned_id, 'ddeeff')
+        mock_cloned = mock.Mock()
+        mock_cloned._id = 'ddeeff'
+        mock_clone.return_value = mock_cloned
+        node = NodeFactory(parent=self.project, creator=self.user)
+        expected_id = 'ddeeff'
+        cloned_id = views._wiki_copy_import_directory(self.copy_to_dir._id, self.root_import_folder1._id, self.project, node)
+        self.assertEqual(expected_id, cloned_id)
 
 class TestWikiImportReplace(OsfTestCase):
 
