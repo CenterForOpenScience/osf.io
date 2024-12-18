@@ -380,7 +380,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         # Create an entry in the `GuidVersionsThrough` table
         guid_version = GuidVersionsThrough(
-            referent=guid_obj.referent,
+            referent=preprint,
             object_id=guid_obj.object_id,
             content_type=guid_obj.content_type,
             version=last_version_number + 1,
