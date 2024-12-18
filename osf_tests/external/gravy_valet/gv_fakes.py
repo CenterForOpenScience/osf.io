@@ -5,6 +5,7 @@ import logging
 import re
 import typing
 import urllib.parse
+from enum import Enum
 from functools import cache
 from http import HTTPStatus
 
@@ -151,13 +152,17 @@ class _FakeCitationAddonProvider(_FakeAddonProvider):
     RESOURCE_TYPE = 'external-citation-services'
 
 
+class _FakeRemoteComputeAddonProvider(_FakeAddonProvider):
+    RESOURCE_TYPE = 'external-citation-services'
+
 @dataclasses.dataclass(frozen=True)
-class _FakeAccount(_FakeGVEntity):
-    RESOURCE_TYPE = 'authorized-accounts'
-    external_storage_service: _FakeAddonProvider | None
-    external_citation_service: _FakeCitationAddonProvider | None
+class _FakeStorageAccount(_FakeGVEntity):
+    RESOURCE_TYPE = 'authorized-storage-accounts'
     account_owner_pk: int
     display_name: str = ''
+    external_storage_service: _FakeAddonProvider | None = None
+    external_citation_service: _FakeCitationAddonProvider | None = None
+    external_computing_service: _FakeRemoteComputeAddonProvider | None = None
 
     @property
     @cache
@@ -209,12 +214,20 @@ class _FakeAccount(_FakeGVEntity):
             })
         return _serialized_relationships
 
+@dataclasses.dataclass(frozen=True)
+class _FakeCitationAccount(_FakeStorageAccount):
+    RESOURCE_TYPE = 'authorized-citation-accounts'
 
 @dataclasses.dataclass(frozen=True)
-class _FakeAddon(_FakeGVEntity):
-    RESOURCE_TYPE = 'configured-addons'
+class _FakeRemoteComputeAccount(_FakeStorageAccount):
+    RESOURCE_TYPE = 'authorized-computing-accounts'
+
+
+@dataclasses.dataclass(frozen=True)
+class _FakeStorageAddon(_FakeGVEntity):
+    RESOURCE_TYPE = 'configured-storage-addons'
     resource_pk: int
-    base_account: _FakeAccount
+    base_account: _FakeStorageAccount
     display_name: str = ''
     root_folder: str = '0:1'
 
@@ -239,7 +252,7 @@ class _FakeAddon(_FakeGVEntity):
             ),
             'base_account': self._format_relationship_entry(
                 relationship_path='base_account',
-                related_type=_FakeAccount.RESOURCE_TYPE,
+                related_type=_FakeStorageAccount.RESOURCE_TYPE,
                 related_pk=self.base_account.pk
             ),
             'external_storage_service': self._format_relationship_entry(
@@ -257,6 +270,13 @@ class _FakeAddon(_FakeGVEntity):
             ),
         }
 
+@dataclasses.dataclass(frozen=True)
+class _FakeCitationAddon(_FakeStorageAddon):
+    RESOURCE_TYPE = 'configured-citation-addons'
+
+@dataclasses.dataclass(frozen=True)
+class _FakeRemoteComputeAddon(_FakeStorageAddon):
+    RESOURCE_TYPE = 'configured-computing-addons'
 
 class FakeGravyValet:
     ROUTES = {
@@ -346,17 +366,22 @@ class FakeGravyValet:
             user: OSFUser,
             addon_name: str,
             **account_attrs
-    ) -> _FakeAccount:
+    ) -> _FakeStorageAccount:
         user_uri, user_pk = self._get_or_create_user_entry(user)
         account_pk = _get_nested_count(self._user_accounts) + 1
         connected_provider = self._known_providers[addon_name]
+
         if isinstance(connected_provider, _FakeCitationAddonProvider):
-            account_attrs['external_storage_service'] = None
-            account_attrs['external_citation_service'] = connected_provider
+            account_type = 'citation'
+        elif isinstance(connected_provider, _FakeAddonProvider):
+            account_type = 'storage'
+        elif isinstance(connected_provider, _FakeRemoteComputeAddonProvider):
+            account_type = 'computing'
         else:
-            account_attrs['external_storage_service'] = connected_provider
-            account_attrs['external_citation_service'] = None
-        new_account = _FakeAccount(
+            raise Exception('unknown addon provider type')
+
+        account_attrs[f'external_{account_type}_service'] = connected_provider
+        new_account = _AccountTypes[account_type].value(
             pk=account_pk,
             account_owner_pk=user_pk,
             **account_attrs
@@ -367,12 +392,12 @@ class FakeGravyValet:
     def configure_fake_addon(
             self,
             resource: AbstractNode,
-            connected_account: _FakeAccount,
+            connected_account: _FakeStorageAccount,
             **config_attrs
-    ) -> _FakeAddon:
+    ) -> _FakeStorageAddon:
         resource_uri, resource_pk = self._get_or_create_resource_entry(resource)
         addon_pk = _get_nested_count(self._resource_addons) + 1
-        new_addon = _FakeAddon(
+        new_addon = _FakeStorageAddon(
             pk=addon_pk,
             resource_pk=resource_pk,
             base_account=connected_account,
@@ -744,3 +769,9 @@ def _validate_resource_access(requested_resource_uri, headers):
     resource_permissions = headers.get(auth_helpers.PERMISSIONS_HEADER, '').split(';')
     if osf_permissions.READ not in resource_permissions:
         raise FakeGVError(permission_denied_error_code)
+
+
+class _AccountTypes(Enum):
+    storage = _FakeStorageAccount
+    citation = _FakeCitationAccount
+    computing = _FakeRemoteComputeAccount
