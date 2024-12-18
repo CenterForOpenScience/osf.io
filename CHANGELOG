@@ -2,6 +2,20 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+24.11.0 (2024-12-11)
+====================
+- Institutional Dashboard Project Bugfix Release
+
+24.10.0 (2024-12-05)
+====================
+
+- Migrate Preprint Affilations
+- Add OOPSpam and Akismet metrics to spam report
+- Add PrivateSpamMetricsReport
+- Update PrivateSpamMetricsReporter to work with refactored MonthlyReporter
+- Fix duplicate reports when run for past years
+- Fix counted-usage clobbers
+
 24.09.0 (2024-11-14)
 ====================
 

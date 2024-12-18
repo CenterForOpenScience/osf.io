@@ -188,6 +188,7 @@ class TestNewInstitutionSummaryMetricsList:
         assert data['type'] == 'institution-summary-metrics'
 
         attributes = data['attributes']
+        assert attributes['report_yearmonth'] == '2024-08'
         assert attributes['user_count'] == 200
         assert attributes['public_project_count'] == 150
         assert attributes['private_project_count'] == 125
@@ -254,6 +255,7 @@ class TestNewInstitutionSummaryMetricsList:
 
         attributes = data['attributes']
 
+        assert attributes['report_yearmonth'] == '2024-09'
         assert attributes['user_count'] == 250
         assert attributes['public_project_count'] == 200
         assert attributes['private_project_count'] == 150
