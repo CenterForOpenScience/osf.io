@@ -19,7 +19,7 @@ from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
-from osf.models.base import GuidMixin
+from osf.models.base import GuidMixin, Guid
 from functools import cmp_to_key
 
 def lowercase(lower):
@@ -577,7 +577,27 @@ class PreprintFilterMixin(ListFilterMixin):
             operation['source_field_name'] = 'provider___id'
 
         if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
+            values = operation['value']
+            object_ids = []
+            for val in values:
+                base_guid, version = Guid.split_guid(val)
+                if version:
+                    try:
+                        version = int(version)
+                    except ValueError:
+                        continue
+                    base_guid_obj = Guid.objects.filter(_id=base_guid).first()
+                    if not base_guid_obj:
+                        continue
+                    obj_ids = base_guid_obj.versions.filter(version=version).values_list('object_id', flat=True)
+                    object_ids.extend(obj_ids)
+                else:
+                    obj_ids = Guid.objects.filter(_id=val).values_list('object_id', flat=True)
+                    object_ids.extend(obj_ids)
+
+            operation['source_field_name'] = 'id__in'
+            operation['value'] = list(object_ids)
+            operation['op'] = 'eq'
 
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)

@@ -511,16 +511,9 @@ class TestPreprintCreate(ApiTestCase):
         assert res.json['errors'][0]['detail'] == 'This file is not a valid primary file for this preprint.'
 
     def test_preprint_contributor_signal_sent_on_creation(self):
-        project_owner = AuthUserFactory()
-        other_user_project = ProjectFactory(creator=project_owner)
-        other_user_project.add_contributor(self.user, permissions=permissions.WRITE, visible=True, save=True)
-        other_user_project.remove_contributor(self.user, auth=Auth(project_owner))
+        # Signal sent but bails out early without sending email
         with capture_signals() as mock_signals:
-            payload = build_preprint_create_payload(
-                node_id=other_user_project._id,
-                provider_id=self.provider._id
-            )
-            other_user_project.add_contributor(self.user, permissions=permissions.WRITE, visible=True, save=True)
+            payload = build_preprint_create_payload(provider_id=self.provider._id)
             res = self.app.post_json_api(self.url, payload, auth=self.user.auth)
 
             assert res.status_code == 201
