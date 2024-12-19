@@ -707,9 +707,7 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
         return super().get_queryset()
 
     def get_resource(self):
-        base_guid__id = self.kwargs['preprint_id'].split('_v')[0]
-        return get_object_or_error(Preprint, base_guid__id, self.request)
-
+        return get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)
 
 class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):
     permission_classes = (
