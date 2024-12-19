@@ -792,23 +792,44 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         record_id = (request.data.get('id', None) or '').lower().strip()
         if not record_id:
             raise ValidationError('Must specify record "id".')
+
         claimed_user = self.get_user(check_permissions=True)  # Ensures claimability
         if claimed_user.is_disabled:
             raise ValidationError('Cannot claim disabled account.')
-        try:
-            record_referent = Guid.objects.get(_id=record_id).referent
-        except Guid.DoesNotExist:
-            raise NotFound('Unable to find specified record.')
+
+        base_guid, version = Guid.split_guid(record_id)
+        if version:
+            try:
+                version = int(version)
+            except ValueError:
+                raise NotFound('Unable to find specified record.')
+
+            guid_obj = Guid.objects.filter(_id=base_guid).first()
+            if not guid_obj:
+                raise NotFound('Unable to find specified record.')
+
+            versioned_entry = guid_obj.versions.filter(version=version).first()
+            if not versioned_entry:
+                raise NotFound('Unable to find specified record.')
+
+            record_referent = versioned_entry.referent
+        else:
+            try:
+                record_referent = Guid.objects.get(_id=base_guid).referent
+            except Guid.DoesNotExist:
+                raise NotFound('Unable to find specified record.')
 
         try:
             unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
         except KeyError:
-            if isinstance(record_referent, Preprint) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
+            if isinstance(record_referent,
+                          Preprint) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
                 record_referent = record_referent.node
                 unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
             else:
                 raise NotFound('Unable to find specified record.')
 
+        # The rest of the logic remains unchanged
         if claimer.is_anonymous and email:
             claimer = get_user(email=email)
             try:
@@ -825,9 +846,9 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
                 self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
             except HTTPError as e:
                 raise ValidationError(e.data['message_long'])
-
         else:
             raise ValidationError('Must either be logged in or specify claim email.')
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

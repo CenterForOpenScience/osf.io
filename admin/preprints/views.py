@@ -330,18 +330,6 @@ class WithdrawalRequestMixin(PermissionRequiredMixin):
             target=target,
         ).first()
 
-    # def get_object(self):
-    #     preprint = Preprint.load(self.kwargs['guid'])
-    #     if preprint is None:
-    #         return None
-    #
-    #     return PreprintRequest.objects.filter(
-    #         request_type='withdrawal',
-    #         target=preprint
-    #     ).exclude(
-    #         machine_state='initial'
-    #     ).first()
-
     def get_success_url(self):
         return reverse_lazy('preprints:withdrawal-requests')
 

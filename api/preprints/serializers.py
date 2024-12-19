@@ -576,6 +576,23 @@ class PreprintCreateSerializer(PreprintSerializer):
         description = validated_data.pop('description', '')
         preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description)
 
+        if preprint.node:
+            preprint.node.add_contributor(
+                creator,
+                permissions=osf_permissions.ADMIN,
+                visible=True,
+                auth=get_user_auth(self.context['request']),
+                save=True,
+                send_signals=True
+            )
+        else:
+            project_signals.contributor_added.send(
+                preprint,
+                contributor=creator,
+                auth=get_user_auth(self.context['request']),
+                email_template='preprint',
+            )
+
         return self.update(preprint, validated_data)
 
 
