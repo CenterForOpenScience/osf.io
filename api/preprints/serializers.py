@@ -3,6 +3,8 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
 from rest_framework.exceptions import PermissionDenied, ValidationError as DRFValidationError
+
+from framework import sentry
 from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
@@ -590,9 +592,13 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
         try:
             preprint, update_data = Preprint.create_version(create_from_guid, auth)
         except PermissionsError:
-            raise PermissionDenied(detail='You must have admin permissions to create new version.')
+            message = 'User must have admin permissions to create new version.'
+            sentry.log_message(message)
+            raise PermissionDenied(detail=message)
         except UnpublishedPendingPreprintVersionExists:
-            raise Conflict(detail='Before creating a new version, you must publish the latest version.')
+            message = 'Fail to create a new version since an unpublished pending version already exists.'
+            sentry.log_message(message)
+            raise Conflict(detail=message)
         # TODO add more checks
         return self.update(preprint, update_data)
 
