@@ -829,7 +829,6 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
             else:
                 raise NotFound('Unable to find specified record.')
 
-        # The rest of the logic remains unchanged
         if claimer.is_anonymous and email:
             claimer = get_user(email=email)
             try:
