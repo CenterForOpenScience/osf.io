@@ -789,7 +789,7 @@ def _view_project(node, auth, primary=False,
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'visible_preprints': serialize_preprints(node, user),
+            'visible_preprints': serialize_preprints(node, user, latest_only=True),
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
             'access_requests_enabled': node.access_requests_enabled,
@@ -921,7 +921,10 @@ def serialize_collections(collection_submissions, auth):
     } for collection_submission in collection_submissions if collection_submission.collection.provider and (collection_submission.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', collection_submission.collection)))]
 
-def serialize_preprints(node, user):
+def serialize_preprints(node, user, latest_only=False):
+    preprints = Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
+    if latest_only:
+        preprints = [p for p in preprints if p.is_latest_version]
     return [
         {
             'title': preprint.title,
@@ -932,7 +935,7 @@ def serialize_preprints(node, user):
             'provider': {'name': 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
             'url': preprint.url,
             'absolute_url': preprint.absolute_url
-        } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
+        } for preprint in preprints
     ]
 
 
