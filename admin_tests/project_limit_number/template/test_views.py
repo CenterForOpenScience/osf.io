@@ -1059,7 +1059,7 @@ class TestUpdateProjectLimitNumberTemplatesSettingView(AdminTestCase):
         response = self.view.put(request, template_id=self.template.id)
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error_message'], 'Template 1 is being used')
+        self.assertEqual(response_data['error_message'], 'Template 1 is being used.')
 
     @mock.patch('osf.models.ProjectLimitNumberTemplate.objects.filter')
     def test_put_data_template_name_already_exists(self, mock_filter):
@@ -1402,7 +1402,7 @@ class TestDeleteProjectLimitNumberTemplatesSettingView(AdminTestCase):
         response = self.view.delete(request)
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error_message'], 'Template is being used')
+        self.assertEqual(response_data['error_message'], 'Template is being used.')
 
     @mock.patch('osf.models.ProjectLimitNumberTemplate.objects.filter')
     def test_delete_data_internal_server_error(self, mock_filter):

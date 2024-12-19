@@ -200,7 +200,7 @@
     </form>
 
     <!-- View User List -->
-    <div class="col-md-12" id="id_user_list" hidden>
+    <div id="id_user_list" hidden>
         <h2>{% trans 'User List' %}</h2>
         <div id="user-table"></div>
     </div>
@@ -291,7 +291,7 @@
                             </tr>
                         `;
                     }
-                    const maxPageNumber = Math.max(1, response.total / 10);
+                    const maxPageNumber = Math.max(1, Math.ceil(response.total / 10));
                     const pageNumber = (page === undefined) ? 1 : (page === 'last') ? maxPageNumber : Number(page, 10);
                     const previousPageClass = pageNumber === 1 ? 'disabled' : '';
                     const nextPageClass = pageNumber >= maxPageNumber ? 'disabled' : '';

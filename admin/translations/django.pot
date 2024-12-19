@@ -3749,6 +3749,12 @@ msgstr ""
 msgid "Clear Availability"
 msgstr ""
 
+msgid "Save Availability/Priority"
+msgstr ""
+
+msgid "Clear Availability/Priority"
+msgstr ""
+
 msgid "Availability"
 msgstr ""
 

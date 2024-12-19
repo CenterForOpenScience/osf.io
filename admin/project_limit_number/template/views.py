@@ -419,7 +419,7 @@ class UpdateProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
 
             # Check template is using
             if template.used_setting_number > 0:
-                return JsonResponse({'error_message': template.template_name + ' is being used'}, status=HTTPStatus.BAD_REQUEST)
+                return JsonResponse({'error_message': template.template_name + ' is being used.'}, status=HTTPStatus.BAD_REQUEST)
 
             # Check template name is exist
             if template.template_name != template_name:
@@ -562,7 +562,7 @@ class DeleteProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
 
             if template.used_setting_number > 0:
                 return JsonResponse(
-                    {'error_message': template.template_name + ' is being used'},
+                    {'error_message': template.template_name + ' is being used.'},
                     status=HTTPStatus.BAD_REQUEST
                 )
 

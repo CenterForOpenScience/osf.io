@@ -8924,8 +8924,8 @@ msgstr "ダウンロード中"
 msgid "Download failed."
 msgstr "ダウンロードが失敗されました。"
 
-msgid "{template_name} is being used."
-msgstr "{template_name}が使用されています。"
+msgid "%s is being used."
+msgstr "%sが使用されています。"
 
 msgid "The attribute list is invalid."
 msgstr "属性一覧が不正です。"

@@ -133,8 +133,8 @@
                 {% include "project_limit_number/pagination.html" with institution_id=selected_institution.id items=page page_size=page_size %}
             </div>
             <div class="row col-md-12">
-                <button id="save_changes_button" type="button" class="btn btn-primary" disabled onclick="saveSettings()">{% trans "Save Availability" %}</button>
-                <button id="clear_changes_button" type="reset" class="btn btn-default" disabled style="margin-left: 5px;" onclick="resetSettings()">{% trans "Clear Availability" %}</button>
+                <button id="save_changes_button" type="button" class="btn btn-primary" disabled onclick="saveSettings()">{% trans "Save Availability/Priority" %}</button>
+                <button id="clear_changes_button" type="reset" class="btn btn-default" disabled style="margin-left: 5px;" onclick="resetSettings()">{% trans "Clear Availability/Priority" %}</button>
             </div>
         </form>
         <table id="setting-table" class="table table-striped table-hover table-responsive">
@@ -201,7 +201,7 @@
                 {% endfor %}
             </tbody>
         </table>
-        <div class="row col-md-12">
+        <div>
             <a href="{% url 'project_limit_number:settings:create-setting'%}?institution_id={{selected_institution.id}}" class="btn btn-primary">{% trans "Create New" %}</a>
         </div>
     {% endif %}

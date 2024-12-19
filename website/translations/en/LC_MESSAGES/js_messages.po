@@ -7677,7 +7677,7 @@ msgstr ""
 msgid "Download failed."
 msgstr ""
 
-msgid "{template_name} is being used."
+msgid "%s is being used."
 msgstr ""
 
 msgid "The attribute list is invalid."

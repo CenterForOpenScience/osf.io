@@ -3841,6 +3841,12 @@ msgstr "使用可否の保存"
 msgid "Clear Availability"
 msgstr "使用可否のクリア"
 
+msgid "Save Availability/Priority"
+msgstr "使用可否/優先順位の保存"
+
+msgid "Clear Availability/Priority"
+msgstr "使用可否/優先順位のクリア"
+
 msgid "Availability"
 msgstr "使用可否"
 
