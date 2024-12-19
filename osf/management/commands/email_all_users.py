@@ -19,13 +19,13 @@ logger = logging.getLogger(__name__)
 
 OFFSET = 500000
 
-def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSET):
+def email_all_users(email_template, dry_run=False, ids=None, start_id=0, offset=OFFSET):
 
     if ids:
         active_users = OSFUser.objects.filter(id__in=ids)
     else:
-        lower_bound = run * offset
-        upper_bound = (run + 1) * offset
+        lower_bound = start_id
+        upper_bound = start_id + offset
         base_query = OSFUser.objects.filter(date_confirmed__isnull=False, deleted=None).exclude(date_disabled__isnull=False).exclude(is_active=False)
         active_users = base_query.filter(id__gt=lower_bound, id__lte=upper_bound).order_by('id')
 
@@ -42,11 +42,12 @@ def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSE
 
     total_sent = 0
     for user in active_users.iterator():
+        logger.info(f'Sending email to {user.id}')
         try:
             mails.send_mail(
                 to_addr=user.email,
                 mail=template,
-                fullname=user.fullname,
+                given_name=user.given_name or user.fullname,
             )
         except Exception as e:
             logger.error(f'Exception encountered sending email to {user.id}')
@@ -80,11 +81,11 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            '--r',
+            '--start-id',
             type=int,
-            dest='run',
+            dest='start_id',
             default=0,
-            help='Specify which run this is'
+            help='Specify id to start from.'
         )
 
         parser.add_argument(
@@ -105,9 +106,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
         template = options.get('template')
-        run = options.get('run')
+        start_id = options.get('start_id')
         ids = options.get('ids')
         offset = options.get('offset', OFFSET)
-        email_all_users(template, dry_run, run=run, ids=ids, offset=offset)
+        email_all_users(template, dry_run, start_id=start_id, ids=ids, offset=offset)
         if dry_run:
             raise RuntimeError('Dry run, only superusers emailed')
