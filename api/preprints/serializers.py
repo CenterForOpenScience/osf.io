@@ -592,11 +592,11 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
         try:
             preprint, update_data = Preprint.create_version(create_from_guid, auth)
         except PermissionsError:
-            message = 'You must have admin permissions to create new version.'
+            message = 'User must have admin permissions to create new version.'
             sentry.log_message(message)
             raise PermissionDenied(detail=message)
         except UnpublishedPendingPreprintVersionExists:
-            message = 'Before creating a new version, you must publish the latest version.'
+            message = 'Fail to create a new version since an unpublished pending version already exists.'
             sentry.log_message(message)
             raise Conflict(detail=message)
         # TODO add more checks

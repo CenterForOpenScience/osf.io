@@ -226,7 +226,7 @@ class Guid(BaseModel):
             return cls.objects.get(_id=base_guid) if not select_for_update else cls.objects.filter(
                 _id=base_guid).select_for_update().get()
         except cls.DoesNotExist:
-            sentry.log_message(f'Does not exists with GUID {base_guid}')
+            sentry.log_message(f'Object not found: [guid={base_guid}, version={version}]')
             return None
 
     @classmethod
@@ -240,10 +240,10 @@ class Guid(BaseModel):
             if base_guid_obj.is_versioned:
                 versioned_obj_qs = base_guid_obj.versions.filter(version=version)
                 if not versioned_obj_qs.exists():
-                    sentry.log_message(f'Does not exists GUID {base_guid} with version {version}')
+                    sentry.log_message(f'Version not found for GUID: [guid={base_guid}, version={version}]')
                     return None, None
             else:
-                sentry.log_message(f'Does not exists versioned GUID {base_guid}')
+                sentry.log_message(f'GUID does not support versions: [guid={base_guid}, version={version}]')
                 return None, None
             referent = versioned_obj_qs.first().referent
             return referent, referent.version
@@ -520,12 +520,12 @@ class VersionedGuidMixin(GuidMixin):
             if versioned_guid.exists():
                 version = versioned_guid.first().version
                 guid = versioned_guid.first().guid
-        except IndexError:
-            sentry.log_message(f'IndexError')
+        except IndexError as e:
+            sentry.log_exception(e)
             return None
         if guid:
             return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
-        sentry.log_message(f'Versioned GUID does not exist')
+        sentry.log_message('Versioned GUID does not exist')
         return None
 
     @_id.setter
@@ -552,10 +552,9 @@ class VersionedGuidMixin(GuidMixin):
             return cls.objects.filter(guids___id=guid).select_for_update().get()
 
         except cls.DoesNotExist:
-            sentry.log_message(f'Object with GUID {guid} does not exist')
+            sentry.log_message(f'Object not found: [guid={base_guid}, version={version}]')
             return None
         except cls.MultipleObjectsReturned:
-            sentry.log_message(f'Object with GUID {guid} has multiple versions')
             return None
 
     def get_guid(self):

@@ -76,7 +76,7 @@ class PreprintOldVersionsImmutableMixin:
         preprint = self.get_preprint(check_object_permissions=False)
         if preprint.is_latest_version or preprint.machine_state == 'initial':
             return super().update(request, *args, **kwargs)
-        message = 'Edit availiabe only for the last preprint version or withdrawn preprints'
+        message = 'User can not edit previous versions of a preprint'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
@@ -84,7 +84,7 @@ class PreprintOldVersionsImmutableMixin:
         preprint = self.get_preprint(check_object_permissions=False)
         if preprint.is_latest_version or preprint.machine_state == 'initial':
             return super().create(request, *args, **kwargs)
-        message = 'Edit availiabe only for the last preprint version or withdrawn preprints'
+        message ='User can not edit previous versions of a preprint'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
@@ -92,7 +92,7 @@ class PreprintOldVersionsImmutableMixin:
         preprint = self.get_preprint(check_object_permissions=False)
         if preprint.is_latest_version or preprint.machine_state == 'initial':
             return super().delete(request, *args, **kwargs)
-        message = 'Edit availiabe only for the last preprint version or withdrawn preprints'
+        message = 'User can not edit previous versions of a preprint'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
@@ -114,7 +114,7 @@ class PreprintMixin(NodeMixin):
         try:
             preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
         except Preprint.DoesNotExist:
-            sentry.log_message(f'Preprint with GUID {base_guid_id} not found')
+            sentry.log_message(f'Preprint not found: [guid={base_guid_id}, version={preprint_version}]')
             if ignore_404:
                 return
             raise NotFound
@@ -227,7 +227,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
     def get_queryset(self):
         preprint = Preprint.load(self.kwargs.get('preprint_id'))
         if not preprint:
-            sentry.log_message(f'Not found preprint with GUID {self.kwargs.get('preprint_id')}')
+            sentry.log_message(f'Preprint not found: [preprint_id={self.kwargs.get('preprint_id')}]')
             raise NotFound
         version_ids = preprint.versioned_guids.first().guid.versions.values_list('object_id', flat=True)
         qs = Preprint.objects.filter(id__in=version_ids)
