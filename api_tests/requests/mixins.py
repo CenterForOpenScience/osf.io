@@ -107,17 +107,18 @@ class PreprintRequestTestMixin:
         pre = PreprintFactory(
             creator=admin,
             provider=pre_mod_provider,
-            is_published=True,
-            machine_state='accepted',
+            is_published=False,
+            machine_state='pending'
         )
         pre.ever_public = True
-        pre.is_public = True
         pre.save()
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
             save=True
         )
+        pre.is_public = True
+        pre.save()
         return pre
 
     @pytest.fixture()
