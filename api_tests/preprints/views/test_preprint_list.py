@@ -16,6 +16,7 @@ from api_tests.preprints.views.test_preprint_list_mixin import (
     PreprintIsValidListMixin,
 )
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
+from framework.auth import Auth
 from osf.models import Preprint, Node
 from osf import features
 from osf.utils.workflows import DefaultStates
@@ -123,13 +124,21 @@ class TestPreprintCreateWithoutNode:
     def test_create_preprint_with_supplementary_node(
         self, app, user_one, provider, url, preprint_payload, supplementary_project
     ):
-        preprint_payload['data']['relationships']['node'] = {'data': {'id': supplementary_project._id, 'type': 'nodes'}}
-        res = app.post_json_api(url, preprint_payload, auth=user_one.auth)
+        preprint_payload['data']['relationships']['node'] = {
+            'data': {'id': supplementary_project._id, 'type': 'nodes'}
+        }
 
+        res = app.post_json_api(url, preprint_payload, auth=user_one.auth)
         assert res.status_code == 201
         preprint = Preprint.load(res.json['data']['id'])
+        preprint_id, version = res.json['data']['id'].split('_v')
+
         assert preprint.node == supplementary_project
-        assert Node.objects.filter(preprints__guids___id=res.json['data']['id']).exists()
+        filtered_nodes = Node.objects.filter(
+            preprints__versioned_guids__guid___id=preprint_id,
+            preprints__versioned_guids__version=version
+        )
+        assert supplementary_project in filtered_nodes
 
     def test_create_preprint_with_incorrectly_specified_node(
         self, app, user_one, provider, url, preprint_payload, supplementary_project
