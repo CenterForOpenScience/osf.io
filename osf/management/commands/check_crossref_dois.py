@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand
 import django
 django.setup()
 
-from osf.models import Preprint
+from osf.models import Preprint, VersionedGuidMixin
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +27,19 @@ def pop_slice(lis, n):
     del lis[:n]
     return tem
 
+def create_dois_locally():
+    """
+    This script creates identifiers for preprints which have pending DOI in local environment.
+    """
+    preprints_with_pending_doi = Preprint.objects.filter(
+        preprint_doi_created__isnull=True,
+        is_published=True
+    )
+
+    for preprint in preprints_with_pending_doi:
+        client = preprint.get_doi_client()
+        doi = client.build_doi(preprint=preprint) if client else None
+        preprint.set_identifier_values(doi, save=True)
 
 def check_crossref_dois(dry_run=True):
     """
@@ -69,7 +82,11 @@ def check_crossref_dois(dry_run=True):
 
         for preprint in preprints_response:
             guid = preprint['DOI'].split('/')[-1]
-            pending_preprint = preprints_with_pending_dois.get(guids___id=guid)
+            base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+            pending_preprint = preprints_with_pending_dois.get(
+                versioned_guids__guid___id=base_guid,
+                versioned_guids__version=version,
+            )
             if not dry_run:
                 pending_preprint.set_identifier_values(preprint['DOI'], save=True)
             else:

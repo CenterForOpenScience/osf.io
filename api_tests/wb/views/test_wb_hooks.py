@@ -813,6 +813,7 @@ class TestCopyPreprint():
                 'name': folder_two.name,
             }
         })
+
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 201
 

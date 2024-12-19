@@ -33,8 +33,8 @@ def load_guid_as_target(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        guid = kwargs.get('guid')
-        target = getattr(Guid.load(guid), 'referent', None)
+        target, _ = Guid.load_referent(kwargs.get('guid'))
+
         if not target:
             raise HTTPError(
                 http_status.HTTP_404_NOT_FOUND,
@@ -88,7 +88,9 @@ def waterbutler_opt_hook(func):
             user = OSFUser.load(payload['user'])
             # Waterbutler is sending back ['node'] under the destination payload - WB should change to target
             target = payload['destination'].get('target') or payload['destination'].get('node')
-            dest_target = Guid.load(target).referent
+            dest_target, _ = Guid.load_referent(target)
+            if not dest_target:
+                raise HTTPError(http_status.HTTP_404_NOT_FOUND)
             source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_target)
 
