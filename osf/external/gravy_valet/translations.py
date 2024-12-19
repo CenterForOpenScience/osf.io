@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import markupsafe
 
 from addons.bitbucket.apps import BitbucketAddonConfig
+from addons.boa.apps import BoaAddonAppConfig
 from addons.box.apps import BoxAddonAppConfig
 from addons.dataverse.apps import DataverseAddonAppConfig
 from addons.dropbox.apps import DropboxAddonAppConfig
@@ -44,6 +45,7 @@ class _LegacyConfigsForWBKey(enum.Enum):
     s3 = S3AddonAppConfig
     zotero_org = ZoteroAddonAppConfig
     mendeley = MendeleyAddonConfig
+    boa = BoaAddonAppConfig
 
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
@@ -51,7 +53,6 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
     service_wb_key = gv_account_data.get_included_attribute(
         include_path=include_path,
         attribute_name='wb_key'
-
     )
     legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
     return EphemeralUserSettings(
