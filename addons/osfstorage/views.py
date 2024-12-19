@@ -187,9 +187,12 @@ def osfstorage_get_metadata(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
+    from osf.models.preprint import Preprint
     user_id = request.args.get('user_id')
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
+    guid_id = file_node.target.get_guid().id if isinstance(file_node.target, Preprint) else file_node.target.guids.first().id,
+
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
         cursor.execute("""
@@ -281,7 +284,7 @@ def osfstorage_get_children(file_node, **kwargs):
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
         """, [
             user_content_type_id,
-            file_node.target.guids.first().id,
+            guid_id,
             user_pk,
             user_pk,
             user_id,

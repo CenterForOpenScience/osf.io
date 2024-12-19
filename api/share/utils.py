@@ -410,11 +410,12 @@ def serialize_share_data(resource, old_subjects=None):
         Preprint,
         Registration,
     )
-
+    suid = None
     if isinstance(resource, Preprint):
         # old_subjects is only used for preprints and should be removed as soon as SHARE
         # is fully switched over to the non-mergy pipeline (see ENG-2098)
         serializer = partial(serialize_preprint, old_subjects=old_subjects)
+        suid = resource.get_guid()._id
     elif isinstance(resource, Node):
         serializer = serialize_osf_node
     elif isinstance(resource, Registration):
@@ -430,7 +431,7 @@ def serialize_share_data(resource, old_subjects=None):
             'attributes': {
                 'tasks': [],
                 'raw': None,
-                'suid': resource._id,
+                'suid': resource._id if not suid else suid,
                 'data': serializer(resource),
             },
         },
