@@ -1,6 +1,8 @@
 import jwe
 import jwt
 from unittest import mock
+
+from django.contrib.contenttypes.models import ContentType
 from furl import furl
 import pytest
 import time
@@ -2413,3 +2415,54 @@ class TestWithdrawnPreprint:
         assert preprint_pre_mod.is_retracted
         assert preprint_pre_mod.verified_publishable
         assert crossref_client.get_status(preprint_pre_mod) == 'unavailable'
+
+    def test_run_submit_pre_mod(self, unpublished_preprint_pre_mod, user):
+        assert unpublished_preprint_pre_mod.ever_public is False
+        unpublished_preprint_pre_mod.run_submit(user)
+        guid = unpublished_preprint_pre_mod.versioned_guids.first().guid
+        assert guid.referent == unpublished_preprint_pre_mod
+        assert guid.object_id == unpublished_preprint_pre_mod.pk
+        assert guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_pre_mod)
+
+    def test_run_submit_post_mod(self, unpublished_preprint_post_mod, user):
+
+        assert unpublished_preprint_post_mod.ever_public is False
+        unpublished_preprint_post_mod.run_submit(user)
+        guid = unpublished_preprint_post_mod.versioned_guids.first().guid
+        assert guid.object_id == unpublished_preprint_post_mod.pk
+
+    def test_run_accept_pre_mod(self, user, unpublished_preprint_pre_mod):
+        comment = 'Approving preprint in pre-moderation.'
+        unpublished_preprint_pre_mod.run_submit(user)
+        unpublished_preprint_pre_mod.run_accept(user, comment)
+        guid = unpublished_preprint_pre_mod.versioned_guids.first().guid
+        assert guid.referent == unpublished_preprint_pre_mod
+        assert guid.object_id == unpublished_preprint_pre_mod.pk
+        assert guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_pre_mod)
+
+    def test_run_accept_post_mod(self, user, unpublished_preprint_post_mod):
+        comment = 'Approving preprint in pre-moderation.'
+        unpublished_preprint_post_mod.run_submit(user)
+        unpublished_preprint_post_mod.run_accept(user, comment)
+        guid = unpublished_preprint_post_mod.versioned_guids.first().guid
+        assert guid.referent == unpublished_preprint_post_mod
+        assert guid.object_id == unpublished_preprint_post_mod.pk
+        assert guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_post_mod)
+
+
+    def test_run_reject_sets_version_rejected(self, unpublished_preprint_pre_mod, user):
+        comment = 'Rejecting preprint.'
+        unpublished_preprint_pre_mod.run_submit(user)
+        unpublished_preprint_pre_mod.run_reject(user, comment)
+        versioned_guid = unpublished_preprint_pre_mod.versioned_guids.first()
+        assert versioned_guid.is_rejected is True
+
+    def test_run_accept_hybrid_mod(self, unpublished_preprint_pre_mod, moderator):
+        unpublished_preprint_pre_mod.provider.add_to_group(moderator, 'moderator')
+        comment = 'Rejecting hybrid moderated preprint.'
+        unpublished_preprint_pre_mod.run_submit(moderator)
+        unpublished_preprint_pre_mod.run_accept(moderator, comment)
+        versioned_guid = unpublished_preprint_pre_mod.versioned_guids.first()
+        assert versioned_guid.referent == unpublished_preprint_pre_mod
+        assert versioned_guid.object_id == unpublished_preprint_pre_mod.pk
+        assert versioned_guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_pre_mod)
